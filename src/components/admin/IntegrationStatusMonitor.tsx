@@ -45,16 +45,21 @@ export const IntegrationStatusMonitor: React.FC = () => {
         let status: IntegrationStatus['status'] = 'unknown';
         let message = '';
 
+        // Safely cast config to Record<string, any>
+        const config = (integration.config && typeof integration.config === 'object' && !Array.isArray(integration.config)) 
+          ? integration.config as Record<string, any>
+          : {};
+
         if (!integration.is_active) {
           status = 'warning';
           message = 'אינטגרציה מושבתת';
-        } else if (integration.config && Object.keys(integration.config).length > 0) {
+        } else if (config && Object.keys(config).length > 0) {
           // Check if required config exists
           switch (integration.integration_name) {
             case 'google_maps':
             case 'maps':
             case 'GOOGLE_MAPS':
-              if (integration.config.api_key) {
+              if (config.api_key) {
                 status = integration.last_tested_at ? 'healthy' : 'warning';
                 message = integration.last_tested_at ? 'תקין' : 'טרם נבדק';
               } else {
@@ -63,7 +68,7 @@ export const IntegrationStatusMonitor: React.FC = () => {
               }
               break;
             case 'whatsapp':
-              if (integration.config.access_token && integration.config.phone_number_id) {
+              if (config.access_token && config.phone_number_id) {
                 status = integration.last_tested_at ? 'healthy' : 'warning';
                 message = integration.last_tested_at ? 'תקין' : 'טרם נבדק';
               } else {
@@ -72,7 +77,7 @@ export const IntegrationStatusMonitor: React.FC = () => {
               }
               break;
             default:
-              if (integration.config.api_key) {
+              if (config.api_key) {
                 status = integration.last_tested_at ? 'healthy' : 'warning';
                 message = integration.last_tested_at ? 'תקין' : 'טרם נבדק';
               } else {
@@ -91,7 +96,7 @@ export const IntegrationStatusMonitor: React.FC = () => {
           display_name: integration.display_name,
           is_active: integration.is_active,
           last_tested_at: integration.last_tested_at,
-          config: integration.config || {},
+          config,
           status,
           message
         };
