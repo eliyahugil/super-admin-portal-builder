@@ -69,7 +69,7 @@ export const IntegrationManagement: React.FC = () => {
               <CardContent>
                 <GlobalIntegrationsAdmin />
               </CardContent>
-            </CardContent>
+            </Card>
           </TabsContent>
         )}
       </Tabs>
