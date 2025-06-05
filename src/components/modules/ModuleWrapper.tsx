@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { EmployeeManagement } from './employees/EmployeeManagement';
@@ -133,9 +132,5 @@ export const ModuleWrapper: React.FC = () => {
     return <Navigate to="/" replace />;
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Component />
-    </div>
-  );
+  return <Component />;
 };
