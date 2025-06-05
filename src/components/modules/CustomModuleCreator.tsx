@@ -11,7 +11,13 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Trash2, GripVertical, Sparkles, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { generateTableName, generateRoute, generateIcon, validateModuleName } from '@/utils/moduleUtils';
+import { 
+  generateTableName, 
+  generateRoute, 
+  generateIcon, 
+  validateModuleName,
+  getCustomerNumberForUser 
+} from '@/utils/moduleUtils';
 
 interface CustomField {
   id: string;
@@ -119,23 +125,19 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
     try {
       console.log('Starting custom module creation...');
       
-      // Get the next customer number from the database function
-      const { data: customerNumberData, error: customerNumberError } = await supabase
-        .rpc('get_next_customer_number', { 
-          business_id_param: '123e4567-e89b-12d3-a456-426614174000' // TODO: Replace with actual business_id from context
-        });
-
-      if (customerNumberError) {
-        console.error('Error getting customer number:', customerNumberError);
+      // Get current user
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
         toast({
           title: 'שגיאה',
-          description: 'לא ניתן לקבל מספר לקוח',
+          description: 'משתמש לא מזוהה',
           variant: 'destructive'
         });
         return;
       }
 
-      const customerNumber = customerNumberData;
+      // Get customer number for the current user (0 for super admin, next number for others)
+      const customerNumber = await getCustomerNumberForUser(userData.user.id);
       console.log('Generated customer number:', customerNumber);
 
       // Create the module with the customer number
@@ -261,9 +263,10 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
 
       console.log('Custom table created successfully:', tableResult);
 
+      const customerText = customerNumber === 0 ? 'מנהל על (0)' : customerNumber.toString();
       toast({
         title: 'הצלחה',
-        description: `המודל "${moduleName}" נוצר בהצלחה עם מספר לקוח ${customerNumber} כולל דף ייעודי בנתיב ${fullRoute}`,
+        description: `המודל "${moduleName}" נוצר בהצלחה עם מספר לקוח ${customerText} כולל דף ייעודי בנתיב ${fullRoute}`,
       });
 
       // Reset form

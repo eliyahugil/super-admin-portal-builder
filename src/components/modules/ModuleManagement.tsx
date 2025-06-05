@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +20,7 @@ import { ModuleBusinessDialog } from './ModuleBusinessDialog';
 import { ModuleCard } from './ModuleCard';
 import { CustomModuleCreator } from './CustomModuleCreator';
 import { CustomModuleViewer } from './CustomModuleViewer';
+import { cleanupModuleData } from '@/utils/moduleUtils';
 
 interface Module {
   id: string;
@@ -32,6 +32,7 @@ interface Module {
   is_custom: boolean;
   created_at: string;
   updated_at: string;
+  module_config?: any;
 }
 
 export const ModuleManagement: React.FC = () => {
@@ -154,11 +155,44 @@ export const ModuleManagement: React.FC = () => {
   };
 
   const handleDeleteModule = async (moduleId: string) => {
-    if (!confirm('האם אתה בטוח שברצונך למחוק את המודל? פעולה זו תסיר את המודל מכל העסקים.')) {
+    if (!confirm('האם אתה בטוח שברצונך למחוק את המודל? פעולה זו תסיר את המודל מכל העסקים ותמחק את כל הנתונים הקשורים אליו.')) {
       return;
     }
 
     try {
+      // Get module data first to extract table name
+      const { data: moduleData, error: moduleDataError } = await supabase
+        .from('modules')
+        .select('module_config, is_custom')
+        .eq('id', moduleId)
+        .single();
+
+      if (moduleDataError) {
+        console.error('Error fetching module data:', moduleDataError);
+        toast({
+          title: 'שגיאה',
+          description: 'לא ניתן לקרוא נתוני המודל',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // For custom modules, clean up associated data and tables
+      if (moduleData?.is_custom) {
+        const tableName = moduleData?.module_config?.table_name;
+        console.log('Cleaning up custom module with table:', tableName);
+        
+        const cleanupSuccess = await cleanupModuleData(moduleId, tableName);
+        if (!cleanupSuccess) {
+          toast({
+            title: 'אזהרה',
+            description: 'חלק מהנתונים הקשורים למודל לא נמחקו במלואם',
+            variant: 'destructive'
+          });
+        }
+      }
+
+      // Delete the module itself
       const { error } = await supabase
         .from('modules')
         .delete()
@@ -169,19 +203,24 @@ export const ModuleManagement: React.FC = () => {
         toast({
           title: 'שגיאה',
           description: 'לא ניתן למחוק את המודל',
-          variant: 'destructive',
+          variant: 'destructive'
         });
         return;
       }
 
       toast({
         title: 'הצלחה',
-        description: 'המודל נמחק בהצלחה',
+        description: 'המודל והנתונים הקשורים אליו נמחקו בהצלחה',
       });
 
       fetchModules();
     } catch (error) {
       console.error('Error in handleDeleteModule:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'אירעה שגיאה בלתי צפויה במחיקת המודל',
+        variant: 'destructive'
+      });
     }
   };
 

@@ -1,3 +1,4 @@
+
 // Mapping of Hebrew words to English for route generation
 const hebrewToEnglishMapping: Record<string, string> = {
   // Business & Management
@@ -174,7 +175,7 @@ export const generateTableName = (name: string, moduleId?: string, customerNumbe
     .replace(/^_|_$/g, '');
   
   // Add customer number prefix for better organization
-  if (customerNumber) {
+  if (customerNumber !== undefined) {
     baseName = `c${customerNumber}_${baseName}`;
   }
   
@@ -247,4 +248,89 @@ export const validateModuleName = (name: string): { isValid: boolean; error?: st
   }
   
   return { isValid: true };
+};
+
+// New function to get customer number for super admin or regular users
+export const getCustomerNumberForUser = async (userId: string) => {
+  // Check if user is super admin
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  if (profileError) {
+    console.error('Error checking user role:', profileError);
+    throw new Error('לא ניתן לבדוק הרשאות משתמש');
+  }
+
+  // Super admin gets customer number 0
+  if (profileData?.role === 'super_admin') {
+    return 0;
+  }
+
+  // For regular users, get next customer number
+  const { data: customerNumberData, error: customerNumberError } = await supabase
+    .rpc('get_next_customer_number', { 
+      business_id_param: '123e4567-e89b-12d3-a456-426614174000' // TODO: Replace with actual business_id from context
+    });
+
+  if (customerNumberError) {
+    console.error('Error getting customer number:', customerNumberError);
+    throw new Error('לא ניתן לקבל מספר לקוח');
+  }
+
+  return customerNumberData;
+};
+
+// New function to clean up module data when deleting
+export const cleanupModuleData = async (moduleId: string, tableName?: string) => {
+  try {
+    // If table name is provided, drop the custom table
+    if (tableName) {
+      const { error: dropTableError } = await supabase
+        .rpc('drop_custom_module_table', { table_name_param: tableName });
+      
+      if (dropTableError) {
+        console.error('Error dropping custom table:', dropTableError);
+        // Don't throw error here, continue with cleanup
+      }
+    }
+
+    // Delete module fields
+    const { error: fieldsError } = await supabase
+      .from('module_fields')
+      .delete()
+      .eq('module_id', moduleId);
+
+    if (fieldsError) {
+      console.error('Error deleting module fields:', fieldsError);
+    }
+
+    // Delete module data
+    const { error: dataError } = await supabase
+      .from('module_data')
+      .delete()
+      .eq('module_id', moduleId);
+
+    if (dataError) {
+      console.error('Error deleting module data:', dataError);
+    }
+
+    // Delete business module associations
+    const { error: businessModulesError } = await supabase
+      .from('business_modules')
+      .delete()
+      .eq('module_id', moduleId);
+
+    if (businessModulesError) {
+      console.error('Error deleting business module associations:', businessModulesError);
+    }
+
+    console.log('Module cleanup completed successfully');
+    return true;
+  } catch (error) {
+    console.error('Error in module cleanup:', error);
+    return false;
+  }
 };
