@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 import type { ProfileRow, BusinessRow, CustomField, ModuleCreationResult } from './moduleTypes';
 import { generateTableName, generateRoute, generateIcon } from './moduleGeneration';
@@ -8,11 +9,11 @@ import { validateModuleName } from './moduleValidation';
 export const getCustomerNumberForUser = async (userId: string): Promise<number> => {
   try {
     // Check if user is super admin
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await (supabase as any)
       .from('profiles')
       .select('role')
       .eq('id', userId)
-      .maybeSingle() as any;
+      .maybeSingle();
 
     if (profileError) {
       console.error('Error fetching profile:', profileError);
@@ -26,11 +27,11 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
     }
 
     // For regular users, get their business and generate next customer number
-    const { data, error: businessError } = await supabase
+    const { data, error: businessError } = await (supabase as any)
       .from('businesses')
       .select('id')
       .eq('owner_id', userId)
-      .maybeSingle() as any;
+      .maybeSingle();
 
     if (businessError) {
       console.error('Error fetching business:', businessError);
@@ -63,11 +64,11 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
 // Check if user is super admin
 export const isSuperAdmin = async (userId: string): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('profiles')
       .select('role')
       .eq('id', userId)
-      .maybeSingle() as any;
+      .maybeSingle();
 
     if (error) {
       console.error('Error checking super admin status:', error);
@@ -85,11 +86,11 @@ export const isSuperAdmin = async (userId: string): Promise<boolean> => {
 // Get user business ID
 export const getUserBusinessId = async (userId: string): Promise<string | null> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('businesses')
       .select('id')
       .eq('owner_id', userId)
-      .maybeSingle() as any;
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching user business:', error);
@@ -118,7 +119,7 @@ export const createCustomModuleWithTable = async (
     const tableName = generateTableName(moduleName, 'temp', customerNumber);
 
     // Create module record
-    const { data: moduleData, error: moduleError } = await supabase
+    const { data: moduleData, error: moduleError } = await (supabase as any)
       .from('modules')
       .insert({
         name: moduleName,
@@ -130,7 +131,7 @@ export const createCustomModuleWithTable = async (
         customer_number: customerNumber
       })
       .select()
-      .single() as any;
+      .single();
 
     if (moduleError) {
       console.error('Error creating module:', moduleError);
@@ -163,3 +164,4 @@ export const createCustomModuleWithTable = async (
     return { success: false, error: String(error) };
   }
 };
+
