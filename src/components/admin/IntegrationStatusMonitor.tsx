@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,6 +49,9 @@ export const IntegrationStatusMonitor: React.FC = () => {
           ? integration.config as Record<string, any>
           : {};
 
+        // Since last_tested_at doesn't exist in the database yet, we'll set it to null
+        const last_tested_at = null;
+
         if (!integration.is_active) {
           status = 'warning';
           message = 'אינטגרציה מושבתת';
@@ -60,8 +62,8 @@ export const IntegrationStatusMonitor: React.FC = () => {
             case 'maps':
             case 'GOOGLE_MAPS':
               if (config.api_key) {
-                status = integration.last_tested_at ? 'healthy' : 'warning';
-                message = integration.last_tested_at ? 'תקין' : 'טרם נבדק';
+                status = last_tested_at ? 'healthy' : 'warning';
+                message = last_tested_at ? 'תקין' : 'טרם נבדק';
               } else {
                 status = 'error';
                 message = 'חסר API Key';
@@ -69,8 +71,8 @@ export const IntegrationStatusMonitor: React.FC = () => {
               break;
             case 'whatsapp':
               if (config.access_token && config.phone_number_id) {
-                status = integration.last_tested_at ? 'healthy' : 'warning';
-                message = integration.last_tested_at ? 'תקין' : 'טרם נבדק';
+                status = last_tested_at ? 'healthy' : 'warning';
+                message = last_tested_at ? 'תקין' : 'טרם נבדק';
               } else {
                 status = 'error';
                 message = 'חסרים פרטי התחברות';
@@ -78,8 +80,8 @@ export const IntegrationStatusMonitor: React.FC = () => {
               break;
             default:
               if (config.api_key) {
-                status = integration.last_tested_at ? 'healthy' : 'warning';
-                message = integration.last_tested_at ? 'תקין' : 'טרם נבדק';
+                status = last_tested_at ? 'healthy' : 'warning';
+                message = last_tested_at ? 'תקין' : 'טרם נבדק';
               } else {
                 status = 'error';
                 message = 'חסר API Key';
@@ -95,7 +97,7 @@ export const IntegrationStatusMonitor: React.FC = () => {
           integration_name: integration.integration_name,
           display_name: integration.display_name,
           is_active: integration.is_active,
-          last_tested_at: integration.last_tested_at,
+          last_tested_at,
           config,
           status,
           message
