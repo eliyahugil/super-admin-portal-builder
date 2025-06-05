@@ -1,18 +1,20 @@
+
 import React from 'react';
-import { useParams } from 'react-router-dom';
-import { IntegrationDashboard } from '@/components/integrations/IntegrationDashboard';
-import { BusinessIntegrationsManager } from '@/components/business/BusinessIntegrationsManager';
 import { useBusiness } from '@/hooks/useBusiness';
+import { SuperAdminIntegrationsDashboard } from '@/components/admin/SuperAdminIntegrationsDashboard';
+import { IntegrationDashboard } from '@/components/integrations/IntegrationDashboard';
 
 export const IntegrationsRoute: React.FC = () => {
-  const { businessId } = useParams();
   const { isSuperAdmin } = useBusiness();
 
-  // If we have a business ID in the URL, show business-specific integrations
-  if (businessId) {
-    return <BusinessIntegrationsManager />;
+  console.log('=== IntegrationsRoute ===');
+  console.log('Is Super Admin:', isSuperAdmin);
+
+  // For super admin, show the advanced dashboard with real data
+  if (isSuperAdmin) {
+    return <SuperAdminIntegrationsDashboard />;
   }
 
-  // Otherwise show the main integrations dashboard
+  // For regular users, show the standard integration dashboard
   return <IntegrationDashboard />;
 };

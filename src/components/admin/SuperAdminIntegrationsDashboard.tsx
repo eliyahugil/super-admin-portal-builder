@@ -1,15 +1,15 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useIntegrations } from '@/hooks/useIntegrations';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useToast } from '@/hooks/use-toast';
+import { RealDataView } from '@/components/ui/RealDataView';
+import { useIntegrationsData, useBusinessIntegrationsData } from '@/hooks/useRealData';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
 import { 
   Settings, 
   Users, 
@@ -31,7 +31,7 @@ interface BusinessIntegrationStats {
 }
 
 export const SuperAdminIntegrationsDashboard: React.FC = () => {
-  const { integrations, loading: integrationsLoading } = useIntegrations();
+  const { data: integrations, isLoading: integrationsLoading, error: integrationsError } = useIntegrationsData();
   const { toast } = useToast();
   const [testingIntegration, setTestingIntegration] = useState<string | null>(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
@@ -181,7 +181,6 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
   };
 
   const navigateToGlobalSettings = () => {
-    // Use React Router navigation instead of window.location
     window.open('/global-integrations', '_blank');
   };
 
@@ -207,25 +206,12 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
     return displayNames[category] || category;
   };
 
-  if (integrationsLoading || businessStatsLoading) {
-    return (
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-32 bg-gray-100 rounded-lg animate-pulse" />
-          ))}
-        </div>
-        <div className="h-96 bg-gray-100 rounded-lg animate-pulse" />
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">דשבורד אינטגרציות - מנהל מערכת</h1>
         <p className="text-gray-600 mt-2">
-          מרכז שליטה לניהול כל האינטגרציות במערכת
+          מרכז שליטה לניהול כל האינטגרציות במערכת - נתונים אמיתיים בלבד
         </p>
       </div>
 
@@ -299,67 +285,70 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5" />
-                אינטגרציות נתמכות
+                אינטגרציות נתמכות (נתונים אמיתיים)
               </CardTitle>
               <CardDescription>
-                רשימת כל האינטגרציות הזמינות במערכת ומצב השימוש שלהן
+                רשימת כל האינטגרציות הזמינות במערכת ומצב השימוש שלהן - ללא mock data
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {integrations.map((integration) => {
-                  return (
-                    <div 
-                      key={integration.id} 
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                    >
-                      <div className="flex items-center gap-4">
-                        <span className="text-2xl">{integration.icon || '🔗'}</span>
-                        <div>
-                          <h3 className="font-semibold">{integration.display_name}</h3>
-                          <p className="text-sm text-gray-600">{integration.description}</p>
-                          <div className="flex gap-2 mt-1">
-                            <Badge variant="outline" className={getCategoryColor(integration.category)}>
-                              {getCategoryDisplayName(integration.category)}
+              <RealDataView
+                data={integrations || []}
+                loading={integrationsLoading}
+                error={integrationsError}
+                emptyMessage="אין אינטגרציות רשומות במערכת"
+                emptyIcon={<Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />}
+                renderItem={(integration) => (
+                  <div 
+                    key={integration.id} 
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="text-2xl">{integration.icon || '🔗'}</span>
+                      <div>
+                        <h3 className="font-semibold">{integration.display_name}</h3>
+                        <p className="text-sm text-gray-600">{integration.description}</p>
+                        <div className="flex gap-2 mt-1">
+                          <Badge variant="outline" className={getCategoryColor(integration.category)}>
+                            {getCategoryDisplayName(integration.category)}
+                          </Badge>
+                          {integration.requires_global_key && (
+                            <Badge variant="secondary" className="text-xs">
+                              מפתח גלובלי
                             </Badge>
-                            {integration.requires_global_key && (
-                              <Badge variant="secondary" className="text-xs">
-                                מפתח גלובלי
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-4">
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => testIntegrationStatus(integration.integration_name)}
-                            disabled={testingIntegration === integration.integration_name}
-                          >
-                            {testingIntegration === integration.integration_name ? (
-                              <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                            ) : (
-                              <Activity className="h-4 w-4 mr-1" />
-                            )}
-                            {testingIntegration === integration.integration_name ? 'בודק...' : 'בדוק סטטוס'}
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => openIntegrationSettings(integration)}
-                          >
-                            <Settings className="h-4 w-4 mr-1" />
-                            הגדרות
-                          </Button>
+                          )}
                         </div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => testIntegrationStatus(integration.integration_name)}
+                          disabled={testingIntegration === integration.integration_name}
+                        >
+                          {testingIntegration === integration.integration_name ? (
+                            <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            <Activity className="h-4 w-4 mr-1" />
+                          )}
+                          {testingIntegration === integration.integration_name ? 'בודק...' : 'בדוק סטטוס'}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openIntegrationSettings(integration)}
+                        >
+                          <Settings className="h-4 w-4 mr-1" />
+                          הגדרות
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -369,15 +358,20 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                סטטוס אינטגרציות עסקים
+                סטטוס אינטגרציות עסקים (נתונים אמיתיים)
               </CardTitle>
               <CardDescription>
-                מצב האינטגרציות לכל עסק במערכת
+                מצב האינטגרציות לכל עסק במערכת - ישירות מבסיס הנתונים
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {businessStats?.map((business) => (
+              <RealDataView
+                data={businessStats || []}
+                loading={businessStatsLoading}
+                error={null}
+                emptyMessage="אין עסקים רשומים במערכת עם אינטגרציות"
+                emptyIcon={<Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />}
+                renderItem={(business) => (
                   <div 
                     key={business.business_id} 
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
@@ -417,15 +411,8 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
                       </Button>
                     </div>
                   </div>
-                ))}
-                
-                {(!businessStats || businessStats.length === 0) && (
-                  <div className="text-center py-8">
-                    <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">אין עסקים רשומים במערכת</p>
-                  </div>
                 )}
-              </div>
+              />
             </CardContent>
           </Card>
         </TabsContent>

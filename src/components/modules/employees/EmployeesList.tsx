@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -5,6 +6,7 @@ import { Edit, Trash2, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
+import { RealDataView } from '@/components/ui/RealDataView';
 
 interface Employee {
   id: string;
@@ -21,9 +23,16 @@ interface Employee {
 interface EmployeesListProps {
   employees: Employee[];
   onRefetch: () => void;
+  loading?: boolean;
+  error?: Error | null;
 }
 
-export const EmployeesList: React.FC<EmployeesListProps> = ({ employees, onRefetch }) => {
+export const EmployeesList: React.FC<EmployeesListProps> = ({ 
+  employees, 
+  onRefetch, 
+  loading = false, 
+  error = null 
+}) => {
   const { toast } = useToast();
   const { logActivity } = useActivityLogger();
 
@@ -48,8 +57,8 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({ employees, onRefet
   };
 
   const handleEdit = (employee: Employee) => {
-    // TODO: Implement edit functionality
-    console.log('Edit employee:', employee);
+    console.log('=== EDIT EMPLOYEE ===');
+    console.log('Employee:', employee);
     
     logActivity({
       action: 'view_edit_form',
@@ -73,6 +82,10 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({ employees, onRefet
     }
 
     try {
+      console.log('=== DELETING EMPLOYEE ===');
+      console.log('Employee ID:', employeeId);
+      console.log('Employee Name:', employeeName);
+      
       const { error } = await supabase
         .from('employees')
         .delete()
@@ -136,19 +149,14 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({ employees, onRefet
     }
   };
 
-  if (employees.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-500">אין עובדים עדיין</p>
-        <p className="text-sm text-gray-400">התחל על ידי הוספת העובד הראשון</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      {employees.map((employee) => (
+    <RealDataView
+      data={employees || []}
+      loading={loading}
+      error={error}
+      emptyMessage="אין עובדים רשומים במערכת"
+      emptyIcon={<User className="h-12 w-12 text-gray-400 mx-auto mb-4" />}
+      renderItem={(employee) => (
         <div
           key={employee.id}
           className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
@@ -200,7 +208,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({ employees, onRefet
             </Button>
           </div>
         </div>
-      ))}
-    </div>
+      )}
+    />
   );
 };
