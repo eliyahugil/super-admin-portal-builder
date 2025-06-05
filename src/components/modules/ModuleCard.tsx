@@ -37,9 +37,9 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({
   onDelete,
 }) => {
   return (
-    <div className="p-6 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+    <div className="p-6 border border-gray-200 rounded-lg hover:shadow-md transition-shadow" dir="rtl">
       <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3 space-x-reverse">
+        <div className="flex items-center gap-3">
           {module.icon && (
             <span className="text-2xl">{module.icon}</span>
           )}
@@ -72,7 +72,7 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <div className="flex items-center space-x-2 space-x-reverse">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -89,7 +89,7 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({
           </Button>
         </div>
         
-        <div className="flex items-center space-x-2 space-x-reverse">
+        <div className="flex items-center gap-2">
           <Button
             variant={module.is_active ? "secondary" : "default"}
             size="sm"

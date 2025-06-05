@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -95,7 +96,28 @@
     @apply border-border;
   }
 
+  html {
+    direction: rtl;
+  }
+
   body {
     @apply bg-background text-foreground;
+    direction: rtl;
+    text-align: right;
+  }
+}
+
+/* RTL specific styles */
+@layer components {
+  .rtl-grid {
+    direction: rtl;
+  }
+  
+  .rtl-flex {
+    direction: rtl;
+  }
+  
+  .space-x-reverse > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 1;
   }
 }

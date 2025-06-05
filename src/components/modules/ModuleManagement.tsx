@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -155,7 +154,7 @@ export const ModuleManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" dir="rtl">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-2 text-gray-600">טוען מודלים...</p>
@@ -165,7 +164,7 @@ export const ModuleManagement: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -235,7 +234,7 @@ export const ModuleManagement: React.FC = () => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <CardTitle>רשימת מודלים</CardTitle>
-              <Button onClick={handleCreateModule} className="flex items-center space-x-2 space-x-reverse">
+              <Button onClick={handleCreateModule} className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 <span>צור מודל חדש</span>
               </Button>
@@ -246,13 +245,13 @@ export const ModuleManagement: React.FC = () => {
               <div className="flex-1">
                 <Label htmlFor="search">חיפוש מודלים</Label>
                 <div className="relative">
-                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     id="search"
                     placeholder="חפש לפי שם או תיאור..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pr-10"
+                    className="pl-10"
                   />
                 </div>
               </div>
