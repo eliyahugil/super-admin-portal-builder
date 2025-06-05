@@ -8,6 +8,7 @@ import { Toaster } from '@/components/ui/toaster';
 import Index from '@/pages/Index';
 import { GlobalIntegrationsPage } from '@/pages/GlobalIntegrationsPage';
 import { ModuleWrapper } from '@/components/modules/ModuleWrapper';
+import { IntegrationsRoute } from '@/components/routes/IntegrationsRoute';
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,12 @@ function App() {
         <Router>
           <Routes>
             <Route path="/" element={<Index />} />
+            
+            <Route path="/integrations" element={
+              <ProtectedRoute>
+                <IntegrationsRoute />
+              </ProtectedRoute>
+            } />
             
             <Route path="/global-integrations" element={
               <ProtectedRoute>
