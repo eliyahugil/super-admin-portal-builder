@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 
 interface CreateEmployeeDialogProps {
   open: boolean;
@@ -44,6 +44,7 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { logActivity } = useActivityLogger();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,12 +93,25 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
         is_active: formData.is_active,
       };
 
-      const { error } = await supabase
+      const { data: createdEmployee, error } = await supabase
         .from('employees')
-        .insert(employeeData);
+        .insert(employeeData)
+        .select()
+        .single();
 
       if (error) {
         console.error('Error creating employee:', error);
+        
+        logActivity({
+          action: 'create_failed',
+          target_type: 'employee',
+          target_id: 'unknown',
+          details: { 
+            employee_name: `${formData.first_name} ${formData.last_name}`,
+            error: error.message 
+          }
+        });
+
         toast({
           title: 'שגיאה',
           description: 'לא ניתן ליצור את העובד',
@@ -105,6 +119,18 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
         });
         return;
       }
+
+      logActivity({
+        action: 'create',
+        target_type: 'employee',
+        target_id: createdEmployee.id,
+        details: { 
+          employee_name: `${formData.first_name} ${formData.last_name}`,
+          employee_id: formData.employee_id,
+          employee_type: formData.employee_type,
+          success: true 
+        }
+      });
 
       toast({
         title: 'הצלחה',
@@ -132,6 +158,17 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
       onOpenChange(false);
     } catch (error) {
       console.error('Error in handleSubmit:', error);
+      
+      logActivity({
+        action: 'create_failed',
+        target_type: 'employee',
+        target_id: 'unknown',
+        details: { 
+          employee_name: `${formData.first_name} ${formData.last_name}`,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      });
+
       toast({
         title: 'שגיאה',
         description: 'אירעה שגיאה בלתי צפויה',

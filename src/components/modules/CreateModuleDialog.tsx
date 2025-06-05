@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 
 interface CreateModuleDialogProps {
   open: boolean;
@@ -29,6 +29,7 @@ export const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { logActivity } = useActivityLogger();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,18 +46,33 @@ export const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      const moduleData = {
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        icon: formData.icon.trim() || null,
+        route: formData.route.trim() || null,
+        is_active: formData.is_active,
+      };
+
+      const { data: createdModule, error } = await supabase
         .from('modules')
-        .insert({
-          name: formData.name.trim(),
-          description: formData.description.trim() || null,
-          icon: formData.icon.trim() || null,
-          route: formData.route.trim() || null,
-          is_active: formData.is_active,
-        });
+        .insert(moduleData)
+        .select()
+        .single();
 
       if (error) {
         console.error('Error creating module:', error);
+        
+        logActivity({
+          action: 'create_failed',
+          target_type: 'module',
+          target_id: 'unknown',
+          details: { 
+            module_name: formData.name,
+            error: error.message 
+          }
+        });
+
         toast({
           title: 'שגיאה',
           description: 'לא ניתן ליצור את המודל',
@@ -64,6 +80,17 @@ export const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
         });
         return;
       }
+
+      logActivity({
+        action: 'create',
+        target_type: 'module',
+        target_id: createdModule.id,
+        details: { 
+          module_name: formData.name,
+          route: formData.route,
+          success: true 
+        }
+      });
 
       toast({
         title: 'הצלחה',
@@ -82,6 +109,22 @@ export const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
       onOpenChange(false);
     } catch (error) {
       console.error('Error in handleSubmit:', error);
+      
+      logActivity({
+        action: 'create_failed',
+        target_type: 'module',
+        target_id: 'unknown',
+        details: { 
+          module_name: formData.name,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      });
+
+      toast({
+        title: 'שגיאה',
+        description: 'אירעה שגיאה בלתי צפויה',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }

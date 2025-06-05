@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 
 interface CreateBranchDialogProps {
   open: boolean;
@@ -30,6 +30,7 @@ export const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { logActivity } = useActivityLogger();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,12 +60,25 @@ export const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({
         is_active: formData.is_active,
       };
 
-      const { error } = await supabase
+      const { data: createdBranch, error } = await supabase
         .from('branches')
-        .insert(branchData);
+        .insert(branchData)
+        .select()
+        .single();
 
       if (error) {
         console.error('Error creating branch:', error);
+        
+        logActivity({
+          action: 'create_failed',
+          target_type: 'branch',
+          target_id: 'unknown',
+          details: { 
+            branch_name: formData.name,
+            error: error.message 
+          }
+        });
+
         toast({
           title: 'שגיאה',
           description: 'לא ניתן ליצור את הסניף',
@@ -72,6 +86,18 @@ export const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({
         });
         return;
       }
+
+      logActivity({
+        action: 'create',
+        target_type: 'branch',
+        target_id: createdBranch.id,
+        details: { 
+          branch_name: formData.name,
+          address: formData.address,
+          gps_radius: formData.gps_radius,
+          success: true 
+        }
+      });
 
       toast({
         title: 'הצלחה',
@@ -91,6 +117,17 @@ export const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({
       onOpenChange(false);
     } catch (error) {
       console.error('Error in handleSubmit:', error);
+      
+      logActivity({
+        action: 'create_failed',
+        target_type: 'branch',
+        target_id: 'unknown',
+        details: { 
+          branch_name: formData.name,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      });
+
       toast({
         title: 'שגיאה',
         description: 'אירעה שגיאה בלתי צפויה',
