@@ -1,4 +1,6 @@
 
+import { supabase } from '@/integrations/supabase/client';
+
 // Module route mappings
 export const moduleRouteMapping: Record<string, { 
   name: string; 
@@ -139,8 +141,6 @@ export const validateModuleName = (name: string): { isValid: boolean; error?: st
 
 // Get customer number for user
 export const getCustomerNumberForUser = async (userId: string): Promise<number> => {
-  const { supabase } = await import('@/integrations/supabase/client');
-  
   // Check if user is super admin
   const { data: profile } = await supabase
     .from('profiles')
@@ -172,4 +172,45 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
   }
 
   return result || 1;
+};
+
+// Clean up module data when deleting a custom module
+export const cleanupModuleData = async (moduleId: string, tableName?: string): Promise<boolean> => {
+  try {
+    console.log('Starting cleanup for module:', moduleId, 'table:', tableName);
+
+    // Remove module from all businesses
+    const { error: businessModuleError } = await supabase
+      .from('business_modules')
+      .delete()
+      .eq('module_id', moduleId);
+
+    if (businessModuleError) {
+      console.error('Error removing module from businesses:', businessModuleError);
+      return false;
+    }
+
+    // If it's a custom module with a table, attempt to drop the table
+    if (tableName) {
+      try {
+        // Note: This will only work if the user has proper permissions
+        // In production, this might need to be handled by a database function
+        const { error: dropTableError } = await supabase
+          .rpc('drop_custom_table', { table_name: tableName });
+
+        if (dropTableError) {
+          console.warn('Could not drop custom table:', dropTableError);
+          // Continue execution - table deletion is not critical
+        }
+      } catch (tableError) {
+        console.warn('Table deletion failed:', tableError);
+        // Continue execution - table deletion is not critical
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in cleanupModuleData:', error);
+    return false;
+  }
 };
