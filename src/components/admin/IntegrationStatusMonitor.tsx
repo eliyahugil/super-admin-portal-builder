@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Clock, TestTube } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { googleMapsService } from '@/services/GoogleMapsService';
 
 interface IntegrationStatus {
   id: string;
@@ -113,6 +114,79 @@ export const IntegrationStatusMonitor: React.FC = () => {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
+  const testIntegrationConnection = async (integration: IntegrationStatus) => {
+    console.log('=== TESTING INTEGRATION CONNECTION ===');
+    console.log('Integration:', integration.integration_name);
+    console.log('Config:', integration.config);
+    
+    try {
+      let testResult = false;
+      let errorMessage = '';
+
+      switch (integration.integration_name) {
+        case 'google_maps':
+        case 'maps':
+        case 'GOOGLE_MAPS':
+          console.log('Testing Google Maps integration...');
+          if (integration.config.api_key) {
+            // Set the API key temporarily for testing
+            googleMapsService.setApiKey(integration.config.api_key);
+            testResult = await googleMapsService.testConnection();
+            if (!testResult) {
+              errorMessage = 'חיבור ל-Google Maps נכשל';
+            }
+          } else {
+            errorMessage = 'חסר API Key ל-Google Maps';
+          }
+          break;
+
+        case 'whatsapp':
+          console.log('Testing WhatsApp integration...');
+          if (integration.config.access_token && integration.config.phone_number_id) {
+            try {
+              const response = await fetch(
+                `https://graph.facebook.com/v18.0/${integration.config.phone_number_id}/whatsapp_business_profile`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${integration.config.access_token}`,
+                  },
+                }
+              );
+              testResult = response.ok;
+              if (!testResult) {
+                errorMessage = 'חיבור ל-WhatsApp נכשל - בדוק את פרטי ההתחברות';
+              }
+            } catch (error) {
+              console.error('WhatsApp test error:', error);
+              errorMessage = 'שגיאה בבדיקת חיבור WhatsApp';
+            }
+          } else {
+            errorMessage = 'חסרים פרטי התחברות ל-WhatsApp';
+          }
+          break;
+
+        default:
+          // For other integrations, just check if config exists
+          testResult = integration.config && Object.keys(integration.config).length > 0;
+          if (!testResult) {
+            errorMessage = 'חסרה הגדרה עבור האינטגרציה';
+          }
+      }
+
+      console.log('Test result:', testResult);
+      
+      if (testResult) {
+        return { success: true, message: 'החיבור תקין' };
+      } else {
+        return { success: false, message: errorMessage || 'בדיקת החיבור נכשלה' };
+      }
+
+    } catch (error: any) {
+      console.error('Integration test error:', error);
+      return { success: false, message: error.message || 'שגיאה בבדיקת החיבור' };
+    }
+  };
+
   const testIntegration = async (integration: IntegrationStatus) => {
     console.log('=== TESTING INTEGRATION ===');
     console.log('Integration:', integration.integration_name);
@@ -120,6 +194,10 @@ export const IntegrationStatusMonitor: React.FC = () => {
     setTesting(integration.id);
     
     try {
+      // Test the actual integration
+      const testResult = await testIntegrationConnection(integration);
+      console.log('Integration test result:', testResult);
+
       // Update the last_tested_at field in the database
       const { error } = await supabase
         .from('global_integrations')
@@ -136,8 +214,9 @@ export const IntegrationStatusMonitor: React.FC = () => {
       console.log('Successfully updated last_tested_at');
       
       toast({
-        title: 'הצלחה',
-        description: `בדיקת ${integration.display_name} הושלמה בהצלחה`,
+        title: testResult.success ? 'הצלחה' : 'שגיאה',
+        description: `${integration.display_name}: ${testResult.message}`,
+        variant: testResult.success ? 'default' : 'destructive',
       });
 
       // Refresh the data to show updated status
@@ -272,7 +351,7 @@ export const IntegrationStatusMonitor: React.FC = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => testIntegration(integration)}
-                    disabled={testing === integration.id}
+                    disabled={testing === integration.id || !integration.is_active}
                     className="flex items-center gap-2"
                   >
                     {testing === integration.id ? (
