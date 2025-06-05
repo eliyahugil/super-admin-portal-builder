@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -179,7 +180,13 @@ export const ModuleManagement: React.FC = () => {
 
       // For custom modules, clean up associated data and tables
       if (moduleData?.is_custom) {
-        const tableName = moduleData?.module_config?.table_name;
+        // Safely access table_name from module_config
+        const tableName = typeof moduleData.module_config === 'object' && 
+                         moduleData.module_config !== null &&
+                         'table_name' in moduleData.module_config
+                         ? (moduleData.module_config as any).table_name
+                         : undefined;
+        
         console.log('Cleaning up custom module with table:', tableName);
         
         const cleanupSuccess = await cleanupModuleData(moduleId, tableName);

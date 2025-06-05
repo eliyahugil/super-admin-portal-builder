@@ -1,3 +1,4 @@
+import { supabase } from '@/integrations/supabase/client';
 
 // Mapping of Hebrew words to English for route generation
 const hebrewToEnglishMapping: Record<string, string> = {
