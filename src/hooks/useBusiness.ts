@@ -2,7 +2,16 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Profile, Business } from '@/types/supabase';
+
+// Simple types to avoid Supabase type recursion
+interface SimpleProfile {
+  role: string;
+}
+
+interface SimpleBusiness {
+  id: string;
+  name?: string;
+}
 
 export const useBusiness = () => {
   const [currentBusinessId, setCurrentBusinessId] = useState<string | null>(null);
@@ -21,14 +30,14 @@ export const useBusiness = () => {
     queryFn: async () => {
       if (!user?.id) return null;
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .maybeSingle() as { data: Profile | null; error: any };
+        .maybeSingle();
 
       if (error) throw error;
-      return data;
+      return data as SimpleProfile | null;
     },
     enabled: !!user?.id,
   });
@@ -44,16 +53,17 @@ export const useBusiness = () => {
         return { id: 'super_admin', role: 'super_admin' };
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('businesses')
         .select('id, name')
         .eq('owner_id', user.id)
-        .maybeSingle() as { data: Business | null; error: any };
+        .maybeSingle();
 
       if (error || !data) return null;
       
-      setCurrentBusinessId(data.id);
-      return data;
+      const businessData = data as SimpleBusiness;
+      setCurrentBusinessId(businessData.id);
+      return businessData;
     },
     enabled: !!user?.id && !!profile,
   });
