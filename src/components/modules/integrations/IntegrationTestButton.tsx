@@ -19,6 +19,9 @@ export const IntegrationTestButton: React.FC<IntegrationTestButtonProps> = ({
 
   const testIntegration = async (key: string, testConfig: Record<string, any>) => {
     try {
+      console.log('=== Testing Integration ===');
+      console.log('Key:', key, 'Config:', testConfig);
+
       switch (key) {
         case 'whatsapp':
           if (!testConfig.token || !testConfig.phone_number_id) {
@@ -53,10 +56,15 @@ export const IntegrationTestButton: React.FC<IntegrationTestButtonProps> = ({
         case 'google_maps':
         case 'GOOGLE_MAPS':
           console.log('=== Testing Google Maps Integration ===');
-          console.log('Test config:', testConfig);
           
-          // First, refresh the API key from the database
-          await googleMapsService.refreshApiKey();
+          // If we have an API key in config, use it temporarily
+          if (testConfig.api_key) {
+            console.log('Setting temporary API key for test');
+            googleMapsService.setApiKey(testConfig.api_key);
+          } else {
+            console.log('No API key in config, using service default');
+            await googleMapsService.refreshApiKey();
+          }
           
           // Test the connection
           const isConnected = await googleMapsService.testConnection();

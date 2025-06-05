@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { IntegrationTestButton } from './IntegrationTestButton';
 
 interface GlobalIntegrationFormProps {
   integration: {
@@ -36,17 +37,25 @@ export const GlobalIntegrationForm: React.FC<GlobalIntegrationFormProps> = ({
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      console.log('Saving global config for integration:', integration.id, config);
+      console.log('=== Saving Global Integration Config ===');
+      console.log('Integration ID:', integration.id);
+      console.log('Integration Name:', integration.integration_name);
+      console.log('New Config:', config);
       
       const { error } = await supabase
         .from('global_integrations')
-        .update({ config })
+        .update({ 
+          config,
+          updated_at: new Date().toISOString()
+        })
         .eq('integration_name', integration.integration_name);
 
       if (error) {
         console.error('Error saving global config:', error);
         throw error;
       }
+
+      console.log('Global config saved successfully');
 
       toast({
         title: 'הצלחה',
@@ -75,6 +84,7 @@ export const GlobalIntegrationForm: React.FC<GlobalIntegrationFormProps> = ({
     switch (integration.integration_name) {
       case 'google_maps':
       case 'maps':
+      case 'GOOGLE_MAPS':
         return (
           <div className="space-y-4">
             <div>
@@ -87,6 +97,9 @@ export const GlobalIntegrationForm: React.FC<GlobalIntegrationFormProps> = ({
                 placeholder="AIzaSy..."
                 className="mt-1"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                מפתח API עבור Google Maps עם הפעלת Geocoding API ו-Places API
+              </p>
             </div>
             <div>
               <Label htmlFor="region">אזור ברירת מחדל</Label>
@@ -97,6 +110,9 @@ export const GlobalIntegrationForm: React.FC<GlobalIntegrationFormProps> = ({
                 placeholder="IL"
                 className="mt-1"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                קוד מדינה (ISO 3166-1) לחיפוש כתובות
+              </p>
             </div>
           </div>
         );
@@ -206,6 +222,12 @@ export const GlobalIntegrationForm: React.FC<GlobalIntegrationFormProps> = ({
             איפוס
           </Button>
         </div>
+
+        {/* Integration Test Button */}
+        <IntegrationTestButton
+          integrationKey={integration.integration_name}
+          config={config}
+        />
       </CardContent>
     </Card>
   );

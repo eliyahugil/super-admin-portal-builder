@@ -1,4 +1,3 @@
-
 /// <reference types="google.maps" />
 
 import { supabase } from '@/integrations/supabase/client';
@@ -61,10 +60,15 @@ class GoogleMapsService {
 
       console.log('Global integrations query result:', { data: globalIntegrations, error });
 
-      if (globalIntegrations?.config?.api_key) {
-        this.apiKey = globalIntegrations.config.api_key;
-        console.log('API Key loaded from global integrations:', this.apiKey ? 'Yes' : 'No');
-      } else {
+      if (globalIntegrations?.config && typeof globalIntegrations.config === 'object' && globalIntegrations.config !== null) {
+        const config = globalIntegrations.config as Record<string, any>;
+        if (config.api_key && typeof config.api_key === 'string') {
+          this.apiKey = config.api_key;
+          console.log('API Key loaded from global integrations:', this.apiKey ? 'Yes' : 'No');
+        }
+      }
+      
+      if (!this.apiKey) {
         // Fallback to environment variable
         this.apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || null;
         console.log('API Key loaded from environment:', this.apiKey ? 'Yes' : 'No');
