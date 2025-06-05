@@ -49,8 +49,8 @@ export const IntegrationStatusMonitor: React.FC = () => {
           ? integration.config as Record<string, any>
           : {};
 
-        // Since last_tested_at doesn't exist in the database yet, we'll set it to null
-        const last_tested_at = null;
+        // Now we can use the actual last_tested_at field from the database
+        const last_tested_at = integration.last_tested_at;
 
         if (!integration.is_active) {
           status = 'warning';

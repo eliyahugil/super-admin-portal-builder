@@ -881,6 +881,7 @@ export type Database = {
           integration_name: string
           is_active: boolean
           is_global: boolean
+          last_tested_at: string | null
           updated_at: string
         }
         Insert: {
@@ -893,6 +894,7 @@ export type Database = {
           integration_name: string
           is_active?: boolean
           is_global?: boolean
+          last_tested_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -905,6 +907,7 @@ export type Database = {
           integration_name?: string
           is_active?: boolean
           is_global?: boolean
+          last_tested_at?: string | null
           updated_at?: string
         }
         Relationships: []

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,6 +76,13 @@ export const GlobalIntegrationForm: React.FC<GlobalIntegrationFormProps> = ({
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleTestComplete = () => {
+    console.log('=== Test completed, triggering update ===');
+    if (onUpdate) {
+      onUpdate();
     }
   };
 
@@ -227,6 +233,7 @@ export const GlobalIntegrationForm: React.FC<GlobalIntegrationFormProps> = ({
         <IntegrationTestButton
           integrationKey={integration.integration_name}
           config={config}
+          onTestComplete={handleTestComplete}
         />
       </CardContent>
     </Card>

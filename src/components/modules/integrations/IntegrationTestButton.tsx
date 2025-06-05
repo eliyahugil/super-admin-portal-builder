@@ -4,18 +4,43 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { googleMapsService } from '@/services/GoogleMapsService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface IntegrationTestButtonProps {
   integrationKey: string;
   config: Record<string, any>;
+  onTestComplete?: () => void;
 }
 
 export const IntegrationTestButton: React.FC<IntegrationTestButtonProps> = ({
   integrationKey,
   config,
+  onTestComplete,
 }) => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message?: string } | null>(null);
+
+  const updateLastTestedAt = async (integrationName: string, success: boolean) => {
+    try {
+      console.log('=== UPDATING LAST_TESTED_AT ===');
+      console.log('Integration name:', integrationName, 'Success:', success);
+      
+      const { error } = await supabase
+        .from('global_integrations')
+        .update({ 
+          last_tested_at: new Date().toISOString() 
+        })
+        .eq('integration_name', integrationName);
+
+      if (error) {
+        console.error('Error updating last_tested_at:', error);
+      } else {
+        console.log('Successfully updated last_tested_at');
+      }
+    } catch (error) {
+      console.error('Error in updateLastTestedAt:', error);
+    }
+  };
 
   const testIntegration = async (key: string, testConfig: Record<string, any>) => {
     try {
@@ -24,14 +49,14 @@ export const IntegrationTestButton: React.FC<IntegrationTestButtonProps> = ({
 
       switch (key) {
         case 'whatsapp':
-          if (!testConfig.token || !testConfig.phone_number_id) {
+          if (!testConfig.access_token || !testConfig.phone_number_id) {
             throw new Error('חסר Token או Phone Number ID');
           }
           const wspResponse = await fetch(
             `https://graph.facebook.com/v18.0/${testConfig.phone_number_id}/whatsapp_business_profile`,
             {
               headers: {
-                Authorization: `Bearer ${testConfig.token}`,
+                Authorization: `Bearer ${testConfig.access_token}`,
               },
             }
           );
@@ -116,9 +141,25 @@ export const IntegrationTestButton: React.FC<IntegrationTestButtonProps> = ({
       const testResult = await testIntegration(integrationKey, config);
       console.log('Test result:', testResult);
       setResult(testResult);
+      
+      // Update the last_tested_at field in the database
+      await updateLastTestedAt(integrationKey, testResult.success);
+      
+      // Call the onTestComplete callback if provided
+      if (onTestComplete) {
+        onTestComplete();
+      }
     } catch (error: any) {
       console.error('Test error:', error);
-      setResult({ success: false, message: 'שגיאה בבדיקת החיבור' });
+      const errorResult = { success: false, message: 'שגיאה בבדיקת החיבור' };
+      setResult(errorResult);
+      
+      // Update the last_tested_at field even for failed tests
+      await updateLastTestedAt(integrationKey, false);
+      
+      if (onTestComplete) {
+        onTestComplete();
+      }
     } finally {
       setLoading(false);
     }
