@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Settings, Trash2, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
@@ -33,7 +33,10 @@ export const BusinessIntegrationsList: React.FC = () => {
         .eq('business_id', businessId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching business integrations:', error);
+        throw error;
+      }
       return data as BusinessIntegration[];
     },
     enabled: !!businessId,
@@ -55,6 +58,7 @@ export const BusinessIntegrationsList: React.FC = () => {
 
       refetch();
     } catch (error) {
+      console.error('Error toggling integration:', error);
       toast({
         title: 'שגיאה',
         description: 'לא ניתן לעדכן את האינטגרציה',
@@ -83,6 +87,7 @@ export const BusinessIntegrationsList: React.FC = () => {
 
       refetch();
     } catch (error) {
+      console.error('Error deleting integration:', error);
       toast({
         title: 'שגיאה',
         description: 'לא ניתן למחוק את האינטגרציה',

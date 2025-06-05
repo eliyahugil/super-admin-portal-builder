@@ -17,7 +17,10 @@ export const useBusiness = () => {
         .eq('id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
       return data;
     },
     enabled: !!user?.id,
@@ -34,7 +37,10 @@ export const useBusiness = () => {
         .eq('owner_id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching business:', error);
+        return null;
+      }
       return data;
     },
     enabled: !!user?.id,

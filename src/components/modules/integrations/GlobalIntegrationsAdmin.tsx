@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Settings, Trash2, Edit, Key } from 'lucide-react';
+import { Plus, Edit, Trash2, Key } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,7 +36,10 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching global integrations:', error);
+        return [];
+      }
       return data as GlobalIntegration[];
     },
   });
@@ -65,6 +68,7 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
 
       refetch();
     } catch (error) {
+      console.error('Error toggling global integration:', error);
       toast({
         title: 'שגיאה',
         description: 'לא ניתן לעדכן את האינטגרציה הגלובלית',
@@ -93,6 +97,7 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
 
       refetch();
     } catch (error) {
+      console.error('Error deleting global integration:', error);
       toast({
         title: 'שגיאה',
         description: 'לא ניתן למחוק את האינטגרציה הגלובלית',

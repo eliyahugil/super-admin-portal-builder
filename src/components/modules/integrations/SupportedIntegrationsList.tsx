@@ -30,7 +30,10 @@ export const SupportedIntegrationsList: React.FC = () => {
         .eq('is_active', true)
         .order('category', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching supported integrations:', error);
+        return [];
+      }
       return data as SupportedIntegration[];
     },
   });
@@ -44,6 +47,17 @@ export const SupportedIntegrationsList: React.FC = () => {
       'automation': 'bg-orange-100 text-orange-800',
     };
     return colors[category] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getCategoryDisplayName = (category: string) => {
+    const displayNames: Record<string, string> = {
+      'maps': 'מפות וניווט',
+      'crm': 'ניהול לקוחות',
+      'invoicing': 'חשבוניות',
+      'communication': 'תקשורת',
+      'automation': 'אוטומציה',
+    };
+    return displayNames[category] || category;
   };
 
   const groupedIntegrations = integrations?.reduce((acc, integration) => {
@@ -64,17 +78,22 @@ export const SupportedIntegrationsList: React.FC = () => {
     );
   }
 
+  if (!integrations?.length) {
+    return (
+      <div className="text-center py-8">
+        <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-500">אין אינטגרציות זמינות</p>
+        <p className="text-sm text-gray-400">אינטגרציות יתווספו בקרוב</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {Object.entries(groupedIntegrations || {}).map(([category, categoryIntegrations]) => (
         <div key={category}>
-          <h3 className="text-lg font-semibold mb-3 capitalize">
-            {category === 'maps' && 'מפות וניווט'}
-            {category === 'crm' && 'ניהול לקוחות'}
-            {category === 'invoicing' && 'חשבוניות'}
-            {category === 'communication' && 'תקשורת'}
-            {category === 'automation' && 'אוטומציה'}
-            {!['maps', 'crm', 'invoicing', 'communication', 'automation'].includes(category) && category}
+          <h3 className="text-lg font-semibold mb-3">
+            {getCategoryDisplayName(category)}
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -83,11 +102,11 @@ export const SupportedIntegrationsList: React.FC = () => {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">{integration.icon}</span>
+                      <span className="text-2xl">{integration.icon || '🔗'}</span>
                       <div>
                         <CardTitle className="text-sm">{integration.display_name}</CardTitle>
                         <Badge variant="outline" className={getCategoryColor(integration.category)}>
-                          {integration.category}
+                          {getCategoryDisplayName(integration.category)}
                         </Badge>
                       </div>
                     </div>
