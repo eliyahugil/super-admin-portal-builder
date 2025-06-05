@@ -9,43 +9,28 @@ import { ModuleConfigDashboard } from '../config/ModuleConfigDashboard';
 import { useBusiness } from '@/hooks/useBusiness';
 
 export const IntegrationManagement: React.FC = () => {
-  const { isSuperAdmin } = useBusiness();
-  const [activeTab, setActiveTab] = useState('modules');
+  const { isSuperAdmin, businessId } = useBusiness();
+  const [activeTab, setActiveTab] = useState('available');
+
+  const tabs = [
+    { value: 'available', label: 'אינטגרציות זמינות', show: true },
+    { value: 'business', label: 'האינטגרציות שלי', show: !!businessId },
+    { value: 'modules', label: 'מודולים', show: true },
+    { value: 'admin', label: 'ניהול גלובלי', show: isSuperAdmin }
+  ].filter(tab => tab.show);
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">ניהול מודולים ואינטגרציות</h1>
-        <p className="text-gray-600 mt-2">
-          נהל את המודולים והאינטגרציות של העסק והתחבר לשירותים חיצוניים
-        </p>
-      </div>
-
+    <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-          <TabsTrigger value="modules">מודולים זמינים</TabsTrigger>
-          <TabsTrigger value="supported">אינטגרציות זמינות</TabsTrigger>
-          <TabsTrigger value="business">האינטגרציות שלי</TabsTrigger>
-          {isSuperAdmin && (
-            <TabsTrigger value="admin">ניהול גלובלי</TabsTrigger>
-          )}
+        <TabsList className={`grid w-full grid-cols-${tabs.length}`}>
+          {tabs.map(tab => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        <TabsContent value="modules">
-          <Card>
-            <CardHeader>
-              <CardTitle>מודולים זמינים</CardTitle>
-              <CardDescription>
-                רשימת כל המודולים הזמינים עבור העסק שלך
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ModuleConfigDashboard />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="supported">
+        <TabsContent value="available">
           <Card>
             <CardHeader>
               <CardTitle>אינטגרציות זמינות</CardTitle>
@@ -59,16 +44,32 @@ export const IntegrationManagement: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="business">
+        {businessId && (
+          <TabsContent value="business">
+            <Card>
+              <CardHeader>
+                <CardTitle>האינטגרציות שלי</CardTitle>
+                <CardDescription>
+                  נהל את האינטגרציות הפעילות של העסק שלך
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BusinessIntegrationsList />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+
+        <TabsContent value="modules">
           <Card>
             <CardHeader>
-              <CardTitle>האינטגרציות שלי</CardTitle>
+              <CardTitle>מודולים זמינים</CardTitle>
               <CardDescription>
-                נהל את האינטגרציות הפעילות של העסק שלך
+                רשימת כל המודולים הזמינים עבור העסק שלך
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <BusinessIntegrationsList />
+              <ModuleConfigDashboard />
             </CardContent>
           </Card>
         </TabsContent>

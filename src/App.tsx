@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -19,6 +20,7 @@ import { SystemPreview } from "@/components/admin/SystemPreview";
 import { CRMDashboard } from "@/components/crm/CRMDashboard";
 import { BusinessDashboard } from "@/components/business/BusinessDashboard";
 import { BusinessIntegrationsManager } from "@/components/business/BusinessIntegrationsManager";
+import { IntegrationsRoute } from "@/components/routes/IntegrationsRoute";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

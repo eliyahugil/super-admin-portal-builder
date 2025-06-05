@@ -46,6 +46,27 @@ export const useBusiness = () => {
     enabled: !!user?.id,
   });
 
+  // Get business integrations count
+  const { data: integrationsCount } = useQuery({
+    queryKey: ['business-integrations-count', business?.id],
+    queryFn: async () => {
+      if (!business?.id) return 0;
+      
+      const { count, error } = await supabase
+        .from('business_integrations')
+        .select('*', { count: 'exact', head: true })
+        .eq('business_id', business.id)
+        .eq('is_active', true);
+
+      if (error) {
+        console.error('Error fetching integrations count:', error);
+        return 0;
+      }
+      return count || 0;
+    },
+    enabled: !!business?.id,
+  });
+
   return {
     user,
     profile,
@@ -54,5 +75,6 @@ export const useBusiness = () => {
     isSuperAdmin: profile?.role === 'super_admin',
     isBusinessOwner: !!business,
     isLoading: profileLoading || businessLoading,
+    integrationsCount: integrationsCount || 0,
   };
 };
