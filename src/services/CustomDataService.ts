@@ -1,32 +1,33 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { getTableName } from '@/utils/tableUtils';
+import type { CustomTables, CustomTableKey } from '@/types/customSchemas';
 
-export class DataService<T extends Record<string, any>> {
-  private moduleRoute: string;
-  private businessId: number | string;
+export class CustomDataService<K extends CustomTableKey> {
+  private module: K;
+  private businessId: string | number;
 
-  constructor(moduleRoute: string, businessId: number | string) {
-    this.moduleRoute = moduleRoute;
+  constructor(module: K, businessId: string | number) {
+    this.module = module;
     this.businessId = businessId;
   }
 
-  private tableName(): string {
-    return getTableName(this.moduleRoute, this.businessId);
+  private tableName() {
+    return getTableName(this.module, this.businessId);
   }
 
-  async getAll(): Promise<T[]> {
-    // Use RPC to bypass strict typing for dynamic table names
+  async getAll(): Promise<CustomTables[K][]> {
+    // Use rpc call to bypass TypeScript strict typing for dynamic tables
     const { data, error } = await supabase.rpc('select_from_table', {
       table_name: this.tableName(),
       select_clause: '*'
     });
 
     if (error) throw error;
-    return (data as T[]) || [];
+    return (data as CustomTables[K][]) || [];
   }
 
-  async getById(id: number | string): Promise<T | null> {
+  async getById(id: string): Promise<CustomTables[K] | null> {
     const { data, error } = await supabase.rpc('select_from_table', {
       table_name: this.tableName(),
       select_clause: '*',
@@ -34,10 +35,10 @@ export class DataService<T extends Record<string, any>> {
     });
 
     if (error) throw error;
-    return data && data.length > 0 ? (data[0] as T) : null;
+    return data && data.length > 0 ? (data[0] as CustomTables[K]) : null;
   }
 
-  async create(payload: Partial<T>): Promise<T> {
+  async create(payload: Partial<CustomTables[K]>): Promise<CustomTables[K]> {
     const columns = Object.keys(payload).join(', ');
     const values = Object.values(payload).map(v => 
       typeof v === 'string' ? `'${v}'` : v
@@ -50,10 +51,10 @@ export class DataService<T extends Record<string, any>> {
     });
 
     if (error) throw error;
-    return data as T;
+    return data as CustomTables[K];
   }
 
-  async update(id: number | string, payload: Partial<T>): Promise<T> {
+  async update(id: string, payload: Partial<CustomTables[K]>): Promise<CustomTables[K]> {
     const updates = Object.entries(payload)
       .map(([key, value]) => `${key} = ${typeof value === 'string' ? `'${value}'` : value}`)
       .join(', ');
@@ -65,10 +66,10 @@ export class DataService<T extends Record<string, any>> {
     });
 
     if (error) throw error;
-    return data as T;
+    return data as CustomTables[K];
   }
 
-  async delete(id: number | string): Promise<void> {
+  async delete(id: string): Promise<void> {
     const { error } = await supabase.rpc('delete_from_table', {
       table_name: this.tableName(),
       where_clause: `id = '${id}'`
@@ -77,7 +78,7 @@ export class DataService<T extends Record<string, any>> {
     if (error) throw error;
   }
 
-  async search(field: string, value: any): Promise<T[]> {
+  async search(field: string, value: any): Promise<CustomTables[K][]> {
     const whereClause = typeof value === 'string' 
       ? `${field} = '${value}'` 
       : `${field} = ${value}`;
@@ -89,10 +90,10 @@ export class DataService<T extends Record<string, any>> {
     });
 
     if (error) throw error;
-    return (data as T[]) || [];
+    return (data as CustomTables[K][]) || [];
   }
 
-  async filter(filters: Record<string, any>): Promise<T[]> {
+  async filter(filters: Record<string, any>): Promise<CustomTables[K][]> {
     const whereClause = Object.entries(filters)
       .map(([field, value]) => 
         typeof value === 'string' ? `${field} = '${value}'` : `${field} = ${value}`
@@ -106,6 +107,6 @@ export class DataService<T extends Record<string, any>> {
     });
 
     if (error) throw error;
-    return (data as T[]) || [];
+    return (data as CustomTables[K][]) || [];
   }
 }
