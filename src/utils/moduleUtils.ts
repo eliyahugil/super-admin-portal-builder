@@ -148,54 +148,59 @@ export const validateModuleName = (name: string): { isValid: boolean; error?: st
   return { isValid: true };
 };
 
-// Get customer number for user
+// Get customer number for user with simple typing to avoid recursion
 export const getCustomerNumberForUser = async (userId: string): Promise<number> => {
-  // Check if user is super admin with explicit typing to avoid recursion
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
-    .maybeSingle();
+  try {
+    // Check if user is super admin with explicit typing to avoid recursion
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
 
-  if (profileError) {
-    console.error('Error fetching profile:', profileError);
-    throw profileError;
-  }
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+      throw profileError;
+    }
 
-  const userProfile = profile as unknown as SimpleProfile | null;
+    const userProfile = profile as SimpleProfile | null;
 
-  if (userProfile?.role === 'super_admin') {
-    return 0; // Super admin gets customer number 0
-  }
+    if (userProfile?.role === 'super_admin') {
+      return 0; // Super admin gets customer number 0
+    }
 
-  // For regular users, get their business and generate next customer number
-  const { data: business, error: businessError } = await supabase
-    .from('businesses')
-    .select('id')
-    .eq('owner_id', userId)
-    .maybeSingle();
+    // For regular users, get their business and generate next customer number
+    const { data: business, error: businessError } = await supabase
+      .from('businesses')
+      .select('id')
+      .eq('owner_id', userId)
+      .maybeSingle();
 
-  if (businessError) {
-    console.error('Error fetching business:', businessError);
-    throw businessError;
-  }
+    if (businessError) {
+      console.error('Error fetching business:', businessError);
+      throw businessError;
+    }
 
-  const userBusiness = business as unknown as SimpleBusiness | null;
+    const userBusiness = business as SimpleBusiness | null;
 
-  if (!userBusiness) {
-    throw new Error('No business found for user');
-  }
+    if (!userBusiness) {
+      throw new Error('No business found for user');
+    }
 
-  // Get the next customer number for this business with explicit typing
-  const { data: result, error } = await supabase
-    .rpc('get_next_customer_number', { business_id_param: userBusiness.id });
+    // Get the next customer number for this business with explicit typing
+    const { data: result, error } = await supabase
+      .rpc('get_next_customer_number', { business_id_param: userBusiness.id });
 
-  if (error) {
-    console.error('Error getting next customer number:', error);
+    if (error) {
+      console.error('Error getting next customer number:', error);
+      throw error;
+    }
+
+    return Number(result) || 1;
+  } catch (error) {
+    console.error('Error in getCustomerNumberForUser:', error);
     throw error;
   }
-
-  return (result as unknown as number) || 1;
 };
 
 // Clean up module data when deleting a custom module with simplified return type
@@ -226,7 +231,7 @@ export const cleanupModuleData = async (moduleId: string, tableName?: string): P
           console.warn('Could not drop custom table:', dropTableError);
           // Continue execution - table deletion is not critical
         } else {
-          const dropResult = data as unknown as boolean | null;
+          const dropResult = Boolean(data);
           console.log('Successfully dropped custom table:', tableName, 'Result:', dropResult);
         }
       } catch (tableError) {
