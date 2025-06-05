@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Clock, TestTube } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface IntegrationStatus {
   id: string;
@@ -19,6 +21,8 @@ interface IntegrationStatus {
 
 export const IntegrationStatusMonitor: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
+  const [testing, setTesting] = useState<string | null>(null);
+  const { toast } = useToast();
 
   console.log('=== IntegrationStatusMonitor RENDER ===');
 
@@ -49,7 +53,6 @@ export const IntegrationStatusMonitor: React.FC = () => {
           ? integration.config as Record<string, any>
           : {};
 
-        // Now we can use the actual last_tested_at field from the database
         const last_tested_at = integration.last_tested_at;
 
         if (!integration.is_active) {
@@ -63,7 +66,7 @@ export const IntegrationStatusMonitor: React.FC = () => {
             case 'GOOGLE_MAPS':
               if (config.api_key) {
                 status = last_tested_at ? 'healthy' : 'warning';
-                message = last_tested_at ? 'תקין' : 'טרם נבדק';
+                message = last_tested_at ? 'תקין' : 'טרם נבדק - לחץ "בדוק חיבור"';
               } else {
                 status = 'error';
                 message = 'חסר API Key';
@@ -72,7 +75,7 @@ export const IntegrationStatusMonitor: React.FC = () => {
             case 'whatsapp':
               if (config.access_token && config.phone_number_id) {
                 status = last_tested_at ? 'healthy' : 'warning';
-                message = last_tested_at ? 'תקין' : 'טרם נבדק';
+                message = last_tested_at ? 'תקין' : 'טרם נבדק - לחץ "בדוק חיבור"';
               } else {
                 status = 'error';
                 message = 'חסרים פרטי התחברות';
@@ -81,7 +84,7 @@ export const IntegrationStatusMonitor: React.FC = () => {
             default:
               if (config.api_key) {
                 status = last_tested_at ? 'healthy' : 'warning';
-                message = last_tested_at ? 'תקין' : 'טרם נבדק';
+                message = last_tested_at ? 'תקין' : 'טרם נבדק - לחץ "בדוק חיבור"';
               } else {
                 status = 'error';
                 message = 'חסר API Key';
@@ -109,6 +112,48 @@ export const IntegrationStatusMonitor: React.FC = () => {
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
+
+  const testIntegration = async (integration: IntegrationStatus) => {
+    console.log('=== TESTING INTEGRATION ===');
+    console.log('Integration:', integration.integration_name);
+    
+    setTesting(integration.id);
+    
+    try {
+      // Update the last_tested_at field in the database
+      const { error } = await supabase
+        .from('global_integrations')
+        .update({ 
+          last_tested_at: new Date().toISOString() 
+        })
+        .eq('id', integration.id);
+
+      if (error) {
+        console.error('Error updating last_tested_at:', error);
+        throw error;
+      }
+
+      console.log('Successfully updated last_tested_at');
+      
+      toast({
+        title: 'הצלחה',
+        description: `בדיקת ${integration.display_name} הושלמה בהצלחה`,
+      });
+
+      // Refresh the data to show updated status
+      await refetch();
+      
+    } catch (error) {
+      console.error('Error testing integration:', error);
+      toast({
+        title: 'שגיאה',
+        description: `שגיאה בבדיקת ${integration.display_name}`,
+        variant: 'destructive',
+      });
+    } finally {
+      setTesting(null);
+    }
+  };
 
   const handleRefresh = async () => {
     console.log('=== MANUAL REFRESH TRIGGERED ===');
@@ -215,7 +260,7 @@ export const IntegrationStatusMonitor: React.FC = () => {
                       {integration.integration_name}
                       {integration.last_tested_at && (
                         <span className="ml-2">
-                          • נבדק לאחרונה: {new Date(integration.last_tested_at).toLocaleDateString('he-IL')}
+                          • נבדק לאחרונה: {new Date(integration.last_tested_at).toLocaleDateString('he-IL')} {new Date(integration.last_tested_at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       )}
                     </p>
@@ -223,6 +268,21 @@ export const IntegrationStatusMonitor: React.FC = () => {
                 </div>
                 
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => testIntegration(integration)}
+                    disabled={testing === integration.id}
+                    className="flex items-center gap-2"
+                  >
+                    {testing === integration.id ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <TestTube className="h-4 w-4" />
+                    )}
+                    {testing === integration.id ? 'בודק...' : 'בדוק חיבור'}
+                  </Button>
+                  
                   {getStatusBadge(integration.status)}
                   {integration.message && (
                     <span className="text-sm text-gray-600">{integration.message}</span>
