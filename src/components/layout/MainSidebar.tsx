@@ -28,7 +28,8 @@ import {
   ShoppingCart,
   Briefcase,
   UserCheck,
-  CheckSquare
+  CheckSquare,
+  Calendar
 } from 'lucide-react';
 import { useBusiness } from '@/hooks/useBusiness';
 import { getModuleRoutes } from '@/utils/routeMapping';
