@@ -6,22 +6,31 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Clock, CheckCircle, XCircle, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useBusiness } from '@/hooks/useBusiness';
 
 type RequestStatus = 'pending' | 'approved' | 'rejected';
 
 export const EmployeeRequests: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<RequestStatus | ''>('');
+  const { businessId, isLoading: businessLoading } = useBusiness();
 
   const { data: employeeRequests } = useQuery({
-    queryKey: ['employee-requests', statusFilter],
+    queryKey: ['employee-requests', statusFilter, businessId],
     queryFn: async () => {
+      if (!businessId) return [];
+
       let query = supabase
         .from('employee_requests')
         .select(`
           *,
-          employee:employees(first_name, last_name, employee_id)
+          employee:employees(first_name, last_name, employee_id, business_id)
         `)
         .order('created_at', { ascending: false });
+
+      // Filter by business_id if not super admin
+      if (businessId !== 'super_admin') {
+        query = query.eq('employee.business_id', businessId);
+      }
 
       if (statusFilter) {
         query = query.eq('status', statusFilter);
@@ -31,6 +40,7 @@ export const EmployeeRequests: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
+    enabled: !!businessId && !businessLoading,
   });
 
   const getStatusBadge = (status: string) => {
@@ -64,6 +74,10 @@ export const EmployeeRequests: React.FC = () => {
 
     return labels[type as keyof typeof labels] || type;
   };
+
+  if (businessLoading) {
+    return <div className="container mx-auto px-4 py-8" dir="rtl">טוען...</div>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">

@@ -7,25 +7,37 @@ import { Badge } from '@/components/ui/badge';
 import { FileCheck, Search, Download, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
+import { useBusiness } from '@/hooks/useBusiness';
 
 export const EmployeeDocs: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { businessId, isLoading: businessLoading } = useBusiness();
 
   const { data: signedDocuments } = useQuery({
-    queryKey: ['employee-docs'],
+    queryKey: ['employee-docs', businessId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (!businessId) return [];
+
+      let query = supabase
         .from('employee_documents')
         .select(`
           *,
-          employee:employees(first_name, last_name, employee_id)
+          employee:employees(first_name, last_name, employee_id, business_id)
         `)
         .not('digital_signature_data', 'is', null)
         .order('created_at', { ascending: false });
 
+      // Filter by business_id if not super admin
+      if (businessId !== 'super_admin') {
+        query = query.eq('employee.business_id', businessId);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
       return data || [];
     },
+    enabled: !!businessId && !businessLoading,
   });
 
   const filteredDocs = signedDocuments?.filter(doc =>
@@ -40,6 +52,10 @@ export const EmployeeDocs: React.FC = () => {
     }
     return '';
   };
+
+  if (businessLoading) {
+    return <div className="container mx-auto px-4 py-8" dir="rtl">טוען...</div>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">

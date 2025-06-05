@@ -8,35 +8,53 @@ import { Badge } from '@/components/ui/badge';
 import { Upload, FileText, Download, Search, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useBusiness } from '@/hooks/useBusiness';
 
 export const EmployeeFiles: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const { toast } = useToast();
+  const { businessId, isLoading: businessLoading } = useBusiness();
 
   const { data: employees } = useQuery({
-    queryKey: ['employees'],
+    queryKey: ['employees', businessId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (!businessId) return [];
+
+      let query = supabase
         .from('employees')
-        .select('id, first_name, last_name, employee_id')
+        .select('id, first_name, last_name, employee_id, business_id')
         .order('first_name');
+
+      // Filter by business_id if not super admin
+      if (businessId !== 'super_admin') {
+        query = query.eq('business_id', businessId);
+      }
       
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
+    enabled: !!businessId && !businessLoading,
   });
 
   const { data: employeeFiles } = useQuery({
-    queryKey: ['employee-files', selectedEmployee],
+    queryKey: ['employee-files', selectedEmployee, businessId],
     queryFn: async () => {
+      if (!businessId) return [];
+
       let query = supabase
         .from('employee_documents')
         .select(`
           *,
-          employee:employees(first_name, last_name, employee_id)
+          employee:employees(first_name, last_name, employee_id, business_id)
         `)
         .order('created_at', { ascending: false });
+
+      // Filter by business_id if not super admin
+      if (businessId !== 'super_admin') {
+        query = query.eq('employee.business_id', businessId);
+      }
 
       if (selectedEmployee) {
         query = query.eq('employee_id', selectedEmployee);
@@ -46,7 +64,7 @@ export const EmployeeFiles: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: true,
+    enabled: !!businessId && !businessLoading,
   });
 
   const filteredFiles = employeeFiles?.filter(file =>
@@ -55,6 +73,10 @@ export const EmployeeFiles: React.FC = () => {
     (file.employee && 
      `${file.employee.first_name} ${file.employee.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  if (businessLoading) {
+    return <div className="container mx-auto px-4 py-8" dir="rtl">טוען...</div>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">

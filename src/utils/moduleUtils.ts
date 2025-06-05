@@ -287,106 +287,48 @@ export const validateModuleName = (name: string): { isValid: boolean; error?: st
   return { isValid: true };
 };
 
-export const getCustomerNumberForUser = async (userId: string): Promise<number> => {
+export const getCurrentBusinessId = async (): Promise<string | null> => {
   try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error('Error getting user:', userError);
+      return null;
+    }
+
+    // Check if user is super admin
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single();
 
     if (profileError) {
       console.error('Error checking user role:', profileError);
-      throw new Error('לא ניתן לבדוק הרשאות משתמש');
+      return null;
     }
 
+    // Super admin has access to all businesses
     if (profileData?.role === 'super_admin') {
-      return 0;
+      return 'super_admin';
     }
 
+    // Get business for regular user
     const { data: businessData, error: businessError } = await supabase
       .from('businesses')
       .select('id')
-      .eq('owner_id', userId)
+      .eq('owner_id', user.id)
       .single();
 
-    if (businessError && businessError.code !== 'PGRST116') {
+    if (businessError || !businessData) {
       console.error('Error getting business:', businessError);
-      throw new Error('לא ניתן לקבל מידע על העסק');
+      return null;
     }
 
-    if (!businessData) {
-      const customerNumber = await createNewBusinessWithCustomerNumber(userId);
-      return customerNumber;
-    }
-
-    const { data: customerNumberData, error: customerError } = await supabase
-      .from('customer_numbers')
-      .select('customer_number')
-      .eq('business_id', businessData.id)
-      .single();
-
-    if (customerError) {
-      console.error('Error getting customer number:', customerError);
-      return 1;
-    }
-
-    return customerNumberData?.customer_number || 1;
+    return businessData.id;
   } catch (error) {
-    console.error('Error in getCustomerNumberForUser:', error);
-    throw error;
-  }
-};
-
-const createNewBusinessWithCustomerNumber = async (userId: string): Promise<number> => {
-  try {
-    const { data: maxCustomerData, error: maxError } = await supabase
-      .from('customer_numbers')
-      .select('customer_number')
-      .order('customer_number', { ascending: false })
-      .limit(1);
-
-    if (maxError) {
-      console.error('Error getting max customer number:', maxError);
-      throw new Error('לא ניתן לקבל מספר לקוח חדש');
-    }
-
-    let nextCustomerNumber = 1;
-    if (maxCustomerData && maxCustomerData.length > 0 && maxCustomerData[0].customer_number) {
-      nextCustomerNumber = maxCustomerData[0].customer_number + 1;
-    }
-
-    const { data: businessData, error: createBusinessError } = await supabase
-      .from('businesses')
-      .insert({
-        owner_id: userId,
-        name: `עסק ${nextCustomerNumber}`,
-        is_active: true
-      })
-      .select()
-      .single();
-
-    if (createBusinessError) {
-      console.error('Error creating business:', createBusinessError);
-      throw new Error('לא ניתן ליצור עסק חדש');
-    }
-
-    const { error: createCustomerError } = await supabase
-      .from('customer_numbers')
-      .insert({
-        business_id: businessData.id,
-        customer_number: nextCustomerNumber
-      });
-
-    if (createCustomerError) {
-      console.error('Error creating customer number:', createCustomerError);
-      throw new Error('לא ניתן ליצור מספר לקוח');
-    }
-
-    return nextCustomerNumber;
-  } catch (error) {
-    console.error('Error in createNewBusinessWithCustomerNumber:', error);
-    throw error;
+    console.error('Error in getCurrentBusinessId:', error);
+    return null;
   }
 };
 

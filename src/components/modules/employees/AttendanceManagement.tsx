@@ -6,37 +6,55 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useBusiness } from '@/hooks/useBusiness';
 
 export const AttendanceManagement: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
+  const { businessId, isLoading: businessLoading } = useBusiness();
 
   const { data: employees } = useQuery({
-    queryKey: ['employees'],
+    queryKey: ['employees', businessId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (!businessId) return [];
+
+      let query = supabase
         .from('employees')
-        .select('id, first_name, last_name, employee_id')
+        .select('id, first_name, last_name, employee_id, business_id')
         .order('first_name');
+
+      // Filter by business_id if not super admin
+      if (businessId !== 'super_admin') {
+        query = query.eq('business_id', businessId);
+      }
       
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
+    enabled: !!businessId && !businessLoading,
   });
 
   const { data: attendanceRecords } = useQuery({
-    queryKey: ['attendance-records', selectedDate, selectedEmployee],
+    queryKey: ['attendance-records', selectedDate, selectedEmployee, businessId],
     queryFn: async () => {
+      if (!businessId) return [];
+
       let query = supabase
         .from('attendance_records')
         .select(`
           *,
-          employee:employees(first_name, last_name, employee_id),
-          branch:branches(name)
+          employee:employees(first_name, last_name, employee_id, business_id),
+          branch:branches(name, business_id)
         `)
         .gte('recorded_at', `${selectedDate}T00:00:00`)
         .lt('recorded_at', `${selectedDate}T23:59:59`)
         .order('recorded_at', { ascending: false });
+
+      // Filter by business_id if not super admin
+      if (businessId !== 'super_admin') {
+        query = query.eq('employee.business_id', businessId);
+      }
 
       if (selectedEmployee) {
         query = query.eq('employee_id', selectedEmployee);
@@ -46,6 +64,7 @@ export const AttendanceManagement: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
+    enabled: !!businessId && !businessLoading,
   });
 
   const getActionBadge = (action: string) => {
@@ -69,6 +88,10 @@ export const AttendanceManagement: React.FC = () => {
       </Badge>
     );
   };
+
+  if (businessLoading) {
+    return <div className="container mx-auto px-4 py-8" dir="rtl">טוען...</div>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
