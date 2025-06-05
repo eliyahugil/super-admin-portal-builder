@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +13,7 @@ export const EmployeeFiles: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const { toast } = useToast();
-  const { businessId, isLoading: businessLoading } = useBusiness();
+  const { businessId, isLoading } = useBusiness();
 
   const { data: employees } = useQuery({
     queryKey: ['employees', businessId],
@@ -35,7 +34,7 @@ export const EmployeeFiles: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!businessId && !businessLoading,
+    enabled: !!businessId && !isLoading,
   });
 
   const { data: employeeFiles } = useQuery({
@@ -64,7 +63,7 @@ export const EmployeeFiles: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!businessId && !businessLoading,
+    enabled: !!businessId && !isLoading,
   });
 
   const filteredFiles = employeeFiles?.filter(file =>
@@ -74,7 +73,7 @@ export const EmployeeFiles: React.FC = () => {
      `${file.employee.first_name} ${file.employee.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  if (businessLoading) {
+  if (isLoading) {
     return <div className="container mx-auto px-4 py-8" dir="rtl">טוען...</div>;
   }
 

@@ -6,7 +6,7 @@ import { useAuth } from '@/components/auth/AuthContext';
 export const useBusiness = () => {
   const { user } = useAuth();
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -23,7 +23,7 @@ export const useBusiness = () => {
     enabled: !!user?.id,
   });
 
-  const { data: business } = useQuery({
+  const { data: business, isLoading: businessLoading } = useQuery({
     queryKey: ['business', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -47,5 +47,6 @@ export const useBusiness = () => {
     businessId: business?.id,
     isSuperAdmin: profile?.role === 'super_admin',
     isBusinessOwner: !!business,
+    isLoading: profileLoading || businessLoading,
   };
 };

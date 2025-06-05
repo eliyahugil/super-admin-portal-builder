@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +11,7 @@ type RequestStatus = 'pending' | 'approved' | 'rejected';
 
 export const EmployeeRequests: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<RequestStatus | ''>('');
-  const { businessId, isLoading: businessLoading } = useBusiness();
+  const { businessId, isLoading } = useBusiness();
 
   const { data: employeeRequests } = useQuery({
     queryKey: ['employee-requests', statusFilter, businessId],
@@ -40,7 +39,7 @@ export const EmployeeRequests: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!businessId && !businessLoading,
+    enabled: !!businessId && !isLoading,
   });
 
   const getStatusBadge = (status: string) => {
@@ -75,7 +74,7 @@ export const EmployeeRequests: React.FC = () => {
     return labels[type as keyof typeof labels] || type;
   };
 
-  if (businessLoading) {
+  if (isLoading) {
     return <div className="container mx-auto px-4 py-8" dir="rtl">טוען...</div>;
   }
 

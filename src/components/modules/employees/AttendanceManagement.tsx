@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +10,7 @@ import { useBusiness } from '@/hooks/useBusiness';
 export const AttendanceManagement: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
-  const { businessId, isLoading: businessLoading } = useBusiness();
+  const { businessId, isLoading } = useBusiness();
 
   const { data: employees } = useQuery({
     queryKey: ['employees', businessId],
@@ -32,7 +31,7 @@ export const AttendanceManagement: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!businessId && !businessLoading,
+    enabled: !!businessId && !isLoading,
   });
 
   const { data: attendanceRecords } = useQuery({
@@ -64,7 +63,7 @@ export const AttendanceManagement: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!businessId && !businessLoading,
+    enabled: !!businessId && !isLoading,
   });
 
   const getActionBadge = (action: string) => {
@@ -89,7 +88,7 @@ export const AttendanceManagement: React.FC = () => {
     );
   };
 
-  if (businessLoading) {
+  if (isLoading) {
     return <div className="container mx-auto px-4 py-8" dir="rtl">טוען...</div>;
   }
 
