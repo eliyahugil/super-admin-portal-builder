@@ -18,7 +18,7 @@ export class CustomDataService<K extends CustomTableKey> {
 
   async getAll(): Promise<CustomTables[K][]> {
     // Use rpc call to bypass TypeScript strict typing for dynamic tables
-    const { data, error } = await supabase.rpc('select_from_table', {
+    const { data, error } = await supabase.rpc('select_from_table' as any, {
       table_name: this.tableName(),
       select_clause: '*'
     });
@@ -28,14 +28,14 @@ export class CustomDataService<K extends CustomTableKey> {
   }
 
   async getById(id: string): Promise<CustomTables[K] | null> {
-    const { data, error } = await supabase.rpc('select_from_table', {
+    const { data, error } = await supabase.rpc('select_from_table' as any, {
       table_name: this.tableName(),
       select_clause: '*',
       where_clause: `id = '${id}'`
     });
 
     if (error) throw error;
-    return data && data.length > 0 ? (data[0] as CustomTables[K]) : null;
+    return data && Array.isArray(data) && data.length > 0 ? (data[0] as CustomTables[K]) : null;
   }
 
   async create(payload: Partial<CustomTables[K]>): Promise<CustomTables[K]> {
@@ -44,10 +44,10 @@ export class CustomDataService<K extends CustomTableKey> {
       typeof v === 'string' ? `'${v}'` : v
     ).join(', ');
 
-    const { data, error } = await supabase.rpc('insert_into_table', {
+    const { data, error } = await supabase.rpc('insert_into_table' as any, {
       table_name: this.tableName(),
-      columns,
-      values
+      columns_list: columns,
+      values_list: values
     });
 
     if (error) throw error;
@@ -59,7 +59,7 @@ export class CustomDataService<K extends CustomTableKey> {
       .map(([key, value]) => `${key} = ${typeof value === 'string' ? `'${value}'` : value}`)
       .join(', ');
 
-    const { data, error } = await supabase.rpc('update_table', {
+    const { data, error } = await supabase.rpc('update_table' as any, {
       table_name: this.tableName(),
       set_clause: updates,
       where_clause: `id = '${id}'`
@@ -70,7 +70,7 @@ export class CustomDataService<K extends CustomTableKey> {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase.rpc('delete_from_table', {
+    const { error } = await supabase.rpc('delete_from_table' as any, {
       table_name: this.tableName(),
       where_clause: `id = '${id}'`
     });
@@ -83,7 +83,7 @@ export class CustomDataService<K extends CustomTableKey> {
       ? `${field} = '${value}'` 
       : `${field} = ${value}`;
 
-    const { data, error } = await supabase.rpc('select_from_table', {
+    const { data, error } = await supabase.rpc('select_from_table' as any, {
       table_name: this.tableName(),
       select_clause: '*',
       where_clause: whereClause
@@ -100,7 +100,7 @@ export class CustomDataService<K extends CustomTableKey> {
       )
       .join(' AND ');
 
-    const { data, error } = await supabase.rpc('select_from_table', {
+    const { data, error } = await supabase.rpc('select_from_table' as any, {
       table_name: this.tableName(),
       select_clause: '*',
       where_clause: whereClause

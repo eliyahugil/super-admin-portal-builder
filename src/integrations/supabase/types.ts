@@ -1045,6 +1045,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      delete_from_table: {
+        Args: { table_name: string; where_clause: string }
+        Returns: undefined
+      }
       drop_custom_table: {
         Args: { table_name: string }
         Returns: boolean
@@ -1061,9 +1065,25 @@ export type Database = {
         Args: { business_id_param: string }
         Returns: number
       }
+      insert_into_table: {
+        Args: { table_name: string; columns_list: string; values_list: string }
+        Returns: Json
+      }
       is_super_admin: {
         Args: { user_id: string }
         Returns: boolean
+      }
+      select_from_table: {
+        Args: {
+          table_name: string
+          select_clause?: string
+          where_clause?: string
+        }
+        Returns: Json
+      }
+      update_table: {
+        Args: { table_name: string; set_clause: string; where_clause: string }
+        Returns: Json
       }
     }
     Enums: {
