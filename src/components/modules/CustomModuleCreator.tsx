@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,9 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Sparkles, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { generateTableName, generateRoute, generateIcon, validateModuleName } from '@/utils/moduleUtils';
 
 interface CustomField {
   id: string;
@@ -47,6 +49,15 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
     { value: 'textarea', label: 'טקסט ארוך' }
   ];
 
+  // Auto-generate icon when module name changes
+  const handleModuleNameChange = (name: string) => {
+    setModuleName(name);
+    if (name.trim()) {
+      const autoIcon = generateIcon(name);
+      setModuleIcon(autoIcon);
+    }
+  };
+
   const addField = () => {
     const newField: CustomField = {
       id: Date.now().toString(),
@@ -68,10 +79,11 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
   };
 
   const validateFields = () => {
-    if (!moduleName.trim()) {
+    const nameValidation = validateModuleName(moduleName);
+    if (!nameValidation.isValid) {
       toast({
         title: 'שגיאה',
-        description: 'שם המודל הוא שדה חובה',
+        description: nameValidation.error,
         variant: 'destructive'
       });
       return false;
@@ -100,26 +112,6 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
     return true;
   };
 
-  const generateTableName = (name: string) => {
-    // Convert to lowercase, replace spaces and special chars with underscores
-    // Remove Hebrew characters and keep only English letters, numbers, and underscores
-    return 'custom_' + name
-      .toLowerCase()
-      .replace(/[^a-z0-9_]/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_|_$/g, '');
-  };
-
-  const generateRoute = (name: string) => {
-    // Convert to lowercase, replace spaces with hyphens for URL-friendly route
-    // Add /custom prefix to distinguish from system routes
-    return '/custom/' + name
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
-  };
-
   const handleCreate = async () => {
     if (!validateFields()) return;
 
@@ -127,7 +119,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
     try {
       console.log('Starting custom module creation...');
       
-      // Generate table name and route
+      // Generate table name and route using utility functions
       const tableName = generateTableName(moduleName);
       const route = generateRoute(moduleName);
       
@@ -228,7 +220,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
 
       toast({
         title: 'הצלחה',
-        description: 'המודל המותאם אישית נוצר בהצלחה כולל טבלת הנתונים',
+        description: `המודל "${moduleName}" נוצר בהצלחה כולל דף ייעודי בנתיב ${route}`,
       });
 
       // Reset form
@@ -255,7 +247,10 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
-          <DialogTitle>יצירת מודל מותאם אישית</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-blue-600" />
+            יצירת מודל מותאם אישית
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -270,15 +265,20 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
                 <Input
                   id="moduleName"
                   value={moduleName}
-                  onChange={(e) => setModuleName(e.target.value)}
-                  placeholder="לדוגמה: ניהול פרויקטים"
+                  onChange={(e) => handleModuleNameChange(e.target.value)}
+                  placeholder="לדוגמה: ניהול פרויקטים, מעקב משימות, רישום לקוחות"
                 />
                 {moduleName && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    <div>שם טבלה: {generateTableName(moduleName)}</div>
-                    <div>נתיב: {generateRoute(moduleName)}</div>
-                    <div className="text-green-600 font-medium">
-                      ✓ דף ייעודי יווצר אוטומטיט למודל זה
+                  <div className="mt-2 text-xs space-y-1">
+                    <div className="text-gray-500">
+                      <span className="font-medium">שם טבלה:</span> {generateTableName(moduleName)}
+                    </div>
+                    <div className="text-gray-500">
+                      <span className="font-medium">נתיב:</span> {generateRoute(moduleName)}
+                    </div>
+                    <div className="text-green-600 font-medium flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      דף ייעודי יווצר אוטומטיט למודל זה עם ממשק ניהול מלא
                     </div>
                   </div>
                 )}
@@ -295,14 +295,31 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
               </div>
 
               <div>
-                <Label htmlFor="moduleIcon">אייקון המודל (אמוג'י)</Label>
-                <Input
-                  id="moduleIcon"
-                  value={moduleIcon}
-                  onChange={(e) => setModuleIcon(e.target.value)}
-                  placeholder="📋"
-                  className="w-20"
-                />
+                <Label htmlFor="moduleIcon" className="flex items-center gap-2">
+                  אייקון המודל (נבחר אוטומטית)
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setModuleIcon(generateIcon(moduleName))}
+                    className="h-6 w-6 p-0"
+                    title="רענן אייקון"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                  </Button>
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="moduleIcon"
+                    value={moduleIcon}
+                    onChange={(e) => setModuleIcon(e.target.value)}
+                    placeholder="📋"
+                    className="w-20"
+                  />
+                  <div className="text-xs text-gray-500">
+                    האייקון נבחר אוטומטית על בסיס שם המודל
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -414,6 +431,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
               className="flex items-center gap-2"
             >
               {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>}
+              <Sparkles className="h-4 w-4" />
               צור מודל
             </Button>
           </div>
