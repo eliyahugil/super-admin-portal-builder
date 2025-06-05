@@ -97,10 +97,10 @@ export const ShiftsAdminTable: React.FC = () => {
   }
 
   return (
-    <div className="bg-white rounded-lg border p-6" dir="rtl">
-      <div className="flex items-center gap-2 mb-6">
+    <div className="bg-white rounded-2xl shadow-md p-6" dir="rtl">
+      <div className="flex items-center gap-3 mb-6">
         <Calendar className="h-6 w-6 text-blue-600" />
-        <h2 className="text-xl font-bold">ניהול משמרות</h2>
+        <h2 className="text-xl font-semibold text-gray-800">ניהול משמרות</h2>
       </div>
 
       <RealDataView
@@ -110,11 +110,11 @@ export const ShiftsAdminTable: React.FC = () => {
         emptyMessage="אין משמרות במערכת"
         emptyIcon={<Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />}
         renderItem={(shift) => (
-          <div key={shift.id} className="border rounded-lg p-4 mb-4">
+          <div key={shift.id} className="bg-gray-50 rounded-xl p-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-              <div>
-                <label className="text-sm font-medium text-gray-500">עובד</label>
-                <p className="font-medium">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">עובד</label>
+                <p className="font-medium text-gray-900">
                   {shift.employee ? 
                     `${shift.employee.first_name} ${shift.employee.last_name}` : 
                     'לא משויך'
@@ -122,39 +122,41 @@ export const ShiftsAdminTable: React.FC = () => {
                 </p>
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-500">תאריך</label>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">תאריך</label>
                 {editingId === shift.id ? (
                   <Input
                     type="date"
                     value={editData.shift_date || shift.shift_date}
                     onChange={(e) => setEditData({ ...editData, shift_date: e.target.value })}
-                    className="mt-1"
+                    className="border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                   />
                 ) : (
-                  <p className="font-medium">{new Date(shift.shift_date).toLocaleDateString('he-IL')}</p>
+                  <p className="font-medium text-gray-900">{new Date(shift.shift_date).toLocaleDateString('he-IL')}</p>
                 )}
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-500">שעות</label>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">שעות</label>
                 {editingId === shift.id ? (
-                  <div className="flex gap-2 mt-1">
+                  <div className="flex gap-2">
                     <Input
                       type="time"
                       placeholder="כניסה"
                       value={editData.start_time || shift.shift_template?.start_time}
                       onChange={(e) => setEditData({ ...editData, start_time: e.target.value })}
+                      className="border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
                     <Input
                       type="time"
                       placeholder="יציאה" 
                       value={editData.end_time || shift.shift_template?.end_time}
                       onChange={(e) => setEditData({ ...editData, end_time: e.target.value })}
+                      className="border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
                   </div>
                 ) : (
-                  <p className="font-medium">
+                  <p className="font-medium text-gray-900">
                     {shift.shift_template?.start_time && shift.shift_template?.end_time ?
                       `${shift.shift_template.start_time}–${shift.shift_template.end_time}` :
                       'לא הוגדר'
@@ -166,7 +168,11 @@ export const ShiftsAdminTable: React.FC = () => {
               <div className="flex gap-2">
                 {editingId === shift.id ? (
                   <>
-                    <Button size="sm" onClick={handleUpdate} className="flex items-center gap-1">
+                    <Button 
+                      size="sm" 
+                      onClick={handleUpdate} 
+                      className="bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-1"
+                    >
                       <Save className="h-4 w-4" />
                       שמור
                     </Button>
@@ -177,7 +183,7 @@ export const ShiftsAdminTable: React.FC = () => {
                         setEditingId(null);
                         setEditData({});
                       }}
-                      className="flex items-center gap-1"
+                      className="border rounded-xl flex items-center gap-1"
                     >
                       <X className="h-4 w-4" />
                       ביטול
@@ -192,16 +198,15 @@ export const ShiftsAdminTable: React.FC = () => {
                         setEditingId(shift.id); 
                         setEditData(shift); 
                       }}
-                      className="flex items-center gap-1"
+                      className="border rounded-xl flex items-center gap-1"
                     >
                       <Edit className="h-4 w-4" />
                       ערוך
                     </Button>
                     <Button 
                       size="sm" 
-                      variant="destructive" 
                       onClick={() => handleDelete(shift.id)}
-                      className="flex items-center gap-1"
+                      className="bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center gap-1"
                     >
                       <Trash2 className="h-4 w-4" />
                       מחק

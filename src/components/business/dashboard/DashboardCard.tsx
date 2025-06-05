@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 
 interface DashboardCardProps {
   title: string;
@@ -17,17 +16,15 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
   color, 
   bgColor 
 }) => (
-  <Card>
-    <CardContent className="p-6">
-      <div className="flex items-center">
-        <div className={`p-3 rounded-lg ${bgColor}`}>
-          <Icon className={`h-6 w-6 ${color}`} />
-        </div>
-        <div className="mr-4">
-          <p className="text-2xl font-bold">{value}</p>
-          <p className="text-sm text-gray-600">{title}</p>
-        </div>
+  <div className="bg-white rounded-2xl shadow-md p-6">
+    <div className="flex items-center">
+      <div className={`p-3 rounded-xl ${bgColor}`}>
+        <Icon className={`h-6 w-6 ${color}`} />
       </div>
-    </CardContent>
-  </Card>
+      <div className="mr-4">
+        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <p className="text-sm text-gray-600">{title}</p>
+      </div>
+    </div>
+  </div>
 );
