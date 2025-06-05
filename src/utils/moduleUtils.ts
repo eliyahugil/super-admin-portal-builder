@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Define our own simple types to avoid Supabase type complexity
@@ -180,7 +181,7 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
     }
 
     // For regular users, get their business and generate next customer number
-    const { data: business, error: businessError } = await supabase
+    const { data, error: businessError } = await supabase
       .from('businesses')
       .select('id')
       .eq('owner_id', userId)
@@ -191,7 +192,7 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
       throw businessError;
     }
 
-    const userBusiness = business as unknown as SimpleBusiness | null;
+    const userBusiness = data as unknown as SimpleBusiness | null;
 
     if (!userBusiness) {
       throw new Error('No business found for user');
@@ -359,3 +360,4 @@ export const createCustomModuleWithTable = async (
     return { success: false, error: String(error) };
   }
 };
+
