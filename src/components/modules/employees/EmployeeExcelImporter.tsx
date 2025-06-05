@@ -30,6 +30,7 @@ interface FieldMapping {
 interface PreviewEmployee {
   rowIndex: number;
   data: Partial<Employee> & { business_id: string };
+  customFields: Record<string, any>;
   isValid: boolean;
   errors: string[];
   isDuplicate?: boolean;
@@ -45,7 +46,6 @@ export const EmployeeExcelImporter: React.FC = () => {
   const [headers, setHeaders] = useState<string[]>([]);
   const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
   const [previewData, setPreviewData] = useState<PreviewEmployee[]>([]);
-  const [customFields, setCustomFields] = useState<Record<string, any>>({});
   const [branches, setBranches] = useState<any[]>([]);
   const [existingEmployees, setExistingEmployees] = useState<any[]>([]);
   const [step, setStep] = useState<'upload' | 'mapping' | 'preview' | 'import'>('upload');
@@ -219,23 +219,12 @@ export const EmployeeExcelImporter: React.FC = () => {
     setFieldMappings(newMappings);
   };
 
-  const addCustomFieldOption = (mappingIndex: number, option: string) => {
-    const newMappings = [...fieldMappings];
-    const mapping = newMappings[mappingIndex];
-    if (mapping.isCustomField) {
-      mapping.selectOptions = mapping.selectOptions || [];
-      if (!mapping.selectOptions.includes(option)) {
-        mapping.selectOptions.push(option);
-      }
-    }
-    setFieldMappings(newMappings);
-  };
-
   const generatePreview = () => {
     const preview: PreviewEmployee[] = rawData.map((row, index) => {
       const employeeData: Partial<Employee> & { business_id: string } = {
         business_id: businessId!
       };
+      const customFields: Record<string, any> = {};
       const errors: string[] = [];
 
       fieldMappings.forEach(mapping => {
@@ -294,6 +283,9 @@ export const EmployeeExcelImporter: React.FC = () => {
           if (mapping.systemField !== 'branch_name' && mapping.systemField !== 'full_name') {
             (employeeData as any)[mapping.systemField] = value;
           }
+        } else if (mapping.isCustomField) {
+          // Handle custom fields
+          customFields[mapping.excelHeader] = row[mapping.excelHeader];
         }
       });
 
@@ -320,6 +312,7 @@ export const EmployeeExcelImporter: React.FC = () => {
       return {
         rowIndex: index + 1,
         data: employeeData,
+        customFields,
         isValid: errors.length === 0,
         errors,
         isDuplicate
@@ -335,8 +328,7 @@ export const EmployeeExcelImporter: React.FC = () => {
     
     try {
       const validEmployees = previewData
-        .filter(emp => emp.isValid && !emp.isDuplicate)
-        .map(emp => emp.data);
+        .filter(emp => emp.isValid && !emp.isDuplicate);
 
       if (validEmployees.length === 0) {
         toast({
@@ -347,49 +339,80 @@ export const EmployeeExcelImporter: React.FC = () => {
         return;
       }
 
-      // Type assertion to ensure compatibility with Supabase insert
+      // Insert employees
       const employeesToInsert = validEmployees.map(emp => ({
-        business_id: emp.business_id,
-        first_name: emp.first_name || '',
-        last_name: emp.last_name || '',
-        email: emp.email || null,
-        phone: emp.phone || null,
-        id_number: emp.id_number || null,
-        employee_id: emp.employee_id || null,
-        address: emp.address || null,
-        hire_date: emp.hire_date || null,
-        employee_type: emp.employee_type || 'permanent',
-        weekly_hours_required: emp.weekly_hours_required || null,
-        main_branch_id: emp.main_branch_id || null,
-        notes: emp.notes || null,
+        business_id: emp.data.business_id,
+        first_name: emp.data.first_name || '',
+        last_name: emp.data.last_name || '',
+        email: emp.data.email || null,
+        phone: emp.data.phone || null,
+        id_number: emp.data.id_number || null,
+        employee_id: emp.data.employee_id || null,
+        address: emp.data.address || null,
+        hire_date: emp.data.hire_date || null,
+        employee_type: emp.data.employee_type || 'permanent',
+        weekly_hours_required: emp.data.weekly_hours_required || null,
+        main_branch_id: emp.data.main_branch_id || null,
+        notes: emp.data.notes || null,
         is_active: true
       }));
 
-      const { data, error } = await supabase
+      const { data: insertedEmployees, error: employeeError } = await supabase
         .from('employees')
-        .insert(employeesToInsert);
+        .insert(employeesToInsert)
+        .select();
 
-      if (error) {
+      if (employeeError) {
         toast({
-          title: 'שגיאה בייבוא',
-          description: error.message,
+          title: 'שגיאה בייבוא עובדים',
+          description: employeeError.message,
           variant: 'destructive'
         });
-      } else {
-        toast({
-          title: 'ייבוא הושלם בהצלחה',
-          description: `${employeesToInsert.length} עובדים נוספו למערכת`,
-        });
-        
-        // Reset form
-        setStep('upload');
-        setFile(null);
-        setRawData([]);
-        setHeaders([]);
-        setFieldMappings([]);
-        setPreviewData([]);
-        setIsOpen(false);
+        return;
       }
+
+      // Insert custom fields for employees that have them
+      const customFieldValues: any[] = [];
+      validEmployees.forEach((emp, index) => {
+        const employeeId = insertedEmployees?.[index]?.id;
+        if (employeeId && Object.keys(emp.customFields).length > 0) {
+          Object.entries(emp.customFields).forEach(([fieldName, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+              customFieldValues.push({
+                employee_id: employeeId,
+                field_name: fieldName,
+                value: value.toString()
+              });
+            }
+          });
+        }
+      });
+
+      if (customFieldValues.length > 0) {
+        const { error: customFieldError } = await supabase
+          .from('custom_field_values')
+          .insert(customFieldValues);
+
+        if (customFieldError) {
+          console.error('Error inserting custom fields:', customFieldError);
+          // Don't fail the entire import for custom field errors
+        }
+      }
+
+      toast({
+        title: 'ייבוא הושלם בהצלחה',
+        description: `${employeesToInsert.length} עובדים נוספו למערכת`,
+      });
+      
+      // Reset form
+      setStep('upload');
+      setFile(null);
+      setRawData([]);
+      setHeaders([]);
+      setFieldMappings([]);
+      setPreviewData([]);
+      setIsOpen(false);
+
     } catch (error) {
       toast({
         title: 'שגיאה לא צפויה',
@@ -427,6 +450,7 @@ export const EmployeeExcelImporter: React.FC = () => {
           <DialogTitle>ייבוא עובדים מקובץ Excel</DialogTitle>
         </DialogHeader>
 
+        {/* Upload step */}
         {step === 'upload' && (
           <div className="space-y-4">
             <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
@@ -453,11 +477,12 @@ export const EmployeeExcelImporter: React.FC = () => {
           </div>
         )}
 
+        {/* Mapping step */}
         {step === 'mapping' && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">מיפוי שדות</h3>
             <p className="text-sm text-gray-600">
-              התאם כל עמודה בקובץ Excel לשדה במערכת. אם שדה לא קיים, ניתן ליצור שדה מותאם אישית.
+              התאם כל עמודה בקובץ Excel לשדה במערכת. שדות שלא יתואמו יישמרו כשדות מותאמים אישית.
             </p>
             
             <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -479,42 +504,23 @@ export const EmployeeExcelImporter: React.FC = () => {
                         <SelectValue placeholder="בחר שדה במערכת" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">אל תייבא שדה זה</SelectItem>
+                        <SelectItem value="">שדה מותאם אישית</SelectItem>
                         {systemFields.map(field => (
                           <SelectItem key={field.value} value={field.value}>
                             {field.label}
                           </SelectItem>
                         ))}
-                        <SelectItem value="custom">
-                          <Plus className="h-4 w-4 inline mr-1" />
-                          שדה מותאם אישית
-                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  {mapping.isCustomField && (
-                    <div className="w-1/3">
-                      <Select
-                        value={mapping.customFieldType}
-                        onValueChange={(value: any) => {
-                          const newMappings = [...fieldMappings];
-                          newMappings[index].customFieldType = value;
-                          setFieldMappings(newMappings);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="סוג שדה" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="text">טקסט</SelectItem>
-                          <SelectItem value="number">מספר</SelectItem>
-                          <SelectItem value="date">תאריך</SelectItem>
-                          <SelectItem value="select">רשימה נפתחת</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                  <div className="w-1/3">
+                    {mapping.systemField ? (
+                      <Badge variant="outline">שדה מערכת</Badge>
+                    ) : (
+                      <Badge variant="secondary">שדה מותאם</Badge>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -530,6 +536,7 @@ export const EmployeeExcelImporter: React.FC = () => {
           </div>
         )}
 
+        {/* Preview step */}
         {step === 'preview' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -556,6 +563,7 @@ export const EmployeeExcelImporter: React.FC = () => {
                     <TableHead>שם</TableHead>
                     <TableHead>אימייל</TableHead>
                     <TableHead>טלפון</TableHead>
+                    <TableHead>שדות מותאמים</TableHead>
                     <TableHead>שגיאות</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -577,6 +585,15 @@ export const EmployeeExcelImporter: React.FC = () => {
                       </TableCell>
                       <TableCell>{employee.data.email}</TableCell>
                       <TableCell>{employee.data.phone}</TableCell>
+                      <TableCell>
+                        {Object.keys(employee.customFields).length > 0 ? (
+                          <Badge variant="outline">
+                            {Object.keys(employee.customFields).length} שדות
+                          </Badge>
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
                       <TableCell>
                         {employee.errors.length > 0 && (
                           <div className="text-red-600 text-xs">

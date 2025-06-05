@@ -341,6 +341,38 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_field_values: {
+        Row: {
+          created_at: string
+          employee_id: string | null
+          field_name: string
+          id: string
+          value: string | null
+        }
+        Insert: {
+          created_at?: string
+          employee_id?: string | null
+          field_name: string
+          id?: string
+          value?: string | null
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string | null
+          field_name?: string
+          id?: string
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_field_values_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_management: {
         Row: {
           created_at: string
@@ -436,6 +468,54 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_branch_assignments: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          employee_id: string | null
+          id: string
+          is_active: boolean
+          max_weekly_hours: number | null
+          priority_order: number
+          role_name: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          is_active?: boolean
+          max_weekly_hours?: number | null
+          priority_order?: number
+          role_name: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          is_active?: boolean
+          max_weekly_hours?: number | null
+          priority_order?: number
+          role_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_branch_assignments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_branch_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
@@ -778,6 +858,113 @@ export type Database = {
           },
           {
             foreignKeyName: "employee_shift_preferences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_shift_requests: {
+        Row: {
+          branch_preference: string | null
+          created_at: string
+          employee_id: string | null
+          end_time: string
+          id: string
+          notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role_preference: string | null
+          shift_date: string
+          start_time: string
+          status: string
+          submission_deadline: string | null
+          submission_token: string | null
+        }
+        Insert: {
+          branch_preference?: string | null
+          created_at?: string
+          employee_id?: string | null
+          end_time: string
+          id?: string
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role_preference?: string | null
+          shift_date: string
+          start_time: string
+          status?: string
+          submission_deadline?: string | null
+          submission_token?: string | null
+        }
+        Update: {
+          branch_preference?: string | null
+          created_at?: string
+          employee_id?: string | null
+          end_time?: string
+          id?: string
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role_preference?: string | null
+          shift_date?: string
+          start_time?: string
+          status?: string
+          submission_deadline?: string | null
+          submission_token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_shift_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_shift_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_weekly_tokens: {
+        Row: {
+          created_at: string
+          employee_id: string | null
+          expires_at: string
+          id: string
+          is_active: boolean
+          token: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id?: string | null
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          token?: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string | null
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          token?: string
+          week_end_date?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_weekly_tokens_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
