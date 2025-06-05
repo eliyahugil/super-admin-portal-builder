@@ -4,15 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Settings, 
-  Building2, 
   Edit2, 
   Trash2, 
+  Building2, 
   ToggleLeft, 
   ToggleRight,
   Eye,
-  Wrench
+  ExternalLink
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface Module {
   id: string;
@@ -43,55 +43,65 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({
   onDelete,
   onViewCustomModule
 }) => {
+  const isCustomModule = module.is_custom;
+  
   return (
-    <Card className={`h-full transition-all duration-200 hover:shadow-lg ${
+    <Card className={`transition-all duration-200 hover:shadow-md ${
       !module.is_active ? 'opacity-60' : ''
     }`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="text-2xl">
-              {module.icon || (module.is_custom ? '🔧' : '📋')}
-            </div>
+            <span className="text-2xl">{module.icon || '📋'}</span>
             <div className="flex-1">
-              <CardTitle className="text-lg leading-tight">
-                {module.name}
-              </CardTitle>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant={module.is_active ? 'default' : 'secondary'}>
-                  {module.is_active ? 'פעיל' : 'לא פעיל'}
-                </Badge>
-                {module.is_custom && (
-                  <Badge variant="outline" className="text-orange-600 border-orange-600">
-                    <Wrench className="h-3 w-3 mr-1" />
-                    מותאם אישית
-                  </Badge>
-                )}
-                {module.route && (
-                  <Badge variant="outline" className="text-purple-600 border-purple-600">
-                    נתיב: {module.route}
-                  </Badge>
-                )}
-              </div>
+              <CardTitle className="text-lg">{module.name}</CardTitle>
+              {module.description && (
+                <p className="text-sm text-gray-600 mt-1">{module.description}</p>
+              )}
             </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Badge variant={module.is_active ? 'default' : 'secondary'}>
+              {module.is_active ? 'פעיל' : 'לא פעיל'}
+            </Badge>
+            {isCustomModule && (
+              <Badge variant="outline" className="text-orange-600 border-orange-600">
+                מותאם אישית
+              </Badge>
+            )}
           </div>
         </div>
       </CardHeader>
       
       <CardContent className="pt-0">
-        <div className="space-y-4">
-          {module.description && (
-            <p className="text-sm text-gray-600 line-clamp-2">
-              {module.description}
-            </p>
+        <div className="space-y-3">
+          {/* Module Route */}
+          {module.route && (
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">נתיב:</span> {module.route}
+            </div>
           )}
           
-          <div className="text-xs text-gray-500">
-            נוצר: {new Date(module.created_at).toLocaleDateString('he-IL')}
+          {/* Creation Date */}
+          <div className="text-sm text-gray-600">
+            <span className="font-medium">נוצר:</span>{' '}
+            {new Date(module.created_at).toLocaleDateString('he-IL')}
           </div>
           
-          <div className="flex flex-wrap gap-2">
-            {module.is_custom && onViewCustomModule && (
+          {/* Actions */}
+          <div className="flex flex-wrap gap-2 pt-2">
+            {/* Navigate to Module Page for Custom Modules */}
+            {isCustomModule && module.route && (
+              <Link to={module.route}>
+                <Button variant="outline" size="sm" className="flex items-center gap-1">
+                  <ExternalLink className="h-3 w-3" />
+                  פתח דף המודל
+                </Button>
+              </Link>
+            )}
+            
+            {/* View Custom Module (Popup) */}
+            {isCustomModule && onViewCustomModule && (
               <Button
                 variant="outline"
                 size="sm"
@@ -99,10 +109,11 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({
                 className="flex items-center gap-1"
               >
                 <Eye className="h-3 w-3" />
-                צפה בנתונים
+                צפייה מהירה
               </Button>
             )}
             
+            {/* Edit Module */}
             <Button
               variant="outline"
               size="sm"
@@ -110,9 +121,10 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({
               className="flex items-center gap-1"
             >
               <Edit2 className="h-3 w-3" />
-              ערוך
+              עריכה
             </Button>
             
+            {/* Manage Businesses */}
             <Button
               variant="outline"
               size="sm"
@@ -123,6 +135,7 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({
               עסקים
             </Button>
             
+            {/* Toggle Active */}
             <Button
               variant="outline"
               size="sm"
@@ -130,23 +143,19 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({
               className="flex items-center gap-1"
             >
               {module.is_active ? (
-                <>
-                  <ToggleRight className="h-3 w-3" />
-                  השבת
-                </>
+                <ToggleLeft className="h-3 w-3" />
               ) : (
-                <>
-                  <ToggleLeft className="h-3 w-3" />
-                  הפעל
-                </>
+                <ToggleRight className="h-3 w-3" />
               )}
+              {module.is_active ? 'השבת' : 'הפעל'}
             </Button>
             
+            {/* Delete Module */}
             <Button
               variant="outline"
               size="sm"
               onClick={() => onDelete(module.id)}
-              className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300"
+              className="flex items-center gap-1 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
             >
               <Trash2 className="h-3 w-3" />
               מחק

@@ -112,7 +112,8 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
 
   const generateRoute = (name: string) => {
     // Convert to lowercase, replace spaces with hyphens for URL-friendly route
-    return '/' + name
+    // Add /custom prefix to distinguish from system routes
+    return '/custom/' + name
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, '-')
       .replace(/-+/g, '-')
@@ -276,6 +277,9 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
                   <div className="mt-2 text-xs text-gray-500">
                     <div>שם טבלה: {generateTableName(moduleName)}</div>
                     <div>נתיב: {generateRoute(moduleName)}</div>
+                    <div className="text-green-600 font-medium">
+                      ✓ דף ייעודי יווצר אוטומטיט למודל זה
+                    </div>
                   </div>
                 )}
               </div>
@@ -384,7 +388,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
                             onChange={(e) => updateField(field.id, { 
                               options: e.target.value.split(',').map(opt => opt.trim()).filter(Boolean)
                             })}
-                            placeholder="אפשרות 1, אפשרות 2, אפשרות 3"
+                            placeholder="אפשרויות 1, אפשרות 2, אפשרות 3"
                           />
                         </div>
                       )}
