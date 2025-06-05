@@ -9,9 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Key } from 'lucide-react';
+import { Plus, Edit, Trash2, Key, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { GlobalIntegrationForm } from './GlobalIntegrationForm';
 
 interface GlobalIntegration {
   id: string;
@@ -19,6 +20,7 @@ interface GlobalIntegration {
   display_name: string;
   description: string | null;
   is_active: boolean;
+  config: Record<string, any>;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +28,7 @@ interface GlobalIntegration {
 export const GlobalIntegrationsAdmin: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<GlobalIntegration | null>(null);
+  const [expandedIntegrations, setExpandedIntegrations] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const { data: integrations, isLoading, refetch } = useQuery({
@@ -106,6 +109,18 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
     }
   };
 
+  const toggleExpanded = (integrationId: string) => {
+    setExpandedIntegrations(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(integrationId)) {
+        newSet.delete(integrationId);
+      } else {
+        newSet.add(integrationId);
+      }
+      return newSet;
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -149,10 +164,6 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
               <div>
                 <Label>תיאור</Label>
                 <Textarea placeholder="תיאור האינטגרציה..." />
-              </div>
-              <div>
-                <Label>API Key</Label>
-                <Input type="password" placeholder="מפתח API..." />
               </div>
               <div className="flex items-center space-x-2">
                 <Switch />
@@ -201,6 +212,14 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => toggleExpanded(integration.id)}
+                    >
+                      <Settings className="h-4 w-4" />
+                      {expandedIntegrations.has(integration.id) ? 'סגור' : 'הגדר'}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
                       onClick={() => toggleIntegration(integration.id, integration.is_active)}
                     >
                       {integration.is_active ? 'השבת' : 'הפעל'}
@@ -222,6 +241,18 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
                     </Button>
                   </div>
                 </div>
+                
+                {expandedIntegrations.has(integration.id) && (
+                  <GlobalIntegrationForm
+                    integration={{
+                      id: integration.id,
+                      integration_name: integration.integration_name,
+                      display_name: integration.display_name,
+                      global_config: integration.config
+                    }}
+                    onUpdate={refetch}
+                  />
+                )}
               </CardContent>
             </Card>
           ))}
