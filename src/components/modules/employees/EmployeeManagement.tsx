@@ -11,6 +11,7 @@ import { CreateEmployeeDialog } from './CreateEmployeeDialog';
 import { CreateBranchDialog } from './CreateBranchDialog';
 import { EmployeesList } from './EmployeesList';
 import { BranchesList } from './BranchesList';
+import { EmployeeExcelImporter } from './EmployeeExcelImporter';
 
 export const EmployeeManagement = () => {
   const [createEmployeeOpen, setCreateEmployeeOpen] = useState(false);
@@ -82,13 +83,16 @@ export const EmployeeManagement = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>רשימת עובדים</CardTitle>
-              <Button 
-                onClick={() => setCreateEmployeeOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                הוסף עובד
-              </Button>
+              <div className="flex gap-2">
+                <EmployeeExcelImporter />
+                <Button 
+                  onClick={() => setCreateEmployeeOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  הוסף עובד
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <EmployeesList employees={employees || []} onRefetch={refetchEmployees} />
