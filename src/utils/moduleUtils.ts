@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Mapping of Hebrew words to English for route generation
@@ -212,8 +213,7 @@ export const moduleRouteMapping: Record<string, {
   }
 };
 
-export const generateTableName = (name: string, businessId: string, moduleId?: string): string => {
-  // Convert Hebrew to English, then create table name
+export const generateTableName = (name: string, moduleId: string, customerNumber: number): string => {
   const englishName = translateHebrewToEnglish(name);
   let baseName = englishName
     .toLowerCase()
@@ -221,20 +221,12 @@ export const generateTableName = (name: string, businessId: string, moduleId?: s
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '');
   
-  // Add business ID suffix for separation
-  const businessSuffix = `_${businessId.toString().padStart(3, '0')}`;
-  
-  // If moduleId is provided, append a short version of it to ensure uniqueness
-  if (moduleId) {
-    const shortId = moduleId.substring(0, 8);
-    return `${baseName}_${shortId}${businessSuffix}`;
-  }
-  
-  return `${baseName}${businessSuffix}`;
+  const customerSuffix = `_${customerNumber.toString().padStart(3, '0')}`;
+  const shortId = moduleId.substring(0, 8);
+  return `${baseName}_${shortId}${customerSuffix}`;
 };
 
 export const generateRoute = (name: string, parentModule?: string): string => {
-  // Convert Hebrew to English for URL-friendly route parameter only
   const englishName = translateHebrewToEnglish(name);
   const routePart = englishName
     .toLowerCase()
@@ -246,36 +238,30 @@ export const generateRoute = (name: string, parentModule?: string): string => {
     return `/modules/${parentModule}/${routePart}`;
   }
   
-  return `/modules/${routePart}`;
+  return routePart;
 };
 
 export const generateIcon = (name: string): string => {
-  // Find the best matching icon based on Hebrew keywords
   const lowerName = name.toLowerCase();
   
-  // Check for exact matches first
   for (const [hebrew, icon] of Object.entries(hebrewToIconMapping)) {
     if (lowerName.includes(hebrew)) {
       return icon;
     }
   }
   
-  // Default icon if no match found
   return '📋';
 };
 
 const translateHebrewToEnglish = (hebrewText: string): string => {
   let result = hebrewText;
   
-  // Replace Hebrew words with English equivalents
   for (const [hebrew, english] of Object.entries(hebrewToEnglishMapping)) {
     const regex = new RegExp(hebrew, 'g');
     result = result.replace(regex, english);
   }
   
-  // If no Hebrew words were found, create a generic English name
   if (result === hebrewText) {
-    // Remove Hebrew characters and replace with generic name
     result = result.replace(/[\u0590-\u05FF]/g, '').trim();
     if (!result) {
       result = 'custom_module';
@@ -301,10 +287,8 @@ export const validateModuleName = (name: string): { isValid: boolean; error?: st
   return { isValid: true };
 };
 
-// New function to get or create business ID for user
-export const getBusinessIdForUser = async (userId: string): Promise<string> => {
+export const getCustomerNumberForUser = async (userId: string): Promise<number> => {
   try {
-    // Check if user is super admin
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('role')
@@ -316,12 +300,10 @@ export const getBusinessIdForUser = async (userId: string): Promise<string> => {
       throw new Error('לא ניתן לבדוק הרשאות משתמש');
     }
 
-    // Super admin gets business ID "000"
     if (profileData?.role === 'super_admin') {
-      return '000';
+      return 0;
     }
 
-    // For regular users, get or create business ID
     const { data: businessData, error: businessError } = await supabase
       .from('businesses')
       .select('id')
@@ -334,79 +316,80 @@ export const getBusinessIdForUser = async (userId: string): Promise<string> => {
     }
 
     if (!businessData) {
-      // Create new business and assign sequential ID
-      const businessId = await createNewBusinessWithId(userId);
-      return businessId;
+      const customerNumber = await createNewBusinessWithCustomerNumber(userId);
+      return customerNumber;
     }
 
-    // Get existing business ID from businesses table
-    const { data: existingBusiness, error: getBusinessError } = await supabase
-      .from('businesses')
-      .select('business_id')
-      .eq('id', businessData.id)
+    const { data: customerNumberData, error: customerError } = await supabase
+      .from('customer_numbers')
+      .select('customer_number')
+      .eq('business_id', businessData.id)
       .single();
 
-    if (getBusinessError) {
-      console.error('Error getting business ID:', getBusinessError);
-      throw new Error('לא ניתן לקבל מזהה עסק');
+    if (customerError) {
+      console.error('Error getting customer number:', customerError);
+      return 1;
     }
 
-    return existingBusiness.business_id || '001';
+    return customerNumberData?.customer_number || 1;
   } catch (error) {
-    console.error('Error in getBusinessIdForUser:', error);
+    console.error('Error in getCustomerNumberForUser:', error);
     throw error;
   }
 };
 
-// Function to create new business with sequential ID
-const createNewBusinessWithId = async (userId: string): Promise<string> => {
+const createNewBusinessWithCustomerNumber = async (userId: string): Promise<number> => {
   try {
-    // Get the highest business ID and increment
-    const { data: maxBusinessData, error: maxError } = await supabase
-      .from('businesses')
-      .select('business_id')
-      .order('business_id', { ascending: false })
+    const { data: maxCustomerData, error: maxError } = await supabase
+      .from('customer_numbers')
+      .select('customer_number')
+      .order('customer_number', { ascending: false })
       .limit(1);
 
     if (maxError) {
-      console.error('Error getting max business ID:', maxError);
-      throw new Error('לא ניתן לקבל מספר עסק חדש');
+      console.error('Error getting max customer number:', maxError);
+      throw new Error('לא ניתן לקבל מספר לקוח חדש');
     }
 
-    let nextBusinessId = '001';
-    if (maxBusinessData && maxBusinessData.length > 0 && maxBusinessData[0].business_id) {
-      const currentMax = parseInt(maxBusinessData[0].business_id);
-      nextBusinessId = (currentMax + 1).toString().padStart(3, '0');
+    let nextCustomerNumber = 1;
+    if (maxCustomerData && maxCustomerData.length > 0 && maxCustomerData[0].customer_number) {
+      nextCustomerNumber = maxCustomerData[0].customer_number + 1;
     }
 
-    // Create the business record
-    const { error: createError } = await supabase
+    const { data: businessData, error: createBusinessError } = await supabase
       .from('businesses')
       .insert({
         owner_id: userId,
-        business_id: nextBusinessId,
-        name: `עסק ${nextBusinessId}`,
+        name: `עסק ${nextCustomerNumber}`,
         is_active: true
-      });
+      })
+      .select()
+      .single();
 
-    if (createError) {
-      console.error('Error creating business:', createError);
+    if (createBusinessError) {
+      console.error('Error creating business:', createBusinessError);
       throw new Error('לא ניתן ליצור עסק חדש');
     }
 
-    return nextBusinessId;
+    const { error: createCustomerError } = await supabase
+      .from('customer_numbers')
+      .insert({
+        business_id: businessData.id,
+        customer_number: nextCustomerNumber
+      });
+
+    if (createCustomerError) {
+      console.error('Error creating customer number:', createCustomerError);
+      throw new Error('לא ניתן ליצור מספר לקוח');
+    }
+
+    return nextCustomerNumber;
   } catch (error) {
-    console.error('Error in createNewBusinessWithId:', error);
+    console.error('Error in createNewBusinessWithCustomerNumber:', error);
     throw error;
   }
 };
 
-// Function to get table name with business ID
-export const getTableNameForBusiness = (baseTableName: string, businessId: string): string => {
-  return `${baseTableName}_${businessId.padStart(3, '0')}`;
-};
-
-// Function to parse route and get module info
 export const parseModuleRoute = (route: string): { 
   parentModule?: string; 
   subModule?: string; 
@@ -430,13 +413,8 @@ export const parseModuleRoute = (route: string): {
   return { fullRoute: route };
 };
 
-// New function to clean up module data when deleting
 export const cleanupModuleData = async (moduleId: string, tableName?: string) => {
   try {
-    // Note: Custom table cleanup is handled at the database level via triggers
-    // when the module is deleted, so we don't need to manually drop the table here
-    
-    // Delete module fields
     const { error: fieldsError } = await supabase
       .from('module_fields')
       .delete()
@@ -446,7 +424,6 @@ export const cleanupModuleData = async (moduleId: string, tableName?: string) =>
       console.error('Error deleting module fields:', fieldsError);
     }
 
-    // Delete module data
     const { error: dataError } = await supabase
       .from('module_data')
       .delete()
@@ -456,7 +433,6 @@ export const cleanupModuleData = async (moduleId: string, tableName?: string) =>
       console.error('Error deleting module data:', dataError);
     }
 
-    // Delete business module associations
     const { error: businessModulesError } = await supabase
       .from('business_modules')
       .delete()

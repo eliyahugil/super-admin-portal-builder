@@ -328,7 +328,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
                     </div>
                     <div className="text-green-600 font-medium flex items-center gap-1">
                       <Sparkles className="h-3 w-3" />
-                      דף ייעודי יווצר אוטומטיט למודל זה עם ממשק ניהול מלא
+                      דף ייעודי יווצר אוטומטית למודל זה עם ממשק ניהול מלא
                     </div>
                   </div>
                 )}
@@ -367,7 +367,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
                     className="w-20"
                   />
                   <div className="text-xs text-gray-500">
-                    האייקון נבחר אוטומatically על בסיס שם המודל
+                    האייקון נבחר אוטומטית על בסיס שם המודל
                   </div>
                 </div>
               </div>

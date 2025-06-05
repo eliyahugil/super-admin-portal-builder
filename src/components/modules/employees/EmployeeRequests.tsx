@@ -7,8 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Clock, CheckCircle, XCircle, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
+type RequestStatus = 'pending' | 'approved' | 'rejected';
+
 export const EmployeeRequests: React.FC = () => {
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<RequestStatus | ''>('');
 
   const { data: employeeRequests } = useQuery({
     queryKey: ['employee-requests', statusFilter],
@@ -74,7 +76,7 @@ export const EmployeeRequests: React.FC = () => {
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => setStatusFilter(e.target.value as RequestStatus | '')}
           className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">כל הסטטוסים</option>

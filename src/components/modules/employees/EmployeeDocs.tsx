@@ -34,6 +34,13 @@ export const EmployeeDocs: React.FC = () => {
      `${doc.employee.first_name} ${doc.employee.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const getSignatureTimestamp = (signatureData: any): string => {
+    if (typeof signatureData === 'object' && signatureData !== null && 'timestamp' in signatureData) {
+      return new Date(signatureData.timestamp as string).toLocaleString('he-IL');
+    }
+    return '';
+  };
+
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
       <div className="mb-8">
@@ -83,7 +90,7 @@ export const EmployeeDocs: React.FC = () => {
                 <div className="mb-4 p-2 bg-green-50 rounded-md">
                   <p className="text-xs text-green-800 font-medium">חתימה דיגיטלית מאומתת</p>
                   <p className="text-xs text-green-700">
-                    {new Date(doc.digital_signature_data.timestamp || doc.created_at).toLocaleString('he-IL')}
+                    {getSignatureTimestamp(doc.digital_signature_data) || new Date(doc.created_at).toLocaleString('he-IL')}
                   </p>
                 </div>
               )}
