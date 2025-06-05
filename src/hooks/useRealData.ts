@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,7 +18,7 @@ export function useRealData<T = any>({
   orderBy,
   enabled = true
 }: UseRealDataOptions) {
-  return useQuery({
+  const queryResult = useQuery({
     queryKey,
     queryFn: async () => {
       console.log(`=== useRealData: Fetching from ${tableName} ===`);
@@ -53,6 +52,12 @@ export function useRealData<T = any>({
     },
     enabled,
   });
+
+  // Return the query result with loading mapped from isLoading
+  return {
+    ...queryResult,
+    loading: queryResult.isLoading
+  };
 }
 
 // Specialized hooks for common use cases
