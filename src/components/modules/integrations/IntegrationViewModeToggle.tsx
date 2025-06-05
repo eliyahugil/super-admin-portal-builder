@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, Grid, List } from 'lucide-react';
+import { LayoutGrid, List } from 'lucide-react';
 
 interface IntegrationViewModeToggleProps {
   viewMode: 'merged' | 'tabs';
@@ -41,7 +41,7 @@ export const IntegrationViewModeToggle: React.FC<IntegrationViewModeToggleProps>
           onClick={() => onViewModeChange('tabs')}
           className="flex items-center gap-2 text-xs"
         >
-          <Tabs className="h-3 w-3" />
+          <LayoutGrid className="h-3 w-3" />
           לשוניות
         </Button>
       </div>
