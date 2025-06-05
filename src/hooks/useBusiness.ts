@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Profile, Business } from '@/types/supabase';
 
 export const useBusiness = () => {
   const [currentBusinessId, setCurrentBusinessId] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export const useBusiness = () => {
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single();
+        .maybeSingle() as { data: Profile | null; error: any };
 
       if (error) throw error;
       return data;
@@ -47,7 +48,7 @@ export const useBusiness = () => {
         .from('businesses')
         .select('id, name')
         .eq('owner_id', user.id)
-        .single();
+        .maybeSingle() as { data: Business | null; error: any };
 
       if (error || !data) return null;
       

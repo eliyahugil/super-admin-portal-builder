@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { UserCheck, Shield, Search, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Branch, EmployeeBranchPriority } from '@/types/supabase';
 
 export const BranchRoles: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,7 +18,7 @@ export const BranchRoles: React.FC = () => {
         .from('branches')
         .select('id, name')
         .eq('is_active', true)
-        .order('name');
+        .order('name') as { data: Branch[] | null; error: any };
 
       if (error) throw error;
       return data || [];
@@ -35,7 +35,7 @@ export const BranchRoles: React.FC = () => {
           employee:employees(first_name, last_name, employee_id),
           branch:branches(name)
         `)
-        .order('priority_order');
+        .order('priority_order') as { data: EmployeeBranchPriority[] | null; error: any };
 
       if (error) throw error;
       return data || [];

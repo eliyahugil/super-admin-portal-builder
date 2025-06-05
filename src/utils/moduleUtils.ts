@@ -1,5 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
+import type { Business, Profile } from '@/types/supabase';
 
 // Module route mappings with simplified typing
 export const moduleRouteMapping: Record<string, {
@@ -141,12 +141,12 @@ export const validateModuleName = (name: string): { isValid: boolean; error?: st
 
 // Get customer number for user
 export const getCustomerNumberForUser = async (userId: string): Promise<number> => {
-  // Check if user is super admin
+  // Check if user is super admin with explicit typing
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', userId)
-    .single();
+    .maybeSingle() as { data: Profile | null; error: any };
 
   if (profile?.role === 'super_admin') {
     return 0; // Super admin gets customer number 0
@@ -157,7 +157,7 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
     .from('businesses')
     .select('id')
     .eq('owner_id', userId)
-    .single();
+    .maybeSingle() as { data: Business | null; error: any };
 
   if (!business) {
     throw new Error('No business found for user');

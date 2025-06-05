@@ -8,6 +8,7 @@ import { FileCheck, Search, Download, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useBusiness } from '@/hooks/useBusiness';
+import type { EmployeeDocument } from '@/types/supabase';
 
 export const EmployeeDocs: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,7 +33,7 @@ export const EmployeeDocs: React.FC = () => {
         query = query.eq('employee.business_id', businessId);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query as { data: EmployeeDocument[] | null; error: any };
 
       if (error) throw error;
       return data || [];
