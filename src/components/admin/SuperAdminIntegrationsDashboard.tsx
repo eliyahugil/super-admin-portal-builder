@@ -1,13 +1,15 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useIntegrations } from '@/hooks/useIntegrations';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 import { 
   Settings, 
   Users, 
@@ -17,7 +19,8 @@ import {
   Globe, 
   Building, 
   BarChart3,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
 
 interface BusinessIntegrationStats {
@@ -29,6 +32,10 @@ interface BusinessIntegrationStats {
 
 export const SuperAdminIntegrationsDashboard: React.FC = () => {
   const { integrations, loading: integrationsLoading } = useIntegrations();
+  const { toast } = useToast();
+  const [testingIntegration, setTestingIntegration] = useState<string | null>(null);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
 
   // Get all business integration statistics with proper joins
   const { data: businessStats, isLoading: businessStatsLoading } = useQuery({
@@ -102,6 +109,81 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
       };
     },
   });
+
+  const testIntegrationStatus = async (integrationName: string) => {
+    console.log('=== TESTING INTEGRATION STATUS ===');
+    console.log('Integration:', integrationName);
+    
+    setTestingIntegration(integrationName);
+    
+    try {
+      // Check if there's a global integration configuration
+      const { data: globalIntegration, error } = await supabase
+        .from('global_integrations')
+        .select('*')
+        .eq('integration_name', integrationName)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      let testResult = false;
+      let message = '';
+
+      if (globalIntegration && globalIntegration.is_active) {
+        // Test the global integration
+        if (globalIntegration.config && Object.keys(globalIntegration.config).length > 0) {
+          testResult = true;
+          message = 'אינטגרציה גלובלית מוגדרת ופעילה';
+        } else {
+          message = 'אינטגרציה גלובלית פעילה אך חסרה הגדרה';
+        }
+      } else {
+        message = 'אין אינטגרציה גלובלית מוגדרת';
+      }
+
+      // Count how many businesses are using this integration
+      const { count: businessUsage } = await supabase
+        .from('business_integrations')
+        .select('*', { count: 'exact', head: true })
+        .eq('integration_name', integrationName)
+        .eq('is_active', true);
+
+      if (businessUsage && businessUsage > 0) {
+        message += ` • ${businessUsage} עסקים משתמשים`;
+      }
+
+      toast({
+        title: testResult ? 'מצב תקין' : 'דורש תשומת לב',
+        description: `${integrationName}: ${message}`,
+        variant: testResult ? 'default' : 'destructive',
+      });
+
+    } catch (error) {
+      console.error('Error testing integration status:', error);
+      toast({
+        title: 'שגיאה',
+        description: `שגיאה בבדיקת סטטוס ${integrationName}`,
+        variant: 'destructive',
+      });
+    } finally {
+      setTestingIntegration(null);
+    }
+  };
+
+  const openIntegrationSettings = (integration: any) => {
+    console.log('=== OPENING INTEGRATION SETTINGS ===');
+    console.log('Integration:', integration);
+    
+    setSelectedIntegration(integration);
+    setSettingsDialogOpen(true);
+  };
+
+  const navigateToGlobalSettings = () => {
+    // Navigate to global integrations admin page
+    window.location.href = '/admin/modules/global-integrations';
+  };
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -226,10 +308,6 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 {integrations.map((integration) => {
-                  const businessUsageCount = businessStats?.reduce((count, business) => {
-                    return count + business.active_integrations;
-                  }, 0) || 0;
-
                   return (
                     <div 
                       key={integration.id} 
@@ -254,17 +332,25 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
                       </div>
                       
                       <div className="flex items-center gap-4">
-                        <div className="text-center">
-                          <p className="text-sm text-gray-500">עסקים משתמשים</p>
-                          <p className="text-lg font-semibold">{businessUsageCount}</p>
-                        </div>
-                        
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            <Activity className="h-4 w-4 mr-1" />
-                            בדוק סטטוס
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => testIntegrationStatus(integration.integration_name)}
+                            disabled={testingIntegration === integration.integration_name}
+                          >
+                            {testingIntegration === integration.integration_name ? (
+                              <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                              <Activity className="h-4 w-4 mr-1" />
+                            )}
+                            {testingIntegration === integration.integration_name ? 'בודק...' : 'בדוק סטטוס'}
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openIntegrationSettings(integration)}
+                          >
                             <Settings className="h-4 w-4 mr-1" />
                             הגדרות
                           </Button>
@@ -344,6 +430,41 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Settings Dialog */}
+      <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              הגדרות אינטגרציה - {selectedIntegration?.display_name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 border rounded-lg">
+              <h3 className="font-medium mb-2">פרטי האינטגרציה</h3>
+              <div className="space-y-2 text-sm">
+                <p><strong>שם:</strong> {selectedIntegration?.display_name}</p>
+                <p><strong>קטגוריה:</strong> {getCategoryDisplayName(selectedIntegration?.category)}</p>
+                <p><strong>תיאור:</strong> {selectedIntegration?.description}</p>
+                <p><strong>דורש מפתח גלובלי:</strong> {selectedIntegration?.requires_global_key ? 'כן' : 'לא'}</p>
+                <p><strong>דורש הגדרות עסק:</strong> {selectedIntegration?.requires_business_credentials ? 'כן' : 'לא'}</p>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button onClick={navigateToGlobalSettings}>
+                נהל הגדרות גלובליות
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setSettingsDialogOpen(false)}
+              >
+                סגור
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
