@@ -1,6 +1,14 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { Business, Profile } from '@/types/supabase';
+
+// Simplified types to avoid infinite recursion
+type SimpleProfile = {
+  role: string;
+};
+
+type SimpleBusiness = {
+  id: string;
+};
 
 // Module route mappings with simplified typing
 export const moduleRouteMapping: Record<string, {
@@ -142,37 +150,52 @@ export const validateModuleName = (name: string): { isValid: boolean; error?: st
 
 // Get customer number for user
 export const getCustomerNumberForUser = async (userId: string): Promise<number> => {
-  // Check if user is super admin with explicit typing
-  const { data: profile } = await supabase
+  // Check if user is super admin with explicit typing to avoid recursion
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', userId)
-    .maybeSingle() as { data: Profile | null; error: any };
+    .maybeSingle();
 
-  if (profile?.role === 'super_admin') {
+  if (profileError) {
+    console.error('Error fetching profile:', profileError);
+    throw profileError;
+  }
+
+  const userProfile = profile as unknown as SimpleProfile | null;
+
+  if (userProfile?.role === 'super_admin') {
     return 0; // Super admin gets customer number 0
   }
 
   // For regular users, get their business and generate next customer number
-  const { data: business } = await supabase
+  const { data: business, error: businessError } = await supabase
     .from('businesses')
     .select('id')
     .eq('owner_id', userId)
-    .maybeSingle() as { data: Business | null; error: any };
+    .maybeSingle();
 
-  if (!business) {
+  if (businessError) {
+    console.error('Error fetching business:', businessError);
+    throw businessError;
+  }
+
+  const userBusiness = business as unknown as SimpleBusiness | null;
+
+  if (!userBusiness) {
     throw new Error('No business found for user');
   }
 
   // Get the next customer number for this business with explicit typing
   const { data: result, error } = await supabase
-    .rpc('get_next_customer_number', { business_id_param: business.id }) as { data: number | null; error: any };
+    .rpc('get_next_customer_number', { business_id_param: userBusiness.id });
 
   if (error) {
+    console.error('Error getting next customer number:', error);
     throw error;
   }
 
-  return result || 1;
+  return (result as unknown as number) || 1;
 };
 
 // Clean up module data when deleting a custom module with simplified return type
@@ -197,13 +220,14 @@ export const cleanupModuleData = async (moduleId: string, tableName?: string): P
         // Use the SQL function to drop the custom table with explicit typing
         const { data, error: dropTableError } = await supabase.rpc('drop_custom_table', { 
           table_name: tableName 
-        }) as { data: boolean | null; error: any };
+        });
 
         if (dropTableError) {
           console.warn('Could not drop custom table:', dropTableError);
           // Continue execution - table deletion is not critical
         } else {
-          console.log('Successfully dropped custom table:', tableName, 'Result:', data);
+          const dropResult = data as unknown as boolean | null;
+          console.log('Successfully dropped custom table:', tableName, 'Result:', dropResult);
         }
       } catch (tableError) {
         console.warn('Table deletion failed:', tableError);
