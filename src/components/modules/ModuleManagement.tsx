@@ -2,22 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
   Plus, 
-  Edit, 
-  Trash2, 
-  Settings, 
+  Settings,
   Search,
   Building2,
   CheckCircle,
@@ -28,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CreateModuleDialog } from './CreateModuleDialog';
 import { EditModuleDialog } from './EditModuleDialog';
 import { ModuleBusinessDialog } from './ModuleBusinessDialog';
+import { ModuleCard } from './ModuleCard';
 
 interface Module {
   id: string;
@@ -38,12 +28,6 @@ interface Module {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-}
-
-interface BusinessModule {
-  business_id: string;
-  business_name: string;
-  is_enabled: boolean;
 }
 
 export const ModuleManagement: React.FC = () => {
@@ -291,91 +275,18 @@ export const ModuleManagement: React.FC = () => {
                 )}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">שם המודל</TableHead>
-                    <TableHead className="text-right">תיאור</TableHead>
-                    <TableHead className="text-right">נתיב</TableHead>
-                    <TableHead className="text-right">סטטוס</TableHead>
-                    <TableHead className="text-right">תאריך יצירה</TableHead>
-                    <TableHead className="text-right">פעולות</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredModules.map((module) => (
-                    <TableRow key={module.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center space-x-3 space-x-reverse">
-                          {module.icon && (
-                            <span className="text-lg">{module.icon}</span>
-                          )}
-                          <span>{module.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate">
-                        {module.description || '-'}
-                      </TableCell>
-                      <TableCell>
-                        {module.route ? (
-                          <code className="bg-gray-100 px-2 py-1 rounded text-sm">
-                            {module.route}
-                          </code>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={module.is_active ? "default" : "secondary"}
-                          className={module.is_active ? "bg-green-100 text-green-800" : ""}
-                        >
-                          {module.is_active ? 'פעיל' : 'לא פעיל'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(module.created_at).toLocaleDateString('he-IL')}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2 space-x-reverse">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditModule(module)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleManageBusinesses(module)}
-                          >
-                            <Building2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant={module.is_active ? "secondary" : "default"}
-                            size="sm"
-                            onClick={() => handleToggleActive(module.id, module.is_active)}
-                          >
-                            {module.is_active ? (
-                              <XCircle className="h-4 w-4" />
-                            ) : (
-                              <CheckCircle className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteModule(module.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredModules.map((module) => (
+                  <ModuleCard
+                    key={module.id}
+                    module={module}
+                    onEdit={handleEditModule}
+                    onManageBusinesses={handleManageBusinesses}
+                    onToggleActive={handleToggleActive}
+                    onDelete={handleDeleteModule}
+                  />
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
