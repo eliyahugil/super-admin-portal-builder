@@ -1,4 +1,6 @@
 
+/// <reference types="google.maps" />
+
 export interface AddressComponent {
   long_name: string;
   short_name: string;
@@ -26,6 +28,13 @@ export interface PlaceAutocompleteResult {
   };
 }
 
+// Declare global types for Google Maps
+declare global {
+  interface Window {
+    google: typeof google;
+  }
+}
+
 class GoogleMapsService {
   private apiKey: string | null = null;
   private isLoaded = false;
@@ -40,7 +49,7 @@ class GoogleMapsService {
     try {
       // In a real app, this would come from your global integrations table
       // For now, we'll use a placeholder that can be set via environment or configuration
-      this.apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY || null;
+      this.apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || null;
     } catch (error) {
       console.warn('Could not load Google Maps API key:', error);
     }
@@ -190,10 +199,3 @@ class GoogleMapsService {
 }
 
 export const googleMapsService = new GoogleMapsService();
-
-// Global type declarations for Google Maps
-declare global {
-  interface Window {
-    google: typeof google;
-  }
-}
