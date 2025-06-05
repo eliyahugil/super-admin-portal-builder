@@ -26,7 +26,8 @@ export function useRealData<T = any>({
       console.log('Filters:', filters);
       console.log('Select:', select);
       
-      let query = supabase.from(tableName).select(select);
+      // Use type assertion to bypass TypeScript's strict typing
+      let query = (supabase as any).from(tableName).select(select);
       
       // Apply filters
       Object.entries(filters).forEach(([key, value]) => {
