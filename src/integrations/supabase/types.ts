@@ -1045,6 +1045,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      drop_custom_table: {
+        Args: { table_name: string }
+        Returns: boolean
+      }
       generate_module_route: {
         Args: { module_name: string }
         Returns: string

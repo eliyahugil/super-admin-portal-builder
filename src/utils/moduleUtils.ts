@@ -193,14 +193,16 @@ export const cleanupModuleData = async (moduleId: string, tableName?: string): P
     // If it's a custom module with a table, attempt to drop the table
     if (tableName) {
       try {
-        // Note: This will only work if the user has proper permissions
-        // In production, this might need to be handled by a database function
-        const { error: dropTableError } = await supabase
-          .rpc('drop_custom_table', { table_name: tableName });
+        // Use the SQL function we just created to drop the custom table
+        const { data, error: dropTableError } = await supabase.rpc('drop_custom_table', { 
+          table_name: tableName 
+        });
 
         if (dropTableError) {
           console.warn('Could not drop custom table:', dropTableError);
           // Continue execution - table deletion is not critical
+        } else {
+          console.log('Successfully dropped custom table:', tableName, 'Result:', data);
         }
       } catch (tableError) {
         console.warn('Table deletion failed:', tableError);
