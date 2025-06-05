@@ -1,10 +1,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Module route mappings
-export const moduleRouteMapping: Record<string, { 
-  name: string; 
-  description: string; 
+// Module route mappings with simplified typing
+export const moduleRouteMapping: Record<string, {
+  name: string;
+  description: string;
   icon: string;
   subModules?: Record<string, { name: string; description: string }>;
 }> = {
@@ -28,7 +28,7 @@ export const moduleRouteMapping: Record<string, {
       'branch-roles': { name: 'תפקידי סניף', description: 'ניהול תפקידים בסניף' },
     }
   }
-};
+} as const;
 
 // Parse module route information
 export const parseModuleRoute = (route: string) => {
@@ -76,7 +76,7 @@ export const generateRoute = (moduleName: string): string => {
 export const generateIcon = (moduleName: string): string => {
   const name = moduleName.toLowerCase();
   
-  // Hebrew word mappings
+  // Icon mappings with simplified type
   const iconMappings: Record<string, string> = {
     // Hebrew mappings
     'לקוחות': '👥',
@@ -163,9 +163,9 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
     throw new Error('No business found for user');
   }
 
-  // Get the next customer number for this business
+  // Get the next customer number for this business with explicit typing
   const { data: result, error } = await supabase
-    .rpc('get_next_customer_number', { business_id_param: business.id });
+    .rpc('get_next_customer_number', { business_id_param: business.id }) as { data: number | null; error: any };
 
   if (error) {
     throw error;
@@ -174,7 +174,7 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
   return result || 1;
 };
 
-// Clean up module data when deleting a custom module
+// Clean up module data when deleting a custom module with simplified return type
 export const cleanupModuleData = async (moduleId: string, tableName?: string): Promise<boolean> => {
   try {
     console.log('Starting cleanup for module:', moduleId, 'table:', tableName);
@@ -193,10 +193,10 @@ export const cleanupModuleData = async (moduleId: string, tableName?: string): P
     // If it's a custom module with a table, attempt to drop the table
     if (tableName) {
       try {
-        // Use the SQL function we just created to drop the custom table
+        // Use the SQL function to drop the custom table with explicit typing
         const { data, error: dropTableError } = await supabase.rpc('drop_custom_table', { 
           table_name: tableName 
-        });
+        }) as { data: boolean | null; error: any };
 
         if (dropTableError) {
           console.warn('Could not drop custom table:', dropTableError);
