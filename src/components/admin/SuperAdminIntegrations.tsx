@@ -8,12 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { SuperAdminIntegrationsDashboard } from './SuperAdminIntegrationsDashboard';
 import { GlobalIntegrationsAdmin } from '../modules/integrations/GlobalIntegrationsAdmin';
 import { IntegrationStatusMonitor } from './IntegrationStatusMonitor';
 import { Key, Settings, Activity, MapPin, Globe, MessageSquare, FileText, Users } from 'lucide-react';
 
 export const SuperAdminIntegrations: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('global');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -25,12 +26,17 @@ export const SuperAdminIntegrations: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="dashboard">דשבורד ראשי</TabsTrigger>
           <TabsTrigger value="global">אינטגרציות גלובליות</TabsTrigger>
           <TabsTrigger value="maps">Google Maps</TabsTrigger>
           <TabsTrigger value="status">מוניטור סטטוס</TabsTrigger>
           <TabsTrigger value="translations">תרגומים</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="dashboard">
+          <SuperAdminIntegrationsDashboard />
+        </TabsContent>
 
         <TabsContent value="global">
           <Card>

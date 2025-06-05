@@ -2,11 +2,13 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { SupportedIntegrationsList } from './SupportedIntegrationsList';
 import { BusinessIntegrationsList } from './BusinessIntegrationsList';
 import { GlobalIntegrationsAdmin } from './GlobalIntegrationsAdmin';
 import { ModuleConfigDashboard } from '../config/ModuleConfigDashboard';
 import { useBusiness } from '@/hooks/useBusiness';
+import { Settings, Crown } from 'lucide-react';
 
 export const IntegrationManagement: React.FC = () => {
   const { isSuperAdmin, businessId } = useBusiness();
@@ -21,6 +23,29 @@ export const IntegrationManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {isSuperAdmin && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Crown className="h-5 w-5 text-amber-600" />
+                <div>
+                  <h3 className="font-semibold text-amber-800">מנהל מערכת</h3>
+                  <p className="text-sm text-amber-700">גש לדשבורד הניהול המתקדם</p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                className="border-amber-300 text-amber-800 hover:bg-amber-100"
+                onClick={() => window.open('/admin/integrations', '_blank')}
+              >
+                דשבורד סופר אדמין
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className={`grid w-full grid-cols-${tabs.length}`}>
           {tabs.map(tab => (
