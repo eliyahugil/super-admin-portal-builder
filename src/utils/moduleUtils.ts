@@ -166,37 +166,87 @@ const hebrewToIconMapping: Record<string, string> = {
   'אישור': '✅'
 };
 
-export const generateTableName = (name: string, moduleId?: string, customerNumber?: number): string => {
+// Module route mapping for dynamic routes
+export const moduleRouteMapping: Record<string, { 
+  parentRoute: string; 
+  subModules?: Record<string, string>;
+  hebrewName: string;
+  tableName: string;
+}> = {
+  'employees': {
+    parentRoute: '/modules/employees',
+    hebrewName: 'ניהול עובדים',
+    tableName: 'employees',
+    subModules: {
+      'employee-files': 'קבצי עובדים',
+      'attendance': 'נוכחות',
+      'employee-requests': 'בקשות עובדים',
+      'employee-docs': 'מסמכים חתומים',
+      'shifts': 'משמרות',
+      'payroll': 'משכורות'
+    }
+  },
+  'branches': {
+    parentRoute: '/modules/branches',
+    hebrewName: 'ניהול סניפים',
+    tableName: 'branches',
+    subModules: {
+      'branch-roles': 'תפקידים בסניף',
+      'branch-equipment': 'ציוד סניף'
+    }
+  },
+  'customers': {
+    parentRoute: '/modules/customers',
+    hebrewName: 'ניהול לקוחות',
+    tableName: 'customers'
+  },
+  'inventory': {
+    parentRoute: '/modules/inventory',
+    hebrewName: 'ניהול מלאי',
+    tableName: 'inventory'
+  },
+  'projects': {
+    parentRoute: '/modules/projects',
+    hebrewName: 'ניהול פרויקטים',
+    tableName: 'projects'
+  }
+};
+
+export const generateTableName = (name: string, businessId: string, moduleId?: string): string => {
   // Convert Hebrew to English, then create table name
   const englishName = translateHebrewToEnglish(name);
-  let baseName = 'custom_' + englishName
+  let baseName = englishName
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, '_')
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '');
   
-  // Add customer number prefix for better organization
-  if (customerNumber !== undefined) {
-    baseName = `c${customerNumber}_${baseName}`;
-  }
+  // Add business ID suffix for separation
+  const businessSuffix = `_${businessId.toString().padStart(3, '0')}`;
   
   // If moduleId is provided, append a short version of it to ensure uniqueness
   if (moduleId) {
     const shortId = moduleId.substring(0, 8);
-    return `${baseName}_${shortId}`;
+    return `${baseName}_${shortId}${businessSuffix}`;
   }
   
-  return baseName;
+  return `${baseName}${businessSuffix}`;
 };
 
-export const generateRoute = (name: string): string => {
+export const generateRoute = (name: string, parentModule?: string): string => {
   // Convert Hebrew to English for URL-friendly route parameter only
   const englishName = translateHebrewToEnglish(name);
-  return englishName
+  const routePart = englishName
     .toLowerCase()
     .replace(/[^a-z0-9-]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
+  
+  if (parentModule) {
+    return `/modules/${parentModule}/${routePart}`;
+  }
+  
+  return `/modules/${routePart}`;
 };
 
 export const generateIcon = (name: string): string => {
@@ -251,37 +301,133 @@ export const validateModuleName = (name: string): { isValid: boolean; error?: st
   return { isValid: true };
 };
 
-// New function to get customer number for super admin or regular users
-export const getCustomerNumberForUser = async (userId: string) => {
-  // Check if user is super admin
-  const { data: profileData, error: profileError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
-    .single();
+// New function to get or create business ID for user
+export const getBusinessIdForUser = async (userId: string): Promise<string> => {
+  try {
+    // Check if user is super admin
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
 
-  if (profileError) {
-    console.error('Error checking user role:', profileError);
-    throw new Error('לא ניתן לבדוק הרשאות משתמש');
+    if (profileError) {
+      console.error('Error checking user role:', profileError);
+      throw new Error('לא ניתן לבדוק הרשאות משתמש');
+    }
+
+    // Super admin gets business ID "000"
+    if (profileData?.role === 'super_admin') {
+      return '000';
+    }
+
+    // For regular users, get or create business ID
+    const { data: businessData, error: businessError } = await supabase
+      .from('businesses')
+      .select('id')
+      .eq('owner_id', userId)
+      .single();
+
+    if (businessError && businessError.code !== 'PGRST116') {
+      console.error('Error getting business:', businessError);
+      throw new Error('לא ניתן לקבל מידע על העסק');
+    }
+
+    if (!businessData) {
+      // Create new business and assign sequential ID
+      const businessId = await createNewBusinessWithId(userId);
+      return businessId;
+    }
+
+    // Get existing business ID from businesses table
+    const { data: existingBusiness, error: getBusinessError } = await supabase
+      .from('businesses')
+      .select('business_id')
+      .eq('id', businessData.id)
+      .single();
+
+    if (getBusinessError) {
+      console.error('Error getting business ID:', getBusinessError);
+      throw new Error('לא ניתן לקבל מזהה עסק');
+    }
+
+    return existingBusiness.business_id || '001';
+  } catch (error) {
+    console.error('Error in getBusinessIdForUser:', error);
+    throw error;
   }
+};
 
-  // Super admin gets customer number 0
-  if (profileData?.role === 'super_admin') {
-    return 0;
+// Function to create new business with sequential ID
+const createNewBusinessWithId = async (userId: string): Promise<string> => {
+  try {
+    // Get the highest business ID and increment
+    const { data: maxBusinessData, error: maxError } = await supabase
+      .from('businesses')
+      .select('business_id')
+      .order('business_id', { ascending: false })
+      .limit(1);
+
+    if (maxError) {
+      console.error('Error getting max business ID:', maxError);
+      throw new Error('לא ניתן לקבל מספר עסק חדש');
+    }
+
+    let nextBusinessId = '001';
+    if (maxBusinessData && maxBusinessData.length > 0 && maxBusinessData[0].business_id) {
+      const currentMax = parseInt(maxBusinessData[0].business_id);
+      nextBusinessId = (currentMax + 1).toString().padStart(3, '0');
+    }
+
+    // Create the business record
+    const { error: createError } = await supabase
+      .from('businesses')
+      .insert({
+        owner_id: userId,
+        business_id: nextBusinessId,
+        name: `עסק ${nextBusinessId}`,
+        is_active: true
+      });
+
+    if (createError) {
+      console.error('Error creating business:', createError);
+      throw new Error('לא ניתן ליצור עסק חדש');
+    }
+
+    return nextBusinessId;
+  } catch (error) {
+    console.error('Error in createNewBusinessWithId:', error);
+    throw error;
   }
+};
 
-  // For regular users, get next customer number
-  const { data: customerNumberData, error: customerNumberError } = await supabase
-    .rpc('get_next_customer_number', { 
-      business_id_param: '123e4567-e89b-12d3-a456-426614174000' // TODO: Replace with actual business_id from context
-    });
+// Function to get table name with business ID
+export const getTableNameForBusiness = (baseTableName: string, businessId: string): string => {
+  return `${baseTableName}_${businessId.padStart(3, '0')}`;
+};
 
-  if (customerNumberError) {
-    console.error('Error getting customer number:', customerNumberError);
-    throw new Error('לא ניתן לקבל מספר לקוח');
+// Function to parse route and get module info
+export const parseModuleRoute = (route: string): { 
+  parentModule?: string; 
+  subModule?: string; 
+  fullRoute: string;
+} => {
+  const routeParts = route.replace('/modules/', '').split('/');
+  
+  if (routeParts.length === 1) {
+    return {
+      parentModule: routeParts[0],
+      fullRoute: route
+    };
+  } else if (routeParts.length === 2) {
+    return {
+      parentModule: routeParts[0],
+      subModule: routeParts[1],
+      fullRoute: route
+    };
   }
-
-  return customerNumberData;
+  
+  return { fullRoute: route };
 };
 
 // New function to clean up module data when deleting

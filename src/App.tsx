@@ -12,6 +12,7 @@ import { Dashboard } from "@/components/dashboard/Dashboard";
 import { ModuleManagement } from "@/components/modules/ModuleManagement";
 import { EmployeeManagement } from "@/components/modules/employees/EmployeeManagement";
 import { DynamicModulePage } from "@/components/modules/DynamicModulePage";
+import { ModuleWrapper } from "@/components/modules/ModuleWrapper";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,30 @@ const App: React.FC = () => (
                 </ProtectedRoute>
               } 
             />
+            {/* Dynamic module routes */}
+            <Route 
+              path="/modules/:moduleRoute" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <ModuleWrapper />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/modules/:moduleRoute/:subModule" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <ModuleWrapper />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            {/* Legacy employee route - redirect to new dynamic route */}
             <Route 
               path="/employees" 
               element={

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface ModuleEmptyStateProps {
   searchTerm: string;
@@ -14,6 +15,12 @@ export const ModuleEmptyState: React.FC<ModuleEmptyStateProps> = ({
   onCreateModule,
   onCreateCustomModule,
 }) => {
+  const navigate = useNavigate();
+
+  const navigateToEmployees = () => {
+    navigate('/modules/employees');
+  };
+
   return (
     <div className="text-center py-12">
       <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -23,15 +30,18 @@ export const ModuleEmptyState: React.FC<ModuleEmptyStateProps> = ({
       <p className="text-gray-600 mb-4">
         {searchTerm 
           ? 'נסה לשנות את מונחי החיפוש' 
-          : 'התחל על ידי יצירת המודל הראשון'
+          : 'התחל על ידי יצירת המודל הראשון או השתמש במודלים הקיימים'
         }
       </p>
       {!searchTerm && (
-        <div className="flex gap-2 justify-center">
+        <div className="flex gap-2 justify-center flex-wrap">
+          <Button onClick={navigateToEmployees} variant="default">
+            ניהול עובדים וסניפים
+          </Button>
           <Button onClick={onCreateCustomModule} variant="outline">
             צור מודל מותאם אישית
           </Button>
-          <Button onClick={onCreateModule}>
+          <Button onClick={onCreateModule} variant="outline">
             צור מודל רגיל
           </Button>
         </div>
