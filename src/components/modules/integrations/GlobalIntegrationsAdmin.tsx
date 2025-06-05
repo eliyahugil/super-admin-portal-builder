@@ -27,13 +27,23 @@ interface GlobalIntegration {
 
 export const GlobalIntegrationsAdmin: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<GlobalIntegration | null>(null);
   const [expandedIntegrations, setExpandedIntegrations] = useState<Set<string>>(new Set());
+  const [newIntegration, setNewIntegration] = useState({
+    integration_name: '',
+    display_name: '',
+    description: '',
+    is_active: true
+  });
   const { toast } = useToast();
+
+  console.log('=== GlobalIntegrationsAdmin RENDER ===');
 
   const { data: integrations, isLoading, refetch } = useQuery({
     queryKey: ['global-integrations'],
     queryFn: async () => {
+      console.log('=== FETCHING GLOBAL INTEGRATIONS ===');
       const { data, error } = await supabase
         .from('global_integrations')
         .select('*')
@@ -43,16 +53,62 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
         console.error('Error fetching global integrations:', error);
         return [];
       }
+      console.log('Fetched integrations:', data);
       return data as GlobalIntegration[];
     },
   });
 
+  const handleCreateIntegration = async () => {
+    console.log('=== CREATE INTEGRATION CLICKED ===');
+    console.log('New integration data:', newIntegration);
+    
+    try {
+      const { error } = await supabase
+        .from('global_integrations')
+        .insert({
+          integration_name: newIntegration.integration_name,
+          display_name: newIntegration.display_name,
+          description: newIntegration.description,
+          is_active: newIntegration.is_active,
+          config: {}
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'הצלחה',
+        description: 'האינטגרציה הגלובלית נוצרה בהצלחה',
+      });
+
+      setCreateDialogOpen(false);
+      setNewIntegration({
+        integration_name: '',
+        display_name: '',
+        description: '',
+        is_active: true
+      });
+      refetch();
+    } catch (error) {
+      console.error('Error creating global integration:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן ליצור את האינטגרציה הגלובלית',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleEdit = (integration: GlobalIntegration) => {
+    console.log('=== EDIT INTEGRATION CLICKED ===');
+    console.log('Integration to edit:', integration);
     setSelectedIntegration(integration);
     setEditDialogOpen(true);
   };
 
   const toggleIntegration = async (integrationId: string, currentStatus: boolean) => {
+    console.log('=== TOGGLE INTEGRATION CLICKED ===');
+    console.log('Integration ID:', integrationId, 'Current status:', currentStatus);
+    
     try {
       const { error } = await supabase
         .from('global_integrations')
@@ -81,7 +137,11 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
   };
 
   const deleteIntegration = async (integrationId: string, integrationName: string) => {
+    console.log('=== DELETE INTEGRATION CLICKED ===');
+    console.log('Integration ID:', integrationId, 'Name:', integrationName);
+    
     if (!confirm(`האם אתה בטוח שברצונך למחוק את האינטגרציה הגלובלית "${integrationName}"?`)) {
+      console.log('Delete cancelled by user');
       return;
     }
 
@@ -110,12 +170,17 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
   };
 
   const toggleExpanded = (integrationId: string) => {
+    console.log('=== TOGGLE EXPANDED CLICKED ===');
+    console.log('Integration ID:', integrationId);
+    
     setExpandedIntegrations(prev => {
       const newSet = new Set(prev);
       if (newSet.has(integrationId)) {
         newSet.delete(integrationId);
+        console.log('Collapsed integration:', integrationId);
       } else {
         newSet.add(integrationId);
+        console.log('Expanded integration:', integrationId);
       }
       return newSet;
     });
@@ -131,6 +196,9 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
     );
   }
 
+  console.log('Current integrations:', integrations);
+  console.log('Expanded integrations:', expandedIntegrations);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -141,9 +209,12 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
           </p>
         </div>
         
-        <Dialog>
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => {
+              console.log('=== ADD INTEGRATION DIALOG OPENED ===');
+              setCreateDialogOpen(true);
+            }}>
               <Plus className="h-4 w-4 mr-2" />
               הוסף אינטגרציה גלובלית
             </Button>
@@ -155,21 +226,52 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <Label>שם האינטגרציה</Label>
-                <Input placeholder="google_maps" />
+                <Input 
+                  placeholder="google_maps" 
+                  value={newIntegration.integration_name}
+                  onChange={(e) => setNewIntegration(prev => ({
+                    ...prev,
+                    integration_name: e.target.value
+                  }))}
+                />
               </div>
               <div>
                 <Label>שם תצוגה</Label>
-                <Input placeholder="Google Maps" />
+                <Input 
+                  placeholder="Google Maps" 
+                  value={newIntegration.display_name}
+                  onChange={(e) => setNewIntegration(prev => ({
+                    ...prev,
+                    display_name: e.target.value
+                  }))}
+                />
               </div>
               <div>
                 <Label>תיאור</Label>
-                <Textarea placeholder="תיאור האינטגרציה..." />
+                <Textarea 
+                  placeholder="תיאור האינטגרציה..." 
+                  value={newIntegration.description}
+                  onChange={(e) => setNewIntegration(prev => ({
+                    ...prev,
+                    description: e.target.value
+                  }))}
+                />
               </div>
               <div className="flex items-center space-x-2">
-                <Switch />
+                <Switch 
+                  checked={newIntegration.is_active}
+                  onCheckedChange={(checked) => setNewIntegration(prev => ({
+                    ...prev,
+                    is_active: checked
+                  }))}
+                />
                 <Label>פעיל</Label>
               </div>
-              <Button className="w-full">
+              <Button 
+                className="w-full"
+                onClick={handleCreateIntegration}
+                disabled={!newIntegration.integration_name || !newIntegration.display_name}
+              >
                 הוסף אינטגרציה
               </Button>
             </div>
@@ -257,6 +359,29 @@ export const GlobalIntegrationsAdmin: React.FC = () => {
             </Card>
           ))}
         </div>
+      )}
+
+      {selectedIntegration && (
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>עריכת אינטגרציה גלובלית</DialogTitle>
+            </DialogHeader>
+            <GlobalIntegrationForm
+              integration={{
+                id: selectedIntegration.id,
+                integration_name: selectedIntegration.integration_name,
+                display_name: selectedIntegration.display_name,
+                global_config: selectedIntegration.config
+              }}
+              onUpdate={() => {
+                refetch();
+                setEditDialogOpen(false);
+                setSelectedIntegration(null);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
