@@ -153,6 +153,53 @@ export type Database = {
           },
         ]
       }
+      business_integrations: {
+        Row: {
+          business_id: string
+          config: Json | null
+          created_at: string
+          credentials: Json
+          display_name: string
+          id: string
+          integration_name: string
+          is_active: boolean
+          last_sync: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          config?: Json | null
+          created_at?: string
+          credentials?: Json
+          display_name: string
+          id?: string
+          integration_name: string
+          is_active?: boolean
+          last_sync?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          config?: Json | null
+          created_at?: string
+          credentials?: Json
+          display_name?: string
+          id?: string
+          integration_name?: string
+          is_active?: boolean
+          last_sync?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_integrations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_modules: {
         Row: {
           business_id: string
@@ -203,6 +250,7 @@ export type Database = {
           is_active: boolean
           logo_url: string | null
           name: string
+          owner_id: string | null
           updated_at: string
           website: string | null
         }
@@ -216,6 +264,7 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name: string
+          owner_id?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -229,6 +278,7 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name?: string
+          owner_id?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -763,6 +813,92 @@ export type Database = {
           },
         ]
       }
+      global_integrations: {
+        Row: {
+          api_key: string | null
+          config: Json | null
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          integration_name: string
+          is_active: boolean
+          is_global: boolean
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string | null
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id?: string
+          integration_name: string
+          is_active?: boolean
+          is_global?: boolean
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string | null
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          integration_name?: string
+          is_active?: boolean
+          is_global?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      integration_logs: {
+        Row: {
+          action: string
+          business_id: string | null
+          created_at: string
+          error_message: string | null
+          execution_time_ms: number | null
+          id: string
+          integration_name: string
+          request_data: Json | null
+          response_data: Json | null
+          status: string
+        }
+        Insert: {
+          action: string
+          business_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          integration_name: string
+          request_data?: Json | null
+          response_data?: Json | null
+          status: string
+        }
+        Update: {
+          action?: string
+          business_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          integration_name?: string
+          request_data?: Json | null
+          response_data?: Json | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       module_data: {
         Row: {
           created_at: string
@@ -1059,6 +1195,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      supported_integrations: {
+        Row: {
+          category: string
+          created_at: string
+          credential_fields: Json
+          description: string | null
+          display_name: string
+          documentation_url: string | null
+          icon: string | null
+          id: string
+          integration_name: string
+          is_active: boolean
+          requires_business_credentials: boolean
+          requires_global_key: boolean
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          credential_fields?: Json
+          description?: string | null
+          display_name: string
+          documentation_url?: string | null
+          icon?: string | null
+          id?: string
+          integration_name: string
+          is_active?: boolean
+          requires_business_credentials?: boolean
+          requires_global_key?: boolean
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          credential_fields?: Json
+          description?: string | null
+          display_name?: string
+          documentation_url?: string | null
+          icon?: string | null
+          id?: string
+          integration_name?: string
+          is_active?: boolean
+          requires_business_credentials?: boolean
+          requires_global_key?: boolean
+        }
+        Relationships: []
       }
       user_business_permissions: {
         Row: {
