@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/components/auth/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Header } from "@/components/layout/Header";
+import { MainSidebar } from "@/components/layout/MainSidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { ModuleManagement } from "@/components/modules/ModuleManagement";
 import { EmployeeManagement } from "@/components/modules/employees/EmployeeManagement";
@@ -25,6 +26,25 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <SidebarProvider>
+    <div className="min-h-screen flex w-full bg-gray-50">
+      <MainSidebar />
+      <SidebarInset className="flex flex-col">
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <div className="flex-1">
+            <Header />
+          </div>
+        </header>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {children}
+        </div>
+      </SidebarInset>
+    </div>
+  </SidebarProvider>
+);
+
 const App: React.FC = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -38,10 +58,9 @@ const App: React.FC = () => (
               path="/" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <Dashboard />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -51,10 +70,9 @@ const App: React.FC = () => (
               path="/admin" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <SuperAdminDashboard />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -62,10 +80,9 @@ const App: React.FC = () => (
               path="/admin/businesses" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <BusinessManagement />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -73,10 +90,9 @@ const App: React.FC = () => (
               path="/admin/modules" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <ModuleManagement />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -84,10 +100,9 @@ const App: React.FC = () => (
               path="/admin/integrations" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <SuperAdminIntegrations />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -95,10 +110,9 @@ const App: React.FC = () => (
               path="/admin/system-preview/:moduleId" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <SystemPreview />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -108,10 +122,9 @@ const App: React.FC = () => (
               path="/crm" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <CRMDashboard />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -119,10 +132,9 @@ const App: React.FC = () => (
               path="/crm/:crmModule" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <CRMDashboard />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -132,10 +144,9 @@ const App: React.FC = () => (
               path="/:businessId/dashboard" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <BusinessDashboard />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -143,10 +154,9 @@ const App: React.FC = () => (
               path="/:businessId/integrations" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <BusinessIntegrationsManager />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -154,10 +164,9 @@ const App: React.FC = () => (
               path="/:businessId/integrations/:integration" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <BusinessIntegrationsManager />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -167,10 +176,9 @@ const App: React.FC = () => (
               path="/modules" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <ModuleManagement />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -178,10 +186,9 @@ const App: React.FC = () => (
               path="/modules/:moduleRoute" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <ModuleWrapper />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -189,10 +196,9 @@ const App: React.FC = () => (
               path="/modules/:moduleRoute/:subModule" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <ModuleWrapper />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -202,10 +208,9 @@ const App: React.FC = () => (
               path="/employees" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <EmployeeManagement />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
@@ -213,10 +218,9 @@ const App: React.FC = () => (
               path="/custom/:moduleRoute" 
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
+                  <AppLayout>
                     <DynamicModulePage />
-                  </div>
+                  </AppLayout>
                 </ProtectedRoute>
               } 
             />
