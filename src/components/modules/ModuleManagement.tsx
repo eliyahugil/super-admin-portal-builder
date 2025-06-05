@@ -52,9 +52,53 @@ export const ModuleManagement: React.FC = () => {
     setFilteredModules(filtered);
   }, [searchTerm, modules]);
 
+  const ensureEmployeeModuleExists = async () => {
+    try {
+      // Check if Employee Management module exists
+      const { data: existingModule, error: checkError } = await supabase
+        .from('modules')
+        .select('*')
+        .eq('route', '/employees')
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking for employee module:', checkError);
+        return;
+      }
+
+      if (!existingModule) {
+        console.log('Employee module not found, creating it...');
+        // Create the Employee Management module
+        const { error: insertError } = await supabase
+          .from('modules')
+          .insert({
+            name: 'ניהול עובדים וסניפים',
+            description: 'מודל לניהול עובדים, סניפים, משמרות ונוכחות',
+            icon: '👥',
+            route: '/employees',
+            is_active: true,
+          });
+
+        if (insertError) {
+          console.error('Error creating employee module:', insertError);
+        } else {
+          console.log('Employee module created successfully');
+        }
+      } else {
+        console.log('Employee module already exists:', existingModule);
+      }
+    } catch (error) {
+      console.error('Error in ensureEmployeeModuleExists:', error);
+    }
+  };
+
   const fetchModules = async () => {
     try {
       setLoading(true);
+      
+      // First ensure the employee module exists
+      await ensureEmployeeModuleExists();
+      
       const { data, error } = await supabase
         .from('modules')
         .select('*')
@@ -70,6 +114,7 @@ export const ModuleManagement: React.FC = () => {
         return;
       }
 
+      console.log('Fetched modules:', data);
       setModules(data || []);
     } catch (error) {
       console.error('Error in fetchModules:', error);
