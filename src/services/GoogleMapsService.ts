@@ -1,6 +1,8 @@
 
 /// <reference types="google.maps" />
 
+import { supabase } from '@/integrations/supabase/client';
+
 export interface AddressComponent {
   long_name: string;
   short_name: string;
@@ -41,21 +43,48 @@ class GoogleMapsService {
   private loadPromise: Promise<void> | null = null;
 
   constructor() {
-    // Try to get API key from global configuration
+    // Initialize API key from global configuration on startup
     this.initializeApiKey();
   }
 
   private async initializeApiKey() {
     try {
-      // In a real app, this would come from your global integrations table
-      // For now, we'll use a placeholder that can be set via environment or configuration
-      this.apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || null;
+      console.log('=== GoogleMapsService: Initializing API Key ===');
+      
+      // First try to get from global integrations
+      const { data: globalIntegrations, error } = await supabase
+        .from('global_integrations')
+        .select('config')
+        .or('integration_name.eq.google_maps,integration_name.eq.GOOGLE_MAPS')
+        .eq('is_active', true)
+        .single();
+
+      console.log('Global integrations query result:', { data: globalIntegrations, error });
+
+      if (globalIntegrations?.config?.api_key) {
+        this.apiKey = globalIntegrations.config.api_key;
+        console.log('API Key loaded from global integrations:', this.apiKey ? 'Yes' : 'No');
+      } else {
+        // Fallback to environment variable
+        this.apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || null;
+        console.log('API Key loaded from environment:', this.apiKey ? 'Yes' : 'No');
+      }
     } catch (error) {
-      console.warn('Could not load Google Maps API key:', error);
+      console.warn('Could not load Google Maps API key from global integrations:', error);
+      // Fallback to environment variable
+      this.apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || null;
+      console.log('Fallback API Key from environment:', this.apiKey ? 'Yes' : 'No');
     }
   }
 
+  // Method to refresh API key from database
+  async refreshApiKey() {
+    console.log('=== GoogleMapsService: Refreshing API Key ===');
+    await this.initializeApiKey();
+  }
+
   setApiKey(apiKey: string) {
+    console.log('=== GoogleMapsService: Setting API Key manually ===');
     this.apiKey = apiKey;
   }
 
@@ -63,12 +92,19 @@ class GoogleMapsService {
     if (this.isLoaded) return Promise.resolve();
     if (this.loadPromise) return this.loadPromise;
 
+    // Refresh API key before loading
+    await this.refreshApiKey();
+
     if (!this.apiKey) {
       throw new Error('Google Maps API key not configured');
     }
 
+    console.log('=== GoogleMapsService: Loading Google Maps Script ===');
+    console.log('Using API Key:', this.apiKey ? 'Configured' : 'Missing');
+
     this.loadPromise = new Promise((resolve, reject) => {
       if (window.google && window.google.maps) {
+        console.log('Google Maps already loaded');
         this.isLoaded = true;
         resolve();
         return;
@@ -79,12 +115,16 @@ class GoogleMapsService {
       script.async = true;
       script.defer = true;
 
+      console.log('Loading Google Maps script from:', script.src);
+
       script.onload = () => {
+        console.log('Google Maps script loaded successfully');
         this.isLoaded = true;
         resolve();
       };
 
-      script.onerror = () => {
+      script.onerror = (error) => {
+        console.error('Failed to load Google Maps script:', error);
         reject(new Error('Failed to load Google Maps script'));
       };
 
@@ -95,6 +135,9 @@ class GoogleMapsService {
   }
 
   async geocodeAddress(address: string): Promise<GeocodeResult[]> {
+    console.log('=== GoogleMapsService: Geocoding Address ===');
+    console.log('Address:', address);
+    
     await this.loadGoogleMapsScript();
 
     return new Promise((resolve, reject) => {
@@ -107,6 +150,8 @@ class GoogleMapsService {
           componentRestrictions: { country: 'IL' }
         },
         (results, status) => {
+          console.log('Geocoding result:', { status, results });
+          
           if (status === google.maps.GeocoderStatus.OK && results) {
             // Convert Google Maps GeocoderResult to our GeocodeResult format
             const mappedResults: GeocodeResult[] = results.map((r) => ({
@@ -120,8 +165,11 @@ class GoogleMapsService {
               },
               place_id: r.place_id || ''
             }));
+            
+            console.log('Mapped results:', mappedResults);
             resolve(mappedResults);
           } else {
+            console.error('Geocoding failed:', status);
             reject(new Error(`Geocoding failed: ${status}`));
           }
         }
@@ -130,6 +178,9 @@ class GoogleMapsService {
   }
 
   async getPlaceAutocomplete(input: string): Promise<PlaceAutocompleteResult[]> {
+    console.log('=== GoogleMapsService: Getting Place Autocomplete ===');
+    console.log('Input:', input);
+    
     await this.loadGoogleMapsScript();
 
     return new Promise((resolve, reject) => {
@@ -143,9 +194,12 @@ class GoogleMapsService {
           types: ['address']
         },
         (predictions, status) => {
+          console.log('Autocomplete result:', { status, predictions });
+          
           if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
             resolve(predictions);
           } else {
+            console.log('Autocomplete returned empty results, status:', status);
             resolve([]); // Return empty array instead of rejecting for better UX
           }
         }
@@ -154,6 +208,9 @@ class GoogleMapsService {
   }
 
   async getPlaceDetails(placeId: string): Promise<GeocodeResult> {
+    console.log('=== GoogleMapsService: Getting Place Details ===');
+    console.log('Place ID:', placeId);
+    
     await this.loadGoogleMapsScript();
 
     return new Promise((resolve, reject) => {
@@ -165,6 +222,8 @@ class GoogleMapsService {
           fields: ['address_components', 'formatted_address', 'geometry', 'place_id']
         },
         (place, status) => {
+          console.log('Place details result:', { status, place });
+          
           if (status === google.maps.places.PlacesServiceStatus.OK && place) {
             resolve({
               address_components: place.address_components || [],
@@ -178,6 +237,7 @@ class GoogleMapsService {
               place_id: place.place_id || ''
             });
           } else {
+            console.error('Place details failed:', status);
             reject(new Error(`Place details failed: ${status}`));
           }
         }
@@ -207,6 +267,22 @@ class GoogleMapsService {
     });
 
     return result;
+  }
+
+  // Test method to verify API connectivity
+  async testConnection(): Promise<boolean> {
+    try {
+      console.log('=== GoogleMapsService: Testing Connection ===');
+      await this.loadGoogleMapsScript();
+      
+      // Try a simple geocoding request
+      const results = await this.geocodeAddress('תל אביב');
+      console.log('Connection test successful:', results.length > 0);
+      return results.length > 0;
+    } catch (error) {
+      console.error('Connection test failed:', error);
+      return false;
+    }
   }
 }
 

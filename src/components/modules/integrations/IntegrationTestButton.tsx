@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { googleMapsService } from '@/services/GoogleMapsService';
 
 interface IntegrationTestButtonProps {
   integrationKey: string;
@@ -49,20 +50,22 @@ export const IntegrationTestButton: React.FC<IntegrationTestButtonProps> = ({
           return { success: true };
 
         case 'maps':
-          if (!testConfig.api_key) {
-            throw new Error('חסר Google Maps API Key');
+        case 'google_maps':
+        case 'GOOGLE_MAPS':
+          console.log('=== Testing Google Maps Integration ===');
+          console.log('Test config:', testConfig);
+          
+          // First, refresh the API key from the database
+          await googleMapsService.refreshApiKey();
+          
+          // Test the connection
+          const isConnected = await googleMapsService.testConnection();
+          
+          if (!isConnected) {
+            throw new Error('לא ניתן להתחבר ל-Google Maps API. בדוק את ה-API Key');
           }
-          const mapsResponse = await fetch(
-            `https://maps.googleapis.com/maps/api/geocode/json?latlng=31.7683,35.2137&key=${testConfig.api_key}`
-          );
-          const mapsData = await mapsResponse.json();
-          if (mapsData.status === 'REQUEST_DENIED') {
-            throw new Error('API Key שגוי או חסר הרשאות');
-          }
-          if (mapsData.status === 'INVALID_REQUEST') {
-            throw new Error('בקשה לא תקינה');
-          }
-          return { success: true };
+          
+          return { success: true, message: 'החיבור ל-Google Maps תקין' };
 
         case 'icount':
           if (!testConfig.username || !testConfig.password || !testConfig.entity_id) {
@@ -88,18 +91,25 @@ export const IntegrationTestButton: React.FC<IntegrationTestButtonProps> = ({
           throw new Error('סוג אינטגרציה לא מוכר');
       }
     } catch (error: any) {
+      console.error('Integration test error:', error);
       return { success: false, message: error.message };
     }
   };
 
   const handleTest = async () => {
+    console.log('=== INTEGRATION TEST START ===');
+    console.log('Integration Key:', integrationKey);
+    console.log('Config:', config);
+    
     setLoading(true);
     setResult(null);
 
     try {
       const testResult = await testIntegration(integrationKey, config);
+      console.log('Test result:', testResult);
       setResult(testResult);
     } catch (error: any) {
+      console.error('Test error:', error);
       setResult({ success: false, message: 'שגיאה בבדיקת החיבור' });
     } finally {
       setLoading(false);
@@ -107,6 +117,10 @@ export const IntegrationTestButton: React.FC<IntegrationTestButtonProps> = ({
   };
 
   const hasRequiredConfig = () => {
+    if (integrationKey === 'maps' || integrationKey === 'google_maps' || integrationKey === 'GOOGLE_MAPS') {
+      // For Google Maps, we don't need config here as it comes from global settings
+      return true;
+    }
     return Object.keys(config).length > 0 && Object.values(config).some(value => value);
   };
 
@@ -144,13 +158,15 @@ export const IntegrationTestButton: React.FC<IntegrationTestButtonProps> = ({
               שגיאה
             </Badge>
           )}
-          {result.message && !result.success && (
-            <span className="text-sm text-red-600">{result.message}</span>
+          {result.message && (
+            <span className={`text-sm ${result.success ? 'text-green-600' : 'text-red-600'}`}>
+              {result.message}
+            </span>
           )}
         </div>
       )}
 
-      {!hasRequiredConfig() && (
+      {!hasRequiredConfig() && integrationKey !== 'maps' && integrationKey !== 'google_maps' && integrationKey !== 'GOOGLE_MAPS' && (
         <p className="text-xs text-gray-500">
           מלא את השדות הנדרשים כדי לבדוק את החיבור
         </p>
