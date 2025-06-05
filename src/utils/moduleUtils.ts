@@ -1,5 +1,4 @@
 
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Define our own simple types to avoid Supabase type complexity
@@ -361,4 +360,3 @@ export const createCustomModuleWithTable = async (
     return { success: false, error: String(error) };
   }
 };
-
