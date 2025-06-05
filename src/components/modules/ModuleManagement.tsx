@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,8 @@ import {
   Search,
   Building2,
   CheckCircle,
-  XCircle
+  XCircle,
+  Wrench
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +19,8 @@ import { CreateModuleDialog } from './CreateModuleDialog';
 import { EditModuleDialog } from './EditModuleDialog';
 import { ModuleBusinessDialog } from './ModuleBusinessDialog';
 import { ModuleCard } from './ModuleCard';
+import { CustomModuleCreator } from './CustomModuleCreator';
+import { CustomModuleViewer } from './CustomModuleViewer';
 
 interface Module {
   id: string;
@@ -25,6 +29,7 @@ interface Module {
   icon: string | null;
   route: string | null;
   is_active: boolean;
+  is_custom: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -37,6 +42,8 @@ export const ModuleManagement: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [businessDialogOpen, setBusinessDialogOpen] = useState(false);
+  const [customModuleCreatorOpen, setCustomModuleCreatorOpen] = useState(false);
+  const [customModuleViewerOpen, setCustomModuleViewerOpen] = useState(false);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const { toast } = useToast();
 
@@ -127,6 +134,10 @@ export const ModuleManagement: React.FC = () => {
     setCreateDialogOpen(true);
   };
 
+  const handleCreateCustomModule = () => {
+    setCustomModuleCreatorOpen(true);
+  };
+
   const handleEditModule = (module: Module) => {
     setSelectedModule(module);
     setEditDialogOpen(true);
@@ -135,6 +146,11 @@ export const ModuleManagement: React.FC = () => {
   const handleManageBusinesses = (module: Module) => {
     setSelectedModule(module);
     setBusinessDialogOpen(true);
+  };
+
+  const handleViewCustomModule = (module: Module) => {
+    setSelectedModule(module);
+    setCustomModuleViewerOpen(true);
   };
 
   const handleDeleteModule = async (moduleId: string) => {
@@ -208,6 +224,9 @@ export const ModuleManagement: React.FC = () => {
     );
   }
 
+  const customModules = modules.filter(m => m.is_custom);
+  const systemModules = modules.filter(m => !m.is_custom);
+
   return (
     <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
       <div className="max-w-7xl mx-auto">
@@ -218,7 +237,7 @@ export const ModuleManagement: React.FC = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -272,6 +291,20 @@ export const ModuleManagement: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">מודלים מותאמים</p>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {customModules.length}
+                  </p>
+                </div>
+                <Wrench className="h-8 w-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Controls */}
@@ -279,10 +312,16 @@ export const ModuleManagement: React.FC = () => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <CardTitle>רשימת מודלים</CardTitle>
-              <Button onClick={handleCreateModule} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                <span>צור מודל חדש</span>
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleCreateCustomModule} variant="outline" className="flex items-center gap-2">
+                  <Wrench className="h-4 w-4" />
+                  <span>צור מודל מותאם אישית</span>
+                </Button>
+                <Button onClick={handleCreateModule} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span>צור מודל רגיל</span>
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -315,21 +354,58 @@ export const ModuleManagement: React.FC = () => {
                   }
                 </p>
                 {!searchTerm && (
-                  <Button onClick={handleCreateModule}>צור מודל חדש</Button>
+                  <div className="flex gap-2 justify-center">
+                    <Button onClick={handleCreateCustomModule} variant="outline">צור מודל מותאם אישית</Button>
+                    <Button onClick={handleCreateModule}>צור מודל רגיל</Button>
+                  </div>
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredModules.map((module) => (
-                  <ModuleCard
-                    key={module.id}
-                    module={module}
-                    onEdit={handleEditModule}
-                    onManageBusinesses={handleManageBusinesses}
-                    onToggleActive={handleToggleActive}
-                    onDelete={handleDeleteModule}
-                  />
-                ))}
+              <div className="space-y-8">
+                {/* Custom Modules Section */}
+                {customModules.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <Wrench className="h-5 w-5 text-orange-600" />
+                      מודלים מותאמים אישית ({customModules.length})
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {customModules.map((module) => (
+                        <ModuleCard
+                          key={module.id}
+                          module={module}
+                          onEdit={handleEditModule}
+                          onManageBusinesses={handleManageBusinesses}
+                          onToggleActive={handleToggleActive}
+                          onDelete={handleDeleteModule}
+                          onViewCustomModule={handleViewCustomModule}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* System Modules Section */}
+                {systemModules.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <Settings className="h-5 w-5 text-blue-600" />
+                      מודלי מערכת ({systemModules.length})
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {systemModules.map((module) => (
+                        <ModuleCard
+                          key={module.id}
+                          module={module}
+                          onEdit={handleEditModule}
+                          onManageBusinesses={handleManageBusinesses}
+                          onToggleActive={handleToggleActive}
+                          onDelete={handleDeleteModule}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -352,6 +428,18 @@ export const ModuleManagement: React.FC = () => {
         <ModuleBusinessDialog
           open={businessDialogOpen}
           onOpenChange={setBusinessDialogOpen}
+          module={selectedModule}
+        />
+
+        <CustomModuleCreator
+          open={customModuleCreatorOpen}
+          onOpenChange={setCustomModuleCreatorOpen}
+          onSuccess={fetchModules}
+        />
+
+        <CustomModuleViewer
+          open={customModuleViewerOpen}
+          onOpenChange={setCustomModuleViewerOpen}
           module={selectedModule}
         />
       </div>

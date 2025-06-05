@@ -634,6 +634,85 @@ export type Database = {
           },
         ]
       }
+      module_data: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: Json
+          id: string
+          module_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          module_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          module_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_data_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      module_fields: {
+        Row: {
+          created_at: string
+          display_order: number
+          field_name: string
+          field_options: Json | null
+          field_type: string
+          id: string
+          is_required: boolean
+          module_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          field_name: string
+          field_options?: Json | null
+          field_type: string
+          id?: string
+          is_required?: boolean
+          module_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          field_name?: string
+          field_options?: Json | null
+          field_type?: string
+          id?: string
+          is_required?: boolean
+          module_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_fields_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
           created_at: string
@@ -641,6 +720,8 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean
+          is_custom: boolean
+          module_config: Json | null
           name: string
           route: string | null
           updated_at: string
@@ -651,6 +732,8 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_custom?: boolean
+          module_config?: Json | null
           name: string
           route?: string | null
           updated_at?: string
@@ -661,6 +744,8 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_custom?: boolean
+          module_config?: Json | null
           name?: string
           route?: string | null
           updated_at?: string

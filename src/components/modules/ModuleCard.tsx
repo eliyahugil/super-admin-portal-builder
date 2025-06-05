@@ -1,13 +1,17 @@
 
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { 
-  Edit, 
+  Settings, 
+  Building2, 
+  Edit2, 
   Trash2, 
-  Building2,
-  CheckCircle,
-  XCircle
+  ToggleLeft, 
+  ToggleRight,
+  Eye,
+  Wrench
 } from 'lucide-react';
 
 interface Module {
@@ -17,6 +21,7 @@ interface Module {
   icon: string | null;
   route: string | null;
   is_active: boolean;
+  is_custom: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -27,6 +32,7 @@ interface ModuleCardProps {
   onManageBusinesses: (module: Module) => void;
   onToggleActive: (moduleId: string, currentStatus: boolean) => void;
   onDelete: (moduleId: string) => void;
+  onViewCustomModule?: (module: Module) => void;
 }
 
 export const ModuleCard: React.FC<ModuleCardProps> = ({
@@ -35,81 +41,119 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({
   onManageBusinesses,
   onToggleActive,
   onDelete,
+  onViewCustomModule
 }) => {
   return (
-    <div className="p-6 border border-gray-200 rounded-lg hover:shadow-md transition-shadow" dir="rtl">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          {module.icon && (
-            <span className="text-2xl">{module.icon}</span>
+    <Card className={`h-full transition-all duration-200 hover:shadow-lg ${
+      !module.is_active ? 'opacity-60' : ''
+    }`}>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="text-2xl">
+              {module.icon || (module.is_custom ? '🔧' : '📋')}
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-lg leading-tight">
+                {module.name}
+              </CardTitle>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant={module.is_active ? 'default' : 'secondary'}>
+                  {module.is_active ? 'פעיל' : 'לא פעיל'}
+                </Badge>
+                {module.is_custom && (
+                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    <Wrench className="h-3 w-3 mr-1" />
+                    מותאם אישית
+                  </Badge>
+                )}
+                {module.route && (
+                  <Badge variant="outline" className="text-purple-600 border-purple-600">
+                    נתיב: {module.route}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="pt-0">
+        <div className="space-y-4">
+          {module.description && (
+            <p className="text-sm text-gray-600 line-clamp-2">
+              {module.description}
+            </p>
           )}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">{module.name}</h3>
-            <p className="text-sm text-gray-600 mt-1">{module.description || 'אין תיאור'}</p>
+          
+          <div className="text-xs text-gray-500">
+            נוצר: {new Date(module.created_at).toLocaleDateString('he-IL')}
           </div>
-        </div>
-        <Badge 
-          variant={module.is_active ? "default" : "secondary"}
-          className={module.is_active ? "bg-green-100 text-green-800" : ""}
-        >
-          {module.is_active ? 'פעיל' : 'לא פעיל'}
-        </Badge>
-      </div>
-
-      <div className="space-y-2 mb-4">
-        {module.route && (
-          <div className="flex items-center text-sm text-gray-600">
-            <span className="font-medium ml-2">נתיב:</span>
-            <code className="bg-gray-100 px-2 py-1 rounded text-xs">
-              {module.route}
-            </code>
-          </div>
-        )}
-        <div className="flex items-center text-sm text-gray-600">
-          <span className="font-medium ml-2">תאריך יצירה:</span>
-          <span>{new Date(module.created_at).toLocaleDateString('he-IL')}</span>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(module)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onManageBusinesses(module)}
-          >
-            <Building2 className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            variant={module.is_active ? "secondary" : "default"}
-            size="sm"
-            onClick={() => onToggleActive(module.id, module.is_active)}
-          >
-            {module.is_active ? (
-              <XCircle className="h-4 w-4" />
-            ) : (
-              <CheckCircle className="h-4 w-4" />
+          
+          <div className="flex flex-wrap gap-2">
+            {module.is_custom && onViewCustomModule && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onViewCustomModule(module)}
+                className="flex items-center gap-1"
+              >
+                <Eye className="h-3 w-3" />
+                צפה בנתונים
+              </Button>
             )}
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => onDelete(module.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(module)}
+              className="flex items-center gap-1"
+            >
+              <Edit2 className="h-3 w-3" />
+              ערוך
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onManageBusinesses(module)}
+              className="flex items-center gap-1"
+            >
+              <Building2 className="h-3 w-3" />
+              עסקים
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onToggleActive(module.id, module.is_active)}
+              className="flex items-center gap-1"
+            >
+              {module.is_active ? (
+                <>
+                  <ToggleRight className="h-3 w-3" />
+                  השבת
+                </>
+              ) : (
+                <>
+                  <ToggleLeft className="h-3 w-3" />
+                  הפעל
+                </>
+              )}
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(module.id)}
+              className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300"
+            >
+              <Trash2 className="h-3 w-3" />
+              מחק
+            </Button>
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
