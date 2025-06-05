@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 
 interface Employee {
   id: string;
@@ -25,6 +25,7 @@ interface EmployeesListProps {
 
 export const EmployeesList: React.FC<EmployeesListProps> = ({ employees, onRefetch }) => {
   const { toast } = useToast();
+  const { logActivity } = useActivityLogger();
 
   const getEmployeeTypeLabel = (type: string) => {
     const types: Record<string, string> = {
@@ -49,6 +50,17 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({ employees, onRefet
   const handleEdit = (employee: Employee) => {
     // TODO: Implement edit functionality
     console.log('Edit employee:', employee);
+    
+    logActivity({
+      action: 'view_edit_form',
+      target_type: 'employee',
+      target_id: employee.id,
+      details: { 
+        employee_name: `${employee.first_name} ${employee.last_name}`,
+        employee_id: employee.employee_id
+      }
+    });
+
     toast({
       title: 'עריכה',
       description: 'פונקציונליות עריכה תמומש בקרוב',
@@ -68,6 +80,17 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({ employees, onRefet
 
       if (error) {
         console.error('Error deleting employee:', error);
+        
+        logActivity({
+          action: 'delete_failed',
+          target_type: 'employee',
+          target_id: employeeId,
+          details: { 
+            employee_name: employeeName,
+            error: error.message 
+          }
+        });
+
         toast({
           title: 'שגיאה',
           description: 'לא ניתן למחוק את העובד',
@@ -75,6 +98,16 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({ employees, onRefet
         });
         return;
       }
+
+      logActivity({
+        action: 'delete',
+        target_type: 'employee',
+        target_id: employeeId,
+        details: { 
+          employee_name: employeeName,
+          success: true 
+        }
+      });
 
       toast({
         title: 'הצלחה',
@@ -84,6 +117,17 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({ employees, onRefet
       onRefetch();
     } catch (error) {
       console.error('Error in handleDelete:', error);
+      
+      logActivity({
+        action: 'delete_failed',
+        target_type: 'employee',
+        target_id: employeeId,
+        details: { 
+          employee_name: employeeName,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      });
+
       toast({
         title: 'שגיאה',
         description: 'אירעה שגיאה בלתי צפויה',

@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 
 interface Branch {
   id: string;
@@ -23,10 +23,19 @@ interface BranchesListProps {
 
 export const BranchesList: React.FC<BranchesListProps> = ({ branches, onRefetch }) => {
   const { toast } = useToast();
+  const { logActivity } = useActivityLogger();
 
   const handleEdit = (branch: Branch) => {
     // TODO: Implement edit functionality
     console.log('Edit branch:', branch);
+    
+    logActivity({
+      action: 'view_edit_form',
+      target_type: 'branch',
+      target_id: branch.id,
+      details: { branch_name: branch.name }
+    });
+
     toast({
       title: 'עריכה',
       description: 'פונקציונליות עריכה תמומש בקרוב',
@@ -46,6 +55,17 @@ export const BranchesList: React.FC<BranchesListProps> = ({ branches, onRefetch 
 
       if (error) {
         console.error('Error deleting branch:', error);
+        
+        logActivity({
+          action: 'delete_failed',
+          target_type: 'branch',
+          target_id: branchId,
+          details: { 
+            branch_name: branchName,
+            error: error.message 
+          }
+        });
+
         toast({
           title: 'שגיאה',
           description: 'לא ניתן למחוק את הסניף',
@@ -53,6 +73,16 @@ export const BranchesList: React.FC<BranchesListProps> = ({ branches, onRefetch 
         });
         return;
       }
+
+      logActivity({
+        action: 'delete',
+        target_type: 'branch',
+        target_id: branchId,
+        details: { 
+          branch_name: branchName,
+          success: true 
+        }
+      });
 
       toast({
         title: 'הצלחה',
@@ -62,6 +92,17 @@ export const BranchesList: React.FC<BranchesListProps> = ({ branches, onRefetch 
       onRefetch();
     } catch (error) {
       console.error('Error in handleDelete:', error);
+      
+      logActivity({
+        action: 'delete_failed',
+        target_type: 'branch',
+        target_id: branchId,
+        details: { 
+          branch_name: branchName,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      });
+
       toast({
         title: 'שגיאה',
         description: 'אירעה שגיאה בלתי צפויה',
