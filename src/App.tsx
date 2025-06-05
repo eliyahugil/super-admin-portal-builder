@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -14,6 +13,12 @@ import { EmployeeManagement } from "@/components/modules/employees/EmployeeManag
 import { DynamicModulePage } from "@/components/modules/DynamicModulePage";
 import { ModuleWrapper } from "@/components/modules/ModuleWrapper";
 import { SuperAdminIntegrations } from "@/components/admin/SuperAdminIntegrations";
+import { SuperAdminDashboard } from "@/components/admin/SuperAdminDashboard";
+import { BusinessManagement } from "@/components/admin/BusinessManagement";
+import { SystemPreview } from "@/components/admin/SystemPreview";
+import { CRMDashboard } from "@/components/crm/CRMDashboard";
+import { BusinessDashboard } from "@/components/business/BusinessDashboard";
+import { BusinessIntegrationsManager } from "@/components/business/BusinessIntegrationsManager";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +31,7 @@ const App: React.FC = () => (
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* Default Route - Dashboard */}
             <Route 
               path="/" 
               element={
@@ -37,6 +43,124 @@ const App: React.FC = () => (
                 </ProtectedRoute>
               } 
             />
+
+            {/* Super Admin Routes */}
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <SuperAdminDashboard />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/businesses" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <BusinessManagement />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/modules" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <ModuleManagement />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/integrations" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <SuperAdminIntegrations />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/system-preview/:moduleId" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <SystemPreview />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* CRM Routes */}
+            <Route 
+              path="/crm" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <CRMDashboard />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/crm/:crmModule" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <CRMDashboard />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* Business Routes with Business ID */}
+            <Route 
+              path="/:businessId/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <BusinessDashboard />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/:businessId/integrations" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <BusinessIntegrationsManager />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/:businessId/integrations/:integration" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <BusinessIntegrationsManager />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* Existing Module Routes */}
             <Route 
               path="/modules" 
               element={
@@ -48,7 +172,6 @@ const App: React.FC = () => (
                 </ProtectedRoute>
               } 
             />
-            {/* Dynamic module routes with sub-modules */}
             <Route 
               path="/modules/:moduleRoute" 
               element={
@@ -71,19 +194,8 @@ const App: React.FC = () => (
                 </ProtectedRoute>
               } 
             />
-            {/* Super Admin Routes */}
-            <Route 
-              path="/super-admin/integrations" 
-              element={
-                <ProtectedRoute>
-                  <div className="min-h-screen bg-gray-50">
-                    <Header />
-                    <SuperAdminIntegrations />
-                  </div>
-                </ProtectedRoute>
-              } 
-            />
-            {/* Legacy employee route - redirect to new dynamic route */}
+
+            {/* Legacy Routes */}
             <Route 
               path="/employees" 
               element={
@@ -95,7 +207,6 @@ const App: React.FC = () => (
                 </ProtectedRoute>
               } 
             />
-            {/* Dynamic route for custom modules */}
             <Route 
               path="/custom/:moduleRoute" 
               element={
@@ -107,6 +218,7 @@ const App: React.FC = () => (
                 </ProtectedRoute>
               } 
             />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

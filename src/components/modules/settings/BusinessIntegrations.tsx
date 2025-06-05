@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { IntegrationManagement } from '../integrations/IntegrationManagement';
+import { BusinessIntegrationsManager } from '@/components/business/BusinessIntegrationsManager';
 
 export const BusinessIntegrations: React.FC = () => {
-  return <IntegrationManagement />;
+  return <BusinessIntegrationsManager />;
 };
