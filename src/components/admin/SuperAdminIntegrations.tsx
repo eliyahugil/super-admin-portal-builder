@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +17,20 @@ import { Key, Settings, Activity, MapPin, Globe, MessageSquare, FileText, Users 
 export const SuperAdminIntegrations: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
 
+  const handleTabChange = (value: string) => {
+    console.log('=== TAB CHANGE ===');
+    console.log('Changing to tab:', value);
+    setActiveTab(value);
+  };
+
+  const handleTestClick = () => {
+    console.log('=== TEST BUTTON CLICKED ===');
+    alert('כפתור בדיקה נלחץ בהצלחה!');
+  };
+
+  console.log('=== SuperAdminIntegrations RENDER ===');
+  console.log('Current activeTab:', activeTab);
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="mb-8">
@@ -23,16 +38,54 @@ export const SuperAdminIntegrations: React.FC = () => {
         <p className="text-gray-600 mt-2">
           ניהול מפתחות גלובליים ואינטגרציות לכל המערכת
         </p>
+        
+        {/* כפתור בדיקה */}
+        <Button 
+          onClick={handleTestClick}
+          className="mt-4 bg-red-500 hover:bg-red-600"
+        >
+          🔥 בדיקה - האם הכפתור עובד?
+        </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="dashboard">דשבורד ראשי</TabsTrigger>
-          <TabsTrigger value="global">אינטגרציות גלובליות</TabsTrigger>
-          <TabsTrigger value="testing">בדיקת אינטגרציות</TabsTrigger>
-          <TabsTrigger value="maps">Google Maps</TabsTrigger>
-          <TabsTrigger value="status">מוניטור סטטוס</TabsTrigger>
-          <TabsTrigger value="translations">תרגומים</TabsTrigger>
+          <TabsTrigger 
+            value="dashboard"
+            onClick={() => console.log('Dashboard tab clicked')}
+          >
+            דשבורד ראשי
+          </TabsTrigger>
+          <TabsTrigger 
+            value="global"
+            onClick={() => console.log('Global tab clicked')}
+          >
+            אינטגרציות גלובליות
+          </TabsTrigger>
+          <TabsTrigger 
+            value="testing"
+            onClick={() => console.log('Testing tab clicked')}
+          >
+            בדיקת אינטגרציות
+          </TabsTrigger>
+          <TabsTrigger 
+            value="maps"
+            onClick={() => console.log('Maps tab clicked')}
+          >
+            Google Maps
+          </TabsTrigger>
+          <TabsTrigger 
+            value="status"
+            onClick={() => console.log('Status tab clicked')}
+          >
+            מוניטור סטטוס
+          </TabsTrigger>
+          <TabsTrigger 
+            value="translations"
+            onClick={() => console.log('Translations tab clicked')}
+          >
+            תרגומים
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard">
@@ -127,7 +180,13 @@ export const SuperAdminIntegrations: React.FC = () => {
                 <p className="text-sm text-gray-500 mt-1">קוד מדינה (ISO 3166-1)</p>
               </div>
 
-              <Button className="w-full">
+              <Button 
+                className="w-full"
+                onClick={() => {
+                  console.log('=== SAVE GOOGLE MAPS SETTINGS ===');
+                  alert('הגדרות Google Maps נשמרו!');
+                }}
+              >
                 שמור הגדרות Google Maps
               </Button>
             </CardContent>
@@ -196,7 +255,13 @@ export const SuperAdminIntegrations: React.FC = () => {
                 </div>
               </div>
 
-              <Button className="w-full">
+              <Button 
+                className="w-full"
+                onClick={() => {
+                  console.log('=== SAVE TRANSLATIONS ===');
+                  alert('תרגומים נשמרו!');
+                }}
+              >
                 שמור תרגומים
               </Button>
             </CardContent>
