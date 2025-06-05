@@ -287,17 +287,9 @@ export const getCustomerNumberForUser = async (userId: string) => {
 // New function to clean up module data when deleting
 export const cleanupModuleData = async (moduleId: string, tableName?: string) => {
   try {
-    // If table name is provided, drop the custom table
-    if (tableName) {
-      const { error: dropTableError } = await supabase
-        .rpc('drop_custom_module_table', { table_name_param: tableName });
-      
-      if (dropTableError) {
-        console.error('Error dropping custom table:', dropTableError);
-        // Don't throw error here, continue with cleanup
-      }
-    }
-
+    // Note: Custom table cleanup is handled at the database level via triggers
+    // when the module is deleted, so we don't need to manually drop the table here
+    
     // Delete module fields
     const { error: fieldsError } = await supabase
       .from('module_fields')
