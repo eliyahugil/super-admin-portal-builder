@@ -27,21 +27,23 @@ import { BusinessProfile } from './settings/BusinessProfile';
 import { UsersManagement } from './settings/UsersManagement';
 import { PermissionsManagement } from './settings/PermissionsManagement';
 import { BusinessIntegrations } from './settings/BusinessIntegrations';
+import { ManagementToolsSection } from './employees/ManagementToolsSection';
 import { moduleRouteMapping, parseModuleRoute, isValidSubModule } from '@/utils/moduleRouting';
 
 export const ModuleWrapper: React.FC = () => {
-  const { moduleRoute, subModule } = useParams();
+  const { businessId, moduleRoute, subModule, itemId } = useParams();
   
   if (!moduleRoute) {
-    return <Navigate to="/modules" replace />;
+    return <Navigate to="/" replace />;
   }
 
-  const routeInfo = parseModuleRoute(`/modules/${moduleRoute}${subModule ? `/${subModule}` : ''}`);
+  const fullRoute = `/modules/${moduleRoute}${subModule ? `/${subModule}` : ''}`;
+  const routeInfo = parseModuleRoute(fullRoute);
   
   // Check if the module route exists in our mapping
   const moduleConfig = moduleRouteMapping[moduleRoute];
   if (!moduleConfig) {
-    return <Navigate to="/modules" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // If there's a sub-module, validate it exists
@@ -49,7 +51,7 @@ export const ModuleWrapper: React.FC = () => {
     return <Navigate to={`/modules/${moduleRoute}`} replace />;
   }
 
-  // Route mapping for components
+  // Route mapping for components - now includes shift management components
   const componentMap: Record<string, React.ComponentType> = {
     // Employee modules
     'employees': EmployeeManagement,
@@ -58,10 +60,21 @@ export const ModuleWrapper: React.FC = () => {
     'employees/employee-requests': EmployeeRequests,
     'employees/employee-docs': EmployeeDocs,
     'employees/shifts': ShiftManagement,
+    'employees/import': () => <div>Employee Import Component</div>, // Placeholder
+    'employees/profile': () => <div>Employee Profile Component</div>, // Placeholder
     
     // Branch modules
     'branches': BranchManagement,
     'branches/branch-roles': BranchRoles,
+    'branches/create': () => <div>Create Branch Component</div>, // Placeholder
+    'branches/edit': () => <div>Edit Branch Component</div>, // Placeholder
+    
+    // Shift modules (dedicated shift management)
+    'shifts': () => <div>Shift Overview Component</div>, // Placeholder
+    'shifts/requests': () => <div>Shift Requests Component</div>, // Placeholder
+    'shifts/approval': ManagementToolsSection, // Use existing approval component
+    'shifts/schedule': () => <div>Shift Schedule Component</div>, // Placeholder
+    'shifts/admin': ManagementToolsSection, // Use existing admin tools
     
     // Integration modules
     'integrations': IntegrationManagement,
@@ -92,6 +105,21 @@ export const ModuleWrapper: React.FC = () => {
     'settings/users': UsersManagement,
     'settings/permissions': PermissionsManagement,
     'settings/integrations': BusinessIntegrations,
+    
+    // Admin modules
+    'admin': () => <div>Admin Dashboard Component</div>, // Placeholder
+    'admin/businesses': () => <div>Business Management Component</div>, // Placeholder
+    'admin/modules': () => <div>Module Management Component</div>, // Placeholder
+    'admin/integrations': () => <div>Admin Integrations Component</div>, // Placeholder
+    'admin/system-preview': () => <div>System Preview Component</div>, // Placeholder
+    
+    // CRM modules
+    'crm': () => <div>CRM Dashboard Component</div>, // Placeholder
+    'crm/leads': () => <div>CRM Leads Component</div>, // Placeholder
+    'crm/franchisees': () => <div>CRM Franchisees Component</div>, // Placeholder
+    'crm/wholesale': () => <div>CRM Wholesale Component</div>, // Placeholder
+    'crm/events': () => <div>CRM Events Component</div>, // Placeholder
+    'crm/clients': () => <div>CRM Clients Component</div>, // Placeholder
   };
 
   const routeKey = subModule ? `${moduleRoute}/${subModule}` : moduleRoute;
@@ -102,7 +130,7 @@ export const ModuleWrapper: React.FC = () => {
     if (subModule) {
       return <Navigate to={`/modules/${moduleRoute}`} replace />;
     }
-    return <Navigate to="/modules" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return (

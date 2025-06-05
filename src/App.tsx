@@ -19,20 +19,29 @@ function App() {
         <Toaster />
         <Router>
           <Routes>
+            {/* Root route */}
             <Route path="/" element={<Index />} />
             
-            <Route path="/integrations" element={
+            {/* Business-specific routes with modules */}
+            <Route path="/business/:businessId/modules/:moduleRoute" element={
               <ProtectedRoute>
-                <IntegrationsRoute />
+                <ModuleWrapper />
               </ProtectedRoute>
             } />
             
-            <Route path="/global-integrations" element={
+            <Route path="/business/:businessId/modules/:moduleRoute/:subModule" element={
               <ProtectedRoute>
-                <GlobalIntegrationsPage />
+                <ModuleWrapper />
               </ProtectedRoute>
             } />
             
+            <Route path="/business/:businessId/modules/:moduleRoute/:subModule/:itemId" element={
+              <ProtectedRoute>
+                <ModuleWrapper />
+              </ProtectedRoute>
+            } />
+            
+            {/* Standard module routes (without business prefix) */}
             <Route path="/modules/:moduleRoute" element={
               <ProtectedRoute>
                 <ModuleWrapper />
@@ -42,6 +51,51 @@ function App() {
             <Route path="/modules/:moduleRoute/:subModule" element={
               <ProtectedRoute>
                 <ModuleWrapper />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/modules/:moduleRoute/:subModule/:itemId" element={
+              <ProtectedRoute>
+                <ModuleWrapper />
+              </ProtectedRoute>
+            } />
+            
+            {/* Admin routes */}
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <ModuleWrapper />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin/:subModule" element={
+              <ProtectedRoute>
+                <ModuleWrapper />
+              </ProtectedRoute>
+            } />
+            
+            {/* CRM routes */}
+            <Route path="/crm" element={
+              <ProtectedRoute>
+                <ModuleWrapper />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/crm/:subModule" element={
+              <ProtectedRoute>
+                <ModuleWrapper />
+              </ProtectedRoute>
+            } />
+            
+            {/* Integration routes */}
+            <Route path="/integrations" element={
+              <ProtectedRoute>
+                <IntegrationsRoute />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/global-integrations" element={
+              <ProtectedRoute>
+                <GlobalIntegrationsPage />
               </ProtectedRoute>
             } />
             

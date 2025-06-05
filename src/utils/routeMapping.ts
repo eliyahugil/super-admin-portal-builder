@@ -72,6 +72,8 @@ export const businessRoutes: Record<string, RouteConfig> = {
       'employee-requests': { name: 'בקשות עובדים', description: 'ניהול בקשות ואישורים', icon: '📝' },
       'employee-docs': { name: 'מסמכים חתומים', description: 'מסמכים וטפסים חתומים דיגיטלית', icon: '📋' },
       'shifts': { name: 'ניהול משמרות', description: 'תכנון וניהול משמרות', icon: '🕐' },
+      'import': { name: 'ייבוא עובדים', description: 'ייבוא מסיבי מאקסל', icon: '📈' },
+      'profile': { name: 'פרופיל עובד', description: 'צפייה ועריכת פרטי עובד', icon: '👤' },
     }
   },
   'branches': {
@@ -81,6 +83,20 @@ export const businessRoutes: Record<string, RouteConfig> = {
     requiresBusiness: true,
     subRoutes: {
       'branch-roles': { name: 'תפקידי סניף', description: 'ניהול תפקידים בסניף', icon: '👔' },
+      'create': { name: 'יצירת סניף', description: 'הוספת סניף חדש', icon: '➕' },
+      'edit': { name: 'עריכת סניף', description: 'עריכת פרטי סניף', icon: '✏️' },
+    }
+  },
+  'shifts': {
+    name: 'ניהול משמרות',
+    description: 'בקשות ואישור משמרות',
+    icon: '⏰',
+    requiresBusiness: true,
+    subRoutes: {
+      'requests': { name: 'בקשות משמרת', description: 'הגשת בקשות למשמרות', icon: '📝' },
+      'approval': { name: 'אישור משמרות', description: 'אישור וניהול בקשות משמרות', icon: '✅' },
+      'schedule': { name: 'לוח משמרות', description: 'תצוגת לוח שעות', icon: '📅' },
+      'admin': { name: 'ניהול משמרות', description: 'כלי ניהול למנהלים', icon: '⚙️' },
     }
   },
   'integrations': {
@@ -155,6 +171,53 @@ export const getFullRoute = (businessId: string | null, route: string): string =
   }
   
   return `/${route}`;
+};
+
+// יצירת ראוטים בפורמט מודולים
+export const getModuleRoutes = (businessId?: string) => {
+  const baseRoutes = businessId ? `/business/${businessId}` : '';
+  
+  return {
+    employees: {
+      base: `${baseRoutes}/modules/employees`,
+      files: `${baseRoutes}/modules/employees/employee-files`,
+      attendance: `${baseRoutes}/modules/employees/attendance`,
+      requests: `${baseRoutes}/modules/employees/employee-requests`,
+      docs: `${baseRoutes}/modules/employees/employee-docs`,
+      shifts: `${baseRoutes}/modules/employees/shifts`,
+      import: `${baseRoutes}/modules/employees/import`,
+      profile: (id: string) => `${baseRoutes}/modules/employees/profile/${id}`,
+    },
+    branches: {
+      base: `${baseRoutes}/modules/branches`,
+      roles: `${baseRoutes}/modules/branches/branch-roles`,
+      create: `${baseRoutes}/modules/branches/create`,
+      edit: (id: string) => `${baseRoutes}/modules/branches/edit/${id}`,
+    },
+    shifts: {
+      base: `${baseRoutes}/modules/shifts`,
+      requests: `${baseRoutes}/modules/shifts/requests`,
+      approval: `${baseRoutes}/modules/shifts/approval`,
+      schedule: `${baseRoutes}/modules/shifts/schedule`,
+      admin: `${baseRoutes}/modules/shifts/admin`,
+    },
+    integrations: {
+      base: `${baseRoutes}/modules/integrations`,
+      googleMaps: `${baseRoutes}/modules/integrations/google-maps`,
+      whatsapp: `${baseRoutes}/modules/integrations/whatsapp`,
+      facebook: `${baseRoutes}/modules/integrations/facebook`,
+      invoices: `${baseRoutes}/modules/integrations/invoices`,
+      crm: `${baseRoutes}/modules/integrations/crm`,
+      payments: `${baseRoutes}/modules/integrations/payments`,
+      custom: `${baseRoutes}/modules/integrations/custom`,
+    },
+    settings: {
+      base: `${baseRoutes}/modules/settings`,
+      profile: `${baseRoutes}/modules/settings/profile`,
+      users: `${baseRoutes}/modules/settings/users`,
+      permissions: `${baseRoutes}/modules/settings/permissions`,
+    }
+  };
 };
 
 // מיזוג כל הראוטרים
