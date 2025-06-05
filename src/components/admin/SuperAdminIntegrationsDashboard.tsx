@@ -181,8 +181,8 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
   };
 
   const navigateToGlobalSettings = () => {
-    // Navigate to global integrations admin page
-    window.location.href = '/admin/modules/global-integrations';
+    // Use React Router navigation instead of window.location
+    window.open('/global-integrations', '_blank');
   };
 
   const getCategoryColor = (category: string) => {
