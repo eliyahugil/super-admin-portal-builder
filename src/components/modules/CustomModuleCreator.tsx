@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -118,32 +119,17 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
     try {
       console.log('Starting custom module creation...');
       
-      // Generate table name and route using utility functions
-      const tableName = generateTableName(moduleName);
-      const routeParam = generateRoute(moduleName);
-      const fullRoute = `/custom/${routeParam}`;
-      
-      console.log('Generated table name:', tableName);
-      console.log('Generated route parameter:', routeParam);
-      console.log('Full route:', fullRoute);
-
-      // Create the module first
+      // Create the module first to get the module ID
       const { data: moduleData, error: moduleError } = await supabase
         .from('modules')
         .insert({
           name: moduleName,
           description: moduleDescription,
           icon: moduleIcon,
-          route: fullRoute,
+          route: `/custom/${generateRoute(moduleName)}`,
           is_active: true,
           is_custom: true,
-          module_config: {
-            table_name: tableName,
-            fields: fields.map((field, index) => ({
-              ...field,
-              display_order: index + 1
-            }))
-          }
+          module_config: {}
         })
         .select()
         .single();
@@ -159,6 +145,41 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
       }
 
       console.log('Created module:', moduleData);
+
+      // Now generate table name with module ID for uniqueness
+      const tableName = generateTableName(moduleName, moduleData.id);
+      const routeParam = generateRoute(moduleName);
+      const fullRoute = `/custom/${routeParam}`;
+      
+      console.log('Generated table name:', tableName);
+      console.log('Generated route parameter:', routeParam);
+      console.log('Full route:', fullRoute);
+
+      // Update the module with the correct table name in config
+      const { error: updateError } = await supabase
+        .from('modules')
+        .update({
+          module_config: {
+            table_name: tableName,
+            fields: fields.map((field, index) => ({
+              ...field,
+              display_order: index + 1
+            }))
+          }
+        })
+        .eq('id', moduleData.id);
+
+      if (updateError) {
+        console.error('Error updating module config:', updateError);
+        // Clean up the module if update fails
+        await supabase.from('modules').delete().eq('id', moduleData.id);
+        toast({
+          title: 'שגיאה',
+          description: 'לא ניתן לעדכן הגדרות המודל',
+          variant: 'destructive'
+        });
+        return;
+      }
 
       // Create field definitions in module_fields table
       const fieldsToInsert = fields.map((field, index) => ({

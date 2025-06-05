@@ -1,4 +1,3 @@
-
 // Mapping of Hebrew words to English for route generation
 const hebrewToEnglishMapping: Record<string, string> = {
   // Business & Management
@@ -165,14 +164,22 @@ const hebrewToIconMapping: Record<string, string> = {
   'אישור': '✅'
 };
 
-export const generateTableName = (name: string): string => {
+export const generateTableName = (name: string, moduleId?: string): string => {
   // Convert Hebrew to English, then create table name
   const englishName = translateHebrewToEnglish(name);
-  return 'custom_' + englishName
+  const baseName = 'custom_' + englishName
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, '_')
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '');
+  
+  // If moduleId is provided, append a short version of it to ensure uniqueness
+  if (moduleId) {
+    const shortId = moduleId.substring(0, 8);
+    return `${baseName}_${shortId}`;
+  }
+  
+  return baseName;
 };
 
 export const generateRoute = (name: string): string => {
