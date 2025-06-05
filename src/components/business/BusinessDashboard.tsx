@@ -16,6 +16,9 @@ import {
 } from 'lucide-react';
 import { useRealData } from '@/hooks/useRealData';
 import { useBusiness } from '@/hooks/useBusiness';
+import { ShiftsAdminTable } from '@/components/modules/employees/ShiftsAdminTable';
+import { CreateShiftForm } from '@/components/modules/employees/CreateShiftForm';
+import { EmployeeRequestForm } from '@/components/modules/employees/EmployeeRequestForm';
 
 interface DashboardCardProps {
   title: string;
@@ -174,6 +177,12 @@ export const BusinessDashboard: React.FC = () => {
         ))}
       </div>
 
+      {/* Management Tools */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <ShiftsAdminTable />
+        <CreateShiftForm />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity */}
         <Card>
@@ -202,33 +211,8 @@ export const BusinessDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>פעולות מהירות</CardTitle>
-            <CardDescription>גישה מהירה לפונקציות נפוצות</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="h-20 flex flex-col">
-                <Users className="h-6 w-6 mb-2" />
-                הוסף עובד
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col">
-                <Calendar className="h-6 w-6 mb-2" />
-                נהל משמרות
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col">
-                <DollarSign className="h-6 w-6 mb-2" />
-                צור חשבונית
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col">
-                <TrendingUp className="h-6 w-6 mb-2" />
-                דוחות
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Employee Request Form */}
+        <EmployeeRequestForm employeeId={activeEmployees[0]?.id} />
       </div>
     </div>
   );
