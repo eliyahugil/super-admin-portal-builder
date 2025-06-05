@@ -14,45 +14,101 @@ import {
   Settings,
   Eye
 } from 'lucide-react';
+import { useRealData } from '@/hooks/useRealData';
+import { useBusiness } from '@/hooks/useBusiness';
+
+interface DashboardCardProps {
+  title: string;
+  value: number | string;
+  icon: React.ComponentType<any>;
+  color: string;
+  bgColor: string;
+}
+
+const DashboardCard: React.FC<DashboardCardProps> = ({ title, value, icon: Icon, color, bgColor }) => (
+  <Card>
+    <CardContent className="p-6">
+      <div className="flex items-center">
+        <div className={`p-3 rounded-lg ${bgColor}`}>
+          <Icon className={`h-6 w-6 ${color}`} />
+        </div>
+        <div className="mr-4">
+          <p className="text-2xl font-bold">{value}</p>
+          <p className="text-sm text-gray-600">{title}</p>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
 
 export const BusinessDashboard: React.FC = () => {
-  const { businessId } = useParams();
+  const { businessId: urlBusinessId } = useParams();
+  const { businessId, business, isLoading: businessLoading } = useBusiness();
+  
+  // Use businessId from URL if available, otherwise use from context
+  const currentBusinessId = urlBusinessId || businessId;
 
-  // Mock business data
-  const businessData = {
-    id: businessId,
-    name: 'קפה ברחוב הראשי',
-    owner: 'יוסי כהן',
-    employees: 12,
-    revenue: 45600,
-    notifications: 3
-  };
+  const { data: employees } = useRealData<any>({
+    queryKey: ['employees', currentBusinessId],
+    tableName: 'employees',
+    filters: currentBusinessId !== 'super_admin' ? { business_id: currentBusinessId } : {},
+    enabled: !!currentBusinessId && !businessLoading
+  });
 
+  const { data: shifts } = useRealData<any>({
+    queryKey: ['shifts-today', currentBusinessId],
+    tableName: 'scheduled_shifts',
+    filters: { shift_date: new Date().toISOString().split('T')[0] },
+    enabled: !!currentBusinessId && !businessLoading
+  });
+
+  const { data: attendance } = useRealData<any>({
+    queryKey: ['attendance-today', currentBusinessId],
+    tableName: 'attendance_records',
+    enabled: !!currentBusinessId && !businessLoading
+  });
+
+  const { data: requests } = useRealData<any>({
+    queryKey: ['pending-requests', currentBusinessId],
+    tableName: 'employee_requests',
+    filters: { status: 'pending' },
+    enabled: !!currentBusinessId && !businessLoading
+  });
+
+  // Filter today's attendance records
+  const todayAttendance = attendance?.filter((record: any) => {
+    const recordDate = new Date(record.recorded_at).toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
+    return recordDate === today;
+  }) || [];
+
+  const activeEmployees = employees?.filter((emp: any) => emp.is_active) || [];
+  
   const quickStats = [
     {
       title: 'עובדים פעילים',
-      value: businessData.employees,
+      value: activeEmployees.length,
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100'
     },
     {
-      title: 'הכנסות חודשיות',
-      value: `₪${businessData.revenue.toLocaleString()}`,
-      icon: DollarSign,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100'
-    },
-    {
-      title: 'משמרות השבוע',
-      value: '42',
+      title: 'משמרות היום',
+      value: shifts?.length || 0,
       icon: Calendar,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100'
     },
     {
-      title: 'התראות',
-      value: businessData.notifications,
+      title: 'כניסות היום',
+      value: todayAttendance.length,
+      icon: DollarSign,
+      color: 'text-green-600',
+      bgColor: 'bg-green-100'
+    },
+    {
+      title: 'בקשות ממתינות',
+      value: requests?.length || 0,
       icon: Bell,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100'
@@ -61,32 +117,42 @@ export const BusinessDashboard: React.FC = () => {
 
   const recentActivity = [
     {
-      title: 'עובד חדש נוסף',
-      description: 'מרים כהן נוספה למערכת',
-      time: '10 דקות',
+      title: 'נתונים אמיתיים זמינים',
+      description: 'המערכת מציגה נתונים אמיתיים מהמסד נתונים',
+      time: 'עכשיו',
+      type: 'system'
+    },
+    {
+      title: `${activeEmployees.length} עובדים פעילים`,
+      description: 'עובדים רשומים במערכת',
+      time: 'עדכון אחרון',
       type: 'employee'
     },
     {
-      title: 'משמרת עודכנה',
-      description: 'משמרת ערב - ראשון עודכנה',
-      time: '2 שעות',
+      title: `${shifts?.length || 0} משמרות היום`,
+      description: 'משמרות מתוכננות להיום',
+      time: 'היום',
       type: 'shift'
-    },
-    {
-      title: 'חשבונית נוצרה',
-      description: 'חשבונית #1234 נוצרה',
-      time: '1 יום',
-      type: 'invoice'
     }
   ];
+
+  if (businessLoading) {
+    return (
+      <div className="max-w-7xl mx-auto p-6" dir="rtl">
+        <div className="text-center">טוען...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto p-6" dir="rtl">
       <div className="mb-8">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{businessData.name}</h1>
-            <p className="text-gray-600 mt-2">דשבורד ניהול העסק</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {business?.name || 'דשבורד עסקי'}
+            </h1>
+            <p className="text-gray-600 mt-2">דשבורד ניהול העסק - נתונים אמיתיים</p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline">
@@ -104,19 +170,7 @@ export const BusinessDashboard: React.FC = () => {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         {quickStats.map((stat, index) => (
-          <Card key={index}>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                </div>
-                <div className="mr-4">
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-sm text-gray-600">{stat.title}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <DashboardCard key={index} {...stat} />
         ))}
       </div>
 
@@ -125,7 +179,7 @@ export const BusinessDashboard: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle>פעילות אחרונה</CardTitle>
-            <CardDescription>עדכונים ופעילות בעסק</CardDescription>
+            <CardDescription>עדכונים ופעילות בעסק (נתונים אמיתיים)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -139,7 +193,7 @@ export const BusinessDashboard: React.FC = () => {
                       {activity.description}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      לפני {activity.time}
+                      {activity.time}
                     </p>
                   </div>
                 </div>
