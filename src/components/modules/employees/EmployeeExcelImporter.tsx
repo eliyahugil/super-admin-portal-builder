@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Download, Check, X, Plus, Eye } from 'lucide-react';
+import type { Employee } from '@/types/supabase';
 
 interface ExcelRow {
   [key: string]: any;
@@ -29,7 +29,7 @@ interface FieldMapping {
 
 interface PreviewEmployee {
   rowIndex: number;
-  data: Record<string, any>;
+  data: Partial<Employee> & { business_id: string };
   isValid: boolean;
   errors: string[];
   isDuplicate?: boolean;
@@ -233,8 +233,8 @@ export const EmployeeExcelImporter: React.FC = () => {
 
   const generatePreview = () => {
     const preview: PreviewEmployee[] = rawData.map((row, index) => {
-      const employeeData: Record<string, any> = {
-        business_id: businessId
+      const employeeData: Partial<Employee> & { business_id: string } = {
+        business_id: businessId!
       };
       const errors: string[] = [];
 
@@ -272,17 +272,42 @@ export const EmployeeExcelImporter: React.FC = () => {
             }
           }
 
-          employeeData[mapping.systemField] = value;
-        } else if (mapping.isCustomField) {
-          // Handle custom fields
-          const customFieldKey = mapping.excelHeader;
-          employeeData[`custom_${customFieldKey.replace(/\s+/g, '_')}`] = row[mapping.excelHeader];
+          if (mapping.systemField === 'full_name' && value) {
+            // Split full name into first and last name if separate names not provided
+            const nameParts = value.toString().split(' ');
+            if (!employeeData.first_name) {
+              employeeData.first_name = nameParts[0] || '';
+            }
+            if (!employeeData.last_name && nameParts.length > 1) {
+              employeeData.last_name = nameParts.slice(1).join(' ');
+            }
+          }
+
+          if (mapping.systemField === 'weekly_hours_required' && value) {
+            const numValue = Number(value);
+            if (!isNaN(numValue)) {
+              employeeData.weekly_hours_required = numValue;
+            }
+          }
+
+          // Set the field value (excluding special cases handled above)
+          if (mapping.systemField !== 'branch_name' && mapping.systemField !== 'full_name') {
+            (employeeData as any)[mapping.systemField] = value;
+          }
         }
       });
 
-      // Validation
-      if (!employeeData.first_name && !employeeData.full_name) {
-        errors.push('שם חובה');
+      // Ensure required fields are present
+      if (!employeeData.first_name) {
+        errors.push('שם פרטי חובה');
+      }
+      if (!employeeData.last_name) {
+        errors.push('שם משפחה חובה');
+      }
+
+      // Set default employee type if not provided
+      if (!employeeData.employee_type) {
+        employeeData.employee_type = 'permanent';
       }
 
       // Check for duplicates
@@ -322,9 +347,27 @@ export const EmployeeExcelImporter: React.FC = () => {
         return;
       }
 
+      // Type assertion to ensure compatibility with Supabase insert
+      const employeesToInsert = validEmployees.map(emp => ({
+        business_id: emp.business_id,
+        first_name: emp.first_name || '',
+        last_name: emp.last_name || '',
+        email: emp.email || null,
+        phone: emp.phone || null,
+        id_number: emp.id_number || null,
+        employee_id: emp.employee_id || null,
+        address: emp.address || null,
+        hire_date: emp.hire_date || null,
+        employee_type: emp.employee_type || 'permanent',
+        weekly_hours_required: emp.weekly_hours_required || null,
+        main_branch_id: emp.main_branch_id || null,
+        notes: emp.notes || null,
+        is_active: true
+      }));
+
       const { data, error } = await supabase
         .from('employees')
-        .insert(validEmployees);
+        .insert(employeesToInsert);
 
       if (error) {
         toast({
@@ -335,7 +378,7 @@ export const EmployeeExcelImporter: React.FC = () => {
       } else {
         toast({
           title: 'ייבוא הושלם בהצלחה',
-          description: `${validEmployees.length} עובדים נוספו למערכת`,
+          description: `${employeesToInsert.length} עובדים נוספו למערכת`,
         });
         
         // Reset form
@@ -530,7 +573,7 @@ export const EmployeeExcelImporter: React.FC = () => {
                       </TableCell>
                       <TableCell>{employee.rowIndex}</TableCell>
                       <TableCell>
-                        {employee.data.full_name || `${employee.data.first_name || ''} ${employee.data.last_name || ''}`.trim()}
+                        {`${employee.data.first_name || ''} ${employee.data.last_name || ''}`.trim()}
                       </TableCell>
                       <TableCell>{employee.data.email}</TableCell>
                       <TableCell>{employee.data.phone}</TableCell>
