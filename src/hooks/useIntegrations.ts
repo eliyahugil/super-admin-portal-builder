@@ -76,38 +76,73 @@ export function useIntegrations(businessId?: string) {
       integrationName: string; 
       values: Partial<BusinessIntegration> 
     }) => {
-      if (!businessId) throw new Error('Business ID is required');
+      console.log('=== updateIntegration mutation START ===');
+      console.log('Business ID:', businessId);
+      console.log('Integration Name:', integrationName);
+      console.log('Values:', values);
+      
+      if (!businessId) {
+        console.error('Business ID is required');
+        throw new Error('Business ID is required');
+      }
 
       const existingIntegration = businessIntegrations?.find(
         bi => bi.integration_name === integrationName
       );
 
+      console.log('Existing integration:', existingIntegration);
+
       if (existingIntegration) {
         // Update existing integration
-        const { error } = await supabase
+        console.log('Updating existing integration with ID:', existingIntegration.id);
+        const { data, error } = await supabase
           .from('business_integrations')
           .update(values)
-          .eq('id', existingIntegration.id);
+          .eq('id', existingIntegration.id)
+          .select();
 
-        if (error) throw error;
+        console.log('Update result:', { data, error });
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
+        return data;
       } else {
         // Create new integration
+        console.log('Creating new integration...');
         const integration = integrations?.find(i => i.integration_name === integrationName);
-        if (!integration) throw new Error('Integration not found');
+        console.log('Found integration template:', integration);
+        
+        if (!integration) {
+          console.error('Integration template not found');
+          throw new Error('Integration not found');
+        }
 
-        const { error } = await supabase
+        const insertData = {
+          business_id: businessId,
+          integration_name: integrationName,
+          display_name: integration.display_name,
+          ...values
+        };
+        
+        console.log('Insert data:', insertData);
+
+        const { data, error } = await supabase
           .from('business_integrations')
-          .insert({
-            business_id: businessId,
-            integration_name: integrationName,
-            display_name: integration.display_name,
-            ...values
-          });
+          .insert(insertData)
+          .select();
 
-        if (error) throw error;
+        console.log('Insert result:', { data, error });
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
+        return data;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('=== updateIntegration SUCCESS ===');
+      console.log('Success data:', data);
       queryClient.invalidateQueries({ queryKey: ['business-integrations', businessId] });
       toast({
         title: 'הצלחה',
@@ -115,6 +150,7 @@ export function useIntegrations(businessId?: string) {
       });
     },
     onError: (error) => {
+      console.log('=== updateIntegration ERROR ===');
       console.error('Error updating integration:', error);
       toast({
         title: 'שגיאה',

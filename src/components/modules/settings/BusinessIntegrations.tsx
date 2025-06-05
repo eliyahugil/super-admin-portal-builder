@@ -20,17 +20,34 @@ export const BusinessIntegrations: React.FC = () => {
   const [viewMode, setViewMode] = useState<'merged' | 'tabs'>('merged');
 
   const handleIntegrationSave = (integrationKey: string, updatedFields: Record<string, any>) => {
-    console.log('Saving integration:', integrationKey, updatedFields);
+    console.log('=== handleIntegrationSave START ===');
+    console.log('Business ID:', business?.id);
+    console.log('Integration Key:', integrationKey);
+    console.log('Updated Fields:', updatedFields);
+    console.log('Available integrations:', integrations);
+    console.log('Business integrations:', businessIntegrations);
+    
+    if (!business?.id) {
+      console.error('No business ID available');
+      return;
+    }
     
     // Use the updateIntegration function from useIntegrations hook
-    updateIntegration({
-      integrationName: integrationKey,
-      values: {
-        credentials: updatedFields,
-        config: updatedFields,
-        is_active: true,
-      }
-    });
+    try {
+      console.log('Calling updateIntegration...');
+      updateIntegration({
+        integrationName: integrationKey,
+        values: {
+          credentials: updatedFields,
+          config: updatedFields,
+          is_active: true,
+        }
+      });
+      console.log('updateIntegration called successfully');
+    } catch (error) {
+      console.error('Error calling updateIntegration:', error);
+    }
+    console.log('=== handleIntegrationSave END ===');
   };
 
   if (loading) {
