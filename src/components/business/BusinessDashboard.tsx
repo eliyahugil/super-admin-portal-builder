@@ -5,7 +5,9 @@ import { DashboardStats } from './dashboard/DashboardStats';
 import { ManagementToolsSection } from './dashboard/ManagementToolsSection';
 import { RecentActivityCard } from './dashboard/RecentActivityCard';
 import { EmployeeRequestForm } from '@/components/modules/employees/EmployeeRequestForm';
+import { EmployeeRequestsApproval } from '@/components/modules/employees/EmployeeRequestsApproval';
 import { useDashboardData } from './dashboard/useDashboardData';
+import { useBusiness } from '@/hooks/useBusiness';
 
 export const BusinessDashboard: React.FC = () => {
   const {
@@ -16,6 +18,9 @@ export const BusinessDashboard: React.FC = () => {
     todayAttendance,
     requests
   } = useDashboardData();
+
+  const { profile } = useBusiness();
+  const isAdmin = profile?.role === 'business_admin' || profile?.role === 'super_admin';
 
   const recentActivity = [
     {
@@ -58,6 +63,13 @@ export const BusinessDashboard: React.FC = () => {
       />
 
       <ManagementToolsSection />
+
+      {/* Employee Requests Approval Section - Only for Admins */}
+      {isAdmin && (
+        <section className="mb-8">
+          <EmployeeRequestsApproval />
+        </section>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RecentActivityCard activities={recentActivity} />

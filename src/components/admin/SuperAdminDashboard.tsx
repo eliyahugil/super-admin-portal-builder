@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
+import { EmployeeRequestsApproval } from '@/components/modules/employees/EmployeeRequestsApproval';
 
 export const SuperAdminDashboard: React.FC = () => {
   // Mock data - יוחלף בנתונים אמיתיים
@@ -199,6 +199,11 @@ export const SuperAdminDashboard: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Employee Requests Approval Section */}
+      <section className="mb-8">
+        <EmployeeRequestsApproval />
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity */}
