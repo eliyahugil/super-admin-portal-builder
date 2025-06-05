@@ -8,3 +8,4 @@ export { DynamicIntegrationForm } from './DynamicIntegrationForm';
 export { IntegrationHeader } from './IntegrationHeader';
 export { IntegrationControls } from './IntegrationControls';
 export { IntegrationActions } from './IntegrationActions';
+export { IntegrationTestButton } from './IntegrationTestButton';

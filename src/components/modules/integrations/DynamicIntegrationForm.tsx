@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Save, Eye, EyeOff } from 'lucide-react';
 import { integrationFieldMap } from '@/config/integrationFieldMap';
+import { IntegrationTestButton } from './IntegrationTestButton';
 
 interface DynamicIntegrationFormProps {
   integrationKey: string;
@@ -114,6 +115,12 @@ export const DynamicIntegrationForm: React.FC<DynamicIntegrationFormProps> = ({
             </Button>
           </div>
         </form>
+
+        {/* Integration Test Section */}
+        <IntegrationTestButton
+          integrationKey={integrationKey}
+          config={formData}
+        />
       </CardContent>
     </Card>
   );
