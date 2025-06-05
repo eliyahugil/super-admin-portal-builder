@@ -17,6 +17,9 @@ interface CreateEmployeeDialogProps {
   branches: Array<{ id: string; name: string }>;
 }
 
+type EmployeeType = 'permanent' | 'temporary' | 'youth' | 'contractor';
+type ShiftType = 'morning' | 'afternoon' | 'evening' | 'night' | 'full_day';
+
 export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
   open,
   onOpenChange,
@@ -31,8 +34,8 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
     email: '',
     phone: '',
     address: '',
-    employee_type: 'permanent',
-    preferred_shift_type: 'morning',
+    employee_type: 'permanent' as EmployeeType,
+    preferred_shift_type: 'morning' as ShiftType,
     weekly_hours_required: 40,
     main_branch_id: '',
     hire_date: '',
@@ -72,16 +75,21 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
       const businessId = 'default-business-id'; // This should be properly handled
 
       const employeeData = {
-        ...formData,
         business_id: businessId,
         employee_id: formData.employee_id.trim() || null,
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
         id_number: formData.id_number.trim() || null,
         email: formData.email.trim() || null,
         phone: formData.phone.trim() || null,
         address: formData.address.trim() || null,
+        employee_type: formData.employee_type,
+        preferred_shift_type: formData.preferred_shift_type,
+        weekly_hours_required: formData.weekly_hours_required,
         main_branch_id: formData.main_branch_id || null,
         hire_date: formData.hire_date || null,
         notes: formData.notes.trim() || null,
+        is_active: formData.is_active,
       };
 
       const { error } = await supabase
@@ -223,7 +231,7 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
               <Label htmlFor="employee_type">סוג עובד</Label>
               <Select
                 value={formData.employee_type}
-                onValueChange={(value) => setFormData({ ...formData, employee_type: value })}
+                onValueChange={(value: EmployeeType) => setFormData({ ...formData, employee_type: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -240,7 +248,7 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
               <Label htmlFor="preferred_shift_type">סוג משמרת מועדף</Label>
               <Select
                 value={formData.preferred_shift_type}
-                onValueChange={(value) => setFormData({ ...formData, preferred_shift_type: value })}
+                onValueChange={(value: ShiftType) => setFormData({ ...formData, preferred_shift_type: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
