@@ -1,5 +1,11 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+// Import only specific types we need to avoid infinite recursion
+type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+type BusinessRow = Database['public']['Tables']['businesses']['Row'];
+type ModuleRow = Database['public']['Tables']['modules']['Row'];
 
 // Safe type to prevent infinite recursion
 type SafeType<T> = T extends object ? { [K in keyof T]: T[K] } : T;
