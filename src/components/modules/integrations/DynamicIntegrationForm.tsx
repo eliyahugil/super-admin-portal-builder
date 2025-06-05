@@ -5,15 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Save, Eye, EyeOff } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Save, Eye, EyeOff, History, Shield } from 'lucide-react';
 import { integrationFieldMap } from '@/config/integrationFieldMap';
 import { IntegrationTestButton } from './IntegrationTestButton';
+import { IntegrationAuditLog } from './IntegrationAuditLog';
+import { IntegrationPermissionControl } from './IntegrationPermissionControl';
+import { useIntegrationAuditLog } from '@/hooks/useIntegrationAuditLog';
 
 interface DynamicIntegrationFormProps {
   integrationKey: string;
   initialData?: Record<string, any>;
   onSave: (updatedFields: Record<string, any>) => void;
   isLoading?: boolean;
+  businessId?: string;
+  viewMode?: 'merged' | 'tabs';
 }
 
 export const DynamicIntegrationForm: React.FC<DynamicIntegrationFormProps> = ({
@@ -21,10 +27,21 @@ export const DynamicIntegrationForm: React.FC<DynamicIntegrationFormProps> = ({
   initialData = {},
   onSave,
   isLoading = false,
+  businessId,
+  viewMode = 'merged',
 }) => {
   const config = integrationFieldMap[integrationKey];
   const [formData, setFormData] = useState<Record<string, any>>(initialData);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [permissions, setPermissions] = useState({
+    canView: true,
+    canEdit: true,
+    canTest: true,
+    canDelete: false,
+    restrictedRoles: [],
+  });
+
+  const { logAction } = useIntegrationAuditLog(businessId);
 
   if (!config) {
     return (
@@ -39,7 +56,21 @@ export const DynamicIntegrationForm: React.FC<DynamicIntegrationFormProps> = ({
   }
 
   const handleChange = (key: string, value: string) => {
+    const oldValue = formData[key];
     setFormData((prev) => ({ ...prev, [key]: value }));
+    
+    // Log the change if businessId is available
+    if (businessId && oldValue !== value) {
+      logAction({
+        integrationName: integrationKey,
+        action: 'edit',
+        changes: {
+          field: key,
+          oldValue: oldValue || '',
+          newValue: value,
+        },
+      });
+    }
   };
 
   const togglePasswordVisibility = (fieldKey: string) => {
@@ -49,79 +80,176 @@ export const DynamicIntegrationForm: React.FC<DynamicIntegrationFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
+    
+    // Log the save action
+    if (businessId) {
+      logAction({
+        integrationName: integrationKey,
+        action: Object.keys(initialData).length > 0 ? 'edit' : 'create',
+        changes: {
+          updatedFields: Object.keys(formData),
+          formData,
+        },
+      });
+    }
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-lg">{config.label}</CardTitle>
-            <CardDescription>
-              הגדר את פרטי החיבור עבור האינטגרציה
-            </CardDescription>
+  const renderMainForm = () => (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {config.fields.map((field) => (
+        <div key={field.key} className="space-y-2">
+          <Label htmlFor={`field-${field.key}`} className="text-sm font-medium">
+            {field.label}
+            {field.type === 'password' && (
+              <span className="text-red-500 mr-1">*</span>
+            )}
+          </Label>
+          <div className="relative">
+            <Input
+              id={`field-${field.key}`}
+              type={field.type === 'password' && !showPasswords[field.key] ? 'password' : 'text'}
+              value={formData[field.key] || ''}
+              onChange={(e) => handleChange(field.key, e.target.value)}
+              placeholder={field.placeholder}
+              className="w-full"
+            />
+            {field.type === 'password' && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                onClick={() => togglePasswordVisibility(field.key)}
+              >
+                {showPasswords[field.key] ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+            )}
           </div>
-          <Badge variant="outline">
-            {config.fields.length} שדות
-          </Badge>
         </div>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {config.fields.map((field) => (
-            <div key={field.key} className="space-y-2">
-              <Label htmlFor={`field-${field.key}`} className="text-sm font-medium">
-                {field.label}
-                {field.type === 'password' && (
-                  <span className="text-red-500 mr-1">*</span>
-                )}
-              </Label>
-              <div className="relative">
-                <Input
-                  id={`field-${field.key}`}
-                  type={field.type === 'password' && !showPasswords[field.key] ? 'password' : 'text'}
-                  value={formData[field.key] || ''}
-                  onChange={(e) => handleChange(field.key, e.target.value)}
-                  placeholder={field.placeholder}
-                  className="w-full"
-                />
-                {field.type === 'password' && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                    onClick={() => togglePasswordVisibility(field.key)}
-                  >
-                    {showPasswords[field.key] ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                )}
-              </div>
+      ))}
+
+      <div className="flex justify-end pt-4">
+        <Button 
+          type="submit" 
+          disabled={isLoading}
+          className="flex items-center gap-2"
+        >
+          <Save className="h-4 w-4" />
+          {isLoading ? 'שומר...' : 'שמור הגדרות'}
+        </Button>
+      </div>
+    </form>
+  );
+
+  if (viewMode === 'tabs') {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">{config.label}</CardTitle>
+              <CardDescription>
+                הגדר את פרטי החיבור עבור האינטגרציה
+              </CardDescription>
             </div>
-          ))}
-
-          <div className="flex justify-end pt-4">
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className="flex items-center gap-2"
-            >
-              <Save className="h-4 w-4" />
-              {isLoading ? 'שומר...' : 'שמור הגדרות'}
-            </Button>
+            <Badge variant="outline">
+              {config.fields.length} שדות
+            </Badge>
           </div>
-        </form>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="settings" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="settings">הגדרות</TabsTrigger>
+              <TabsTrigger value="test">בדיקת חיבור</TabsTrigger>
+              <TabsTrigger value="permissions">הרשאות</TabsTrigger>
+              <TabsTrigger value="audit">יומן פעילות</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="settings" className="space-y-4">
+              {renderMainForm()}
+            </TabsContent>
+            
+            <TabsContent value="test">
+              <IntegrationTestButton
+                integrationKey={integrationKey}
+                config={formData}
+              />
+            </TabsContent>
+            
+            <TabsContent value="permissions">
+              {businessId && (
+                <IntegrationPermissionControl
+                  integrationName={integrationKey}
+                  permissions={permissions}
+                  onPermissionChange={setPermissions}
+                />
+              )}
+            </TabsContent>
+            
+            <TabsContent value="audit">
+              {businessId && (
+                <IntegrationAuditLog
+                  businessId={businessId}
+                  integrationName={integrationKey}
+                />
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    );
+  }
 
-        {/* Integration Test Section */}
-        <IntegrationTestButton
-          integrationKey={integrationKey}
-          config={formData}
-        />
-      </CardContent>
-    </Card>
+  // Merged view
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">{config.label}</CardTitle>
+              <CardDescription>
+                הגדר את פרטי החיבור עבור האינטגרציה
+              </CardDescription>
+            </div>
+            <Badge variant="outline">
+              {config.fields.length} שדות
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {renderMainForm()}
+          
+          {/* Integration Test Section */}
+          <div className="mt-6">
+            <IntegrationTestButton
+              integrationKey={integrationKey}
+              config={formData}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Additional Cards for Merged View */}
+      {businessId && (
+        <>
+          <IntegrationPermissionControl
+            integrationName={integrationKey}
+            permissions={permissions}
+            onPermissionChange={setPermissions}
+          />
+          
+          <IntegrationAuditLog
+            businessId={businessId}
+            integrationName={integrationKey}
+          />
+        </>
+      )}
+    </div>
   );
 };

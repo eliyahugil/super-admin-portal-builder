@@ -909,6 +909,47 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_audit_log: {
+        Row: {
+          action: string
+          business_id: string | null
+          changes: Json | null
+          created_at: string
+          id: string
+          integration_name: string
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          business_id?: string | null
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          integration_name: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          business_id?: string | null
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          integration_name?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_audit_log_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_logs: {
         Row: {
           action: string
@@ -917,10 +958,12 @@ export type Database = {
           error_message: string | null
           execution_time_ms: number | null
           id: string
+          integration_id: string | null
           integration_name: string
           request_data: Json | null
           response_data: Json | null
           status: string
+          timestamp: string | null
         }
         Insert: {
           action: string
@@ -929,10 +972,12 @@ export type Database = {
           error_message?: string | null
           execution_time_ms?: number | null
           id?: string
+          integration_id?: string | null
           integration_name: string
           request_data?: Json | null
           response_data?: Json | null
           status: string
+          timestamp?: string | null
         }
         Update: {
           action?: string
@@ -941,10 +986,12 @@ export type Database = {
           error_message?: string | null
           execution_time_ms?: number | null
           id?: string
+          integration_id?: string | null
           integration_name?: string
           request_data?: Json | null
           response_data?: Json | null
           status?: string
+          timestamp?: string | null
         }
         Relationships: [
           {
