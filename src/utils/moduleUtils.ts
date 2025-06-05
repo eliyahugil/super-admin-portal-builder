@@ -1,16 +1,30 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Safe type to prevent infinite recursion
+type SafeType<T> = T extends object ? { [K in keyof T]: T[K] } : T;
+
 // Simplified types to avoid infinite recursion
-type SimpleProfile = {
+type SimpleProfile = SafeType<{
   role: string;
-};
+}>;
 
-type SimpleBusiness = {
+type SimpleBusiness = SafeType<{
   id: string;
-};
+}>;
 
-// Module route mappings with simplified typing
+type SimpleModule = SafeType<{
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  route?: string;
+  is_custom: boolean;
+  is_active: boolean;
+  customer_number?: number;
+}>;
+
+// Module route mappings with safe typing
 export const moduleRouteMapping: Record<string, {
   name: string;
   description: string;
@@ -85,7 +99,6 @@ export const generateRoute = (moduleName: string): string => {
 export const generateIcon = (moduleName: string): string => {
   const name = moduleName.toLowerCase();
   
-  // Icon mappings with simplified type
   const iconMappings: Record<string, string> = {
     // Hebrew mappings
     'לקוחות': '👥',
@@ -148,10 +161,10 @@ export const validateModuleName = (name: string): { isValid: boolean; error?: st
   return { isValid: true };
 };
 
-// Get customer number for user with simple typing to avoid recursion
+// Get customer number for user with safe types
 export const getCustomerNumberForUser = async (userId: string): Promise<number> => {
   try {
-    // Check if user is super admin with explicit typing to avoid recursion
+    // Check if user is super admin
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
@@ -187,7 +200,7 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
       throw new Error('No business found for user');
     }
 
-    // Get the next customer number for this business with explicit typing
+    // Get the next customer number for this business
     const { data: result, error } = await supabase
       .rpc('get_next_customer_number', { business_id_param: userBusiness.id });
 
@@ -203,7 +216,7 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
   }
 };
 
-// Clean up module data when deleting a custom module with simplified return type
+// Clean up module data when deleting a custom module
 export const cleanupModuleData = async (moduleId: string, tableName?: string): Promise<boolean> => {
   try {
     console.log('Starting cleanup for module:', moduleId, 'table:', tableName);
@@ -222,7 +235,7 @@ export const cleanupModuleData = async (moduleId: string, tableName?: string): P
     // If it's a custom module with a table, attempt to drop the table
     if (tableName) {
       try {
-        // Use the SQL function to drop the custom table with explicit typing
+        // Use the SQL function to drop the custom table
         const { data, error: dropTableError } = await supabase.rpc('drop_custom_table', { 
           table_name: tableName 
         });
@@ -231,8 +244,7 @@ export const cleanupModuleData = async (moduleId: string, tableName?: string): P
           console.warn('Could not drop custom table:', dropTableError);
           // Continue execution - table deletion is not critical
         } else {
-          const dropResult = Boolean(data);
-          console.log('Successfully dropped custom table:', tableName, 'Result:', dropResult);
+          console.log('Successfully dropped custom table:', tableName, 'Result:', Boolean(data));
         }
       } catch (tableError) {
         console.warn('Table deletion failed:', tableError);
@@ -244,5 +256,109 @@ export const cleanupModuleData = async (moduleId: string, tableName?: string): P
   } catch (error) {
     console.error('Error in cleanupModuleData:', error);
     return false;
+  }
+};
+
+// Check if user is super admin
+export const isSuperAdmin = async (userId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error checking super admin status:', error);
+      return false;
+    }
+
+    const profile = data as SimpleProfile | null;
+    return profile?.role === 'super_admin';
+  } catch (error) {
+    console.error('Error in isSuperAdmin:', error);
+    return false;
+  }
+};
+
+// Get user business ID
+export const getUserBusinessId = async (userId: string): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('businesses')
+      .select('id')
+      .eq('owner_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching user business:', error);
+      return null;
+    }
+
+    const business = data as SimpleBusiness | null;
+    return business?.id || null;
+  } catch (error) {
+    console.error('Error in getUserBusinessId:', error);
+    return null;
+  }
+};
+
+// Create custom module with table
+export const createCustomModuleWithTable = async (
+  moduleName: string,
+  description: string,
+  fields: any[],
+  userId: string
+): Promise<{ success: boolean; moduleId?: string; error?: string }> => {
+  try {
+    const customerNumber = await getCustomerNumberForUser(userId);
+    const route = generateRoute(moduleName);
+    const icon = generateIcon(moduleName);
+    const tableName = generateTableName(moduleName, 'temp', customerNumber);
+
+    // Create module record
+    const { data: moduleData, error: moduleError } = await supabase
+      .from('modules')
+      .insert({
+        name: moduleName,
+        description,
+        icon,
+        route,
+        is_custom: true,
+        is_active: true,
+        customer_number: customerNumber
+      })
+      .select()
+      .single();
+
+    if (moduleError) {
+      console.error('Error creating module:', moduleError);
+      return { success: false, error: moduleError.message };
+    }
+
+    const module = moduleData as SimpleModule;
+    const finalTableName = generateTableName(moduleName, module.id, customerNumber);
+
+    // Create custom table
+    const { data: tableResult, error: tableError } = await supabase.rpc(
+      'create_custom_module_table',
+      {
+        module_id_param: module.id,
+        table_name_param: finalTableName,
+        fields_config: fields
+      }
+    );
+
+    if (tableError) {
+      console.error('Error creating custom table:', tableError);
+      // Clean up the module if table creation failed
+      await supabase.from('modules').delete().eq('id', module.id);
+      return { success: false, error: tableError.message };
+    }
+
+    return { success: true, moduleId: module.id };
+  } catch (error) {
+    console.error('Error in createCustomModuleWithTable:', error);
+    return { success: false, error: String(error) };
   }
 };
