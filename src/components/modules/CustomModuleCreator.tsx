@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -101,21 +100,51 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
     return true;
   };
 
+  const generateTableName = (name: string) => {
+    // Convert to lowercase, replace spaces and special chars with underscores
+    // Remove Hebrew characters and keep only English letters, numbers, and underscores
+    return 'custom_' + name
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '');
+  };
+
+  const generateRoute = (name: string) => {
+    // Convert to lowercase, replace spaces with hyphens for URL-friendly route
+    return '/' + name
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  };
+
   const handleCreate = async () => {
     if (!validateFields()) return;
 
     setLoading(true);
     try {
-      // Create the module
+      console.log('Starting custom module creation...');
+      
+      // Generate table name and route
+      const tableName = generateTableName(moduleName);
+      const route = generateRoute(moduleName);
+      
+      console.log('Generated table name:', tableName);
+      console.log('Generated route:', route);
+
+      // Create the module first
       const { data: moduleData, error: moduleError } = await supabase
         .from('modules')
         .insert({
           name: moduleName,
           description: moduleDescription,
           icon: moduleIcon,
+          route: route,
           is_active: true,
           is_custom: true,
           module_config: {
+            table_name: tableName,
             fields: fields.map((field, index) => ({
               ...field,
               display_order: index + 1
@@ -137,7 +166,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
 
       console.log('Created module:', moduleData);
 
-      // Create field definitions
+      // Create field definitions in module_fields table
       const fieldsToInsert = fields.map((field, index) => ({
         module_id: moduleData.id,
         field_name: field.name,
@@ -163,9 +192,42 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
         return;
       }
 
+      console.log('Created module fields successfully');
+
+      // Now create the custom table using the database function
+      const fieldsConfig = fields.map(field => ({
+        name: field.name,
+        type: field.type,
+        required: field.required,
+        options: field.options || []
+      }));
+
+      console.log('Creating custom table with config:', fieldsConfig);
+
+      const { data: tableResult, error: tableError } = await supabase
+        .rpc('create_custom_module_table', {
+          module_id_param: moduleData.id,
+          table_name_param: tableName,
+          fields_config: fieldsConfig
+        });
+
+      if (tableError) {
+        console.error('Error creating custom table:', tableError);
+        // Clean up module and fields if table creation fails
+        await supabase.from('modules').delete().eq('id', moduleData.id);
+        toast({
+          title: 'שגיאה',
+          description: 'לא ניתן ליצור את טבלת הנתונים של המודל',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      console.log('Custom table created successfully:', tableResult);
+
       toast({
         title: 'הצלחה',
-        description: 'המודל המותאם אישית נוצר בהצלחה',
+        description: 'המודל המותאם אישית נוצר בהצלחה כולל טבלת הנתונים',
       });
 
       // Reset form
@@ -210,6 +272,12 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
                   onChange={(e) => setModuleName(e.target.value)}
                   placeholder="לדוגמה: ניהול פרויקטים"
                 />
+                {moduleName && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    <div>שם טבלה: {generateTableName(moduleName)}</div>
+                    <div>נתיב: {generateRoute(moduleName)}</div>
+                  </div>
+                )}
               </div>
 
               <div>

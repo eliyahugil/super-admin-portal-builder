@@ -935,6 +935,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_custom_module_table: {
+        Args: {
+          module_id_param: string
+          table_name_param: string
+          fields_config: Json
+        }
+        Returns: boolean
+      }
+      generate_module_route: {
+        Args: { module_name: string }
+        Returns: string
+      }
+      generate_table_name: {
+        Args: { module_name: string }
+        Returns: string
+      }
       is_super_admin: {
         Args: { user_id: string }
         Returns: boolean
