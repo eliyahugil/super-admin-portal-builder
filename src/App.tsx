@@ -13,6 +13,7 @@ import { ModuleManagement } from "@/components/modules/ModuleManagement";
 import { EmployeeManagement } from "@/components/modules/employees/EmployeeManagement";
 import { DynamicModulePage } from "@/components/modules/DynamicModulePage";
 import { ModuleWrapper } from "@/components/modules/ModuleWrapper";
+import { SuperAdminIntegrations } from "@/components/admin/SuperAdminIntegrations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,18 @@ const App: React.FC = () => (
                   <div className="min-h-screen bg-gray-50">
                     <Header />
                     <ModuleWrapper />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            {/* Super Admin Routes */}
+            <Route 
+              path="/super-admin/integrations" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <SuperAdminIntegrations />
                   </div>
                 </ProtectedRoute>
               } 

@@ -27,6 +27,16 @@ export const moduleRouteMapping: Record<string, {
     subModules: {
       'branch-roles': { name: 'תפקידי סניף', description: 'ניהול תפקידים בסניף' },
     }
+  },
+  'integrations': {
+    name: 'ניהול אינטגרציות',
+    description: 'ניהול ואינטגרציה עם שירותים חיצוניים',
+    icon: '🔗',
+    subModules: {
+      'business': { name: 'אינטגרציות עסק', description: 'ניהול אינטגרציות פרטיות לעסק' },
+      'supported': { name: 'אינטגרציות זמינות', description: 'רשימת אינטגרציות זמינות' },
+      'admin': { name: 'ניהול גלובלי', description: 'ניהול אינטגרציות גלובליות' },
+    }
   }
 } as const;
 

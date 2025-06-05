@@ -9,6 +9,7 @@ import { EmployeeDocs } from './employees/EmployeeDocs';
 import { ShiftManagement } from './employees/ShiftManagement';
 import { BranchManagement } from './branches/BranchManagement';
 import { BranchRoles } from './branches/BranchRoles';
+import { IntegrationManagement } from './integrations/IntegrationManagement';
 import { moduleRouteMapping, parseModuleRoute } from '@/utils/moduleUtils';
 
 export const ModuleWrapper: React.FC = () => {
@@ -39,6 +40,9 @@ export const ModuleWrapper: React.FC = () => {
     // Branch modules
     'branches': BranchManagement,
     'branches/branch-roles': BranchRoles,
+    
+    // Integration modules
+    'integrations': IntegrationManagement,
   };
 
   const routeKey = subModule ? `${moduleRoute}/${subModule}` : moduleRoute;
