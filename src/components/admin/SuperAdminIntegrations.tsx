@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { SuperAdminIntegrationsDashboard } from './SuperAdminIntegrationsDashboard';
 import { GlobalIntegrationsAdmin } from '../modules/integrations/GlobalIntegrationsAdmin';
+import { IntegrationTestManager } from './IntegrationTestManager';
 import { IntegrationStatusMonitor } from './IntegrationStatusMonitor';
 import { Key, Settings, Activity, MapPin, Globe, MessageSquare, FileText, Users } from 'lucide-react';
 
@@ -26,9 +26,10 @@ export const SuperAdminIntegrations: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="dashboard">דשבורד ראשי</TabsTrigger>
           <TabsTrigger value="global">אינטגרציות גלובליות</TabsTrigger>
+          <TabsTrigger value="testing">בדיקת אינטגרציות</TabsTrigger>
           <TabsTrigger value="maps">Google Maps</TabsTrigger>
           <TabsTrigger value="status">מוניטור סטטוס</TabsTrigger>
           <TabsTrigger value="translations">תרגומים</TabsTrigger>
@@ -53,6 +54,10 @@ export const SuperAdminIntegrations: React.FC = () => {
               <GlobalIntegrationsAdmin />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="testing">
+          <IntegrationTestManager />
         </TabsContent>
 
         <TabsContent value="maps">

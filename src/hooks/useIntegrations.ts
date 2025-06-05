@@ -21,6 +21,7 @@ interface BusinessIntegration {
   display_name: string;
   is_active: boolean;
   last_sync: string | null;
+  last_tested_at: string | null;
   created_at: string;
   credentials: Record<string, any>;
   config: Record<string, any>;

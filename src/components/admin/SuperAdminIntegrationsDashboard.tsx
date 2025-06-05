@@ -30,40 +30,44 @@ interface BusinessIntegrationStats {
 export const SuperAdminIntegrationsDashboard: React.FC = () => {
   const { integrations, loading: integrationsLoading } = useIntegrations();
 
-  // Get all business integration statistics
+  // Get all business integration statistics with proper joins
   const { data: businessStats, isLoading: businessStatsLoading } = useQuery({
     queryKey: ['business-integration-stats'],
     queryFn: async () => {
-      const { data: businesses, error: businessError } = await supabase
-        .from('businesses')
-        .select('id, name')
-        .eq('is_active', true);
+      const { data, error } = await supabase
+        .from('business_integrations')
+        .select(`
+          business_id,
+          is_active,
+          businesses!inner(name)
+        `);
 
-      if (businessError) throw businessError;
+      if (error) throw error;
 
-      const stats: BusinessIntegrationStats[] = [];
+      // Group by business and calculate stats
+      const businessMap = new Map<string, BusinessIntegrationStats>();
       
-      for (const business of businesses || []) {
-        const { count: totalCount } = await supabase
-          .from('business_integrations')
-          .select('*', { count: 'exact', head: true })
-          .eq('business_id', business.id);
+      data?.forEach(integration => {
+        const businessId = integration.business_id;
+        const businessName = integration.businesses?.name || 'Unknown Business';
+        
+        if (!businessMap.has(businessId)) {
+          businessMap.set(businessId, {
+            business_id: businessId,
+            business_name: businessName,
+            total_integrations: 0,
+            active_integrations: 0,
+          });
+        }
+        
+        const stats = businessMap.get(businessId)!;
+        stats.total_integrations++;
+        if (integration.is_active) {
+          stats.active_integrations++;
+        }
+      });
 
-        const { count: activeCount } = await supabase
-          .from('business_integrations')
-          .select('*', { count: 'exact', head: true })
-          .eq('business_id', business.id)
-          .eq('is_active', true);
-
-        stats.push({
-          business_id: business.id,
-          business_name: business.name,
-          total_integrations: totalCount || 0,
-          active_integrations: activeCount || 0,
-        });
-      }
-
-      return stats;
+      return Array.from(businessMap.values());
     },
   });
 
@@ -135,7 +139,7 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">דשבורד אינטגרציות - מנהל מערכת</h1>
         <p className="text-gray-600 mt-2">
