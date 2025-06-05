@@ -167,14 +167,14 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
       .from('profiles')
       .select('role')
       .eq('id', userId)
-      .maybeSingle();
+      .maybeSingle() as any;
 
     if (profileError) {
       console.error('Error fetching profile:', profileError);
       throw profileError;
     }
 
-    const userProfile = profile as unknown as SimpleProfile | null;
+    const userProfile = profile as SimpleProfile | null;
 
     if (userProfile?.role === 'super_admin') {
       return 0; // Super admin gets customer number 0
@@ -185,29 +185,30 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
       .from('businesses')
       .select('id')
       .eq('owner_id', userId)
-      .maybeSingle();
+      .maybeSingle() as any;
 
     if (businessError) {
       console.error('Error fetching business:', businessError);
       throw businessError;
     }
 
-    const userBusiness = data as unknown as SimpleBusiness | null;
+    const userBusiness = data as SimpleBusiness | null;
 
     if (!userBusiness) {
       throw new Error('No business found for user');
     }
 
     // Get the next customer number for this business
-    const { data: result, error } = await supabase
-      .rpc('get_next_customer_number', { business_id_param: userBusiness.id });
+    const rpcResult = await (supabase as any).rpc('get_next_customer_number', { 
+      business_id_param: userBusiness.id 
+    });
 
-    if (error) {
-      console.error('Error getting next customer number:', error);
-      throw error;
+    if (rpcResult.error) {
+      console.error('Error getting next customer number:', rpcResult.error);
+      throw rpcResult.error;
     }
 
-    return Number(result) || 1;
+    return Number(rpcResult.data) || 1;
   } catch (error) {
     console.error('Error in getCustomerNumberForUser:', error);
     throw error;
@@ -223,7 +224,7 @@ export const cleanupModuleData = async (moduleId: string, tableName?: string): P
     const { error: businessModuleError } = await supabase
       .from('business_modules')
       .delete()
-      .eq('module_id', moduleId);
+      .eq('module_id', moduleId) as any;
 
     if (businessModuleError) {
       console.error('Error removing module from businesses:', businessModuleError);
@@ -234,15 +235,15 @@ export const cleanupModuleData = async (moduleId: string, tableName?: string): P
     if (tableName) {
       try {
         // Use the SQL function to drop the custom table
-        const { data, error: dropTableError } = await supabase.rpc('drop_custom_table', { 
+        const dropResult = await (supabase as any).rpc('drop_custom_table', { 
           table_name: tableName 
         });
 
-        if (dropTableError) {
-          console.warn('Could not drop custom table:', dropTableError);
+        if (dropResult.error) {
+          console.warn('Could not drop custom table:', dropResult.error);
           // Continue execution - table deletion is not critical
         } else {
-          console.log('Successfully dropped custom table:', tableName, 'Result:', Boolean(data));
+          console.log('Successfully dropped custom table:', tableName, 'Result:', Boolean(dropResult.data));
         }
       } catch (tableError) {
         console.warn('Table deletion failed:', tableError);
@@ -264,14 +265,14 @@ export const isSuperAdmin = async (userId: string): Promise<boolean> => {
       .from('profiles')
       .select('role')
       .eq('id', userId)
-      .maybeSingle();
+      .maybeSingle() as any;
 
     if (error) {
       console.error('Error checking super admin status:', error);
       return false;
     }
 
-    const profile = data as unknown as SimpleProfile | null;
+    const profile = data as SimpleProfile | null;
     return profile?.role === 'super_admin';
   } catch (error) {
     console.error('Error in isSuperAdmin:', error);
@@ -286,14 +287,14 @@ export const getUserBusinessId = async (userId: string): Promise<string | null> 
       .from('businesses')
       .select('id')
       .eq('owner_id', userId)
-      .maybeSingle();
+      .maybeSingle() as any;
 
     if (error) {
       console.error('Error fetching user business:', error);
       return null;
     }
 
-    const business = data as unknown as SimpleBusiness | null;
+    const business = data as SimpleBusiness | null;
     return business?.id || null;
   } catch (error) {
     console.error('Error in getUserBusinessId:', error);
@@ -327,18 +328,18 @@ export const createCustomModuleWithTable = async (
         customer_number: customerNumber
       })
       .select()
-      .single();
+      .single() as any;
 
     if (moduleError) {
       console.error('Error creating module:', moduleError);
       return { success: false, error: moduleError.message };
     }
 
-    const module = moduleData as unknown as SimpleModule;
+    const module = moduleData as SimpleModule;
     const finalTableName = generateTableName(moduleName, module.id, customerNumber);
 
     // Create custom table
-    const { data: tableResult, error: tableError } = await supabase.rpc(
+    const tableResult = await (supabase as any).rpc(
       'create_custom_module_table',
       {
         module_id_param: module.id,
@@ -347,11 +348,11 @@ export const createCustomModuleWithTable = async (
       }
     );
 
-    if (tableError) {
-      console.error('Error creating custom table:', tableError);
+    if (tableResult.error) {
+      console.error('Error creating custom table:', tableResult.error);
       // Clean up the module if table creation failed
-      await supabase.from('modules').delete().eq('id', module.id);
-      return { success: false, error: tableError.message };
+      await (supabase as any).from('modules').delete().eq('id', module.id);
+      return { success: false, error: tableResult.error.message };
     }
 
     return { success: true, moduleId: module.id };
