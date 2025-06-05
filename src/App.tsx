@@ -8,6 +8,7 @@ import { AuthProvider } from "@/components/auth/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Header } from "@/components/layout/Header";
 import { Dashboard } from "@/components/dashboard/Dashboard";
+import { ModuleManagement } from "@/components/modules/ModuleManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,17 @@ const App = () => (
                   <div className="min-h-screen bg-gray-50">
                     <Header />
                     <Dashboard />
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/modules" 
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50">
+                    <Header />
+                    <ModuleManagement />
                   </div>
                 </ProtectedRoute>
               } 
