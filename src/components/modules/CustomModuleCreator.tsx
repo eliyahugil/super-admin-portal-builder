@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -121,10 +120,12 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
       
       // Generate table name and route using utility functions
       const tableName = generateTableName(moduleName);
-      const route = generateRoute(moduleName);
+      const routeParam = generateRoute(moduleName);
+      const fullRoute = `/custom/${routeParam}`;
       
       console.log('Generated table name:', tableName);
-      console.log('Generated route:', route);
+      console.log('Generated route parameter:', routeParam);
+      console.log('Full route:', fullRoute);
 
       // Create the module first
       const { data: moduleData, error: moduleError } = await supabase
@@ -133,7 +134,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
           name: moduleName,
           description: moduleDescription,
           icon: moduleIcon,
-          route: route,
+          route: fullRoute,
           is_active: true,
           is_custom: true,
           module_config: {
@@ -220,7 +221,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
 
       toast({
         title: 'הצלחה',
-        description: `המודל "${moduleName}" נוצר בהצלחה כולל דף ייעודי בנתיב ${route}`,
+        description: `המודל "${moduleName}" נוצר בהצלחה כולל דף ייעודי בנתיב ${fullRoute}`,
       });
 
       // Reset form
@@ -274,7 +275,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
                       <span className="font-medium">שם טבלה:</span> {generateTableName(moduleName)}
                     </div>
                     <div className="text-gray-500">
-                      <span className="font-medium">נתיב:</span> {generateRoute(moduleName)}
+                      <span className="font-medium">נתיב:</span> /custom/{generateRoute(moduleName)}
                     </div>
                     <div className="text-green-600 font-medium flex items-center gap-1">
                       <Sparkles className="h-3 w-3" />
@@ -317,7 +318,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
                     className="w-20"
                   />
                   <div className="text-xs text-gray-500">
-                    האייקון נבחר אוטומטית על בסיס שם המודל
+                    האייקון נבחר אוטומatically על בסיס שם המודל
                   </div>
                 </div>
               </div>

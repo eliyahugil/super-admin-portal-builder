@@ -204,6 +204,41 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_management: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          module_id: string
+          updated_at: string
+          "שם ": string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          module_id: string
+          updated_at?: string
+          "שם "?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          module_id?: string
+          updated_at?: string
+          "שם "?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_management_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_branch_priorities: {
         Row: {
           branch_id: string

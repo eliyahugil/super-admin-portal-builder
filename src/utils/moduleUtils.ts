@@ -176,9 +176,9 @@ export const generateTableName = (name: string): string => {
 };
 
 export const generateRoute = (name: string): string => {
-  // Convert Hebrew to English for URL-friendly route
+  // Convert Hebrew to English for URL-friendly route parameter only
   const englishName = translateHebrewToEnglish(name);
-  return '/custom/' + englishName
+  return englishName
     .toLowerCase()
     .replace(/[^a-z0-9-]/g, '-')
     .replace(/-+/g, '-')
