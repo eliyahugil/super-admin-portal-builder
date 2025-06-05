@@ -21,7 +21,12 @@ export function useIntegrationAuditLog(businessId?: string) {
   const { data: auditLogs, isLoading } = useQuery({
     queryKey: ['integration-audit-log', businessId],
     queryFn: async () => {
-      if (!businessId) return [];
+      console.log('Fetching audit logs for business:', businessId);
+      
+      if (!businessId) {
+        console.log('No business ID provided, returning empty array');
+        return [];
+      }
 
       const { data, error } = await supabase
         .from('integration_audit_log')
@@ -34,7 +39,9 @@ export function useIntegrationAuditLog(businessId?: string) {
         console.error('Error fetching audit logs:', error);
         throw error;
       }
-      return data as AuditLogEntry[];
+      
+      console.log('Fetched audit logs:', data);
+      return (data || []) as AuditLogEntry[];
     },
     enabled: !!businessId,
   });
@@ -51,7 +58,11 @@ export function useIntegrationAuditLog(businessId?: string) {
       changes?: Record<string, any>;
       userId?: string;
     }) => {
-      if (!businessId) throw new Error('Business ID is required');
+      if (!businessId) {
+        throw new Error('Business ID is required');
+      }
+
+      console.log('Logging audit action:', { businessId, integrationName, action, changes, userId });
 
       const { error } = await supabase
         .from('integration_audit_log')
@@ -63,9 +74,13 @@ export function useIntegrationAuditLog(businessId?: string) {
           changes: changes || null,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting audit log:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
+      console.log('Audit log entry created successfully');
       queryClient.invalidateQueries({ queryKey: ['integration-audit-log', businessId] });
     },
     onError: (error) => {

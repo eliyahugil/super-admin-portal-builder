@@ -19,6 +19,11 @@ export const BusinessIntegrations: React.FC = () => {
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'merged' | 'tabs'>('merged');
 
+  const handleIntegrationSave = (integrationKey: string, updatedFields: Record<string, any>) => {
+    console.log('Saving integration:', integrationKey, updatedFields);
+    // Implementation will be handled by parent component
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -34,11 +39,6 @@ export const BusinessIntegrations: React.FC = () => {
       </div>
     );
   }
-
-  const handleIntegrationSave = (integrationKey: string, updatedFields: Record<string, any>) => {
-    console.log('Saving integration:', integrationKey, updatedFields);
-    // Implementation will be handled by parent component
-  };
 
   return (
     <div className="space-y-6">

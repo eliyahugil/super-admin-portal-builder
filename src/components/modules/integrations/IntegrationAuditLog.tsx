@@ -19,6 +19,8 @@ export const IntegrationAuditLog: React.FC<IntegrationAuditLogProps> = ({
 }) => {
   const { auditLogs, isLoading } = useIntegrationAuditLog(businessId);
 
+  console.log('IntegrationAuditLog render:', { businessId, integrationName, auditLogs, isLoading });
+
   const filteredLogs = integrationName
     ? auditLogs.filter(log => log.integration_name === integrationName)
     : auditLogs;
