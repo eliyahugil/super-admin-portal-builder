@@ -1,25 +1,16 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
 
-// Import only specific types we need to avoid infinite recursion
-type ProfileRow = Database['public']['Tables']['profiles']['Row'];
-type BusinessRow = Database['public']['Tables']['businesses']['Row'];
-type ModuleRow = Database['public']['Tables']['modules']['Row'];
-
-// Safe type to prevent infinite recursion
-type SafeType<T> = T extends object ? { [K in keyof T]: T[K] } : T;
-
-// Simplified types to avoid infinite recursion
-type SimpleProfile = SafeType<{
+// Define our own simple types to avoid Supabase type complexity
+interface SimpleProfile {
   role: string;
-}>;
+}
 
-type SimpleBusiness = SafeType<{
+interface SimpleBusiness {
   id: string;
-}>;
+}
 
-type SimpleModule = SafeType<{
+interface SimpleModule {
   id: string;
   name: string;
   description?: string;
@@ -28,9 +19,9 @@ type SimpleModule = SafeType<{
   is_custom: boolean;
   is_active: boolean;
   customer_number?: number;
-}>;
+}
 
-// Module route mappings with safe typing
+// Module route mappings
 export const moduleRouteMapping: Record<string, {
   name: string;
   description: string;
@@ -167,7 +158,7 @@ export const validateModuleName = (name: string): { isValid: boolean; error?: st
   return { isValid: true };
 };
 
-// Get customer number for user with safe types
+// Get customer number for user
 export const getCustomerNumberForUser = async (userId: string): Promise<number> => {
   try {
     // Check if user is super admin
@@ -182,7 +173,7 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
       throw profileError;
     }
 
-    const userProfile = profile as SimpleProfile | null;
+    const userProfile = profile as unknown as SimpleProfile | null;
 
     if (userProfile?.role === 'super_admin') {
       return 0; // Super admin gets customer number 0
@@ -200,7 +191,7 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
       throw businessError;
     }
 
-    const userBusiness = business as SimpleBusiness | null;
+    const userBusiness = business as unknown as SimpleBusiness | null;
 
     if (!userBusiness) {
       throw new Error('No business found for user');
@@ -279,7 +270,7 @@ export const isSuperAdmin = async (userId: string): Promise<boolean> => {
       return false;
     }
 
-    const profile = data as SimpleProfile | null;
+    const profile = data as unknown as SimpleProfile | null;
     return profile?.role === 'super_admin';
   } catch (error) {
     console.error('Error in isSuperAdmin:', error);
@@ -301,7 +292,7 @@ export const getUserBusinessId = async (userId: string): Promise<string | null> 
       return null;
     }
 
-    const business = data as SimpleBusiness | null;
+    const business = data as unknown as SimpleBusiness | null;
     return business?.id || null;
   } catch (error) {
     console.error('Error in getUserBusinessId:', error);
@@ -342,7 +333,7 @@ export const createCustomModuleWithTable = async (
       return { success: false, error: moduleError.message };
     }
 
-    const module = moduleData as SimpleModule;
+    const module = moduleData as unknown as SimpleModule;
     const finalTableName = generateTableName(moduleName, module.id, customerNumber);
 
     // Create custom table
