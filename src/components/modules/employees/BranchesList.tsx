@@ -3,6 +3,8 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, MapPin } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Branch {
   id: string;
@@ -20,6 +22,54 @@ interface BranchesListProps {
 }
 
 export const BranchesList: React.FC<BranchesListProps> = ({ branches, onRefetch }) => {
+  const { toast } = useToast();
+
+  const handleEdit = (branch: Branch) => {
+    // TODO: Implement edit functionality
+    console.log('Edit branch:', branch);
+    toast({
+      title: 'עריכה',
+      description: 'פונקציונליות עריכה תמומש בקרוב',
+    });
+  };
+
+  const handleDelete = async (branchId: string, branchName: string) => {
+    if (!confirm(`האם אתה בטוח שברצונך למחוק את הסניף "${branchName}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('branches')
+        .delete()
+        .eq('id', branchId);
+
+      if (error) {
+        console.error('Error deleting branch:', error);
+        toast({
+          title: 'שגיאה',
+          description: 'לא ניתן למחוק את הסניף',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'הצלחה',
+        description: 'הסניף נמחק בהצלחה',
+      });
+
+      onRefetch();
+    } catch (error) {
+      console.error('Error in handleDelete:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'אירעה שגיאה בלתי צפויה',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (branches.length === 0) {
     return (
       <div className="text-center py-8">
@@ -61,10 +111,19 @@ export const BranchesList: React.FC<BranchesListProps> = ({ branches, onRefetch 
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => handleEdit(branch)}
+            >
               <Edit className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-red-600 hover:text-red-700"
+              onClick={() => handleDelete(branch.id, branch.name)}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>

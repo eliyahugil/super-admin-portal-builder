@@ -3,6 +3,8 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, User } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Employee {
   id: string;
@@ -22,6 +24,8 @@ interface EmployeesListProps {
 }
 
 export const EmployeesList: React.FC<EmployeesListProps> = ({ employees, onRefetch }) => {
+  const { toast } = useToast();
+
   const getEmployeeTypeLabel = (type: string) => {
     const types: Record<string, string> = {
       permanent: 'קבוע',
@@ -40,6 +44,52 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({ employees, onRefet
       contractor: 'destructive',
     };
     return variants[type] || 'default';
+  };
+
+  const handleEdit = (employee: Employee) => {
+    // TODO: Implement edit functionality
+    console.log('Edit employee:', employee);
+    toast({
+      title: 'עריכה',
+      description: 'פונקציונליות עריכה תמומש בקרוב',
+    });
+  };
+
+  const handleDelete = async (employeeId: string, employeeName: string) => {
+    if (!confirm(`האם אתה בטוח שברצונך למחוק את העובד "${employeeName}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('employees')
+        .delete()
+        .eq('id', employeeId);
+
+      if (error) {
+        console.error('Error deleting employee:', error);
+        toast({
+          title: 'שגיאה',
+          description: 'לא ניתן למחוק את העובד',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'הצלחה',
+        description: 'העובד נמחק בהצלחה',
+      });
+
+      onRefetch();
+    } catch (error) {
+      console.error('Error in handleDelete:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'אירעה שגיאה בלתי צפויה',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (employees.length === 0) {
@@ -89,10 +139,19 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({ employees, onRefet
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => handleEdit(employee)}
+            >
               <Edit className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-red-600 hover:text-red-700"
+              onClick={() => handleDelete(employee.id, `${employee.first_name} ${employee.last_name}`)}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
