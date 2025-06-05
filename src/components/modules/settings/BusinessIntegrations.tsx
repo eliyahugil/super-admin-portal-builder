@@ -15,13 +15,22 @@ import {
 
 export const BusinessIntegrations: React.FC = () => {
   const { business } = useBusiness();
-  const { integrations, businessIntegrations, loading } = useIntegrations(business?.id);
+  const { integrations, businessIntegrations, updateIntegration, loading } = useIntegrations(business?.id);
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'merged' | 'tabs'>('merged');
 
   const handleIntegrationSave = (integrationKey: string, updatedFields: Record<string, any>) => {
     console.log('Saving integration:', integrationKey, updatedFields);
-    // Implementation will be handled by parent component
+    
+    // Use the updateIntegration function from useIntegrations hook
+    updateIntegration({
+      integrationName: integrationKey,
+      values: {
+        credentials: updatedFields,
+        config: updatedFields,
+        is_active: true,
+      }
+    });
   };
 
   if (loading) {
