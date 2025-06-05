@@ -200,6 +200,60 @@ export type Database = {
           },
         ]
       }
+      business_module_config: {
+        Row: {
+          business_id: string
+          created_at: string
+          custom_config: Json | null
+          custom_permissions: Json | null
+          enabled_at: string | null
+          enabled_by: string | null
+          id: string
+          is_enabled: boolean
+          module_key: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          custom_config?: Json | null
+          custom_permissions?: Json | null
+          enabled_at?: string | null
+          enabled_by?: string | null
+          id?: string
+          is_enabled?: boolean
+          module_key: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          custom_config?: Json | null
+          custom_permissions?: Json | null
+          enabled_at?: string | null
+          enabled_by?: string | null
+          id?: string
+          is_enabled?: boolean
+          module_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_module_config_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_module_config_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "modules_config"
+            referencedColumns: ["module_key"]
+          },
+        ]
+      }
       business_modules: {
         Row: {
           business_id: string
@@ -1016,6 +1070,69 @@ export type Database = {
           module_config?: Json | null
           name?: string
           route?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      modules_config: {
+        Row: {
+          category: string
+          config_schema: Json | null
+          created_at: string
+          default_visible: boolean
+          description: string | null
+          display_order: number | null
+          enabled_by_superadmin: boolean
+          icon: string | null
+          id: string
+          integration_type: string | null
+          is_core_module: boolean
+          minimum_role: string | null
+          module_key: string
+          module_name: string
+          permissions_required: Json | null
+          requires_integration: boolean
+          route_pattern: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          config_schema?: Json | null
+          created_at?: string
+          default_visible?: boolean
+          description?: string | null
+          display_order?: number | null
+          enabled_by_superadmin?: boolean
+          icon?: string | null
+          id?: string
+          integration_type?: string | null
+          is_core_module?: boolean
+          minimum_role?: string | null
+          module_key: string
+          module_name: string
+          permissions_required?: Json | null
+          requires_integration?: boolean
+          route_pattern: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          config_schema?: Json | null
+          created_at?: string
+          default_visible?: boolean
+          description?: string | null
+          display_order?: number | null
+          enabled_by_superadmin?: boolean
+          icon?: string | null
+          id?: string
+          integration_type?: string | null
+          is_core_module?: boolean
+          minimum_role?: string | null
+          module_key?: string
+          module_name?: string
+          permissions_required?: Json | null
+          requires_integration?: boolean
+          route_pattern?: string
           updated_at?: string
         }
         Relationships: []

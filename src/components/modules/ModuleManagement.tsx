@@ -1,15 +1,24 @@
-
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ModuleStatsCards } from './ModuleStatsCards';
 import { ModuleSearchControls } from './ModuleSearchControls';
 import { ModuleEmptyState } from './ModuleEmptyState';
 import { ModuleGrid } from './ModuleGrid';
+import { SuperAdminModuleConfig } from './config/SuperAdminModuleConfig';
 import { useModuleManagement } from './ModuleManagementHooks';
 import { useModuleActions } from './ModuleManagementActions';
 import { useModuleDialogs } from './ModuleManagementDialogs';
+import { useBusiness } from '@/hooks/useBusiness';
 
 export const ModuleManagement: React.FC = () => {
+  const { isSuperAdmin } = useBusiness();
+
+  // For super admin, show the new configuration interface
+  if (isSuperAdmin) {
+    return <SuperAdminModuleConfig />;
+  }
+
+  // For regular business users, keep the existing interface
   const {
     modules,
     filteredModules,
