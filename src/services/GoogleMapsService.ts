@@ -108,7 +108,19 @@ class GoogleMapsService {
         },
         (results, status) => {
           if (status === google.maps.GeocoderStatus.OK && results) {
-            resolve(results);
+            // Convert Google Maps GeocoderResult to our GeocodeResult format
+            const mappedResults: GeocodeResult[] = results.map((r) => ({
+              address_components: r.address_components || [],
+              formatted_address: r.formatted_address || '',
+              geometry: {
+                location: {
+                  lat: r.geometry.location.lat(),
+                  lng: r.geometry.location.lng()
+                }
+              },
+              place_id: r.place_id || ''
+            }));
+            resolve(mappedResults);
           } else {
             reject(new Error(`Geocoding failed: ${status}`));
           }
