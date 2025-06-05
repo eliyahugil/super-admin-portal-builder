@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash2, GripVertical, Sparkles, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Sparkles, RefreshCw, Folder, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -16,16 +16,10 @@ import {
   generateRoute, 
   generateIcon, 
   validateModuleName,
-  getCustomerNumberForUser 
+  getCustomerNumberForUser,
+  createCustomModuleWithTable
 } from '@/utils/moduleUtils';
-
-interface CustomField {
-  id: string;
-  name: string;
-  type: string;
-  required: boolean;
-  options?: string[];
-}
+import type { CustomField, SubModule } from '@/utils/moduleTypes';
 
 interface CustomModuleCreatorProps {
   open: boolean;
@@ -42,6 +36,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
   const [moduleDescription, setModuleDescription] = useState('');
   const [moduleIcon, setModuleIcon] = useState('📋');
   const [fields, setFields] = useState<CustomField[]>([]);
+  const [subModules, setSubModules] = useState<SubModule[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -84,6 +79,28 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
     setFields(fields.filter(field => field.id !== id));
   };
 
+  const addSubModule = () => {
+    const newSubModule: SubModule = {
+      id: Date.now().toString(),
+      name: '',
+      description: '',
+      route: '',
+      icon: '📄',
+      display_order: subModules.length + 1
+    };
+    setSubModules([...subModules, newSubModule]);
+  };
+
+  const updateSubModule = (id: string, updates: Partial<SubModule>) => {
+    setSubModules(subModules.map(subModule => 
+      subModule.id === id ? { ...subModule, ...updates } : subModule
+    ));
+  };
+
+  const removeSubModule = (id: string) => {
+    setSubModules(subModules.filter(subModule => subModule.id !== id));
+  };
+
   const validateFields = () => {
     const nameValidation = validateModuleName(moduleName);
     if (!nameValidation.isValid) {
@@ -115,6 +132,26 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
       }
     }
 
+    // Validate sub-modules if any
+    for (const subModule of subModules) {
+      if (!subModule.name.trim()) {
+        toast({
+          title: 'שגיאה',
+          description: 'כל תת-המודלים חייבים להכיל שם',
+          variant: 'destructive'
+        });
+        return false;
+      }
+      if (!subModule.route.trim()) {
+        toast({
+          title: 'שגיאה',
+          description: 'כל תת-המודלים חייבים להכיל נתיב',
+          variant: 'destructive'
+        });
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -136,137 +173,31 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
         return;
       }
 
-      // Get customer number for the current user (0 for super admin, next number for others)
+      // Use the enhanced creation function with sub-modules
+      const result = await createCustomModuleWithTable(
+        moduleName,
+        moduleDescription,
+        fields,
+        subModules,
+        userData.user.id
+      );
+
+      if (!result.success) {
+        toast({
+          title: 'שגיאה',
+          description: result.error || 'לא ניתן ליצור את המודל',
+          variant: 'destructive'
+        });
+        return;
+      }
+
       const customerNumber = await getCustomerNumberForUser(userData.user.id);
-      console.log('Generated customer number:', customerNumber);
-
-      // Create the module with the customer number
-      const { data: moduleData, error: moduleError } = await supabase
-        .from('modules')
-        .insert({
-          name: moduleName,
-          description: moduleDescription,
-          icon: moduleIcon,
-          route: `/custom/${generateRoute(moduleName)}`,
-          is_active: true,
-          is_custom: true,
-          customer_number: customerNumber,
-          module_config: {}
-        })
-        .select()
-        .single();
-
-      if (moduleError) {
-        console.error('Error creating module:', moduleError);
-        toast({
-          title: 'שגיאה',
-          description: 'לא ניתן ליצור את המודל',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      console.log('Created module:', moduleData);
-
-      // Generate table name with customer number for better organization
-      const tableName = generateTableName(moduleName, moduleData.id, customerNumber);
-      const routeParam = generateRoute(moduleName);
-      const fullRoute = `/custom/${routeParam}`;
-      
-      console.log('Generated table name:', tableName);
-      console.log('Generated route parameter:', routeParam);
-      console.log('Full route:', fullRoute);
-
-      // Update the module with the correct table name in config
-      const { error: updateError } = await supabase
-        .from('modules')
-        .update({
-          module_config: {
-            table_name: tableName,
-            customer_number: customerNumber,
-            fields: fields.map((field, index) => ({
-              ...field,
-              display_order: index + 1
-            }))
-          }
-        })
-        .eq('id', moduleData.id);
-
-      if (updateError) {
-        console.error('Error updating module config:', updateError);
-        // Clean up the module if update fails
-        await supabase.from('modules').delete().eq('id', moduleData.id);
-        toast({
-          title: 'שגיאה',
-          description: 'לא ניתן לעדכן הגדרות המודל',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // Create field definitions in module_fields table
-      const fieldsToInsert = fields.map((field, index) => ({
-        module_id: moduleData.id,
-        field_name: field.name,
-        field_type: field.type,
-        is_required: field.required,
-        display_order: index + 1,
-        field_options: field.options ? { options: field.options } : null
-      }));
-
-      const { error: fieldsError } = await supabase
-        .from('module_fields')
-        .insert(fieldsToInsert);
-
-      if (fieldsError) {
-        console.error('Error creating fields:', fieldsError);
-        // Clean up the module if field creation fails
-        await supabase.from('modules').delete().eq('id', moduleData.id);
-        toast({
-          title: 'שגיאה',
-          description: 'לא ניתן ליצור את שדות המודל',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      console.log('Created module fields successfully');
-
-      // Now create the custom table using the database function
-      const fieldsConfig = fields.map(field => ({
-        name: field.name,
-        type: field.type,
-        required: field.required,
-        options: field.options || []
-      }));
-
-      console.log('Creating custom table with config:', fieldsConfig);
-
-      const { data: tableResult, error: tableError } = await supabase
-        .rpc('create_custom_module_table', {
-          module_id_param: moduleData.id,
-          table_name_param: tableName,
-          fields_config: fieldsConfig
-        });
-
-      if (tableError) {
-        console.error('Error creating custom table:', tableError);
-        // Clean up module and fields if table creation fails
-        await supabase.from('modules').delete().eq('id', moduleData.id);
-        toast({
-          title: 'שגיאה',
-          description: 'לא ניתן ליצור את טבלת הנתונים של המודל',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      console.log('Custom table created successfully:', tableResult);
-
       const customerText = customerNumber === 0 ? 'מנהל על (0)' : customerNumber.toString();
+      const subModulesText = subModules.length > 0 ? ` עם ${subModules.length} תת-מודלים` : '';
+      
       toast({
         title: 'הצלחה',
-        description: `המודל "${moduleName}" נוצר בהצלחה עם מספר לקוח ${customerText} כולל דף ייעודי בנתיב ${fullRoute}`,
+        description: `המודל "${moduleName}" נוצר בהצלחה עם מספר לקוח ${customerText}${subModulesText}`,
       });
 
       // Reset form
@@ -274,6 +205,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
       setModuleDescription('');
       setModuleIcon('📋');
       setFields([]);
+      setSubModules([]);
       
       onSuccess();
       onOpenChange(false);
@@ -371,6 +303,92 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Sub-Modules */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Folder className="h-5 w-5" />
+                  תת-מודלים (אופציונלי)
+                </div>
+                <Button onClick={addSubModule} size="sm" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  הוסף תת-מודל
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {subModules.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  ללא תת-מודלים. ניתן להוסיף תת-מודלים לארגון טוב יותר של התוכן.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {subModules.map((subModule, index) => (
+                    <div key={subModule.id} className="border rounded-lg p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-gray-400" />
+                          <span className="font-medium">תת-מודל {index + 1}</span>
+                        </div>
+                        <Button
+                          onClick={() => removeSubModule(subModule.id)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>שם תת-המודל</Label>
+                          <Input
+                            value={subModule.name}
+                            onChange={(e) => updateSubModule(subModule.id, { 
+                              name: e.target.value,
+                              route: generateRoute(e.target.value)
+                            })}
+                            placeholder="לדוגמה: ניהול קבצים, דוחות"
+                          />
+                        </div>
+
+                        <div>
+                          <Label>נתיב תת-המודל</Label>
+                          <Input
+                            value={subModule.route}
+                            onChange={(e) => updateSubModule(subModule.id, { route: e.target.value })}
+                            placeholder="לדוגמה: files, reports"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>תיאור תת-המודל</Label>
+                        <Input
+                          value={subModule.description || ''}
+                          onChange={(e) => updateSubModule(subModule.id, { description: e.target.value })}
+                          placeholder="תיאור קצר של תפקיד תת-המודל"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>אייקון תת-המודל</Label>
+                        <Input
+                          value={subModule.icon}
+                          onChange={(e) => updateSubModule(subModule.id, { icon: e.target.value })}
+                          placeholder="📄"
+                          className="w-20"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

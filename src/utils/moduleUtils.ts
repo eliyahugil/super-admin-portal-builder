@@ -5,6 +5,7 @@ export type {
   SimpleBusiness,
   SimpleModule,
   CustomField,
+  SubModule,
   ModuleCreationResult,
   ModuleRouteInfo,
   ValidationResult
@@ -27,7 +28,9 @@ export {
   getCustomerNumberForUser,
   isSuperAdmin,
   getUserBusinessId,
-  createCustomModuleWithTable
+  createCustomModuleWithTable,
+  createSubModules,
+  addModuleToBusiness
 } from './moduleDatabase';
 
 export { cleanupModuleData } from './moduleCleanup';

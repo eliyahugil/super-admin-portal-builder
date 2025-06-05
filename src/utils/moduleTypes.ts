@@ -47,12 +47,32 @@ export interface BusinessModuleRow {
   module_id: string;
 }
 
+export interface SubModuleRow {
+  id: string;
+  module_id: string;
+  name: string;
+  description?: string;
+  route: string;
+  icon?: string;
+  display_order: number;
+  is_active: boolean;
+}
+
 export interface CustomField {
   id: string;
   name: string;
   type: string;
   required: boolean;
   options?: string[];
+}
+
+export interface SubModule {
+  id: string;
+  name: string;
+  description?: string;
+  route: string;
+  icon?: string;
+  display_order: number;
 }
 
 export interface ModuleCreationResult {
