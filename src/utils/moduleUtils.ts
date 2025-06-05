@@ -164,14 +164,19 @@ const hebrewToIconMapping: Record<string, string> = {
   'אישור': '✅'
 };
 
-export const generateTableName = (name: string, moduleId?: string): string => {
+export const generateTableName = (name: string, moduleId?: string, customerNumber?: number): string => {
   // Convert Hebrew to English, then create table name
   const englishName = translateHebrewToEnglish(name);
-  const baseName = 'custom_' + englishName
+  let baseName = 'custom_' + englishName
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, '_')
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '');
+  
+  // Add customer number prefix for better organization
+  if (customerNumber) {
+    baseName = `c${customerNumber}_${baseName}`;
+  }
   
   // If moduleId is provided, append a short version of it to ensure uniqueness
   if (moduleId) {

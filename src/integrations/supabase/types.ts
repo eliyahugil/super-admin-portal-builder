@@ -239,6 +239,70 @@ export type Database = {
           },
         ]
       }
+      custom_management_customers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          module_id: string
+          updated_at: string
+          "שם הלקוח ": string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          module_id: string
+          updated_at?: string
+          "שם הלקוח "?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          module_id?: string
+          updated_at?: string
+          "שם הלקוח "?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_management_customers_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_numbers: {
+        Row: {
+          business_id: string
+          created_at: string
+          customer_number: number
+          id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          customer_number: number
+          id?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          customer_number?: number
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_numbers_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_branch_priorities: {
         Row: {
           branch_id: string
@@ -751,6 +815,7 @@ export type Database = {
       modules: {
         Row: {
           created_at: string
+          customer_number: number | null
           description: string | null
           icon: string | null
           id: string
@@ -763,6 +828,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          customer_number?: number | null
           description?: string | null
           icon?: string | null
           id?: string
@@ -775,6 +841,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          customer_number?: number | null
           description?: string | null
           icon?: string | null
           id?: string
@@ -985,6 +1052,10 @@ export type Database = {
       generate_table_name: {
         Args: { module_name: string }
         Returns: string
+      }
+      get_next_customer_number: {
+        Args: { business_id_param: string }
+        Returns: number
       }
       is_super_admin: {
         Args: { user_id: string }

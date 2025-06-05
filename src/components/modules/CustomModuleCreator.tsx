@@ -119,7 +119,26 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
     try {
       console.log('Starting custom module creation...');
       
-      // Create the module first to get the module ID
+      // Get the next customer number from the database function
+      const { data: customerNumberData, error: customerNumberError } = await supabase
+        .rpc('get_next_customer_number', { 
+          business_id_param: '123e4567-e89b-12d3-a456-426614174000' // TODO: Replace with actual business_id from context
+        });
+
+      if (customerNumberError) {
+        console.error('Error getting customer number:', customerNumberError);
+        toast({
+          title: 'שגיאה',
+          description: 'לא ניתן לקבל מספר לקוח',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const customerNumber = customerNumberData;
+      console.log('Generated customer number:', customerNumber);
+
+      // Create the module with the customer number
       const { data: moduleData, error: moduleError } = await supabase
         .from('modules')
         .insert({
@@ -129,6 +148,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
           route: `/custom/${generateRoute(moduleName)}`,
           is_active: true,
           is_custom: true,
+          customer_number: customerNumber,
           module_config: {}
         })
         .select()
@@ -146,8 +166,8 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
 
       console.log('Created module:', moduleData);
 
-      // Now generate table name with module ID for uniqueness
-      const tableName = generateTableName(moduleName, moduleData.id);
+      // Generate table name with customer number for better organization
+      const tableName = generateTableName(moduleName, moduleData.id, customerNumber);
       const routeParam = generateRoute(moduleName);
       const fullRoute = `/custom/${routeParam}`;
       
@@ -161,6 +181,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
         .update({
           module_config: {
             table_name: tableName,
+            customer_number: customerNumber,
             fields: fields.map((field, index) => ({
               ...field,
               display_order: index + 1
@@ -242,7 +263,7 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
 
       toast({
         title: 'הצלחה',
-        description: `המודל "${moduleName}" נוצר בהצלחה כולל דף ייעודי בנתיב ${fullRoute}`,
+        description: `המודל "${moduleName}" נוצר בהצלחה עם מספר לקוח ${customerNumber} כולל דף ייעודי בנתיב ${fullRoute}`,
       });
 
       // Reset form
@@ -293,10 +314,14 @@ export const CustomModuleCreator: React.FC<CustomModuleCreatorProps> = ({
                 {moduleName && (
                   <div className="mt-2 text-xs space-y-1">
                     <div className="text-gray-500">
-                      <span className="font-medium">שם טבלה:</span> {generateTableName(moduleName)}
+                      <span className="font-medium">שם טבלה:</span> {generateTableName(moduleName, 'temp-id', 0)}
                     </div>
                     <div className="text-gray-500">
                       <span className="font-medium">נתיב:</span> /custom/{generateRoute(moduleName)}
+                    </div>
+                    <div className="text-blue-600 font-medium flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      המודל יקבל מספר לקוח ייחודי אוטומטית
                     </div>
                     <div className="text-green-600 font-medium flex items-center gap-1">
                       <Sparkles className="h-3 w-3" />
