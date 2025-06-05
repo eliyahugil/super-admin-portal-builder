@@ -26,7 +26,7 @@ export const EmployeeRequestForm: React.FC<EmployeeRequestFormProps> = ({ employ
   const requestTypes = [
     { value: 'vacation', label: 'בקשת חופשה' },
     { value: 'sick_leave', label: 'דיווח מחלה' },
-    { value: 'schedule_change', label: 'שינוי במשמרת' },
+    { value: 'shift_change', label: 'שינוי במשמרת' },
     { value: 'equipment', label: 'בקשת ציוד' },
     { value: 'other', label: 'אחר' }
   ];
@@ -48,13 +48,13 @@ export const EmployeeRequestForm: React.FC<EmployeeRequestFormProps> = ({ employ
     try {
       const { error } = await supabase
         .from('employee_requests')
-        .insert([{
+        .insert({
           employee_id: employeeId,
-          request_type: requestType,
+          request_type: requestType as 'vacation' | 'sick_leave' | 'shift_change' | 'equipment' | 'other',
           subject,
           description: description || null,
           status: 'pending'
-        }]);
+        });
 
       if (error) throw error;
 
