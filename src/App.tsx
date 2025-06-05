@@ -48,7 +48,7 @@ const App: React.FC = () => (
                 </ProtectedRoute>
               } 
             />
-            {/* Dynamic module routes */}
+            {/* Dynamic module routes with sub-modules */}
             <Route 
               path="/modules/:moduleRoute" 
               element={
