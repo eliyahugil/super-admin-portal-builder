@@ -98,10 +98,18 @@
 
   html {
     direction: rtl;
+    lang: he;
   }
 
   body {
     @apply bg-background text-foreground;
+    direction: rtl;
+    text-align: right;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  /* הגדרת RTL לכל הקונטיינרים */
+  #root {
     direction: rtl;
     text-align: right;
   }
@@ -142,5 +150,16 @@
   /* RTL icon positioning */
   .sidebar-menu-item-rtl {
     flex-direction: row-reverse;
+  }
+
+  /* RTL form styling */
+  .auth-form {
+    direction: rtl;
+    text-align: right;
+  }
+
+  .auth-form input {
+    text-align: right;
+    direction: rtl;
   }
 }

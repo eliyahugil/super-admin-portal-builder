@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Header } from "@/components/layout/Header";
 import { MainSidebar } from "@/components/layout/MainSidebar";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { useAuth } from "@/components/auth/AuthContext";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { ModuleManagement } from "@/components/modules/ModuleManagement";
 import { EmployeeManagement } from "@/components/modules/employees/EmployeeManagement";
@@ -26,24 +27,176 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <SidebarProvider>
-    <div className="min-h-screen flex w-full bg-gray-50">
-      <MainSidebar />
-      <SidebarInset className="flex flex-col">
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <div className="flex-1">
-            <Header />
+const AppContent: React.FC = () => {
+  const { user } = useAuth();
+
+  // אם המשתמש לא מחובר, הצג רק את Header (שיכיל את טופס ההתחברות)
+  if (!user) {
+    return <Header />;
+  }
+
+  // אם המשתמש מחובר, הצג את המערכת המלאה
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gray-50" dir="rtl">
+        <MainSidebar />
+        <SidebarInset className="flex flex-col">
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <div className="flex-1">
+              <Header />
+            </div>
+          </header>
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <Routes>
+              {/* Default Route - Dashboard */}
+              <Route 
+                path="/" 
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Super Admin Routes */}
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute>
+                    <SuperAdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/businesses" 
+                element={
+                  <ProtectedRoute>
+                    <BusinessManagement />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/modules" 
+                element={
+                  <ProtectedRoute>
+                    <ModuleManagement />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/integrations" 
+                element={
+                  <ProtectedRoute>
+                    <SuperAdminIntegrations />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/system-preview/:moduleId" 
+                element={
+                  <ProtectedRoute>
+                    <SystemPreview />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* CRM Routes */}
+              <Route 
+                path="/crm" 
+                element={
+                  <ProtectedRoute>
+                    <CRMDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/crm/:crmModule" 
+                element={
+                  <ProtectedRoute>
+                    <CRMDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Business Routes with Business ID */}
+              <Route 
+                path="/:businessId/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <BusinessDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/:businessId/integrations" 
+                element={
+                  <ProtectedRoute>
+                    <BusinessIntegrationsManager />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/:businessId/integrations/:integration" 
+                element={
+                  <ProtectedRoute>
+                    <BusinessIntegrationsManager />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Existing Module Routes */}
+              <Route 
+                path="/modules" 
+                element={
+                  <ProtectedRoute>
+                    <ModuleManagement />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/modules/:moduleRoute" 
+                element={
+                  <ProtectedRoute>
+                    <ModuleWrapper />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/modules/:moduleRoute/:subModule" 
+                element={
+                  <ProtectedRoute>
+                    <ModuleWrapper />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Legacy Routes */}
+              <Route 
+                path="/employees" 
+                element={
+                  <ProtectedRoute>
+                    <EmployeeManagement />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/custom/:moduleRoute" 
+                element={
+                  <ProtectedRoute>
+                    <DynamicModulePage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </div>
-        </header>
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {children}
-        </div>
-      </SidebarInset>
-    </div>
-  </SidebarProvider>
-);
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
+  );
+};
 
 const App: React.FC = () => (
   <QueryClientProvider client={queryClient}>
@@ -52,181 +205,7 @@ const App: React.FC = () => (
       <Sonner />
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
-            {/* Default Route - Dashboard */}
-            <Route 
-              path="/" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Dashboard />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-
-            {/* Super Admin Routes */}
-            <Route 
-              path="/admin" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <SuperAdminDashboard />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin/businesses" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <BusinessManagement />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin/modules" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <ModuleManagement />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin/integrations" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <SuperAdminIntegrations />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin/system-preview/:moduleId" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <SystemPreview />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-
-            {/* CRM Routes */}
-            <Route 
-              path="/crm" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <CRMDashboard />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/crm/:crmModule" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <CRMDashboard />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-
-            {/* Business Routes with Business ID */}
-            <Route 
-              path="/:businessId/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <BusinessDashboard />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/:businessId/integrations" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <BusinessIntegrationsManager />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/:businessId/integrations/:integration" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <BusinessIntegrationsManager />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-
-            {/* Existing Module Routes */}
-            <Route 
-              path="/modules" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <ModuleManagement />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/modules/:moduleRoute" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <ModuleWrapper />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/modules/:moduleRoute/:subModule" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <ModuleWrapper />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-
-            {/* Legacy Routes */}
-            <Route 
-              path="/employees" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <EmployeeManagement />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/custom/:moduleRoute" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <DynamicModulePage />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppContent />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
