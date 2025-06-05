@@ -19,6 +19,34 @@ export interface SimpleModule {
   customer_number?: number;
 }
 
+// Simple row types for database operations
+export interface ProfileRow {
+  id: string;
+  role: string;
+}
+
+export interface BusinessRow {
+  id: string;
+  owner_id: string;
+}
+
+export interface ModuleRow {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  route?: string;
+  is_custom: boolean;
+  is_active: boolean;
+  customer_number?: number;
+}
+
+export interface BusinessModuleRow {
+  id: string;
+  business_id: string;
+  module_id: string;
+}
+
 export interface CustomField {
   id: string;
   name: string;

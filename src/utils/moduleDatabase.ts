@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { SimpleProfile, SimpleBusiness, CustomField, ModuleCreationResult } from './moduleTypes';
+import type { ProfileRow, BusinessRow, CustomField, ModuleCreationResult } from './moduleTypes';
 import { generateTableName, generateRoute, generateIcon } from './moduleGeneration';
 import { validateModuleName } from './moduleValidation';
 
@@ -19,7 +19,7 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
       throw profileError;
     }
 
-    const userProfile = profile as SimpleProfile | null;
+    const userProfile = profile as ProfileRow | null;
 
     if (userProfile?.role === 'super_admin') {
       return 0; // Super admin gets customer number 0
@@ -37,7 +37,7 @@ export const getCustomerNumberForUser = async (userId: string): Promise<number> 
       throw businessError;
     }
 
-    const userBusiness = data as SimpleBusiness | null;
+    const userBusiness = data as BusinessRow | null;
 
     if (!userBusiness) {
       throw new Error('No business found for user');
@@ -74,7 +74,7 @@ export const isSuperAdmin = async (userId: string): Promise<boolean> => {
       return false;
     }
 
-    const profile = data as SimpleProfile | null;
+    const profile = data as ProfileRow | null;
     return profile?.role === 'super_admin';
   } catch (error) {
     console.error('Error in isSuperAdmin:', error);
@@ -96,7 +96,7 @@ export const getUserBusinessId = async (userId: string): Promise<string | null> 
       return null;
     }
 
-    const business = data as SimpleBusiness | null;
+    const business = data as BusinessRow | null;
     return business?.id || null;
   } catch (error) {
     console.error('Error in getUserBusinessId:', error);
