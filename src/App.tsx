@@ -30,6 +30,7 @@ import { BusinessDashboard } from '@/components/business/BusinessDashboard';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { GlobalIntegrationsPage } from '@/pages/GlobalIntegrationsPage';
 import { CRMDashboard } from '@/components/crm/CRMDashboard';
+import { ShiftTokenSchedulePage } from '@/components/modules/settings/ShiftTokenSchedulePage';
 
 const queryClient = new QueryClient();
 
@@ -127,6 +128,14 @@ function App() {
               <ProtectedRoute>
                 <AppLayout>
                   <BusinessModulesPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/modules/settings/shift-schedule" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ShiftTokenSchedulePage />
                 </AppLayout>
               </ProtectedRoute>
             } />
