@@ -33,6 +33,9 @@ import { EmployeeEditDialog } from './EmployeeEditDialog';
 import { EmployeeBranchAssignments } from './EmployeeBranchAssignments';
 import { EmployeeContacts } from './EmployeeContacts';
 import { RecentAttendance } from './RecentAttendance';
+import { useEmployeeAttendance } from '@/hooks/useEmployeeAttendance';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
 import type { EmployeeType } from '@/types/supabase';
 
 interface Employee {
@@ -59,6 +62,7 @@ export const EmployeeProfilePage: React.FC = () => {
   const { businessId } = useBusiness();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
+  const { data: attendanceLogs, loading: attendanceLoading } = useEmployeeAttendance(employee?.id || '');
 
   useEffect(() => {
     if (employeeId && businessId) {
@@ -351,10 +355,14 @@ export const EmployeeProfilePage: React.FC = () => {
         {/* Main Content with Tabs */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="shifts" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="shifts" className="flex items-center gap-2">
                 <History className="h-4 w-4" />
                 משמרות
+              </TabsTrigger>
+              <TabsTrigger value="attendance" className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                נוכחות
               </TabsTrigger>
               <TabsTrigger value="contacts" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -377,6 +385,71 @@ export const EmployeeProfilePage: React.FC = () => {
             <div className="mt-6">
               <TabsContent value="shifts" className="mt-0">
                 <ShiftSubmissionHistory employeeId={employee.id} />
+              </TabsContent>
+              
+              <TabsContent value="attendance" className="mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      היסטוריית נוכחות
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {attendanceLoading ? (
+                      <div className="flex justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      </div>
+                    ) : attendanceLogs.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-right p-2">תאריך</th>
+                              <th className="text-right p-2">פעולה</th>
+                              <th className="text-right p-2">שעה</th>
+                              <th className="text-right p-2">סניף</th>
+                              <th className="text-right p-2">הערות</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {attendanceLogs.map((log) => (
+                              <tr key={log.id} className="border-b hover:bg-gray-50">
+                                <td className="p-2">
+                                  {format(new Date(log.recorded_at), 'dd/MM/yyyy', { locale: he })}
+                                </td>
+                                <td className="p-2">
+                                  <span className={`px-2 py-1 rounded text-xs ${
+                                    log.action === 'check_in' 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {log.action === 'check_in' ? 'כניסה' : 'יציאה'}
+                                  </span>
+                                </td>
+                                <td className="p-2">
+                                  {format(new Date(log.recorded_at), 'HH:mm', { locale: he })}
+                                </td>
+                                <td className="p-2">
+                                  {log.branch_id || 'לא צוין'}
+                                </td>
+                                <td className="p-2">
+                                  {log.notes || '-'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">אין רישומי נוכחות</h3>
+                        <p className="text-gray-600">לא נמצאו רישומי נוכחות עבור העובד</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </TabsContent>
               
               <TabsContent value="contacts" className="mt-0">
