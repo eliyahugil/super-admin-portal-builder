@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Edit } from 'lucide-react';
+import type { EmployeeType } from '@/types/supabase';
 
 interface Employee {
   id: string;
@@ -18,7 +19,7 @@ interface Employee {
   email: string | null;
   phone: string | null;
   address: string | null;
-  employee_type: string;
+  employee_type: EmployeeType;
   is_active: boolean;
   hire_date: string | null;
   weekly_hours_required: number | null;
@@ -40,7 +41,7 @@ export const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({ employee
     email: employee.email || '',
     phone: employee.phone || '',
     address: employee.address || '',
-    employee_type: employee.employee_type,
+    employee_type: employee.employee_type as EmployeeType,
     is_active: employee.is_active,
     hire_date: employee.hire_date || '',
     weekly_hours_required: employee.weekly_hours_required || 0,
@@ -54,9 +55,24 @@ export const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({ employee
     setLoading(true);
 
     try {
+      const updateData = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        address: formData.address || null,
+        employee_type: formData.employee_type,
+        is_active: formData.is_active,
+        hire_date: formData.hire_date || null,
+        weekly_hours_required: formData.weekly_hours_required || null,
+        notes: formData.notes || null,
+        main_branch_id: formData.main_branch_id || null,
+        updated_at: new Date().toISOString(),
+      };
+
       const { error } = await supabase
         .from('employees')
-        .update(formData)
+        .update(updateData)
         .eq('id', employee.id);
 
       if (error) throw error;
@@ -148,7 +164,7 @@ export const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({ employee
               <Label htmlFor="employee_type">סוג עובד</Label>
               <Select
                 value={formData.employee_type}
-                onValueChange={(value) => setFormData({ ...formData, employee_type: value })}
+                onValueChange={(value: EmployeeType) => setFormData({ ...formData, employee_type: value })}
               >
                 <SelectTrigger>
                   <SelectValue />

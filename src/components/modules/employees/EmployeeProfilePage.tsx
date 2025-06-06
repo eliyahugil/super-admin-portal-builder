@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +31,7 @@ import { SalaryHistory } from './SalaryHistory';
 import { WeeklyTokenButton } from './WeeklyTokenButton';
 import { EmployeeEditDialog } from './EmployeeEditDialog';
 import { EmployeeBranchAssignments } from './EmployeeBranchAssignments';
+import type { EmployeeType } from '@/types/supabase';
 
 interface Employee {
   id: string;
@@ -39,11 +41,12 @@ interface Employee {
   email: string | null;
   phone: string | null;
   address: string | null;
-  employee_type: string;
+  employee_type: EmployeeType;
   is_active: boolean;
   hire_date: string | null;
   weekly_hours_required: number | null;
   notes: string | null;
+  main_branch_id: string | null;
   main_branch?: { name: string } | null;
 }
 
@@ -114,8 +117,8 @@ export const EmployeeProfilePage: React.FC = () => {
     }
   };
 
-  const getEmployeeTypeLabel = (type: string) => {
-    const types: Record<string, string> = {
+  const getEmployeeTypeLabel = (type: EmployeeType) => {
+    const types: Record<EmployeeType, string> = {
       permanent: 'קבוע',
       temporary: 'זמני',
       youth: 'נוער',
@@ -124,8 +127,8 @@ export const EmployeeProfilePage: React.FC = () => {
     return types[type] || type;
   };
 
-  const getEmployeeTypeVariant = (type: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  const getEmployeeTypeVariant = (type: EmployeeType) => {
+    const variants: Record<EmployeeType, 'default' | 'secondary' | 'destructive' | 'outline'> = {
       permanent: 'default',
       temporary: 'secondary',
       youth: 'outline',
