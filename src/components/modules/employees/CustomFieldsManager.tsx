@@ -11,19 +11,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Edit, Trash2, Settings } from 'lucide-react';
 import { useEmployeeFieldTemplates, type EmployeeFieldTemplate } from '@/hooks/useEmployeeFieldTemplates';
 
+type FieldType = 'text' | 'textarea' | 'number' | 'email' | 'date' | 'boolean' | 'select';
+
 export const CustomFieldsManager: React.FC = () => {
   const { fieldTemplates, isLoading, createFieldTemplate, updateFieldTemplate, deleteFieldTemplate } = useEmployeeFieldTemplates();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingField, setEditingField] = useState<EmployeeFieldTemplate | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    field_name: string;
+    field_type: FieldType;
+    field_options: string[];
+    is_required: boolean;
+    display_order: number;
+  }>({
     field_name: '',
-    field_type: 'text' as const,
-    field_options: [] as string[],
+    field_type: 'text',
+    field_options: [],
     is_required: false,
     display_order: 1,
   });
 
-  const fieldTypes = [
+  const fieldTypes: { value: FieldType; label: string }[] = [
     { value: 'text', label: 'טקסט' },
     { value: 'textarea', label: 'טקסט ארוך' },
     { value: 'number', label: 'מספר' },
@@ -72,7 +80,7 @@ export const CustomFieldsManager: React.FC = () => {
     setEditingField(field);
     setFormData({
       field_name: field.field_name,
-      field_type: field.field_type,
+      field_type: field.field_type as FieldType,
       field_options: field.field_options || [],
       is_required: field.is_required,
       display_order: field.display_order,
@@ -142,7 +150,7 @@ export const CustomFieldsManager: React.FC = () => {
                   <Label htmlFor="field_type">סוג השדה</Label>
                   <Select
                     value={formData.field_type}
-                    onValueChange={(value: any) => setFormData({ ...formData, field_type: value })}
+                    onValueChange={(value: FieldType) => setFormData({ ...formData, field_type: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />

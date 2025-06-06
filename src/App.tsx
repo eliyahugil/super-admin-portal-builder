@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -5,9 +6,10 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { Index } from '@/pages/Index';
-import { LearnMore } from '@/pages/LearnMore';
-import { NotFound } from '@/pages/NotFound';
+import Index from '@/pages/Index';
+import LearnMore from '@/pages/LearnMore';
+import NotFound from '@/pages/NotFound';
+import { AuthForm } from '@/components/auth/AuthForm';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { ModuleManagement } from '@/components/modules/ModuleManagement';
 import { BusinessSettings } from '@/components/modules/settings/BusinessSettings';
@@ -26,6 +28,8 @@ import { DynamicModulePage } from '@/components/modules/DynamicModulePage';
 import { SubmitShiftPage } from '@/components/modules/shifts/SubmitShiftPage';
 import { BusinessDashboard } from '@/components/business/BusinessDashboard';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
+import { GlobalIntegrationsPage } from '@/pages/GlobalIntegrationsPage';
+import { CRMDashboard } from '@/components/crm/CRMDashboard';
 
 const queryClient = new QueryClient();
 
