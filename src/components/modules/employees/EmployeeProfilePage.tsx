@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/useBusiness';
+import { useBusinessModuleEnabled } from '@/hooks/useBusinessModuleEnabled';
 import { 
   User, 
   Phone, 
@@ -41,7 +43,7 @@ import type { EmployeeType } from '@/types/supabase';
 
 interface Employee {
   id: string;
-  business_id: string; // Added missing business_id property
+  business_id: string;
   employee_id: string | null;
   first_name: string;
   last_name: string;
@@ -62,6 +64,7 @@ export const EmployeeProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { businessId } = useBusiness();
+  const { isModuleEnabled } = useBusinessModuleEnabled();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const { data: attendanceLogs, loading: attendanceLoading } = useEmployeeAttendance(employee?.id || '');
@@ -157,6 +160,33 @@ export const EmployeeProfilePage: React.FC = () => {
     }
   };
 
+  // Dynamic tab configuration based on enabled modules
+  const getAvailableTabs = () => {
+    const tabs = [
+      { id: 'shifts', label: 'משמרות', icon: History, component: 'shifts' },
+      { id: 'attendance', label: 'נוכחות', icon: Clock, component: 'attendance' },
+    ];
+
+    // Add conditional tabs based on module enablement
+    if (isModuleEnabled('employee_contacts')) {
+      tabs.push({ id: 'contacts', label: 'פניות', icon: Users, component: 'contacts' });
+    }
+
+    if (isModuleEnabled('employee_documents')) {
+      tabs.push({ id: 'documents', label: 'מסמכים', icon: FileText, component: 'documents' });
+    }
+
+    if (isModuleEnabled('employee_notes')) {
+      tabs.push({ id: 'notes', label: 'הערות', icon: StickyNote, component: 'notes' });
+    }
+
+    if (isModuleEnabled('salary_management')) {
+      tabs.push({ id: 'salary', label: 'שכר', icon: DollarSign, component: 'salary' });
+    }
+
+    return tabs;
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8" dir="rtl">
@@ -184,6 +214,7 @@ export const EmployeeProfilePage: React.FC = () => {
   }
 
   const employeeName = `${employee.first_name} ${employee.last_name}`;
+  const availableTabs = getAvailableTabs();
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
@@ -231,7 +262,6 @@ export const EmployeeProfilePage: React.FC = () => {
               <MessageCircle className="h-4 w-4" />
               שלח הודעה
             </Button>
-            {/* Compact WhatsApp token button */}
             <WeeklyTokenButton
               phone={employee.phone}
               employeeName={employeeName}
@@ -242,7 +272,6 @@ export const EmployeeProfilePage: React.FC = () => {
         )}
       </div>
 
-      {/* Rest of the component remains the same */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Personal Information */}
         <div className="lg:col-span-1">
@@ -355,34 +384,16 @@ export const EmployeeProfilePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content with Tabs */}
+        {/* Main Content with Dynamic Tabs */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="shifts" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="shifts" className="flex items-center gap-2">
-                <History className="h-4 w-4" />
-                משמרות
-              </TabsTrigger>
-              <TabsTrigger value="attendance" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                נוכחות
-              </TabsTrigger>
-              <TabsTrigger value="contacts" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                פניות
-              </TabsTrigger>
-              <TabsTrigger value="documents" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                מסמכים
-              </TabsTrigger>
-              <TabsTrigger value="notes" className="flex items-center gap-2">
-                <StickyNote className="h-4 w-4" />
-                הערות
-              </TabsTrigger>
-              <TabsTrigger value="salary" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                שכר
-              </TabsTrigger>
+            <TabsList className={`grid w-full grid-cols-${Math.min(availableTabs.length, 6)}`}>
+              {availableTabs.map((tab) => (
+                <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </TabsTrigger>
+              ))}
             </TabsList>
             
             <div className="mt-6">
@@ -455,33 +466,41 @@ export const EmployeeProfilePage: React.FC = () => {
                 </Card>
               </TabsContent>
               
-              <TabsContent value="contacts" className="mt-0">
-                <EmployeeContacts 
-                  employeeId={employee.id} 
-                  employeeName={employeeName}
-                />
-              </TabsContent>
+              {isModuleEnabled('employee_contacts') && (
+                <TabsContent value="contacts" className="mt-0">
+                  <EmployeeContacts 
+                    employeeId={employee.id} 
+                    employeeName={employeeName}
+                  />
+                </TabsContent>
+              )}
               
-              <TabsContent value="documents" className="mt-0">
-                <EmployeeDocuments 
-                  employeeId={employee.id} 
-                  employeeName={employeeName}
-                />
-              </TabsContent>
+              {isModuleEnabled('employee_documents') && (
+                <TabsContent value="documents" className="mt-0">
+                  <EmployeeDocuments 
+                    employeeId={employee.id} 
+                    employeeName={employeeName}
+                  />
+                </TabsContent>
+              )}
               
-              <TabsContent value="notes" className="mt-0">
-                <EmployeeNotes 
-                  employeeId={employee.id} 
-                  employeeName={employeeName}
-                />
-              </TabsContent>
+              {isModuleEnabled('employee_notes') && (
+                <TabsContent value="notes" className="mt-0">
+                  <EmployeeNotes 
+                    employeeId={employee.id} 
+                    employeeName={employeeName}
+                  />
+                </TabsContent>
+              )}
               
-              <TabsContent value="salary" className="mt-0">
-                <SalaryHistory 
-                  employeeId={employee.id} 
-                  employeeName={employeeName}
-                />
-              </TabsContent>
+              {isModuleEnabled('salary_management') && (
+                <TabsContent value="salary" className="mt-0">
+                  <SalaryHistory 
+                    employeeId={employee.id} 
+                    employeeName={employeeName}
+                  />
+                </TabsContent>
+              )}
             </div>
           </Tabs>
         </div>
