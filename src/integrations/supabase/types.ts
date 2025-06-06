@@ -805,6 +805,64 @@ export type Database = {
           },
         ]
       }
+      employee_notes: {
+        Row: {
+          business_id: string
+          content: string
+          created_at: string
+          created_by: string
+          employee_id: string
+          id: string
+          is_warning: boolean
+          note_type: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          content: string
+          created_at?: string
+          created_by: string
+          employee_id: string
+          id?: string
+          is_warning?: boolean
+          note_type: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          content?: string
+          created_at?: string
+          created_by?: string
+          employee_id?: string
+          id?: string
+          is_warning?: boolean
+          note_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_notes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_notes_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_notifications: {
         Row: {
           created_at: string | null

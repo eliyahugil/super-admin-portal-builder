@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +20,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { EmployeeNotesSection } from './EmployeeNotesSection';
 
 interface Employee {
   id: string;
@@ -237,7 +237,7 @@ export const EmployeeProfilePage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Personal Information */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -246,6 +246,7 @@ export const EmployeeProfilePage: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Personal Information Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {employee.phone && (
                   <div className="flex items-center gap-3">
@@ -318,6 +319,9 @@ export const EmployeeProfilePage: React.FC = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Employee Notes Section */}
+          <EmployeeNotesSection employeeId={employee.id} />
         </div>
 
         {/* Quick Actions & Recent Activity */}
