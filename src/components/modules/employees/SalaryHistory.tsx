@@ -1,21 +1,33 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, TrendingUp, Calendar, Plus, Edit } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
 interface SalaryRecord {
   id: string;
+  employee_id: string;
   amount: number;
   currency: string;
   type: 'hourly' | 'monthly' | 'fixed';
-  effectiveDate: string;
+  effective_date: string;
   reason?: string;
-  approvedBy?: string;
+  approved_by?: string;
   notes?: string;
+  created_at: string;
+  created_by?: string;
+  approver?: {
+    full_name: string;
+  };
+  creator?: {
+    full_name: string;
+  };
 }
 
 interface SalaryHistoryProps {
@@ -29,28 +41,31 @@ export const SalaryHistory: React.FC<SalaryHistoryProps> = ({
   employeeName,
   canEdit = true 
 }) => {
-  // Mock data - in real app this would come from API
-  const [salaryRecords] = useState<SalaryRecord[]>([
-    {
-      id: '1',
-      amount: 35,
-      currency: 'ILS',
-      type: 'hourly',
-      effectiveDate: '2024-01-01',
-      reason: 'שכר התחלתי',
-      approvedBy: 'מנהל משאבי אנוש',
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: salaryRecords, isLoading } = useQuery({
+    queryKey: ['salary-history', employeeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employee_salary_history')
+        .select(`
+          *,
+          approver:profiles!employee_salary_history_approved_by_fkey(full_name),
+          creator:profiles!employee_salary_history_created_by_fkey(full_name)
+        `)
+        .eq('employee_id', employeeId)
+        .order('effective_date', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching salary history:', error);
+        throw error;
+      }
+
+      return data as SalaryRecord[];
     },
-    {
-      id: '2',
-      amount: 38,
-      currency: 'ILS',
-      type: 'hourly',
-      effectiveDate: '2024-06-01',
-      reason: 'העלאת שכר על בסיס ביצועים',
-      approvedBy: 'מנהל משאבי אנוש',
-      notes: 'העלאה בעקבות הערכת ביצועים מעולה',
-    },
-  ]);
+    enabled: !!employeeId,
+  });
 
   const getSalaryTypeLabel = (type: string) => {
     switch (type) {
@@ -73,7 +88,7 @@ export const SalaryHistory: React.FC<SalaryHistoryProps> = ({
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('he-IL', {
       style: 'currency',
-      currency: currency,
+      currency: currency || 'ILS',
     }).format(amount);
   };
 
@@ -81,6 +96,21 @@ export const SalaryHistory: React.FC<SalaryHistoryProps> = ({
     const increase = ((current - previous) / previous) * 100;
     return increase.toFixed(1);
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -98,7 +128,7 @@ export const SalaryHistory: React.FC<SalaryHistoryProps> = ({
         )}
       </div>
 
-      {salaryRecords.length > 0 ? (
+      {salaryRecords && salaryRecords.length > 0 ? (
         <div className="space-y-4">
           {/* Current Salary Summary */}
           <Card className="border-2 border-green-200 bg-green-50">
@@ -107,23 +137,23 @@ export const SalaryHistory: React.FC<SalaryHistoryProps> = ({
                 <div>
                   <h4 className="font-semibold text-green-800">שכר נוכחי</h4>
                   <div className="text-2xl font-bold text-green-900">
-                    {formatCurrency(salaryRecords[salaryRecords.length - 1].amount, salaryRecords[salaryRecords.length - 1].currency)}
+                    {formatCurrency(salaryRecords[0].amount, salaryRecords[0].currency)}
                     <span className="text-sm font-normal mr-2">
-                      / {salaryRecords[salaryRecords.length - 1].type === 'hourly' ? 'שעה' : 'חודש'}
+                      / {salaryRecords[0].type === 'hourly' ? 'שעה' : 'חודש'}
                     </span>
                   </div>
                 </div>
                 <div className="text-left">
-                  <Badge className={getSalaryTypeColor(salaryRecords[salaryRecords.length - 1].type)}>
-                    {getSalaryTypeLabel(salaryRecords[salaryRecords.length - 1].type)}
+                  <Badge className={getSalaryTypeColor(salaryRecords[0].type)}>
+                    {getSalaryTypeLabel(salaryRecords[0].type)}
                   </Badge>
                   {salaryRecords.length > 1 && (
                     <div className="flex items-center gap-1 mt-2 text-green-700">
                       <TrendingUp className="h-4 w-4" />
                       <span className="text-sm">
                         +{calculateIncrease(
-                          salaryRecords[salaryRecords.length - 1].amount,
-                          salaryRecords[salaryRecords.length - 2].amount
+                          salaryRecords[0].amount,
+                          salaryRecords[1].amount
                         )}%
                       </span>
                     </div>
@@ -152,8 +182,8 @@ export const SalaryHistory: React.FC<SalaryHistoryProps> = ({
                       {index < salaryRecords.length - 1 && (
                         <Badge variant="outline" className="text-green-600">
                           +{calculateIncrease(
-                            salaryRecords[index + 1].amount,
-                            record.amount
+                            record.amount,
+                            salaryRecords[index + 1].amount
                           )}%
                         </Badge>
                       )}
@@ -162,7 +192,7 @@ export const SalaryHistory: React.FC<SalaryHistoryProps> = ({
                     <div className="flex items-center gap-2">
                       <div className="text-sm text-gray-500 flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        {format(new Date(record.effectiveDate), 'dd/MM/yyyy', { locale: he })}
+                        {format(new Date(record.effective_date), 'dd/MM/yyyy', { locale: he })}
                       </div>
                       {canEdit && (
                         <Button variant="outline" size="sm">
@@ -179,10 +209,10 @@ export const SalaryHistory: React.FC<SalaryHistoryProps> = ({
                     </div>
                   )}
                   
-                  {record.approvedBy && (
+                  {record.approver?.full_name && (
                     <div className="mb-2">
                       <span className="text-sm font-medium text-gray-700">אושר על ידי: </span>
-                      <span className="text-sm text-gray-600">{record.approvedBy}</span>
+                      <span className="text-sm text-gray-600">{record.approver.full_name}</span>
                     </div>
                   )}
                   

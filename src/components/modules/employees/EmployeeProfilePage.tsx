@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +31,7 @@ import { ShiftSubmissionHistory } from './ShiftSubmissionHistory';
 import { EmployeeDocuments } from './EmployeeDocuments';
 import { EmployeeNotes } from './EmployeeNotes';
 import { SalaryHistory } from './SalaryHistory';
+import { WeeklyTokenButton } from './WeeklyTokenButton';
 
 interface Employee {
   id: string;
@@ -227,13 +227,6 @@ export const EmployeeProfilePage: React.FC = () => {
             שלח וואטסאפ
           </Button>
         )}
-        {employee.phone && (
-          <SendReminderButton
-            phone={employee.phone}
-            employeeName={employeeName}
-            tokenUrl={`${window.location.origin}/weekly-shift-submission/temp-token`}
-          />
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -317,6 +310,25 @@ export const EmployeeProfilePage: React.FC = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Weekly Token Section */}
+          {employee.phone && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5" />
+                  הגשת משמרות שבועית
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <WeeklyTokenButton
+                  phone={employee.phone}
+                  employeeName={employeeName}
+                  employeeId={employee.id}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Recent Attendance */}
           <Card className="mt-6">
