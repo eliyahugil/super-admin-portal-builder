@@ -1,5 +1,8 @@
+
 import React from 'react';
 import { useParams, Navigate } from 'react-router-dom';
+import { useAuth } from '@/components/auth/AuthContext';
+import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { EmployeeManagement } from './employees/EmployeeManagement';
 import { EmployeeFiles } from './employees/EmployeeFiles';
 import { AttendanceManagement } from './employees/AttendanceManagement';
@@ -31,8 +34,44 @@ import { moduleRouteMapping, parseModuleRoute, isValidSubModule } from '@/utils/
 
 export const ModuleWrapper: React.FC = () => {
   const { businessId, moduleRoute, subModule, itemId } = useParams();
+  const { profile, isSuperAdmin, loading } = useAuth();
+  
+  console.log('ModuleWrapper - Current params:', { businessId, moduleRoute, subModule, itemId });
+  console.log('ModuleWrapper - Auth state:', { profile, isSuperAdmin, loading });
+
+  // Handle loading state
+  if (loading) {
+    console.log('ModuleWrapper - Still loading auth...');
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">טוען...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle admin routes specifically
+  if (moduleRoute === 'admin' || (!moduleRoute && window.location.pathname === '/admin')) {
+    console.log('ModuleWrapper - Handling admin route, isSuperAdmin:', isSuperAdmin);
+    
+    if (!profile) {
+      console.log('ModuleWrapper - No profile found, redirecting to auth');
+      return <Navigate to="/auth" replace />;
+    }
+    
+    if (profile.role !== 'super_admin') {
+      console.log('ModuleWrapper - User is not super admin, redirecting to home');
+      return <Navigate to="/" replace />;
+    }
+    
+    console.log('ModuleWrapper - Rendering SuperAdminDashboard');
+    return <SuperAdminDashboard />;
+  }
   
   if (!moduleRoute) {
+    console.log('ModuleWrapper - No module route, redirecting to home');
     return <Navigate to="/" replace />;
   }
 
@@ -42,11 +81,13 @@ export const ModuleWrapper: React.FC = () => {
   // Check if the module route exists in our mapping
   const moduleConfig = moduleRouteMapping[moduleRoute];
   if (!moduleConfig) {
+    console.log('ModuleWrapper - Invalid module route:', moduleRoute);
     return <Navigate to="/" replace />;
   }
 
   // If there's a sub-module, validate it exists
   if (subModule && !isValidSubModule(moduleRoute, subModule)) {
+    console.log('ModuleWrapper - Invalid sub-module:', subModule);
     return <Navigate to={`/modules/${moduleRoute}`} replace />;
   }
 
@@ -59,78 +100,69 @@ export const ModuleWrapper: React.FC = () => {
     'employees/employee-requests': EmployeeRequests,
     'employees/employee-docs': EmployeeDocs,
     'employees/shifts': ShiftManagement,
-    'employees/import': () => <div>Employee Import Component</div>, // Placeholder
-    'employees/profile': () => <div>Employee Profile Component</div>, // Placeholder
+    'employees/import': () => <div>Employee Import Component</div>,
+    'employees/profile': () => <div>Employee Profile Component</div>,
     
-    // Branch modules
     'branches': BranchManagement,
     'branches/branch-roles': BranchRoles,
-    'branches/create': () => <div>Create Branch Component</div>, // Placeholder
-    'branches/edit': () => <div>Edit Branch Component</div>, // Placeholder
+    'branches/create': () => <div>Create Branch Component</div>,
+    'branches/edit': () => <div>Edit Branch Component</div>,
     
-    // Shift modules (dedicated shift management)
-    'shifts': () => <div>Shift Overview Component</div>, // Placeholder
-    'shifts/requests': () => <div>Shift Requests Component</div>, // Placeholder
-    'shifts/approval': ManagementToolsSection, // Use existing approval component
-    'shifts/schedule': () => <div>Shift Schedule Component</div>, // Placeholder
-    'shifts/admin': ManagementToolsSection, // Use existing admin tools
+    'shifts': () => <div>Shift Overview Component</div>,
+    'shifts/requests': () => <div>Shift Requests Component</div>,
+    'shifts/approval': ManagementToolsSection,
+    'shifts/schedule': () => <div>Shift Schedule Component</div>,
+    'shifts/admin': ManagementToolsSection,
     
-    // Integration modules
     'integrations': IntegrationManagement,
     
-    // Inventory modules
     'inventory': InventoryManagement,
     'inventory/products': ProductsManagement,
     'inventory/stock-movements': StockMovements,
     
-    // Orders modules
     'orders': OrdersManagement,
     'orders/delivery': DeliveryManagement,
     'orders/pickup': PickupManagement,
     
-    // Finance modules
     'finance': FinanceManagement,
     'finance/invoices': InvoicesManagement,
     'finance/payments': PaymentsManagement,
     'finance/reports': FinanceReports,
     
-    // Projects modules
     'projects': ProjectsManagement,
     'projects/tasks': TasksManagement,
     
-    // Settings modules
     'settings': BusinessSettings,
     'settings/profile': BusinessProfile,
     'settings/users': UsersManagement,
     'settings/permissions': PermissionsManagement,
     'settings/integrations': BusinessIntegrations,
     
-    // Admin modules
-    'admin': () => <div>Admin Dashboard Component</div>, // Placeholder
-    'admin/businesses': () => <div>Business Management Component</div>, // Placeholder
-    'admin/modules': () => <div>Module Management Component</div>, // Placeholder
-    'admin/integrations': () => <div>Admin Integrations Component</div>, // Placeholder
-    'admin/system-preview': () => <div>System Preview Component</div>, // Placeholder
+    'admin': () => <div>Admin Dashboard Component</div>,
+    'admin/businesses': () => <div>Business Management Component</div>,
+    'admin/modules': () => <div>Module Management Component</div>,
+    'admin/integrations': () => <div>Admin Integrations Component</div>,
+    'admin/system-preview': () => <div>System Preview Component</div>,
     
-    // CRM modules
-    'crm': () => <div>CRM Dashboard Component</div>, // Placeholder
-    'crm/leads': () => <div>CRM Leads Component</div>, // Placeholder
-    'crm/franchisees': () => <div>CRM Franchisees Component</div>, // Placeholder
-    'crm/wholesale': () => <div>CRM Wholesale Component</div>, // Placeholder
-    'crm/events': () => <div>CRM Events Component</div>, // Placeholder
-    'crm/clients': () => <div>CRM Clients Component</div>, // Placeholder
+    'crm': () => <div>CRM Dashboard Component</div>,
+    'crm/leads': () => <div>CRM Leads Component</div>,
+    'crm/franchisees': () => <div>CRM Franchisees Component</div>,
+    'crm/wholesale': () => <div>CRM Wholesale Component</div>,
+    'crm/events': () => <div>CRM Events Component</div>,
+    'crm/clients': () => <div>CRM Clients Component</div>,
   };
 
   const routeKey = subModule ? `${moduleRoute}/${subModule}` : moduleRoute;
   const Component = componentMap[routeKey];
 
   if (!Component) {
-    // If submodule doesn't exist, redirect to parent module
+    console.log('ModuleWrapper - No component found for route:', routeKey);
     if (subModule) {
       return <Navigate to={`/modules/${moduleRoute}`} replace />;
     }
     return <Navigate to="/" replace />;
   }
 
+  console.log('ModuleWrapper - Rendering component for route:', routeKey);
   return <Component />;
 };

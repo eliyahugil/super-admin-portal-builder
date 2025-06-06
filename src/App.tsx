@@ -31,6 +31,15 @@ function App() {
             {/* Auth page without layout */}
             <Route path="/auth" element={<AuthForm />} />
             
+            {/* Admin route - this should be handled directly by ModuleWrapper */}
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ModuleWrapper />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
             {/* All other routes wrapped with layout */}
             <Route path="/*" element={
               <AppLayout>
@@ -73,13 +82,7 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
-                  {/* Admin routes */}
-                  <Route path="/admin" element={
-                    <ProtectedRoute>
-                      <ModuleWrapper />
-                    </ProtectedRoute>
-                  } />
-                  
+                  {/* Admin sub-routes */}
                   <Route path="/admin/:subModule" element={
                     <ProtectedRoute>
                       <ModuleWrapper />
