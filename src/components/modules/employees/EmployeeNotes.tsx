@@ -121,8 +121,8 @@ export const EmployeeNotes: React.FC<EmployeeNotesProps> = ({
     
     switch (type) {
       case 'performance': return <User className="h-4 w-4 text-blue-600" />;
-      case 'attendance': return <MessageSquare className="h-4 w-4 text-green-600" />;
-      case 'disciplinary': return <AlertTriangle className="h-4 w-4 text-red-600" />;
+      case 'communication': return <MessageSquare className="h-4 w-4 text-green-600" />;
+      case 'positive': return <Info className="h-4 w-4 text-green-600" />;
       default: return <Info className="h-4 w-4 text-gray-600" />;
     }
   };
@@ -130,8 +130,8 @@ export const EmployeeNotes: React.FC<EmployeeNotesProps> = ({
   const getNoteTypeLabel = (type: string) => {
     switch (type) {
       case 'performance': return 'ביצועים';
-      case 'attendance': return 'נוכחות';
-      case 'disciplinary': return 'משמעת';
+      case 'communication': return 'תקשורת';
+      case 'positive': return 'חיובי';
       case 'general': return 'כללי';
       default: return type;
     }
@@ -142,8 +142,8 @@ export const EmployeeNotes: React.FC<EmployeeNotesProps> = ({
     
     switch (type) {
       case 'performance': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'attendance': return 'bg-green-100 text-green-800 border-green-200';
-      case 'disciplinary': return 'bg-red-100 text-red-800 border-red-200';
+      case 'communication': return 'bg-green-100 text-green-800 border-green-200';
+      case 'positive': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -198,8 +198,8 @@ export const EmployeeNotes: React.FC<EmployeeNotesProps> = ({
                   <SelectContent>
                     <SelectItem value="general">כללי</SelectItem>
                     <SelectItem value="performance">ביצועים</SelectItem>
-                    <SelectItem value="attendance">נוכחות</SelectItem>
-                    <SelectItem value="disciplinary">משמעת</SelectItem>
+                    <SelectItem value="communication">תקשורת</SelectItem>
+                    <SelectItem value="positive">חיובי</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
