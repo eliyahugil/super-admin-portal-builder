@@ -81,12 +81,12 @@ export class ShiftTokenService {
 
     if (shiftError) throw shiftError;
 
-    // Mark token as used
+    // Mark token as used - fix the type issue by converting to plain object
     const { error: updateError } = await supabase
       .from('shift_tokens')
       .update({
         is_used: true,
-        submitted_data: shiftData,
+        submitted_data: JSON.parse(JSON.stringify(shiftData)),
       })
       .eq('token', token);
 
