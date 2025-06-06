@@ -7,14 +7,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { AddressAutocomplete } from '@/components/ui/AddressAutocomplete';
 import { LogoUpload } from './LogoUpload';
 
+interface BusinessDetails {
+  name: string;
+  contact_phone?: string;
+  description?: string;
+  logo_url?: string;
+}
+
 interface BasicInfoCardProps {
-  details: {
-    name: string;
-    contact_phone?: string;
-    description?: string;
-    logo_url?: string;
-  };
-  onDetailsChange: (updates: Partial<typeof details>) => void;
+  details: BusinessDetails;
+  onDetailsChange: (updates: Partial<BusinessDetails>) => void;
   address: any;
   onAddressChange: (address: any) => void;
 }

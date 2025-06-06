@@ -4,12 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+interface ContactDetails {
+  contact_email?: string;
+  admin_email?: string;
+}
+
 interface ContactInfoCardProps {
-  details: {
-    contact_email?: string;
-    admin_email?: string;
-  };
-  onDetailsChange: (updates: Partial<typeof details>) => void;
+  details: ContactDetails;
+  onDetailsChange: (updates: Partial<ContactDetails>) => void;
 }
 
 export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
