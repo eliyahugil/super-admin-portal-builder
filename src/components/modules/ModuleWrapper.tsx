@@ -32,6 +32,7 @@ import { PermissionsManagement } from './settings/PermissionsManagement';
 import { BusinessIntegrations } from './settings/BusinessIntegrations';
 import { ManagementToolsSection } from './employees/ManagementToolsSection';
 import { ShiftManagementTabs } from './shifts/ShiftManagementTabs';
+import { ShiftTokenManagement } from './shifts/ShiftTokenManagement';
 import { moduleRouteMapping, parseModuleRoute, isValidSubModule } from '@/utils/moduleRouting';
 
 export const ModuleWrapper: React.FC = () => {
@@ -107,7 +108,7 @@ export const ModuleWrapper: React.FC = () => {
     return <Navigate to={`/modules/${moduleRoute}`} replace />;
   }
 
-  // Route mapping for components - now includes shift submission components
+  // Route mapping for components - fixed shift token management
   const componentMap: Record<string, React.ComponentType> = {
     // Employee modules
     'employees': EmployeeManagement,
@@ -124,13 +125,13 @@ export const ModuleWrapper: React.FC = () => {
     'branches/create': () => <div>Create Branch Component</div>,
     'branches/edit': () => <div>Edit Branch Component</div>,
     
-    // Fixed: Add the shifts module mapping
+    // Fixed: Properly reference the imported component
     'shifts': ShiftManagementTabs,
     'shifts/requests': () => <div>Shift Requests Component</div>,
     'shifts/approval': ManagementToolsSection,
     'shifts/schedule': () => <div>Shift Schedule Component</div>,
     'shifts/admin': ManagementToolsSection,
-    'shifts/tokens': () => React.createElement(React.lazy(() => import('./shifts/ShiftTokenManagement').then(m => ({ default: m.ShiftTokenManagement })))),
+    'shifts/tokens': ShiftTokenManagement,
     
     'integrations': IntegrationManagement,
     
