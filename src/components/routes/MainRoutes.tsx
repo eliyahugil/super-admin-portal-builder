@@ -10,7 +10,7 @@ import { CRMDashboard } from '@/components/crm/CRMDashboard';
 
 export const MainRoutes: React.FC = () => {
   return (
-    <>
+    <React.Fragment>
       <Route path="/" element={
         <ProtectedRoute>
           <AppLayout>
@@ -44,6 +44,6 @@ export const MainRoutes: React.FC = () => {
           </AppLayout>
         </ProtectedRoute>
       } />
-    </>
+    </React.Fragment>
   );
 };

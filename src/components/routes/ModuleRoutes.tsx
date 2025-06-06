@@ -11,7 +11,7 @@ import { BusinessMultiManagement } from '@/components/modules/settings/BusinessM
 
 export const ModuleRoutes: React.FC = () => {
   return (
-    <>
+    <React.Fragment>
       {/* Direct module routes */}
       <Route path="/modules/:moduleRoute" element={
         <ProtectedRoute>
@@ -70,6 +70,6 @@ export const ModuleRoutes: React.FC = () => {
           </AppLayout>
         </ProtectedRoute>
       } />
-    </>
+    </React.Fragment>
   );
 };

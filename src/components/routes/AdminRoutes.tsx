@@ -8,7 +8,7 @@ import { CreateBusinessPage } from '@/components/admin/CreateBusinessPage';
 
 export const AdminRoutes: React.FC = () => {
   return (
-    <>
+    <React.Fragment>
       {/* Admin routes */}
       <Route path="/admin" element={
         <ProtectedRoute>
@@ -34,6 +34,6 @@ export const AdminRoutes: React.FC = () => {
           </AppLayout>
         </ProtectedRoute>
       } />
-    </>
+    </React.Fragment>
   );
 };

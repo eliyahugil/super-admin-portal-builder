@@ -9,7 +9,7 @@ import { EmployeeProfilePage } from '@/components/modules/employees/EmployeeProf
 
 export const BusinessRoutes: React.FC = () => {
   return (
-    <>
+    <React.Fragment>
       {/* Business dashboard route */}
       <Route path="/business/:businessId/dashboard" element={
         <ProtectedRoute>
@@ -52,6 +52,6 @@ export const BusinessRoutes: React.FC = () => {
           </AppLayout>
         </ProtectedRoute>
       } />
-    </>
+    </React.Fragment>
   );
 };

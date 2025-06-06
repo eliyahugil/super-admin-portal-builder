@@ -23,23 +23,23 @@ function App() {
         <AuthProvider>
           <Toaster />
           <Routes>
-            {/* Render route components as functions to get their Route elements */}
-            <PublicRoutes />
+            {/* Public routes */}
+            {PublicRoutes()}
             
             {/* Auth route */}
             <Route path="/auth" element={<AuthForm />} />
             
             {/* Main protected routes */}
-            <MainRoutes />
+            {MainRoutes()}
             
             {/* Business routes */}
-            <BusinessRoutes />
+            {BusinessRoutes()}
             
             {/* Module routes */}
-            <ModuleRoutes />
+            {ModuleRoutes()}
             
             {/* Admin routes */}
-            <AdminRoutes />
+            {AdminRoutes()}
 
             {/* Catch all route */}
             <Route path="*" element={<NotFound />} />
