@@ -21,7 +21,8 @@ import {
   ArrowRight,
   StickyNote,
   DollarSign,
-  History
+  History,
+  Users
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { ShiftSubmissionHistory } from './ShiftSubmissionHistory';
@@ -31,6 +32,8 @@ import { SalaryHistory } from './SalaryHistory';
 import { WeeklyTokenButton } from './WeeklyTokenButton';
 import { EmployeeEditDialog } from './EmployeeEditDialog';
 import { EmployeeBranchAssignments } from './EmployeeBranchAssignments';
+import { EmployeeContacts } from './EmployeeContacts';
+import { RecentAttendance } from './RecentAttendance';
 import type { EmployeeType } from '@/types/supabase';
 
 interface Employee {
@@ -57,12 +60,10 @@ export const EmployeeProfilePage: React.FC = () => {
   const { businessId } = useBusiness();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
-  const [recentAttendance, setRecentAttendance] = useState<any[]>([]);
 
   useEffect(() => {
     if (employeeId && businessId) {
       fetchEmployeeDetails();
-      fetchRecentAttendance();
     }
   }, [employeeId, businessId]);
 
@@ -97,23 +98,6 @@ export const EmployeeProfilePage: React.FC = () => {
       console.error('Exception in fetchEmployeeDetails:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchRecentAttendance = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('attendance_records')
-        .select('*')
-        .eq('employee_id', employeeId)
-        .order('recorded_at', { ascending: false })
-        .limit(5);
-
-      if (!error && data) {
-        setRecentAttendance(data);
-      }
-    } catch (error) {
-      console.error('Error fetching attendance:', error);
     }
   };
 
@@ -166,10 +150,6 @@ export const EmployeeProfilePage: React.FC = () => {
         variant: 'destructive',
       });
     }
-  };
-
-  const handleEdit = () => {
-    // This will be handled by the EmployeeEditDialog component
   };
 
   if (loading) {
@@ -363,44 +343,22 @@ export const EmployeeProfilePage: React.FC = () => {
           )}
 
           {/* Recent Attendance */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                נוכחות אחרונה
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {recentAttendance.length > 0 ? (
-                <div className="space-y-3">
-                  {recentAttendance.map((attendance) => (
-                    <div key={attendance.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                      <Clock className="h-4 w-4 text-gray-500" />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium">{attendance.action}</div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(attendance.recorded_at).toLocaleString('he-IL')}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-gray-500 text-sm">
-                  אין רישומי נוכחות
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <div className="mt-6">
+            <RecentAttendance employeeId={employee.id} />
+          </div>
         </div>
 
         {/* Main Content with Tabs */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="shifts" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="shifts" className="flex items-center gap-2">
                 <History className="h-4 w-4" />
                 משמרות
+              </TabsTrigger>
+              <TabsTrigger value="contacts" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                פניות
               </TabsTrigger>
               <TabsTrigger value="documents" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
@@ -419,6 +377,13 @@ export const EmployeeProfilePage: React.FC = () => {
             <div className="mt-6">
               <TabsContent value="shifts" className="mt-0">
                 <ShiftSubmissionHistory employeeId={employee.id} />
+              </TabsContent>
+              
+              <TabsContent value="contacts" className="mt-0">
+                <EmployeeContacts 
+                  employeeId={employee.id} 
+                  employeeName={employeeName}
+                />
               </TabsContent>
               
               <TabsContent value="documents" className="mt-0">
