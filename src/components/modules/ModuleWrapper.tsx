@@ -34,12 +34,12 @@ import { moduleRouteMapping, parseModuleRoute, isValidSubModule } from '@/utils/
 
 export const ModuleWrapper: React.FC = () => {
   const { businessId, moduleRoute, subModule, itemId } = useParams();
-  const { profile, isSuperAdmin, loading } = useAuth();
+  const { profile, isSuperAdmin, loading, user } = useAuth();
   
   console.log('ModuleWrapper - Current params:', { businessId, moduleRoute, subModule, itemId });
-  console.log('ModuleWrapper - Auth state:', { profile, isSuperAdmin, loading });
+  console.log('ModuleWrapper - Auth state:', { profile, isSuperAdmin, loading, user: user?.email });
 
-  // Handle loading state
+  // Handle loading state - wait for auth to complete
   if (loading) {
     console.log('ModuleWrapper - Still loading auth...');
     return (
@@ -52,16 +52,30 @@ export const ModuleWrapper: React.FC = () => {
     );
   }
 
+  // If no user, redirect to auth
+  if (!user) {
+    console.log('ModuleWrapper - No user found, redirecting to auth');
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Wait for profile to load if user exists but profile doesn't
+  if (user && !profile) {
+    console.log('ModuleWrapper - User exists but profile still loading...');
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">טוען פרופיל...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Handle admin routes specifically
   if (moduleRoute === 'admin' || (!moduleRoute && window.location.pathname === '/admin')) {
     console.log('ModuleWrapper - Handling admin route, isSuperAdmin:', isSuperAdmin);
     
-    if (!profile) {
-      console.log('ModuleWrapper - No profile found, redirecting to auth');
-      return <Navigate to="/auth" replace />;
-    }
-    
-    if (profile.role !== 'super_admin') {
+    if (profile?.role !== 'super_admin') {
       console.log('ModuleWrapper - User is not super admin, redirecting to home');
       return <Navigate to="/" replace />;
     }
