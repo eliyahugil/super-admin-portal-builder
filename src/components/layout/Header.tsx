@@ -8,10 +8,11 @@ import { LogOut, User } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const { business, isSuperAdmin } = useBusiness();
-  const { profile, user, loading, signOut } = useAuth();
+  const { profile, user, session, loading, signOut } = useAuth();
 
   console.log('🎯 Header render - Auth state:', {
     hasUser: !!user,
+    hasSession: !!session,
     hasProfile: !!profile,
     loading,
     profileRole: profile?.role,
@@ -28,6 +29,9 @@ export const Header: React.FC = () => {
     }
   };
 
+  // Only show user info if we have both user and session (truly logged in)
+  const isAuthenticated = user && session && profile;
+
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
       <div className="flex items-center gap-4">
@@ -40,7 +44,7 @@ export const Header: React.FC = () => {
       <div className="flex items-center gap-4">
         {loading ? (
           <span className="text-sm text-gray-400">טוען...</span>
-        ) : profile && user ? (
+        ) : isAuthenticated ? (
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm">
               <User className="h-4 w-4 text-gray-500" />
@@ -67,7 +71,7 @@ export const Header: React.FC = () => {
             </Button>
           </div>
         ) : (
-          <span className="text-sm text-red-600">אין פרופיל</span>
+          <span className="text-sm text-red-600">לא מחובר</span>
         )}
       </div>
     </header>
