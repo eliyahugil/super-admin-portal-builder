@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { EmployeeNotesSection } from './EmployeeNotesSection';
+import { EmployeeDocumentsViewer } from './EmployeeDocumentsViewer';
 
 interface Employee {
   id: string;
@@ -45,13 +47,11 @@ export const EmployeeProfilePage: React.FC = () => {
   const { businessId } = useBusiness();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
-  const [recentDocuments, setRecentDocuments] = useState<any[]>([]);
   const [recentAttendance, setRecentAttendance] = useState<any[]>([]);
 
   useEffect(() => {
     if (employeeId && businessId) {
       fetchEmployeeDetails();
-      fetchRecentDocuments();
       fetchRecentAttendance();
     }
   }, [employeeId, businessId]);
@@ -87,23 +87,6 @@ export const EmployeeProfilePage: React.FC = () => {
       console.error('Exception in fetchEmployeeDetails:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchRecentDocuments = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('employee_documents')
-        .select('*')
-        .eq('employee_id', employeeId)
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      if (!error && data) {
-        setRecentDocuments(data);
-      }
-    } catch (error) {
-      console.error('Error fetching documents:', error);
     }
   };
 
@@ -326,36 +309,8 @@ export const EmployeeProfilePage: React.FC = () => {
 
         {/* Quick Actions & Recent Activity */}
         <div className="space-y-6">
-          {/* Recent Documents */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                מסמכים אחרונים
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {recentDocuments.length > 0 ? (
-                <div className="space-y-3">
-                  {recentDocuments.map((doc) => (
-                    <div key={doc.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">{doc.document_name}</div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(doc.created_at).toLocaleDateString('he-IL')}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-gray-500 text-sm">
-                  אין מסמכים
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Employee Documents */}
+          <EmployeeDocumentsViewer employeeId={employee.id} />
 
           {/* Recent Attendance */}
           <Card>
