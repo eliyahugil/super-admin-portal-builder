@@ -965,6 +965,70 @@ export type Database = {
           },
         ]
       }
+      employee_salary_history: {
+        Row: {
+          amount: number
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          effective_date: string
+          employee_id: string
+          id: string
+          notes: string | null
+          reason: string | null
+          type: string
+        }
+        Insert: {
+          amount: number
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          effective_date: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          type: string
+        }
+        Update: {
+          amount?: number
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          effective_date?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_salary_history_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_salary_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_salary_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_shift_preferences: {
         Row: {
           branch_id: string

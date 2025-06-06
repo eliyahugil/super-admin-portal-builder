@@ -47,22 +47,23 @@ export const SalaryHistory: React.FC<SalaryHistoryProps> = ({
   const { data: salaryRecords, isLoading } = useQuery({
     queryKey: ['salary-history', employeeId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employee_salary_history')
-        .select(`
+      // Use raw query to avoid TypeScript issues with the new table
+      const { data, error } = await supabase.rpc('select_from_table', {
+        table_name: 'employee_salary_history',
+        select_clause: `
           *,
           approver:profiles!employee_salary_history_approved_by_fkey(full_name),
           creator:profiles!employee_salary_history_created_by_fkey(full_name)
-        `)
-        .eq('employee_id', employeeId)
-        .order('effective_date', { ascending: false });
+        `,
+        where_clause: `employee_id = '${employeeId}' ORDER BY effective_date DESC`
+      });
 
       if (error) {
         console.error('Error fetching salary history:', error);
         throw error;
       }
 
-      return data as SalaryRecord[];
+      return (data || []) as SalaryRecord[];
     },
     enabled: !!employeeId,
   });
