@@ -325,14 +325,14 @@ export const SuperAdminDashboard: React.FC = () => {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => navigate(`/business/${business.id}/dashboard`)}
+                          onClick={() => navigate(`/business/${business.id}/modules/settings`)}
                         >
                           נהל עסק
                         </Button>
                         <Button 
                           size="sm" 
                           variant="ghost"
-                          onClick={() => navigate(`/admin/businesses/${business.id}/modules`)}
+                          onClick={() => navigate(`/business/${business.id}/modules/settings`)}
                         >
                           <Settings className="h-4 w-4" />
                         </Button>
