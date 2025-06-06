@@ -4,35 +4,15 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/AuthContext';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import Index from '@/pages/Index';
-import LearnMore from '@/pages/LearnMore';
-import NotFound from '@/pages/NotFound';
 import { AuthForm } from '@/components/auth/AuthForm';
-import { Dashboard } from '@/components/dashboard/Dashboard';
-import { ModuleManagement } from '@/components/modules/ModuleManagement';
-import { BusinessSettings } from '@/components/modules/settings/BusinessSettings';
-import { BusinessProfile } from '@/components/modules/settings/BusinessProfile';
-import { UsersManagement } from '@/components/modules/settings/UsersManagement';
-import { PermissionsManagement } from '@/components/modules/settings/PermissionsManagement';
-import { BusinessIntegrations } from '@/components/modules/settings/BusinessIntegrations';
-import { BusinessMultiManagement } from '@/components/modules/settings/BusinessMultiManagement';
-import BusinessModulesPage from '@/components/modules/settings/BusinessModulesPage';
-import { EmployeeManagement } from '@/components/modules/employees/EmployeeManagement';
-import { EmployeeProfilePage } from '@/components/modules/employees/EmployeeProfilePage';
-import { AttendanceManagement } from '@/components/modules/employees/AttendanceManagement';
-import { ShiftManagementTabs } from '@/components/modules/shifts/ShiftManagementTabs';
-import { IntegrationsRoute } from '@/components/routes/IntegrationsRoute';
-import { ModuleWrapper } from '@/components/modules/ModuleWrapper';
-import { DynamicModulePage } from '@/components/modules/DynamicModulePage';
-import { SubmitShiftPage } from '@/components/modules/shifts/SubmitShiftPage';
-import { BusinessDashboard } from '@/components/business/BusinessDashboard';
-import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
-import { CreateBusinessPage } from '@/components/admin/CreateBusinessPage';
-import { GlobalIntegrationsPage } from '@/pages/GlobalIntegrationsPage';
-import { CRMDashboard } from '@/components/crm/CRMDashboard';
-import { ShiftTokenSchedulePage } from '@/components/modules/settings/ShiftTokenSchedulePage';
+import NotFound from '@/pages/NotFound';
+
+// Route components
+import { PublicRoutes } from '@/components/routes/PublicRoutes';
+import { MainRoutes } from '@/components/routes/MainRoutes';
+import { BusinessRoutes } from '@/components/routes/BusinessRoutes';
+import { ModuleRoutes } from '@/components/routes/ModuleRoutes';
+import { AdminRoutes } from '@/components/routes/AdminRoutes';
 
 const queryClient = new QueryClient();
 
@@ -43,183 +23,23 @@ function App() {
         <AuthProvider>
           <Toaster />
           <Routes>
-            {/* Public shift submission routes */}
-            <Route 
-              path="/shift-submission/:token" 
-              element={<SubmitShiftPage />} 
-            />
-            <Route 
-              path="/weekly-shift-submission/:token" 
-              element={React.createElement(React.lazy(() => import('./components/modules/shifts/WeeklyShiftSubmissionForm').then(m => ({ default: m.WeeklyShiftSubmissionForm }))))} 
-            />
-            <Route 
-              path="/shift-submitted" 
-              element={React.createElement(React.lazy(() => import('./components/modules/shifts/ShiftSubmissionSuccess').then(m => ({ default: m.ShiftSubmissionSuccess }))))} 
-            />
+            {/* Public routes */}
+            <PublicRoutes />
             
-            {/* Protected routes */}
+            {/* Auth route */}
             <Route path="/auth" element={<AuthForm />} />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Index />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
             
-            <Route path="/learn-more" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <LearnMore />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            {/* Business dashboard route */}
-            <Route path="/business/:businessId/dashboard" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <BusinessDashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
+            {/* Main protected routes */}
+            <MainRoutes />
+            
             {/* Business routes */}
-            <Route path="/business/:businessId/modules/:moduleRoute" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ModuleWrapper />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
+            <BusinessRoutes />
             
-            <Route path="/business/:businessId/modules/:moduleRoute/:subModule" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ModuleWrapper />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/business/:businessId/modules/:moduleRoute/:subModule/:itemId" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ModuleWrapper />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            {/* Employee profile routes for businesses */}
-            <Route path="/business/:businessId/modules/employees/profile/:employeeId" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <EmployeeProfilePage />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            {/* Direct module routes for businesses */}
-            <Route path="/modules/:moduleRoute" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ModuleWrapper />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
+            {/* Module routes */}
+            <ModuleRoutes />
             
-            <Route path="/modules/:moduleRoute/:subModule" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ModuleWrapper />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/modules/:moduleRoute/:subModule/:itemId" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ModuleWrapper />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            {/* Employee profile routes for direct modules */}
-            <Route path="/modules/employees/profile/:employeeId" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <EmployeeProfilePage />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            {/* Settings routes */}
-            <Route path="/modules/settings/modules" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <BusinessModulesPage />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/modules/settings/shift-schedule" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ShiftTokenSchedulePage />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/modules/settings/advanced" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <BusinessMultiManagement />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            {/* Admin routes - Add specific route for admin/businesses */}
-            <Route path="/admin" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ModuleWrapper />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            {/* Handle admin/businesses route specifically */}
-            <Route path="/admin/:moduleRoute" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ModuleWrapper />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/admin/businesses/create" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <CreateBusinessPage />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            {/* Global integrations route */}
-            <Route path="/integrations" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <GlobalIntegrationsPage />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-
-            {/* CRM routes */}
-            <Route path="/crm/*" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <CRMDashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
+            {/* Admin routes */}
+            <AdminRoutes />
 
             {/* Catch all route */}
             <Route path="*" element={<NotFound />} />
