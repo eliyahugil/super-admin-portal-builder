@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, Building, Mail, Phone, User } from 'lucide-react';
+import { ArrowRight, Building, Mail, Phone, User, Send } from 'lucide-react';
 
 const availableModules = [
   { key: 'shift_management', label: 'ניהול משמרות' },
@@ -29,6 +29,7 @@ export const CreateBusinessPage: React.FC = () => {
   });
   const [activeModules, setActiveModules] = useState<string[]>(['shift_management']);
   const [loading, setLoading] = useState(false);
+  const [sendInvitation, setSendInvitation] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -45,6 +46,47 @@ export const CreateBusinessPage: React.FC = () => {
         ? prev.filter(key => key !== moduleKey)
         : [...prev, moduleKey]
     );
+  };
+
+  const createBusinessUser = async (businessId: string, email: string, businessName: string) => {
+    try {
+      // Generate a temporary password
+      const tempPassword = Math.random().toString(36).slice(-8) + 'A1!';
+      
+      // Create the user account
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          business_id: businessId,
+          business_name: businessName,
+          role: 'business_admin'
+        }
+      });
+
+      if (authError) throw authError;
+
+      // Update the business with the owner_id
+      await supabase
+        .from('businesses')
+        .update({ owner_id: authData.user.id })
+        .eq('id', businessId);
+
+      // Update the user's profile
+      await supabase
+        .from('profiles')
+        .update({ 
+          role: 'business_admin',
+          full_name: `מנהל ${businessName}`
+        })
+        .eq('id', authData.user.id);
+
+      return { success: true, tempPassword };
+    } catch (error) {
+      console.error('Error creating business user:', error);
+      return { success: false, error };
+    }
   };
 
   const handleCreateBusiness = async () => {
@@ -98,10 +140,25 @@ export const CreateBusinessPage: React.FC = () => {
         }
       }
 
+      let userCreationResult = null;
+      if (sendInvitation) {
+        userCreationResult = await createBusinessUser(business.id, formData.contact_email, formData.name);
+      }
+
       toast({
         title: 'הצלחה!',
-        description: `העסק "${business.name}" נוצר בהצלחה`,
+        description: sendInvitation 
+          ? `העסק "${business.name}" נוצר בהצלחה והזמנה נשלחה למייל ${formData.contact_email}`
+          : `העסק "${business.name}" נוצר בהצלחה`,
       });
+
+      if (sendInvitation && userCreationResult?.success) {
+        toast({
+          title: 'פרטי כניסה זמניים',
+          description: `המייל: ${formData.contact_email}\nהסיסמה הזמנית: ${userCreationResult.tempPassword}`,
+          variant: 'default',
+        });
+      }
 
       // Navigate back to admin dashboard
       navigate('/admin');
@@ -205,6 +262,23 @@ export const CreateBusinessPage: React.FC = () => {
                 placeholder="תיאור קצר של העסק"
                 className="text-right"
               />
+            </div>
+
+            {/* User Invitation Option */}
+            <div className="pt-4 border-t">
+              <div className="flex items-center justify-between p-3 border rounded-lg bg-green-50">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={sendInvitation}
+                    onCheckedChange={setSendInvitation}
+                  />
+                  <div>
+                    <span className="font-medium">יצירת משתמש למנהל העסק</span>
+                    <p className="text-sm text-gray-600">יצירת חשבון זמני ושליחת פרטי כניסה למייל</p>
+                  </div>
+                </div>
+                <Send className="h-4 w-4 text-green-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
