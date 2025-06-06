@@ -296,6 +296,44 @@ export type Database = {
           },
         ]
       }
+      business_settings: {
+        Row: {
+          auto_shift_reminders: boolean
+          business_id: string
+          created_at: string
+          id: string
+          reminder_day: string
+          reminder_hour: number
+          updated_at: string
+        }
+        Insert: {
+          auto_shift_reminders?: boolean
+          business_id: string
+          created_at?: string
+          id?: string
+          reminder_day?: string
+          reminder_hour?: number
+          updated_at?: string
+        }
+        Update: {
+          auto_shift_reminders?: boolean
+          business_id?: string
+          created_at?: string
+          id?: string
+          reminder_day?: string
+          reminder_hour?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       businesses: {
         Row: {
           address: string | null
