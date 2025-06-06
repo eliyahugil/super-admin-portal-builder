@@ -30,6 +30,8 @@ import { BusinessProfile } from './settings/BusinessProfile';
 import { UsersManagement } from './settings/UsersManagement';
 import { PermissionsManagement } from './settings/PermissionsManagement';
 import { BusinessIntegrations } from './settings/BusinessIntegrations';
+import { BusinessSettingsMain } from './settings/BusinessSettingsMain';
+import { BusinessSettingsAdvanced } from './settings/BusinessSettingsAdvanced';
 import { ManagementToolsSection } from './employees/ManagementToolsSection';
 import { ShiftManagementTabs } from './shifts/ShiftManagementTabs';
 import { ShiftTokenManagement } from './shifts/ShiftTokenManagement';
@@ -108,7 +110,7 @@ export const ModuleWrapper: React.FC = () => {
     return <Navigate to={`/modules/${moduleRoute}`} replace />;
   }
 
-  // Route mapping for components - fixed shift token management
+  // Route mapping for components
   const componentMap: Record<string, React.ComponentType> = {
     // Employee modules
     'employees': EmployeeManagement,
@@ -125,7 +127,6 @@ export const ModuleWrapper: React.FC = () => {
     'branches/create': () => <div>Create Branch Component</div>,
     'branches/edit': () => <div>Edit Branch Component</div>,
     
-    // Fixed: Properly reference the imported component
     'shifts': ShiftManagementTabs,
     'shifts/requests': () => <div>Shift Requests Component</div>,
     'shifts/approval': ManagementToolsSection,
@@ -156,6 +157,8 @@ export const ModuleWrapper: React.FC = () => {
     'settings/users': UsersManagement,
     'settings/permissions': PermissionsManagement,
     'settings/integrations': BusinessIntegrations,
+    'settings/main': BusinessSettingsMain,
+    'settings/advanced': BusinessSettingsAdvanced,
     
     'admin': () => <div>Admin Dashboard Component</div>,
     'admin/businesses': () => <div>Business Management Component</div>,

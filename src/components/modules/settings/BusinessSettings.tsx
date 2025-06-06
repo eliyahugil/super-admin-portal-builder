@@ -2,13 +2,20 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, User, Users, Shield, Link as LinkIcon, Cog, Layers, Clock } from 'lucide-react';
+import { Settings, User, Users, Shield, Link as LinkIcon, Cog, Layers, Clock, Building } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { NotificationSettings } from './NotificationSettings';
 import { ReminderLogsSection } from './ReminderLogsSection';
 
 export const BusinessSettings: React.FC = () => {
   const settingsCategories = [
+    { 
+      title: 'הגדרות עסק מלאות', 
+      description: 'עדכן פרטי עסק, מודולים ותזמונים', 
+      link: '/modules/settings/main', 
+      icon: Building,
+      featured: true 
+    },
     { title: 'פרטי עסק', description: 'עדכן פרטי העסק והלוגו', link: '/modules/settings/profile', icon: User },
     { title: 'ניהול מודולים', description: 'בחר אילו מודולים יהיו פעילים', link: '/modules/settings/modules', icon: Layers },
     { title: 'תזמון טוכני משמרות', description: 'הגדר מתי לשלוח טוכני משמרות אוטומטית', link: '/modules/settings/shift-schedule', icon: Clock },
@@ -38,18 +45,27 @@ export const BusinessSettings: React.FC = () => {
       {/* Settings Categories */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {settingsCategories.map((category, index) => (
-          <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card 
+            key={index} 
+            className={`hover:shadow-md transition-shadow cursor-pointer ${
+              category.featured ? 'border-blue-200 bg-blue-50' : ''
+            }`}
+          >
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <category.icon className="h-6 w-6 text-blue-600" />
+                  <category.icon className={`h-6 w-6 ${category.featured ? 'text-blue-600' : 'text-blue-600'}`} />
                   <div>
-                    <CardTitle className="text-lg">{category.title}</CardTitle>
-                    <CardDescription>{category.description}</CardDescription>
+                    <CardTitle className={`text-lg ${category.featured ? 'text-blue-800' : ''}`}>
+                      {category.title}
+                    </CardTitle>
+                    <CardDescription className={category.featured ? 'text-blue-600' : ''}>
+                      {category.description}
+                    </CardDescription>
                   </div>
                 </div>
                 <Link to={category.link}>
-                  <Button variant="outline">
+                  <Button variant={category.featured ? 'default' : 'outline'}>
                     <Settings className="h-4 w-4 mr-2" />
                     הגדר
                   </Button>
