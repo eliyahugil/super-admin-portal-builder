@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MessageCircle, Clock, RefreshCw, Send } from 'lucide-react';
+import { sendWhatsappReminder, checkWhatsAppAPIAvailability } from '@/utils/sendWhatsappReminder';
 
 interface EmployeeTokenManagerProps {
   employeeId: string;
@@ -21,11 +22,18 @@ export const EmployeeTokenManager: React.FC<EmployeeTokenManagerProps> = ({
   const [loading, setLoading] = useState(false);
   const [activeToken, setActiveToken] = useState<string | null>(null);
   const [tokenExpiry, setTokenExpiry] = useState<string | null>(null);
+  const [hasWhatsAppAPI, setHasWhatsAppAPI] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchActiveToken();
+    checkAPIAvailability();
   }, [employeeId]);
+
+  const checkAPIAvailability = async () => {
+    const apiAvailable = await checkWhatsAppAPIAvailability();
+    setHasWhatsAppAPI(apiAvailable);
+  };
 
   const fetchActiveToken = async () => {
     try {
@@ -137,36 +145,21 @@ export const EmployeeTokenManager: React.FC<EmployeeTokenManagerProps> = ({
       const submissionUrl = `${window.location.origin}/weekly-shift-submission/${tokenToSend}`;
       
       // Create WhatsApp message
-      const message = encodeURIComponent(
+      const message = 
         `שלום ${employeeName}! 👋\n\n` +
         `זהו הקישור להגשת המשמרות שלך לשבוע הבא:\n` +
         `${submissionUrl}\n\n` +
         `⏰ אנא הגש את המשמרות עד יום רביעי\n` +
-        `💼 מערכת ניהול העובדים`
-      );
+        `💼 מערכת ניהול העובדים`;
 
-      // Try to use WhatsApp Business API if available (check for API key)
-      const hasWhatsAppAPI = false; // This would check for actual API configuration
+      // Use the new utility function
+      await sendWhatsappReminder(whatsappPhone, message, hasWhatsAppAPI);
       
-      if (hasWhatsAppAPI) {
-        // TODO: Implement actual WhatsApp Business API call
-        // await sendWhatsAppBusinessAPI(whatsappPhone, message);
-        console.log('Would send via API to:', whatsappPhone);
-        
-        toast({
-          title: 'הודעה נשלחה',
-          description: `הודעה נשלחה בהצלחה ל-${employeeName} דרך WhatsApp API`,
-        });
-      } else {
-        // Open regular WhatsApp
-        const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${message}`;
-        window.open(whatsappUrl, '_blank');
-        
-        toast({
-          title: 'נפתח WhatsApp',
-          description: `WhatsApp נפתח עם הודעה מוכנה ל-${employeeName}`,
-        });
-      }
+      const methodText = hasWhatsAppAPI ? 'WhatsApp API' : 'דפדפן';
+      toast({
+        title: hasWhatsAppAPI ? 'הודעה נשלחה' : 'נפתח WhatsApp',
+        description: `${hasWhatsAppAPI ? 'הודעה נשלחה בהצלחה' : 'WhatsApp נפתח עם הודעה מוכנה'} ל-${employeeName} דרך ${methodText}`,
+      });
 
       onTokenSent?.();
     } catch (error) {
@@ -190,6 +183,9 @@ export const EmployeeTokenManager: React.FC<EmployeeTokenManagerProps> = ({
           <div className="flex items-center gap-1 text-xs text-green-600">
             <Clock className="h-3 w-3" />
             <span>טוקן פעיל</span>
+            {hasWhatsAppAPI && (
+              <span className="text-blue-600 text-xs">(API)</span>
+            )}
           </div>
           <Button
             onClick={() => sendWhatsAppMessage(true)}
@@ -197,6 +193,7 @@ export const EmployeeTokenManager: React.FC<EmployeeTokenManagerProps> = ({
             variant="outline"
             size="sm"
             className="h-8 text-green-600 border-green-200 hover:bg-green-50"
+            title={hasWhatsAppAPI ? 'שלח דרך WhatsApp API' : 'פתח WhatsApp בדפדפן'}
           >
             <MessageCircle className="h-3 w-3 mr-1" />
             {loading ? 'שולח...' : 'שלח'}
@@ -209,6 +206,7 @@ export const EmployeeTokenManager: React.FC<EmployeeTokenManagerProps> = ({
           variant="outline"
           size="sm"
           className="h-8"
+          title={hasWhatsAppAPI ? 'צור ושלח טוקן דרך API' : 'צור ושלח טוקן בדפדפן'}
         >
           <Send className="h-3 w-3 mr-1" />
           {loading ? 'יוצר...' : 'צור ושלח טוקן'}
