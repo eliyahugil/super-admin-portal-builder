@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +8,7 @@ import { Upload, FileText, Download, Search, Plus, Trash2, X } from 'lucide-reac
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/useBusiness';
+import { useAuth } from '@/components/auth/AuthContext';
 
 interface EmployeeFile {
   id: string;
@@ -35,6 +35,7 @@ export const EmployeeFiles: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { businessId, isLoading } = useBusiness();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: employees } = useQuery({
@@ -88,7 +89,7 @@ export const EmployeeFiles: React.FC = () => {
 
   const uploadFileMutation = useMutation({
     mutationFn: async ({ file, employeeId }: { file: File; employeeId: string }) => {
-      if (!businessId || !file) throw new Error('Missing required data');
+      if (!businessId || !file || !user?.id) throw new Error('Missing required data');
 
       // Generate unique file path
       const fileExt = file.name.split('.').pop();
@@ -112,6 +113,7 @@ export const EmployeeFiles: React.FC = () => {
           file_path: uploadData.path,
           file_size: file.size,
           file_type: file.type,
+          uploaded_by: user.id,
         })
         .select('*')
         .single();
