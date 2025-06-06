@@ -176,7 +176,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         </PopoverContent>
       </Popover>
 
-      {value && (
+      {value && typeof value.latitude === 'number' && typeof value.longitude === 'number' && (
         <div className="text-sm text-gray-500 space-y-1">
           <div>📍 {value.latitude.toFixed(6)}, {value.longitude.toFixed(6)}</div>
           {value.city && <div>🏙️ {value.city}</div>}
