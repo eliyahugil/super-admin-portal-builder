@@ -105,7 +105,7 @@ export const ModuleWrapper: React.FC = () => {
     return <Navigate to={`/modules/${moduleRoute}`} replace />;
   }
 
-  // Route mapping for components - now includes employee profile
+  // Route mapping for components - now includes shift submission components
   const componentMap: Record<string, React.ComponentType> = {
     // Employee modules
     'employees': EmployeeManagement,
@@ -127,6 +127,7 @@ export const ModuleWrapper: React.FC = () => {
     'shifts/approval': ManagementToolsSection,
     'shifts/schedule': () => <div>Shift Schedule Component</div>,
     'shifts/admin': ManagementToolsSection,
+    'shifts/tokens': () => React.createElement(React.lazy(() => import('./shifts/ShiftTokenManagement').then(m => ({ default: m.ShiftTokenManagement })))),
     
     'integrations': IntegrationManagement,
     

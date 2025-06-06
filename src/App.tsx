@@ -1,38 +1,56 @@
-
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { Suspense } from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/components/auth/AuthContext';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Toaster } from '@/components/ui/toaster';
-import { AppLayout } from '@/components/layout/AppLayout';
-import Index from '@/pages/Index';
-import LearnMore from '@/pages/LearnMore';
-import { GlobalIntegrationsPage } from '@/pages/GlobalIntegrationsPage';
-import { ModuleWrapper } from '@/components/modules/ModuleWrapper';
-import { IntegrationsRoute } from '@/components/routes/IntegrationsRoute';
+import { AuthProvider } from '@/components/auth/AuthContext';
 import { AuthForm } from '@/components/auth/AuthForm';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Index } from '@/components/Index';
+import { LearnMore } from '@/components/LearnMore';
+import { ModuleWrapper } from '@/components/modules/ModuleWrapper';
+import { GlobalIntegrationsPage } from '@/components/integrations/GlobalIntegrationsPage';
+import { CRMDashboard } from '@/components/crm/CRMDashboard';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { NotFound } from '@/components/NotFound';
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Toaster />
-        <Router>
+    <Router>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
           <Routes>
-            {/* Root route without layout */}
-            <Route path="/" element={<Index />} />
+            {/* Public shift submission route */}
+            <Route 
+              path="/shift-submission/:token" 
+              element={React.createElement(React.lazy(() => import('./components/modules/shifts/ShiftSubmissionForm').then(m => ({ default: m.ShiftSubmissionForm }))))} 
+            />
+            <Route 
+              path="/shift-submitted" 
+              element={React.createElement(React.lazy(() => import('./components/modules/shifts/ShiftSubmissionSuccess').then(m => ({ default: m.ShiftSubmissionSuccess }))))} 
+            />
             
-            {/* Learn More page without layout */}
-            <Route path="/learn-more" element={<LearnMore />} />
-            
-            {/* Auth page without layout */}
+            {/* Protected routes */}
             <Route path="/auth" element={<AuthForm />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Index />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
             
-            {/* Admin route - this should be handled directly by ModuleWrapper */}
-            <Route path="/admin" element={
+            <Route path="/learn-more" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <LearnMore />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Business routes */}
+            <Route path="/business/:businessId/modules/:moduleRoute" element={
               <ProtectedRoute>
                 <AppLayout>
                   <ModuleWrapper />
@@ -40,87 +58,81 @@ function App() {
               </ProtectedRoute>
             } />
             
-            {/* All other routes wrapped with layout */}
-            <Route path="/*" element={
-              <AppLayout>
-                <Routes>
-                  {/* Business-specific routes with modules */}
-                  <Route path="/business/:businessId/modules/:moduleRoute" element={
-                    <ProtectedRoute>
-                      <ModuleWrapper />
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/business/:businessId/modules/:moduleRoute/:subModule" element={
-                    <ProtectedRoute>
-                      <ModuleWrapper />
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/business/:businessId/modules/:moduleRoute/:subModule/:itemId" element={
-                    <ProtectedRoute>
-                      <ModuleWrapper />
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* Standard module routes (without business prefix) */}
-                  <Route path="/modules/:moduleRoute" element={
-                    <ProtectedRoute>
-                      <ModuleWrapper />
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/modules/:moduleRoute/:subModule" element={
-                    <ProtectedRoute>
-                      <ModuleWrapper />
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/modules/:moduleRoute/:subModule/:itemId" element={
-                    <ProtectedRoute>
-                      <ModuleWrapper />
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* Admin sub-routes */}
-                  <Route path="/admin/:subModule" element={
-                    <ProtectedRoute>
-                      <ModuleWrapper />
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* CRM routes */}
-                  <Route path="/crm" element={
-                    <ProtectedRoute>
-                      <ModuleWrapper />
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/crm/:subModule" element={
-                    <ProtectedRoute>
-                      <ModuleWrapper />
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* Integration routes */}
-                  <Route path="/integrations" element={
-                    <ProtectedRoute>
-                      <IntegrationsRoute />
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="/global-integrations" element={
-                    <ProtectedRoute>
-                      <GlobalIntegrationsPage />
-                    </ProtectedRoute>
-                  } />
-                </Routes>
-              </AppLayout>
+            <Route path="/business/:businessId/modules/:moduleRoute/:subModule" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ModuleWrapper />
+                </AppLayout>
+              </ProtectedRoute>
             } />
+
+            <Route path="/business/:businessId/modules/:moduleRoute/:subModule/:itemId" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ModuleWrapper />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Direct module routes for businesses */}
+            <Route path="/modules/:moduleRoute" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ModuleWrapper />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/modules/:moduleRoute/:subModule" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ModuleWrapper />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/modules/:moduleRoute/:subModule/:itemId" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ModuleWrapper />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Admin routes */}
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ModuleWrapper />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Global integrations route */}
+            <Route path="/integrations" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <GlobalIntegrationsPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* CRM routes */}
+            <Route path="/crm/*" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <CRMDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Catch all route */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
-        </Router>
-      </AuthProvider>
-    </QueryClientProvider>
+        </AuthProvider>
+        <Toaster />
+      </QueryClientProvider>
+    </Router>
   );
 }
 

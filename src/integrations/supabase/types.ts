@@ -1567,6 +1567,50 @@ export type Database = {
           },
         ]
       }
+      shift_tokens: {
+        Row: {
+          branch_preference_1: string | null
+          branch_preference_2: string | null
+          created_at: string
+          employee_id: string
+          expires_at: string
+          id: string
+          is_used: boolean | null
+          submitted_data: Json | null
+          token: string
+        }
+        Insert: {
+          branch_preference_1?: string | null
+          branch_preference_2?: string | null
+          created_at?: string
+          employee_id: string
+          expires_at: string
+          id?: string
+          is_used?: boolean | null
+          submitted_data?: Json | null
+          token: string
+        }
+        Update: {
+          branch_preference_1?: string | null
+          branch_preference_2?: string | null
+          created_at?: string
+          employee_id?: string
+          expires_at?: string
+          id?: string
+          is_used?: boolean | null
+          submitted_data?: Json | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_tokens_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sub_modules: {
         Row: {
           created_at: string

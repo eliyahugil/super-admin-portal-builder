@@ -29,7 +29,8 @@ import {
   UserCheck,
   CheckSquare,
   Calendar,
-  User
+  User,
+  LinkIcon
 } from 'lucide-react';
 import { useBusiness } from '@/hooks/useBusiness';
 import { getModuleRoutes } from '@/utils/routeMapping';
@@ -92,6 +93,7 @@ export const MainSidebar: React.FC = () => {
         { path: moduleRoutes.shifts.approval, label: 'אישור משמרות', icon: UserCheck },
         { path: moduleRoutes.shifts.schedule, label: 'לוח משמרות', icon: Calendar },
         { path: moduleRoutes.shifts.admin, label: 'כלי מנהל', icon: Settings },
+        { path: `${moduleRoutes.shifts.base}/tokens`, label: 'טוקני הגשה', icon: LinkIcon },
       ]
     },
   ];
