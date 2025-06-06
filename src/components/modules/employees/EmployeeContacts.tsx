@@ -29,7 +29,7 @@ interface EmployeeContactsProps {
   employeeName: string;
 }
 
-type ContactType = 'phone_call' | 'meeting' | 'email' | 'whatsapp' | 'warning' | 'disciplinary';
+type ContactType = 'general' | 'warning' | 'inquiry' | 'reward';
 
 export const EmployeeContacts: React.FC<EmployeeContactsProps> = ({ 
   employeeId, 
@@ -39,7 +39,7 @@ export const EmployeeContacts: React.FC<EmployeeContactsProps> = ({
   const [newContact, setNewContact] = useState({
     subject: '',
     description: '',
-    contact_type: 'phone_call' as ContactType
+    contact_type: 'general' as ContactType
   });
   const { toast } = useToast();
   const { profile } = useAuth();
@@ -82,7 +82,7 @@ export const EmployeeContacts: React.FC<EmployeeContactsProps> = ({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee-contacts', employeeId] });
-      setNewContact({ subject: '', description: '', contact_type: 'phone_call' });
+      setNewContact({ subject: '', description: '', contact_type: 'general' });
       setShowAddForm(false);
       toast({
         title: 'הצלחה',
@@ -125,36 +125,30 @@ export const EmployeeContacts: React.FC<EmployeeContactsProps> = ({
 
   const getContactTypeIcon = (type: ContactType) => {
     switch (type) {
-      case 'phone_call': return <Phone className="h-4 w-4 text-blue-600" />;
-      case 'meeting': return <User className="h-4 w-4 text-green-600" />;
-      case 'email': return <Mail className="h-4 w-4 text-purple-600" />;
-      case 'whatsapp': return <MessageCircle className="h-4 w-4 text-green-600" />;
+      case 'general': return <Info className="h-4 w-4 text-blue-600" />;
       case 'warning': return <AlertTriangle className="h-4 w-4 text-orange-600" />;
-      case 'disciplinary': return <AlertTriangle className="h-4 w-4 text-red-600" />;
+      case 'inquiry': return <MessageCircle className="h-4 w-4 text-purple-600" />;
+      case 'reward': return <User className="h-4 w-4 text-green-600" />;
       default: return <Info className="h-4 w-4 text-gray-600" />;
     }
   };
 
   const getContactTypeLabel = (type: ContactType) => {
     switch (type) {
-      case 'phone_call': return 'שיחת טלפון';
-      case 'meeting': return 'פגישה';
-      case 'email': return 'אימייל';
-      case 'whatsapp': return 'וואטסאפ';
+      case 'general': return 'כללי';
       case 'warning': return 'אזהרה';
-      case 'disciplinary': return 'משמעת';
+      case 'inquiry': return 'בירור';
+      case 'reward': return 'הערכה';
       default: return type;
     }
   };
 
   const getContactTypeColor = (type: ContactType) => {
     switch (type) {
-      case 'phone_call': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'meeting': return 'bg-green-100 text-green-800 border-green-200';
-      case 'email': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'whatsapp': return 'bg-green-100 text-green-800 border-green-200';
+      case 'general': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'warning': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'disciplinary': return 'bg-red-100 text-red-800 border-red-200';
+      case 'inquiry': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'reward': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -208,12 +202,10 @@ export const EmployeeContacts: React.FC<EmployeeContactsProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="phone_call">שיחת טלפון</SelectItem>
-                    <SelectItem value="meeting">פגישה</SelectItem>
-                    <SelectItem value="email">אימייל</SelectItem>
-                    <SelectItem value="whatsapp">וואטסאפ</SelectItem>
+                    <SelectItem value="general">כללי</SelectItem>
                     <SelectItem value="warning">אזהרה</SelectItem>
-                    <SelectItem value="disciplinary">משמעת</SelectItem>
+                    <SelectItem value="inquiry">בירור</SelectItem>
+                    <SelectItem value="reward">הערכה</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -242,7 +234,7 @@ export const EmployeeContacts: React.FC<EmployeeContactsProps> = ({
                 variant="outline" 
                 onClick={() => {
                   setShowAddForm(false);
-                  setNewContact({ subject: '', description: '', contact_type: 'phone_call' });
+                  setNewContact({ subject: '', description: '', contact_type: 'general' });
                 }}
               >
                 ביטול
@@ -261,7 +253,7 @@ export const EmployeeContacts: React.FC<EmployeeContactsProps> = ({
       {contacts && contacts.length > 0 ? (
         <div className="space-y-4">
           {contacts.map((contact) => (
-            <Card key={contact.id} className={`${['warning', 'disciplinary'].includes(contact.contact_type) ? 'border-l-4 border-l-red-500' : ''}`}>
+            <Card key={contact.id} className={`${contact.contact_type === 'warning' ? 'border-l-4 border-l-red-500' : ''}`}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
