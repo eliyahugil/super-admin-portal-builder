@@ -16,7 +16,16 @@ export const useShiftSubmissions = () => {
     queryKey: ['shift-submissions', businessId],
     queryFn: async () => {
       if (!businessId) return [];
-      return await WeeklyShiftService.getShiftSubmissionsForBusiness(businessId);
+      const rawData = await WeeklyShiftService.getShiftSubmissionsForBusiness(businessId);
+      
+      // Map the data to ensure employee has the correct id field
+      return rawData.map((submission: any) => ({
+        ...submission,
+        employee: submission.employee ? {
+          ...submission.employee,
+          id: submission.employee.employee_id || submission.employee.id, // Use employee_id as id if id doesn't exist
+        } : undefined,
+      })) as ShiftSubmission[];
     },
     enabled: !!businessId && !isLoading,
   });
