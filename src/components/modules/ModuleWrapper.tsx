@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -30,6 +31,7 @@ import { UsersManagement } from './settings/UsersManagement';
 import { PermissionsManagement } from './settings/PermissionsManagement';
 import { BusinessIntegrations } from './settings/BusinessIntegrations';
 import { ManagementToolsSection } from './employees/ManagementToolsSection';
+import { ShiftManagementTabs } from './shifts/ShiftManagementTabs';
 import { moduleRouteMapping, parseModuleRoute, isValidSubModule } from '@/utils/moduleRouting';
 
 export const ModuleWrapper: React.FC = () => {
@@ -122,7 +124,8 @@ export const ModuleWrapper: React.FC = () => {
     'branches/create': () => <div>Create Branch Component</div>,
     'branches/edit': () => <div>Edit Branch Component</div>,
     
-    'shifts': () => <div>Shift Overview Component</div>,
+    // Fixed: Add the shifts module mapping
+    'shifts': ShiftManagementTabs,
     'shifts/requests': () => <div>Shift Requests Component</div>,
     'shifts/approval': ManagementToolsSection,
     'shifts/schedule': () => <div>Shift Schedule Component</div>,
