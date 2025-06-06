@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -18,6 +17,7 @@ import { UsersManagement } from '@/components/modules/settings/UsersManagement';
 import { PermissionsManagement } from '@/components/modules/settings/PermissionsManagement';
 import { BusinessIntegrations } from '@/components/modules/settings/BusinessIntegrations';
 import { BusinessMultiManagement } from '@/components/modules/settings/BusinessMultiManagement';
+import BusinessModulesPage from '@/components/modules/settings/BusinessModulesPage';
 import { EmployeeManagement } from '@/components/modules/employees/EmployeeManagement';
 import { EmployeeProfilePage } from '@/components/modules/employees/EmployeeProfilePage';
 import { AttendanceManagement } from '@/components/modules/employees/AttendanceManagement';
@@ -122,6 +122,23 @@ function App() {
               </ProtectedRoute>
             } />
 
+            {/* Settings routes */}
+            <Route path="/modules/settings/modules" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <BusinessModulesPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/modules/settings/advanced" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <BusinessMultiManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
             {/* Admin routes */}
             <Route path="/admin" element={
               <ProtectedRoute>
@@ -151,14 +168,6 @@ function App() {
 
             {/* Catch all route */}
             <Route path="*" element={<NotFound />} />
-            
-            <Route path="/modules/settings/advanced" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <BusinessMultiManagement />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
           </Routes>
         </AuthProvider>
       </QueryClientProvider>

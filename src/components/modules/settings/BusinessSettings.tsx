@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, User, Users, Shield, Link as LinkIcon, Cog } from 'lucide-react';
+import { Settings, User, Users, Shield, Link as LinkIcon, Cog, Layers } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { NotificationSettings } from './NotificationSettings';
 import { ReminderLogsSection } from './ReminderLogsSection';
@@ -10,6 +10,7 @@ import { ReminderLogsSection } from './ReminderLogsSection';
 export const BusinessSettings: React.FC = () => {
   const settingsCategories = [
     { title: 'פרטי עסק', description: 'עדכן פרטי העסק והלוגו', link: '/modules/settings/profile', icon: User },
+    { title: 'ניהול מודולים', description: 'בחר אילו מודולים יהיו פעילים', link: '/modules/settings/modules', icon: Layers },
     { title: 'ניהול משתמשים', description: 'הוסף ונהל משתמשים', link: '/modules/settings/users', icon: Users },
     { title: 'הרשאות', description: 'נהל הרשאות משתמשים', link: '/modules/settings/permissions', icon: Shield },
     { title: 'אינטגרציות', description: 'התחבר לשירותים חיצוניים', link: '/modules/settings/integrations', icon: LinkIcon },
