@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -76,13 +75,17 @@ export const CreateBusinessPage: React.FC = () => {
 
       if (businessError) throw businessError;
 
+      // Get current user
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUserId = userData.user?.id;
+
       // Enable selected modules for the business
       if (activeModules.length > 0) {
         const moduleInserts = activeModules.map(moduleKey => ({
           business_id: business.id,
           module_key: moduleKey,
           is_enabled: true,
-          enabled_by: (await supabase.auth.getUser()).data.user?.id,
+          enabled_by: currentUserId,
           enabled_at: new Date().toISOString(),
         }));
 
@@ -261,4 +264,3 @@ export const CreateBusinessPage: React.FC = () => {
     </div>
   );
 };
-
