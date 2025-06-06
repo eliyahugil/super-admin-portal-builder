@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +34,7 @@ import { EmployeeEditDialog } from './EmployeeEditDialog';
 import { EmployeeBranchAssignments } from './EmployeeBranchAssignments';
 import { EmployeeContacts } from './EmployeeContacts';
 import { RecentAttendance } from './RecentAttendance';
+import { CloneEmployeeDialog } from './CloneEmployeeDialog';
 import { useEmployeeAttendance } from '@/hooks/useEmployeeAttendance';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -218,6 +220,7 @@ export const EmployeeProfilePage: React.FC = () => {
       {/* Action Buttons */}
       <div className="flex gap-3 mb-6">
         <EmployeeEditDialog employee={employee} onUpdate={fetchEmployeeDetails} />
+        <CloneEmployeeDialog employee={employee} />
         {employee.phone && (
           <>
             <Button
