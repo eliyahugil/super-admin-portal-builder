@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (userId: string) => {
     try {
-      console.log('Fetching profile for user ID:', userId);
+      console.log('🔍 Starting fetchProfile for user ID:', userId);
       
       const { data, error } = await supabase
         .from('profiles')
@@ -47,67 +47,122 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
+      console.log('📊 Profile query result:', { data, error });
+
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.error('❌ Error fetching profile:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         return;
       }
 
-      console.log('Profile fetched successfully:', data);
-      setProfile(data);
+      if (data) {
+        console.log('✅ Profile fetched successfully:', data);
+        console.log('👤 Setting profile with role:', data.role);
+        setProfile(data);
+      } else {
+        console.log('⚠️ No profile data returned from query');
+      }
     } catch (error) {
-      console.error('Error in fetchProfile:', error);
+      console.error('💥 Exception in fetchProfile:', error);
     }
   };
 
   useEffect(() => {
-    console.log('Setting up auth state listener');
+    console.log('🚀 Setting up auth state listener');
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session);
+        console.log('🔄 Auth state changed:', event, session?.user?.email || 'no session');
+        console.log('📱 Event details:', event);
+        console.log('🆔 Session user ID:', session?.user?.id);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          console.log('User logged in, fetching profile for:', session.user.id);
-          console.log('User email:', session.user.email);
+          console.log('👥 User logged in, fetching profile for:', session.user.id);
+          console.log('📧 User email:', session.user.email);
+          console.log('🕐 User created at:', session.user.created_at);
+          
+          // Clear any existing profile first
+          console.log('🧹 Clearing existing profile before fetch');
+          setProfile(null);
           
           // Defer profile fetch to avoid potential deadlock
           setTimeout(() => {
+            console.log('⏰ Executing delayed profile fetch');
             fetchProfile(session.user.id);
-          }, 0);
+          }, 100);
         } else {
-          console.log('No user session, clearing profile');
+          console.log('🚪 No user session, clearing profile');
           setProfile(null);
         }
+        
+        console.log('⏳ Setting loading to false');
         setLoading(false);
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session);
+      console.log('🔍 Initial session check:', session?.user?.email || 'no session');
+      console.log('📋 Initial session details:', {
+        hasSession: !!session,
+        userId: session?.user?.id,
+        userEmail: session?.user?.email
+      });
+      
       setSession(session);
       setUser(session?.user ?? null);
+      
       if (session?.user) {
-        console.log('Found existing session for user:', session.user.email);
-        fetchProfile(session.user.id);
+        console.log('🎯 Found existing session, fetching profile for user:', session.user.email);
+        setTimeout(() => {
+          fetchProfile(session.user.id);
+        }, 100);
+      } else {
+        console.log('❌ No existing session found');
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('🧹 Cleaning up auth subscription');
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Debug effect to track profile changes
   useEffect(() => {
-    console.log('Profile state changed:', profile);
-    console.log('Is super admin:', profile?.role === 'super_admin');
+    console.log('📊 Profile state changed:', profile);
+    console.log('🔐 Is super admin:', profile?.role === 'super_admin');
+    console.log('👤 Profile details:', {
+      hasProfile: !!profile,
+      profileId: profile?.id,
+      profileEmail: profile?.email,
+      profileRole: profile?.role,
+      profileName: profile?.full_name
+    });
   }, [profile]);
 
+  // Debug effect to track loading state
+  useEffect(() => {
+    console.log('⏳ Loading state changed:', loading);
+  }, [loading]);
+
+  // Debug effect to track user changes
+  useEffect(() => {
+    console.log('👥 User state changed:', user?.email || 'no user');
+  }, [user]);
+
   const signIn = async (email: string, password: string) => {
-    console.log('Attempting to sign in with email:', email);
+    console.log('🔑 Attempting to sign in with email:', email);
     
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -115,9 +170,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     
     if (error) {
-      console.error('Sign in error:', error);
+      console.error('❌ Sign in error:', error);
     } else {
-      console.log('Sign in successful');
+      console.log('✅ Sign in successful');
     }
     
     return { error };
@@ -140,7 +195,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    console.log('Signing out');
+    console.log('🚪 Signing out');
     await supabase.auth.signOut();
   };
 
