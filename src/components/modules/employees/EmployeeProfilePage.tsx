@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,6 +41,7 @@ import type { EmployeeType } from '@/types/supabase';
 
 interface Employee {
   id: string;
+  business_id: string; // Added missing business_id property
   employee_id: string | null;
   first_name: string;
   last_name: string;

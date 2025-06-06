@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Copy } from 'lucide-react';
+import type { EmployeeType } from '@/types/supabase';
 
 interface Business {
   id: string;
@@ -19,7 +20,7 @@ interface Employee {
   last_name: string;
   phone?: string | null;
   email?: string | null;
-  employee_type: string;
+  employee_type: EmployeeType;
   hire_date?: string | null;
   weekly_hours_required?: number | null;
   notes?: string | null;
@@ -85,7 +86,7 @@ export const CloneEmployeeDialog: React.FC<CloneEmployeeDialogProps> = ({ employ
         last_name: employee.last_name,
         phone: employee.phone,
         email: employee.email,
-        employee_type: employee.employee_type,
+        employee_type: employee.employee_type as EmployeeType,
         hire_date: employee.hire_date,
         weekly_hours_required: employee.weekly_hours_required,
         notes: employee.notes ? `שוכפל מעובד מקורי: ${employee.first_name} ${employee.last_name}\n\n${employee.notes}` : `שוכפל מעובד מקורי: ${employee.first_name} ${employee.last_name}`,
