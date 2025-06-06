@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,20 +15,30 @@ import {
 } from '@/components/modules/integrations';
 
 export const BusinessIntegrations: React.FC = () => {
+  const { businessId: urlBusinessId } = useParams();
   const { business } = useBusiness();
-  const { integrations, businessIntegrations, updateIntegration, loading } = useIntegrations(business?.id);
+  
+  // Use businessId from URL params if available, otherwise fall back to useBusiness hook
+  const businessId = urlBusinessId || business?.id;
+  
+  const { integrations, businessIntegrations, updateIntegration, loading } = useIntegrations(businessId);
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'merged' | 'tabs'>('merged');
 
+  console.log('=== BusinessIntegrations ===');
+  console.log('URL Business ID:', urlBusinessId);
+  console.log('Hook Business ID:', business?.id);
+  console.log('Final Business ID:', businessId);
+  console.log('Available integrations:', integrations);
+  console.log('Business integrations:', businessIntegrations);
+
   const handleIntegrationSave = (integrationKey: string, updatedFields: Record<string, any>) => {
     console.log('=== handleIntegrationSave START ===');
-    console.log('Business ID:', business?.id);
+    console.log('Business ID:', businessId);
     console.log('Integration Key:', integrationKey);
     console.log('Updated Fields:', updatedFields);
-    console.log('Available integrations:', integrations);
-    console.log('Business integrations:', businessIntegrations);
     
-    if (!business?.id) {
+    if (!businessId) {
       console.error('No business ID available');
       return;
     }
@@ -58,7 +69,7 @@ export const BusinessIntegrations: React.FC = () => {
     );
   }
 
-  if (!business) {
+  if (!businessId) {
     return (
       <div className="p-6">
         <div className="text-center text-gray-500">לא נמצא עסק</div>
@@ -82,7 +93,7 @@ export const BusinessIntegrations: React.FC = () => {
       </div>
 
       {/* Failure Notifications */}
-      <IntegrationFailureNotifications businessId={business.id} />
+      <IntegrationFailureNotifications businessId={businessId} />
 
       {/* Main Content */}
       <Tabs defaultValue="active" className="w-full">
@@ -126,7 +137,7 @@ export const BusinessIntegrations: React.FC = () => {
                     onSave={(updatedFields) => 
                       handleIntegrationSave(integration.integration_name, updatedFields)
                     }
-                    businessId={business.id}
+                    businessId={businessId}
                     viewMode={viewMode}
                   />
                 );
@@ -162,7 +173,7 @@ export const BusinessIntegrations: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="audit">
-          <IntegrationAuditLog businessId={business.id} />
+          <IntegrationAuditLog businessId={businessId} />
         </TabsContent>
       </Tabs>
 
@@ -182,7 +193,7 @@ export const BusinessIntegrations: React.FC = () => {
                 handleIntegrationSave(selectedIntegration, updatedFields);
                 setSelectedIntegration(null);
               }}
-              businessId={business.id}
+              businessId={businessId}
               viewMode={viewMode}
             />
             <div className="mt-4">
