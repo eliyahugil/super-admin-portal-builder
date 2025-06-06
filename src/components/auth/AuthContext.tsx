@@ -39,6 +39,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user ID:', userId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -50,6 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
+      console.log('Profile fetched successfully:', data);
       setProfile(data);
     } catch (error) {
       console.error('Error in fetchProfile:', error);
@@ -57,6 +60,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    console.log('Setting up auth state listener');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -65,11 +70,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          console.log('User logged in, fetching profile for:', session.user.id);
+          console.log('User email:', session.user.email);
+          
           // Defer profile fetch to avoid potential deadlock
           setTimeout(() => {
             fetchProfile(session.user.id);
           }, 0);
         } else {
+          console.log('No user session, clearing profile');
           setProfile(null);
         }
         setLoading(false);
@@ -78,9 +87,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        console.log('Found existing session for user:', session.user.email);
         fetchProfile(session.user.id);
       }
       setLoading(false);
@@ -89,11 +100,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
+  // Debug effect to track profile changes
+  useEffect(() => {
+    console.log('Profile state changed:', profile);
+    console.log('Is super admin:', profile?.role === 'super_admin');
+  }, [profile]);
+
   const signIn = async (email: string, password: string) => {
+    console.log('Attempting to sign in with email:', email);
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
+    if (error) {
+      console.error('Sign in error:', error);
+    } else {
+      console.log('Sign in successful');
+    }
+    
     return { error };
   };
 
@@ -114,6 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    console.log('Signing out');
     await supabase.auth.signOut();
   };
 

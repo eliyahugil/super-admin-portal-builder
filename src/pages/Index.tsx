@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,22 +7,29 @@ import { useBusiness } from '@/hooks/useBusiness';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, profile } = useAuth();
   const { isSuperAdmin } = useBusiness();
 
   // Auto-redirect logged in users to their appropriate dashboard
   useEffect(() => {
-    if (!loading && user) {
-      if (isSuperAdmin) {
+    console.log('Index page effect - loading:', loading, 'user:', user?.email, 'profile:', profile, 'isSuperAdmin:', isSuperAdmin);
+    
+    if (!loading && user && profile) {
+      console.log('User is authenticated, profile loaded. Redirecting...');
+      
+      if (profile.role === 'super_admin') {
+        console.log('Redirecting super admin to /admin');
         navigate('/admin', { replace: true });
       } else {
+        console.log('Redirecting regular user to /modules/employees');
         navigate('/modules/employees', { replace: true });
       }
     }
-  }, [user, loading, isSuperAdmin, navigate]);
+  }, [user, loading, profile, navigate]);
 
   // Don't render anything while checking auth status
   if (loading) {
+    console.log('Index page loading...');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -36,8 +42,11 @@ const Index = () => {
 
   // Only show marketing page to non-authenticated users
   if (user) {
+    console.log('User exists but still showing Index page - waiting for profile or redirect');
     return null; // Will redirect via useEffect
   }
+
+  console.log('Showing marketing page to non-authenticated user');
 
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
