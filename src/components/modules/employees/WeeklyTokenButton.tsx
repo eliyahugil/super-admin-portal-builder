@@ -5,7 +5,7 @@ import { MessageCircle, Calendar, Link, Copy, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { sendWhatsappReminder } from '@/utils/sendWhatsappReminder';
+import { sendShiftTokenWhatsapp } from '@/utils/sendWhatsappReminder';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { useBusiness } from '@/hooks/useBusiness';
 import { Badge } from '@/components/ui/badge';
@@ -14,12 +14,14 @@ interface WeeklyTokenButtonProps {
   phone: string;
   employeeName: string;
   employeeId: string;
+  compact?: boolean;
 }
 
 export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
   phone,
   employeeName,
   employeeId,
+  compact = false,
 }) => {
   const [loading, setLoading] = useState(false);
   const { businessId } = useBusiness();
@@ -116,7 +118,7 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
     if (!phone || !tokenData?.submissionUrl) {
       toast({
         title: 'שגיאה',
-        description: 'לא ניתן לשלוח הודעה - חסר מספר טלפון או טוקן',
+        description: 'לא ניתן לשלוח הודעה - חסר מספר טלפון או טוכן',
         variant: 'destructive',
       });
       return;
@@ -124,20 +126,21 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
 
     try {
       setLoading(true);
-
-      const weekStart = new Date(tokenData.week_start_date).toLocaleDateString('he-IL');
-      const weekEnd = new Date(tokenData.week_end_date).toLocaleDateString('he-IL');
-
-      const message = `שלום ${employeeName}! 👋\n\n📅 נא למלא את המשמרות שלך לשבוע ${weekStart} - ${weekEnd}\n\n🔗 קישור למילוי:\n${tokenData.submissionUrl}\n\n⏰ אנא הגש עד יום רביעי\n💼 מערכת ניהול העובדים`;
       
       const useAPI = settings?.use_whatsapp_api || false;
       
-      await sendWhatsappReminder(phone, message, useAPI);
+      await sendShiftTokenWhatsapp({
+        phone,
+        employeeName,
+        employeeId,
+        tokenUrl: tokenData.submissionUrl,
+        useAPI,
+      });
       
       // Log successful reminder
       await logReminderMutation.mutateAsync({
         phone,
-        message,
+        message: `שליחת טוכן שבועי ל-${employeeName}`,
         method: useAPI ? 'whatsapp_api' : 'browser',
         status: 'success',
       });
@@ -199,6 +202,37 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
   const weekStart = new Date(tokenData.week_start_date).toLocaleDateString('he-IL');
   const weekEnd = new Date(tokenData.week_end_date).toLocaleDateString('he-IL');
   const isExpired = new Date(tokenData.expires_at) < new Date();
+
+  if (compact) {
+    return (
+      <div className="flex gap-2">
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={handleSendWhatsApp}
+          disabled={loading || !phone || isExpired}
+          className="flex items-center gap-2"
+          title={settings?.use_whatsapp_api ? 'שלח דרך WhatsApp API' : 'פתח WhatsApp בדפדפן'}
+        >
+          <MessageCircle className="h-4 w-4" />
+          {loading ? 'שולח...' : 'שלח בוואטסאפ'}
+          {settings?.use_whatsapp_api && (
+            <span className="text-xs text-blue-600">(API)</span>
+          )}
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={handleCopyLink}
+          className="flex items-center gap-2"
+          title="העתק קישור"
+        >
+          <Copy className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

@@ -1,4 +1,3 @@
-
 export const sendWhatsappReminder = (phone: string, message: string, useAPI: boolean = false) => {
   if (useAPI) {
     // Example for API usage (e.g., Twilio, Meta)
@@ -44,6 +43,33 @@ export const sendWhatsappReminder = (phone: string, message: string, useAPI: boo
       throw error;
     }
   }
+};
+
+// Helper function specifically for shift tokens
+export const sendShiftTokenWhatsapp = async ({
+  phone,
+  employeeName,
+  employeeId,
+  tokenUrl,
+  useAPI = false
+}: {
+  phone: string;
+  employeeName: string;
+  employeeId: string;
+  tokenUrl: string;
+  useAPI?: boolean;
+}) => {
+  const message = `שלום ${employeeName}! 👋
+
+📅 נא למלא את המשמרות שלך לשבוע הקרוב
+
+🔗 קישור למילוי:
+${tokenUrl}
+
+⏰ אנא הגש עד יום רביעי
+💼 מערכת ניהול העובדים`;
+  
+  return sendWhatsappReminder(phone, message, useAPI);
 };
 
 // Check if WhatsApp API is available/configured

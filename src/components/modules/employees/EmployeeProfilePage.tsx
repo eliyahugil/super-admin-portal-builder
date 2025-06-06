@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -133,11 +132,34 @@ export const EmployeeProfilePage: React.FC = () => {
     return variants[type] || 'default';
   };
 
-  const handleWhatsApp = () => {
-    if (employee?.phone) {
-      const message = encodeURIComponent(`שלום ${employee.first_name}, מערכת ניהול העובדים`);
-      const phoneNumber = employee.phone.replace(/[^\d]/g, '');
-      window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+  const handleWhatsApp = async () => {
+    if (!employee?.phone) {
+      toast({
+        title: 'שגיאה',
+        description: 'לא נמצא מספר טלפון',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const message = `שלום ${employee.first_name}, מערכת ניהול העובדים`;
+      const cleanedPhone = employee.phone.replace(/[^0-9]/g, "");
+      const formattedPhone = cleanedPhone.startsWith('972') ? cleanedPhone : `972${cleanedPhone.startsWith('0') ? cleanedPhone.slice(1) : cleanedPhone}`;
+      const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+      
+      window.open(url, '_blank');
+      
+      toast({
+        title: 'נפתח WhatsApp',
+        description: `הודעה מוכנה ל-${employee.first_name}`,
+      });
+    } catch (error) {
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן לפתוח WhatsApp',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -215,14 +237,23 @@ export const EmployeeProfilePage: React.FC = () => {
           ערוך פרטים
         </Button>
         {employee.phone && (
-          <Button
-            onClick={handleWhatsApp}
-            variant="outline"
-            className="flex items-center gap-2 text-green-600 border-green-200 hover:bg-green-50"
-          >
-            <MessageCircle className="h-4 w-4" />
-            שלח וואטסאפ
-          </Button>
+          <>
+            <Button
+              onClick={handleWhatsApp}
+              variant="outline"
+              className="flex items-center gap-2 text-green-600 border-green-200 hover:bg-green-50"
+            >
+              <MessageCircle className="h-4 w-4" />
+              שלח הודעה
+            </Button>
+            {/* Compact WhatsApp token button */}
+            <WeeklyTokenButton
+              phone={employee.phone}
+              employeeName={employeeName}
+              employeeId={employee.id}
+              compact={true}
+            />
+          </>
         )}
       </div>
 
