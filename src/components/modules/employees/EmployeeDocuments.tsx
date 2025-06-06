@@ -77,20 +77,34 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     try {
       setUploading(true);
       
-      // Simulate file upload - In real implementation, upload to storage bucket first
-      const fileUrl = URL.createObjectURL(file);
+      // Upload file to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const timestamp = Date.now();
+      const filePath = `employee-documents/${employeeId}/${timestamp}-${file.name}`;
       
-      const { error } = await supabase
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('employee-files')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('employee-files')
+        .getPublicUrl(filePath);
+
+      // Save document record
+      const { error: insertError } = await supabase
         .from('employee_documents')
         .insert({
           employee_id: employeeId,
           document_name: file.name,
           document_type: getFileType(file.name),
-          file_url: fileUrl,
+          file_url: urlData.publicUrl,
           uploaded_by: profile.id,
         });
 
-      if (error) throw error;
+      if (insertError) throw insertError;
       
       toast({
         title: 'הצלחה',
