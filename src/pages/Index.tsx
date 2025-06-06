@@ -1,95 +1,202 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/components/auth/AuthContext';
+import { useBusiness } from '@/hooks/useBusiness';
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+  const { isSuperAdmin } = useBusiness();
+
+  // Auto-redirect logged in users to their appropriate dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      if (isSuperAdmin) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/modules/employees', { replace: true });
+      }
+    }
+  }, [user, loading, isSuperAdmin, navigate]);
+
+  // Don't render anything while checking auth status
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">טוען...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only show marketing page to non-authenticated users
+  if (user) {
+    return null; // Will redirect via useEffect
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">ברוכים הבאים למערכת ניהול העסק</h1>
-          <p className="text-xl text-gray-600">פלטפורמה מתקדמת לניהול עסקים עם אינטגרציות חכמות</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                🏢 ניהול עסקים
-              </CardTitle>
-              <CardDescription>
-                ניהול מקיף של פרטי העסק, עובדים ומשמרות
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
-                כלים מתקדמים לניהול יומיומי של העסק שלך
-              </p>
-              <Button variant="outline" className="w-full">
-                התחל עכשיו
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                🔗 אינטגרציות
-              </CardTitle>
-              <CardDescription>
-                חיבור לשירותים חיצוניים ואוטומציה חכמה
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
-                חבר את העסק שלך לכלים הטובים ביותר בשוק
-              </p>
-              <Button asChild className="w-full">
-                <Link to="/global-integrations">
-                  נהל אינטגרציות
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                📊 דוחות וניתוחים
-              </CardTitle>
-              <CardDescription>
-                תובנות עסקיות ודוחות מתקדמים
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
-                קבל תמונה ברורה על ביצועי העסק שלך
-              </p>
-              <Button variant="outline" className="w-full">
-                צפה בדוחות
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="text-center mt-12">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">מוכן להתחיל?</h2>
-          <p className="text-gray-600 mb-6">
-            הצטרף לאלפי עסקים שכבר משתמשים במערכת שלנו
+    <div className="min-h-screen bg-gray-50" dir="rtl">
+      <div className="container mx-auto px-4 py-12">
+        {/* Header Section */}
+        <div className="text-center mb-16">
+          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+            👨‍💼 מערכת ניהול מתקדמת לעסקים
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            פלטפורמה מקיפה לניהול עובדים, אינטגרציות חכמות, CRM מובנה וכלי ניהול משמרות מתקדמים
           </p>
-          <div className="flex gap-4 justify-center">
-            <Button size="lg">
-              התחל ניסיון חינם
+        </div>
+
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          <FeatureCard 
+            title="👥 ניהול עובדים מתקדם"
+            description="ניהול מידע עובדים, מסמכים דיגיטליים, מעקב נוכחות, בקשות עובדים וכלי ניהול משמרות חכמים"
+            icon="👥"
+          />
+          <FeatureCard 
+            title="🔗 אינטגרציות חכמות"
+            description="חיבור קל ומהיר ל-WhatsApp Business, Google Maps, Facebook Leads, מערכות חשבוניות ועוד"
+            icon="🔗"
+          />
+          <FeatureCard 
+            title="🤝 CRM מובנה"
+            description="מעקב לידים, ניהול לקוחות, אוטומציות שיווקיות וכלי מכירות מתקדמים"
+            icon="🤝"
+          />
+          <FeatureCard 
+            title="🏢 ניהול סניפים"
+            description="ניהול מרכזי של מספר סניפים, הגדרת תפקידים והרשאות לכל סניף"
+            icon="🏢"
+          />
+          <FeatureCard 
+            title="📊 דוחות וניתוחים"
+            description="דוחות מפורטים על ביצועי עובדים, נוכחות, מכירות ותובנות עסקיות"
+            icon="📊"
+          />
+          <FeatureCard 
+            title="⚙️ התאמה אישית"
+            description="מודולים מותאמים אישית, הגדרות גמישות והתאמה לצרכי העסק הספציפיים"
+            icon="⚙️"
+          />
+        </div>
+
+        {/* Call to Action Buttons */}
+        <div className="text-center space-y-6">
+          <h2 className="text-3xl font-semibold text-gray-900 mb-8">
+            מוכנים להתחיל?
+          </h2>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-lg mx-auto">
+            <Button 
+              size="lg" 
+              className="w-full sm:w-auto text-lg px-8 py-4 bg-green-600 hover:bg-green-700"
+              onClick={() => navigate('/auth')}
+            >
+              🧪 נסו את המערכת בחינם
             </Button>
-            <Button variant="outline" size="lg">
-              למד עוד
+            
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="w-full sm:w-auto text-lg px-8 py-4"
+              onClick={() => navigate('/learn-more')}
+            >
+              📘 למידע נוסף
             </Button>
+          </div>
+
+          {/* Login Link */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <p className="text-gray-600 mb-4">
+              כבר יש לכם חשבון?
+            </p>
+            <Button 
+              variant="ghost" 
+              size="lg"
+              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              onClick={() => navigate('/auth')}
+            >
+              🔐 התחברו כאן
+            </Button>
+          </div>
+        </div>
+
+        {/* Additional Benefits Section */}
+        <div className="mt-20 bg-white rounded-2xl p-8 shadow-lg">
+          <h3 className="text-2xl font-bold text-center text-gray-900 mb-8">
+            למה לבחור במערכת שלנו?
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">✅</span>
+                <div>
+                  <h4 className="font-semibold text-gray-900">הקמה מהירה</h4>
+                  <p className="text-gray-600">התקנה ותפעול תוך דקות ספורות</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🔒</span>
+                <div>
+                  <h4 className="font-semibold text-gray-900">אבטחה מתקדמת</h4>
+                  <p className="text-gray-600">הגנה מלאה על נתוני העסק והעובדים</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">📱</span>
+                <div>
+                  <h4 className="font-semibold text-gray-900">ממשק ידידותי</h4>
+                  <p className="text-gray-600">עיצוב אינטואיטיבי ונוח לשימוש</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🎯</span>
+                <div>
+                  <h4 className="font-semibold text-gray-900">תמיכה מלאה</h4>
+                  <p className="text-gray-600">צוות התמיכה זמין לעזרה בכל עת</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
+  );
+};
+
+interface FeatureCardProps {
+  title: string;
+  description: string;
+  icon: string;
+}
+
+const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon }) => {
+  return (
+    <Card className="h-full hover:shadow-lg transition-shadow duration-300 border-l-4 border-l-blue-500">
+      <CardHeader className="text-center pb-4">
+        <div className="text-4xl mb-2">{icon}</div>
+        <CardTitle className="text-xl font-bold text-gray-900">
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <CardDescription className="text-gray-600 text-center leading-relaxed">
+          {description}
+        </CardDescription>
+      </CardContent>
+    </Card>
   );
 };
 

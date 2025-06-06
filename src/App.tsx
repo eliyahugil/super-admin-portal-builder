@@ -7,9 +7,11 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Toaster } from '@/components/ui/toaster';
 import { AppLayout } from '@/components/layout/AppLayout';
 import Index from '@/pages/Index';
+import LearnMore from '@/pages/LearnMore';
 import { GlobalIntegrationsPage } from '@/pages/GlobalIntegrationsPage';
 import { ModuleWrapper } from '@/components/modules/ModuleWrapper';
 import { IntegrationsRoute } from '@/components/routes/IntegrationsRoute';
+import { AuthForm } from '@/components/auth/AuthForm';
 
 const queryClient = new QueryClient();
 
@@ -22,6 +24,12 @@ function App() {
           <Routes>
             {/* Root route without layout */}
             <Route path="/" element={<Index />} />
+            
+            {/* Learn More page without layout */}
+            <Route path="/learn-more" element={<LearnMore />} />
+            
+            {/* Auth page without layout */}
+            <Route path="/auth" element={<AuthForm />} />
             
             {/* All other routes wrapped with layout */}
             <Route path="/*" element={
