@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -28,6 +29,7 @@ import { DynamicModulePage } from '@/components/modules/DynamicModulePage';
 import { SubmitShiftPage } from '@/components/modules/shifts/SubmitShiftPage';
 import { BusinessDashboard } from '@/components/business/BusinessDashboard';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
+import { CreateBusinessPage } from '@/components/admin/CreateBusinessPage';
 import { GlobalIntegrationsPage } from '@/pages/GlobalIntegrationsPage';
 import { CRMDashboard } from '@/components/crm/CRMDashboard';
 import { ShiftTokenSchedulePage } from '@/components/modules/settings/ShiftTokenSchedulePage';
@@ -157,6 +159,14 @@ function App() {
               </ProtectedRoute>
             } />
 
+            <Route path="/admin/businesses/create" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <CreateBusinessPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
             {/* Global integrations route */}
             <Route path="/integrations" element={
               <ProtectedRoute>
@@ -185,3 +195,4 @@ function App() {
 }
 
 export default App;
+
