@@ -95,13 +95,13 @@ export const Dashboard: React.FC = () => {
   }, [isSuperAdmin]);
 
   const handleManageBusiness = (businessId: string) => {
-    // Navigate to business settings
-    navigate(`/modules/settings`);
+    // Navigate to business-specific settings
+    navigate(`/business/${businessId}/modules/settings`);
   };
 
   const handleEditBusiness = (business: Business) => {
-    // Navigate to business profile settings
-    navigate(`/modules/settings/profile`);
+    // Navigate to business-specific profile settings
+    navigate(`/business/${business.id}/modules/settings/profile`);
   };
 
   const handleCreateBusiness = () => {
