@@ -11,6 +11,7 @@ import { ShiftManagement } from './employees/ShiftManagement';
 import { ModuleManagement } from './ModuleManagement';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { BusinessManagement } from '@/components/business/BusinessManagement';
+import { AttendanceManagement } from './employees/AttendanceManagement';
 
 export const ModuleWrapper: React.FC = () => {
   const { businessId, moduleRoute, subModule } = useParams();
@@ -80,6 +81,8 @@ export const ModuleWrapper: React.FC = () => {
       return <div>Permissions component</div>;
     case 'employees':
       return <EmployeeManagement />;
+    case 'employees/attendance':
+      return <AttendanceManagement />;
     case 'shifts':
       return <ShiftManagement />;
     case 'modules':

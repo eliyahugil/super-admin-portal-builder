@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useBusiness } from '@/hooks/useBusiness';
 import { 
   Eye, 
   Edit, 
@@ -35,18 +36,25 @@ export const EmployeeActions: React.FC<EmployeeActionsProps> = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { businessId } = useBusiness();
   const employeeName = `${employee.first_name} ${employee.last_name}`;
 
   const handleViewProfile = () => {
-    navigate(`/modules/employees/profile/${employee.id}`);
+    if (businessId) {
+      navigate(`/business/${businessId}/modules/employees/profile/${employee.id}`);
+    } else {
+      navigate(`/modules/employees/profile/${employee.id}`);
+    }
   };
 
   const handleEdit = () => {
     if (onEdit) {
       onEdit(employee.id);
     } else {
-      // Navigate to edit page or open edit modal
-      navigate(`/modules/employees/edit/${employee.id}`);
+      toast({
+        title: 'עריכת עובד',
+        description: 'הפונקציה תתווסף בקרוב',
+      });
     }
   };
 
@@ -63,7 +71,19 @@ export const EmployeeActions: React.FC<EmployeeActionsProps> = ({
   };
 
   const handleViewDocuments = () => {
-    navigate(`/modules/employees/profile/${employee.id}#documents`);
+    if (businessId) {
+      navigate(`/business/${businessId}/modules/employees/profile/${employee.id}#documents`);
+    } else {
+      navigate(`/modules/employees/profile/${employee.id}#documents`);
+    }
+  };
+
+  const handleViewAttendance = () => {
+    if (businessId) {
+      navigate(`/business/${businessId}/modules/employees/attendance`);
+    } else {
+      navigate(`/modules/employees/attendance`);
+    }
   };
 
   return (

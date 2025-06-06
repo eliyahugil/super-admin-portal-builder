@@ -109,6 +109,15 @@ function App() {
               </ProtectedRoute>
             } />
 
+            {/* Employee profile routes for businesses */}
+            <Route path="/business/:businessId/modules/employees/profile/:employeeId" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <EmployeeProfilePage />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
             {/* Direct module routes for businesses */}
             <Route path="/modules/:moduleRoute" element={
               <ProtectedRoute>
@@ -130,6 +139,15 @@ function App() {
               <ProtectedRoute>
                 <AppLayout>
                   <ModuleWrapper />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Employee profile routes for direct modules */}
+            <Route path="/modules/employees/profile/:employeeId" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <EmployeeProfilePage />
                 </AppLayout>
               </ProtectedRoute>
             } />
