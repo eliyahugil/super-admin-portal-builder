@@ -2,13 +2,16 @@
 import React from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { BackButton } from '@/components/ui/BackButton';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { LogOut, User } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const { business, isSuperAdmin } = useBusiness();
   const { profile, user, session, loading, signOut } = useAuth();
+  const location = useLocation();
 
   console.log('🎯 Header render - Auth state:', {
     hasUser: !!user,
@@ -32,10 +35,14 @@ export const Header: React.FC = () => {
   // Only show user info if we have both user and session (truly logged in)
   const isAuthenticated = user && session && profile;
 
+  // Show back button for deep navigation paths
+  const showBackButton = location.pathname.split('/').length > 3;
+
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
       <div className="flex items-center gap-4">
         <SidebarTrigger />
+        {showBackButton && <BackButton />}
         <h1 className="text-xl font-semibold text-gray-900">
           {business?.name || 'מערכת ניהול'}
         </h1>
