@@ -28,6 +28,8 @@ import { EmployeeDocuments } from './EmployeeDocuments';
 import { EmployeeNotes } from './EmployeeNotes';
 import { SalaryHistory } from './SalaryHistory';
 import { WeeklyTokenButton } from './WeeklyTokenButton';
+import { EmployeeEditDialog } from './EmployeeEditDialog';
+import { EmployeeBranchAssignments } from './EmployeeBranchAssignments';
 
 interface Employee {
   id: string;
@@ -164,10 +166,7 @@ export const EmployeeProfilePage: React.FC = () => {
   };
 
   const handleEdit = () => {
-    toast({
-      title: 'עריכה',
-      description: 'פונקציונליות עריכה תמומש בקרוב',
-    });
+    // This will be handled by the EmployeeEditDialog component
   };
 
   if (loading) {
@@ -232,10 +231,7 @@ export const EmployeeProfilePage: React.FC = () => {
 
       {/* Action Buttons */}
       <div className="flex gap-3 mb-6">
-        <Button onClick={handleEdit} className="flex items-center gap-2">
-          <Edit className="h-4 w-4" />
-          ערוך פרטים
-        </Button>
+        <EmployeeEditDialog employee={employee} onUpdate={fetchEmployeeDetails} />
         {employee.phone && (
           <>
             <Button
@@ -338,6 +334,11 @@ export const EmployeeProfilePage: React.FC = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Branch Assignments Section */}
+          <div className="mt-6">
+            <EmployeeBranchAssignments employeeId={employee.id} />
+          </div>
 
           {/* Weekly Token Section */}
           {employee.phone && (
