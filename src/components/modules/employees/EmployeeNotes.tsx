@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { StickyNote, Plus, AlertTriangle, Info, User, MessageSquare } from 'lucide-react';
+import { StickyNote, Plus, AlertTriangle, Info, User, MessageSquare, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthContext';
+import { useBusiness } from '@/hooks/useBusiness';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -30,6 +31,7 @@ export const EmployeeNotes: React.FC<EmployeeNotesProps> = ({
   const [isWarning, setIsWarning] = useState(false);
   const { toast } = useToast();
   const { profile } = useAuth();
+  const { businessId } = useBusiness();
   const queryClient = useQueryClient();
 
   const { data: notes, isLoading } = useQuery({
@@ -47,22 +49,24 @@ export const EmployeeNotes: React.FC<EmployeeNotesProps> = ({
       if (error) throw error;
       return data;
     },
+    enabled: !!employeeId,
   });
 
   const addNoteMutation = useMutation({
     mutationFn: async () => {
-      if (!newNote.trim()) throw new Error('התוכן לא יכול להיות רק');
+      if (!newNote.trim()) throw new Error('התוכן לא יכול להיות ריק');
       if (!profile?.id) throw new Error('משתמש לא מזוהה');
+      if (!businessId) throw new Error('עסק לא מזוהה');
 
       const { error } = await supabase
         .from('employee_notes')
         .insert({
           employee_id: employeeId,
+          business_id: businessId,
           content: newNote.trim(),
           note_type: noteType,
           is_warning: isWarning,
           created_by: profile.id,
-          business_id: 'temp' // You'll need to get the actual business_id
         });
 
       if (error) throw error;
@@ -82,6 +86,31 @@ export const EmployeeNotes: React.FC<EmployeeNotesProps> = ({
       toast({
         title: 'שגיאה',
         description: error.message || 'לא ניתן להוסיף את ההערה',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: async (noteId: string) => {
+      const { error } = await supabase
+        .from('employee_notes')
+        .delete()
+        .eq('id', noteId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employee-notes', employeeId] });
+      toast({
+        title: 'הצלחה',
+        description: 'ההערה נמחקה בהצלחה',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן למחוק את ההערה',
         variant: 'destructive',
       });
     },
@@ -234,8 +263,21 @@ export const EmployeeNotes: React.FC<EmployeeNotesProps> = ({
                       {note.is_warning && ' - אזהרה'}
                     </Badge>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    {format(new Date(note.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm text-gray-500">
+                      {format(new Date(note.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                    </div>
+                    {canEdit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteNoteMutation.mutate(note.id)}
+                        disabled={deleteNoteMutation.isPending}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
                 

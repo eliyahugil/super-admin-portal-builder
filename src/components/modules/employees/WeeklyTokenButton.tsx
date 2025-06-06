@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Calendar, Link, Copy } from 'lucide-react';
+import { MessageCircle, Calendar, Link, Copy, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { sendWhatsappReminder } from '@/utils/sendWhatsappReminder';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
@@ -25,6 +25,7 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
   const { businessId } = useBusiness();
   const { settings } = useBusinessSettings(businessId);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Get or create weekly token for next week
   const { data: tokenData, isLoading } = useQuery({
@@ -86,6 +87,31 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
     enabled: !!employeeId,
   });
 
+  // Log WhatsApp reminder
+  const logReminderMutation = useMutation({
+    mutationFn: async (data: {
+      phone: string;
+      message: string;
+      method: string;
+      status: string;
+      errorDetails?: string;
+    }) => {
+      const { error } = await supabase
+        .from('shift_reminder_logs')
+        .insert({
+          employee_id: employeeId,
+          business_id: businessId,
+          phone_number: data.phone,
+          message_content: data.message,
+          method: data.method,
+          status: data.status,
+          error_details: data.errorDetails,
+        });
+
+      if (error) throw error;
+    },
+  });
+
   const handleSendWhatsApp = async () => {
     if (!phone || !tokenData?.submissionUrl) {
       toast({
@@ -108,6 +134,14 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
       
       await sendWhatsappReminder(phone, message, useAPI);
       
+      // Log successful reminder
+      await logReminderMutation.mutateAsync({
+        phone,
+        message,
+        method: useAPI ? 'whatsapp_api' : 'browser',
+        status: 'success',
+      });
+      
       const methodText = useAPI ? 'WhatsApp API' : 'דפדפן';
       toast({
         title: useAPI ? 'הודעה נשלחה' : 'נפתח WhatsApp',
@@ -115,6 +149,16 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
       });
     } catch (error) {
       console.error('Error sending WhatsApp reminder:', error);
+      
+      // Log failed reminder
+      await logReminderMutation.mutateAsync({
+        phone,
+        message: '',
+        method: settings?.use_whatsapp_api ? 'whatsapp_api' : 'browser',
+        status: 'failed',
+        errorDetails: error instanceof Error ? error.message : 'Unknown error',
+      });
+      
       toast({
         title: 'שגיאה',
         description: 'לא ניתן לשלוח הודעה',
@@ -139,7 +183,7 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
     return (
       <div className="flex items-center gap-2">
         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-        <span className="text-sm text-gray-500">טוען טוקן...</span>
+        <span className="text-sm text-gray-500">טוען טוכן...</span>
       </div>
     );
   }
@@ -147,7 +191,7 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
   if (!tokenData) {
     return (
       <div className="text-sm text-red-600">
-        שגיאה ביצירת טוקן
+        שגיאה ביצירת טוכן
       </div>
     );
   }
@@ -160,7 +204,7 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Calendar className="h-4 w-4 text-blue-600" />
-        <span className="text-sm font-medium">טוקן שבוע {weekStart} - {weekEnd}</span>
+        <span className="text-sm font-medium">טוכן שבוע {weekStart} - {weekEnd}</span>
         <Badge variant={isExpired ? "destructive" : "default"}>
           {isExpired ? "פג תוקף" : "פעיל"}
         </Badge>

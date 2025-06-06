@@ -7,6 +7,7 @@ import { FileText, Download, Eye, Upload, Plus, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/auth/AuthContext';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -23,6 +24,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 }) => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
+  const { profile } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: documents, isLoading } = useQuery({
@@ -40,6 +42,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       if (error) throw error;
       return data;
     },
+    enabled: !!employeeId,
   });
 
   const deleteDocumentMutation = useMutation({
@@ -69,14 +72,25 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !profile?.id) return;
 
     try {
       setUploading(true);
       
-      // Here you would implement file upload logic
-      // For now, we'll simulate it
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Simulate file upload - In real implementation, upload to storage bucket first
+      const fileUrl = URL.createObjectURL(file);
+      
+      const { error } = await supabase
+        .from('employee_documents')
+        .insert({
+          employee_id: employeeId,
+          document_name: file.name,
+          document_type: getFileType(file.name),
+          file_url: fileUrl,
+          uploaded_by: profile.id,
+        });
+
+      if (error) throw error;
       
       toast({
         title: 'הצלחה',
@@ -85,6 +99,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       
       queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
     } catch (error) {
+      console.error('Error uploading document:', error);
       toast({
         title: 'שגיאה',
         description: 'לא ניתן להעלות את המסמך',
@@ -93,6 +108,19 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     } finally {
       setUploading(false);
       event.target.value = '';
+    }
+  };
+
+  const getFileType = (fileName: string) => {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    switch (extension) {
+      case 'pdf': return 'contract';
+      case 'doc':
+      case 'docx': return 'form';
+      case 'jpg':
+      case 'jpeg':
+      case 'png': return 'id';
+      default: return 'other';
     }
   };
 
@@ -113,6 +141,21 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       case 'certificate': return 'תעודה';
       case 'form': return 'טופס';
       default: return type;
+    }
+  };
+
+  const handleDownload = (document: any) => {
+    if (document.file_url) {
+      const link = document.createElement('a');
+      link.href = document.file_url;
+      link.download = document.document_name;
+      link.click();
+    }
+  };
+
+  const handleView = (document: any) => {
+    if (document.file_url) {
+      window.open(document.file_url, '_blank');
     }
   };
 
@@ -195,10 +238,18 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleView(document)}
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleDownload(document)}
+                    >
                       <Download className="h-4 w-4" />
                     </Button>
                     {canEdit && (

@@ -25,6 +25,7 @@ export const ShiftSubmissionHistory: React.FC<ShiftSubmissionHistoryProps> = ({ 
       if (error) throw error;
       return data;
     },
+    enabled: !!employeeId,
   });
 
   const getStatusColor = (status: string) => {
@@ -42,6 +43,26 @@ export const ShiftSubmissionHistory: React.FC<ShiftSubmissionHistoryProps> = ({ 
       case 'rejected': return <AlertCircle className="h-4 w-4" />;
       default: return <Clock className="h-4 w-4" />;
     }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'approved': return 'אושר';
+      case 'rejected': return 'נדחה';
+      case 'pending': return 'ממתין';
+      default: return 'הוגש';
+    }
+  };
+
+  const parseShifts = (shifts: any) => {
+    if (typeof shifts === 'string') {
+      try {
+        return JSON.parse(shifts);
+      } catch {
+        return [];
+      }
+    }
+    return Array.isArray(shifts) ? shifts : [];
   };
 
   if (isLoading) {
@@ -68,63 +89,66 @@ export const ShiftSubmissionHistory: React.FC<ShiftSubmissionHistoryProps> = ({ 
 
       {submissions && submissions.length > 0 ? (
         <div className="space-y-4">
-          {submissions.map((submission) => (
-            <Card key={submission.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    שבוע {format(new Date(submission.week_start_date), 'dd/MM', { locale: he })} - 
-                    {format(new Date(submission.week_end_date), 'dd/MM/yyyy', { locale: he })}
-                  </CardTitle>
-                  <Badge className={`flex items-center gap-1 ${getStatusColor(submission.status)}`}>
-                    {getStatusIcon(submission.status)}
-                    {submission.status === 'approved' ? 'אושר' : 
-                     submission.status === 'rejected' ? 'נדחה' : 
-                     submission.status === 'pending' ? 'ממתין' : 'הוגש'}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">תאריך הגשה:</span>
-                    <div className="font-medium">
-                      {format(new Date(submission.submitted_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+          {submissions.map((submission) => {
+            const shiftsData = parseShifts(submission.shifts);
+            return (
+              <Card key={submission.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      שבוע {format(new Date(submission.week_start_date), 'dd/MM', { locale: he })} - 
+                      {format(new Date(submission.week_end_date), 'dd/MM/yyyy', { locale: he })}
+                    </CardTitle>
+                    <Badge className={`flex items-center gap-1 ${getStatusColor(submission.status)}`}>
+                      {getStatusIcon(submission.status)}
+                      {getStatusLabel(submission.status)}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500">תאריך הגשה:</span>
+                      <div className="font-medium">
+                        {format(new Date(submission.submitted_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">מספר משמרות:</span>
+                      <div className="font-medium">
+                        {shiftsData.length}
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <span className="text-gray-500">מספר משמרות:</span>
-                    <div className="font-medium">
-                      {Array.isArray(submission.shifts) ? submission.shifts.length : 0}
+                  
+                  {submission.notes && (
+                    <div className="mt-3 p-2 bg-gray-50 rounded">
+                      <span className="text-gray-500 text-sm">הערות:</span>
+                      <p className="text-sm mt-1">{submission.notes}</p>
                     </div>
-                  </div>
-                </div>
-                
-                {submission.notes && (
-                  <div className="mt-3 p-2 bg-gray-50 rounded">
-                    <span className="text-gray-500 text-sm">הערות:</span>
-                    <p className="text-sm mt-1">{submission.notes}</p>
-                  </div>
-                )}
+                  )}
 
-                {Array.isArray(submission.shifts) && submission.shifts.length > 0 && (
-                  <div className="mt-3">
-                    <span className="text-gray-500 text-sm">משמרות:</span>
-                    <div className="mt-2 space-y-2">
-                      {submission.shifts.map((shift: any, index: number) => (
-                        <div key={index} className="flex items-center justify-between text-sm bg-blue-50 p-2 rounded">
-                          <span>{shift.date}</span>
-                          <span>{shift.startTime} - {shift.endTime}</span>
-                          {shift.branch && <span className="text-blue-600">{shift.branch}</span>}
-                        </div>
-                      ))}
+                  {shiftsData.length > 0 && (
+                    <div className="mt-3">
+                      <span className="text-gray-500 text-sm">משמרות:</span>
+                      <div className="mt-2 space-y-2">
+                        {shiftsData.map((shift: any, index: number) => (
+                          <div key={index} className="flex items-center justify-between text-sm bg-blue-50 p-2 rounded">
+                            <span>{shift.date || 'תאריך לא זמין'}</span>
+                            <span>{shift.start_time || shift.startTime} - {shift.end_time || shift.endTime}</span>
+                            {(shift.branch_preference || shift.branch) && (
+                              <span className="text-blue-600">{shift.branch_preference || shift.branch}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <Card>
