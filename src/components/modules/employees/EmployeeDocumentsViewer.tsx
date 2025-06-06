@@ -8,8 +8,8 @@ import { FileText, Download, Calendar } from 'lucide-react';
 
 interface Document {
   id: string;
-  file_name: string;
-  file_path: string;
+  document_name: string;
+  file_url: string;
   document_type: string;
   created_at: string;
 }
@@ -28,7 +28,7 @@ export const EmployeeDocumentsViewer: React.FC<EmployeeDocumentsViewerProps> = (
       try {
         const { data, error } = await supabase
           .from('employee_documents')
-          .select('id, file_name, file_path, document_type, created_at')
+          .select('id, document_name, file_url, document_type, created_at')
           .eq('employee_id', employeeId)
           .order('created_at', { ascending: false });
 
@@ -60,37 +60,22 @@ export const EmployeeDocumentsViewer: React.FC<EmployeeDocumentsViewerProps> = (
     }
   }, [employeeId, toast]);
 
-  const downloadFile = async (path: string, fileName: string) => {
+  const downloadFile = async (fileUrl: string, fileName: string) => {
     try {
-      const { data, error } = await supabase.storage
-        .from('employee_docs')
-        .download(path);
+      // For direct file URLs, we can just open them in a new tab
+      // If these are stored in Supabase storage, we might need to handle them differently
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = fileName;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-      if (error) {
-        console.error('Error downloading file:', error);
-        toast({
-          title: 'שגיאה',
-          description: 'לא ניתן להוריד את הקובץ',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      if (data) {
-        const url = URL.createObjectURL(data);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        toast({
-          title: 'הורדה הושלמה',
-          description: `הקובץ ${fileName} הורד בהצלחה`,
-        });
-      }
+      toast({
+        title: 'הורדה הושלמה',
+        description: `הקובץ ${fileName} הורד בהצלחה`,
+      });
     } catch (error) {
       console.error('Exception downloading file:', error);
       toast({
@@ -155,7 +140,7 @@ export const EmployeeDocumentsViewer: React.FC<EmployeeDocumentsViewerProps> = (
                   <FileText className="h-5 w-5 text-gray-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-gray-900 truncate">
-                      {doc.file_name}
+                      {doc.document_name}
                     </div>
                     <div className="text-sm text-gray-500">
                       {getDocumentTypeLabel(doc.document_type)}
@@ -167,7 +152,7 @@ export const EmployeeDocumentsViewer: React.FC<EmployeeDocumentsViewerProps> = (
                   </div>
                 </div>
                 <Button
-                  onClick={() => downloadFile(doc.file_path, doc.file_name)}
+                  onClick={() => downloadFile(doc.file_url, doc.document_name)}
                   variant="outline"
                   size="sm"
                   className="flex items-center gap-2"
