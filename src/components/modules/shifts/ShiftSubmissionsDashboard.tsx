@@ -7,8 +7,31 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/useBusiness';
-import { WeeklyShiftService } from '@/services/WeeklyShiftService';
+import { WeeklyShiftService, ShiftEntry } from '@/services/WeeklyShiftService';
 import { Search, Calendar, User, Clock, MessageSquare, FileText } from 'lucide-react';
+
+interface EmployeeData {
+  first_name: string;
+  last_name: string;
+  employee_id: string;
+  phone?: string;
+  business_id: string;
+}
+
+interface ShiftSubmission {
+  id: string;
+  employee_id: string;
+  token: string;
+  submitted_at: string;
+  shifts: any; // JSON from database
+  week_start_date: string;
+  week_end_date: string;
+  status: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  employee?: EmployeeData;
+}
 
 export const ShiftSubmissionsDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,7 +67,26 @@ export const ShiftSubmissionsDashboard: React.FC = () => {
     window.open(url, '_blank');
   };
 
-  const filteredSubmissions = submissions?.filter(submission =>
+  // Parse shifts from JSON and ensure it's an array
+  const parseShifts = (shiftsData: any): ShiftEntry[] => {
+    if (!shiftsData) return [];
+    
+    if (typeof shiftsData === 'string') {
+      try {
+        return JSON.parse(shiftsData);
+      } catch {
+        return [];
+      }
+    }
+    
+    if (Array.isArray(shiftsData)) {
+      return shiftsData;
+    }
+    
+    return [];
+  };
+
+  const filteredSubmissions = submissions?.filter((submission: ShiftSubmission) =>
     submission.employee?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     submission.employee?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     submission.employee?.employee_id?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -95,7 +137,7 @@ export const ShiftSubmissionsDashboard: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-600">עובדים פעילים</p>
                 <p className="text-2xl font-bold">
-                  {new Set(submissions?.map(s => s.employee_id)).size || 0}
+                  {new Set(submissions?.map((s: ShiftSubmission) => s.employee_id)).size || 0}
                 </p>
               </div>
             </div>
@@ -109,7 +151,7 @@ export const ShiftSubmissionsDashboard: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-600">השבוע</p>
                 <p className="text-2xl font-bold">
-                  {submissions?.filter(s => {
+                  {submissions?.filter((s: ShiftSubmission) => {
                     const weekStart = new Date(s.week_start_date);
                     const now = new Date();
                     const thisWeekStart = new Date(now.setDate(now.getDate() - now.getDay()));
@@ -124,97 +166,101 @@ export const ShiftSubmissionsDashboard: React.FC = () => {
 
       {/* Submissions List */}
       <div className="space-y-6">
-        {filteredSubmissions?.map((submission) => (
-          <Card key={submission.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <User className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <h3 className="font-semibold">
-                      {submission.employee?.first_name} {submission.employee?.last_name}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      מס' עובד: {submission.employee?.employee_id}
+        {filteredSubmissions?.map((submission: ShiftSubmission) => {
+          const parsedShifts = parseShifts(submission.shifts);
+          
+          return (
+            <Card key={submission.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <User className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <h3 className="font-semibold">
+                        {submission.employee?.first_name} {submission.employee?.last_name}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        מס' עובד: {submission.employee?.employee_id}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-left">
+                    <Badge variant="default">הוגש</Badge>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(submission.submitted_at).toLocaleDateString('he-IL')} {new Date(submission.submitted_at).toLocaleTimeString('he-IL')}
                     </p>
                   </div>
                 </div>
-                <div className="text-left">
-                  <Badge variant="default">הוגש</Badge>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {new Date(submission.submitted_at).toLocaleDateString('he-IL')} {new Date(submission.submitted_at).toLocaleTimeString('he-IL')}
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Calendar className="h-4 w-4" />
-                  <span>
-                    שבוע: {new Date(submission.week_start_date).toLocaleDateString('he-IL')} - {new Date(submission.week_end_date).toLocaleDateString('he-IL')}
-                  </span>
-                </div>
-
-                {submission.notes && (
-                  <div className="bg-blue-50 p-3 rounded-md">
-                    <p className="text-sm text-blue-800">
-                      <strong>הערות כלליות:</strong> {submission.notes}
-                    </p>
+              </CardHeader>
+              
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Calendar className="h-4 w-4" />
+                    <span>
+                      שבוע: {new Date(submission.week_start_date).toLocaleDateString('he-IL')} - {new Date(submission.week_end_date).toLocaleDateString('he-IL')}
+                    </span>
                   </div>
-                )}
 
-                <div className="space-y-3">
-                  <h4 className="font-medium">משמרות שהוגשו ({submission.shifts?.length || 0}):</h4>
-                  
-                  {submission.shifts?.map((shift: any, index: number) => (
-                    <div key={index} className="bg-gray-50 p-3 rounded-md">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
-                        <div>
-                          <strong>תאריך:</strong> {new Date(shift.date).toLocaleDateString('he-IL')}
-                        </div>
-                        <div>
-                          <strong>שעות:</strong> {shift.start_time} - {shift.end_time}
-                        </div>
-                        <div>
-                          <strong>סניף:</strong> {shift.branch_preference}
-                        </div>
-                        {shift.role_preference && (
+                  {submission.notes && (
+                    <div className="bg-blue-50 p-3 rounded-md">
+                      <p className="text-sm text-blue-800">
+                        <strong>הערות כלליות:</strong> {submission.notes}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <h4 className="font-medium">משמרות שהוגשו ({parsedShifts.length}):</h4>
+                    
+                    {parsedShifts.map((shift: ShiftEntry, index: number) => (
+                      <div key={index} className="bg-gray-50 p-3 rounded-md">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
                           <div>
-                            <strong>תפקיד:</strong> {shift.role_preference}
+                            <strong>תאריך:</strong> {new Date(shift.date).toLocaleDateString('he-IL')}
+                          </div>
+                          <div>
+                            <strong>שעות:</strong> {shift.start_time} - {shift.end_time}
+                          </div>
+                          <div>
+                            <strong>סניף:</strong> {shift.branch_preference}
+                          </div>
+                          {shift.role_preference && (
+                            <div>
+                              <strong>תפקיד:</strong> {shift.role_preference}
+                            </div>
+                          )}
+                        </div>
+                        {shift.notes && (
+                          <div className="mt-2 text-sm text-gray-600">
+                            <strong>הערות:</strong> {shift.notes}
                           </div>
                         )}
                       </div>
-                      {shift.notes && (
-                        <div className="mt-2 text-sm text-gray-600">
-                          <strong>הערות:</strong> {shift.notes}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
 
-                <div className="flex justify-end">
-                  <Button
-                    onClick={() => sendWhatsApp(
-                      submission.employee?.phone,
-                      `${submission.employee?.first_name} ${submission.employee?.last_name}`,
-                      submission.week_start_date,
-                      submission.week_end_date
-                    )}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    שלח בוואטסאפ
-                  </Button>
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => sendWhatsApp(
+                        submission.employee?.phone,
+                        `${submission.employee?.first_name} ${submission.employee?.last_name}`,
+                        submission.week_start_date,
+                        submission.week_end_date
+                      )}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      שלח בוואטסאפ
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {filteredSubmissions?.length === 0 && (

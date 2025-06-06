@@ -60,7 +60,7 @@ export class WeeklyShiftService {
       .from('employee_weekly_tokens')
       .select(`
         *,
-        employee:employees(first_name, last_name, employee_id)
+        employee:employees(first_name, last_name, employee_id, phone)
       `)
       .eq('token', token)
       .eq('is_active', true)
@@ -87,13 +87,13 @@ export class WeeklyShiftService {
       throw new Error('Shifts already submitted for this week');
     }
 
-    // Insert shift submission
+    // Insert shift submission - convert shifts array to JSON
     const { error: submissionError } = await supabase
       .from('shift_submissions')
       .insert({
         employee_id: tokenData.employee_id,
         token,
-        shifts: submissionData.shifts,
+        shifts: JSON.stringify(submissionData.shifts),
         week_start_date: submissionData.week_start_date,
         week_end_date: submissionData.week_end_date,
         notes: submissionData.notes,
@@ -117,7 +117,7 @@ export class WeeklyShiftService {
       .from('employee_weekly_tokens')
       .select(`
         *,
-        employee:employees!inner(first_name, last_name, employee_id, business_id)
+        employee:employees!inner(first_name, last_name, employee_id, phone, business_id)
       `)
       .eq('employee.business_id', businessId)
       .order('created_at', { ascending: false });
@@ -132,7 +132,7 @@ export class WeeklyShiftService {
       .from('shift_submissions')
       .select(`
         *,
-        employee:employees!inner(first_name, last_name, employee_id, business_id)
+        employee:employees!inner(first_name, last_name, employee_id, phone, business_id)
       `)
       .eq('employee.business_id', businessId)
       .order('submitted_at', { ascending: false });
