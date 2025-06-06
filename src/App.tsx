@@ -150,8 +150,17 @@ function App() {
               </ProtectedRoute>
             } />
 
-            {/* Admin routes */}
+            {/* Admin routes - Add specific route for admin/businesses */}
             <Route path="/admin" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ModuleWrapper />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Handle admin/businesses route specifically */}
+            <Route path="/admin/:moduleRoute" element={
               <ProtectedRoute>
                 <AppLayout>
                   <ModuleWrapper />
@@ -195,4 +204,3 @@ function App() {
 }
 
 export default App;
-

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -47,7 +48,16 @@ export const ModuleWrapper: React.FC = () => {
     return <div>Access denied</div>;
   }
 
-  // Handle business management for super admin
+  // Handle business management for super admin - check for admin in businessId
+  if (businessId === 'admin' && moduleRoute === 'businesses') {
+    console.log('ModuleWrapper - Rendering BusinessManagement for super admin via admin route');
+    if (isSuperAdmin) {
+      return <BusinessManagement />;
+    }
+    return <div>Access denied</div>;
+  }
+
+  // Handle business management for super admin - direct businesses route
   if (moduleRoute === 'businesses' && isSuperAdmin) {
     console.log('ModuleWrapper - Rendering BusinessManagement for super admin');
     return <BusinessManagement />;
