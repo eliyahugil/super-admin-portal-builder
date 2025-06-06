@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -236,6 +235,7 @@ export const EmployeeProfilePage: React.FC = () => {
         )}
       </div>
 
+      {/* Rest of the component remains the same */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Personal Information */}
         <div className="lg:col-span-1">
