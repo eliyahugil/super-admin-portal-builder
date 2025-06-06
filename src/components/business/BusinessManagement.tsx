@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -82,11 +81,13 @@ export const BusinessManagement: React.FC = () => {
   );
 
   const handleViewBusiness = (businessId: string) => {
-    navigate(`/business/${businessId}/settings`);
+    // Navigate to business dashboard
+    navigate(`/business/${businessId}/dashboard`);
   };
 
   const handleManageBusiness = (businessId: string) => {
-    navigate(`/business/${businessId}/settings/main`);
+    // Navigate to business settings
+    navigate(`/business/${businessId}/modules/settings`);
   };
 
   const handleCreateBusiness = () => {

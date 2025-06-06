@@ -75,6 +75,15 @@ function App() {
               </ProtectedRoute>
             } />
 
+            {/* Business dashboard route */}
+            <Route path="/business/:businessId/dashboard" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <BusinessDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+
             {/* Business routes */}
             <Route path="/business/:businessId/modules/:moduleRoute" element={
               <ProtectedRoute>
