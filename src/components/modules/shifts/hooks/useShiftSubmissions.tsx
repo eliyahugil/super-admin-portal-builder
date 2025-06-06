@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/useBusiness';
+import { supabase } from '@/integrations/supabase/client';
 import { WeeklyShiftService } from '@/services/WeeklyShiftService';
 import { ShiftSubmission, ShiftEntry } from '../types';
 
