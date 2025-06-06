@@ -12,7 +12,7 @@ export const useShiftSubmissions = () => {
   const { businessId, isLoading } = useBusiness();
 
   // Get shift submissions
-  const { data: submissions, isLoading: submissionsLoading } = useQuery({
+  const { data: submissions, isLoading: submissionsLoading, refetch } = useQuery({
     queryKey: ['shift-submissions', businessId],
     queryFn: async () => {
       if (!businessId) return [];
@@ -23,9 +23,27 @@ export const useShiftSubmissions = () => {
         ...submission,
         employee: submission.employee ? {
           ...submission.employee,
-          id: submission.employee.employee_id || submission.employee.id, // Use employee_id as id if id doesn't exist
+          id: submission.employee.employee_id || submission.employee.id,
         } : undefined,
       })) as ShiftSubmission[];
+    },
+    enabled: !!businessId && !isLoading,
+  });
+
+  // Get all employees to show missing submissions
+  const { data: allEmployees } = useQuery({
+    queryKey: ['employees-for-submissions', businessId],
+    queryFn: async () => {
+      if (!businessId) return [];
+      
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, phone, employee_id, is_active')
+        .eq('business_id', businessId)
+        .eq('is_active', true);
+
+      if (error) throw error;
+      return data;
     },
     enabled: !!businessId && !isLoading,
   });
@@ -55,6 +73,65 @@ export const useShiftSubmissions = () => {
     });
   };
 
+  // Send reminder to employee
+  const sendReminder = async (employee: any) => {
+    if (!employee.phone) {
+      toast({
+        title: 'שגיאה',
+        description: 'לא נמצא מספר טלפון לעובד זה',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Create a weekly token for this employee
+    const currentWeek = getWeekDates();
+    
+    try {
+      const token = await WeeklyShiftService.generateWeeklyToken(
+        employee.id,
+        currentWeek.start,
+        currentWeek.end
+      );
+
+      const submissionUrl = `${window.location.origin}/weekly-shift-submission/${token}`;
+      const message = `שלום ${employee.first_name}! 👋\n\nזוהי תזכורת להגיש את המשמרות שלך לשבוע הקרוב.\n\nלחץ כאן כדי להגיש: ${submissionUrl}\n\nצוות הניהול`;
+      
+      const cleanPhone = employee.phone.replace(/[^\d]/g, '');
+      const whatsappPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.slice(1) : cleanPhone;
+      const url = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
+      
+      window.open(url, '_blank');
+      
+      toast({
+        title: 'תזכורת נשלחה',
+        description: `תזכורת נשלחה ל${employee.first_name} ${employee.last_name}`,
+      });
+    } catch (error) {
+      console.error('Error sending reminder:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן לשלוח תזכורת',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Get current week dates
+  const getWeekDates = () => {
+    const now = new Date();
+    const currentDay = now.getDay();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - currentDay);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+    return {
+      start: startOfWeek.toISOString().split('T')[0],
+      end: endOfWeek.toISOString().split('T')[0]
+    };
+  };
+
   // Parse shifts from JSON and ensure it's an array
   const parseShifts = (shiftsData: any): ShiftEntry[] => {
     if (!shiftsData) return [];
@@ -74,19 +151,36 @@ export const useShiftSubmissions = () => {
     return [];
   };
 
-  const filteredSubmissions = submissions?.filter((submission: ShiftSubmission) =>
-    submission.employee?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    submission.employee?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    submission.employee?.employee_id?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Create combined data for dashboard
+  const currentWeek = getWeekDates();
+  const dashboardData = allEmployees?.map(employee => {
+    const submission = submissions?.find(s => s.employee_id === employee.id && 
+      s.week_start_date <= currentWeek.end && s.week_end_date >= currentWeek.start);
+    
+    return {
+      ...employee,
+      hasSubmitted: !!submission,
+      submissionDate: submission?.submitted_at,
+      submissionId: submission?.id,
+      status: submission ? 'submitted' : 'pending'
+    };
+  }) || [];
+
+  const filteredData = dashboardData.filter(employee =>
+    `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    employee.employee_id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return {
     searchTerm,
     setSearchTerm,
     submissions,
-    filteredSubmissions,
+    allEmployees,
+    dashboardData: filteredData,
     isLoading: isLoading || submissionsLoading,
     parseShifts,
-    sendWhatsApp
+    sendWhatsApp,
+    sendReminder,
+    refetch
   };
 };
