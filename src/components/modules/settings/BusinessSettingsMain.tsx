@@ -1,5 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ interface BusinessDetails {
   address?: string;
   logo_url?: string;
   contact_email?: string;
+  admin_email?: string;
   description?: string;
 }
 
@@ -34,8 +35,13 @@ interface ScheduleConfig {
 }
 
 export const BusinessSettingsMain: React.FC = () => {
-  const { business, businessId } = useBusiness();
+  const { businessId: urlBusinessId } = useParams();
+  const { business, businessId: hookBusinessId } = useBusiness();
   const { toast } = useToast();
+  
+  // Use businessId from URL if available, otherwise from hook
+  const effectiveBusinessId = urlBusinessId || hookBusinessId;
+  
   const [details, setDetails] = useState<BusinessDetails>({
     id: '',
     name: '',
@@ -43,6 +49,7 @@ export const BusinessSettingsMain: React.FC = () => {
     address: '',
     logo_url: '',
     contact_email: '',
+    admin_email: '',
     description: ''
   });
   const [modules, setModules] = useState<ModuleConfig[]>([]);
@@ -54,6 +61,7 @@ export const BusinessSettingsMain: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  // ... keep existing code (allModules array definition)
   const allModules = [
     { key: 'shift_management', label: 'ניהול משמרות' },
     { key: 'employee_documents', label: 'מסמכי עובדים' },
@@ -66,36 +74,53 @@ export const BusinessSettingsMain: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!businessId) return;
+      if (!effectiveBusinessId) {
+        console.log('No business ID available');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Fetching business data for ID:', effectiveBusinessId);
 
       try {
         // Fetch business details
         const { data: bizData, error: bizError } = await supabase
           .from('businesses')
           .select('*')
-          .eq('id', businessId)
+          .eq('id', effectiveBusinessId)
           .single();
 
-        if (bizError) throw bizError;
+        if (bizError) {
+          console.error('Error fetching business:', bizError);
+          throw bizError;
+        }
+        
+        console.log('Business data fetched:', bizData);
         if (bizData) setDetails(bizData);
 
         // Fetch module configuration
         const { data: moduleData, error: moduleError } = await supabase
           .from('business_module_config')
           .select('module_key, is_enabled')
-          .eq('business_id', businessId);
+          .eq('business_id', effectiveBusinessId);
 
-        if (moduleError) throw moduleError;
+        if (moduleError) {
+          console.error('Error fetching modules:', moduleError);
+          throw moduleError;
+        }
         setModules(moduleData || []);
 
         // Fetch schedule configuration
         const { data: scheduleData, error: scheduleError } = await supabase
           .from('shift_token_schedules')
           .select('*')
-          .eq('business_id', businessId)
+          .eq('business_id', effectiveBusinessId)
           .maybeSingle();
 
-        if (scheduleError) throw scheduleError;
+        if (scheduleError) {
+          console.error('Error fetching schedule:', scheduleError);
+          throw scheduleError;
+        }
         if (scheduleData) {
           setSchedule({
             send_day: scheduleData.send_day,
@@ -117,16 +142,16 @@ export const BusinessSettingsMain: React.FC = () => {
     };
 
     fetchData();
-  }, [businessId, toast]);
+  }, [effectiveBusinessId, toast]);
 
   const updateBusinessField = async (field: keyof BusinessDetails, value: string) => {
-    if (!businessId) return;
+    if (!effectiveBusinessId) return;
 
     try {
       const { error } = await supabase
         .from('businesses')
         .update({ [field]: value })
-        .eq('id', businessId);
+        .eq('id', effectiveBusinessId);
 
       if (error) throw error;
 
@@ -147,13 +172,13 @@ export const BusinessSettingsMain: React.FC = () => {
   };
 
   const toggleModule = async (moduleKey: string, currentValue: boolean) => {
-    if (!businessId) return;
+    if (!effectiveBusinessId) return;
 
     try {
       const { error } = await supabase
         .from('business_module_config')
         .upsert({
-          business_id: businessId,
+          business_id: effectiveBusinessId,
           module_key: moduleKey,
           is_enabled: !currentValue,
           enabled_by: (await supabase.auth.getUser()).data.user?.id,
@@ -193,7 +218,7 @@ export const BusinessSettingsMain: React.FC = () => {
   };
 
   const updateSchedule = async (updates: Partial<ScheduleConfig>) => {
-    if (!businessId) return;
+    if (!effectiveBusinessId) return;
 
     const newSchedule = { ...schedule, ...updates };
     
@@ -201,7 +226,7 @@ export const BusinessSettingsMain: React.FC = () => {
       const { error } = await supabase
         .from('shift_token_schedules')
         .upsert({
-          business_id: businessId,
+          business_id: effectiveBusinessId,
           ...newSchedule,
           updated_at: new Date().toISOString(),
         }, { 
@@ -234,6 +259,14 @@ export const BusinessSettingsMain: React.FC = () => {
     );
   }
 
+  if (!effectiveBusinessId) {
+    return (
+      <div className="max-w-4xl mx-auto p-6" dir="rtl">
+        <div className="text-center text-red-600">לא נמצא מזהה עסק</div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6" dir="rtl">
       <div className="mb-8">
@@ -242,6 +275,9 @@ export const BusinessSettingsMain: React.FC = () => {
           הגדרות עסק
         </h1>
         <p className="text-gray-600 mt-2">נהל את פרטי העסק, מודולים ותזמונים</p>
+        {effectiveBusinessId && (
+          <p className="text-sm text-gray-500 mt-1">מזהה עסק: {effectiveBusinessId}</p>
+        )}
       </div>
 
       {/* Business Details Card */}
@@ -297,6 +333,18 @@ export const BusinessSettingsMain: React.FC = () => {
               onChange={(e) => setDetails(prev => ({ ...prev, contact_email: e.target.value }))}
               onBlur={(e) => updateBusinessField('contact_email', e.target.value)}
               placeholder="email@business.com"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="admin-email">אימייל מנהל העסק</Label>
+            <Input
+              id="admin-email"
+              type="email"
+              value={details.admin_email || ''}
+              onChange={(e) => setDetails(prev => ({ ...prev, admin_email: e.target.value }))}
+              onBlur={(e) => updateBusinessField('admin_email', e.target.value)}
+              placeholder="admin@business.com"
             />
           </div>
         </CardContent>
