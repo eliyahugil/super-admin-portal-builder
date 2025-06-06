@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/useBusiness';
 import { WeeklyShiftService, ShiftEntry } from '@/services/WeeklyShiftService';
-import { Search, Calendar, User, Clock, MessageSquare, FileText } from 'lucide-react';
+import { Search, Calendar, User, Clock, MessageSquare, FileText, Send } from 'lucide-react';
 
 interface EmployeeData {
   first_name: string;
@@ -48,6 +48,7 @@ export const ShiftSubmissionsDashboard: React.FC = () => {
     enabled: !!businessId && !isLoading,
   });
 
+  // WhatsApp functions
   const sendWhatsApp = (phone: string | undefined, employeeName: string, weekStart: string, weekEnd: string) => {
     if (!phone) {
       toast({
@@ -58,13 +59,46 @@ export const ShiftSubmissionsDashboard: React.FC = () => {
       return;
     }
 
-    const message = `שלום ${employeeName}, קיבלנו את בקשת המשמרות שלך לשבוע ${new Date(weekStart).toLocaleDateString('he-IL')} - ${new Date(weekEnd).toLocaleDateString('he-IL')}. תודה!`;
+    const message = `שלום ${employeeName}! 👋\n\nקיבלנו את בקשת המשמרות שלך לשבוע ${new Date(weekStart).toLocaleDateString('he-IL')} - ${new Date(weekEnd).toLocaleDateString('he-IL')}.\n\nתודה רבה! ✅\nצוות הניהול`;
     
     const cleanPhone = phone.replace(/[^\d]/g, '');
     const whatsappPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.slice(1) : cleanPhone;
     const url = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
     
     window.open(url, '_blank');
+    
+    toast({
+      title: 'נשלח',
+      description: `הודעה נשלחה ל${employeeName}`,
+    });
+  };
+
+  const sendReminderToAll = () => {
+    const unsubmittedEmployees = submissions?.filter((s: ShiftSubmission) => !s.submitted_at);
+    
+    if (!unsubmittedEmployees || unsubmittedEmployees.length === 0) {
+      toast({
+        title: 'אין מה לשלוח',
+        description: 'כל העובדים כבר הגישו משמרות',
+      });
+      return;
+    }
+
+    const reminderMessage = `היי! 👋\n\nתזכורת להגשת משמרות לשבוע הקרוב.\n\nאנא הגישו עד סוף היום.\n\nתודה! 🙏`;
+    
+    unsubmittedEmployees.forEach((emp: ShiftSubmission) => {
+      if (emp.employee?.phone) {
+        const cleanPhone = emp.employee.phone.replace(/[^\d]/g, '');
+        const whatsappPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.slice(1) : cleanPhone;
+        const url = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(reminderMessage)}`;
+        setTimeout(() => window.open(url, '_blank'), 500);
+      }
+    });
+
+    toast({
+      title: 'תזכורות נשלחו',
+      description: `נשלחו תזכורות ל${unsubmittedEmployees.length} עובדים`,
+    });
   };
 
   // Parse shifts from JSON and ensure it's an array
@@ -101,6 +135,18 @@ export const ShiftSubmissionsDashboard: React.FC = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">דשבורד הגשות משמרות</h1>
         <p className="text-gray-600">מעקב אחר הגשות משמרות שבועיות מעובדים</p>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="mb-6 flex gap-4">
+        <Button
+          onClick={sendReminderToAll}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <Send className="h-4 w-4" />
+          שלח תזכורת לכולם
+        </Button>
       </div>
 
       {/* Search */}
@@ -184,13 +230,27 @@ export const ShiftSubmissionsDashboard: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="text-left">
+                  <div className="text-left flex items-center gap-3">
                     <Badge variant="default">הוגש</Badge>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {new Date(submission.submitted_at).toLocaleDateString('he-IL')} {new Date(submission.submitted_at).toLocaleTimeString('he-IL')}
-                    </p>
+                    <Button
+                      onClick={() => sendWhatsApp(
+                        submission.employee?.phone,
+                        `${submission.employee?.first_name} ${submission.employee?.last_name}`,
+                        submission.week_start_date,
+                        submission.week_end_date
+                      )}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      שלח בוואטסאפ
+                    </Button>
                   </div>
                 </div>
+                <p className="text-xs text-gray-500">
+                  הוגש: {new Date(submission.submitted_at).toLocaleDateString('he-IL')} {new Date(submission.submitted_at).toLocaleTimeString('he-IL')}
+                </p>
               </CardHeader>
               
               <CardContent>
@@ -238,23 +298,6 @@ export const ShiftSubmissionsDashboard: React.FC = () => {
                         )}
                       </div>
                     ))}
-                  </div>
-
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={() => sendWhatsApp(
-                        submission.employee?.phone,
-                        `${submission.employee?.first_name} ${submission.employee?.last_name}`,
-                        submission.week_start_date,
-                        submission.week_end_date
-                      )}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2"
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      שלח בוואטסאפ
-                    </Button>
                   </div>
                 </div>
               </CardContent>

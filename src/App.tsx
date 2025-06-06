@@ -12,6 +12,7 @@ import { ModuleWrapper } from '@/components/modules/ModuleWrapper';
 import { GlobalIntegrationsPage } from '@/pages/GlobalIntegrationsPage';
 import { CRMDashboard } from '@/components/crm/CRMDashboard';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { SubmitShiftPage } from '@/components/modules/shifts/SubmitShiftPage';
 import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -25,7 +26,7 @@ function App() {
             {/* Public shift submission routes */}
             <Route 
               path="/shift-submission/:token" 
-              element={React.createElement(React.lazy(() => import('./components/modules/shifts/ShiftSubmissionForm').then(m => ({ default: m.ShiftSubmissionForm }))))} 
+              element={<SubmitShiftPage />} 
             />
             <Route 
               path="/weekly-shift-submission/:token" 
