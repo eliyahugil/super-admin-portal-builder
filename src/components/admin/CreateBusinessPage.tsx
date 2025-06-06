@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +24,7 @@ export const CreateBusinessPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     contact_email: '',
+    admin_email: '',
     contact_phone: '',
     description: '',
     address: '',
@@ -90,7 +92,7 @@ export const CreateBusinessPage: React.FC = () => {
   };
 
   const handleCreateBusiness = async () => {
-    if (!formData.name || !formData.contact_email) {
+    if (!formData.name || !formData.admin_email) {
       toast({
         title: 'שגיאה',
         description: 'נא למלא את כל השדות החובה',
@@ -101,12 +103,13 @@ export const CreateBusinessPage: React.FC = () => {
 
     setLoading(true);
     try {
-      // Create the business
+      // Create the business with auto-generated UUID
       const { data: business, error: businessError } = await supabase
         .from('businesses')
         .insert({
           name: formData.name,
-          contact_email: formData.contact_email,
+          contact_email: formData.contact_email || formData.admin_email,
+          admin_email: formData.admin_email,
           contact_phone: formData.contact_phone,
           description: formData.description,
           address: formData.address,
@@ -142,20 +145,20 @@ export const CreateBusinessPage: React.FC = () => {
 
       let userCreationResult = null;
       if (sendInvitation) {
-        userCreationResult = await createBusinessUser(business.id, formData.contact_email, formData.name);
+        userCreationResult = await createBusinessUser(business.id, formData.admin_email, formData.name);
       }
 
       toast({
         title: 'הצלחה!',
         description: sendInvitation 
-          ? `העסק "${business.name}" נוצר בהצלחה והזמנה נשלחה למייל ${formData.contact_email}`
+          ? `העסק "${business.name}" נוצר בהצלחה והזמנה נשלחה למייל ${formData.admin_email}`
           : `העסק "${business.name}" נוצר בהצלחה`,
       });
 
       if (sendInvitation && userCreationResult?.success) {
         toast({
           title: 'פרטי כניסה זמניים',
-          description: `המייל: ${formData.contact_email}\nהסיסמה הזמנית: ${userCreationResult.tempPassword}`,
+          description: `המייל: ${formData.admin_email}\nהסיסמה הזמנית: ${userCreationResult.tempPassword}`,
           variant: 'default',
         });
       }
@@ -214,15 +217,30 @@ export const CreateBusinessPage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">מייל ליצירת קשר *</Label>
+              <Label htmlFor="admin_email">מייל מנהל העסק *</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  id="email"
+                  id="admin_email"
+                  type="email"
+                  value={formData.admin_email}
+                  onChange={(e) => handleInputChange('admin_email', e.target.value)}
+                  placeholder="admin@example.com"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contact_email">מייל ליצירת קשר</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="contact_email"
                   type="email"
                   value={formData.contact_email}
                   onChange={(e) => handleInputChange('contact_email', e.target.value)}
-                  placeholder="email@example.com"
+                  placeholder="contact@example.com"
                   className="pl-10"
                 />
               </div>
@@ -322,7 +340,7 @@ export const CreateBusinessPage: React.FC = () => {
         </Button>
         <Button 
           onClick={handleCreateBusiness} 
-          disabled={loading || !formData.name || !formData.contact_email}
+          disabled={loading || !formData.name || !formData.admin_email}
           className="flex items-center gap-2"
         >
           {loading ? (

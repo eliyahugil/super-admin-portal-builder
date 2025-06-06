@@ -337,6 +337,7 @@ export type Database = {
       businesses: {
         Row: {
           address: string | null
+          admin_email: string | null
           contact_email: string | null
           contact_phone: string | null
           created_at: string
@@ -351,6 +352,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          admin_email?: string | null
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -365,6 +367,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          admin_email?: string | null
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
