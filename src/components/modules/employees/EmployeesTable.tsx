@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useBusiness } from '@/hooks/useBusiness';
@@ -23,9 +22,12 @@ import {
   Clock, 
   CheckCircle, 
   XCircle,
-  Eye,
-  MessageCircle
+  DollarSign,
+  FileText,
+  MessageSquare,
+  Plus
 } from 'lucide-react';
+import { EmployeeActions } from './EmployeeActions';
 import { useNavigate } from 'react-router-dom';
 
 interface Employee {
@@ -38,6 +40,8 @@ interface Employee {
   employee_type: string;
   is_active: boolean;
   hire_date: string | null;
+  weekly_hours_required: number | null;
+  notes: string | null;
   main_branch?: { name: string } | null;
   branch_assignments?: Array<{
     branch: { name: string };
@@ -50,12 +54,24 @@ interface Employee {
     week_end_date: string;
     is_active: boolean;
   }>;
+  employee_notes?: Array<{
+    content: string;
+    note_type: string;
+    created_at: string;
+  }>;
+  salary_info?: {
+    hourly_rate?: number;
+    monthly_salary?: number;
+    currency?: string;
+  };
 }
 
 export const EmployeesTable: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const { businessId } = useBusiness();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -68,7 +84,7 @@ export const EmployeesTable: React.FC = () => {
 
   const fetchEmployees = async () => {
     try {
-      console.log('=== FETCHING EMPLOYEES FOR TABLE ===');
+      console.log('=== FETCHING EMPLOYEES FOR ENHANCED TABLE ===');
       console.log('Business ID:', businessId);
       
       const { data, error } = await supabase
@@ -83,6 +99,8 @@ export const EmployeesTable: React.FC = () => {
           employee_type,
           is_active,
           hire_date,
+          weekly_hours_required,
+          notes,
           main_branch:branches!main_branch_id(name),
           branch_assignments:employee_branch_assignments(
             role_name,
@@ -94,6 +112,11 @@ export const EmployeesTable: React.FC = () => {
             week_start_date,
             week_end_date,
             is_active
+          ),
+          employee_notes:employee_notes(
+            content,
+            note_type,
+            created_at
           )
         `)
         .eq('business_id', businessId)
@@ -109,7 +132,7 @@ export const EmployeesTable: React.FC = () => {
         return;
       }
 
-      console.log('Employees fetched:', data?.length);
+      console.log('Enhanced employees fetched:', data?.length);
       setEmployees(data || []);
     } catch (error) {
       console.error('Exception in fetchEmployees:', error);
@@ -129,9 +152,16 @@ export const EmployeesTable: React.FC = () => {
     const employeeId = emp.employee_id?.toLowerCase() || '';
     const phone = emp.phone?.toLowerCase() || '';
     
-    return fullName.includes(searchTerm) || 
-           employeeId.includes(searchTerm) || 
-           phone.includes(searchTerm);
+    const matchesSearch = fullName.includes(searchTerm) || 
+                         employeeId.includes(searchTerm) || 
+                         phone.includes(searchTerm);
+    
+    const matchesType = filterType === 'all' || emp.employee_type === filterType;
+    const matchesStatus = filterStatus === 'all' || 
+                         (filterStatus === 'active' && emp.is_active) ||
+                         (filterStatus === 'inactive' && !emp.is_active);
+    
+    return matchesSearch && matchesType && matchesStatus;
   });
 
   const getEmployeeTypeLabel = (type: string) => {
@@ -180,24 +210,17 @@ export const EmployeesTable: React.FC = () => {
     } : null;
   };
 
-  const handleViewProfile = (employeeId: string) => {
-    navigate(`/modules/employees/profile/${employeeId}`);
+  const getRecentNotes = (employee: Employee) => {
+    return employee.employee_notes?.slice(0, 2) || [];
   };
 
-  const handleWhatsApp = (phone: string | null, employeeName: string) => {
-    if (!phone) {
-      toast({
-        title: 'שגיאה',
-        description: 'לא נמצא מספר טלפון לעובד זה',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const handleCreateEmployee = () => {
+    navigate('/modules/employees/create');
+  };
 
-    const message = encodeURIComponent(`שלום ${employeeName}! מערכת ניהול העובדים`);
-    const phoneNumber = phone.replace(/[^\d]/g, '');
-    const whatsappPhone = phoneNumber.startsWith('0') ? '972' + phoneNumber.slice(1) : phoneNumber;
-    window.open(`https://wa.me/${whatsappPhone}?text=${message}`, '_blank');
+  const handleTokenSent = () => {
+    // Refresh data after token is sent
+    fetchEmployees();
   };
 
   if (loading) {
@@ -221,26 +244,62 @@ export const EmployeesTable: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <User className="h-5 w-5" />
-          טבלת עובדים ({employees.length})
-        </CardTitle>
-        <div className="flex items-center gap-2 mt-4">
-          <Search className="h-4 w-4 text-gray-500" />
-          <Input
-            type="text"
-            placeholder="חיפוש לפי שם, מספר עובד או טלפון..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-md"
-          />
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            ניהול עובדים ({employees.length})
+          </CardTitle>
+          <Button onClick={handleCreateEmployee} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            הוסף עובד חדש
+          </Button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+          <div className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-gray-500" />
+            <Input
+              type="text"
+              placeholder="חיפוש לפי שם, מספר עובד או טלפון..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          
+          <select 
+            value={filterType} 
+            onChange={(e) => setFilterType(e.target.value)}
+            className="border rounded-md px-3 py-2 text-sm"
+          >
+            <option value="all">כל הסוגים</option>
+            <option value="permanent">קבוע</option>
+            <option value="temporary">זמני</option>
+            <option value="youth">נוער</option>
+            <option value="contractor">קבלן</option>
+          </select>
+          
+          <select 
+            value={filterStatus} 
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="border rounded-md px-3 py-2 text-sm"
+          >
+            <option value="all">כל הסטטוסים</option>
+            <option value="active">פעיל</option>
+            <option value="inactive">לא פעיל</option>
+          </select>
         </div>
       </CardHeader>
+      
       <CardContent>
         {filteredEmployees.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
             <User className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p>{search ? 'לא נמצאו עובדים התואמים לחיפוש' : 'אין עובדים רשומים במערכת'}</p>
+            <p>{search || filterType !== 'all' || filterStatus !== 'all' ? 'לא נמצאו עובדים התואמים לחיפוש' : 'אין עובדים רשומים במערכת'}</p>
+            {(!search && filterType === 'all' && filterStatus === 'all') && (
+              <Button onClick={handleCreateEmployee} className="mt-4">
+                הוסף עובד ראשון
+              </Button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -254,6 +313,7 @@ export const EmployeesTable: React.FC = () => {
                   <TableHead className="text-right">סניפים</TableHead>
                   <TableHead className="text-right">תפקידים</TableHead>
                   <TableHead className="text-right">טוקן פעיל</TableHead>
+                  <TableHead className="text-right">הערות</TableHead>
                   <TableHead className="text-right">סטטוס</TableHead>
                   <TableHead className="text-right">פעולות</TableHead>
                 </TableRow>
@@ -263,17 +323,26 @@ export const EmployeesTable: React.FC = () => {
                   const activeBranches = getActiveBranches(employee);
                   const activeRoles = getActiveRoles(employee);
                   const activeToken = getActiveToken(employee);
-                  const employeeName = `${employee.first_name} ${employee.last_name}`;
+                  const recentNotes = getRecentNotes(employee);
 
                   return (
                     <TableRow key={employee.id} className="hover:bg-gray-50">
                       <TableCell className="font-medium">
-                        {employeeName}
-                        {employee.email && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {employee.email}
+                        <div>
+                          <div className="font-medium">
+                            {employee.first_name} {employee.last_name}
                           </div>
-                        )}
+                          {employee.email && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {employee.email}
+                            </div>
+                          )}
+                          {employee.hire_date && (
+                            <div className="text-xs text-gray-500">
+                              התחיל: {new Date(employee.hire_date).toLocaleDateString('he-IL')}
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       
                       <TableCell>
@@ -297,17 +366,27 @@ export const EmployeesTable: React.FC = () => {
                         <Badge variant={getEmployeeTypeVariant(employee.employee_type)}>
                           {getEmployeeTypeLabel(employee.employee_type)}
                         </Badge>
+                        {employee.weekly_hours_required && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {employee.weekly_hours_required} שעות/שבוע
+                          </div>
+                        )}
                       </TableCell>
                       
                       <TableCell>
                         {activeBranches.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
-                            {activeBranches.map((branchName, index) => (
+                            {activeBranches.slice(0, 2).map((branchName, index) => (
                               <Badge key={index} variant="outline" className="text-xs">
                                 <Building className="h-3 w-3 mr-1" />
                                 {branchName}
                               </Badge>
                             ))}
+                            {activeBranches.length > 2 && (
+                              <span className="text-xs text-gray-500">
+                                +{activeBranches.length - 2} נוספים
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <span className="text-gray-400 text-sm">לא שוייך</span>
@@ -317,11 +396,16 @@ export const EmployeesTable: React.FC = () => {
                       <TableCell>
                         {activeRoles.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
-                            {activeRoles.map((role, index) => (
+                            {activeRoles.slice(0, 2).map((role, index) => (
                               <Badge key={index} variant="secondary" className="text-xs">
                                 {role}
                               </Badge>
                             ))}
+                            {activeRoles.length > 2 && (
+                              <span className="text-xs text-gray-500">
+                                +{activeRoles.length - 2}
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <span className="text-gray-400 text-sm">לא הוגדר</span>
@@ -347,6 +431,33 @@ export const EmployeesTable: React.FC = () => {
                       </TableCell>
                       
                       <TableCell>
+                        <div className="space-y-1">
+                          {recentNotes.length > 0 ? (
+                            recentNotes.map((note, index) => (
+                              <div key={index} className="text-xs bg-gray-100 rounded px-2 py-1">
+                                <span className="font-medium">{note.note_type}:</span>
+                                <span className="ml-1">
+                                  {note.content.length > 30 
+                                    ? `${note.content.substring(0, 30)}...`
+                                    : note.content
+                                  }
+                                </span>
+                              </div>
+                            ))
+                          ) : employee.notes ? (
+                            <div className="text-xs text-gray-600">
+                              {employee.notes.length > 50 
+                                ? `${employee.notes.substring(0, 50)}...`
+                                : employee.notes
+                              }
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-sm">אין הערות</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell>
                         {employee.is_active ? (
                           <Badge variant="default" className="bg-green-100 text-green-800">
                             <CheckCircle className="h-3 w-3 mr-1" />
@@ -361,27 +472,10 @@ export const EmployeesTable: React.FC = () => {
                       </TableCell>
                       
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            onClick={() => handleViewProfile(employee.id)}
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                          >
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                          
-                          {employee.phone && (
-                            <Button
-                              onClick={() => handleWhatsApp(employee.phone, employeeName)}
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
-                            >
-                              <MessageCircle className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
+                        <EmployeeActions
+                          employee={employee}
+                          onTokenSent={handleTokenSent}
+                        />
                       </TableCell>
                     </TableRow>
                   );
