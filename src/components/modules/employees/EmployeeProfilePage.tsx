@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useEmployeesData } from '@/hooks/useRealData';
 import { useBusiness } from '@/hooks/useBusiness';
@@ -18,11 +19,19 @@ import {
   MessageCircle, 
   FileText, 
   Clock,
-  ArrowRight
+  ArrowRight,
+  StickyNote,
+  DollarSign,
+  History
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { EmployeeNotesSection } from './EmployeeNotesSection';
 import { EmployeeDocumentsViewer } from './EmployeeDocumentsViewer';
+import { SendReminderButton } from './SendReminderButton';
+import { ShiftSubmissionHistory } from './ShiftSubmissionHistory';
+import { EmployeeDocuments } from './EmployeeDocuments';
+import { EmployeeNotes } from './EmployeeNotes';
+import { SalaryHistory } from './SalaryHistory';
 
 interface Employee {
   id: string;
@@ -168,6 +177,8 @@ export const EmployeeProfilePage: React.FC = () => {
     );
   }
 
+  const employeeName = `${employee.first_name} ${employee.last_name}`;
+
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
       {/* Header */}
@@ -182,7 +193,7 @@ export const EmployeeProfilePage: React.FC = () => {
             חזור לרשימת עובדים
           </Button>
           <h1 className="text-3xl font-bold text-gray-900">
-            {employee.first_name} {employee.last_name}
+            {employeeName}
           </h1>
           <p className="text-gray-600">
             {employee.employee_id && `מספר עובד: ${employee.employee_id}`}
@@ -216,11 +227,18 @@ export const EmployeeProfilePage: React.FC = () => {
             שלח וואטסאפ
           </Button>
         )}
+        {employee.phone && (
+          <SendReminderButton
+            phone={employee.phone}
+            employeeName={employeeName}
+            tokenUrl={`${window.location.origin}/weekly-shift-submission/temp-token`}
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Personal Information */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-1">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -229,60 +247,57 @@ export const EmployeeProfilePage: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Personal Information Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {employee.phone && (
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <div className="text-sm text-gray-500">טלפון</div>
-                      <div className="font-medium">{employee.phone}</div>
+              {employee.phone && (
+                <div className="flex items-center gap-3">
+                  <Phone className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <div className="text-sm text-gray-500">טלפון</div>
+                    <div className="font-medium">{employee.phone}</div>
+                  </div>
+                </div>
+              )}
+              
+              {employee.email && (
+                <div className="flex items-center gap-3">
+                  <Mail className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <div className="text-sm text-gray-500">אימייל</div>
+                    <div className="font-medium">{employee.email}</div>
+                  </div>
+                </div>
+              )}
+              
+              {employee.main_branch && (
+                <div className="flex items-center gap-3">
+                  <Building className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <div className="text-sm text-gray-500">סניף ראשי</div>
+                    <div className="font-medium">{employee.main_branch.name}</div>
+                  </div>
+                </div>
+              )}
+              
+              {employee.hire_date && (
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <div className="text-sm text-gray-500">תאריך התחלה</div>
+                    <div className="font-medium">
+                      {new Date(employee.hire_date).toLocaleDateString('he-IL')}
                     </div>
                   </div>
-                )}
-                
-                {employee.email && (
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <div className="text-sm text-gray-500">אימייל</div>
-                      <div className="font-medium">{employee.email}</div>
-                    </div>
+                </div>
+              )}
+              
+              {employee.address && (
+                <div className="flex items-center gap-3">
+                  <MapPin className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <div className="text-sm text-gray-500">כתובת</div>
+                    <div className="font-medium">{employee.address}</div>
                   </div>
-                )}
-                
-                {employee.main_branch && (
-                  <div className="flex items-center gap-3">
-                    <Building className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <div className="text-sm text-gray-500">סניף ראשי</div>
-                      <div className="font-medium">{employee.main_branch.name}</div>
-                    </div>
-                  </div>
-                )}
-                
-                {employee.hire_date && (
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <div className="text-sm text-gray-500">תאריך התחלה</div>
-                      <div className="font-medium">
-                        {new Date(employee.hire_date).toLocaleDateString('he-IL')}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {employee.address && (
-                  <div className="flex items-center gap-3 md:col-span-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <div className="text-sm text-gray-500">כתובת</div>
-                      <div className="font-medium">{employee.address}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
               
               {employee.weekly_hours_required && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg">
@@ -303,17 +318,8 @@ export const EmployeeProfilePage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Employee Notes Section */}
-          <EmployeeNotesSection employeeId={employee.id} />
-        </div>
-
-        {/* Quick Actions & Recent Activity */}
-        <div className="space-y-6">
-          {/* Employee Documents */}
-          <EmployeeDocumentsViewer employeeId={employee.id} />
-
           {/* Recent Attendance */}
-          <Card>
+          <Card className="mt-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
@@ -342,6 +348,57 @@ export const EmployeeProfilePage: React.FC = () => {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Main Content with Tabs */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="shifts" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="shifts" className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                משמרות
+              </TabsTrigger>
+              <TabsTrigger value="documents" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                מסמכים
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="flex items-center gap-2">
+                <StickyNote className="h-4 w-4" />
+                הערות
+              </TabsTrigger>
+              <TabsTrigger value="salary" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                שכר
+              </TabsTrigger>
+            </TabsList>
+            
+            <div className="mt-6">
+              <TabsContent value="shifts" className="mt-0">
+                <ShiftSubmissionHistory employeeId={employee.id} />
+              </TabsContent>
+              
+              <TabsContent value="documents" className="mt-0">
+                <EmployeeDocuments 
+                  employeeId={employee.id} 
+                  employeeName={employeeName}
+                />
+              </TabsContent>
+              
+              <TabsContent value="notes" className="mt-0">
+                <EmployeeNotes 
+                  employeeId={employee.id} 
+                  employeeName={employeeName}
+                />
+              </TabsContent>
+              
+              <TabsContent value="salary" className="mt-0">
+                <SalaryHistory 
+                  employeeId={employee.id} 
+                  employeeName={employeeName}
+                />
+              </TabsContent>
+            </div>
+          </Tabs>
         </div>
       </div>
     </div>
