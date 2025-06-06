@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { EmployeeManagement } from './employees/EmployeeManagement';
 import { EmployeeFiles } from './employees/EmployeeFiles';
+import { EmployeeProfilePage } from './employees/EmployeeProfilePage';
 import { AttendanceManagement } from './employees/AttendanceManagement';
 import { EmployeeRequests } from './employees/EmployeeRequests';
 import { EmployeeDocs } from './employees/EmployeeDocs';
@@ -105,17 +105,17 @@ export const ModuleWrapper: React.FC = () => {
     return <Navigate to={`/modules/${moduleRoute}`} replace />;
   }
 
-  // Route mapping for components - now includes shift management components
+  // Route mapping for components - now includes employee profile
   const componentMap: Record<string, React.ComponentType> = {
     // Employee modules
     'employees': EmployeeManagement,
     'employees/employee-files': EmployeeFiles,
+    'employees/profile': EmployeeProfilePage,
     'employees/attendance': AttendanceManagement,
     'employees/employee-requests': EmployeeRequests,
     'employees/employee-docs': EmployeeDocs,
     'employees/shifts': ShiftManagement,
     'employees/import': () => <div>Employee Import Component</div>,
-    'employees/profile': () => <div>Employee Profile Component</div>,
     
     'branches': BranchManagement,
     'branches/branch-roles': BranchRoles,

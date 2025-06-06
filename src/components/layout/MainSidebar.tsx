@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -29,7 +28,8 @@ import {
   Briefcase,
   UserCheck,
   CheckSquare,
-  Calendar
+  Calendar,
+  User
 } from 'lucide-react';
 import { useBusiness } from '@/hooks/useBusiness';
 import { getModuleRoutes } from '@/utils/routeMapping';
@@ -64,6 +64,7 @@ export const MainSidebar: React.FC = () => {
       category: 'main',
       subItems: [
         { path: moduleRoutes.employees.files, label: 'קבצי עובדים', icon: FileText },
+        { path: moduleRoutes.employees.profile, label: 'פרופיל עובד', icon: User },
         { path: moduleRoutes.employees.attendance, label: 'נוכחות', icon: UserCheck },
         { path: moduleRoutes.employees.requests, label: 'בקשות עובדים', icon: CheckSquare },
         { path: moduleRoutes.employees.docs, label: 'מסמכים חתומים', icon: FileText },

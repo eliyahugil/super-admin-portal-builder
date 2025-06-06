@@ -1,4 +1,3 @@
-
 // מפת ראוטרים מלאה למערכת
 export interface RouteConfig {
   name: string;
@@ -174,48 +173,48 @@ export const getFullRoute = (businessId: string | null, route: string): string =
 };
 
 // יצירת ראוטים בפורמט מודולים
-export const getModuleRoutes = (businessId?: string) => {
-  const baseRoutes = businessId ? `/business/${businessId}` : '';
+export const getModuleRoutes = (businessId?: string | number) => {
+  const prefix = businessId && businessId !== 'super_admin' ? `/business/${businessId}` : '';
   
   return {
     employees: {
-      base: `${baseRoutes}/modules/employees`,
-      files: `${baseRoutes}/modules/employees/employee-files`,
-      attendance: `${baseRoutes}/modules/employees/attendance`,
-      requests: `${baseRoutes}/modules/employees/employee-requests`,
-      docs: `${baseRoutes}/modules/employees/employee-docs`,
-      shifts: `${baseRoutes}/modules/employees/shifts`,
-      import: `${baseRoutes}/modules/employees/import`,
-      profile: (id: string) => `${baseRoutes}/modules/employees/profile/${id}`,
+      base: `${prefix}/modules/employees`,
+      files: `${prefix}/modules/employees/employee-files`,
+      profile: `${prefix}/modules/employees/profile`,
+      attendance: `${prefix}/modules/employees/attendance`,
+      requests: `${prefix}/modules/employees/employee-requests`,
+      docs: `${prefix}/modules/employees/employee-docs`,
+      shifts: `${prefix}/modules/employees/shifts`,
+      import: `${prefix}/modules/employees/import`,
     },
     branches: {
-      base: `${baseRoutes}/modules/branches`,
-      roles: `${baseRoutes}/modules/branches/branch-roles`,
-      create: `${baseRoutes}/modules/branches/create`,
-      edit: (id: string) => `${baseRoutes}/modules/branches/edit/${id}`,
+      base: `${prefix}/modules/branches`,
+      roles: `${prefix}/modules/branches/branch-roles`,
+      create: `${prefix}/modules/branches/create`,
+      edit: (id: string) => `${prefix}/modules/branches/edit/${id}`,
     },
     shifts: {
-      base: `${baseRoutes}/modules/shifts`,
-      requests: `${baseRoutes}/modules/shifts/requests`,
-      approval: `${baseRoutes}/modules/shifts/approval`,
-      schedule: `${baseRoutes}/modules/shifts/schedule`,
-      admin: `${baseRoutes}/modules/shifts/admin`,
+      base: `${prefix}/modules/shifts`,
+      requests: `${prefix}/modules/shifts/requests`,
+      approval: `${prefix}/modules/shifts/approval`,
+      schedule: `${prefix}/modules/shifts/schedule`,
+      admin: `${prefix}/modules/shifts/admin`,
     },
     integrations: {
-      base: `${baseRoutes}/modules/integrations`,
-      googleMaps: `${baseRoutes}/modules/integrations/google-maps`,
-      whatsapp: `${baseRoutes}/modules/integrations/whatsapp`,
-      facebook: `${baseRoutes}/modules/integrations/facebook`,
-      invoices: `${baseRoutes}/modules/integrations/invoices`,
-      crm: `${baseRoutes}/modules/integrations/crm`,
-      payments: `${baseRoutes}/modules/integrations/payments`,
-      custom: `${baseRoutes}/modules/integrations/custom`,
+      base: `${prefix}/modules/integrations`,
+      googleMaps: `${prefix}/modules/integrations/google-maps`,
+      whatsapp: `${prefix}/modules/integrations/whatsapp`,
+      facebook: `${prefix}/modules/integrations/facebook`,
+      invoices: `${prefix}/modules/integrations/invoices`,
+      crm: `${prefix}/modules/integrations/crm`,
+      payments: `${prefix}/modules/integrations/payments`,
+      custom: `${prefix}/modules/integrations/custom`,
     },
     settings: {
-      base: `${baseRoutes}/modules/settings`,
-      profile: `${baseRoutes}/modules/settings/profile`,
-      users: `${baseRoutes}/modules/settings/users`,
-      permissions: `${baseRoutes}/modules/settings/permissions`,
+      base: `${prefix}/modules/settings`,
+      profile: `${prefix}/modules/settings/profile`,
+      users: `${prefix}/modules/settings/users`,
+      permissions: `${prefix}/modules/settings/permissions`,
     }
   };
 };
