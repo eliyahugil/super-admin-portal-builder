@@ -23,7 +23,7 @@ function App() {
         <AuthProvider>
           <Toaster />
           <Routes>
-            {/* Public routes */}
+            {/* Render route components as functions to get their Route elements */}
             <PublicRoutes />
             
             {/* Auth route */}
