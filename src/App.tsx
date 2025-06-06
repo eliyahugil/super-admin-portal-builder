@@ -22,10 +22,14 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <Routes>
-            {/* Public shift submission route */}
+            {/* Public shift submission routes */}
             <Route 
               path="/shift-submission/:token" 
               element={React.createElement(React.lazy(() => import('./components/modules/shifts/ShiftSubmissionForm').then(m => ({ default: m.ShiftSubmissionForm }))))} 
+            />
+            <Route 
+              path="/weekly-shift-submission/:token" 
+              element={React.createElement(React.lazy(() => import('./components/modules/shifts/WeeklyShiftSubmissionForm').then(m => ({ default: m.WeeklyShiftSubmissionForm }))))} 
             />
             <Route 
               path="/shift-submitted" 

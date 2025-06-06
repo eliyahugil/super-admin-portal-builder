@@ -1513,6 +1513,56 @@ export type Database = {
           },
         ]
       }
+      shift_submissions: {
+        Row: {
+          created_at: string | null
+          employee_id: string | null
+          id: string
+          notes: string | null
+          shifts: Json
+          status: string | null
+          submitted_at: string | null
+          token: string
+          updated_at: string | null
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string | null
+          employee_id?: string | null
+          id?: string
+          notes?: string | null
+          shifts?: Json
+          status?: string | null
+          submitted_at?: string | null
+          token: string
+          updated_at?: string | null
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string | null
+          employee_id?: string | null
+          id?: string
+          notes?: string | null
+          shifts?: Json
+          status?: string | null
+          submitted_at?: string | null
+          token?: string
+          updated_at?: string | null
+          week_end_date?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_submissions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_templates: {
         Row: {
           branch_id: string
