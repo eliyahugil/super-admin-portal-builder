@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Building2, Users, Shield } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { BusinessCard } from './BusinessCard';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +26,7 @@ interface Stats {
 
 export const Dashboard: React.FC = () => {
   const { isSuperAdmin } = useAuth();
+  const navigate = useNavigate();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [stats, setStats] = useState<Stats>({ totalBusinesses: 0, activeBusinesses: 0, totalUsers: 0 });
   const [loading, setLoading] = useState(true);
@@ -94,27 +95,18 @@ export const Dashboard: React.FC = () => {
   }, [isSuperAdmin]);
 
   const handleManageBusiness = (businessId: string) => {
-    // TODO: Navigate to business management interface
-    toast({
-      title: 'בקרוב',
-      description: 'ממשק ניהול העסק יהיה זמין בקרוב',
-    });
+    // Navigate to business settings
+    navigate(`/modules/settings`);
   };
 
   const handleEditBusiness = (business: Business) => {
-    // TODO: Open business edit modal
-    toast({
-      title: 'בקרוב',
-      description: 'ממשק עריכת העסק יהיה זמין בקרוב',
-    });
+    // Navigate to business profile settings
+    navigate(`/modules/settings/profile`);
   };
 
   const handleCreateBusiness = () => {
-    // TODO: Open create business modal
-    toast({
-      title: 'בקרוב',
-      description: 'ממשק יצירת עסק חדש יהיה זמין בקרוב',
-    });
+    // Navigate to create business page
+    navigate('/admin/businesses/create');
   };
 
   if (!isSuperAdmin) {
