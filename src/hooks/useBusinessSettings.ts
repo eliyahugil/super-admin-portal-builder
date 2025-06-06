@@ -9,6 +9,7 @@ interface BusinessSettings {
   auto_shift_reminders: boolean;
   reminder_day: string;
   reminder_hour: number;
+  use_whatsapp_api: boolean;
   created_at: string;
   updated_at: string;
 }
