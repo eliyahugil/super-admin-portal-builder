@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -6,8 +5,8 @@ import { useAuth } from '@/components/auth/AuthContext';
 // Module Components
 import { BusinessSettings } from './settings/BusinessSettings';
 import { BusinessSettingsMain } from './settings/BusinessSettingsMain';
-import { EmployeesManagement } from './employees/EmployeesManagement';
-import { ShiftManagement } from './shifts/ShiftManagement';
+import { EmployeeManagement } from './employees/EmployeeManagement';
+import { ShiftManagement } from './employees/ShiftManagement';
 import { ModuleManagement } from './ModuleManagement';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { BusinessManagement } from '@/components/business/BusinessManagement';
@@ -70,7 +69,7 @@ export const ModuleWrapper: React.FC = () => {
     case 'settings/permissions':
       return <div>Permissions component</div>;
     case 'employees':
-      return <EmployeesManagement />;
+      return <EmployeeManagement />;
     case 'shifts':
       return <ShiftManagement />;
     case 'modules':
