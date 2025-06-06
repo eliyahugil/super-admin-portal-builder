@@ -6,6 +6,7 @@ import { useAuth } from '@/components/auth/AuthContext';
 // Module Components
 import { BusinessSettings } from './settings/BusinessSettings';
 import { BusinessSettingsMain } from './settings/BusinessSettingsMain';
+import { BusinessProfileEdit } from './settings/BusinessProfileEdit';
 import { EmployeeManagement } from './employees/EmployeeManagement';
 import { ShiftManagement } from './employees/ShiftManagement';
 import { ModuleManagement } from './ModuleManagement';
@@ -74,7 +75,7 @@ export const ModuleWrapper: React.FC = () => {
     case 'settings/main':
       return <BusinessSettingsMain />;
     case 'settings/profile':
-      return <BusinessSettingsMain />;
+      return <BusinessProfileEdit />;
     case 'settings/users':
       return <div>User management component</div>;
     case 'settings/permissions':

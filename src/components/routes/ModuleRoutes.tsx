@@ -5,7 +5,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ModuleWrapper } from '@/components/modules/ModuleWrapper';
 import { EmployeeProfilePage } from '@/components/modules/employees/EmployeeProfilePage';
-import { BusinessModulesPage } from '@/components/modules/settings/BusinessModulesPage';
+import { BusinessSettings } from '@/components/modules/settings/BusinessSettings';
 import { ShiftTokenSchedulePage } from '@/components/modules/settings/ShiftTokenSchedulePage';
 import { BusinessMultiManagement } from '@/components/modules/settings/BusinessMultiManagement';
 
@@ -50,7 +50,7 @@ export const ModuleRoutes: React.FC = () => {
       <Route path="/modules/settings/modules" element={
         <ProtectedRoute>
           <AppLayout>
-            <BusinessModulesPage />
+            <BusinessSettings />
           </AppLayout>
         </ProtectedRoute>
       } />
