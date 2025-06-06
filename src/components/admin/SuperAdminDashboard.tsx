@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -312,7 +311,6 @@ export const SuperAdminDashboard: React.FC = () => {
                               <Switch
                                 checked={isEnabled}
                                 onCheckedChange={() => toggleModule(business.id, moduleKey, isEnabled)}
-                                size="sm"
                               />
                               <span className="text-xs truncate max-w-20" title={moduleKey}>
                                 {moduleKey.replace('_', ' ')}
