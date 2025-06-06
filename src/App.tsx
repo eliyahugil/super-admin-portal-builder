@@ -1,19 +1,31 @@
-
-import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/AuthContext';
-import { AuthForm } from '@/components/auth/AuthForm';
 import { AppLayout } from '@/components/layout/AppLayout';
-import Index from '@/pages/Index';
-import LearnMore from '@/pages/LearnMore';
-import { ModuleWrapper } from '@/components/modules/ModuleWrapper';
-import { GlobalIntegrationsPage } from '@/pages/GlobalIntegrationsPage';
-import { CRMDashboard } from '@/components/crm/CRMDashboard';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { Index } from '@/pages/Index';
+import { LearnMore } from '@/pages/LearnMore';
+import { NotFound } from '@/pages/NotFound';
+import { Dashboard } from '@/components/dashboard/Dashboard';
+import { ModuleManagement } from '@/components/modules/ModuleManagement';
+import { BusinessSettings } from '@/components/modules/settings/BusinessSettings';
+import { BusinessProfile } from '@/components/modules/settings/BusinessProfile';
+import { UsersManagement } from '@/components/modules/settings/UsersManagement';
+import { PermissionsManagement } from '@/components/modules/settings/PermissionsManagement';
+import { BusinessIntegrations } from '@/components/modules/settings/BusinessIntegrations';
+import { BusinessMultiManagement } from '@/components/modules/settings/BusinessMultiManagement';
+import { EmployeeManagement } from '@/components/modules/employees/EmployeeManagement';
+import { EmployeeProfilePage } from '@/components/modules/employees/EmployeeProfilePage';
+import { AttendanceManagement } from '@/components/modules/employees/AttendanceManagement';
+import { ShiftManagementTabs } from '@/components/modules/shifts/ShiftManagementTabs';
+import { IntegrationsRoute } from '@/components/routes/IntegrationsRoute';
+import { ModuleWrapper } from '@/components/modules/ModuleWrapper';
+import { DynamicModulePage } from '@/components/modules/DynamicModulePage';
 import { SubmitShiftPage } from '@/components/modules/shifts/SubmitShiftPage';
-import NotFound from '@/pages/NotFound';
+import { BusinessDashboard } from '@/components/business/BusinessDashboard';
+import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 
 const queryClient = new QueryClient();
 
@@ -22,6 +34,7 @@ function App() {
     <Router>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <Toaster />
           <Routes>
             {/* Public shift submission routes */}
             <Route 
@@ -134,9 +147,16 @@ function App() {
 
             {/* Catch all route */}
             <Route path="*" element={<NotFound />} />
+            
+            <Route path="/modules/settings/advanced" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <BusinessMultiManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
           </Routes>
         </AuthProvider>
-        <Toaster />
       </QueryClientProvider>
     </Router>
   );

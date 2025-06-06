@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, User, Users, Shield, Link as LinkIcon } from 'lucide-react';
+import { Settings, User, Users, Shield, Link as LinkIcon, Cog } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { NotificationSettings } from './NotificationSettings';
 import { ReminderLogsSection } from './ReminderLogsSection';
@@ -12,6 +13,7 @@ export const BusinessSettings: React.FC = () => {
     { title: 'ניהול משתמשים', description: 'הוסף ונהל משתמשים', link: '/modules/settings/users', icon: Users },
     { title: 'הרשאות', description: 'נהל הרשאות משתמשים', link: '/modules/settings/permissions', icon: Shield },
     { title: 'אינטגרציות', description: 'התחבר לשירותים חיצוניים', link: '/modules/settings/integrations', icon: LinkIcon },
+    { title: 'הגדרות מתקדמות', description: 'שדות מותאמים אישית ושכפול עסק', link: '/modules/settings/advanced', icon: Cog },
   ];
 
   return (
@@ -31,7 +33,7 @@ export const BusinessSettings: React.FC = () => {
         <ReminderLogsSection />
       </div>
 
-      {/* Existing Settings Categories */}
+      {/* Settings Categories */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {settingsCategories.map((category, index) => (
           <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer">

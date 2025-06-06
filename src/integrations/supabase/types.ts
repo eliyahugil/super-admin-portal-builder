@@ -744,6 +744,53 @@ export type Database = {
           },
         ]
       }
+      employee_field_templates: {
+        Row: {
+          business_id: string
+          created_at: string
+          display_order: number
+          field_name: string
+          field_options: Json | null
+          field_type: string
+          id: string
+          is_active: boolean
+          is_required: boolean
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          display_order?: number
+          field_name: string
+          field_options?: Json | null
+          field_type: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          display_order?: number
+          field_name?: string
+          field_options?: Json | null
+          field_type?: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_field_templates_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_files: {
         Row: {
           business_id: string
@@ -1831,6 +1878,107 @@ export type Database = {
           },
         ]
       }
+      shift_token_logs: {
+        Row: {
+          business_id: string
+          channel_type: string
+          created_at: string
+          email_address: string | null
+          employee_id: string | null
+          error_message: string | null
+          id: string
+          message_content: string | null
+          phone_number: string | null
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          business_id: string
+          channel_type: string
+          created_at?: string
+          email_address?: string | null
+          employee_id?: string | null
+          error_message?: string | null
+          id?: string
+          message_content?: string | null
+          phone_number?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Update: {
+          business_id?: string
+          channel_type?: string
+          created_at?: string
+          email_address?: string | null
+          employee_id?: string | null
+          error_message?: string | null
+          id?: string
+          message_content?: string | null
+          phone_number?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_token_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_token_logs_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_token_schedules: {
+        Row: {
+          business_id: string
+          channel_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          message_template: string | null
+          send_day: string
+          send_time: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          channel_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message_template?: string | null
+          send_day: string
+          send_time?: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          channel_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message_template?: string | null
+          send_day?: string
+          send_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_token_schedules_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_tokens: {
         Row: {
           branch_preference_1: string | null
@@ -2021,6 +2169,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      clone_employees_to_business: {
+        Args: {
+          from_business_id: string
+          to_business_id: string
+          created_by_user_id?: string
+        }
+        Returns: Json
+      }
       create_custom_module_table: {
         Args: {
           module_id_param: string
@@ -2044,6 +2200,17 @@ export type Database = {
       generate_table_name: {
         Args: { module_name: string }
         Returns: string
+      }
+      get_business_modules: {
+        Args: { business_id_param: string }
+        Returns: {
+          module_key: string
+          is_enabled: boolean
+          module_name: string
+          description: string
+          icon: string
+          route_pattern: string
+        }[]
       }
       get_next_customer_number: {
         Args: { business_id_param: string }
