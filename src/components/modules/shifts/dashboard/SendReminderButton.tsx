@@ -3,6 +3,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Send, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useBusiness } from '@/hooks/useBusiness';
 import { ShiftSubmission } from '../types';
 
 interface SendReminderButtonProps {
@@ -11,8 +13,9 @@ interface SendReminderButtonProps {
 
 export const SendReminderButton: React.FC<SendReminderButtonProps> = ({ submissions }) => {
   const { toast } = useToast();
+  const { business } = useBusiness();
 
-  const sendReminderToAll = () => {
+  const sendReminderToAll = async () => {
     const unsubmittedEmployees = submissions?.filter((s: ShiftSubmission) => !s.submitted_at);
     
     if (!unsubmittedEmployees || unsubmittedEmployees.length === 0) {
@@ -26,17 +29,35 @@ export const SendReminderButton: React.FC<SendReminderButtonProps> = ({ submissi
     const reminderMessage = `היי! 👋\n\nתזכורת להגשת משמרות לשבוע הקרוב.\n\nאנא הגישו עד סוף היום.\n\nתודה! 🙏`;
     
     let sentCount = 0;
-    unsubmittedEmployees.forEach((emp: ShiftSubmission, index: number) => {
+    for (const emp of unsubmittedEmployees) {
       if (emp.employee?.phone) {
         const cleanPhone = emp.employee.phone.replace(/[^\d]/g, '');
         const whatsappPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.slice(1) : cleanPhone;
         const url = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(reminderMessage)}`;
+        
         setTimeout(() => {
           window.open(url, '_blank');
-        }, index * 500); // Stagger by 500ms to avoid browser popup blocking
+        }, sentCount * 500); // Stagger by 500ms to avoid browser popup blocking
+        
+        // Log the manual reminder
+        try {
+          await supabase
+            .from('shift_reminder_logs')
+            .insert({
+              employee_id: emp.employee.id,
+              business_id: business?.id,
+              method: 'manual',
+              status: 'success',
+              message_content: reminderMessage,
+              phone_number: whatsappPhone,
+            });
+        } catch (error) {
+          console.error('Error logging manual reminder:', error);
+        }
+        
         sentCount++;
       }
-    });
+    }
 
     toast({
       title: 'תזכורות נשלחו',

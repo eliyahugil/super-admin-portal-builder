@@ -1,9 +1,10 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, User, Users, Shield, Link as LinkIcon, Bell } from 'lucide-react';
+import { Settings, User, Users, Shield, Link as LinkIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { NotificationSettings } from './NotificationSettings';
+import { ReminderLogsSection } from './ReminderLogsSection';
 
 export const BusinessSettings: React.FC = () => {
   const settingsCategories = [
@@ -23,6 +24,11 @@ export const BusinessSettings: React.FC = () => {
       {/* Notification Settings Section */}
       <div className="mb-8">
         <NotificationSettings />
+      </div>
+
+      {/* Reminder Logs Section */}
+      <div className="mb-8">
+        <ReminderLogsSection />
       </div>
 
       {/* Existing Settings Categories */}

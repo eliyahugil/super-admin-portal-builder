@@ -1551,6 +1551,60 @@ export type Database = {
           },
         ]
       }
+      shift_reminder_logs: {
+        Row: {
+          business_id: string | null
+          created_at: string
+          employee_id: string | null
+          error_details: string | null
+          id: string
+          message_content: string | null
+          method: string
+          phone_number: string | null
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string
+          employee_id?: string | null
+          error_details?: string | null
+          id?: string
+          message_content?: string | null
+          method: string
+          phone_number?: string | null
+          sent_at?: string
+          status: string
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string
+          employee_id?: string | null
+          error_details?: string | null
+          id?: string
+          message_content?: string | null
+          method?: string
+          phone_number?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_reminder_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_reminder_logs_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_submissions: {
         Row: {
           created_at: string | null
