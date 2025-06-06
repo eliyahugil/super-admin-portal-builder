@@ -46,13 +46,21 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   });
 
   const deleteDocumentMutation = useMutation({
-    mutationFn: async (documentId: string) => {
-      const { error } = await supabase
+    mutationFn: async ({ documentId, filePath }: { documentId: string; filePath: string }) => {
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('employee-files')
+        .remove([filePath]);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
         .from('employee_documents')
         .delete()
         .eq('id', documentId);
 
-      if (error) throw error;
+      if (dbError) throw dbError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
@@ -173,6 +181,12 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     }
   };
 
+  const handleDelete = (document: any) => {
+    const pathParts = new URL(document.file_url).pathname.split('/');
+    const filePath = decodeURIComponent(pathParts.slice(2).join('/'));
+    deleteDocumentMutation.mutate({ documentId: document.id, filePath });
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -270,7 +284,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => deleteDocumentMutation.mutate(document.id)}
+                        onClick={() => handleDelete(document)}
                         disabled={deleteDocumentMutation.isPending}
                         className="text-red-600 hover:text-red-700"
                       >
