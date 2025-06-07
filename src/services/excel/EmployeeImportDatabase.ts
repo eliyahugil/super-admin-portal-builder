@@ -25,7 +25,7 @@ export class EmployeeImportDatabase {
   static async importEmployees(previewData: PreviewEmployee[]): Promise<ImportResult> {
     try {
       // Filter employees by validation status
-      const validEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate);
+      const validEmployees = previewData.filter(emp => emp.isValid);
       const duplicateEmployees = previewData.filter(emp => emp.isDuplicate);
       const errorEmployees = previewData.filter(emp => !emp.isValid);
 
@@ -53,43 +53,54 @@ export class EmployeeImportDatabase {
         };
       }
 
-      // Prepare employees for bulk insert with enhanced data sanitization
-      const employeesToInsert = validEmployees.map(emp => ({
-        business_id: emp.data.business_id,
-        first_name: emp.data.first_name?.toString().trim() || '',
-        last_name: emp.data.last_name?.toString().trim() || '',
-        email: emp.data.email?.toString().trim() || null,
-        phone: emp.data.phone?.toString().trim() || null,
-        id_number: emp.data.id_number?.toString().trim() || null,
-        employee_id: emp.data.employee_id?.toString().trim() || null,
-        address: emp.data.address?.toString().trim() || null,
-        hire_date: emp.data.hire_date || null,
-        employee_type: emp.data.employee_type || 'permanent',
-        weekly_hours_required: emp.data.weekly_hours_required || null,
-        main_branch_id: emp.data.main_branch_id || null,
-        notes: emp.data.notes?.toString().trim() || null,
-        is_active: true
-      }));
+      // Prepare employees for upsert with enhanced data sanitization
+      const employeesToUpsert = validEmployees.map(emp => {
+        // Map intern to youth to match database enum
+        let employeeType = emp.data.employee_type || 'permanent';
+        if (employeeType === 'intern') {
+          employeeType = 'youth';
+        }
 
-      console.log('Attempting to insert employees:', employeesToInsert.length);
+        return {
+          business_id: emp.data.business_id,
+          first_name: emp.data.first_name?.toString().trim() || '',
+          last_name: emp.data.last_name?.toString().trim() || '',
+          email: emp.data.email?.toString().trim() || null,
+          phone: emp.data.phone?.toString().trim() || null,
+          id_number: emp.data.id_number?.toString().trim() || null,
+          employee_id: emp.data.employee_id?.toString().trim() || null,
+          address: emp.data.address?.toString().trim() || null,
+          hire_date: emp.data.hire_date || null,
+          employee_type: employeeType as 'permanent' | 'temporary' | 'contractor' | 'youth',
+          weekly_hours_required: emp.data.weekly_hours_required || null,
+          main_branch_id: emp.data.main_branch_id || null,
+          notes: emp.data.notes?.toString().trim() || null,
+          is_active: true
+        };
+      });
 
-      // Use transaction for consistency
-      const { data: insertedEmployees, error: employeeError } = await supabase
+      console.log('Attempting to upsert employees:', employeesToUpsert.length);
+
+      // Use upsert for handling duplicates automatically
+      const { data: upsertedEmployees, error: employeeError } = await supabase
         .from('employees')
-        .insert(employeesToInsert)
+        .upsert(employeesToUpsert, { 
+          onConflict: 'business_id,email',
+          ignoreDuplicates: false 
+        })
         .select('id, first_name, last_name, email, main_branch_id');
 
       if (employeeError) {
-        console.error('Employee insert error:', employeeError);
+        console.error('Employee upsert error:', employeeError);
         throw new Error(`שגיאה בייבוא עובדים: ${employeeError.message}`);
       }
 
-      console.log('Successfully inserted employees:', insertedEmployees?.length);
+      console.log('Successfully upserted employees:', upsertedEmployees?.length);
 
       // Prepare custom field values for bulk insert
       const customFieldValues: any[] = [];
       validEmployees.forEach((emp, index) => {
-        const employeeId = insertedEmployees?.[index]?.id;
+        const employeeId = upsertedEmployees?.[index]?.id;
         if (employeeId && Object.keys(emp.customFields).length > 0) {
           Object.entries(emp.customFields).forEach(([fieldName, value]) => {
             if (value !== null && value !== undefined && value !== '') {
@@ -108,16 +119,19 @@ export class EmployeeImportDatabase {
         console.log('Inserting custom field values:', customFieldValues.length);
         const { error: customFieldError } = await supabase
           .from('custom_field_values')
-          .insert(customFieldValues);
+          .upsert(customFieldValues, { 
+            onConflict: 'employee_id,field_name',
+            ignoreDuplicates: false 
+          });
 
         if (customFieldError) {
-          console.error('Error inserting custom fields:', customFieldError);
+          console.error('Error upserting custom fields:', customFieldError);
           // Don't fail the entire import for custom field errors
         }
       }
 
       // Get branch names for the imported employees
-      const branchIds = insertedEmployees?.map(emp => emp.main_branch_id).filter(Boolean) || [];
+      const branchIds = upsertedEmployees?.map(emp => emp.main_branch_id).filter(Boolean) || [];
       let branchNames: Record<string, string> = {};
       
       if (branchIds.length > 0) {
@@ -133,7 +147,7 @@ export class EmployeeImportDatabase {
       }
 
       // Prepare imported employees summary
-      const importedEmployeesData = insertedEmployees?.map(emp => ({
+      const importedEmployeesData = upsertedEmployees?.map(emp => ({
         name: `${emp.first_name} ${emp.last_name}`.trim(),
         email: emp.email,
         branch: emp.main_branch_id ? branchNames[emp.main_branch_id] : undefined
@@ -148,10 +162,10 @@ export class EmployeeImportDatabase {
 
       const finalResult = {
         success: true,
-        importedCount: employeesToInsert.length,
+        importedCount: employeesToUpsert.length,
         errorCount: errorEmployees.length,
         duplicateCount: duplicateEmployees.length,
-        message: `${employeesToInsert.length} עובדים נוספו למערכת בהצלחה${duplicateEmployees.length > 0 ? `, ${duplicateEmployees.length} כפילויות דולגו` : ''}`,
+        message: `${employeesToUpsert.length} עובדים נוספו/עודכנו במערכת בהצלחה${duplicateEmployees.length > 0 ? ` (כולל ${duplicateEmployees.length} עדכונים)` : ''}`,
         errors: errorDetails.length > 0 ? errorDetails : undefined,
         importedEmployees: importedEmployeesData
       };

@@ -36,7 +36,7 @@ export const ValidationStatusAlert: React.FC<ValidationStatusAlertProps> = ({
         <Info className="h-4 w-4" />
         <AlertDescription>
           נמצאו {summary.warningRows} אזהרות וכפילויות. 
-          <strong> הייבוא ימשיך עם upsert אוטומטי</strong> - עובדים כפולים יעודכנו במקום להיווצר מחדש.
+          <strong> הייבוא ימשיך עם upsert אוטומטי</strong> - עובדים קיימים יעודכנו במקום להיווצר מחדש.
         </AlertDescription>
       </Alert>
     );

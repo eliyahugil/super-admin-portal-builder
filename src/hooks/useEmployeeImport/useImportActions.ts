@@ -1,10 +1,11 @@
 
 import { useToast } from '@/hooks/use-toast';
-import { ExcelImportService } from '@/services/ExcelImportService';
+import { EmployeeImportDatabase } from '@/services/excel/EmployeeImportDatabase';
 import type { ImportStep, ImportActions, ImportValidation } from './types';
 import type { ExcelRow, PreviewEmployee, ImportResult } from '@/services/ExcelImportService';
 import { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
 import { employeeTypes, initialImportResult } from './constants';
+import { ExcelImportService } from '@/services/ExcelImportService';
 
 interface ValidationError {
   rowIndex: number;
@@ -149,7 +150,9 @@ export const useImportActions = ({
       });
 
       console.log('Calling import service with preview data:', previewData.length);
-      const result = await ExcelImportService.importEmployees(previewData);
+      
+      // Use the new EmployeeImportDatabase service
+      const result = await EmployeeImportDatabase.importEmployees(previewData);
       
       console.log('Import completed with result:', result);
       setImportResult(result);
@@ -157,7 +160,7 @@ export const useImportActions = ({
       if (result.success) {
         toast({
           title: 'ייבוא הושלם בהצלחה! 🎉',
-          description: `${result.importedCount} עובדים נוספו למערכת`,
+          description: `${result.importedCount} עובדים נוספו/עודכנו במערכת`,
         });
       } else {
         toast({
