@@ -23,7 +23,50 @@ export const useAuthState = () => {
 
       if (error) {
         console.error('❌ Profile fetch error:', error);
-        return null;
+        
+        // If profile doesn't exist, try to create one
+        console.log('🔧 Profile not found, creating new profile...');
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          if (userData.user) {
+            const newProfile = {
+              id: userId,
+              email: userData.user.email || '',
+              full_name: userData.user.user_metadata?.full_name || userData.user.email || '',
+              role: 'business_user' as const
+            };
+            
+            const { data: createdProfile, error: createError } = await supabase
+              .from('profiles')
+              .insert([newProfile])
+              .select()
+              .single();
+              
+            if (createError) {
+              console.error('❌ שגיאה ביצירת פרופיל:', createError);
+              // If creation fails, return a default profile
+              return {
+                id: userId,
+                email: userData.user.email || '',
+                full_name: userData.user.email || '',
+                role: 'business_user' as const
+              };
+            }
+            
+            console.log('✅ פרופיל חדש נוצר:', createdProfile);
+            return createdProfile;
+          }
+        } catch (createError) {
+          console.error('💥 Exception ביצירת פרופיל:', createError);
+        }
+        
+        // Return a default profile if everything fails
+        return {
+          id: userId,
+          email: user?.email || '',
+          full_name: user?.email || '',
+          role: 'business_user' as const
+        };
       }
 
       if (!data) {
@@ -50,7 +93,13 @@ export const useAuthState = () => {
               
             if (createError) {
               console.error('❌ שגיאה ביצירת פרופיל:', createError);
-              return null;
+              // Return default profile if creation fails
+              return {
+                id: userId,
+                email: userData.user.email || '',
+                full_name: userData.user.email || '',
+                role: 'business_user' as const
+              };
             }
             
             console.log('✅ פרופיל חדש נוצר:', createdProfile);
@@ -60,16 +109,28 @@ export const useAuthState = () => {
           console.error('💥 Exception ביצירת פרופיל:', createError);
         }
         
-        return null;
+        // Return default profile
+        return {
+          id: userId,
+          email: user?.email || '',
+          full_name: user?.email || '',
+          role: 'business_user' as const
+        };
       }
 
       console.log('✅ Profile fetched successfully:', data);
       return data;
     } catch (error) {
       console.error('💥 Exception in fetchProfile:', error);
-      return null;
+      // Return default profile on any error
+      return {
+        id: userId,
+        email: user?.email || '',
+        full_name: user?.email || '',
+        role: 'business_user' as const
+      };
     }
-  }, []);
+  }, [user?.email]);
 
   const refreshProfile = useCallback(async () => {
     if (user?.id) {
@@ -84,15 +145,14 @@ export const useAuthState = () => {
     
     let isMounted = true;
     let authSubscription: any = null;
-    let isInitialized = false;
 
-    // Safety timeout - if still loading after 15 seconds, force completion
+    // Safety timeout reduced to 10 seconds
     const safetyTimeout = setTimeout(() => {
       if (isMounted && loading) {
         console.error('⚠️ Safety timeout - forcing loading to false');
         setLoading(false);
       }
-    }, 15000);
+    }, 10000);
 
     const setupAuth = async () => {
       try {
@@ -103,9 +163,7 @@ export const useAuthState = () => {
           async (event, newSession) => {
             console.log('🔄 Auth state changed:', event, {
               hasSession: !!newSession,
-              userEmail: newSession?.user?.email || 'no session',
-              isMounted,
-              isInitialized
+              userEmail: newSession?.user?.email || 'no session'
             });
             
             if (!isMounted) {
@@ -119,30 +177,37 @@ export const useAuthState = () => {
             
             if (newSession?.user) {
               console.log('👤 User detected, fetching profile...');
-              try {
-                const profileData = await fetchProfile(newSession.user.id);
+              // Use setTimeout to prevent blocking the auth state change
+              setTimeout(async () => {
                 if (isMounted) {
-                  console.log('✅ Profile loaded:', profileData);
-                  setProfile(profileData);
+                  try {
+                    const profileData = await fetchProfile(newSession.user.id);
+                    if (isMounted) {
+                      console.log('✅ Profile loaded:', profileData);
+                      setProfile(profileData);
+                      setLoading(false);
+                    }
+                  } catch (profileError) {
+                    console.error('❌ Error loading profile:', profileError);
+                    if (isMounted) {
+                      // Set default profile on error
+                      setProfile({
+                        id: newSession.user.id,
+                        email: newSession.user.email || '',
+                        full_name: newSession.user.email || '',
+                        role: 'business_user' as const
+                      });
+                      setLoading(false);
+                    }
+                  }
                 }
-              } catch (profileError) {
-                console.error('❌ Error loading profile:', profileError);
-                if (isMounted) {
-                  setProfile(null);
-                }
-              }
+              }, 100);
             } else {
               console.log('🔴 No user in session');
               if (isMounted) {
                 setProfile(null);
+                setLoading(false);
               }
-            }
-            
-            // Set loading to false after handling auth change
-            if (isMounted && !isInitialized) {
-              console.log('✅ Auth initialization complete');
-              setLoading(false);
-              isInitialized = true;
             }
           }
         );
@@ -167,8 +232,7 @@ export const useAuthState = () => {
 
         console.log('🔍 Initial session check:', {
           hasSession: !!initialSession,
-          userEmail: initialSession?.user?.email || 'no user',
-          userId: initialSession?.user?.id || 'no id'
+          userEmail: initialSession?.user?.email || 'no user'
         });
         
         if (!isMounted) {
@@ -191,7 +255,13 @@ export const useAuthState = () => {
           } catch (profileError) {
             console.error('❌ Error fetching initial profile:', profileError);
             if (isMounted) {
-              setProfile(null);
+              // Set default profile on error
+              setProfile({
+                id: initialSession.user.id,
+                email: initialSession.user.email || '',
+                full_name: initialSession.user.email || '',
+                role: 'business_user' as const
+              });
             }
           }
         } else {
@@ -201,11 +271,10 @@ export const useAuthState = () => {
           }
         }
         
-        // Mark as initialized and stop loading
+        // Always stop loading after initial setup
         if (isMounted) {
           console.log('✅ Initial auth setup complete');
           setLoading(false);
-          isInitialized = true;
         }
       } catch (error) {
         console.error('💥 Exception in setupAuth:', error);

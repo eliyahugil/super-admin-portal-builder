@@ -46,9 +46,15 @@ export const AuthForm: React.FC = () => {
 
   // Handle redirects after successful authentication
   useEffect(() => {
-    // Don't redirect if still loading or no complete auth data
-    if (authLoading || !user || !profile) {
-      console.log('AuthForm - Not ready to redirect:', { authLoading, hasUser: !!user, hasProfile: !!profile });
+    // Don't redirect if still loading
+    if (authLoading) {
+      console.log('AuthForm - Auth still loading, waiting...');
+      return;
+    }
+
+    // Only redirect if we have both user and profile
+    if (!user || !profile) {
+      console.log('AuthForm - Missing user or profile:', { hasUser: !!user, hasProfile: !!profile });
       return;
     }
 
@@ -63,13 +69,16 @@ export const AuthForm: React.FC = () => {
       role: profile.role
     });
     
-    if (profile.role === 'super_admin') {
-      console.log('AuthForm - Redirecting super admin to /admin');
-      navigate('/admin', { replace: true });
-    } else {
-      console.log('AuthForm - Redirecting regular user to /modules/employees');
-      navigate('/modules/employees', { replace: true });
-    }
+    // Small delay to ensure state is stable
+    setTimeout(() => {
+      if (profile.role === 'super_admin') {
+        console.log('AuthForm - Redirecting super admin to /admin');
+        navigate('/admin', { replace: true });
+      } else {
+        console.log('AuthForm - Redirecting regular user to /modules/employees');
+        navigate('/modules/employees', { replace: true });
+      }
+    }, 100);
   }, [user, profile, authLoading, navigate, location.pathname]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,6 +110,8 @@ export const AuthForm: React.FC = () => {
           title: 'הרשמה בוצעה בהצלחה',
           description: 'אנא בדוק את המייל שלך לאישור החשבון',
         });
+      } else {
+        console.log('AuthForm - Login successful, waiting for redirect...');
       }
     } catch (error) {
       console.error('AuthForm - Exception:', error);
