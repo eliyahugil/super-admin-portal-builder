@@ -1,73 +1,125 @@
-# Welcome to your Lovable project
 
-## Project info
+# 📘 הנחיות פיתוח – מערכת ניהול AllForYou
 
-**URL**: https://lovable.dev/projects/907c49ca-1b94-44e2-a55e-1208b82ad4c0
+מערכת זו מיועדת לניהול עסקים, עובדים, משמרות, טוקנים, מסמכים ועוד – עם הפרדה ברורה בין סוגי משתמשים והרשאות, ללא נתוני דמה.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🔐 סוגי משתמשים והרשאות
 
-**Use Lovable**
+| סוג משתמש       | גישה                                  |
+|------------------|-----------------------------------------|
+| `super_admin`     | ניהול כל העסקים, אינטגרציות, הרשאות, דוחות |
+| `business_admin`  | ניהול עובדים, משמרות, מסמכים, טוקנים בעסק שלו |
+| `business_user`   | צפייה באזור האישי, הגשת משמרות, צפייה במסמכים בלבד |
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/907c49ca-1b94-44e2-a55e-1208b82ad4c0) and start prompting.
+> כל רכיב או מסך חייב לכלול הגנה (`ProtectedRoute` / בדיקת תפקיד ב־`AuthContext`).
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## 📁 מבנה תיקיות בפרויקט
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+src/
+│
+├── components/
+│   ├── superadmin/        # רכיבים לסופר־אדמין
+│   ├── business/          # רכיבים למנהלי עסקים ועובדים
+│   ├── shared/            # רכיבים כלליים
+│
+├── pages/
+│   ├── superadmin/        # דפים לסופר־אדמין (ניהול עסקים, אינטגרציות)
+│   ├── business/          # דפים למנהל עסק (עובדים, משמרות)
+│   ├── auth/              # התחברות והרשמה
+│
+├── hooks/                 # שימושי דאטה ושאילתות (Supabase)
+├── lib/                   # קוד עזר, ניהול טוקנים ופורמטים
+├── types/                 # טיפוסים עבור טבלאות המערכת
+└── constants/             # קבועים וסוגי תפקידים
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## ✅ כללי כתיבה אחידים
 
-**Use GitHub Codespaces**
+- ✅ שימוש ב-TypeScript עם טיפוסים מלאים – אין להשתמש ב-`any`
+- ✅ רכיבים פונקציונליים בלבד (`React.FC`)
+- ✅ שימוש ב־Tailwind בלבד לעיצוב
+- ✅ אין לשלוף נתוני דמה (`mock data`) – הכל מחובר ל־Supabase אמיתי
+- ✅ שאילתות עם `select` מפורש בלבד – לא להשתמש ב־`select('*')`
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## 🧠 דוגמה לבדיקת הרשאות
 
-This project is built with:
+```tsx
+import { useAuth } from '@/context/AuthContext';
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+const { user } = useAuth();
 
-## How can I deploy this project?
+if (user?.role !== 'super_admin') {
+  return <Unauthorized />;
+}
+```
 
-Simply open [Lovable](https://lovable.dev/projects/907c49ca-1b94-44e2-a55e-1208b82ad4c0) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## 🛑 טעויות נפוצות להימנע מהן
 
-Yes, you can!
+- ⛔ שימוש בשם טבלה לא קיים או ללא קשרים (foreign key)
+- ⛔ כתיבה לא טיפוסית של שאילתות
+- ⛔ ניהול לא נכון של AuthContext
+- ⛔ שימוש ברכיבים לא מופרדים לפי הרשאה
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 🧾 עקרונות פיתוח כלליים
+
+- כל מודול חדש חייב ראוט ייעודי עם בדיקת הרשאות
+- Sidebar אחיד עם ניווט לפי סוג המשתמש
+- ניהול טוקנים, משמרות, מסמכים – לפי העדפות והעסק המשויך
+- כל שליחה אוטומטית (למשל וואטסאפ) – מחייבת תיעוד בלוג
+
+---
+
+## 🎯 מטרת המערכת
+
+מערכת זו מאפשרת לעסקים לנהל עובדים, לקבוע משמרות, לשלוח טוקנים למילוי זמנים, ולעקוב אחר נתוני נוכחות – כל זאת עם הפרדה ברורה בין משתמשים ובקרת גישה הדוקה.
+
+---
+
+## 🔧 טכנולוגיות בשימוש
+
+- **Frontend**: React + TypeScript + Tailwind CSS
+- **Backend**: Supabase (PostgreSQL + Auth + Edge Functions)
+- **State Management**: React Query (TanStack Query)
+- **UI Components**: shadcn/ui
+- **Routing**: React Router DOM
+
+---
+
+## 📝 הערות חשובות
+
+1. המערכת מיועדת להפרדה מוחלטת בין עסקים שונים
+2. כל נתון חייב להיות מקושר לעסק ספציפי או למשתמש מורשה
+3. אין להשתמש בנתוני דמה במודולים הפרודוקטיביים
+4. כל פעולה רגישה חייבת להיות מתועדת ברמת הלוג
+
+---
+
+## ⚡ להתחלה מהירה
+
+```bash
+# התקנת תלויות
+npm install
+
+# הפעלת סביבת הפיתוח
+npm run dev
+
+# בנייה לפרודוקשן
+npm run build
+```
+
+---
+
+**נבנה עם ❤️ למערכות ניהול עסקי מתקדמות**

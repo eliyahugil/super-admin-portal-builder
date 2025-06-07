@@ -34,7 +34,13 @@ export const AccessRequestsManager: React.FC = () => {
       const { data, error } = await supabase
         .from('user_access_requests')
         .select(`
-          *,
+          id,
+          user_id,
+          requested_business_id,
+          requested_role,
+          request_reason,
+          status,
+          created_at,
           profiles!user_access_requests_user_id_fkey(email, full_name),
           businesses!user_access_requests_requested_business_id_fkey(name)
         `)
@@ -42,7 +48,7 @@ export const AccessRequestsManager: React.FC = () => {
 
       if (error) throw error;
       
-      return data || [];
+      return (data || []) as AccessRequest[];
     },
   });
 
