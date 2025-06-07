@@ -17,17 +17,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        {/* Desktop Sidebar */}
+        {/* Desktop Sidebar - Only on desktop */}
         {!isMobile && <DynamicSidebar />}
         
         <SidebarInset className="flex-1">
-          {/* Header with Mobile Menu Trigger */}
+          {/* Header with conditional menu button */}
           <Header 
             showMobileMenu={isMobile} 
             onMobileMenuToggle={() => setMobileMenuOpen(true)}
           />
           
-          {/* Mobile Sidebar */}
+          {/* Mobile Sidebar - Only render when mobile */}
           {isMobile && (
             <MobileSidebar 
               isOpen={mobileMenuOpen} 

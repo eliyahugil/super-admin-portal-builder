@@ -3,7 +3,6 @@ import React from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { BackButton } from '@/components/ui/BackButton';
-import { MobileSidebar } from './MobileSidebar';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useLocation } from 'react-router-dom';
@@ -21,7 +20,6 @@ export const Header: React.FC<HeaderProps> = ({
   const { business, isSuperAdmin } = useBusiness();
   const { profile, user, session, loading, signOut } = useAuth();
   const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   console.log('🎯 Header render - Auth state:', {
     hasUser: !!user,
@@ -51,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-4 sm:px-6">
       <div className="flex items-center gap-3">
-        {/* Mobile Menu Button */}
+        {/* Single Menu Button - Only show one based on mobile/desktop state */}
         {showMobileMenu ? (
           <Button
             variant="ghost"
@@ -63,16 +61,8 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="sr-only">פתח תפריט</span>
           </Button>
         ) : (
-          /* Desktop Sidebar Trigger */
+          /* Desktop Sidebar Trigger - Only on desktop */
           <SidebarTrigger className="hidden md:flex" />
-        )}
-        
-        {/* Mobile Sidebar Component */}
-        {showMobileMenu && (
-          <MobileSidebar 
-            isOpen={mobileMenuOpen} 
-            onOpenChange={setMobileMenuOpen} 
-          />
         )}
         
         {showBackButton && <BackButton />}

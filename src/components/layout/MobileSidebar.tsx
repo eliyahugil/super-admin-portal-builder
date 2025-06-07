@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -7,14 +6,11 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Menu,
   LayoutDashboard, 
   Users, 
   Building, 
@@ -32,7 +28,6 @@ import {
   Calendar,
   User,
   LinkIcon,
-  X
 } from 'lucide-react';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useBusinessModules } from '@/hooks/useBusinessModules';
