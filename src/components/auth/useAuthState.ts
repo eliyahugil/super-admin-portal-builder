@@ -91,8 +91,5 @@ export const useAuthState = () => {
     profile,
     loading,
     refreshProfile,
-    setUser,
-    setSession,
-    setProfile,
   };
 };
