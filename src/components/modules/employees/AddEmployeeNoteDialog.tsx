@@ -79,9 +79,9 @@ export const AddEmployeeNoteDialog: React.FC<AddEmployeeNoteDialogProps> = ({ em
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="noteType">סוג הערה</Label>
-            <Select value={noteType} onValueChange={(value: any) => setNoteType(value)}>
+            <Select value={noteType} onValueChange={(value: 'general' | 'warning' | 'positive' | 'performance' | 'communication') => setNoteType(value)}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="בחר סוג הערה" />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(noteTypeLabels).map(([value, label]) => (
