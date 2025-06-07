@@ -11,7 +11,7 @@ import { BusinessMultiManagement } from '@/components/modules/settings/BusinessM
 
 export const ModuleRoutes: React.FC = () => {
   return (
-    <React.Fragment>
+    <>
       {/* Direct module routes */}
       <Route path="/modules/:moduleRoute" element={
         <ProtectedRoute>
@@ -29,7 +29,7 @@ export const ModuleRoutes: React.FC = () => {
         </ProtectedRoute>
       } />
 
-      <Route path="/modules/:moduleRoute/:subModule/:itemId" element={
+      <Route path="/modules/:moduleRoute/:subModule/:employeeId" element={
         <ProtectedRoute>
           <AppLayout>
             <ModuleWrapper />
@@ -37,7 +37,7 @@ export const ModuleRoutes: React.FC = () => {
         </ProtectedRoute>
       } />
 
-      {/* Employee profile routes for direct modules */}
+      {/* Specific Employee Profile Route for direct modules */}
       <Route path="/modules/employees/profile/:employeeId" element={
         <ProtectedRoute>
           <AppLayout>
@@ -46,7 +46,6 @@ export const ModuleRoutes: React.FC = () => {
         </ProtectedRoute>
       } />
 
-      {/* Settings routes */}
       <Route path="/modules/settings/modules" element={
         <ProtectedRoute>
           <AppLayout>
@@ -70,6 +69,6 @@ export const ModuleRoutes: React.FC = () => {
           </AppLayout>
         </ProtectedRoute>
       } />
-    </React.Fragment>
+    </>
   );
 };

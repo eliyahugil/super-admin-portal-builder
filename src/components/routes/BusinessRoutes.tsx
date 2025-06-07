@@ -9,8 +9,8 @@ import { EmployeeProfilePage } from '@/components/modules/employees/EmployeeProf
 
 export const BusinessRoutes: React.FC = () => {
   return (
-    <React.Fragment>
-      {/* Business dashboard route */}
+    <>
+      {/* Business routes */}
       <Route path="/business/:businessId/dashboard" element={
         <ProtectedRoute>
           <AppLayout>
@@ -19,7 +19,6 @@ export const BusinessRoutes: React.FC = () => {
         </ProtectedRoute>
       } />
 
-      {/* Business routes */}
       <Route path="/business/:businessId/modules/:moduleRoute" element={
         <ProtectedRoute>
           <AppLayout>
@@ -36,7 +35,7 @@ export const BusinessRoutes: React.FC = () => {
         </ProtectedRoute>
       } />
 
-      <Route path="/business/:businessId/modules/:moduleRoute/:subModule/:itemId" element={
+      <Route path="/business/:businessId/modules/:moduleRoute/:subModule/:employeeId" element={
         <ProtectedRoute>
           <AppLayout>
             <ModuleWrapper />
@@ -44,7 +43,7 @@ export const BusinessRoutes: React.FC = () => {
         </ProtectedRoute>
       } />
 
-      {/* Employee profile routes for businesses */}
+      {/* Specific Employee Profile Route */}
       <Route path="/business/:businessId/modules/employees/profile/:employeeId" element={
         <ProtectedRoute>
           <AppLayout>
@@ -52,6 +51,6 @@ export const BusinessRoutes: React.FC = () => {
           </AppLayout>
         </ProtectedRoute>
       } />
-    </React.Fragment>
+    </>
   );
 };
