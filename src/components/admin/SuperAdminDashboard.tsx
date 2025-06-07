@@ -236,10 +236,20 @@ export const SuperAdminDashboard: React.FC = () => {
           <p className="text-sm text-gray-500">מחובר כ: {profile?.email}</p>
         </div>
         
-        <Button onClick={() => navigate('/admin/businesses/create')} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          צור עסק חדש
-        </Button>
+        <div className="flex gap-3">
+          <Button onClick={() => navigate('/admin/new-business')} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            עסק חדש (מהיר)
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => navigate('/admin/businesses/create')} 
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            עסק חדש (מתקדם)
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}

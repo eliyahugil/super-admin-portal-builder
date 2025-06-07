@@ -7,6 +7,7 @@ import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { BusinessManagement } from '@/components/admin/BusinessManagement';
 import { AccessRequestsManager } from '@/components/admin/AccessRequestsManager';
 import { CreateBusinessForm } from '@/components/admin/CreateBusinessForm';
+import { NewBusinessForm } from '@/components/admin/NewBusinessForm';
 
 export const AdminRoutes = () => [
   <Route
@@ -60,6 +61,17 @@ export const AdminRoutes = () => [
       <SuperAdminRoute>
         <AppLayout>
           <CreateBusinessForm />
+        </AppLayout>
+      </SuperAdminRoute>
+    }
+  />,
+  <Route
+    key="new-business"
+    path="/admin/new-business"
+    element={
+      <SuperAdminRoute>
+        <AppLayout>
+          <NewBusinessForm />
         </AppLayout>
       </SuperAdminRoute>
     }
