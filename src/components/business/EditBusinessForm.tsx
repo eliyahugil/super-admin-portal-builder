@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { Building2, Save, ArrowLeft } from 'lucide-react';
 import { AddressAutocomplete } from '@/components/ui/AddressAutocomplete';
 
@@ -34,6 +34,7 @@ export const EditBusinessForm: React.FC = () => {
   const { businessId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { logActivity } = useActivityLogger();
   
   const [formData, setFormData] = useState<BusinessFormData>({
     name: '',
@@ -147,19 +148,17 @@ export const EditBusinessForm: React.FC = () => {
         throw error;
       }
 
-      // Log the update activity
-      await supabase
-        .from('activity_logs')
-        .insert({
-          action: 'business_updated',
-          target_type: 'business',
-          target_id: businessId,
-          details: {
-            business_name: formData.name,
-            updated_fields: Object.keys(formData),
-            updated_at: new Date().toISOString()
-          }
-        });
+      // Log the update activity using the activity logger
+      await logActivity({
+        action: 'business_updated',
+        target_type: 'business',
+        target_id: businessId,
+        details: {
+          business_name: formData.name,
+          updated_fields: Object.keys(formData),
+          updated_at: new Date().toISOString()
+        }
+      });
 
       toast({
         title: 'נשמר בהצלחה! ✅',

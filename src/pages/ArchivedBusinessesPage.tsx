@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { Archive, RotateCcw, Search, Building } from 'lucide-react';
 
 interface ArchivedBusiness {
@@ -22,6 +22,7 @@ export const ArchivedBusinessesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
+  const { logActivity } = useActivityLogger();
 
   useEffect(() => {
     fetchArchivedBusinesses();
@@ -66,18 +67,16 @@ export const ArchivedBusinessesPage: React.FC = () => {
         throw error;
       }
 
-      // Log the restoration activity
-      await supabase
-        .from('activity_logs')
-        .insert({
-          action: 'business_restored',
-          target_type: 'business',
-          target_id: businessId,
-          details: {
-            business_name: businessName,
-            restored_at: new Date().toISOString()
-          }
-        });
+      // Log the restoration activity using the activity logger
+      await logActivity({
+        action: 'business_restored',
+        target_type: 'business',
+        target_id: businessId,
+        details: {
+          business_name: businessName,
+          restored_at: new Date().toISOString()
+        }
+      });
 
       toast({
         title: 'עסק שוחזר בהצלחה! 🔄',
