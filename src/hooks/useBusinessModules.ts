@@ -1,8 +1,7 @@
 
-import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from './useCurrentBusiness';
 
 interface BusinessModule {
   module_key: string;
@@ -13,16 +12,17 @@ interface BusinessModule {
   route_pattern: string;
 }
 
-export const useBusinessModules = () => {
-  const { businessId } = useBusiness();
+export function useBusinessModules(businessId?: string) {
+  const { businessId: currentBusinessId } = useCurrentBusiness();
+  const effectiveBusinessId = businessId || currentBusinessId;
 
-  const { data: businessModules, isLoading, refetch } = useQuery({
-    queryKey: ['business-modules', businessId],
+  const { data: modules, isLoading, error } = useQuery({
+    queryKey: ['business-modules', effectiveBusinessId],
     queryFn: async () => {
-      if (!businessId) return [];
+      if (!effectiveBusinessId) return [];
 
       const { data, error } = await supabase.rpc('get_business_modules', {
-        business_id_param: businessId
+        business_id_param: effectiveBusinessId
       });
 
       if (error) {
@@ -30,26 +30,26 @@ export const useBusinessModules = () => {
         throw error;
       }
 
-      return data as BusinessModule[];
+      return (data as BusinessModule[]) || [];
     },
-    enabled: !!businessId,
+    enabled: !!effectiveBusinessId,
   });
 
   const isModuleEnabled = (moduleKey: string): boolean => {
-    if (!businessModules) return false;
-    const module = businessModules.find(m => m.module_key === moduleKey);
+    if (!modules) return false;
+    const module = modules.find(m => m.module_key === moduleKey);
     return module?.is_enabled || false;
   };
 
   const getEnabledModules = (): BusinessModule[] => {
-    return businessModules?.filter(m => m.is_enabled) || [];
+    return modules?.filter(m => m.is_enabled) || [];
   };
 
   return {
-    businessModules: businessModules || [],
+    modules: modules || [],
     isLoading,
-    refetch,
+    error,
     isModuleEnabled,
     getEnabledModules,
   };
-};
+}
