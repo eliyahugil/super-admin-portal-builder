@@ -26,15 +26,19 @@ export const BranchForm: React.FC<BranchFormProps> = ({
   onSubmit,
   isLoading,
 }) => {
+  const handleCancel = () => {
+    window.history.back();
+  };
+
   return (
     <Card>
       <CardContent className="p-6">
         <form onSubmit={onSubmit} className="space-y-4">
           <BranchFormFields formData={formData} setFormData={setFormData} />
           <BranchFormActions 
-            onCancel={() => window.history.back()} 
+            onCancel={handleCancel} 
             loading={isLoading}
-            submitText="צור סניף"
+            submitText="שמור סניף"
             cancelText="ביטול"
           />
         </form>

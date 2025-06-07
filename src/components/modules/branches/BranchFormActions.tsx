@@ -12,7 +12,7 @@ interface BranchFormActionsProps {
 export const BranchFormActions: React.FC<BranchFormActionsProps> = ({
   onCancel,
   loading,
-  submitText = 'צור סניף',
+  submitText = 'שמור',
   cancelText = 'ביטול',
 }) => {
   return (
@@ -26,7 +26,7 @@ export const BranchFormActions: React.FC<BranchFormActionsProps> = ({
         {cancelText}
       </Button>
       <Button type="submit" disabled={loading}>
-        {loading ? 'יוצר...' : submitText}
+        {loading ? 'שומר...' : submitText}
       </Button>
     </div>
   );
