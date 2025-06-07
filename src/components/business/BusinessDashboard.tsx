@@ -7,7 +7,6 @@ import { RecentActivityCard } from './dashboard/RecentActivityCard';
 import { EmployeeRequestForm } from '@/components/modules/employees/EmployeeRequestForm';
 import { EmployeeRequestsApproval } from '@/components/modules/employees/EmployeeRequestsApproval';
 import { useDashboardData } from './dashboard/useDashboardData';
-import { useBusiness } from '@/hooks/useBusiness';
 import { useBusinessModuleEnabled } from '@/hooks/useBusinessModuleEnabled';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,13 +29,25 @@ export const BusinessDashboard: React.FC = () => {
     activeEmployees,
     shifts,
     todayAttendance,
-    requests
+    requests,
+    userRole,
+    isSuperAdmin
   } = useDashboardData();
 
-  const { profile } = useBusiness();
   const { isModuleEnabled } = useBusinessModuleEnabled();
   const navigate = useNavigate();
-  const isAdmin = profile?.role === 'business_admin' || profile?.role === 'super_admin';
+  const isAdmin = userRole === 'business_admin' || isSuperAdmin;
+
+  // Show welcome message based on role
+  const getWelcomeMessage = () => {
+    if (isSuperAdmin) {
+      return 'שלום, מנהל ראשי';
+    }
+    if (userRole === 'business_admin') {
+      return `שלום, מנהל עסק${business?.name ? ` - ${business.name}` : ''}`;
+    }
+    return `שלום${business?.name ? ` - ${business.name}` : ''}`;
+  };
 
   const recentActivity = [
     {
@@ -145,9 +156,26 @@ export const BusinessDashboard: React.FC = () => {
     );
   }
 
+  // If no business found for non-super-admin users
+  if (!isSuperAdmin && !business?.id) {
+    return (
+      <div className="max-w-7xl mx-auto p-6 text-center" dir="rtl">
+        <h2 className="text-xl font-semibold mb-4">לא נמצא עסק</h2>
+        <p className="text-gray-600 mb-4">נראה שאתה לא משויך לשום עסק במערכת</p>
+        <p className="text-sm text-gray-500">אנא פנה למנהל המערכת להוספת הרשאות</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto p-6" dir="rtl">
-      <DashboardHeader businessName={business?.name} />
+      {/* Welcome Message */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">{getWelcomeMessage()}</h1>
+        {business?.name && !isSuperAdmin && (
+          <p className="text-gray-600 mt-2">ברוך הבא לדשבורד ניהול העסק</p>
+        )}
+      </div>
 
       {/* Enhanced Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

@@ -1,40 +1,41 @@
 
-import { useParams } from 'react-router-dom';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useRealData } from '@/hooks/useRealData';
-import { useBusiness } from '@/hooks/useBusiness';
 
 export const useDashboardData = () => {
-  const { businessId: urlBusinessId } = useParams();
-  const { businessId, business, isLoading: businessLoading } = useBusiness();
+  const { businessId, role, loading: businessLoading, isSuperAdmin, businessName } = useCurrentBusiness();
   
-  // Use businessId from URL if available, otherwise use from context
-  const currentBusinessId = urlBusinessId || businessId;
+  console.log('useDashboardData - Using business:', { businessId, role, isSuperAdmin });
 
   const { data: employees } = useRealData<any>({
-    queryKey: ['employees', currentBusinessId],
+    queryKey: ['employees', businessId],
     tableName: 'employees',
-    filters: currentBusinessId !== 'super_admin' ? { business_id: currentBusinessId } : {},
-    enabled: !!currentBusinessId && !businessLoading
+    filters: businessId ? { business_id: businessId } : {},
+    enabled: !!businessId && !businessLoading,
+    enforceBusinessFilter: !isSuperAdmin // Auto-filter for non-super-admins
   });
 
   const { data: shifts } = useRealData<any>({
-    queryKey: ['shifts-today', currentBusinessId],
+    queryKey: ['shifts-today', businessId],
     tableName: 'scheduled_shifts',
     filters: { shift_date: new Date().toISOString().split('T')[0] },
-    enabled: !!currentBusinessId && !businessLoading
+    enabled: !!businessId && !businessLoading,
+    enforceBusinessFilter: !isSuperAdmin
   });
 
   const { data: attendance } = useRealData<any>({
-    queryKey: ['attendance-today', currentBusinessId],
+    queryKey: ['attendance-today', businessId],
     tableName: 'attendance_records',
-    enabled: !!currentBusinessId && !businessLoading
+    enabled: !!businessId && !businessLoading,
+    enforceBusinessFilter: !isSuperAdmin
   });
 
   const { data: requests } = useRealData<any>({
-    queryKey: ['pending-requests', currentBusinessId],
+    queryKey: ['pending-requests', businessId],
     tableName: 'employee_requests',
     filters: { status: 'pending' },
-    enabled: !!currentBusinessId && !businessLoading
+    enabled: !!businessId && !businessLoading,
+    enforceBusinessFilter: !isSuperAdmin
   });
 
   // Filter today's attendance records
@@ -47,12 +48,14 @@ export const useDashboardData = () => {
   const activeEmployees = employees?.filter((emp: any) => emp.is_active) || [];
 
   return {
-    business,
+    business: { id: businessId, name: businessName },
     businessLoading,
     activeEmployees,
     shifts,
     todayAttendance,
     requests,
-    currentBusinessId
+    currentBusinessId: businessId,
+    userRole: role,
+    isSuperAdmin
   };
 };
