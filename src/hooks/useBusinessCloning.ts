@@ -1,81 +1,165 @@
-
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { useAuth } from '@/components/auth/AuthContext';
 
-export const useBusinessCloning = () => {
-  const { businessId } = useBusiness();
+interface Business {
+  id: string;
+  name: string;
+}
+
+export function useBusinessCloning() {
   const { toast } = useToast();
+  const { businessId: currentBusinessId } = useCurrentBusiness();
+  const { isSuperAdmin, profile } = useAuth();
+
+  const [availableBusinesses, setAvailableBusinesses] = useState<Business[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isCloning, setIsCloning] = useState(false);
 
-  const { data: availableBusinesses, isLoading } = useQuery({
-    queryKey: ['available-businesses-for-cloning'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('businesses')
-        .select('id, name')
-        .eq('is_active', true)
-        .neq('id', businessId || ''); // Exclude current business
-
-      if (error) {
-        console.error('Error fetching businesses:', error);
-        throw error;
+  // Fetch available businesses for cloning
+  useEffect(() => {
+    const fetchAvailableBusinesses = async () => {
+      if (!currentBusinessId) {
+        setIsLoading(false);
+        return;
       }
 
-      return data;
-    },
-    enabled: !!businessId,
-  });
+      try {
+        setIsLoading(true);
 
-  const cloneEmployeesToBusiness = async (targetBusinessId: string) => {
-    if (!businessId) {
-      toast({
-        title: 'שגיאה',
-        description: 'לא נמצא מזהה עסק',
-        variant: 'destructive',
-      });
-      return null;
+        let query = supabase
+          .from('businesses')
+          .select('id, name')
+          .neq('id', currentBusinessId)
+          .eq('is_active', true);
+
+        // If not super admin, filter by businesses the user has access to
+        if (!isSuperAdmin && profile?.id) {
+          // For business admins, only show businesses they own
+          query = query.eq('owner_id', profile.id);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error('Error fetching businesses for cloning:', error);
+          toast({
+            title: 'שגיאה',
+            description: 'לא ניתן לטעון רשימת עסקים',
+            variant: 'destructive',
+          });
+          setAvailableBusinesses([]);
+        } else {
+          setAvailableBusinesses(data || []);
+        }
+      } catch (error) {
+        console.error('Exception in fetchAvailableBusinesses:', error);
+        setAvailableBusinesses([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Only super admins and business owners can clone
+    if (isSuperAdmin || profile?.role === 'business_admin') {
+      fetchAvailableBusinesses();
+    } else {
+      setIsLoading(false);
+      setAvailableBusinesses([]);
+    }
+  }, [currentBusinessId, isSuperAdmin, profile]);
+
+  const cloneEmployeesToBusiness = async (targetBusinessId: string): Promise<boolean> => {
+    if (!currentBusinessId || !targetBusinessId || currentBusinessId === targetBusinessId) {
+      return false;
     }
 
-    setIsCloning(true);
-    try {
-      const { data, error } = await supabase.rpc('clone_employees_to_business', {
-        from_business_id: businessId,
-        to_business_id: targetBusinessId,
-      });
-
-      if (error) {
-        console.error('Error cloning employees:', error);
-        throw error;
-      }
-
-      const result = data as any;
-      
+    if (!isSuperAdmin && profile?.role !== 'business_admin') {
       toast({
-        title: 'הצלחה',
-        description: result.message,
-      });
-
-      return result;
-    } catch (error: any) {
-      console.error('Error in cloneEmployeesToBusiness:', error);
-      toast({
-        title: 'שגיאה',
-        description: `שגיאה בשכפול העובדים: ${error.message}`,
+        title: 'אין הרשאה',
+        description: 'אין לך הרשאות לשכפל עובדים',
         variant: 'destructive',
       });
-      return null;
+      return false;
+    }
+
+    try {
+      setIsCloning(true);
+
+      // Fetch active employees from current business
+      const { data: employees, error: fetchError } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('business_id', currentBusinessId)
+        .eq('is_active', true);
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (!employees || employees.length === 0) {
+        toast({
+          title: 'אין עובדים לשכפול',
+          description: 'לא נמצאו עובדים פעילים בעסק הנוכחי',
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      // Prepare cloned employee data
+      const clonedEmployees = employees.map(employee => ({
+        first_name: employee.first_name,
+        last_name: employee.last_name,
+        phone: employee.phone,
+        email: employee.email,
+        id_number: employee.id_number,
+        employee_id: employee.employee_id,
+        employee_type: employee.employee_type,
+        weekly_hours_required: employee.weekly_hours_required,
+        address: employee.address,
+        notes: `${employee.notes || ''}\n\n--- משוכפל מעסק ${currentBusinessId} בתאריך ${new Date().toLocaleDateString('he-IL')} ---`,
+        business_id: targetBusinessId,
+        is_active: true,
+        hire_date: new Date().toISOString().split('T')[0], // Today's date
+        // Keep track of original source
+        original_business_id: currentBusinessId,
+        cloned_at: new Date().toISOString(),
+      }));
+
+      // Insert cloned employees
+      const { error: insertError } = await supabase
+        .from('employees')
+        .insert(clonedEmployees);
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      toast({
+        title: 'השכפול הצליח!',
+        description: `${clonedEmployees.length} עובדים הועתקו לעסק החדש בהצלחה`,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error cloning employees:', error);
+      toast({
+        title: 'שגיאה בשכפול',
+        description: 'אירעה שגיאה במהלך שכפול העובדים. נסה שוב.',
+        variant: 'destructive',
+      });
+      return false;
     } finally {
       setIsCloning(false);
     }
   };
 
   return {
-    availableBusinesses: availableBusinesses || [],
+    availableBusinesses,
     isLoading,
     isCloning,
     cloneEmployeesToBusiness,
   };
-};
+}
