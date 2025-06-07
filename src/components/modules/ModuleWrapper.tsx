@@ -78,7 +78,8 @@ export const ModuleWrapper: React.FC = () => {
 
   switch (fullRoute) {
     case 'settings':
-      return <BusinessSettings />;
+      // When accessing settings for a business, show the main business settings
+      return businessId ? <BusinessSettingsMain /> : <BusinessSettings />;
     case 'settings/main':
       return <BusinessSettingsMain />;
     case 'settings/profile':
