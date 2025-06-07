@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { EmployeeImportUploadStep } from './steps/EmployeeImportUploadStep';
 import { EmployeeValidationResults } from './EmployeeValidationResults';
 import { EmployeeImportSummary } from './steps/EmployeeImportSummary';
@@ -30,7 +30,37 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
     getValidationSummary,
   } = useEmployeeImport();
 
+  console.log('🎭 ImportDialog - Current step:', step, 'Dialog open:', open);
+
+  const getDialogTitle = () => {
+    switch (step) {
+      case 'upload':
+        return 'ייבוא עובדים מקובץ Excel';
+      case 'preview':
+        return 'תצוגה מקדימה ובדיקת תקינות';
+      case 'summary':
+        return 'סיכום הייבוא';
+      default:
+        return 'ייבוא עובדים מקובץ Excel';
+    }
+  };
+
+  const getDialogDescription = () => {
+    switch (step) {
+      case 'upload':
+        return 'העלה קובץ Excel עם נתוני העובדים שברצונך לייבא';
+      case 'preview':
+        return 'בדוק את הנתונים לפני הייבוא סופי';
+      case 'summary':
+        return 'תוצאות הייבוא העובדים';
+      default:
+        return 'בחר קובץ Excel להעלאה';
+    }
+  };
+
   const renderStepContent = () => {
+    console.log('🎬 Rendering step content for:', step);
+    
     switch (step) {
       case 'upload':
         return (
@@ -64,7 +94,12 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
         );
       
       default:
-        return null;
+        console.warn('⚠️ Unknown step:', step);
+        return (
+          <div className="text-center py-8">
+            <p>שלב לא מזוהה: {step}</p>
+          </div>
+        );
     }
   };
 
@@ -72,9 +107,14 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>ייבוא עובדים מקובץ Excel</DialogTitle>
+          <DialogTitle>{getDialogTitle()}</DialogTitle>
+          <DialogDescription>
+            {getDialogDescription()}
+          </DialogDescription>
         </DialogHeader>
-        {renderStepContent()}
+        <div className="mt-4">
+          {renderStepContent()}
+        </div>
       </DialogContent>
     </Dialog>
   );

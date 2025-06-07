@@ -102,33 +102,60 @@ export const useImportActions = ({
 
   const handleFileUpload = async (uploadedFile: File) => {
     try {
-      console.log('Starting file upload process for:', uploadedFile.name);
+      console.log('🚀 Starting file upload process for:', uploadedFile.name);
       
       // Check authentication before proceeding
       const isAuthenticated = await checkAuthSession();
       if (!isAuthenticated) {
+        console.error('❌ Authentication failed, stopping upload');
         return;
       }
 
+      console.log('✅ Authentication confirmed, proceeding with file processing');
       setFile(uploadedFile);
       
+      console.log('📄 Parsing Excel file...');
       const parsedData = await ExcelImportService.parseExcelFile(uploadedFile);
-      console.log('Excel file parsed successfully:', {
+      console.log('✅ Excel file parsed successfully:', {
         headers: parsedData.headers.length,
         rows: parsedData.data.length
       });
       
+      if (parsedData.headers.length === 0) {
+        throw new Error('הקובץ לא מכיל כותרות תקינות');
+      }
+      
+      if (parsedData.data.length === 0) {
+        throw new Error('הקובץ לא מכיל נתונים');
+      }
+      
+      console.log('📋 Setting headers and data...');
       setHeaders(parsedData.headers);
       setRawData(parsedData.data);
+      
+      console.log('🔄 Transitioning to mapping step...');
       setStep('mapping');
-      setShowMappingDialog(true);
+      
+      // Add a small delay to ensure state is updated before showing dialog
+      setTimeout(() => {
+        console.log('📋 Opening mapping dialog...');
+        setShowMappingDialog(true);
+      }, 100);
+      
+      console.log('✅ File upload process completed successfully');
     } catch (error) {
-      console.error('File upload error:', error);
+      console.error('💥 File upload error:', error);
       toast({
         title: 'שגיאה בקריאת הקובץ',
         description: error instanceof Error ? error.message : 'אנא ודא שהקובץ הוא Excel תקין',
         variant: 'destructive'
       });
+      
+      // Reset state on error
+      setStep('upload');
+      setFile(null);
+      setRawData([]);
+      setHeaders([]);
     }
   };
 
@@ -148,7 +175,7 @@ export const useImportActions = ({
       return;
     }
     
-    console.log('Mapping confirmed, generating preview...');
+    console.log('✅ Mapping confirmed, generating preview...');
     setFieldMappings(mappings);
     setShowMappingDialog(false);
     
@@ -162,7 +189,7 @@ export const useImportActions = ({
       employeeTypes
     );
     
-    console.log('Preview generated:', {
+    console.log('📊 Preview generated:', {
       total: preview.length,
       valid: preview.filter(p => p.isValid).length,
       duplicates: preview.filter(p => p.isDuplicate).length
@@ -257,7 +284,7 @@ export const useImportActions = ({
   };
 
   const resetForm = () => {
-    console.log('Resetting import form');
+    console.log('🔄 Resetting import form');
     setStep('upload');
     setFile(null);
     setRawData([]);
@@ -267,10 +294,11 @@ export const useImportActions = ({
     setImportResult(initialImportResult);
     setValidationErrors([]);
     setDuplicateErrors([]);
+    setShowMappingDialog(false);
   };
 
   const downloadTemplate = () => {
-    console.log('Generating Excel template');
+    console.log('📥 Generating Excel template');
     ExcelImportService.generateTemplate();
     toast({
       title: 'תבנית הורדה',
