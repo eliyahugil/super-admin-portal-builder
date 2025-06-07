@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { useBranchFormValidation } from './useBranchFormValidation';
 
 interface BranchFormData {
   name: string;
@@ -27,16 +28,12 @@ export const useCreateBranchDialog = (onSuccess: () => void, onClose: () => void
   const { toast } = useToast();
   const { logActivity } = useActivityLogger();
   const { businessId } = useCurrentBusiness();
+  const { validateBranchForm } = useBranchFormValidation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim()) {
-      toast({
-        title: 'שגיאה',
-        description: 'שם הסניף הוא שדה חובה',
-        variant: 'destructive',
-      });
+    if (!validateBranchForm(formData)) {
       return;
     }
 
@@ -52,7 +49,6 @@ export const useCreateBranchDialog = (onSuccess: () => void, onClose: () => void
     setLoading(true);
 
     try {
-      // Prepare the data exactly as the database expects it
       const branchData = {
         business_id: businessId,
         name: formData.name.trim(),
