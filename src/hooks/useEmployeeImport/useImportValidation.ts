@@ -50,8 +50,8 @@ export const useImportValidation = ({
       return false;
     }
 
-    const validationErrors: ValidationError[] = [];
-    const duplicateErrors: DuplicateError[] = [];
+    const localValidationErrors: ValidationError[] = [];
+    const localDuplicateErrors: DuplicateError[] = [];
 
     rawData.forEach((row, index) => {
       // Build employee data from mappings
@@ -75,7 +75,7 @@ export const useImportValidation = ({
       const validation = validateEmployeeData(employeeData, businessId!);
       if (!validation.isValid) {
         validation.errors.forEach(error => {
-          validationErrors.push({
+          localValidationErrors.push({
             rowIndex: index + 1,
             field: 'general',
             error,
@@ -93,7 +93,7 @@ export const useImportValidation = ({
           );
           
           if (isDuplicate) {
-            duplicateErrors.push({
+            localDuplicateErrors.push({
               rowIndex: index + 1,
               duplicateField: field,
               existingValue: employeeData[field],
@@ -110,7 +110,7 @@ export const useImportValidation = ({
         futureDate.setFullYear(futureDate.getFullYear() + 1);
         
         if (hireDate > futureDate) {
-          validationErrors.push({
+          localValidationErrors.push({
             rowIndex: index + 1,
             field: 'hire_date',
             error: 'תאריך תחילת עבודה לא יכול להיות יותר משנה קדימה',
@@ -121,12 +121,12 @@ export const useImportValidation = ({
     });
 
     // Update both local state and parent state
-    setCurrentValidationErrors(validationErrors);
-    setCurrentDuplicateErrors(duplicateErrors);
-    setValidationErrors(validationErrors);
-    setDuplicateErrors(duplicateErrors);
+    setCurrentValidationErrors(localValidationErrors);
+    setCurrentDuplicateErrors(localDuplicateErrors);
+    setValidationErrors(localValidationErrors);
+    setDuplicateErrors(localDuplicateErrors);
 
-    return validationErrors.filter(e => e.severity === 'error').length === 0;
+    return localValidationErrors.filter(e => e.severity === 'error').length === 0;
   };
 
   const getValidationSummary = () => {
