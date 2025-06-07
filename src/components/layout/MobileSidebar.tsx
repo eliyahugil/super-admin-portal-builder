@@ -33,6 +33,7 @@ import {
 import { useBusiness } from '@/hooks/useBusiness';
 import { useBusinessModules } from '@/hooks/useBusinessModules';
 import { getModuleRoutes } from '@/utils/routeMapping';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface MenuItem {
   path: string;
@@ -60,6 +61,14 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
   const { isModuleEnabled, isLoading: modulesLoading } = useBusinessModules(businessId);
   const location = useLocation();
   const currentPath = location.pathname;
+
+  console.log('MobileSidebar - Current state:', {
+    business: business?.name,
+    businessId,
+    isSuperAdmin,
+    businessLoading,
+    modulesLoading
+  });
 
   // Get module routes based on business context
   const moduleRoutes = getModuleRoutes(business?.id);
@@ -137,6 +146,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
       label: 'הגדרות', 
       icon: Settings, 
       category: 'system',
+      // Settings is always available
       subItems: [
         { path: moduleRoutes.settings.profile, label: 'פרטי עסק', icon: Building },
         { path: moduleRoutes.settings.users, label: 'משתמשים', icon: Users },
@@ -161,10 +171,14 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
 
   const getVisibleItems = (items: MenuItem[]) => {
     return items.filter(item => {
+      // Check super admin requirement
       if (item.requiresSuperAdmin && !isSuperAdmin) return false;
+      
+      // Check module requirement - skip module check if still loading or if super admin
       if (item.moduleKey && !isSuperAdmin && !modulesLoading) {
         return isModuleEnabled(item.moduleKey);
       }
+      
       return true;
     });
   };
@@ -237,6 +251,25 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
       </div>
     );
   };
+
+  // Show loading state if business is loading
+  if (businessLoading) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="w-[280px] sm:w-[320px] p-0">
+          <SheetHeader className="px-4 py-6 border-b">
+            <Skeleton className="h-6 w-32 mb-2" />
+            <Skeleton className="h-4 w-24" />
+          </SheetHeader>
+          <div className="p-4 space-y-4">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
