@@ -7,14 +7,14 @@ import { Building2 } from 'lucide-react';
 import { useBusiness } from '@/hooks/useBusiness';
 
 export const BusinessSelector: React.FC = () => {
-  const { ownedBusinesses, loading } = useBusiness();
+  const { ownedBusinesses, isLoading } = useBusiness();
   const navigate = useNavigate();
 
   const handleBusinessSelect = (businessId: string) => {
     navigate(`/business/${businessId}/modules/employees`);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
