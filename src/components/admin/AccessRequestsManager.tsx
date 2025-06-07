@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,8 +31,8 @@ export const AccessRequestsManager: React.FC = () => {
         .from('user_access_requests')
         .select(`
           *,
-          profiles!user_access_requests_user_id_fkey(email, full_name),
-          businesses!user_access_requests_requested_business_id_fkey(name)
+          profiles:user_id(email, full_name),
+          businesses:requested_business_id(name)
         `)
         .order('created_at', { ascending: false });
 
