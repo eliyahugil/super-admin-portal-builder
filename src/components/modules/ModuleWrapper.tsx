@@ -42,9 +42,25 @@ export const ModuleWrapper: React.FC = () => {
   });
 
   if (loading) {
+    console.log('ModuleWrapper - Auth still loading');
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">טוען משתמש...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no profile but not loading, it means profile fetch failed
+  if (!loading && !profile) {
+    console.log('ModuleWrapper - No profile available after loading');
+    return (
+      <div className="max-w-7xl mx-auto p-6 text-center">
+        <h2 className="text-xl font-semibold mb-4">שגיאה בטעינת הפרופיל</h2>
+        <p className="text-gray-600 mb-4">לא ניתן לטעון את פרטי המשתמש</p>
+        <p className="text-sm text-gray-500">נסה לרענן את הדף או להתחבר מחדש</p>
       </div>
     );
   }
@@ -68,7 +84,12 @@ export const ModuleWrapper: React.FC = () => {
       console.log('ModuleWrapper - Rendering SuperAdminDashboard');
       return <SuperAdminDashboard />;
     }
-    return <div>Access denied</div>;
+    return (
+      <div className="max-w-7xl mx-auto p-6 text-center">
+        <h2 className="text-xl font-semibold mb-4">אין הרשאה</h2>
+        <p className="text-gray-600">אין לך הרשאות מנהל ראשי</p>
+      </div>
+    );
   }
 
   // Handle business management for super admin - check for admin in businessId
@@ -77,7 +98,12 @@ export const ModuleWrapper: React.FC = () => {
     if (isSuperAdmin) {
       return <BusinessManagement />;
     }
-    return <div>Access denied</div>;
+    return (
+      <div className="max-w-7xl mx-auto p-6 text-center">
+        <h2 className="text-xl font-semibold mb-4">אין הרשאה</h2>
+        <p className="text-gray-600">אין לך הרשאות מנהל ראשי</p>
+      </div>
+    );
   }
 
   // Handle business management for super admin - direct businesses route

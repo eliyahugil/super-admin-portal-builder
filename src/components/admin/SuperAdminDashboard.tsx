@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/auth/AuthContext';
 import { 
   Building, 
   Users, 
@@ -15,7 +17,8 @@ import {
   Search,
   Mail,
   Activity,
-  Shield
+  Shield,
+  AlertCircle
 } from 'lucide-react';
 
 interface Business {
@@ -31,6 +34,7 @@ interface Business {
 export const SuperAdminDashboard: React.FC = () => {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [moduleKeys] = useState([
     'shift_management',
@@ -44,14 +48,26 @@ export const SuperAdminDashboard: React.FC = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSuperAdmin, profile } = useAuth();
+
+  console.log('SuperAdminDashboard - Profile state:', { profile, isSuperAdmin });
 
   useEffect(() => {
+    if (!isSuperAdmin) {
+      console.log('SuperAdminDashboard - Not super admin, skipping data fetch');
+      setError('אין הרשאות מנהל ראשי');
+      setLoading(false);
+      return;
+    }
+    
     fetchBusinessData();
-  }, []);
+  }, [isSuperAdmin]);
 
   const fetchBusinessData = async () => {
     try {
       console.log('=== FETCHING BUSINESS DATA ===');
+      setLoading(true);
+      setError(null);
       
       const { data: bizList, error: bizError } = await supabase
         .from('businesses')
@@ -60,10 +76,11 @@ export const SuperAdminDashboard: React.FC = () => {
 
       if (bizError) {
         console.error('Error fetching businesses:', bizError);
+        setError('שגיאה בטעינת העסקים');
         return;
       }
 
-      console.log('Businesses fetched:', bizList?.length);
+      console.log('Businesses fetched:', bizList?.length || 0);
 
       const enriched = await Promise.all(
         (bizList || []).map(async (biz) => {
@@ -92,6 +109,7 @@ export const SuperAdminDashboard: React.FC = () => {
       console.log('Enriched businesses:', enriched.length);
     } catch (error) {
       console.error('Error in fetchBusinessData:', error);
+      setError('שגיאה במערכת');
       toast({
         title: 'שגיאה',
         description: 'לא ניתן לטעון את נתוני העסקים',
@@ -110,7 +128,7 @@ export const SuperAdminDashboard: React.FC = () => {
           business_id: bizId,
           module_key: moduleKey,
           is_enabled: !currentValue,
-          enabled_by: (await supabase.auth.getUser()).data.user?.id,
+          enabled_by: profile?.id,
           enabled_at: !currentValue ? new Date().toISOString() : null,
           updated_at: new Date().toISOString(),
         }, { 
@@ -151,6 +169,46 @@ export const SuperAdminDashboard: React.FC = () => {
     }
   };
 
+  if (!isSuperAdmin) {
+    return (
+      <div className="container mx-auto px-4 py-8" dir="rtl">
+        <div className="text-center py-8">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">אין הרשאה</h3>
+          <p className="text-gray-600">אין לך הרשאות מנהל ראשי</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8" dir="rtl">
+        <div className="flex items-center justify-center min-h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">טוען נתוני מנהל ראשי...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8" dir="rtl">
+        <div className="text-center py-8">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">שגיאה</h3>
+          <p className="text-gray-600">{error}</p>
+          <Button onClick={fetchBusinessData} className="mt-4">
+            נסה שוב
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const filtered = businesses.filter((b) =>
     b.name.toLowerCase().includes(search.toLowerCase()) ||
     b.contact_email?.toLowerCase().includes(search.toLowerCase())
@@ -165,16 +223,6 @@ export const SuperAdminDashboard: React.FC = () => {
       : 0
   };
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8" dir="rtl">
-        <div className="flex items-center justify-center min-h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-8 space-y-6" dir="rtl">
       {/* Header */}
@@ -185,6 +233,7 @@ export const SuperAdminDashboard: React.FC = () => {
             דשבורד סופר אדמין
           </h1>
           <p className="text-gray-600 mt-2">מרכז שליטה על כל העסקים במערכת</p>
+          <p className="text-sm text-gray-500">מחובר כ: {profile?.email}</p>
         </div>
         
         <Button onClick={() => navigate('/admin/businesses/create')} className="flex items-center gap-2">

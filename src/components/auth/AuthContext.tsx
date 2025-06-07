@@ -48,19 +48,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
-      console.log('📊 Profile query result:', { data, error });
+      console.log('📊 Profile query result:', { data, error, retryCount });
 
       if (error) {
         console.error('❌ Error fetching profile:', error);
         
         // If profile doesn't exist and we haven't retried too many times, wait and retry
-        if (error.code === 'PGRST116' && retryCount < 5) {
-          console.log('⏰ Profile not found, retrying in 2 seconds...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
+        if (error.code === 'PGRST116' && retryCount < 3) {
+          console.log('⏰ Profile not found, retrying in 1 second...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
           return fetchProfile(userId, retryCount + 1);
         }
         
-        console.error('❌ Error details:', {
+        // If it's a different error or we've retried enough, return null
+        console.error('❌ Profile fetch failed permanently:', {
           message: error.message,
           details: error.details,
           hint: error.hint,
@@ -71,7 +72,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         console.log('✅ Profile fetched successfully:', data);
-        console.log('👤 Setting profile with role:', data.role);
         return data;
       } else {
         console.log('⚠️ No profile data returned from query');
@@ -115,6 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Fetch profile with retry logic
           const profileData = await fetchProfile(session.user.id);
+          console.log('📋 Setting profile data:', profileData);
           setProfile(profileData);
         } else {
           console.log('🚪 No user session, clearing profile');
@@ -141,6 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.user) {
         console.log('🎯 Found existing session, fetching profile for user:', session.user.email);
         const profileData = await fetchProfile(session.user.id);
+        console.log('📋 Initial profile fetch result:', profileData);
         setProfile(profileData);
       } else {
         console.log('❌ No existing session found');
