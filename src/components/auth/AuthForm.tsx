@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { AuthGuard } from './AuthGuard';
+import { useAuth } from './AuthContext';
 
-const AuthFormContent: React.FC = () => {
+export const AuthForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,24 +18,7 @@ const AuthFormContent: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Import useAuth inside the guarded component
-  const { signIn, signUp, user, profile, loading: authLoading } = React.useMemo(() => {
-    try {
-      // Dynamic import to avoid context issues
-      const { useAuth } = require('./AuthContext');
-      return useAuth();
-    } catch (error) {
-      console.error('Failed to get auth context:', error);
-      return {
-        signIn: async () => ({ error: new Error('Auth not available') }),
-        signUp: async () => ({ error: new Error('Auth not available') }),
-        user: null,
-        profile: null,
-        loading: false
-      };
-    }
-  }, []);
+  const { signIn, signUp, user, profile, loading: authLoading } = useAuth();
 
   // Only redirect if we have both user and profile, and we're not already on a redirect path
   useEffect(() => {
@@ -204,20 +187,5 @@ const AuthFormContent: React.FC = () => {
         </CardContent>
       </Card>
     </div>
-  );
-};
-
-export const AuthForm: React.FC = () => {
-  return (
-    <AuthGuard fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">מתחבר למערכת...</p>
-        </div>
-      </div>
-    }>
-      <AuthFormContent />
-    </AuthGuard>
   );
 };
