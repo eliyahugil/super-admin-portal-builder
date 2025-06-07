@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, User, Settings, Phone, Mail, AlertTriangle } from 'lucide-react';
+import { Building2, User, Settings, Phone, Mail, AlertTriangle, Sparkles } from 'lucide-react';
 
 interface BusinessFormData {
   name: string;
@@ -57,7 +57,7 @@ export const NewBusinessForm: React.FC = () => {
     );
   };
 
-  const createBusinessWithModules = async () => {
+  const createBusinessWithAutoAdmin = async () => {
     if (!formData.name || !formData.admin_email || !formData.admin_full_name) {
       toast({
         title: 'שגיאה',
@@ -70,81 +70,51 @@ export const NewBusinessForm: React.FC = () => {
     setLoading(true);
 
     try {
-      console.log('🚀 Starting business creation process...');
+      console.log('🚀 Starting automatic business and admin creation...');
       
-      // Step 1: Create the business first
-      const { data: business, error: businessError } = await supabase
-        .from('businesses')
-        .insert({
-          name: formData.name,
-          admin_email: formData.admin_email,
-          contact_email: formData.admin_email,
-          contact_phone: formData.contact_phone,
-          address: formData.address,
-          description: formData.description,
-          is_active: true
-        })
-        .select()
-        .single();
-
-      if (businessError) {
-        console.error('Error creating business:', businessError);
-        throw new Error('שגיאה ביצירת העסק');
+      // Get current session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('לא מחובר למערכת');
       }
 
-      console.log('✅ Business created successfully:', business.name);
-
-      // Step 2: Create selected business module configurations
-      if (selectedModules.length > 0) {
-        const { error: modulesError } = await supabase
-          .from('business_module_config')
-          .insert(
-            selectedModules.map(module_key => ({
-              business_id: business.id,
-              module_key,
-              is_enabled: true,
-              enabled_at: new Date().toISOString()
-            }))
-          );
-
-        if (modulesError) {
-          console.error('Error creating modules:', modulesError);
-          // Don't fail the entire process for module configuration errors
+      // Call the Edge Function to create business and admin user
+      const { data, error } = await supabase.functions.invoke('create-business-admin', {
+        body: {
+          businessData: {
+            name: formData.name,
+            contact_phone: formData.contact_phone,
+            address: formData.address,
+            description: formData.description,
+            selectedModules
+          },
+          adminData: {
+            email: formData.admin_email,
+            full_name: formData.admin_full_name
+          }
         }
+      });
+
+      if (error) {
+        console.error('Error from Edge Function:', error);
+        throw new Error(error.message || 'שגיאה ביצירת העסק והמנהל');
       }
 
-      // Step 3: Log the business creation activity
-      const { data: currentUser } = await supabase.auth.getUser();
-      if (currentUser.user) {
-        const { error: logError } = await supabase
-          .from('activity_logs')
-          .insert({
-            user_id: currentUser.user.id,
-            action: 'business_created',
-            target_type: 'business',
-            target_id: business.id,
-            details: {
-              business_name: business.name,
-              admin_email: formData.admin_email,
-              modules_enabled: selectedModules,
-              created_at: new Date().toISOString()
-            }
-          });
-
-        if (logError) {
-          console.error('Error logging activity:', logError);
-        }
+      if (!data.success) {
+        throw new Error(data.error || 'שגיאה ביצירת העסק והמנהל');
       }
 
-      // Show success message with instructions
+      console.log('✅ Business and admin created successfully:', data);
+
+      // Show success messages
       toast({
         title: 'הצלחה! 🎉',
-        description: `העסק "${business.name}" נוצר בהצלחה`,
+        description: `העסק "${data.business.name}" והמנהל נוצרו בהצלחה`,
       });
       
       toast({
-        title: 'הנחיות למנהל העסק',
-        description: `יש להנחות את מנהל העסק להירשם במייל: ${formData.admin_email} ולבקש גישה לעסק דרך המערכת`,
+        title: 'פרטי כניסה למנהל העסק',
+        description: `המייל: ${data.admin.email}\nהסיסמה הראשונית: 123456\n\nיש להחליף את הסיסמה בהתחברות הראשונה`,
         variant: 'default',
       });
 
@@ -163,10 +133,10 @@ export const NewBusinessForm: React.FC = () => {
       navigate('/admin');
 
     } catch (error) {
-      console.error('💥 Error in createBusinessWithModules:', error);
+      console.error('💥 Error in createBusinessWithAutoAdmin:', error);
       toast({
         title: 'שגיאה',
-        description: error instanceof Error ? error.message : 'שגיאה ביצירת העסק',
+        description: error instanceof Error ? error.message : 'שגיאה ביצירת העסק והמנהל',
         variant: 'destructive',
       });
     } finally {
@@ -179,9 +149,12 @@ export const NewBusinessForm: React.FC = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
           <Building2 className="h-8 w-8" />
-          יצירת עסק חדש
+          יצירת עסק חדש + מנהל אוטומטי
         </h1>
-        <p className="text-gray-600 mt-2">הזן את פרטי העסק והמנהל הראשי</p>
+        <p className="text-gray-600 mt-2 flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-blue-500" />
+          המערכת תיצור אוטומטית את העסק ואת חשבון המנהל
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -250,7 +223,7 @@ export const NewBusinessForm: React.FC = () => {
               <User className="h-5 w-5" />
               פרטי המנהל הראשי
             </CardTitle>
-            <CardDescription>פרטי מנהל העסק לצורך יצירת קשר</CardDescription>
+            <CardDescription>המנהל יקבל חשבון אוטומטית עם הרשאות מלאות</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -279,20 +252,17 @@ export const NewBusinessForm: React.FC = () => {
               />
             </div>
             
-            <div className="bg-amber-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2 text-amber-700">
-                <AlertTriangle className="h-4 w-4" />
-                <span className="font-medium">הנחיות חשובות</span>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 text-blue-700">
+                <Sparkles className="h-4 w-4" />
+                <span className="font-medium">יצירה אוטומטית</span>
               </div>
-              <p className="text-amber-600 text-sm mt-1">
-                לאחר יצירת העסק, יש להנחות את המנהל:
-                <br />
-                1. להירשם למערכת עם המייל שצוין
-                <br />
-                2. לבקש גישה לעסק דרך טופס בקשת גישה
-                <br />
-                3. המנהל הראשי יאשר את הבקשה
-              </p>
+              <ul className="text-blue-600 text-sm mt-1 space-y-1">
+                <li>• המערכת תיצור חשבון אוטומטית למנהל</li>
+                <li>• הסיסמה הראשונית: 123456</li>
+                <li>• המנהל יקבל הרשאות מלאות לעסק</li>
+                <li>• יש להחליף את הסיסמה בכניסה הראשונה</li>
+              </ul>
             </div>
           </CardContent>
         </Card>
@@ -346,11 +316,22 @@ export const NewBusinessForm: React.FC = () => {
           </Button>
           
           <Button 
-            onClick={createBusinessWithModules}
+            onClick={createBusinessWithAutoAdmin}
             disabled={loading || !formData.name || !formData.admin_email || !formData.admin_full_name}
             size="lg"
+            className="flex items-center gap-2"
           >
-            {loading ? 'יוצר עסק...' : 'צור עסק חדש'}
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                יוצר עסק ומנהל...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                צור עסק + מנהל אוטומטי
+              </>
+            )}
           </Button>
         </div>
       </div>
