@@ -2,19 +2,19 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-  useSidebar,
-} from '@/components/ui/sidebar';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { 
+  Menu,
   LayoutDashboard, 
   Users, 
   Building, 
@@ -31,12 +31,12 @@ import {
   CheckSquare,
   Calendar,
   User,
-  LinkIcon
+  LinkIcon,
+  X
 } from 'lucide-react';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useBusinessModules } from '@/hooks/useBusinessModules';
 import { getModuleRoutes } from '@/utils/routeMapping';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface MenuItem {
   path: string;
@@ -53,21 +53,17 @@ interface MenuItem {
   }[];
 }
 
-export const DynamicSidebar: React.FC = () => {
+interface MobileSidebarProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChange }) => {
   const { isSuperAdmin, business, isLoading: businessLoading } = useBusiness();
   const { businessId } = useBusiness();
   const { isModuleEnabled, isLoading: modulesLoading } = useBusinessModules(businessId);
-  const { setOpenMobile, isMobile } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
-
-  console.log('DynamicSidebar - Current state:', {
-    business: business?.name,
-    businessId,
-    isSuperAdmin,
-    businessLoading,
-    modulesLoading
-  });
 
   // Get module routes based on business context
   const moduleRoutes = getModuleRoutes(business?.id);
@@ -145,7 +141,6 @@ export const DynamicSidebar: React.FC = () => {
       label: 'הגדרות', 
       icon: Settings, 
       category: 'system',
-      // Settings is always available
       subItems: [
         { path: moduleRoutes.settings.profile, label: 'פרטי עסק', icon: Building },
         { path: moduleRoutes.settings.users, label: 'משתמשים', icon: Users },
@@ -170,49 +165,55 @@ export const DynamicSidebar: React.FC = () => {
 
   const getVisibleItems = (items: MenuItem[]) => {
     return items.filter(item => {
-      // Check super admin requirement
       if (item.requiresSuperAdmin && !isSuperAdmin) return false;
-      
-      // Check module requirement - skip module check if still loading or if super admin
       if (item.moduleKey && !isSuperAdmin && !modulesLoading) {
         return isModuleEnabled(item.moduleKey);
       }
-      
       return true;
     });
   };
 
   const handleMenuItemClick = () => {
-    if (isMobile) {
-      setOpenMobile(false);
-    }
+    onOpenChange(false);
   };
 
-  const renderMenuGroup = (title: string, items: MenuItem[]) => {
+  const renderMenuSection = (title: string, items: MenuItem[]) => {
     const visibleItems = getVisibleItems(items);
     if (visibleItems.length === 0) return null;
 
     return (
-      <SidebarGroup>
-        <SidebarGroupLabel className="text-right px-3 py-2 text-xs font-medium text-gray-500 uppercase">
-          {title}
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            {visibleItems.map((item) => (
-              <SidebarMenuItem key={item.path}>
-                <SidebarMenuButton asChild isActive={isActive(item.path)}>
-                  <NavLink 
-                    to={item.path} 
-                    className="flex items-center gap-3 px-3 py-2 text-right hover:bg-gray-100 rounded-lg transition-colors"
-                    onClick={handleMenuItemClick}
-                  >
-                    <span className="flex-1 text-right text-sm font-medium">{item.label}</span>
-                    <item.icon className="h-4 w-4 flex-shrink-0" />
-                  </NavLink>
-                </SidebarMenuButton>
-                {item.subItems && isActive(item.path) && (
-                  <div className="mr-6 mt-1 space-y-1">
+      <div className="space-y-2">
+        <div className="px-4 py-2">
+          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+            {title}
+          </h3>
+        </div>
+        <div className="space-y-1">
+          {visibleItems.map((item) => {
+            const active = isActive(item.path);
+            return (
+              <div key={item.path}>
+                <NavLink
+                  to={item.path}
+                  onClick={handleMenuItemClick}
+                  className={`
+                    flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg mx-2 transition-colors
+                    ${active 
+                      ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                    }
+                  `}
+                >
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  <span className="flex-1">{item.label}</span>
+                  {active && (
+                    <div className="w-2 h-2 bg-blue-700 rounded-full" />
+                  )}
+                </NavLink>
+                
+                {/* Sub-items */}
+                {item.subItems && active && (
+                  <div className="mr-4 mt-2 space-y-1">
                     {item.subItems
                       .filter(subItem => {
                         if (subItem.moduleKey && !isSuperAdmin && !modulesLoading) {
@@ -221,73 +222,74 @@ export const DynamicSidebar: React.FC = () => {
                         return true;
                       })
                       .map((subItem) => (
-                        <SidebarMenuButton key={subItem.path} asChild size="sm">
-                          <NavLink
-                            to={subItem.path}
-                            className="flex items-center gap-2 px-4 py-1 text-right text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                            onClick={handleMenuItemClick}
-                          >
-                            <span className="flex-1 text-right">{subItem.label}</span>
-                            <subItem.icon className="h-3 w-3 flex-shrink-0" />
-                          </NavLink>
-                        </SidebarMenuButton>
+                        <NavLink
+                          key={subItem.path}
+                          to={subItem.path}
+                          onClick={handleMenuItemClick}
+                          className="flex items-center gap-3 px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        >
+                          <subItem.icon className="h-4 w-4" />
+                          <span>{subItem.label}</span>
+                        </NavLink>
                       ))}
                   </div>
                 )}
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     );
   };
 
-  // Show loading state only if business is loading
-  if (businessLoading) {
-    return (
-      <Sidebar side="right" className="border-r border-border hidden md:flex">
-        <SidebarHeader className="p-4 text-right">
-          <Skeleton className="h-6 w-32 mb-2" />
-          <Skeleton className="h-4 w-24" />
-        </SidebarHeader>
-        <SidebarContent>
-          <div className="p-4 space-y-4">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-          </div>
-        </SidebarContent>
-      </Sidebar>
-    );
-  }
-
   return (
-    <Sidebar side="right" className="border-r border-border hidden md:flex w-64">
-      <SidebarHeader className="p-4 text-right border-b">
-        <h2 className="text-lg font-bold text-foreground text-right">
-          {business?.name || 'ניהול מערכת'}
-        </h2>
-        {business && (
-          <p className="text-sm text-muted-foreground text-right">
-            {isSuperAdmin ? 'מנהל על' : 'משתמש עסקי'}
-          </p>
-        )}
-      </SidebarHeader>
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
+      <SheetTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden h-9 w-9"
+        >
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">פתח תפריט</span>
+        </Button>
+      </SheetTrigger>
+      
+      <SheetContent side="right" className="w-[280px] sm:w-[320px] p-0">
+        <SheetHeader className="px-4 py-6 border-b">
+          <div className="flex items-center justify-between">
+            <div className="text-right">
+              <SheetTitle className="text-lg font-bold">
+                {business?.name || 'ניהול מערכת'}
+              </SheetTitle>
+              {business && (
+                <SheetDescription className="text-sm text-gray-500">
+                  {isSuperAdmin ? 'מנהל על' : 'משתמש עסקי'}
+                </SheetDescription>
+              )}
+            </div>
+            <Badge variant="outline" className="text-xs">
+              v1.0.0
+            </Badge>
+          </div>
+        </SheetHeader>
 
-      <SidebarContent className="px-2 py-4">
-        <div className="space-y-6">
-          {renderMenuGroup('ראשי', coreMenuItems)}
-          {renderMenuGroup('עסקי', businessMenuItems)}
-          {renderMenuGroup('מערכת', systemMenuItems)}
-          {isSuperAdmin && renderMenuGroup('ניהול', adminMenuItems)}
-        </div>
-      </SidebarContent>
-
-      <SidebarFooter className="p-4 text-right border-t">
-        <div className="text-xs text-muted-foreground">
-          גרסה 1.0.0
-        </div>
-      </SidebarFooter>
-    </Sidebar>
+        <ScrollArea className="flex-1 px-0 py-4">
+          <div className="space-y-6">
+            {renderMenuSection('ראשי', coreMenuItems)}
+            <Separator className="mx-4" />
+            {renderMenuSection('עסקי', businessMenuItems)}
+            <Separator className="mx-4" />
+            {renderMenuSection('מערכת', systemMenuItems)}
+            {isSuperAdmin && (
+              <>
+                <Separator className="mx-4" />
+                {renderMenuSection('ניהול', adminMenuItems)}
+              </>
+            )}
+          </div>
+        </ScrollArea>
+      </SheetContent>
+    </Sheet>
   );
 };

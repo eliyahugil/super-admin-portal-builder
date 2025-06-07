@@ -1,23 +1,42 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { DynamicSidebar } from './DynamicSidebar';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { MobileSidebar } from './MobileSidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Header } from './Header';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+  const isMobile = useIsMobile();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <DynamicSidebar />
+        {/* Desktop Sidebar */}
+        {!isMobile && <DynamicSidebar />}
         
         <SidebarInset className="flex-1">
-          <Header />
+          {/* Header with Mobile Menu Trigger */}
+          <Header 
+            showMobileMenu={isMobile} 
+            onMobileMenuToggle={() => setMobileMenuOpen(true)}
+          />
           
-          <main className="flex-1 p-6 bg-gray-50">
+          {/* Mobile Sidebar */}
+          {isMobile && (
+            <MobileSidebar 
+              isOpen={mobileMenuOpen} 
+              onOpenChange={setMobileMenuOpen} 
+            />
+          )}
+          
+          {/* Main Content */}
+          <main className="flex-1 p-4 sm:p-6 bg-gray-50 min-h-[calc(100vh-64px)]">
             {children}
           </main>
         </SidebarInset>
