@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +18,7 @@ export const AuthForm: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Redirect authenticated users
+  // Redirect authenticated users based on their role
   useEffect(() => {
     console.log('AuthForm - Auth state changed:', { 
       user: user?.email, 
@@ -28,13 +27,15 @@ export const AuthForm: React.FC = () => {
     });
     
     if (!authLoading && user && profile) {
-      console.log('AuthForm - User authenticated, redirecting...');
+      console.log('AuthForm - User authenticated, redirecting based on role...');
       
       if (profile.role === 'super_admin') {
         console.log('AuthForm - Redirecting super admin to /admin');
         navigate('/admin', { replace: true });
       } else {
-        console.log('AuthForm - Redirecting regular user to /modules/employees');
+        // For regular users, check if they have a business or redirect to a default route
+        console.log('AuthForm - Redirecting regular user');
+        // We'll redirect to the modules/employees route which will handle business association
         navigate('/modules/employees', { replace: true });
       }
     }

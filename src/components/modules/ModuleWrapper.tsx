@@ -1,6 +1,8 @@
+
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
+import { useBusiness } from '@/hooks/useBusiness';
 
 // Module Components
 import { BusinessSettings } from './settings/BusinessSettings';
@@ -19,6 +21,8 @@ import BusinessModulesPage from './settings/BusinessModulesPage';
 export const ModuleWrapper: React.FC = () => {
   const { businessId, moduleRoute, subModule, employeeId } = useParams();
   const { profile, isSuperAdmin, loading } = useAuth();
+  const { business, isBusinessOwner } = useBusiness();
+  const navigate = useNavigate();
 
   console.log('ModuleWrapper - Current params:', {
     businessId: { _type: typeof businessId, value: businessId },
@@ -31,13 +35,27 @@ export const ModuleWrapper: React.FC = () => {
     profile,
     isSuperAdmin,
     loading,
-    user: profile?.email
+    user: profile?.email,
+    business: business?.name,
+    isBusinessOwner
   });
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Check if user should have access to business data
+  if (!isSuperAdmin && !isBusinessOwner && !business) {
+    console.log('ModuleWrapper - User has no business access, redirecting to auth');
+    return (
+      <div className="max-w-7xl mx-auto p-6 text-center">
+        <h2 className="text-xl font-semibold mb-4">אין לך גישה לעסק</h2>
+        <p className="text-gray-600 mb-4">נראה שאתה לא משויך לשום עסק במערכת</p>
+        <p className="text-sm text-gray-500">אנא פנה למנהל המערכת להוספת הרשאות</p>
       </div>
     );
   }

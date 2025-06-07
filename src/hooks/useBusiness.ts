@@ -8,12 +8,20 @@ export const useBusiness = () => {
   const { user, profile } = useAuth();
   const { businessId: urlBusinessId } = useParams();
 
+  console.log('useBusiness - Current state:', {
+    user: user?.email,
+    profile: profile?.role,
+    urlBusinessId,
+    isSuperAdmin: profile?.role === 'super_admin'
+  });
+
   // If we have a business ID from URL, use that to fetch business details
   const { data: urlBusiness, isLoading: urlBusinessLoading } = useQuery({
     queryKey: ['business-by-id', urlBusinessId],
     queryFn: async () => {
       if (!urlBusinessId) return null;
       
+      console.log('Fetching business by URL ID:', urlBusinessId);
       const { data, error } = await supabase
         .from('businesses')
         .select('*')
@@ -24,6 +32,7 @@ export const useBusiness = () => {
         console.error('Error fetching business by ID:', error);
         return null;
       }
+      console.log('URL Business fetched:', data);
       return data;
     },
     enabled: !!urlBusinessId,
@@ -35,6 +44,7 @@ export const useBusiness = () => {
     queryFn: async () => {
       if (!user?.id) return null;
       
+      console.log('Fetching owned business for user:', user.id);
       const { data, error } = await supabase
         .from('businesses')
         .select('*')
@@ -45,6 +55,7 @@ export const useBusiness = () => {
         console.error('Error fetching owned business:', error);
         return null;
       }
+      console.log('Owned business fetched:', data);
       return data;
     },
     enabled: !!user?.id && !urlBusinessId, // Only fetch if no URL business ID
@@ -75,13 +86,25 @@ export const useBusiness = () => {
     enabled: !!businessId,
   });
 
+  const isSuperAdmin = profile?.role === 'super_admin';
+  const isBusinessOwner = !!ownedBusiness;
+
+  console.log('useBusiness - Final state:', {
+    business: business?.name,
+    businessId,
+    isSuperAdmin,
+    isBusinessOwner,
+    hasOwnedBusiness: !!ownedBusiness,
+    hasUrlBusiness: !!urlBusiness
+  });
+
   return {
     user,
     profile,
     business,
     businessId,
-    isSuperAdmin: profile?.role === 'super_admin',
-    isBusinessOwner: !!ownedBusiness,
+    isSuperAdmin,
+    isBusinessOwner,
     isLoading: urlBusinessLoading || ownedBusinessLoading,
     integrationsCount: integrationsCount || 0,
   };
