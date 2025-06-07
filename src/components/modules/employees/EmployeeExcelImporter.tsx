@@ -3,28 +3,19 @@ import * as XLSX from 'xlsx';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, Check, X, Plus, Eye } from 'lucide-react';
+import { Upload, Download, Check, X } from 'lucide-react';
+import { FieldMappingDialog, type FieldMapping } from './FieldMappingDialog';
 import type { Employee } from '@/types/supabase';
 
 interface ExcelRow {
   [key: string]: any;
-}
-
-interface FieldMapping {
-  excelHeader: string;
-  systemField: string;
-  isCustomField?: boolean;
-  customFieldType?: 'text' | 'number' | 'date' | 'select';
-  selectOptions?: string[];
 }
 
 interface PreviewEmployee {
@@ -50,6 +41,7 @@ export const EmployeeExcelImporter: React.FC = () => {
   const [existingEmployees, setExistingEmployees] = useState<any[]>([]);
   const [step, setStep] = useState<'upload' | 'mapping' | 'preview' | 'import'>('upload');
   const [isImporting, setIsImporting] = useState(false);
+  const [showMappingDialog, setShowMappingDialog] = useState(false);
 
   // System field options
   const systemFields = [
@@ -148,10 +140,8 @@ export const EmployeeExcelImporter: React.FC = () => {
           return obj;
         }));
 
-        // Auto-detect field mappings
-        const autoMappings = autoDetectFieldMappings(headerRow);
-        setFieldMappings(autoMappings);
         setStep('mapping');
+        setShowMappingDialog(true);
 
       } catch (error) {
         toast({
@@ -165,61 +155,13 @@ export const EmployeeExcelImporter: React.FC = () => {
     reader.readAsArrayBuffer(uploadedFile);
   };
 
-  const autoDetectFieldMappings = (headers: string[]): FieldMapping[] => {
-    const mappings: FieldMapping[] = [];
-    
-    headers.forEach(header => {
-      const lowerHeader = header.toLowerCase().trim();
-      let systemField = '';
-      
-      // Auto-detect common field names
-      if (lowerHeader.includes('שם') && (lowerHeader.includes('מלא') || lowerHeader.includes('שלם'))) {
-        systemField = 'full_name';
-      } else if (lowerHeader.includes('שם') && lowerHeader.includes('פרטי')) {
-        systemField = 'first_name';
-      } else if (lowerHeader.includes('שם') && lowerHeader.includes('משפחה')) {
-        systemField = 'last_name';
-      } else if (lowerHeader.includes('טלפון') || lowerHeader.includes('נייד')) {
-        systemField = 'phone';
-      } else if (lowerHeader.includes('מייל') || lowerHeader.includes('email')) {
-        systemField = 'email';
-      } else if (lowerHeader.includes('זהות')) {
-        systemField = 'id_number';
-      } else if (lowerHeader.includes('עובד') && lowerHeader.includes('מספר')) {
-        systemField = 'employee_id';
-      } else if (lowerHeader.includes('כתובת')) {
-        systemField = 'address';
-      } else if (lowerHeader.includes('תאריך') && lowerHeader.includes('תחילת')) {
-        systemField = 'hire_date';
-      } else if (lowerHeader.includes('סניף')) {
-        systemField = 'branch_name';
-      } else if (lowerHeader.includes('תפקיד')) {
-        systemField = 'role';
-      } else if (lowerHeader.includes('הערות')) {
-        systemField = 'notes';
-      }
-
-      mappings.push({
-        excelHeader: header,
-        systemField: systemField,
-        isCustomField: false
-      });
-    });
-
-    return mappings;
+  const handleMappingConfirm = (mappings: FieldMapping[]) => {
+    setFieldMappings(mappings);
+    setShowMappingDialog(false);
+    generatePreview(mappings);
   };
 
-  const updateFieldMapping = (index: number, systemField: string) => {
-    const newMappings = [...fieldMappings];
-    newMappings[index] = {
-      ...newMappings[index],
-      systemField,
-      isCustomField: systemField === 'custom'
-    };
-    setFieldMappings(newMappings);
-  };
-
-  const generatePreview = () => {
+  const generatePreview = (mappings: FieldMapping[]) => {
     const preview: PreviewEmployee[] = rawData.map((row, index) => {
       const employeeData: Partial<Employee> & { business_id: string } = {
         business_id: businessId!
@@ -227,65 +169,75 @@ export const EmployeeExcelImporter: React.FC = () => {
       const customFields: Record<string, any> = {};
       const errors: string[] = [];
 
-      fieldMappings.forEach(mapping => {
-        if (mapping.systemField && mapping.systemField !== 'custom') {
-          let value = row[mapping.excelHeader];
-          
-          // Handle special field types
-          if (mapping.systemField === 'hire_date' && value) {
-            const date = new Date(value);
-            if (isNaN(date.getTime())) {
-              errors.push(`תאריך לא תקין: ${mapping.excelHeader}`);
-            } else {
-              value = date.toISOString().split('T')[0];
-            }
-          }
-          
-          if (mapping.systemField === 'employee_type' && value) {
-            const validType = employeeTypes.find(type => 
-              type.label === value || type.value === value
-            );
-            if (validType) {
-              value = validType.value;
-            } else {
-              value = 'permanent'; // default
-            }
-          }
+      mappings.forEach(mapping => {
+        if (mapping.systemField && mapping.mappedColumns.length > 0) {
+          // Combine multiple columns into one value
+          const combinedValue = mapping.mappedColumns
+            .map(col => row[col] || '')
+            .filter(val => val !== '')
+            .join(' ')
+            .trim();
 
-          if (mapping.systemField === 'branch_name' && value) {
-            const branch = branches.find(b => b.name === value);
-            if (branch) {
-              employeeData.main_branch_id = branch.id;
-            } else {
-              errors.push(`סניף לא נמצא: ${value}`);
+          if (mapping.isCustomField) {
+            // Handle custom fields
+            customFields[mapping.customFieldName || mapping.systemField] = combinedValue;
+          } else {
+            // Handle system fields
+            let value = combinedValue;
+            
+            // Handle special field types
+            if (mapping.systemField === 'hire_date' && value) {
+              const date = new Date(value);
+              if (isNaN(date.getTime())) {
+                errors.push(`תאריך לא תקין: ${value}`);
+              } else {
+                value = date.toISOString().split('T')[0];
+              }
             }
-          }
+            
+            if (mapping.systemField === 'employee_type' && value) {
+              const validType = employeeTypes.find(type => 
+                type.label === value || type.value === value
+              );
+              if (validType) {
+                value = validType.value;
+              } else {
+                value = 'permanent'; // default
+              }
+            }
 
-          if (mapping.systemField === 'full_name' && value) {
-            // Split full name into first and last name if separate names not provided
-            const nameParts = value.toString().split(' ');
-            if (!employeeData.first_name) {
-              employeeData.first_name = nameParts[0] || '';
+            if (mapping.systemField === 'branch_name' && value) {
+              const branch = branches.find(b => b.name === value);
+              if (branch) {
+                employeeData.main_branch_id = branch.id;
+              } else {
+                errors.push(`סניף לא נמצא: ${value}`);
+              }
             }
-            if (!employeeData.last_name && nameParts.length > 1) {
-              employeeData.last_name = nameParts.slice(1).join(' ');
-            }
-          }
 
-          if (mapping.systemField === 'weekly_hours_required' && value) {
-            const numValue = Number(value);
-            if (!isNaN(numValue)) {
-              employeeData.weekly_hours_required = numValue;
+            if (mapping.systemField === 'full_name' && value) {
+              // Split full name into first and last name if separate names not provided
+              const nameParts = value.toString().split(' ');
+              if (!employeeData.first_name) {
+                employeeData.first_name = nameParts[0] || '';
+              }
+              if (!employeeData.last_name && nameParts.length > 1) {
+                employeeData.last_name = nameParts.slice(1).join(' ');
+              }
+            }
+
+            if (mapping.systemField === 'weekly_hours_required' && value) {
+              const numValue = Number(value);
+              if (!isNaN(numValue)) {
+                employeeData.weekly_hours_required = numValue;
+              }
+            }
+
+            // Set the field value (excluding special cases handled above)
+            if (mapping.systemField !== 'branch_name' && mapping.systemField !== 'full_name') {
+              (employeeData as any)[mapping.systemField] = value;
             }
           }
-
-          // Set the field value (excluding special cases handled above)
-          if (mapping.systemField !== 'branch_name' && mapping.systemField !== 'full_name') {
-            (employeeData as any)[mapping.systemField] = value;
-          }
-        } else if (mapping.isCustomField) {
-          // Handle custom fields
-          customFields[mapping.excelHeader] = row[mapping.excelHeader];
         }
       });
 
@@ -437,195 +389,148 @@ export const EmployeeExcelImporter: React.FC = () => {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Upload className="h-4 w-4" />
-          ייבוא מקובץ Excel
-        </Button>
-      </DialogTrigger>
-      
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>ייבוא עובדים מקובץ Excel</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            ייבוא מקובץ Excel
+          </Button>
+        </DialogTrigger>
+        
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>ייבוא עובדים מקובץ Excel</DialogTitle>
+          </DialogHeader>
 
-        {/* Upload step */}
-        {step === 'upload' && (
-          <div className="space-y-4">
-            <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
-              <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <Label htmlFor="file-upload" className="cursor-pointer">
-                <span className="text-lg font-medium">העלה קובץ Excel</span>
-                <p className="text-sm text-gray-500 mt-2">קבצים נתמכים: .xlsx, .csv</p>
-              </Label>
-              <Input
-                id="file-upload"
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </div>
-            
-            <div className="flex justify-center">
-              <Button variant="outline" onClick={downloadTemplate} className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                הורד תבנית לדוגמה
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Mapping step */}
-        {step === 'mapping' && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">מיפוי שדות</h3>
-            <p className="text-sm text-gray-600">
-              התאם כל עמודה בקובץ Excel לשדה במערכת. שדות שלא יתואמו יישמרו כשדות מותאמים אישית.
-            </p>
-            
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {fieldMappings.map((mapping, index) => (
-                <div key={index} className="flex items-center gap-4 p-3 border rounded-lg">
-                  <div className="w-1/3">
-                    <Label className="font-medium">{mapping.excelHeader}</Label>
-                    <p className="text-xs text-gray-500">
-                      דוגמה: {rawData[0]?.[mapping.excelHeader] || 'אין נתונים'}
-                    </p>
-                  </div>
-                  
-                  <div className="w-1/3">
-                    <Select
-                      value={mapping.systemField}
-                      onValueChange={(value) => updateFieldMapping(index, value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="בחר שדה במערכת" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">שדה מותאם אישית</SelectItem>
-                        {systemFields.map(field => (
-                          <SelectItem key={field.value} value={field.value}>
-                            {field.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="w-1/3">
-                    {mapping.systemField ? (
-                      <Badge variant="outline">שדה מערכת</Badge>
-                    ) : (
-                      <Badge variant="secondary">שדה מותאם</Badge>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep('upload')}>
-                חזור
-              </Button>
-              <Button onClick={generatePreview}>
-                הצג תצוגה מקדימה
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Preview step */}
-        {step === 'preview' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">תצוגה מקדימה</h3>
-              <div className="flex gap-2">
-                <Badge variant="outline">
-                  {previewData.filter(emp => emp.isValid && !emp.isDuplicate).length} תקינים
-                </Badge>
-                <Badge variant="destructive">
-                  {previewData.filter(emp => !emp.isValid).length} שגויים
-                </Badge>
-                <Badge variant="secondary">
-                  {previewData.filter(emp => emp.isDuplicate).length} כפולים
-                </Badge>
+          {/* Upload step */}
+          {step === 'upload' && (
+            <div className="space-y-4">
+              <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <Label htmlFor="file-upload" className="cursor-pointer">
+                  <span className="text-lg font-medium">העלה קובץ Excel</span>
+                  <p className="text-sm text-gray-500 mt-2">קבצים נתמכים: .xlsx, .csv</p>
+                </Label>
+                <Input
+                  id="file-upload"
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </div>
+              
+              <div className="flex justify-center">
+                <Button variant="outline" onClick={downloadTemplate} className="flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  הורד תבנית לדוגמה
+                </Button>
               </div>
             </div>
+          )}
 
-            <div className="max-h-96 overflow-auto border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">סטטוס</TableHead>
-                    <TableHead>שורה</TableHead>
-                    <TableHead>שם</TableHead>
-                    <TableHead>אימייל</TableHead>
-                    <TableHead>טלפון</TableHead>
-                    <TableHead>שדות מותאמים</TableHead>
-                    <TableHead>שגיאות</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {previewData.map((employee) => (
-                    <TableRow key={employee.rowIndex}>
-                      <TableCell>
-                        {employee.isDuplicate ? (
-                          <Badge variant="secondary">כפול</Badge>
-                        ) : employee.isValid ? (
-                          <Check className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <X className="h-4 w-4 text-red-600" />
-                        )}
-                      </TableCell>
-                      <TableCell>{employee.rowIndex}</TableCell>
-                      <TableCell>
-                        {`${employee.data.first_name || ''} ${employee.data.last_name || ''}`.trim()}
-                      </TableCell>
-                      <TableCell>{employee.data.email}</TableCell>
-                      <TableCell>{employee.data.phone}</TableCell>
-                      <TableCell>
-                        {Object.keys(employee.customFields).length > 0 ? (
-                          <Badge variant="outline">
-                            {Object.keys(employee.customFields).length} שדות
-                          </Badge>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {employee.errors.length > 0 && (
-                          <div className="text-red-600 text-xs">
-                            {employee.errors.join(', ')}
-                          </div>
-                        )}
-                        {employee.isDuplicate && (
-                          <div className="text-orange-600 text-xs">
-                            עובד כבר קיים במערכת
-                          </div>
-                        )}
-                      </TableCell>
+          {/* Preview step */}
+          {step === 'preview' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">תצוגה מקדימה</h3>
+                <div className="flex gap-2">
+                  <Badge variant="outline">
+                    {previewData.filter(emp => emp.isValid && !emp.isDuplicate).length} תקינים
+                  </Badge>
+                  <Badge variant="destructive">
+                    {previewData.filter(emp => !emp.isValid).length} שגויים
+                  </Badge>
+                  <Badge variant="secondary">
+                    {previewData.filter(emp => emp.isDuplicate).length} כפולים
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="max-h-96 overflow-auto border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">סטטוס</TableHead>
+                      <TableHead>שורה</TableHead>
+                      <TableHead>שם</TableHead>
+                      <TableHead>אימייל</TableHead>
+                      <TableHead>טלפון</TableHead>
+                      <TableHead>שדות מותאמים</TableHead>
+                      <TableHead>שגיאות</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {previewData.map((employee) => (
+                      <TableRow key={employee.rowIndex}>
+                        <TableCell>
+                          {employee.isDuplicate ? (
+                            <Badge variant="secondary">כפול</Badge>
+                          ) : employee.isValid ? (
+                            <Check className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <X className="h-4 w-4 text-red-600" />
+                          )}
+                        </TableCell>
+                        <TableCell>{employee.rowIndex}</TableCell>
+                        <TableCell>
+                          {`${employee.data.first_name || ''} ${employee.data.last_name || ''}`.trim()}
+                        </TableCell>
+                        <TableCell>{employee.data.email}</TableCell>
+                        <TableCell>{employee.data.phone}</TableCell>
+                        <TableCell>
+                          {Object.keys(employee.customFields).length > 0 ? (
+                            <Badge variant="outline">
+                              {Object.keys(employee.customFields).length} שדות
+                            </Badge>
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {employee.errors.length > 0 && (
+                            <div className="text-red-600 text-xs">
+                              {employee.errors.join(', ')}
+                            </div>
+                          )}
+                          {employee.isDuplicate && (
+                            <div className="text-orange-600 text-xs">
+                              עובד כבר קיים במערכת
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep('mapping')}>
-                חזור למיפוי
-              </Button>
-              <Button 
-                onClick={handleImport} 
-                disabled={isImporting || previewData.filter(emp => emp.isValid && !emp.isDuplicate).length === 0}
-              >
-                {isImporting ? 'מייבא...' : 'ייבא עובדים'}
-              </Button>
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setShowMappingDialog(true)}>
+                  חזור למיפוי
+                </Button>
+                <Button 
+                  onClick={handleImport} 
+                  disabled={isImporting || previewData.filter(emp => emp.isValid && !emp.isDuplicate).length === 0}
+                >
+                  {isImporting ? 'מייבא...' : 'ייבא עובדים'}
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Field Mapping Dialog */}
+      <FieldMappingDialog
+        open={showMappingDialog}
+        onOpenChange={setShowMappingDialog}
+        fileColumns={headers}
+        sampleData={rawData.slice(0, 5)}
+        onConfirm={handleMappingConfirm}
+        systemFields={systemFields}
+      />
+    </>
   );
 };
