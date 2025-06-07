@@ -7,6 +7,7 @@ import CreateBusinessPage from '@/pages/CreateBusinessPage';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { BusinessManagement } from '@/components/admin/BusinessManagement';
 import { AccessRequestsManager } from '@/components/admin/AccessRequestsManager';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 export const AdminRoutes = () => [
   <Route
@@ -32,7 +33,9 @@ export const AdminRoutes = () => [
     path="/admin/businesses"
     element={
       <SuperAdminRoute>
-        <BusinessManagement />
+        <AppLayout>
+          <BusinessManagement />
+        </AppLayout>
       </SuperAdminRoute>
     }
   />,
@@ -41,7 +44,9 @@ export const AdminRoutes = () => [
     path="/admin/access-requests"
     element={
       <SuperAdminRoute>
-        <AccessRequestsManager />
+        <AppLayout>
+          <AccessRequestsManager />
+        </AppLayout>
       </SuperAdminRoute>
     }
   />,
@@ -50,7 +55,9 @@ export const AdminRoutes = () => [
     path="/create-business"
     element={
       <SuperAdminRoute>
-        <CreateBusinessPage />
+        <AppLayout>
+          <CreateBusinessPage />
+        </AppLayout>
       </SuperAdminRoute>
     }
   />
