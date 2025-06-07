@@ -85,14 +85,13 @@ export const UsersManagement: React.FC = () => {
       setIsCreating(true);
       console.log('Creating user with data:', { email, fullName, role });
       
-      // Create user with Supabase Auth
+      // Create user with Supabase Auth - without role in metadata first
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: fullName,
-            role: role  // Pass role in user metadata
+            full_name: fullName
           }
         }
       });
@@ -105,26 +104,49 @@ export const UsersManagement: React.FC = () => {
       console.log('Auth user created:', authData);
 
       if (authData.user) {
-        // Wait a moment for the profile to be created by the trigger
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait for the profile trigger to create the profile
+        console.log('Waiting for profile to be created...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // Then update the role specifically
+        // Now update the profile with the correct role using a direct string
+        console.log('Updating profile with role:', role);
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ 
-            role: role as any,  // Cast to bypass TypeScript enum checking
+            role: role,
             full_name: fullName 
           })
           .eq('id', authData.user.id);
 
         if (profileError) {
           console.error('Profile update error:', profileError);
-          toast({
-            title: 'אזהרה',
-            description: `המשתמש נוצר אבל לא ניתן היה לעדכן את התפקיד: ${profileError.message}`,
-            variant: 'destructive',
-          });
+          // Try to insert if update failed (profile might not exist yet)
+          console.log('Update failed, trying to insert profile...');
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: authData.user.id,
+              email: email,
+              full_name: fullName,
+              role: role
+            });
+
+          if (insertError) {
+            console.error('Profile insert error:', insertError);
+            toast({
+              title: 'אזהרה',
+              description: `המשתמש נוצר אבל לא ניתן היה ליצור פרופיל: ${insertError.message}`,
+              variant: 'destructive',
+            });
+          } else {
+            console.log('Profile inserted successfully');
+            toast({
+              title: 'משתמש נוצר בהצלחה! ✅',
+              description: `המשתמש ${email} נוצר והוקצה התפקיד ${role}`,
+            });
+          }
         } else {
+          console.log('Profile updated successfully');
           toast({
             title: 'משתמש נוצר בהצלחה! ✅',
             description: `המשתמש ${email} נוצר והוקצה התפקיד ${role}`,
