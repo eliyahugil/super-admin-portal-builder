@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -264,7 +263,7 @@ export const UsersManagement: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">תפקיד</Label>
-                  <Select value={role} onValueChange={setRole}>
+                  <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
