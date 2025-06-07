@@ -27,6 +27,7 @@ export const SuperAdminRoutes: React.FC = () => {
           <SuperAdminRoute>
             <AppLayout>
               {/* Business management component */}
+              <div>Business Management Component</div>
             </AppLayout>
           </SuperAdminRoute>
         </ProtectedRoute>
@@ -49,6 +50,7 @@ export const SuperAdminRoutes: React.FC = () => {
           <SuperAdminRoute>
             <AppLayout>
               {/* System config component */}
+              <div>System Configuration Component</div>
             </AppLayout>
           </SuperAdminRoute>
         </ProtectedRoute>
@@ -60,6 +62,7 @@ export const SuperAdminRoutes: React.FC = () => {
           <SuperAdminRoute>
             <AppLayout>
               {/* Global integrations component */}
+              <div>Global Integrations Component</div>
             </AppLayout>
           </SuperAdminRoute>
         </ProtectedRoute>

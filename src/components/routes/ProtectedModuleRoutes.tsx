@@ -15,6 +15,7 @@ export const ProtectedModuleRoutes: React.FC = () => {
           <ProtectedModuleRoute moduleName="employee_management">
             <AppLayout>
               {/* Your employee component here */}
+              <div>Employee Management Component</div>
             </AppLayout>
           </ProtectedModuleRoute>
         </ProtectedRoute>
@@ -26,6 +27,7 @@ export const ProtectedModuleRoutes: React.FC = () => {
           <ProtectedModuleRoute moduleName="shift_management">
             <AppLayout>
               {/* Your shift component here */}
+              <div>Shift Management Component</div>
             </AppLayout>
           </ProtectedModuleRoute>
         </ProtectedRoute>
@@ -37,6 +39,7 @@ export const ProtectedModuleRoutes: React.FC = () => {
           <ProtectedModuleRoute moduleName="salary_management">
             <AppLayout>
               {/* Your salary component here */}
+              <div>Salary Management Component</div>
             </AppLayout>
           </ProtectedModuleRoute>
         </ProtectedRoute>
@@ -48,6 +51,7 @@ export const ProtectedModuleRoutes: React.FC = () => {
           <ProtectedModuleRoute moduleName="employee_documents">
             <AppLayout>
               {/* Your documents component here */}
+              <div>Employee Documents Component</div>
             </AppLayout>
           </ProtectedModuleRoute>
         </ProtectedRoute>
@@ -59,6 +63,7 @@ export const ProtectedModuleRoutes: React.FC = () => {
           <ProtectedModuleRoute moduleName="branch_management">
             <AppLayout>
               {/* Your branch component here */}
+              <div>Branch Management Component</div>
             </AppLayout>
           </ProtectedModuleRoute>
         </ProtectedRoute>
