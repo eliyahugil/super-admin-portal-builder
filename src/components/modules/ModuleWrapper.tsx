@@ -7,6 +7,7 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { BusinessSettings } from './settings/BusinessSettings';
 import { BusinessSettingsMain } from './settings/BusinessSettingsMain';
 import { BusinessProfileEdit } from './settings/BusinessProfileEdit';
+import { UsersManagement } from './settings/UsersManagement';
 import { EmployeeManagement } from './employees/EmployeeManagement';
 import { ShiftManagement } from './employees/ShiftManagement';
 import { ModuleManagement } from './ModuleManagement';
@@ -14,6 +15,7 @@ import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { BusinessManagement } from '@/components/business/BusinessManagement';
 import { AttendanceManagement } from './employees/AttendanceManagement';
 import { EmployeeProfilePage } from './employees/EmployeeProfilePage';
+import { BusinessModulesPage } from './settings/BusinessModulesPage';
 
 export const ModuleWrapper: React.FC = () => {
   const { businessId, moduleRoute, subModule, employeeId } = useParams();
@@ -85,7 +87,9 @@ export const ModuleWrapper: React.FC = () => {
     case 'settings/profile':
       return <BusinessProfileEdit />;
     case 'settings/users':
-      return <div>User management component</div>;
+      return <UsersManagement />;
+    case 'settings/modules':
+      return <BusinessModulesPage />;
     case 'settings/permissions':
       return <div>Permissions component</div>;
     case 'employees':

@@ -3,9 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Layers } from 'lucide-react';
+import { Settings, Layers, Check, X } from 'lucide-react';
 import { useModuleConfig } from '@/hooks/useModuleConfig';
 import { useBusiness } from '@/hooks/useBusiness';
+import { BackButton } from '@/components/ui/BackButton';
 
 const BusinessModulesPage: React.FC = () => {
   const { businessId } = useBusiness();
@@ -16,12 +17,18 @@ const BusinessModulesPage: React.FC = () => {
     toggleModuleForBusiness,
   } = useModuleConfig();
 
+  console.log('BusinessModulesPage - businessId:', businessId);
+  console.log('BusinessModulesPage - moduleConfigs:', moduleConfigs);
+  console.log('BusinessModulesPage - businessModuleConfigs:', businessModuleConfigs);
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">טוען מודולים...</p>
+      <div className="max-w-4xl mx-auto p-6" dir="rtl">
+        <div className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">טוען מודולים...</p>
+          </div>
         </div>
       </div>
     );
@@ -31,6 +38,8 @@ const BusinessModulesPage: React.FC = () => {
   const availableModules = moduleConfigs?.filter(module => 
     module.enabled_by_superadmin && !module.is_core_module
   ) || [];
+
+  console.log('BusinessModulesPage - availableModules:', availableModules);
 
   // Check if module is enabled for this business
   const isModuleEnabled = (moduleKey: string) => {
@@ -47,6 +56,7 @@ const BusinessModulesPage: React.FC = () => {
   };
 
   const handleToggleModule = async (moduleKey: string, enabled: boolean) => {
+    console.log('Toggling module:', moduleKey, 'to:', enabled);
     await toggleModuleForBusiness(moduleKey, enabled);
   };
 
@@ -63,9 +73,16 @@ const BusinessModulesPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6" dir="rtl">
+      <div className="mb-4">
+        <BackButton to={`/business/${businessId}/modules/settings`} />
+      </div>
+      
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">ניהול מודולים לעסק</h1>
         <p className="text-gray-600">בחר אילו מודולים יהיו פעילים עבור העסק שלך</p>
+        {businessId && (
+          <p className="text-sm text-gray-500 mt-1">מזהה עסק: {businessId}</p>
+        )}
       </div>
 
       {/* Summary Card */}
@@ -107,6 +124,7 @@ const BusinessModulesPage: React.FC = () => {
             <div className="text-center py-8">
               <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">אין מודולים זמינים כרגע</p>
+              <p className="text-sm text-gray-400 mt-2">אנא פנה למנהל המערכת</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -121,8 +139,13 @@ const BusinessModulesPage: React.FC = () => {
                     <div className="flex items-center gap-4 flex-1">
                       <span className="text-2xl">{module.icon}</span>
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">
+                        <h3 className="font-medium text-gray-900 flex items-center gap-2">
                           {module.module_name}
+                          {enabled ? (
+                            <Check className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <X className="h-4 w-4 text-red-600" />
+                          )}
                         </h3>
                         {module.description && (
                           <p className="text-sm text-gray-600 mt-1">
