@@ -29,15 +29,17 @@ export const UsersManagement: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   
   // Form state - properly typed role
-  const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('habulgari@gmail.com');
+  const [fullName, setFullName] = useState('המשתמש החדש');
   const [role, setRole] = useState<UserRole>('business_user');
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState('123456');
 
   console.log('UsersManagement - businessId:', businessId);
 
   useEffect(() => {
     fetchUsers();
+    // Auto-open the create form with pre-filled data
+    setShowCreateForm(true);
   }, []);
 
   const fetchUsers = async () => {
@@ -220,7 +222,7 @@ export const UsersManagement: React.FC = () => {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>יצירת משתמש חדש</CardTitle>
-            <CardDescription>הוסף משתמש חדש למערכת</CardDescription>
+            <CardDescription>הוסף משתמש חדש למערכת (טופס מולא מראש עבור habulgari@gmail.com)</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreateUser} className="space-y-4">
