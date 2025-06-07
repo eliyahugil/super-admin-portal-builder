@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Building, Users, Settings, Eye, Plus, Search } from 'lucide-react';
 import { useBusinessesData } from '@/hooks/useRealData';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/components/auth/AuthContext';
 
 interface Business {
   id: string;
@@ -26,31 +27,68 @@ export const BusinessManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { profile } = useAuth();
+
+  console.log('BusinessManagement - User profile:', {
+    profile,
+    role: profile?.role,
+    isSuperAdmin: profile?.role === 'super_admin'
+  });
 
   // Use the secure hook that automatically filters by business permissions
   const { data: businesses = [], isLoading: loading, error } = useBusinessesData();
+
+  console.log('BusinessManagement - Businesses data:', {
+    businessesCount: businesses.length,
+    businesses: businesses.map(b => ({ id: b.id, name: b.name })),
+    loading,
+    error
+  });
 
   // Enrich businesses with employee count
   const { data: enrichedBusinesses = [] } = useQuery({
     queryKey: ['enriched-businesses', businesses],
     queryFn: async () => {
-      if (!businesses.length) return [];
+      if (!businesses.length) {
+        console.log('No businesses to enrich');
+        return [];
+      }
+
+      console.log('Enriching businesses with employee count:', businesses.length);
 
       const enriched = await Promise.all(
         businesses.map(async (business) => {
-          const { count } = await supabase
-            .from('employees')
-            .select('*', { count: 'exact', head: true })
-            .eq('business_id', business.id)
-            .eq('is_active', true);
+          try {
+            const { count, error } = await supabase
+              .from('employees')
+              .select('*', { count: 'exact', head: true })
+              .eq('business_id', business.id)
+              .eq('is_active', true);
 
-          return {
-            ...business,
-            employee_count: count || 0,
-          };
+            if (error) {
+              console.error(`Error counting employees for business ${business.id}:`, error);
+              return {
+                ...business,
+                employee_count: 0,
+              };
+            }
+
+            console.log(`Business ${business.name} has ${count} employees`);
+            return {
+              ...business,
+              employee_count: count || 0,
+            };
+          } catch (err) {
+            console.error(`Failed to fetch employee count for business ${business.id}:`, err);
+            return {
+              ...business,
+              employee_count: 0,
+            };
+          }
         })
       );
 
+      console.log('Enriched businesses:', enriched);
       return enriched;
     },
     enabled: !!businesses.length,
@@ -62,19 +100,29 @@ export const BusinessManagement: React.FC = () => {
     business.admin_email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  console.log('BusinessManagement - Filtered businesses:', {
+    searchTerm,
+    totalBusinesses: enrichedBusinesses.length,
+    filteredCount: filteredBusinesses.length
+  });
+
   const handleViewBusiness = (businessId: string) => {
+    console.log('Navigating to business dashboard:', businessId);
     navigate(`/business/${businessId}/dashboard`);
   };
 
   const handleManageBusiness = (businessId: string) => {
+    console.log('Navigating to business settings:', businessId);
     navigate(`/business/${businessId}/modules/settings`);
   };
 
   const handleCreateBusiness = () => {
+    console.log('Navigating to create business');
     navigate('/admin/businesses/create');
   };
 
   if (loading) {
+    console.log('BusinessManagement - Still loading...');
     return (
       <div className="container mx-auto px-4 py-8" dir="rtl">
         <div className="flex items-center justify-center min-h-64">
@@ -85,11 +133,26 @@ export const BusinessManagement: React.FC = () => {
   }
 
   if (error) {
+    console.error('BusinessManagement - Error loading businesses:', error);
     return (
       <div className="container mx-auto px-4 py-8" dir="rtl">
         <div className="text-center py-8">
           <h3 className="text-lg font-medium text-gray-900 mb-2">שגיאה בטעינת העסקים</h3>
-          <p className="text-gray-600">אנא נסה לרענן את הדף</p>
+          <p className="text-gray-600 mb-4">אנא נסה לרענן את הדף</p>
+          <p className="text-sm text-red-600">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user is super admin
+  if (profile?.role !== 'super_admin') {
+    console.log('BusinessManagement - User is not super admin');
+    return (
+      <div className="container mx-auto px-4 py-8" dir="rtl">
+        <div className="text-center py-8">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">אין הרשאה</h3>
+          <p className="text-gray-600">אין לך הרשאות מנהל ראשי</p>
         </div>
       </div>
     );
@@ -105,6 +168,9 @@ export const BusinessManagement: React.FC = () => {
             ניהול עסקים
           </h1>
           <p className="text-gray-600 mt-2">נהל את כל העסקים במערכת</p>
+          <p className="text-sm text-blue-600 mt-1">
+            נמצאו {businesses.length} עסקים במערכת
+          </p>
         </div>
         
         <Button onClick={handleCreateBusiness} className="flex items-center gap-2">
@@ -209,6 +275,7 @@ export const BusinessManagement: React.FC = () => {
                             <p>📞 {business.contact_phone}</p>
                           )}
                           <p>👥 {business.employee_count || 0} עובדים</p>
+                          <p className="text-xs text-gray-400">ID: {business.id}</p>
                         </div>
                       </div>
                       <Badge variant={business.is_active ? 'default' : 'secondary'}>

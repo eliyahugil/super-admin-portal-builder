@@ -29,7 +29,13 @@ export function useRealData<T = any>({
   return useQuery({
     queryKey,
     queryFn: async (): Promise<T[]> => {
-      console.log(`Fetching data from ${tableName}`, { filters, businessId, isSuperAdmin: profile?.role === 'super_admin' });
+      console.log(`useRealData - Fetching from ${tableName}`, { 
+        filters, 
+        businessId, 
+        isSuperAdmin: profile?.role === 'super_admin',
+        enforceBusinessFilter,
+        userProfile: profile?.email
+      });
       
       // Create a more flexible query builder
       let query = supabase.from(tableName as any).select(select);
@@ -38,6 +44,7 @@ export function useRealData<T = any>({
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           query = query.eq(key, value);
+          console.log(`useRealData - Applied filter: ${key} = ${value}`);
         }
       });
       
@@ -46,7 +53,7 @@ export function useRealData<T = any>({
         // For now, simply apply business_id filter if the table likely has it
         // This is a simpler approach than checking schema
         if (tableName !== 'businesses' && tableName !== 'modules_config' && tableName !== 'supported_integrations') {
-          console.log(`Adding business filter for ${tableName}: ${businessId}`);
+          console.log(`useRealData - Adding business filter for ${tableName}: ${businessId}`);
           query = query.eq('business_id', businessId);
         }
       }
@@ -54,16 +61,17 @@ export function useRealData<T = any>({
       // Apply ordering if specified
       if (orderBy) {
         query = query.order(orderBy.column, { ascending: orderBy.ascending });
+        console.log(`useRealData - Applied ordering: ${orderBy.column} ${orderBy.ascending ? 'ASC' : 'DESC'}`);
       }
       
       const { data, error } = await query;
       
       if (error) {
-        console.error(`Error fetching ${tableName}:`, error);
+        console.error(`useRealData - Error fetching ${tableName}:`, error);
         throw error;
       }
       
-      console.log(`Successfully fetched ${data?.length || 0} records from ${tableName}`);
+      console.log(`useRealData - Successfully fetched ${data?.length || 0} records from ${tableName}`, data);
       return (data as T[]) || [];
     },
     enabled: enabled && !!profile,
@@ -140,6 +148,13 @@ export function useBusinessIntegrationsData() {
 export function useBusinessesData() {
   const { profile } = useAuth();
   const isSuperAdmin = profile?.role === 'super_admin';
+  
+  console.log('useBusinessesData - Called with profile:', {
+    userEmail: profile?.email,
+    userRole: profile?.role,
+    isSuperAdmin,
+    userId: profile?.id
+  });
   
   return useRealData<BusinessType>({
     queryKey: ['businesses'],

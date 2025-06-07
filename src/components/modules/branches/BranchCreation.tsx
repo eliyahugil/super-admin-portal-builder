@@ -10,29 +10,60 @@ import { Switch } from '@/components/ui/switch';
 import { Building, MapPin, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useBusiness } from '@/hooks/useBusiness';
 
 export const BranchCreation: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
-    gps_coordinates: '',
+    latitude: '',
+    longitude: '',
     gps_radius: 100,
     is_active: true,
-    description: ''
   });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { businessId, isSuperAdmin } = useBusiness();
+
+  console.log('BranchCreation - Current state:', {
+    businessId,
+    isSuperAdmin,
+    formData
+  });
 
   const createBranchMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      console.log('Creating branch with data:', data);
+      
+      if (!businessId) {
+        throw new Error('Business ID is required to create a branch');
+      }
+
+      const branchData = {
+        business_id: businessId,
+        name: data.name,
+        address: data.address || null,
+        latitude: data.latitude ? parseFloat(data.latitude) : null,
+        longitude: data.longitude ? parseFloat(data.longitude) : null,
+        gps_radius: data.gps_radius,
+        is_active: data.is_active,
+      };
+
+      console.log('Inserting branch data:', branchData);
+
       const { data: result, error } = await supabase
         .from('branches')
-        .insert([data])
+        .insert([branchData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating branch:', error);
+        throw error;
+      }
+      
+      console.log('Branch created successfully:', result);
       return result;
     },
     onSuccess: () => {
@@ -44,16 +75,17 @@ export const BranchCreation: React.FC = () => {
       setFormData({
         name: '',
         address: '',
-        gps_coordinates: '',
+        latitude: '',
+        longitude: '',
         gps_radius: 100,
         is_active: true,
-        description: ''
       });
     },
     onError: (error) => {
+      console.error('Branch creation failed:', error);
       toast({
         title: 'שגיאה',
-        description: 'אירעה שגיאה ביצירת הסניף',
+        description: error instanceof Error ? error.message : 'אירעה שגיאה ביצירת הסניף',
         variant: 'destructive',
       });
     },
@@ -61,14 +93,45 @@ export const BranchCreation: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.name.trim()) {
+      toast({
+        title: 'שגיאה',
+        description: 'שם הסניף הוא שדה חובה',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!businessId) {
+      toast({
+        title: 'שגיאה',
+        description: 'לא נמצא מזהה עסק. אנא נסה שוב.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     createBranchMutation.mutate(formData);
   };
+
+  if (!businessId && !isSuperAdmin) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center" dir="rtl">
+        <h2 className="text-xl font-semibold mb-4">אין גישה</h2>
+        <p className="text-gray-600">אינך משויך לעסק כלשהו</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">יצירת סניף חדש</h1>
         <p className="text-gray-600">הוסף סניף חדש לעסק</p>
+        {businessId && (
+          <p className="text-sm text-blue-600 mt-2">עסק נוכחי: {businessId}</p>
+        )}
       </div>
 
       <Card className="max-w-2xl">
@@ -95,11 +158,37 @@ export const BranchCreation: React.FC = () => {
               <Label htmlFor="address">כתובת</Label>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-gray-500" />
-                <Input
+                <Textarea
                   id="address"
                   value={formData.address}
                   onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                   placeholder="כתובת הסניף"
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="latitude">קו רוחב</Label>
+                <Input
+                  id="latitude"
+                  type="number"
+                  step="any"
+                  value={formData.latitude}
+                  onChange={(e) => setFormData(prev => ({ ...prev, latitude: e.target.value }))}
+                  placeholder="31.7683"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="longitude">קו אורך</Label>
+                <Input
+                  id="longitude"
+                  type="number"
+                  step="any"
+                  value={formData.longitude}
+                  onChange={(e) => setFormData(prev => ({ ...prev, longitude: e.target.value }))}
+                  placeholder="35.2137"
                 />
               </div>
             </div>
@@ -114,17 +203,6 @@ export const BranchCreation: React.FC = () => {
                 placeholder="100"
                 min="10"
                 max="1000"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">תיאור</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="תיאור הסניף"
-                rows={3}
               />
             </div>
 
