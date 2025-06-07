@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EmployeeImportUploadStep } from './steps/EmployeeImportUploadStep';
-import { EmployeeImportPreviewStep } from './steps/EmployeeImportPreviewStep';
+import { EmployeeImportPreviewStep } from './EmployeeImportPreviewStep';
 import { EmployeeImportSummary } from './steps/EmployeeImportSummary';
 import { useEmployeeImport, ImportStep } from '@/hooks/useEmployeeImport';
 
@@ -20,11 +20,14 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
     previewData,
     isImporting,
     importResult,
+    validationErrors,
+    duplicateErrors,
     handleFileUpload,
     handleImport,
     downloadTemplate,
     setShowMappingDialog,
     resetForm,
+    getValidationSummary,
   } = useEmployeeImport();
 
   const renderStepContent = () => {
@@ -41,6 +44,9 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
         return (
           <EmployeeImportPreviewStep
             previewData={previewData}
+            validationErrors={validationErrors}
+            duplicateErrors={duplicateErrors}
+            summary={getValidationSummary()}
             isImporting={isImporting}
             onBackToMapping={() => setShowMappingDialog(true)}
             onConfirmImport={async () => {
