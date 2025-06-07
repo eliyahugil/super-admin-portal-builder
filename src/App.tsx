@@ -44,7 +44,7 @@ function App() {
               element={React.createElement(React.lazy(() => import('@/components/modules/shifts/ShiftSubmissionSuccess').then(m => ({ default: m.ShiftSubmissionSuccess }))))} 
             />
             
-            {/* Auth route */}
+            {/* Auth route - MUST be before protected routes */}
             <Route path="/auth" element={<AuthForm />} />
             
             {/* Protected main routes */}
