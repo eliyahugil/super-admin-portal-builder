@@ -6,24 +6,46 @@ export interface ImportResult {
   success: boolean;
   importedCount: number;
   errorCount: number;
+  skippedCount?: number;
+  duplicateCount?: number;
   message: string;
+  errors?: Array<{
+    row: number;
+    employee: string;
+    error: string;
+  }>;
+  importedEmployees?: Array<{
+    name: string;
+    email?: string;
+    branch?: string;
+  }>;
 }
 
 export class EmployeeImportDatabase {
   static async importEmployees(previewData: PreviewEmployee[]): Promise<ImportResult> {
     try {
       const validEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate);
+      const duplicateEmployees = previewData.filter(emp => emp.isDuplicate);
+      const errorEmployees = previewData.filter(emp => !emp.isValid);
 
       if (validEmployees.length === 0) {
         return {
           success: false,
           importedCount: 0,
-          errorCount: previewData.length,
-          message: 'כל העובדים נפסלו או כפולים'
+          errorCount: errorEmployees.length,
+          duplicateCount: duplicateEmployees.length,
+          message: validEmployees.length === 0 && duplicateEmployees.length > 0 
+            ? 'כל העובדים כבר קיימים במערכת' 
+            : 'לא נמצאו עובדים תקינים לייבוא',
+          errors: errorEmployees.map(emp => ({
+            row: emp.rowIndex,
+            employee: `${emp.data.first_name || ''} ${emp.data.last_name || ''}`.trim(),
+            error: emp.errors.join(', ')
+          }))
         };
       }
 
-      // Insert employees
+      // Prepare employees for bulk insert
       const employeesToInsert = validEmployees.map(emp => ({
         business_id: emp.data.business_id,
         first_name: emp.data.first_name || '',
@@ -41,16 +63,17 @@ export class EmployeeImportDatabase {
         is_active: true
       }));
 
+      // Bulk insert employees
       const { data: insertedEmployees, error: employeeError } = await supabase
         .from('employees')
         .insert(employeesToInsert)
-        .select();
+        .select('id, first_name, last_name, email, main_branch_id');
 
       if (employeeError) {
         throw new Error(`שגיאה בייבוא עובדים: ${employeeError.message}`);
       }
 
-      // Insert custom fields for employees that have them
+      // Prepare custom field values for bulk insert
       const customFieldValues: any[] = [];
       validEmployees.forEach((emp, index) => {
         const employeeId = insertedEmployees?.[index]?.id;
@@ -67,6 +90,7 @@ export class EmployeeImportDatabase {
         }
       });
 
+      // Bulk insert custom field values if any exist
       if (customFieldValues.length > 0) {
         const { error: customFieldError } = await supabase
           .from('custom_field_values')
@@ -77,11 +101,44 @@ export class EmployeeImportDatabase {
         }
       }
 
+      // Get branch names for the imported employees
+      const branchIds = insertedEmployees?.map(emp => emp.main_branch_id).filter(Boolean) || [];
+      let branchNames: Record<string, string> = {};
+      
+      if (branchIds.length > 0) {
+        const { data: branches } = await supabase
+          .from('branches')
+          .select('id, name')
+          .in('id', branchIds);
+        
+        branchNames = branches?.reduce((acc, branch) => {
+          acc[branch.id] = branch.name;
+          return acc;
+        }, {} as Record<string, string>) || {};
+      }
+
+      // Prepare imported employees summary
+      const importedEmployeesData = insertedEmployees?.map(emp => ({
+        name: `${emp.first_name} ${emp.last_name}`.trim(),
+        email: emp.email,
+        branch: emp.main_branch_id ? branchNames[emp.main_branch_id] : undefined
+      })) || [];
+
+      // Prepare error details
+      const errorDetails = errorEmployees.map(emp => ({
+        row: emp.rowIndex,
+        employee: `${emp.data.first_name || ''} ${emp.data.last_name || ''}`.trim(),
+        error: emp.errors.join(', ')
+      }));
+
       return {
         success: true,
         importedCount: employeesToInsert.length,
-        errorCount: previewData.length - employeesToInsert.length,
-        message: `${employeesToInsert.length} עובדים נוספו למערכת בהצלחה`
+        errorCount: errorEmployees.length,
+        duplicateCount: duplicateEmployees.length,
+        message: `${employeesToInsert.length} עובדים נוספו למערכת בהצלחה${duplicateEmployees.length > 0 ? `, ${duplicateEmployees.length} כפילויות דולגו` : ''}`,
+        errors: errorDetails.length > 0 ? errorDetails : undefined,
+        importedEmployees: importedEmployeesData
       };
 
     } catch (error) {
@@ -89,7 +146,12 @@ export class EmployeeImportDatabase {
         success: false,
         importedCount: 0,
         errorCount: previewData.length,
-        message: error instanceof Error ? error.message : 'שגיאה לא צפויה'
+        message: error instanceof Error ? error.message : 'שגיאה לא צפויה בייבוא',
+        errors: [{
+          row: 0,
+          employee: 'כלל הקובץ',
+          error: error instanceof Error ? error.message : 'שגיאה לא צפויה'
+        }]
       };
     }
   }

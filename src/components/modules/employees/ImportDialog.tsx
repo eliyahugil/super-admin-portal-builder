@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EmployeeImportUploadStep } from './steps/EmployeeImportUploadStep';
-import { EmployeeImportPreviewStep } from './EmployeeImportPreviewStep';
+import { EmployeeValidationResults } from './EmployeeValidationResults';
 import { EmployeeImportSummary } from './steps/EmployeeImportSummary';
 import { useEmployeeImport, ImportStep } from '@/hooks/useEmployeeImport';
 
@@ -42,16 +42,13 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
       
       case 'preview':
         return (
-          <EmployeeImportPreviewStep
-            previewData={previewData}
+          <EmployeeValidationResults
             validationErrors={validationErrors}
             duplicateErrors={duplicateErrors}
             summary={getValidationSummary()}
-            isImporting={isImporting}
+            onContinueImport={handleImport}
             onBackToMapping={() => setShowMappingDialog(true)}
-            onConfirmImport={async () => {
-              await handleImport();
-            }}
+            isImporting={isImporting}
           />
         );
       
