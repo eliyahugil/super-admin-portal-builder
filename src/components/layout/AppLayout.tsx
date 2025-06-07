@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MainSidebar } from './MainSidebar';
+import { DynamicSidebar } from './DynamicSidebar';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Header } from './Header';
 
@@ -12,7 +12,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <MainSidebar />
+        <DynamicSidebar />
         
         <SidebarInset className="flex-1">
           <Header />
