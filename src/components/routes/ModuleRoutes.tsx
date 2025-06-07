@@ -11,6 +11,7 @@ import { BusinessMultiManagement } from '@/components/modules/settings/BusinessM
 
 export const ModuleRoutes = () => (
   <>
+    {/* Base module routes */}
     <Route path="/modules/:moduleRoute" element={
       <ProtectedRoute>
         <AppLayout>
@@ -19,6 +20,7 @@ export const ModuleRoutes = () => (
       </ProtectedRoute>
     } />
     
+    {/* Sub-module routes */}
     <Route path="/modules/:moduleRoute/:subModule" element={
       <ProtectedRoute>
         <AppLayout>
@@ -27,6 +29,7 @@ export const ModuleRoutes = () => (
       </ProtectedRoute>
     } />
 
+    {/* Deep sub-module routes with IDs */}
     <Route path="/modules/:moduleRoute/:subModule/:employeeId" element={
       <ProtectedRoute>
         <AppLayout>
@@ -35,6 +38,7 @@ export const ModuleRoutes = () => (
       </ProtectedRoute>
     } />
 
+    {/* Specific employee profile route */}
     <Route path="/modules/employees/profile/:employeeId" element={
       <ProtectedRoute>
         <AppLayout>
@@ -43,6 +47,32 @@ export const ModuleRoutes = () => (
       </ProtectedRoute>
     } />
 
+    {/* Business-specific module routes */}
+    <Route path="/business/:businessId/modules/:moduleRoute" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ModuleWrapper />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/business/:businessId/modules/:moduleRoute/:subModule" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ModuleWrapper />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+
+    <Route path="/business/:businessId/modules/:moduleRoute/:subModule/:employeeId" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ModuleWrapper />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+
+    {/* Specific settings routes */}
     <Route path="/modules/settings/modules" element={
       <ProtectedRoute>
         <AppLayout>
