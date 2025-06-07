@@ -83,6 +83,7 @@ export const UsersManagement: React.FC = () => {
 
     try {
       setIsCreating(true);
+      console.log('Creating user with data:', { email, fullName, role });
       
       // Create user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -91,6 +92,7 @@ export const UsersManagement: React.FC = () => {
         options: {
           data: {
             full_name: fullName,
+            role: role  // Pass role in user metadata
           }
         }
       });
@@ -100,25 +102,34 @@ export const UsersManagement: React.FC = () => {
         throw authError;
       }
 
+      console.log('Auth user created:', authData);
+
       if (authData.user) {
-        // Update the user's role in profiles table
+        // Wait a moment for the profile to be created by the trigger
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Then update the role specifically
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ 
-            role: role,
+            role: role as any,  // Cast to bypass TypeScript enum checking
             full_name: fullName 
           })
           .eq('id', authData.user.id);
 
         if (profileError) {
-          console.error('Profile error:', profileError);
-          throw profileError;
+          console.error('Profile update error:', profileError);
+          toast({
+            title: 'אזהרה',
+            description: `המשתמש נוצר אבל לא ניתן היה לעדכן את התפקיד: ${profileError.message}`,
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'משתמש נוצר בהצלחה! ✅',
+            description: `המשתמש ${email} נוצר והוקצה התפקיד ${role}`,
+          });
         }
-
-        toast({
-          title: 'משתמש נוצר בהצלחה! ✅',
-          description: `המשתמש ${email} נוצר והוקצה התפקיד ${role}`,
-        });
 
         // Reset form
         setEmail('');
