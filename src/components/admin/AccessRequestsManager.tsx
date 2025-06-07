@@ -11,10 +11,10 @@ import { CheckCircle, XCircle, Clock, UserPlus, Building2 } from 'lucide-react';
 interface AccessRequest {
   id: string;
   user_id: string;
-  requested_business_id: string;
+  requested_business_id: string | null;
   requested_role: string;
-  request_reason?: string;
-  status: 'pending' | 'approved' | 'rejected';
+  request_reason?: string | null;
+  status: string; // Using string to match database type
   created_at: string;
   user_email?: string;
   user_full_name?: string;
@@ -32,8 +32,8 @@ export const AccessRequestsManager: React.FC = () => {
         .from('user_access_requests')
         .select(`
           *,
-          user_email:profiles!user_access_requests_user_id_fkey(email, full_name),
-          business_name:businesses!user_access_requests_requested_business_id_fkey(name)
+          profiles!user_access_requests_user_id_fkey(email, full_name),
+          businesses!user_access_requests_requested_business_id_fkey(name)
         `)
         .order('created_at', { ascending: false });
 
@@ -41,9 +41,9 @@ export const AccessRequestsManager: React.FC = () => {
       
       return data?.map(request => ({
         ...request,
-        user_email: request.user_email?.email,
-        user_full_name: request.user_email?.full_name,
-        business_name: request.business_name?.name
+        user_email: request.profiles?.email,
+        user_full_name: request.profiles?.full_name,
+        business_name: request.businesses?.name
       })) || [];
     },
   });
@@ -85,12 +85,12 @@ export const AccessRequestsManager: React.FC = () => {
           console.warn('Error creating user_business relationship:', businessError);
         }
 
-        // Update user profile with business_id
+        // Update user profile with business_id and role
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ 
             business_id: request.requested_business_id,
-            role: request.requested_role
+            role: request.requested_role as 'super_admin' | 'business_admin' | 'business_user'
           })
           .eq('id', request.user_id);
 

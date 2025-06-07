@@ -3,7 +3,7 @@ import React from 'react';
 import { Route } from 'react-router-dom';
 import { SuperAdminRoute } from '@/components/SuperAdminRoute';
 import { Dashboard } from '@/components/dashboard/Dashboard';
-import { CreateBusinessPage } from '@/pages/CreateBusinessPage';
+import CreateBusinessPage from '@/pages/CreateBusinessPage';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { BusinessManagement } from '@/components/admin/BusinessManagement';
 import { AccessRequestsManager } from '@/components/admin/AccessRequestsManager';
