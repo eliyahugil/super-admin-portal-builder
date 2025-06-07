@@ -9,9 +9,9 @@ import { CreateBusinessPage } from '@/components/admin/CreateBusinessPage';
 export const AdminRoutes: React.FC = () => {
   return (
     <>
-      {/* Admin routes */}
+      {/* Admin routes - restricted to super_admin only */}
       <Route path="/admin" element={
-        <ProtectedRoute>
+        <ProtectedRoute allowedRoles={['super_admin']}>
           <AppLayout>
             <ModuleWrapper />
           </AppLayout>
@@ -19,7 +19,7 @@ export const AdminRoutes: React.FC = () => {
       } />
 
       <Route path="/admin/:moduleRoute" element={
-        <ProtectedRoute>
+        <ProtectedRoute allowedRoles={['super_admin']}>
           <AppLayout>
             <ModuleWrapper />
           </AppLayout>
@@ -27,7 +27,7 @@ export const AdminRoutes: React.FC = () => {
       } />
 
       <Route path="/admin/businesses/create" element={
-        <ProtectedRoute>
+        <ProtectedRoute allowedRoles={['super_admin']}>
           <AppLayout>
             <CreateBusinessPage />
           </AppLayout>

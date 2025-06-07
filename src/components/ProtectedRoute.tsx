@@ -5,16 +5,21 @@ import { useAuth } from '@/components/auth/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  allowedRoles?: string[];
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  allowedRoles 
+}) => {
   const { user, profile, loading } = useAuth();
 
   console.log('ProtectedRoute - Current state:', {
     hasUser: !!user,
     hasProfile: !!profile,
     profileRole: profile?.role,
-    loading
+    loading,
+    allowedRoles
   });
 
   if (loading) {
@@ -34,6 +39,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  console.log('ProtectedRoute - User authenticated, rendering children');
+  // Check role-based access if allowedRoles is provided
+  if (allowedRoles && allowedRoles.length > 0) {
+    const hasRequiredRole = allowedRoles.includes(profile.role);
+    if (!hasRequiredRole) {
+      console.log('ProtectedRoute - User does not have required role, redirecting to /not-authorized');
+      return <Navigate to="/not-authorized" replace />;
+    }
+  }
+
+  console.log('ProtectedRoute - User authenticated and authorized, rendering children');
   return <>{children}</>;
 };

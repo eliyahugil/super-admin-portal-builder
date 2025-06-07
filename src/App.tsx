@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/AuthContext';
 import NotFound from '@/pages/NotFound';
+import NotAuthorized from '@/pages/NotAuthorized';
 import { PublicRoutes } from '@/components/routes/PublicRoutes';
 import { MainRoutes } from '@/components/routes/MainRoutes';
 import { BusinessRoutes } from '@/components/routes/BusinessRoutes';
@@ -25,6 +26,9 @@ function App() {
             <BusinessRoutes />
             <ModuleRoutes />
             <AdminRoutes />
+            
+            {/* Not authorized route */}
+            <Route path="/not-authorized" element={<NotAuthorized />} />
             
             {/* Catch all route */}
             <Route path="*" element={<NotFound />} />
