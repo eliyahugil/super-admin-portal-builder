@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,29 +18,35 @@ export const AuthForm: React.FC = () => {
   const { signIn, signUp, user, profile, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Redirect authenticated users based on their role
+  // Only redirect if we have both user and profile, and we're not already on a redirect path
   useEffect(() => {
-    console.log('AuthForm - Auth state changed:', { 
+    console.log('AuthForm - useEffect triggered:', { 
       user: user?.email, 
       profile: profile?.role, 
-      authLoading 
+      authLoading,
+      currentPath: location.pathname
     });
     
-    if (!authLoading && user && profile) {
-      console.log('AuthForm - User authenticated, redirecting based on role...');
+    // Don't redirect if still loading or if we don't have complete auth data
+    if (authLoading || !user || !profile) {
+      return;
+    }
+
+    // Prevent infinite redirects by checking current path
+    if (location.pathname === '/auth') {
+      console.log('AuthForm - User authenticated, redirecting from auth page');
       
       if (profile.role === 'super_admin') {
         console.log('AuthForm - Redirecting super admin to /admin');
         navigate('/admin', { replace: true });
       } else {
-        // For regular users, redirect to business selector or first business
-        console.log('AuthForm - Redirecting regular user to business management');
-        // We'll redirect to a business selector page if they have multiple businesses
+        console.log('AuthForm - Redirecting regular user to /modules/employees');
         navigate('/modules/employees', { replace: true });
       }
     }
-  }, [user, profile, authLoading, navigate]);
+  }, [user, profile, authLoading, navigate, location.pathname]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,9 +77,6 @@ export const AuthForm: React.FC = () => {
           title: 'הרשמה בוצעה בהצלחה',
           description: 'אנא בדוק את המייל שלך לאישור החשבון',
         });
-      } else {
-        console.log('AuthForm - Login successful, waiting for profile...');
-        // Don't show success toast for login, let the redirect handle it
       }
     } catch (error) {
       console.error('AuthForm - Exception:', error);
@@ -99,13 +103,12 @@ export const AuthForm: React.FC = () => {
     );
   }
 
-  console.log('AuthForm - Rendering form, current state:', { 
-    isLogin, 
-    user: user?.email,
-    profile: profile?.role,
-    loading,
-    authLoading 
-  });
+  // If user is already authenticated and we're not on auth page, don't render
+  if (user && profile && location.pathname !== '/auth') {
+    return null;
+  }
+
+  console.log('AuthForm - Rendering form');
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
@@ -183,6 +186,7 @@ export const AuthForm: React.FC = () => {
               <div>Profile: {profile?.role || 'None'}</div>
               <div>Auth Loading: {authLoading ? 'Yes' : 'No'}</div>
               <div>Form Loading: {loading ? 'Yes' : 'No'}</div>
+              <div>Current Path: {location.pathname}</div>
             </div>
           )}
         </CardContent>

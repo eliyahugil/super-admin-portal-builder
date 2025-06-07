@@ -36,6 +36,7 @@ import {
 import { useBusiness } from '@/hooks/useBusiness';
 import { useBusinessModules } from '@/hooks/useBusinessModules';
 import { getModuleRoutes } from '@/utils/routeMapping';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface MenuItem {
   path: string;
@@ -53,12 +54,20 @@ interface MenuItem {
 }
 
 export const DynamicSidebar: React.FC = () => {
-  const { isSuperAdmin, business } = useBusiness();
+  const { isSuperAdmin, business, isLoading: businessLoading } = useBusiness();
   const { businessId } = useBusiness();
   const { isModuleEnabled, isLoading: modulesLoading } = useBusinessModules(businessId);
   const { setOpenMobile, isMobile } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
+
+  console.log('DynamicSidebar - Current state:', {
+    business: business?.name,
+    businessId,
+    isSuperAdmin,
+    businessLoading,
+    modulesLoading
+  });
 
   // Get module routes based on business context
   const moduleRoutes = getModuleRoutes(business?.id);
@@ -160,14 +169,12 @@ export const DynamicSidebar: React.FC = () => {
   };
 
   const getVisibleItems = (items: MenuItem[]) => {
-    if (modulesLoading) return [];
-    
     return items.filter(item => {
       // Check super admin requirement
       if (item.requiresSuperAdmin && !isSuperAdmin) return false;
       
-      // Check module requirement
-      if (item.moduleKey && !isSuperAdmin) {
+      // Check module requirement - skip module check if still loading or if super admin
+      if (item.moduleKey && !isSuperAdmin && !modulesLoading) {
         return isModuleEnabled(item.moduleKey);
       }
       
@@ -176,7 +183,6 @@ export const DynamicSidebar: React.FC = () => {
   };
 
   const handleMenuItemClick = () => {
-    // Close mobile sidebar when a menu item is clicked
     if (isMobile) {
       setOpenMobile(false);
     }
@@ -207,7 +213,7 @@ export const DynamicSidebar: React.FC = () => {
                   <div className="mr-6 mt-1 space-y-1">
                     {item.subItems
                       .filter(subItem => {
-                        if (subItem.moduleKey && !isSuperAdmin) {
+                        if (subItem.moduleKey && !isSuperAdmin && !modulesLoading) {
                           return isModuleEnabled(subItem.moduleKey);
                         }
                         return true;
@@ -234,18 +240,19 @@ export const DynamicSidebar: React.FC = () => {
     );
   };
 
-  if (modulesLoading) {
+  // Show loading state only if business is loading
+  if (businessLoading) {
     return (
       <Sidebar side="right" className="border-r border-border">
         <SidebarHeader className="p-4 text-right">
-          <div className="animate-pulse">
-            <div className="h-6 bg-gray-200 rounded mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded"></div>
-          </div>
+          <Skeleton className="h-6 w-32 mb-2" />
+          <Skeleton className="h-4 w-24" />
         </SidebarHeader>
         <SidebarContent>
-          <div className="p-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="p-4 space-y-4">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
           </div>
         </SidebarContent>
       </Sidebar>

@@ -10,6 +10,13 @@ interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, profile, loading } = useAuth();
 
+  console.log('ProtectedRoute - Current state:', {
+    hasUser: !!user,
+    hasProfile: !!profile,
+    profileRole: profile?.role,
+    loading
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -21,10 +28,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // אם אין יוזר או אין פרופיל עדיין - תציג טופס התחברות
+  // If no user or profile, show auth form
   if (!user || !profile) {
+    console.log('ProtectedRoute - No user or profile, showing auth form');
     return <AuthForm />;
   }
 
+  console.log('ProtectedRoute - User authenticated, rendering children');
   return <>{children}</>;
 };
