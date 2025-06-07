@@ -33,9 +33,9 @@ export const AuthForm: React.FC = () => {
         console.log('AuthForm - Redirecting super admin to /admin');
         navigate('/admin', { replace: true });
       } else {
-        // For regular users, check if they have a business or redirect to a default route
-        console.log('AuthForm - Redirecting regular user');
-        // We'll redirect to the modules/employees route which will handle business association
+        // For regular users, redirect to business selector or first business
+        console.log('AuthForm - Redirecting regular user to business management');
+        // We'll redirect to a business selector page if they have multiple businesses
         navigate('/modules/employees', { replace: true });
       }
     }

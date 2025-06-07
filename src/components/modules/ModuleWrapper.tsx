@@ -21,7 +21,7 @@ import BusinessModulesPage from './settings/BusinessModulesPage';
 export const ModuleWrapper: React.FC = () => {
   const { businessId, moduleRoute, subModule, employeeId } = useParams();
   const { profile, isSuperAdmin, loading } = useAuth();
-  const { business, isBusinessOwner } = useBusiness();
+  const { business, ownedBusinesses, isBusinessOwner } = useBusiness();
   const navigate = useNavigate();
 
   console.log('ModuleWrapper - Current params:', {
@@ -37,7 +37,8 @@ export const ModuleWrapper: React.FC = () => {
     loading,
     user: profile?.email,
     business: business?.name,
-    isBusinessOwner
+    isBusinessOwner,
+    totalOwnedBusinesses: ownedBusinesses.length
   });
 
   if (loading) {
@@ -49,7 +50,7 @@ export const ModuleWrapper: React.FC = () => {
   }
 
   // Check if user should have access to business data
-  if (!isSuperAdmin && !isBusinessOwner && !business) {
+  if (!isSuperAdmin && !isBusinessOwner && !business && ownedBusinesses.length === 0) {
     console.log('ModuleWrapper - User has no business access, redirecting to auth');
     return (
       <div className="max-w-7xl mx-auto p-6 text-center">

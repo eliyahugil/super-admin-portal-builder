@@ -38,31 +38,31 @@ export const useBusiness = () => {
     enabled: !!urlBusinessId,
   });
 
-  // Also fetch business by owner for cases where user owns a business
-  const { data: ownedBusiness, isLoading: ownedBusinessLoading } = useQuery({
-    queryKey: ['business', user?.id],
+  // Fetch ALL businesses owned by the user (not just one)
+  const { data: ownedBusinesses, isLoading: ownedBusinessesLoading } = useQuery({
+    queryKey: ['owned-businesses', user?.id],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!user?.id) return [];
       
-      console.log('Fetching owned business for user:', user.id);
+      console.log('Fetching all owned businesses for user:', user.id);
       const { data, error } = await supabase
         .from('businesses')
         .select('*')
         .eq('owner_id', user.id)
-        .maybeSingle();
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching owned business:', error);
-        return null;
+        console.error('Error fetching owned businesses:', error);
+        return [];
       }
-      console.log('Owned business fetched:', data);
-      return data;
+      console.log('Owned businesses fetched:', data?.length || 0);
+      return data || [];
     },
     enabled: !!user?.id && !urlBusinessId, // Only fetch if no URL business ID
   });
 
-  // Determine which business to use: URL business takes priority
-  const business = urlBusiness || ownedBusiness;
+  // Determine which business to use: URL business takes priority, otherwise first owned business
+  const business = urlBusiness || (ownedBusinesses && ownedBusinesses.length > 0 ? ownedBusinesses[0] : null);
   const businessId = urlBusinessId || business?.id;
 
   // Get business integrations count
@@ -87,14 +87,14 @@ export const useBusiness = () => {
   });
 
   const isSuperAdmin = profile?.role === 'super_admin';
-  const isBusinessOwner = !!ownedBusiness;
+  const isBusinessOwner = !!business && ownedBusinesses?.some(b => b.id === business.id);
 
   console.log('useBusiness - Final state:', {
     business: business?.name,
     businessId,
     isSuperAdmin,
     isBusinessOwner,
-    hasOwnedBusiness: !!ownedBusiness,
+    totalOwnedBusinesses: ownedBusinesses?.length || 0,
     hasUrlBusiness: !!urlBusiness
   });
 
@@ -103,9 +103,10 @@ export const useBusiness = () => {
     profile,
     business,
     businessId,
+    ownedBusinesses: ownedBusinesses || [],
     isSuperAdmin,
     isBusinessOwner,
-    isLoading: urlBusinessLoading || ownedBusinessLoading,
+    isLoading: urlBusinessLoading || ownedBusinessesLoading,
     integrationsCount: integrationsCount || 0,
   };
 };
