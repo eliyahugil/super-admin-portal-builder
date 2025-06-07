@@ -1,7 +1,7 @@
 
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
-import { AuthForm } from '@/components/auth/AuthForm';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -28,10 +28,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // If no user or profile, show auth form
+  // If no user or profile, redirect to auth page
   if (!user || !profile) {
-    console.log('ProtectedRoute - No user or profile, showing auth form');
-    return <AuthForm />;
+    console.log('ProtectedRoute - No user or profile, redirecting to /auth');
+    return <Navigate to="/auth" replace />;
   }
 
   console.log('ProtectedRoute - User authenticated, rendering children');
