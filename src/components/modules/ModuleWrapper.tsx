@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -15,7 +14,7 @@ import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { BusinessManagement } from '@/components/business/BusinessManagement';
 import { AttendanceManagement } from './employees/AttendanceManagement';
 import { EmployeeProfilePage } from './employees/EmployeeProfilePage';
-import { BusinessModulesPage } from './settings/BusinessModulesPage';
+import BusinessModulesPage from './settings/BusinessModulesPage';
 
 export const ModuleWrapper: React.FC = () => {
   const { businessId, moduleRoute, subModule, employeeId } = useParams();

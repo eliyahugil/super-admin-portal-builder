@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useBusiness } from '@/hooks/useBusiness';
 import { UserPlus, Users, Trash2, Edit, Shield } from 'lucide-react';
+import type { UserRole } from '@/types/supabase';
 
 interface UserProfile {
   id: string;
@@ -28,10 +29,10 @@ export const UsersManagement: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   
-  // Form state
+  // Form state - properly typed role
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState('business_user');
+  const [role, setRole] = useState<UserRole>('business_user');
   const [password, setPassword] = useState('');
 
   console.log('UsersManagement - businessId:', businessId);
