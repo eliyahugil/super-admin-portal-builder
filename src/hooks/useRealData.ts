@@ -10,7 +10,7 @@ interface UseRealDataOptions {
   filters?: Record<string, any>;
   enabled?: boolean;
   enforceBusinessFilter?: boolean;
-  select?: string; // הוספתי את השדה select החסר
+  select?: string;
   orderBy?: { column: string; ascending: boolean };
 }
 
@@ -31,7 +31,8 @@ export function useRealData<T = any>({
     queryFn: async (): Promise<T[]> => {
       console.log(`Fetching data from ${tableName}`, { filters, businessId, isSuperAdmin: profile?.role === 'super_admin' });
       
-      let query = supabase.from(tableName).select(select);
+      // Create a more flexible query builder
+      let query = supabase.from(tableName as any).select(select);
       
       // Apply user-provided filters
       Object.entries(filters).forEach(([key, value]) => {
@@ -69,7 +70,7 @@ export function useRealData<T = any>({
   });
 }
 
-// עכשיו אני אוסיף את כל ה-hooks הספציפיים החסרים
+// Business-specific hooks with proper TypeScript interfaces
 interface IntegrationType {
   id: string;
   integration_name: string;

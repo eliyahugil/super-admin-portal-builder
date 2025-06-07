@@ -1,7 +1,8 @@
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthContext';
+import { useUserBusinesses } from './useUserBusinesses';
+import { useParams } from 'react-router-dom';
 
 interface UseCurrentBusinessResult {
   businessId: string | null;
@@ -9,100 +10,54 @@ interface UseCurrentBusinessResult {
   loading: boolean;
   isSuperAdmin: boolean;
   businessName: string | null;
+  availableBusinesses: any[];
+  hasMultipleBusinesses: boolean;
 }
 
 export function useCurrentBusiness(): UseCurrentBusinessResult {
   const [businessId, setBusinessId] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { user, profile } = useAuth();
-
-  useEffect(() => {
-    const fetchCurrentBusiness = async () => {
-      console.log('useCurrentBusiness - Starting fetch');
-      setLoading(true);
-      
-      try {
-        if (!user || !profile) {
-          console.log('useCurrentBusiness - No user or profile available');
-          setBusinessId(null);
-          setRole(null);
-          setBusinessName(null);
-          setLoading(false);
-          return;
-        }
-
-        // Set role from profile
-        setRole(profile.role);
-        
-        // If super admin, they don't have a specific business but can see all
-        if (profile.role === 'super_admin') {
-          console.log('useCurrentBusiness - Super admin detected');
-          setBusinessId(null);
-          setBusinessName('מנהל ראשי');
-          setLoading(false);
-          return;
-        }
-
-        // Check if user has a business assigned in their profile
-        if (profile.business_id) {
-          console.log('useCurrentBusiness - User has assigned business:', profile.business_id);
-          
-          // Fetch business details
-          const { data: business, error } = await supabase
-            .from('businesses')
-            .select('id, name')
-            .eq('id', profile.business_id)
-            .single();
-
-          if (error) {
-            console.error('useCurrentBusiness - Error fetching assigned business:', error);
-            setBusinessId(null);
-            setBusinessName(null);
-          } else {
-            console.log('useCurrentBusiness - Found assigned business:', business);
-            setBusinessId(business.id);
-            setBusinessName(business.name);
-          }
-        } else {
-          // For users without assigned business, check if they own any businesses
-          console.log('useCurrentBusiness - No assigned business, checking owned businesses for user:', user.id);
-          
-          const { data: ownedBusinesses, error } = await supabase
-            .from('businesses')
-            .select('id, name')
-            .eq('owner_id', user.id)
-            .limit(1)
-            .single();
-
-          if (error) {
-            console.error('useCurrentBusiness - Error fetching owned business:', error);
-            if (error.code !== 'PGRST116') { // Not found error is expected sometimes
-              throw error;
-            }
-            setBusinessId(null);
-            setBusinessName(null);
-          } else {
-            console.log('useCurrentBusiness - Found owned business:', ownedBusinesses);
-            setBusinessId(ownedBusinesses.id);
-            setBusinessName(ownedBusinesses.name);
-          }
-        }
-      } catch (error) {
-        console.error('useCurrentBusiness - Exception:', error);
-        setBusinessId(null);
-        setRole(null);
-        setBusinessName(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCurrentBusiness();
-  }, [user, profile]);
+  const [role, setRole] = useState<string | null>(null);
+  const { user, profile, loading: authLoading } = useAuth();
+  const { data: userBusinesses, isLoading: businessesLoading } = useUserBusinesses();
+  const { businessId: urlBusinessId } = useParams();
 
   const isSuperAdmin = profile?.role === 'super_admin';
+  const loading = authLoading || businessesLoading;
+
+  useEffect(() => {
+    if (loading || !user || !profile) return;
+
+    // Set role from profile
+    setRole(profile.role);
+
+    // If we have a business ID from URL, use that
+    if (urlBusinessId && userBusinesses) {
+      const urlBusiness = userBusinesses.find(ub => ub.business_id === urlBusinessId);
+      if (urlBusiness) {
+        setBusinessId(urlBusiness.business_id);
+        setBusinessName(urlBusiness.business.name);
+        return;
+      }
+    }
+
+    // If super admin without URL business ID, don't set a specific business
+    if (isSuperAdmin && !urlBusinessId) {
+      setBusinessId(null);
+      setBusinessName('מנהל ראשי');
+      return;
+    }
+
+    // For regular users, set their first business or the one from URL
+    if (userBusinesses && userBusinesses.length > 0) {
+      const firstBusiness = userBusinesses[0];
+      setBusinessId(firstBusiness.business_id);
+      setBusinessName(firstBusiness.business.name);
+    } else {
+      setBusinessId(null);
+      setBusinessName(null);
+    }
+  }, [user, profile, userBusinesses, urlBusinessId, isSuperAdmin, loading]);
 
   console.log('useCurrentBusiness - Current state:', {
     businessId,
@@ -110,7 +65,7 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
     businessName,
     isSuperAdmin,
     loading,
-    profileBusinessId: profile?.business_id
+    availableBusinesses: userBusinesses?.length || 0
   });
 
   return { 
@@ -118,6 +73,8 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
     role, 
     loading, 
     isSuperAdmin,
-    businessName 
+    businessName,
+    availableBusinesses: userBusinesses || [],
+    hasMultipleBusinesses: (userBusinesses?.length || 0) > 1
   };
 }
