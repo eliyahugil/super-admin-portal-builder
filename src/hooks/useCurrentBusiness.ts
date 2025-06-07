@@ -36,7 +36,7 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
         // Set role from profile
         setRole(profile.role);
         
-        // If super admin, they don't have a specific business
+        // If super admin, they don't have a specific business but can see all
         if (profile.role === 'super_admin') {
           console.log('useCurrentBusiness - Super admin detected');
           setBusinessId(null);
@@ -45,26 +45,49 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
           return;
         }
 
-        // For regular users, find their business
-        console.log('useCurrentBusiness - Finding business for regular user:', user.id);
-        
-        const { data: userBusiness, error } = await supabase
-          .from('businesses')
-          .select('id, name')
-          .eq('owner_id', user.id)
-          .single();
+        // Check if user has a business assigned in their profile
+        if (profile.business_id) {
+          console.log('useCurrentBusiness - User has assigned business:', profile.business_id);
+          
+          // Fetch business details
+          const { data: business, error } = await supabase
+            .from('businesses')
+            .select('id, name')
+            .eq('id', profile.business_id)
+            .single();
 
-        if (error) {
-          console.error('useCurrentBusiness - Error fetching business:', error);
-          if (error.code !== 'PGRST116') { // Not found error is expected sometimes
-            throw error;
+          if (error) {
+            console.error('useCurrentBusiness - Error fetching assigned business:', error);
+            setBusinessId(null);
+            setBusinessName(null);
+          } else {
+            console.log('useCurrentBusiness - Found assigned business:', business);
+            setBusinessId(business.id);
+            setBusinessName(business.name);
           }
-          setBusinessId(null);
-          setBusinessName(null);
         } else {
-          console.log('useCurrentBusiness - Found business:', userBusiness);
-          setBusinessId(userBusiness.id);
-          setBusinessName(userBusiness.name);
+          // For users without assigned business, check if they own any businesses
+          console.log('useCurrentBusiness - No assigned business, checking owned businesses for user:', user.id);
+          
+          const { data: ownedBusinesses, error } = await supabase
+            .from('businesses')
+            .select('id, name')
+            .eq('owner_id', user.id)
+            .limit(1)
+            .single();
+
+          if (error) {
+            console.error('useCurrentBusiness - Error fetching owned business:', error);
+            if (error.code !== 'PGRST116') { // Not found error is expected sometimes
+              throw error;
+            }
+            setBusinessId(null);
+            setBusinessName(null);
+          } else {
+            console.log('useCurrentBusiness - Found owned business:', ownedBusinesses);
+            setBusinessId(ownedBusinesses.id);
+            setBusinessName(ownedBusinesses.name);
+          }
         }
       } catch (error) {
         console.error('useCurrentBusiness - Exception:', error);
@@ -86,7 +109,8 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
     role,
     businessName,
     isSuperAdmin,
-    loading
+    loading,
+    profileBusinessId: profile?.business_id
   });
 
   return { 

@@ -33,7 +33,8 @@ export const useAuthState = () => {
               id: userId,
               email: userData.user.email || '',
               full_name: userData.user.user_metadata?.full_name || userData.user.email || '',
-              role: 'business_user' as const
+              role: 'business_user' as const,
+              business_id: null // New users start without business assignment
             };
             
             const { data: createdProfile, error: createError } = await supabase
@@ -49,7 +50,8 @@ export const useAuthState = () => {
                 id: userId,
                 email: userData.user.email || '',
                 full_name: userData.user.email || '',
-                role: 'business_user' as const
+                role: 'business_user' as const,
+                business_id: null
               });
               return;
             }
@@ -67,7 +69,8 @@ export const useAuthState = () => {
           id: userId,
           email: user?.email || '',
           full_name: user?.email || '',
-          role: 'business_user' as const
+          role: 'business_user' as const,
+          business_id: null
         });
         return;
       }
@@ -85,7 +88,8 @@ export const useAuthState = () => {
               id: userId,
               email: userData.user.email || '',
               full_name: userData.user.user_metadata?.full_name || userData.user.email || '',
-              role: 'business_user' as const
+              role: 'business_user' as const,
+              business_id: null // New users start without business assignment
             };
             
             const { data: createdProfile, error: createError } = await supabase
@@ -101,7 +105,8 @@ export const useAuthState = () => {
                 id: userId,
                 email: userData.user.email || '',
                 full_name: userData.user.email || '',
-                role: 'business_user' as const
+                role: 'business_user' as const,
+                business_id: null
               });
               return;
             }
@@ -119,7 +124,8 @@ export const useAuthState = () => {
           id: userId,
           email: user?.email || '',
           full_name: user?.email || '',
-          role: 'business_user' as const
+          role: 'business_user' as const,
+          business_id: null
         });
         return;
       }
@@ -133,7 +139,8 @@ export const useAuthState = () => {
         id: userId,
         email: user?.email || '',
         full_name: user?.email || '',
-        role: 'business_user' as const
+        role: 'business_user' as const,
+        business_id: null
       });
     }
   }, [user?.email]);

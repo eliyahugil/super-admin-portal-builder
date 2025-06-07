@@ -6,6 +6,7 @@ export interface Profile {
   email: string;
   full_name: string;
   role: 'super_admin' | 'business_admin' | 'business_user';
+  business_id?: string | null;
 }
 
 export interface AuthContextType {

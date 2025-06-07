@@ -1650,6 +1650,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          business_id: string | null
           created_at: string
           email: string
           full_name: string | null
@@ -1658,6 +1659,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          business_id?: string | null
           created_at?: string
           email: string
           full_name?: string | null
@@ -1666,6 +1668,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          business_id?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
@@ -1673,7 +1676,15 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scheduled_shifts: {
         Row: {
