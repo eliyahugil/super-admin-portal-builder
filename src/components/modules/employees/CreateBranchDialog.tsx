@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 interface CreateBranchDialogProps {
   open: boolean;
@@ -31,6 +33,7 @@ export const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { logActivity } = useActivityLogger();
+  const { businessId } = useCurrentBusiness();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,12 +47,19 @@ export const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({
       return;
     }
 
+    if (!businessId) {
+      toast({
+        title: 'שגיאה',
+        description: 'לא נמצא מזהה עסק. אנא נסה שוב.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // For now, we'll use a default business_id - in production this should come from user context
-      const businessId = 'default-business-id'; // This should be properly handled
-
+      // Prepare the data exactly as the database expects it
       const branchData = {
         business_id: businessId,
         name: formData.name.trim(),
@@ -59,6 +69,8 @@ export const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({
         gps_radius: formData.gps_radius,
         is_active: formData.is_active,
       };
+
+      console.log('Creating branch with data:', branchData);
 
       const { data: createdBranch, error } = await supabase
         .from('branches')
@@ -81,7 +93,7 @@ export const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({
 
         toast({
           title: 'שגיאה',
-          description: 'לא ניתן ליצור את הסניף',
+          description: `לא ניתן ליצור את הסניף: ${error.message}`,
           variant: 'destructive',
         });
         return;
@@ -101,7 +113,7 @@ export const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({
 
       toast({
         title: 'הצלחה',
-        description: 'הסניף נוצר בהצלחה',
+        description: `הסניף "${formData.name}" נוצר בהצלחה`,
       });
 
       setFormData({

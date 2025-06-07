@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Building, MapPin, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 export const BranchCreation: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -24,7 +24,7 @@ export const BranchCreation: React.FC = () => {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { businessId, isSuperAdmin } = useBusiness();
+  const { businessId, isSuperAdmin } = useCurrentBusiness();
 
   console.log('BranchCreation - Current state:', {
     businessId,
@@ -34,23 +34,33 @@ export const BranchCreation: React.FC = () => {
 
   const createBranchMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      console.log('Creating branch with data:', data);
+      console.log('Creating branch with form data:', data);
       
       if (!businessId) {
-        throw new Error('Business ID is required to create a branch');
+        throw new Error('לא נמצא מזהה עסק. אנא נסה שוב.');
       }
 
+      // Prepare the data exactly as the database expects it
       const branchData = {
         business_id: businessId,
-        name: data.name,
-        address: data.address || null,
+        name: data.name.trim(),
+        address: data.address.trim() || null,
         latitude: data.latitude ? parseFloat(data.latitude) : null,
         longitude: data.longitude ? parseFloat(data.longitude) : null,
         gps_radius: data.gps_radius,
         is_active: data.is_active,
       };
 
-      console.log('Inserting branch data:', branchData);
+      console.log('Inserting branch data to database:', branchData);
+
+      // Validate required fields before insertion
+      if (!branchData.name) {
+        throw new Error('שם הסניף הוא שדה חובה');
+      }
+
+      if (!branchData.business_id) {
+        throw new Error('מזהה העסק חסר');
+      }
 
       const { data: result, error } = await supabase
         .from('branches')
@@ -59,19 +69,23 @@ export const BranchCreation: React.FC = () => {
         .single();
 
       if (error) {
-        console.error('Error creating branch:', error);
-        throw error;
+        console.error('Database error creating branch:', error);
+        throw new Error(`שגיאה ביצירת הסניף: ${error.message}`);
       }
       
       console.log('Branch created successfully:', result);
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log('Branch creation successful:', result);
       toast({
         title: 'הצלחה',
-        description: 'הסניף נוצר בהצלחה',
+        description: `הסניף "${result.name}" נוצר בהצלחה`,
       });
       queryClient.invalidateQueries({ queryKey: ['branches'] });
+      queryClient.invalidateQueries({ queryKey: ['business-branches', businessId] });
+      
+      // Reset form
       setFormData({
         name: '',
         address: '',
@@ -94,6 +108,8 @@ export const BranchCreation: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Form submission started with data:', formData);
+    
     if (!formData.name.trim()) {
       toast({
         title: 'שגיאה',
@@ -104,9 +120,10 @@ export const BranchCreation: React.FC = () => {
     }
 
     if (!businessId) {
+      console.error('No businessId available for branch creation');
       toast({
         title: 'שגיאה',
-        description: 'לא נמצא מזהה עסק. אנא נסה שוב.',
+        description: 'לא נמצא מזהה עסק. אנא נסה שוב או פנה למנהל המערכת.',
         variant: 'destructive',
       });
       return;
@@ -115,6 +132,7 @@ export const BranchCreation: React.FC = () => {
     createBranchMutation.mutate(formData);
   };
 
+  // Show message if no business access
   if (!businessId && !isSuperAdmin) {
     return (
       <div className="container mx-auto px-4 py-8 text-center" dir="rtl">
