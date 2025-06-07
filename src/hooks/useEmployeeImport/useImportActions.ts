@@ -1,10 +1,24 @@
 
 import { useToast } from '@/hooks/use-toast';
 import { ExcelImportService } from '@/services/ExcelImportService';
-import type { ImportStep, ImportActions } from './types';
+import type { ImportStep, ImportActions, ImportValidation } from './types';
 import type { ExcelRow, PreviewEmployee, ImportResult } from '@/services/ExcelImportService';
 import { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
 import { employeeTypes, initialImportResult } from './constants';
+
+interface ValidationError {
+  rowIndex: number;
+  field: string;
+  error: string;
+  severity: 'error' | 'warning';
+}
+
+interface DuplicateError {
+  rowIndex: number;
+  duplicateField: string;
+  existingValue: string;
+  severity: 'error' | 'warning';
+}
 
 interface UseImportActionsProps {
   businessId: string | null;
@@ -12,6 +26,7 @@ interface UseImportActionsProps {
   branches: any[];
   existingEmployees: any[];
   previewData: PreviewEmployee[];
+  validation: ImportValidation;
   setStep: (step: ImportStep) => void;
   setFile: (file: File | null) => void;
   setRawData: (data: ExcelRow[]) => void;
@@ -21,6 +36,8 @@ interface UseImportActionsProps {
   setIsImporting: (importing: boolean) => void;
   setShowMappingDialog: (show: boolean) => void;
   setImportResult: (result: ImportResult) => void;
+  setValidationErrors: (errors: ValidationError[]) => void;
+  setDuplicateErrors: (errors: DuplicateError[]) => void;
 }
 
 export const useImportActions = ({
@@ -29,6 +46,7 @@ export const useImportActions = ({
   branches,
   existingEmployees,
   previewData,
+  validation,
   setStep,
   setFile,
   setRawData,
@@ -38,6 +56,8 @@ export const useImportActions = ({
   setIsImporting,
   setShowMappingDialog,
   setImportResult,
+  setValidationErrors,
+  setDuplicateErrors,
 }: UseImportActionsProps): ImportActions => {
   const { toast } = useToast();
 
@@ -65,6 +85,7 @@ export const useImportActions = ({
     setFieldMappings(mappings);
     setShowMappingDialog(false);
     
+    // Generate preview with enhanced validation
     const preview = ExcelImportService.generatePreview(
       rawData,
       mappings,
@@ -75,10 +96,26 @@ export const useImportActions = ({
     );
     
     setPreviewData(preview);
+    
+    // Trigger advanced validation
+    setTimeout(() => {
+      validation.validateImportData();
+    }, 100);
+    
     setStep('preview');
   };
 
   const handleImport = async () => {
+    // Final validation before import
+    if (!validation.validateImportData()) {
+      toast({
+        title: 'שגיאות בולידציה',
+        description: 'אנא תקן את השגיאות לפני הייבוא',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsImporting(true);
     
     try {
@@ -127,6 +164,8 @@ export const useImportActions = ({
     setFieldMappings([]);
     setPreviewData([]);
     setImportResult(initialImportResult);
+    setValidationErrors([]);
+    setDuplicateErrors([]);
   };
 
   const downloadTemplate = () => {
