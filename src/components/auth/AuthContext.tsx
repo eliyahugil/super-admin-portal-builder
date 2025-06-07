@@ -7,11 +7,27 @@ import { useAuthOperations } from './useAuthOperations';
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  try {
+    const context = useContext(AuthContext);
+    if (!context) {
+      throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+  } catch (error) {
+    console.error('❌ Failed to get auth context:', error);
+    // Return a safe fallback to prevent app crash
+    return {
+      user: null,
+      session: null,
+      profile: null,
+      loading: false,
+      signIn: async () => ({ error: new Error('Auth context not available') }),
+      signUp: async () => ({ error: new Error('Auth context not available') }),
+      signOut: async () => {},
+      isSuperAdmin: false,
+      refreshProfile: async () => {},
+    };
   }
-  return context;
 };
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {

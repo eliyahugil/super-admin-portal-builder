@@ -30,18 +30,18 @@ export const useAuthState = () => {
     let mounted = true;
     let authSubscription: any = null;
 
-    // Safety timeout - if still loading after 10 seconds, stop
+    // Safety timeout - if still loading after 15 seconds, stop
     const safetyTimeout = setTimeout(() => {
       if (mounted && loading) {
         console.error('⚠️ Safety timeout reached - stopping loading state');
         setLoading(false);
       }
-    }, 10000);
+    }, 15000);
 
     // Get initial session with better error handling
     const getInitialSession = async () => {
       try {
-        console.log('⏳ מתחיל לבדוק סשן');
+        console.log('⏳ בודק סשן קיים');
         
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
@@ -108,47 +108,55 @@ export const useAuthState = () => {
 
     // Set up auth state listener with error handling
     const setupAuthListener = () => {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, newSession) => {
-          console.log('🔄 Auth state changed:', event, {
-            hasSession: !!newSession,
-            userEmail: newSession?.user?.email || 'no session'
-          });
-          
-          if (!mounted) return;
-          
-          try {
-            // Update state immediately
-            setSession(newSession);
-            setUser(newSession?.user ?? null);
+      try {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, newSession) => {
+            console.log('🔄 Auth state changed:', event, {
+              hasSession: !!newSession,
+              userEmail: newSession?.user?.email || 'no session'
+            });
             
-            if (newSession?.user) {
-              console.log('👤 משתמש חדש, שולף פרופיל...');
-              try {
-                const profileData = await fetchProfile(newSession.user.id);
-                if (mounted) {
-                  console.log('✅ פרופיל עודכן:', profileData);
-                  setProfile(profileData);
+            if (!mounted) return;
+            
+            try {
+              // Update state immediately
+              setSession(newSession);
+              setUser(newSession?.user ?? null);
+              
+              if (newSession?.user) {
+                console.log('👤 משתמש חדש, שולף פרופיל...');
+                try {
+                  const profileData = await fetchProfile(newSession.user.id);
+                  if (mounted) {
+                    console.log('✅ פרופיל עודכן:', profileData);
+                    setProfile(profileData);
+                  }
+                } catch (profileError) {
+                  console.error('❌ שגיאה בעדכון פרופיל:', profileError);
+                  if (mounted) {
+                    setProfile(null);
+                  }
                 }
-              } catch (profileError) {
-                console.error('❌ שגיאה בעדכון פרופיל:', profileError);
+              } else {
+                console.log('🔴 משתמש התנתק');
                 if (mounted) {
                   setProfile(null);
                 }
               }
-            } else {
-              console.log('🔴 משתמש התנתק');
-              if (mounted) {
-                setProfile(null);
-              }
+            } catch (error) {
+              console.error('💥 Error in auth state change handler:', error);
             }
-          } catch (error) {
-            console.error('💥 Error in auth state change handler:', error);
           }
+        );
+        
+        authSubscription = subscription;
+      } catch (error) {
+        console.error('💥 Error setting up auth listener:', error);
+        // Continue without auth listener
+        if (mounted) {
+          setLoading(false);
         }
-      );
-      
-      authSubscription = subscription;
+      }
     };
 
     setupAuthListener();

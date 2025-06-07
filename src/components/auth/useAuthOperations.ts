@@ -15,17 +15,11 @@ export const useAuthOperations = () => {
 
       if (error) {
         console.error('❌ Profile fetch error:', error);
-        console.error('❌ Error details:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        });
         
         // Check for network/connection errors
         if (error.message?.includes('fetch') || error.message?.includes('Failed to fetch')) {
           console.error('🌐 Network error detected while fetching profile');
-          throw new Error('Network connection failed. Please check your internet connection.');
+          return null; // Don't throw, just return null
         }
         
         // If table doesn't exist or no record found
@@ -78,17 +72,7 @@ export const useAuthOperations = () => {
       return data;
     } catch (error) {
       console.error('💥 Exception in fetchProfile:', error);
-      console.error('💥 Exception details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : 'No stack trace'
-      });
-      
-      // Re-throw network errors with a user-friendly message
-      if (error instanceof Error && error.message?.includes('fetch')) {
-        throw new Error('שגיאת חיבור לשרת. אנא בדוק את החיבור לאינטרנט.');
-      }
-      
-      return null;
+      return null; // Don't throw, just return null
     }
   };
 
@@ -103,10 +87,6 @@ export const useAuthOperations = () => {
       
       if (error) {
         console.error('❌ Sign in error:', error);
-        console.error('❌ Sign in error details:', {
-          message: error.message,
-          status: error.status
-        });
         
         // Check for network errors
         if (error.message?.includes('fetch') || error.message?.includes('Failed to fetch')) {
