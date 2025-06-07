@@ -21,11 +21,11 @@ function App() {
         <AuthProvider>
           <Toaster />
           <Routes>
-            {PublicRoutes()}
-            {MainRoutes()}
-            {BusinessRoutes()}
-            {ModuleRoutes()}
-            {AdminRoutes()}
+            <PublicRoutes />
+            <MainRoutes />
+            <BusinessRoutes />
+            <ModuleRoutes />
+            <AdminRoutes />
             
             {/* Not authorized route */}
             <Route path="/not-authorized" element={<NotAuthorized />} />
