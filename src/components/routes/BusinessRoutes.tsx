@@ -7,50 +7,46 @@ import { BusinessDashboard } from '@/components/business/BusinessDashboard';
 import { ModuleWrapper } from '@/components/modules/ModuleWrapper';
 import { EmployeeProfilePage } from '@/components/modules/employees/EmployeeProfilePage';
 
-export const BusinessRoutes: React.FC = () => {
-  return (
-    <>
-      {/* Business routes */}
-      <Route path="/business/:businessId/dashboard" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <BusinessDashboard />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
+export const BusinessRoutes = () => (
+  <>
+    <Route path="/business/:businessId/dashboard" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <BusinessDashboard />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
 
-      <Route path="/business/:businessId/modules/:moduleRoute" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <ModuleWrapper />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/business/:businessId/modules/:moduleRoute/:subModule" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <ModuleWrapper />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
+    <Route path="/business/:businessId/modules/:moduleRoute" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ModuleWrapper />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/business/:businessId/modules/:moduleRoute/:subModule" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ModuleWrapper />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
 
-      <Route path="/business/:businessId/modules/:moduleRoute/:subModule/:employeeId" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <ModuleWrapper />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
+    <Route path="/business/:businessId/modules/:moduleRoute/:subModule/:employeeId" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ModuleWrapper />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
 
-      {/* Specific Employee Profile Route */}
-      <Route path="/business/:businessId/modules/employees/profile/:employeeId" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <EmployeeProfilePage />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-    </>
-  );
-};
+    <Route path="/business/:businessId/modules/employees/profile/:employeeId" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <EmployeeProfilePage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+  </>
+);

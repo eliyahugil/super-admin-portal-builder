@@ -9,66 +9,62 @@ import { BusinessSettings } from '@/components/modules/settings/BusinessSettings
 import { ShiftTokenSchedulePage } from '@/components/modules/settings/ShiftTokenSchedulePage';
 import { BusinessMultiManagement } from '@/components/modules/settings/BusinessMultiManagement';
 
-export const ModuleRoutes: React.FC = () => {
-  return (
-    <>
-      {/* Direct module routes */}
-      <Route path="/modules/:moduleRoute" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <ModuleWrapper />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/modules/:moduleRoute/:subModule" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <ModuleWrapper />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
+export const ModuleRoutes = () => (
+  <>
+    <Route path="/modules/:moduleRoute" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ModuleWrapper />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/modules/:moduleRoute/:subModule" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ModuleWrapper />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
 
-      <Route path="/modules/:moduleRoute/:subModule/:employeeId" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <ModuleWrapper />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
+    <Route path="/modules/:moduleRoute/:subModule/:employeeId" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ModuleWrapper />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
 
-      {/* Specific Employee Profile Route for direct modules */}
-      <Route path="/modules/employees/profile/:employeeId" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <EmployeeProfilePage />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
+    <Route path="/modules/employees/profile/:employeeId" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <EmployeeProfilePage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
 
-      <Route path="/modules/settings/modules" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <BusinessSettings />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
+    <Route path="/modules/settings/modules" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <BusinessSettings />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
 
-      <Route path="/modules/settings/shift-schedule" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <ShiftTokenSchedulePage />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
+    <Route path="/modules/settings/shift-schedule" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ShiftTokenSchedulePage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
 
-      <Route path="/modules/settings/advanced" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <BusinessMultiManagement />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-    </>
-  );
-};
+    <Route path="/modules/settings/advanced" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <BusinessMultiManagement />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+  </>
+);
