@@ -55,11 +55,8 @@ export class EmployeeImportDatabase {
 
       // Prepare employees for upsert with enhanced data sanitization
       const employeesToUpsert = validEmployees.map(emp => {
-        // Map intern to youth to match database enum
+        // Ensure employee_type is valid (already should be 'youth' from transformer)
         let employeeType = emp.data.employee_type || 'permanent';
-        if (employeeType === 'intern') {
-          employeeType = 'youth';
-        }
 
         return {
           business_id: emp.data.business_id,
