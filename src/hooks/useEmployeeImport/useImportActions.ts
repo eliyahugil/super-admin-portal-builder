@@ -1,3 +1,4 @@
+
 import { useToast } from '@/hooks/use-toast';
 import { EmployeeImportDatabase } from '@/services/excel/EmployeeImportDatabase';
 import type { ImportStep, ImportActions, ImportValidation } from './types';
@@ -133,14 +134,9 @@ export const useImportActions = ({
       setHeaders(parsedData.headers);
       setRawData(parsedData.data);
       
-      console.log('🔄 Transitioning to mapping step...');
-      setStep('mapping');
-      
-      // Add a small delay to ensure state is updated before showing dialog
-      setTimeout(() => {
-        console.log('📋 Opening mapping dialog...');
-        setShowMappingDialog(true);
-      }, 100);
+      // DON'T change step - stay on upload until mapping is confirmed
+      console.log('📋 Opening mapping dialog...');
+      setShowMappingDialog(true);
       
       console.log('✅ File upload process completed successfully');
     } catch (error) {
