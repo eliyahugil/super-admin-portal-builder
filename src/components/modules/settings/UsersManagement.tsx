@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,17 +30,15 @@ export const UsersManagement: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   
   // Form state - properly typed role
-  const [email, setEmail] = useState('habulgari@gmail.com');
-  const [fullName, setFullName] = useState('המשתמש החדש');
+  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<UserRole>('business_user');
-  const [password, setPassword] = useState('123456');
+  const [password, setPassword] = useState('');
 
   console.log('UsersManagement - businessId:', businessId);
 
   useEffect(() => {
     fetchUsers();
-    // Auto-open the create form with pre-filled data
-    setShowCreateForm(true);
   }, []);
 
   const fetchUsers = async () => {
@@ -85,13 +84,14 @@ export const UsersManagement: React.FC = () => {
       setIsCreating(true);
       console.log('Creating user with data:', { email, fullName, role });
       
-      // Create user with Supabase Auth - without role in metadata first
+      // Create user with Supabase Auth - the trigger will handle profile creation
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: fullName
+            full_name: fullName,
+            role: role  // Pass role in metadata for the trigger
           }
         }
       });
@@ -104,54 +104,10 @@ export const UsersManagement: React.FC = () => {
       console.log('Auth user created:', authData);
 
       if (authData.user) {
-        // Wait for the profile trigger to create the profile
-        console.log('Waiting for profile to be created...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Now update the profile with the correct role using a direct string
-        console.log('Updating profile with role:', role);
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ 
-            role: role,
-            full_name: fullName 
-          })
-          .eq('id', authData.user.id);
-
-        if (profileError) {
-          console.error('Profile update error:', profileError);
-          // Try to insert if update failed (profile might not exist yet)
-          console.log('Update failed, trying to insert profile...');
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert({
-              id: authData.user.id,
-              email: email,
-              full_name: fullName,
-              role: role
-            });
-
-          if (insertError) {
-            console.error('Profile insert error:', insertError);
-            toast({
-              title: 'אזהרה',
-              description: `המשתמש נוצר אבל לא ניתן היה ליצור פרופיל: ${insertError.message}`,
-              variant: 'destructive',
-            });
-          } else {
-            console.log('Profile inserted successfully');
-            toast({
-              title: 'משתמש נוצר בהצלחה! ✅',
-              description: `המשתמש ${email} נוצר והוקצה התפקיד ${role}`,
-            });
-          }
-        } else {
-          console.log('Profile updated successfully');
-          toast({
-            title: 'משתמש נוצר בהצלחה! ✅',
-            description: `המשתמש ${email} נוצר והוקצה התפקיד ${role}`,
-          });
-        }
+        toast({
+          title: 'משתמש נוצר בהצלחה! ✅',
+          description: `המשתמש ${email} נוצר והוקצה התפקיד ${role}`,
+        });
 
         // Reset form
         setEmail('');
@@ -160,8 +116,10 @@ export const UsersManagement: React.FC = () => {
         setRole('business_user');
         setShowCreateForm(false);
         
-        // Refresh users list
-        fetchUsers();
+        // Refresh users list after a brief delay to allow trigger to complete
+        setTimeout(() => {
+          fetchUsers();
+        }, 1000);
       }
     } catch (error: any) {
       console.error('Error creating user:', error);
@@ -255,7 +213,7 @@ export const UsersManagement: React.FC = () => {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>יצירת משתמש חדש</CardTitle>
-            <CardDescription>הוסף משתמש חדש למערכת (טופס מולא מראש עבור habulgari@gmail.com)</CardDescription>
+            <CardDescription>הוסף משתמש חדש למערכת</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreateUser} className="space-y-4">
