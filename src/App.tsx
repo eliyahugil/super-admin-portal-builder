@@ -105,7 +105,7 @@ function App() {
               </ProtectedRoute>
             } />
 
-            <Route path="/business/:businessId/modules/:moduleRoute/:subModule/:itemId" element={
+            <Route path="/business/:businessId/modules/:moduleRoute/:subModule/:employeeId" element={
               <ProtectedRoute>
                 <AppLayout>
                   <ModuleWrapper />
@@ -113,6 +113,7 @@ function App() {
               </ProtectedRoute>
             } />
 
+            {/* Specific Employee Profile Route */}
             <Route path="/business/:businessId/modules/employees/profile/:employeeId" element={
               <ProtectedRoute>
                 <AppLayout>
@@ -138,7 +139,7 @@ function App() {
               </ProtectedRoute>
             } />
 
-            <Route path="/modules/:moduleRoute/:subModule/:itemId" element={
+            <Route path="/modules/:moduleRoute/:subModule/:employeeId" element={
               <ProtectedRoute>
                 <AppLayout>
                   <ModuleWrapper />
@@ -146,6 +147,7 @@ function App() {
               </ProtectedRoute>
             } />
 
+            {/* Specific Employee Profile Route for direct modules */}
             <Route path="/modules/employees/profile/:employeeId" element={
               <ProtectedRoute>
                 <AppLayout>

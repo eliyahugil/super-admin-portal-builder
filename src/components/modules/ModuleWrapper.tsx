@@ -13,16 +13,17 @@ import { ModuleManagement } from './ModuleManagement';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { BusinessManagement } from '@/components/business/BusinessManagement';
 import { AttendanceManagement } from './employees/AttendanceManagement';
+import { EmployeeProfilePage } from './employees/EmployeeProfilePage';
 
 export const ModuleWrapper: React.FC = () => {
-  const { businessId, moduleRoute, subModule } = useParams();
+  const { businessId, moduleRoute, subModule, employeeId } = useParams();
   const { profile, isSuperAdmin, loading } = useAuth();
 
   console.log('ModuleWrapper - Current params:', {
     businessId: { _type: typeof businessId, value: businessId },
     moduleRoute: { _type: typeof moduleRoute, value: moduleRoute },
     subModule: { _type: typeof subModule, value: subModule },
-    itemId: { _type: typeof useParams().itemId, value: useParams().itemId }
+    employeeId: { _type: typeof employeeId, value: employeeId }
   });
 
   console.log('ModuleWrapper - Auth state:', {
@@ -63,6 +64,12 @@ export const ModuleWrapper: React.FC = () => {
   if (moduleRoute === 'businesses' && isSuperAdmin) {
     console.log('ModuleWrapper - Rendering BusinessManagement for super admin');
     return <BusinessManagement />;
+  }
+
+  // Handle employee profile route specifically
+  if (moduleRoute === 'employees' && subModule === 'profile') {
+    console.log('ModuleWrapper - Rendering EmployeeProfilePage for employeeId:', employeeId);
+    return <EmployeeProfilePage />;
   }
 
   // Handle module routes
