@@ -24,6 +24,8 @@ export const ValidationActionButtons: React.FC<ValidationActionButtonsProps> = (
   onBackToMapping,
   onContinueImport,
 }) => {
+  const canProceed = !hasCriticalErrors && summary.validRows > 0;
+  
   return (
     <div className="flex justify-between">
       <Button variant="outline" onClick={onBackToMapping} disabled={isImporting}>
@@ -32,7 +34,7 @@ export const ValidationActionButtons: React.FC<ValidationActionButtonsProps> = (
       
       <Button 
         onClick={onContinueImport} 
-        disabled={hasCriticalErrors || isImporting || summary.validRows === 0}
+        disabled={!canProceed || isImporting}
         className="min-w-32"
       >
         {isImporting ? (
@@ -41,7 +43,7 @@ export const ValidationActionButtons: React.FC<ValidationActionButtonsProps> = (
             מייבא...
           </>
         ) : (
-          `ייבא ${summary.validRows} עובדים`
+          `ייבא ${summary.validRows} עובדים${summary.warningRows > 0 ? ' (עם upsert)' : ''}`
         )}
       </Button>
     </div>

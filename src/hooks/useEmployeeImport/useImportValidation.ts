@@ -91,7 +91,7 @@ export const useImportValidation = ({
         });
       }
 
-      // Enhanced duplicate checking
+      // Enhanced duplicate checking (רק אזהרות, לא שגיאות)
       const checkFields = [
         { field: 'email', label: 'אימייל' },
         { field: 'phone', label: 'טלפון' },
@@ -110,7 +110,7 @@ export const useImportValidation = ({
               rowIndex: index + 1,
               duplicateField: label,
               existingValue: sanitizedData[field],
-              severity: 'warning'
+              severity: 'warning' // Changed from 'error' to 'warning'
             });
           }
         }
@@ -166,7 +166,7 @@ export const useImportValidation = ({
     setValidationErrors(localValidationErrors);
     setDuplicateErrors(localDuplicateErrors);
 
-    // Only block import if there are critical errors
+    // Only block import if there are critical errors (not warnings or duplicates)
     const criticalErrors = localValidationErrors.filter(e => e.severity === 'error').length;
     return criticalErrors === 0;
   };
@@ -177,7 +177,7 @@ export const useImportValidation = ({
     
     return {
       totalRows: rawData.length,
-      validRows: rawData.length - currentDuplicateErrors.length - criticalErrors,
+      validRows: rawData.length - criticalErrors, // כפילויות לא מונעות ייבוא
       errorRows: criticalErrors,
       warningRows: warnings + currentDuplicateErrors.length,
     };

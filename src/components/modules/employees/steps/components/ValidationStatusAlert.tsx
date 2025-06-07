@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, Info } from 'lucide-react';
 
 interface ValidationSummary {
   totalRows: number;
@@ -33,9 +33,10 @@ export const ValidationStatusAlert: React.FC<ValidationStatusAlertProps> = ({
   if (summary.warningRows > 0) {
     return (
       <Alert>
-        <AlertTriangle className="h-4 w-4" />
+        <Info className="h-4 w-4" />
         <AlertDescription>
-          נמצאו {summary.warningRows} אזהרות. ניתן להמשיך בייבוא אך מומלץ לבדוק את הנתונים.
+          נמצאו {summary.warningRows} אזהרות וכפילויות. 
+          <strong> הייבוא ימשיך עם upsert אוטומטי</strong> - עובדים כפולים יעודכנו במקום להיווצר מחדש.
         </AlertDescription>
       </Alert>
     );
