@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,11 +14,15 @@ interface AccessRequest {
   requested_business_id: string | null;
   requested_role: string;
   request_reason?: string | null;
-  status: string; // Using string to match database type
+  status: string;
   created_at: string;
-  user_email?: string;
-  user_full_name?: string;
-  business_name?: string;
+  profiles?: {
+    email?: string;
+    full_name?: string;
+  } | null;
+  businesses?: {
+    name?: string;
+  } | null;
 }
 
 export const AccessRequestsManager: React.FC = () => {
@@ -38,12 +43,7 @@ export const AccessRequestsManager: React.FC = () => {
 
       if (error) throw error;
       
-      return data?.map(request => ({
-        ...request,
-        user_email: request.profiles?.email,
-        user_full_name: request.profiles?.full_name,
-        business_name: request.businesses?.name
-      })) || [];
+      return data || [];
     },
   });
 
@@ -187,13 +187,13 @@ export const AccessRequestsManager: React.FC = () => {
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="font-semibold text-lg">
-                          {request.user_full_name || request.user_email || 'משתמש לא מזוהה'}
+                          {request.profiles?.full_name || request.profiles?.email || 'משתמש לא מזוהה'}
                         </h3>
-                        <p className="text-sm text-gray-600">{request.user_email}</p>
+                        <p className="text-sm text-gray-600">{request.profiles?.email}</p>
                         <div className="flex items-center gap-2 mt-2">
                           <Building2 className="h-4 w-4 text-gray-500" />
                           <span className="text-sm text-gray-700">
-                            {request.business_name || 'עסק לא מזוהה'}
+                            {request.businesses?.name || 'עסק לא מזוהה'}
                           </span>
                         </div>
                       </div>
@@ -262,10 +262,10 @@ export const AccessRequestsManager: React.FC = () => {
                 <div key={request.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
                   <div>
                     <span className="font-medium">
-                      {request.user_full_name || request.user_email}
+                      {request.profiles?.full_name || request.profiles?.email}
                     </span>
                     <span className="text-sm text-gray-600 mr-2">
-                      → {request.business_name}
+                      → {request.businesses?.name}
                     </span>
                   </div>
                   {getStatusBadge(request.status)}
