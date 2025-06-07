@@ -1,12 +1,12 @@
 
-import { useToast } from '@/hooks/use-toast';
-import { EmployeeImportDatabase } from '@/services/excel/EmployeeImportDatabase';
 import type { ImportStep, ImportActions, ImportValidation } from './types';
 import type { ExcelRow, PreviewEmployee, ImportResult } from '@/services/ExcelImportService';
 import { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
-import { employeeTypes, initialImportResult } from './constants';
-import { ExcelImportService } from '@/services/ExcelImportService';
-import { supabase } from '@/integrations/supabase/client';
+
+import { useFileUpload } from './actions/useFileUpload';
+import { useMappingConfirm } from './actions/useMappingConfirm';
+import { useImportProcess } from './actions/useImportProcess';
+import { useImportUtils } from './actions/useImportUtils';
 
 interface ValidationError {
   rowIndex: number;
@@ -61,246 +61,51 @@ export const useImportActions = ({
   setValidationErrors,
   setDuplicateErrors,
 }: UseImportActionsProps): ImportActions => {
-  const { toast } = useToast();
 
-  // Helper function to check authentication
-  const checkAuthSession = async (): Promise<boolean> => {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('❌ Session check error:', error);
-        toast({
-          title: 'שגיאת אותנטיקציה',
-          description: 'נדרש להתחבר מחדש למערכת',
-          variant: 'destructive'
-        });
-        return false;
-      }
+  // File upload functionality
+  const { handleFileUpload } = useFileUpload({
+    setFile,
+    setRawData,
+    setHeaders,
+    setStep,
+    setShowMappingDialog,
+  });
 
-      if (!session?.access_token) {
-        console.warn('⚠️ No valid session found');
-        toast({
-          title: 'נדרש להתחבר מחדש',
-          description: 'הסשן פג תוקף - אנא התחבר מחדש כדי להמשיך',
-          variant: 'destructive'
-        });
-        return false;
-      }
+  // Mapping confirmation functionality
+  const { handleMappingConfirm } = useMappingConfirm({
+    businessId,
+    rawData,
+    branches,
+    existingEmployees,
+    validation,
+    setFieldMappings,
+    setShowMappingDialog,
+    setPreviewData,
+    setStep,
+  });
 
-      console.log('✅ Valid session confirmed');
-      return true;
-    } catch (error) {
-      console.error('💥 Authentication check failed:', error);
-      toast({
-        title: 'שגיאת מערכת',
-        description: 'לא ניתן לאמת את הסשן - אנא רענן את הדף',
-        variant: 'destructive'
-      });
-      return false;
-    }
-  };
+  // Import process functionality
+  const { handleImport } = useImportProcess({
+    previewData,
+    validation,
+    setIsImporting,
+    setImportResult,
+    setStep,
+  });
 
-  const handleFileUpload = async (uploadedFile: File) => {
-    try {
-      console.log('🚀 Starting file upload process for:', uploadedFile.name);
-      
-      // Check authentication before proceeding
-      const isAuthenticated = await checkAuthSession();
-      if (!isAuthenticated) {
-        console.error('❌ Authentication failed, stopping upload');
-        return;
-      }
-
-      console.log('✅ Authentication confirmed, proceeding with file processing');
-      setFile(uploadedFile);
-      
-      console.log('📄 Parsing Excel file...');
-      const parsedData = await ExcelImportService.parseExcelFile(uploadedFile);
-      console.log('✅ Excel file parsed successfully:', {
-        headers: parsedData.headers.length,
-        rows: parsedData.data.length
-      });
-      
-      if (parsedData.headers.length === 0) {
-        throw new Error('הקובץ לא מכיל כותרות תקינות');
-      }
-      
-      if (parsedData.data.length === 0) {
-        throw new Error('הקובץ לא מכיל נתונים');
-      }
-      
-      console.log('📋 Setting headers and data...');
-      setHeaders(parsedData.headers);
-      setRawData(parsedData.data);
-      
-      // DON'T change step - stay on upload until mapping is confirmed
-      console.log('📋 Opening mapping dialog...');
-      setShowMappingDialog(true);
-      
-      console.log('✅ File upload process completed successfully');
-    } catch (error) {
-      console.error('💥 File upload error:', error);
-      toast({
-        title: 'שגיאה בקריאת הקובץ',
-        description: error instanceof Error ? error.message : 'אנא ודא שהקובץ הוא Excel תקין',
-        variant: 'destructive'
-      });
-      
-      // Reset state on error
-      setStep('upload');
-      setFile(null);
-      setRawData([]);
-      setHeaders([]);
-    }
-  };
-
-  const handleMappingConfirm = async (mappings: FieldMapping[]) => {
-    if (!businessId) {
-      toast({
-        title: 'שגיאה',
-        description: 'זיהוי עסק לא תקין',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    // Check authentication before proceeding with mapping
-    const isAuthenticated = await checkAuthSession();
-    if (!isAuthenticated) {
-      return;
-    }
-    
-    console.log('✅ Mapping confirmed, generating preview...');
-    setFieldMappings(mappings);
-    setShowMappingDialog(false);
-    
-    // Generate preview with enhanced validation
-    const preview = ExcelImportService.generatePreview(
-      rawData,
-      mappings,
-      businessId,
-      branches,
-      existingEmployees,
-      employeeTypes
-    );
-    
-    console.log('📊 Preview generated:', {
-      total: preview.length,
-      valid: preview.filter(p => p.isValid).length,
-      duplicates: preview.filter(p => p.isDuplicate).length
-    });
-    
-    setPreviewData(preview);
-    
-    // Trigger advanced validation
-    setTimeout(() => {
-      validation.validateImportData();
-    }, 100);
-    
-    setStep('preview');
-  };
-
-  const handleImport = async () => {
-    console.log('Starting import process...');
-    
-    // Check authentication before starting import
-    const isAuthenticated = await checkAuthSession();
-    if (!isAuthenticated) {
-      return;
-    }
-    
-    // Final validation before import
-    if (!validation.validateImportData()) {
-      toast({
-        title: 'שגיאות בולידציה',
-        description: 'אנא תקן את השגיאות הקריטיות לפני הייבוא',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    setIsImporting(true);
-    
-    try {
-      // Show initial progress toast
-      toast({
-        title: 'מתחיל ייבוא',
-        description: 'מעבד את הנתונים...',
-      });
-
-      console.log('Calling import service with preview data:', previewData.length);
-      
-      // Double-check session before actual import
-      const finalAuthCheck = await checkAuthSession();
-      if (!finalAuthCheck) {
-        setIsImporting(false);
-        return;
-      }
-
-      // Use the new EmployeeImportDatabase service
-      const result = await EmployeeImportDatabase.importEmployees(previewData);
-      
-      console.log('Import completed with result:', result);
-      setImportResult(result);
-      
-      if (result.success) {
-        toast({
-          title: 'ייבוא הושלם בהצלחה! 🎉',
-          description: `${result.importedCount} עובדים נוספו/עודכנו במערכת`,
-        });
-      } else {
-        toast({
-          title: 'ייבוא הושלם עם שגיאות',
-          description: result.message,
-          variant: 'destructive'
-        });
-      }
-      
-      setStep('summary');
-    } catch (error) {
-      console.error('Import error:', error);
-      const errorResult: ImportResult = {
-        success: false,
-        importedCount: 0,
-        errorCount: previewData.length,
-        message: error instanceof Error ? error.message : 'שגיאה לא צפויה - אנא נסה שוב'
-      };
-      setImportResult(errorResult);
-      setStep('summary');
-      
-      toast({
-        title: 'שגיאה בייבוא',
-        description: 'שגיאה לא צפויה - אנא נסה שוב',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
-  const resetForm = () => {
-    console.log('🔄 Resetting import form');
-    setStep('upload');
-    setFile(null);
-    setRawData([]);
-    setHeaders([]);
-    setFieldMappings([]);
-    setPreviewData([]);
-    setImportResult(initialImportResult);
-    setValidationErrors([]);
-    setDuplicateErrors([]);
-    setShowMappingDialog(false);
-  };
-
-  const downloadTemplate = () => {
-    console.log('📥 Generating Excel template');
-    ExcelImportService.generateTemplate();
-    toast({
-      title: 'תבנית הורדה',
-      description: 'קובץ התבנית הורד בהצלחה',
-    });
-  };
+  // Utility functions
+  const { resetForm, downloadTemplate } = useImportUtils({
+    setStep,
+    setFile,
+    setRawData,
+    setHeaders,
+    setFieldMappings,
+    setPreviewData,
+    setImportResult,
+    setValidationErrors,
+    setDuplicateErrors,
+    setShowMappingDialog,
+  });
 
   return {
     handleFileUpload,
