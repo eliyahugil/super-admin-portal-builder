@@ -19,6 +19,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isSuperAdmin: boolean;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string, retryCount = 0) => {
+  const fetchProfile = async (userId: string, retryCount = 0): Promise<Profile | null> => {
     try {
       console.log('🔍 Starting fetchProfile for user ID:', userId, 'retry:', retryCount);
       
@@ -54,11 +55,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // If profile doesn't exist and we haven't retried too many times, wait and retry
         if (error.code === 'PGRST116' && retryCount < 5) {
-          console.log('⏰ Profile not found, retrying in 1 second...');
-          setTimeout(() => {
-            fetchProfile(userId, retryCount + 1);
-          }, 1000);
-          return;
+          console.log('⏰ Profile not found, retrying in 2 seconds...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return fetchProfile(userId, retryCount + 1);
         }
         
         console.error('❌ Error details:', {
@@ -67,18 +66,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           hint: error.hint,
           code: error.code
         });
-        return;
+        return null;
       }
 
       if (data) {
         console.log('✅ Profile fetched successfully:', data);
         console.log('👤 Setting profile with role:', data.role);
-        setProfile(data);
+        return data;
       } else {
         console.log('⚠️ No profile data returned from query');
+        return null;
       }
     } catch (error) {
       console.error('💥 Exception in fetchProfile:', error);
+      return null;
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (user?.id) {
+      console.log('🔄 Refreshing profile for user:', user.id);
+      const profileData = await fetchProfile(user.id);
+      setProfile(profileData);
     }
   };
 
@@ -105,10 +114,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(null);
           
           // Fetch profile with retry logic
-          setTimeout(() => {
-            console.log('⏰ Executing profile fetch');
-            fetchProfile(session.user.id);
-          }, 500);
+          const profileData = await fetchProfile(session.user.id);
+          setProfile(profileData);
         } else {
           console.log('🚪 No user session, clearing profile');
           setProfile(null);
@@ -120,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log('🔍 Initial session check:', session?.user?.email || 'no session');
       console.log('📋 Initial session details:', {
         hasSession: !!session,
@@ -133,13 +140,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (session?.user) {
         console.log('🎯 Found existing session, fetching profile for user:', session.user.email);
-        setTimeout(() => {
-          fetchProfile(session.user.id);
-        }, 500);
+        const profileData = await fetchProfile(session.user.id);
+        setProfile(profileData);
       } else {
         console.log('❌ No existing session found');
-        setLoading(false);
       }
+      setLoading(false);
     });
 
     return () => {
@@ -220,6 +226,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
     isSuperAdmin,
+    refreshProfile,
   };
 
   return (
