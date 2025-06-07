@@ -25,8 +25,8 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <ErrorBoundary>
-      <Router>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <Router>
           <AuthProvider>
             <Toaster />
             <Routes>
@@ -45,8 +45,8 @@ function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
-        </QueryClientProvider>
-      </Router>
+        </Router>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }
