@@ -11,7 +11,7 @@ export interface PreviewEmployee {
     employee_id?: string;
     address?: string;
     hire_date?: string;
-    employee_type: 'permanent' | 'temporary' | 'contractor' | 'intern';
+    employee_type: 'permanent' | 'temporary' | 'contractor' | 'youth'; // הסרתי 'intern'
     weekly_hours_required?: number;
     main_branch_id?: string;
     notes?: string;
@@ -101,9 +101,19 @@ export class EmployeeDataTransformer {
         }
       }
 
-      // Employee type validation
-      if (employeeData.employee_type && !employeeTypes.includes(employeeData.employee_type)) {
-        warnings.push('סוג עובד לא תקין, יוגדר כקבוע');
+      // Employee type validation and mapping
+      if (employeeData.employee_type) {
+        // Map "intern" to "youth" for consistency
+        if (employeeData.employee_type === 'intern') {
+          employeeData.employee_type = 'youth';
+        }
+        
+        const validTypes = ['permanent', 'temporary', 'contractor', 'youth'];
+        if (!validTypes.includes(employeeData.employee_type)) {
+          warnings.push('סוג עובד לא תקין, יוגדר כקבוע');
+          employeeData.employee_type = 'permanent';
+        }
+      } else {
         employeeData.employee_type = 'permanent';
       }
 

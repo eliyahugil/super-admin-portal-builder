@@ -75,6 +75,11 @@ export const useImportValidation = ({
         }
       });
 
+      // Map intern to youth before sanitization
+      if (employeeData.employee_type === 'intern') {
+        employeeData.employee_type = 'youth';
+      }
+
       // Sanitize the employee data
       const sanitizedData = sanitizeEmployeeData(employeeData);
 
@@ -142,8 +147,8 @@ export const useImportValidation = ({
         });
       }
 
-      // Validate employee type
-      const validEmployeeTypes = ['permanent', 'temporary', 'contractor', 'intern'];
+      // Validate employee type - now includes youth instead of intern
+      const validEmployeeTypes = ['permanent', 'temporary', 'contractor', 'youth'];
       if (sanitizedData.employee_type && !validEmployeeTypes.includes(sanitizedData.employee_type)) {
         localValidationErrors.push({
           rowIndex: index + 1,

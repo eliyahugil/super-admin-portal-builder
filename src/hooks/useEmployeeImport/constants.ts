@@ -2,7 +2,7 @@
 export const employeeTypes = [
   { value: 'permanent', label: 'קבוע' },
   { value: 'temporary', label: 'זמני' },
-  { value: 'youth', label: 'נוער' },
+  { value: 'youth', label: 'נוער' }, // שינוי מ-'intern' ל-'youth'
   { value: 'contractor', label: 'קבלן' }
 ];
 
