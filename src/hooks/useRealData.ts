@@ -14,6 +14,10 @@ interface UseRealDataOptions {
   orderBy?: { column: string; ascending: boolean };
 }
 
+/**
+ * UPDATED: Enhanced useRealData with mandatory business isolation
+ * This ensures all data queries respect business boundaries and RLS policies
+ */
 export function useRealData<T = any>({ 
   queryKey, 
   tableName, 
@@ -24,23 +28,22 @@ export function useRealData<T = any>({
   orderBy
 }: UseRealDataOptions) {
   const { profile } = useAuth();
-  const { businessId } = useCurrentBusiness();
+  const { businessId, isSuperAdmin } = useCurrentBusiness();
 
   return useQuery({
-    queryKey,
+    queryKey: [...queryKey, businessId], // Include businessId in query key for proper caching
     queryFn: async (): Promise<T[]> => {
-      console.log(`useRealData - Fetching from ${tableName}`, { 
+      console.log(`useRealData - Fetching from ${tableName} with business security`, { 
         filters, 
         businessId, 
-        isSuperAdmin: profile?.role === 'super_admin',
+        isSuperAdmin,
         enforceBusinessFilter,
         userProfile: profile?.email
       });
       
-      // Create a more flexible query builder
       let query = supabase.from(tableName as any).select(select);
       
-      // Apply user-provided filters
+      // Apply user-provided filters first
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           query = query.eq(key, value);
@@ -48,12 +51,18 @@ export function useRealData<T = any>({
         }
       });
       
-      // Automatically enforce business filtering for non-super-admins
-      if (enforceBusinessFilter && profile?.role !== 'super_admin' && businessId) {
-        // For now, simply apply business_id filter if the table likely has it
-        // This is a simpler approach than checking schema
-        if (tableName !== 'businesses' && tableName !== 'modules_config' && tableName !== 'supported_integrations') {
-          console.log(`useRealData - Adding business filter for ${tableName}: ${businessId}`);
+      // CRITICAL SECURITY: Automatically enforce business filtering for non-super-admins
+      if (enforceBusinessFilter && !isSuperAdmin && businessId) {
+        // Define which tables are global and don't need business filtering
+        const globalTables = [
+          'businesses', 
+          'modules_config', 
+          'supported_integrations', 
+          'profiles'
+        ];
+        
+        if (!globalTables.includes(tableName)) {
+          console.log(`useRealData - SECURITY: Adding mandatory business filter for ${tableName}: ${businessId}`);
           query = query.eq('business_id', businessId);
         }
       }
@@ -71,83 +80,17 @@ export function useRealData<T = any>({
         throw error;
       }
       
-      console.log(`useRealData - Successfully fetched ${data?.length || 0} records from ${tableName}`, data);
+      console.log(`useRealData - Successfully fetched ${data?.length || 0} records from ${tableName} with business isolation`);
       return (data as T[]) || [];
     },
     enabled: enabled && !!profile,
   });
 }
 
-// Business-specific hooks with proper TypeScript interfaces
-interface IntegrationType {
-  id: string;
-  integration_name: string;
-  display_name: string;
-  description: string;
-  category: string;
-  icon: string;
-  requires_global_key: boolean;
-  requires_business_credentials: boolean;
-  is_active: boolean;
-  credential_fields: any[];
-  created_at: string;
-  documentation_url?: string;
-}
-
-interface BusinessType {
-  id: string;
-  name: string;
-  contact_email: string;
-  admin_email: string;
-  contact_phone: string;
-  is_active: boolean;
-  created_at: string;
-  owner_id: string;
-  description?: string;
-  website?: string;
-  address?: string;
-  logo_url?: string;
-  updated_at: string;
-}
-
-interface BusinessIntegrationType {
-  id: string;
-  business_id: string;
-  integration_name: string;
-  display_name: string;
-  is_active: boolean;
-  credentials: Record<string, any>;
-  config: Record<string, any>;
-  last_tested_at?: string;
-  last_sync?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export function useIntegrationsData() {
-  return useRealData<IntegrationType>({
-    queryKey: ['supported-integrations'],
-    tableName: 'supported_integrations',
-    enforceBusinessFilter: false,
-    orderBy: { column: 'display_name', ascending: true }
-  });
-}
-
-export function useBusinessIntegrationsData() {
-  const { businessId } = useCurrentBusiness();
-  
-  return useRealData<BusinessIntegrationType>({
-    queryKey: ['business-integrations', businessId],
-    tableName: 'business_integrations',
-    filters: businessId ? { business_id: businessId } : {},
-    enabled: !!businessId,
-    enforceBusinessFilter: true
-  });
-}
-
+// Business-specific secure hooks with automatic business_id filtering
 export function useBusinessesData() {
   const { profile } = useAuth();
-  const isSuperAdmin = profile?.role === 'super_admin';
+  const { isSuperAdmin } = useCurrentBusiness();
   
   console.log('useBusinessesData - Called with profile:', {
     userEmail: profile?.email,
@@ -156,11 +99,32 @@ export function useBusinessesData() {
     userId: profile?.id
   });
   
-  return useRealData<BusinessType>({
+  return useRealData<any>({
     queryKey: ['businesses'],
     tableName: 'businesses',
-    filters: isSuperAdmin ? {} : { owner_id: profile?.id },
-    enforceBusinessFilter: false,
+    filters: isSuperAdmin ? {} : { owner_id: profile?.id }, // Super admins see all, others see only owned
+    enforceBusinessFilter: false, // businesses table doesn't need business_id filter
     orderBy: { column: 'name', ascending: true }
+  });
+}
+
+export function useIntegrationsData() {
+  return useRealData<any>({
+    queryKey: ['supported-integrations'],
+    tableName: 'supported_integrations',
+    enforceBusinessFilter: false, // Global table
+    orderBy: { column: 'display_name', ascending: true }
+  });
+}
+
+export function useBusinessIntegrationsData() {
+  const { businessId } = useCurrentBusiness();
+  
+  return useRealData<any>({
+    queryKey: ['business-integrations', businessId],
+    tableName: 'business_integrations',
+    filters: businessId ? { business_id: businessId } : {},
+    enabled: !!businessId,
+    enforceBusinessFilter: true // This table needs business_id filtering
   });
 }
