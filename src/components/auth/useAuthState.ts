@@ -11,7 +11,7 @@ export const useAuthState = () => {
   const [loading, setLoading] = useState(true);
   
   // Stable fetchProfile function that doesn't change on re-renders
-  const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
+  const fetchProfile = useCallback(async (userId: string): Promise<void> => {
     try {
       console.log('🔍 Fetching profile for user:', userId);
       
@@ -45,28 +45,31 @@ export const useAuthState = () => {
             if (createError) {
               console.error('❌ שגיאה ביצירת פרופיל:', createError);
               // If creation fails, return a default profile
-              return {
+              setProfile({
                 id: userId,
                 email: userData.user.email || '',
                 full_name: userData.user.email || '',
                 role: 'business_user' as const
-              };
+              });
+              return;
             }
             
             console.log('✅ פרופיל חדש נוצר:', createdProfile);
-            return createdProfile;
+            setProfile(createdProfile);
+            return;
           }
         } catch (createError) {
           console.error('💥 Exception ביצירת פרופיל:', createError);
         }
         
         // Return a default profile if everything fails
-        return {
+        setProfile({
           id: userId,
           email: user?.email || '',
           full_name: user?.email || '',
           role: 'business_user' as const
-        };
+        });
+        return;
       }
 
       if (!data) {
@@ -94,49 +97,51 @@ export const useAuthState = () => {
             if (createError) {
               console.error('❌ שגיאה ביצירת פרופיל:', createError);
               // Return default profile if creation fails
-              return {
+              setProfile({
                 id: userId,
                 email: userData.user.email || '',
                 full_name: userData.user.email || '',
                 role: 'business_user' as const
-              };
+              });
+              return;
             }
             
             console.log('✅ פרופיל חדש נוצר:', createdProfile);
-            return createdProfile;
+            setProfile(createdProfile);
+            return;
           }
         } catch (createError) {
           console.error('💥 Exception ביצירת פרופיל:', createError);
         }
         
         // Return default profile
-        return {
+        setProfile({
           id: userId,
           email: user?.email || '',
           full_name: user?.email || '',
           role: 'business_user' as const
-        };
+        });
+        return;
       }
 
       console.log('✅ Profile fetched successfully:', data);
-      return data;
+      setProfile(data);
     } catch (error) {
       console.error('💥 Exception in fetchProfile:', error);
       // Return default profile on any error
-      return {
+      setProfile({
         id: userId,
         email: user?.email || '',
         full_name: user?.email || '',
         role: 'business_user' as const
-      };
+      });
     }
   }, [user?.email]);
 
   const refreshProfile = useCallback(async () => {
     if (user?.id) {
       console.log('🔄 Refreshing profile for user:', user.id);
-      const profileData = await fetchProfile(user.id);
-      setProfile(profileData);
+      await fetchProfile(user.id);
     }
   }, [user?.id, fetchProfile]);
 
@@ -144,23 +149,21 @@ export const useAuthState = () => {
     console.log('🚀 useAuthState - Starting auth setup');
     
     let isMounted = true;
-    let authSubscription: any = null;
 
-    // Safety timeout reduced to 10 seconds
+    // Safety timeout reduced to 8 seconds
     const safetyTimeout = setTimeout(() => {
       if (isMounted && loading) {
         console.error('⚠️ Safety timeout - forcing loading to false');
         setLoading(false);
       }
-    }, 10000);
+    }, 8000);
 
     const setupAuth = async () => {
       try {
-        // Set up auth listener first
         console.log('🎧 Setting up auth state listener...');
         
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, newSession) => {
+          (event, newSession) => {
             console.log('🔄 Auth state changed:', event, {
               hasSession: !!newSession,
               userEmail: newSession?.user?.email || 'no session'
@@ -181,10 +184,8 @@ export const useAuthState = () => {
               setTimeout(async () => {
                 if (isMounted) {
                   try {
-                    const profileData = await fetchProfile(newSession.user.id);
+                    await fetchProfile(newSession.user.id);
                     if (isMounted) {
-                      console.log('✅ Profile loaded:', profileData);
-                      setProfile(profileData);
                       setLoading(false);
                     }
                   } catch (profileError) {
@@ -211,8 +212,7 @@ export const useAuthState = () => {
             }
           }
         );
-        
-        authSubscription = subscription;
+
         console.log('✅ Auth listener set up successfully');
 
         // Get initial session
@@ -247,10 +247,9 @@ export const useAuthState = () => {
         if (initialSession?.user) {
           console.log('👤 Initial user found, fetching profile...');
           try {
-            const profileData = await fetchProfile(initialSession.user.id);
+            await fetchProfile(initialSession.user.id);
             if (isMounted) {
-              console.log('✅ Initial profile loaded:', profileData);
-              setProfile(profileData);
+              console.log('✅ Initial profile loaded');
             }
           } catch (profileError) {
             console.error('❌ Error fetching initial profile:', profileError);
@@ -276,6 +275,10 @@ export const useAuthState = () => {
           console.log('✅ Initial auth setup complete');
           setLoading(false);
         }
+
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (error) {
         console.error('💥 Exception in setupAuth:', error);
         if (isMounted) {
@@ -288,15 +291,13 @@ export const useAuthState = () => {
     };
 
     // Start the auth setup
-    setupAuth();
+    const cleanup = setupAuth();
 
     return () => {
       console.log('🧹 Cleaning up useAuthState');
       isMounted = false;
       clearTimeout(safetyTimeout);
-      if (authSubscription) {
-        authSubscription.unsubscribe();
-      }
+      cleanup?.then(unsubscribe => unsubscribe?.());
     };
   }, []); // Empty dependency array to prevent unnecessary re-runs
 
