@@ -132,8 +132,7 @@ export const useAuthState = () => {
       } catch (error) {
         console.error('💥 Exception in setupAuth:', error);
         if (isMounted) {
-          setSession(null);
-          setUser(null);
+          // Clear state using available functions
           setProfile(null);
           setLoading(false);
         }
