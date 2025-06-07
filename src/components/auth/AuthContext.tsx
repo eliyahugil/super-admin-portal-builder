@@ -37,9 +37,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, retryCount = 0) => {
     try {
-      console.log('🔍 Starting fetchProfile for user ID:', userId);
+      console.log('🔍 Starting fetchProfile for user ID:', userId, 'retry:', retryCount);
       
       const { data, error } = await supabase
         .from('profiles')
@@ -51,6 +51,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('❌ Error fetching profile:', error);
+        
+        // If profile doesn't exist and we haven't retried too many times, wait and retry
+        if (error.code === 'PGRST116' && retryCount < 5) {
+          console.log('⏰ Profile not found, retrying in 1 second...');
+          setTimeout(() => {
+            fetchProfile(userId, retryCount + 1);
+          }, 1000);
+          return;
+        }
+        
         console.error('❌ Error details:', {
           message: error.message,
           details: error.details,
@@ -94,11 +104,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('🧹 Clearing existing profile before fetch');
           setProfile(null);
           
-          // Defer profile fetch to avoid potential deadlock
+          // Fetch profile with retry logic
           setTimeout(() => {
-            console.log('⏰ Executing delayed profile fetch');
+            console.log('⏰ Executing profile fetch');
             fetchProfile(session.user.id);
-          }, 100);
+          }, 500);
         } else {
           console.log('🚪 No user session, clearing profile');
           setProfile(null);
@@ -125,7 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('🎯 Found existing session, fetching profile for user:', session.user.email);
         setTimeout(() => {
           fetchProfile(session.user.id);
-        }, 100);
+        }, 500);
       } else {
         console.log('❌ No existing session found');
         setLoading(false);

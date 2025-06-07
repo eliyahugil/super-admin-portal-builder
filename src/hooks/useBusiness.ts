@@ -5,28 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthContext';
 
 export const useBusiness = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { businessId: urlBusinessId } = useParams();
-
-  const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ['profile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        return null;
-      }
-      return data;
-    },
-    enabled: !!user?.id,
-  });
 
   // If we have a business ID from URL, use that to fetch business details
   const { data: urlBusiness, isLoading: urlBusinessLoading } = useQuery({
@@ -102,7 +82,7 @@ export const useBusiness = () => {
     businessId,
     isSuperAdmin: profile?.role === 'super_admin',
     isBusinessOwner: !!ownedBusiness,
-    isLoading: profileLoading || urlBusinessLoading || ownedBusinessLoading,
+    isLoading: urlBusinessLoading || ownedBusinessLoading,
     integrationsCount: integrationsCount || 0,
   };
 };
