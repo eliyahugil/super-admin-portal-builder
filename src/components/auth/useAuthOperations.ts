@@ -7,17 +7,28 @@ export const useAuthOperations = () => {
     try {
       console.log('🔍 Fetching profile for user:', userId);
       
-      // בדיקה אם הטבלה profiles קיימת
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle(); // שימוש ב-maybeSingle במקום single כדי למנוע שגיאות
+        .maybeSingle();
 
       if (error) {
         console.error('❌ Profile fetch error:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
         
-        // אם הטבלה לא קיימת, ננסה ליצור פרופיל חדש
+        // Check for network/connection errors
+        if (error.message?.includes('fetch') || error.message?.includes('Failed to fetch')) {
+          console.error('🌐 Network error detected while fetching profile');
+          throw new Error('Network connection failed. Please check your internet connection.');
+        }
+        
+        // If table doesn't exist or no record found
         if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
           console.warn('⚠️ טבלת profiles לא קיימת או לא נמצאה רשומה');
           return null;
@@ -29,7 +40,7 @@ export const useAuthOperations = () => {
       if (!data) {
         console.warn('⚠️ לא נמצא פרופיל למשתמש:', userId);
         
-        // ננסה ליצור פרופיל חדש אוטומטית
+        // Try to create a new profile automatically
         try {
           const { data: userData } = await supabase.auth.getUser();
           if (userData.user) {
@@ -67,6 +78,16 @@ export const useAuthOperations = () => {
       return data;
     } catch (error) {
       console.error('💥 Exception in fetchProfile:', error);
+      console.error('💥 Exception details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
+      
+      // Re-throw network errors with a user-friendly message
+      if (error instanceof Error && error.message?.includes('fetch')) {
+        throw new Error('שגיאת חיבור לשרת. אנא בדוק את החיבור לאינטרנט.');
+      }
+      
       return null;
     }
   };
@@ -74,39 +95,75 @@ export const useAuthOperations = () => {
   const signIn = async (email: string, password: string) => {
     console.log('🔑 Attempting to sign in with email:', email);
     
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (error) {
-      console.error('❌ Sign in error:', error);
-    } else {
-      console.log('✅ Sign in successful');
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        console.error('❌ Sign in error:', error);
+        console.error('❌ Sign in error details:', {
+          message: error.message,
+          status: error.status
+        });
+        
+        // Check for network errors
+        if (error.message?.includes('fetch') || error.message?.includes('Failed to fetch')) {
+          return { error: new Error('שגיאת חיבור לשרת. אנא בדוק את החיבור לאינטרנט.') };
+        }
+      } else {
+        console.log('✅ Sign in successful');
+      }
+      
+      return { error };
+    } catch (error) {
+      console.error('💥 Exception in signIn:', error);
+      return { error: new Error('שגיאה במערכת האימות') };
     }
-    
-    return { error };
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      console.log('📝 Attempting to sign up with email:', email, 'redirect:', redirectUrl);
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: fullName,
+          }
         }
+      });
+      
+      if (error) {
+        console.error('❌ Sign up error:', error);
+        
+        // Check for network errors
+        if (error.message?.includes('fetch') || error.message?.includes('Failed to fetch')) {
+          return { error: new Error('שגיאת חיבור לשרת. אנא בדוק את החיבור לאינטרנט.') };
+        }
+      } else {
+        console.log('✅ Sign up successful');
       }
-    });
-    return { error };
+      
+      return { error };
+    } catch (error) {
+      console.error('💥 Exception in signUp:', error);
+      return { error: new Error('שגיאה במערכת הרישום') };
+    }
   };
 
   const signOut = async () => {
-    console.log('🚪 Signing out');
-    await supabase.auth.signOut();
+    try {
+      console.log('🚪 Signing out');
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('💥 Exception in signOut:', error);
+    }
   };
 
   return {

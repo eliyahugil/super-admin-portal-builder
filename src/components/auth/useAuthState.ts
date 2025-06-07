@@ -25,25 +25,37 @@ export const useAuthState = () => {
     console.log('🚀 Setting up auth state listener');
     
     let mounted = true;
-    let timeoutId: NodeJS.Timeout;
 
-    // טיימר בטיחות - אם אחרי 10 שניות עדיין loading, נעצור
+    // Safety timeout - if still loading after 15 seconds, stop
     const safetyTimeout = setTimeout(() => {
       if (mounted && loading) {
         console.error('⚠️ Safety timeout reached - stopping loading state');
         setLoading(false);
       }
-    }, 10000);
+    }, 15000);
 
-    // Get initial session
+    // Get initial session with better error handling
     const getInitialSession = async () => {
       try {
         console.log('⏳ מתחיל לבדוק סשן');
+        console.log('🔗 Supabase URL being used:', "https://xmhmztipuvzmwgbcovch.supabase.co");
         
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('💥 שגיאה בקבלת הסשן:', error);
+          console.error('💥 Error details:', {
+            message: error.message,
+            status: error.status,
+            name: error.name
+          });
+          
+          // Check if it's a network error
+          if (error.message?.includes('fetch') || error.message?.includes('Failed to fetch')) {
+            console.error('🌐 Network connectivity issue detected');
+            console.error('🔍 Check your internet connection and Supabase URL');
+          }
+          
           if (mounted) {
             setSession(null);
             setUser(null);
@@ -53,7 +65,11 @@ export const useAuthState = () => {
           return;
         }
 
-        console.log('🔍 Initial session:', initialSession?.user?.email || 'no session');
+        console.log('🔍 Initial session result:', {
+          hasSession: !!initialSession,
+          userEmail: initialSession?.user?.email || 'no user',
+          sessionExpiry: initialSession?.expires_at
+        });
         
         if (!mounted) return;
 
@@ -87,6 +103,11 @@ export const useAuthState = () => {
         }
       } catch (error) {
         console.error('💥 Exception in getInitialSession:', error);
+        console.error('💥 Exception details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : 'No stack trace'
+        });
+        
         if (mounted) {
           setSession(null);
           setUser(null);
@@ -98,36 +119,43 @@ export const useAuthState = () => {
       }
     };
 
-    // Set up auth state listener
+    // Set up auth state listener with error handling
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log('🔄 Auth state changed:', event, newSession?.user?.email || 'no session');
+        console.log('🔄 Auth state changed:', event, {
+          hasSession: !!newSession,
+          userEmail: newSession?.user?.email || 'no session'
+        });
         
         if (!mounted) return;
         
-        // מעדכן מיד את ה-session וה-user
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        if (newSession?.user) {
-          console.log('👤 משתמש חדש, שולף פרופיל...');
-          try {
-            const profileData = await fetchProfile(newSession.user.id);
-            if (mounted) {
-              console.log('✅ פרופיל עודכן:', profileData);
-              setProfile(profileData);
+        try {
+          // Update state immediately
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
+          
+          if (newSession?.user) {
+            console.log('👤 משתמש חדש, שולף פרופיל...');
+            try {
+              const profileData = await fetchProfile(newSession.user.id);
+              if (mounted) {
+                console.log('✅ פרופיל עודכן:', profileData);
+                setProfile(profileData);
+              }
+            } catch (profileError) {
+              console.error('❌ שגיאה בעדכון פרופיל:', profileError);
+              if (mounted) {
+                setProfile(null);
+              }
             }
-          } catch (profileError) {
-            console.error('❌ שגיאה בעדכון פרופיל:', profileError);
+          } else {
+            console.log('🔴 משתמש התנתק');
             if (mounted) {
               setProfile(null);
             }
           }
-        } else {
-          console.log('🔴 משתמש התנתק');
-          if (mounted) {
-            setProfile(null);
-          }
+        } catch (error) {
+          console.error('💥 Error in auth state change handler:', error);
         }
       }
     );
@@ -142,14 +170,15 @@ export const useAuthState = () => {
     };
   }, [fetchProfile]);
 
-  // לוג נוסף לעקוב אחרי השינויים במצב
+  // Log state changes for debugging
   useEffect(() => {
     console.log('📊 Auth state update:', {
       hasUser: !!user,
       userEmail: user?.email,
       hasProfile: !!profile,
       profileRole: profile?.role,
-      loading
+      loading,
+      timestamp: new Date().toISOString()
     });
   }, [user, profile, loading]);
 
