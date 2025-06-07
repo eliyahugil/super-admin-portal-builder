@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -239,17 +240,6 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden h-9 w-9"
-        >
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">פתח תפריט</span>
-        </Button>
-      </SheetTrigger>
-      
       <SheetContent side="right" className="w-[280px] sm:w-[320px] p-0">
         <SheetHeader className="px-4 py-6 border-b">
           <div className="flex items-center justify-between">
