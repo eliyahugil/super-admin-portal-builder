@@ -3,7 +3,7 @@ import React from 'react';
 import { DialogTrigger } from '@/components/ui/dialog';
 import { ImportButton } from './ImportButton';
 import { ImportDialog } from './ImportDialog';
-import { FieldMappingDialog } from './FieldMappingDialog';
+import { EmployeeImportMappingStep } from './steps/EmployeeImportMappingStep';
 import { useEmployeeImport } from '@/hooks/useEmployeeImport';
 
 export const EmployeeExcelImporter: React.FC = () => {
@@ -29,7 +29,7 @@ export const EmployeeExcelImporter: React.FC = () => {
         onOpenChange={setIsOpen}
       />
 
-      <FieldMappingDialog
+      <EmployeeImportMappingStep
         open={showMappingDialog}
         onOpenChange={setShowMappingDialog}
         fileColumns={headers}

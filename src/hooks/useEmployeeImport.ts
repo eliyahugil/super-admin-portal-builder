@@ -1,12 +1,11 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/useBusiness';
 import { supabase } from '@/integrations/supabase/client';
-import { ExcelImportService, type ExcelRow, type PreviewEmployee } from '@/services/ExcelImportService';
+import { ExcelImportService, type ExcelRow, type PreviewEmployee, type ImportResult } from '@/services/ExcelImportService';
 import { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
 
-export type ImportStep = 'upload' | 'mapping' | 'preview' | 'import';
+export type ImportStep = 'upload' | 'mapping' | 'preview' | 'summary';
 
 export const useEmployeeImport = () => {
   const { businessId } = useBusiness();
@@ -22,6 +21,12 @@ export const useEmployeeImport = () => {
   const [existingEmployees, setExistingEmployees] = useState<any[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [showMappingDialog, setShowMappingDialog] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult>({
+    success: false,
+    importedCount: 0,
+    errorCount: 0,
+    message: ''
+  });
 
   const employeeTypes = [
     { value: 'permanent', label: 'קבוע' },
@@ -123,14 +128,13 @@ export const useEmployeeImport = () => {
     
     try {
       const result = await ExcelImportService.importEmployees(previewData);
+      setImportResult(result);
       
       if (result.success) {
         toast({
           title: 'ייבוא הושלם בהצלחה',
           description: result.message,
         });
-        
-        resetForm();
       } else {
         toast({
           title: 'שגיאה בייבוא',
@@ -138,7 +142,18 @@ export const useEmployeeImport = () => {
           variant: 'destructive'
         });
       }
+      
+      setStep('summary');
     } catch (error) {
+      const errorResult: ImportResult = {
+        success: false,
+        importedCount: 0,
+        errorCount: previewData.length,
+        message: 'שגיאה לא צפויה - אנא נסה שוב'
+      };
+      setImportResult(errorResult);
+      setStep('summary');
+      
       toast({
         title: 'שגיאה לא צפויה',
         description: 'אנא נסה שוב',
@@ -156,6 +171,12 @@ export const useEmployeeImport = () => {
     setHeaders([]);
     setFieldMappings([]);
     setPreviewData([]);
+    setImportResult({
+      success: false,
+      importedCount: 0,
+      errorCount: 0,
+      message: ''
+    });
   };
 
   const downloadTemplate = () => {
@@ -172,6 +193,7 @@ export const useEmployeeImport = () => {
     showMappingDialog,
     systemFields,
     employeeTypes,
+    importResult,
     
     // Actions
     handleFileUpload,

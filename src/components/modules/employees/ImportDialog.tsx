@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { EmployeeImportUploadStep } from './EmployeeImportUploadStep';
-import { EmployeeImportPreviewStep } from './EmployeeImportPreviewStep';
+import { EmployeeImportUploadStep } from './steps/EmployeeImportUploadStep';
+import { EmployeeImportPreviewStep } from './steps/EmployeeImportPreviewStep';
+import { EmployeeImportSummary } from './steps/EmployeeImportSummary';
 import { useEmployeeImport, ImportStep } from '@/hooks/useEmployeeImport';
 
 interface ImportDialogProps {
@@ -18,10 +19,12 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
     step,
     previewData,
     isImporting,
+    importResult,
     handleFileUpload,
     handleImport,
     downloadTemplate,
     setShowMappingDialog,
+    resetForm,
   } = useEmployeeImport();
 
   const renderStepContent = () => {
@@ -42,8 +45,18 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
             onBackToMapping={() => setShowMappingDialog(true)}
             onConfirmImport={async () => {
               await handleImport();
-              onOpenChange(false);
             }}
+          />
+        );
+      
+      case 'summary':
+        return (
+          <EmployeeImportSummary
+            result={importResult}
+            onStartOver={() => {
+              resetForm();
+            }}
+            onClose={() => onOpenChange(false)}
           />
         );
       
