@@ -10,7 +10,6 @@ export const useAuthState = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initializing, setInitializing] = useState(true);
   
   const { fetchProfile } = useAuthOperations();
 
@@ -23,32 +22,29 @@ export const useAuthState = () => {
   };
 
   useEffect(() => {
-    if (!initializing) return; // Prevent multiple initializations
+    console.log('🚀 useAuthState - Starting auth setup');
     
-    console.log('🚀 Setting up auth state listener');
-    
-    let mounted = true;
+    let isMounted = true;
     let authSubscription: any = null;
+    let isInitialized = false;
 
-    // Safety timeout - if still loading after 15 seconds, stop
+    // Safety timeout - if still loading after 10 seconds, force completion
     const safetyTimeout = setTimeout(() => {
-      if (mounted && loading) {
-        console.error('⚠️ Safety timeout reached - stopping loading state');
+      if (isMounted && loading) {
+        console.error('⚠️ Safety timeout - forcing loading to false');
         setLoading(false);
       }
-    }, 15000);
+    }, 10000);
 
-    // Get initial session with better error handling
-    const getInitialSession = async () => {
+    const initializeAuth = async () => {
       try {
-        console.log('⏳ בודק סשן קיים');
+        console.log('⏳ Getting initial session...');
         
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('💥 שגיאה בקבלת הסשן:', error);
-          
-          if (mounted) {
+          console.error('💥 Error getting initial session:', error);
+          if (isMounted) {
             setSession(null);
             setUser(null);
             setProfile(null);
@@ -57,121 +53,135 @@ export const useAuthState = () => {
           return;
         }
 
-        console.log('🔍 Initial session result:', {
+        console.log('🔍 Initial session check:', {
           hasSession: !!initialSession,
           userEmail: initialSession?.user?.email || 'no user',
+          userId: initialSession?.user?.id || 'no id'
         });
         
-        if (!mounted) return;
+        if (!isMounted) {
+          console.log('❌ Component unmounted during session check');
+          return;
+        }
 
+        // Update state with initial session
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
         
         if (initialSession?.user) {
-          console.log('👤 יש משתמש, שולף פרופיל...');
+          console.log('👤 User found, fetching profile...');
           try {
             const profileData = await fetchProfile(initialSession.user.id);
-            if (mounted) {
-              console.log('✅ פרופיל נטען בהצלחה:', profileData);
+            if (isMounted) {
+              console.log('✅ Profile loaded:', profileData);
               setProfile(profileData);
             }
           } catch (profileError) {
-            console.error('❌ שגיאה בשליפת פרופיל:', profileError);
-            if (mounted) {
+            console.error('❌ Error fetching profile:', profileError);
+            if (isMounted) {
               setProfile(null);
             }
           }
         } else {
-          console.log('🔴 אין משתמש מחובר');
-          if (mounted) {
+          console.log('🔴 No user in session');
+          if (isMounted) {
             setProfile(null);
           }
         }
         
-        if (mounted) {
-          console.log('✅ סיים טעינה ראשונית');
+        console.log('✅ Initial auth setup complete, setting loading to false');
+        if (isMounted) {
           setLoading(false);
+          isInitialized = true;
         }
       } catch (error) {
-        console.error('💥 Exception in getInitialSession:', error);
-        
-        if (mounted) {
+        console.error('💥 Exception in initializeAuth:', error);
+        if (isMounted) {
           setSession(null);
           setUser(null);
           setProfile(null);
           setLoading(false);
         }
-      } finally {
-        clearTimeout(safetyTimeout);
       }
     };
 
-    // Set up auth state listener with error handling
     const setupAuthListener = () => {
       try {
+        console.log('🎧 Setting up auth state listener...');
+        
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, newSession) => {
             console.log('🔄 Auth state changed:', event, {
               hasSession: !!newSession,
-              userEmail: newSession?.user?.email || 'no session'
+              userEmail: newSession?.user?.email || 'no session',
+              isMounted,
+              isInitialized
             });
             
-            if (!mounted) return;
+            if (!isMounted) {
+              console.log('❌ Component unmounted, ignoring auth change');
+              return;
+            }
             
-            try {
-              // Update state immediately
-              setSession(newSession);
-              setUser(newSession?.user ?? null);
-              
-              if (newSession?.user) {
-                console.log('👤 משתמש חדש, שולף פרופיל...');
-                try {
-                  const profileData = await fetchProfile(newSession.user.id);
-                  if (mounted) {
-                    console.log('✅ פרופיל עודכן:', profileData);
-                    setProfile(profileData);
-                  }
-                } catch (profileError) {
-                  console.error('❌ שגיאה בעדכון פרופיל:', profileError);
-                  if (mounted) {
-                    setProfile(null);
-                  }
+            // Update session and user immediately
+            setSession(newSession);
+            setUser(newSession?.user ?? null);
+            
+            if (newSession?.user) {
+              console.log('👤 New user detected, fetching profile...');
+              try {
+                const profileData = await fetchProfile(newSession.user.id);
+                if (isMounted) {
+                  console.log('✅ Profile updated:', profileData);
+                  setProfile(profileData);
                 }
-              } else {
-                console.log('🔴 משתמש התנתק');
-                if (mounted) {
+              } catch (profileError) {
+                console.error('❌ Error updating profile:', profileError);
+                if (isMounted) {
                   setProfile(null);
                 }
               }
-            } catch (error) {
-              console.error('💥 Error in auth state change handler:', error);
+            } else {
+              console.log('🔴 User signed out');
+              if (isMounted) {
+                setProfile(null);
+              }
+            }
+            
+            // Only set loading to false if we haven't initialized yet
+            if (!isInitialized && isMounted) {
+              console.log('✅ Auth listener setting loading to false');
+              setLoading(false);
+              isInitialized = true;
             }
           }
         );
         
         authSubscription = subscription;
+        console.log('✅ Auth listener set up successfully');
       } catch (error) {
         console.error('💥 Error setting up auth listener:', error);
-        // Continue without auth listener
-        if (mounted) {
+        if (isMounted) {
           setLoading(false);
         }
       }
     };
 
+    // Set up listener first
     setupAuthListener();
-    getInitialSession();
-    setInitializing(false);
+    
+    // Then initialize
+    initializeAuth();
 
     return () => {
-      mounted = false;
+      console.log('🧹 Cleaning up useAuthState');
+      isMounted = false;
       clearTimeout(safetyTimeout);
-      console.log('🧹 Cleaning up auth subscription');
       if (authSubscription) {
         authSubscription.unsubscribe();
       }
     };
-  }, [fetchProfile, initializing]);
+  }, [fetchProfile]);
 
   // Log state changes for debugging
   useEffect(() => {

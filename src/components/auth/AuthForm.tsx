@@ -14,69 +14,63 @@ export const AuthForm: React.FC = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [contextReady, setContextReady] = useState(false);
   
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Try to get auth context with error handling
+  // Get auth context with error handling
   let authContext;
   try {
     authContext = useAuth();
-    console.log('✅ AuthForm - Successfully got auth context');
+    console.log('✅ AuthForm - Got auth context:', {
+      hasUser: !!authContext.user,
+      hasProfile: !!authContext.profile,
+      loading: authContext.loading
+    });
   } catch (error) {
     console.error('❌ AuthForm - Failed to get auth context:', error);
-    authContext = {
-      signIn: async () => ({ error: new Error('Auth not ready') }),
-      signUp: async () => ({ error: new Error('Auth not ready') }),
-      user: null,
-      profile: null,
-      loading: true
-    };
+    // Return loading state if auth context is not ready
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">מאתחל מערכת אימות...</p>
+          <p className="mt-1 text-xs text-gray-400">טוען הקשר לאימות...</p>
+        </div>
+      </div>
+    );
   }
 
   const { signIn, signUp, user, profile, loading: authLoading } = authContext;
 
-  // Wait for context to be ready
+  // Handle redirects after successful authentication
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setContextReady(true);
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Only redirect if we have both user and profile, and we're not already on a redirect path
-  useEffect(() => {
-    if (!contextReady) return;
-    
-    console.log('AuthForm - useEffect triggered:', { 
-      user: user?.email, 
-      profile: profile?.role, 
-      authLoading,
-      currentPath: location.pathname,
-      contextReady
-    });
-    
-    // Don't redirect if still loading or if we don't have complete auth data
+    // Don't redirect if still loading or no complete auth data
     if (authLoading || !user || !profile) {
+      console.log('AuthForm - Not ready to redirect:', { authLoading, hasUser: !!user, hasProfile: !!profile });
       return;
     }
 
-    // Prevent infinite redirects by checking current path
-    if (location.pathname === '/auth') {
-      console.log('AuthForm - User authenticated, redirecting from auth page');
-      
-      if (profile.role === 'super_admin') {
-        console.log('AuthForm - Redirecting super admin to /admin');
-        navigate('/admin', { replace: true });
-      } else {
-        console.log('AuthForm - Redirecting regular user to /modules/employees');
-        navigate('/modules/employees', { replace: true });
-      }
+    // Prevent redirect loops
+    if (location.pathname !== '/auth') {
+      console.log('AuthForm - Not on auth page, skipping redirect');
+      return;
     }
-  }, [user, profile, authLoading, navigate, location.pathname, contextReady]);
+
+    console.log('AuthForm - User authenticated, redirecting:', {
+      user: user.email,
+      role: profile.role
+    });
+    
+    if (profile.role === 'super_admin') {
+      console.log('AuthForm - Redirecting super admin to /admin');
+      navigate('/admin', { replace: true });
+    } else {
+      console.log('AuthForm - Redirecting regular user to /modules/employees');
+      navigate('/modules/employees', { replace: true });
+    }
+  }, [user, profile, authLoading, navigate, location.pathname]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,15 +114,15 @@ export const AuthForm: React.FC = () => {
     }
   };
 
-  // Show loading state while auth is loading or context is not ready
-  if (!contextReady || authLoading) {
-    console.log('AuthForm - Auth still loading or context not ready...');
+  // Show loading state while auth is loading
+  if (authLoading) {
+    console.log('AuthForm - Auth still loading...');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-2 text-gray-600">טוען...</p>
-          <p className="mt-1 text-xs text-gray-400">מאתחל מערכת אימות...</p>
+          <p className="mt-1 text-xs text-gray-400">בודק מצב אימות...</p>
         </div>
       </div>
     );
@@ -212,7 +206,6 @@ export const AuthForm: React.FC = () => {
               <div>Profile: {profile?.role || 'None'}</div>
               <div>Auth Loading: {authLoading ? 'Yes' : 'No'}</div>
               <div>Form Loading: {loading ? 'Yes' : 'No'}</div>
-              <div>Context Ready: {contextReady ? 'Yes' : 'No'}</div>
               <div>Current Path: {location.pathname}</div>
             </div>
           )}
