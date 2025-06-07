@@ -126,25 +126,41 @@ export const EmployeeFiles: React.FC = () => {
 
   const uploadFileMutation = useMutation({
     mutationFn: async ({ file, employeeId }: { file: File; employeeId: string }) => {
+      console.log('📤 Starting file upload process...');
+      
       // Check authentication before upload
       const isAuthenticated = await checkAuthSession();
       if (!isAuthenticated) {
         throw new Error('Authentication required');
       }
 
-      if (!businessId || !file || !user?.id) throw new Error('Missing required data');
+      if (!businessId || !file || !user?.id) {
+        console.error('❌ Missing required data:', { businessId, hasFile: !!file, userId: user?.id });
+        throw new Error('Missing required data');
+      }
 
       // Generate unique file path
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${file.name}`;
+      const timestamp = Date.now();
+      const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
       const filePath = `${businessId}/${employeeId}/${fileName}`;
+
+      console.log('📁 Uploading to path:', filePath);
 
       // Upload file to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('employee-files')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('❌ Storage upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      console.log('✅ File uploaded successfully:', uploadData.path);
 
       // Save file record to database
       const { data: fileRecord, error: dbError } = await supabase
@@ -161,8 +177,14 @@ export const EmployeeFiles: React.FC = () => {
         .select('*')
         .single();
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('❌ Database insert error:', dbError);
+        // Clean up uploaded file if database insert fails
+        await supabase.storage.from('employee-files').remove([uploadData.path]);
+        throw new Error(`Database error: ${dbError.message}`);
+      }
 
+      console.log('✅ File record saved to database:', fileRecord);
       return fileRecord;
     },
     onSuccess: () => {
@@ -179,9 +201,11 @@ export const EmployeeFiles: React.FC = () => {
       console.error('Upload error:', error);
       toast({
         title: 'שגיאה',
-        description: error instanceof Error && error.message === 'Authentication required' 
-          ? 'נדרש להתחבר מחדש כדי להעלות קובץ'
-          : 'שגיאה בהעלאת הקובץ',
+        description: error instanceof Error 
+          ? error.message === 'Authentication required' 
+            ? 'נדרש להתחבר מחדש כדי להעלות קובץ'
+            : `שגיאה בהעלאת הקובץ: ${error.message}`
+          : 'שגיאה לא צפויה בהעלאת הקובץ',
         variant: 'destructive',
       });
     },
@@ -232,12 +256,14 @@ export const EmployeeFiles: React.FC = () => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      console.log('📄 File selected:', file.name, 'Size:', file.size);
       setSelectedFile(file);
     }
   };
 
   const handleUpload = async () => {
     if (selectedFile && uploadingEmployeeId) {
+      console.log('🚀 Starting upload for employee:', uploadingEmployeeId);
       // Check authentication before starting upload
       const isAuthenticated = await checkAuthSession();
       if (!isAuthenticated) {
@@ -256,6 +282,7 @@ export const EmployeeFiles: React.FC = () => {
         return;
       }
 
+      console.log('📥 Downloading file:', file.file_path);
       const { data, error } = await supabase.storage
         .from('employee-files')
         .download(file.file_path);

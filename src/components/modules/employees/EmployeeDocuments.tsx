@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,17 +83,29 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 
     try {
       setUploading(true);
+      console.log('📤 Starting document upload for employee:', employeeId);
       
       // Upload file to Supabase Storage
       const fileExt = file.name.split('.').pop();
       const timestamp = Date.now();
-      const filePath = `employee-documents/${employeeId}/${timestamp}-${file.name}`;
+      const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+      const filePath = `employee-documents/${employeeId}/${fileName}`;
+      
+      console.log('📁 Uploading to path:', filePath);
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('employee-files')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('❌ Storage upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      console.log('✅ File uploaded successfully:', uploadData.path);
 
       // Get public URL
       const { data: urlData } = supabase.storage
@@ -112,8 +123,14 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
           uploaded_by: profile.id,
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('❌ Database insert error:', insertError);
+        // Clean up uploaded file if database insert fails
+        await supabase.storage.from('employee-files').remove([uploadData.path]);
+        throw new Error(`Database error: ${insertError.message}`);
+      }
       
+      console.log('✅ Document record saved successfully');
       toast({
         title: 'הצלחה',
         description: 'המסמך הועלה בהצלחה',
@@ -124,7 +141,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       console.error('Error uploading document:', error);
       toast({
         title: 'שגיאה',
-        description: 'לא ניתן להעלות את המסמך',
+        description: error instanceof Error ? `שגיאה בהעלאת המסמך: ${error.message}` : 'לא ניתן להעלות את המסמך',
         variant: 'destructive',
       });
     } finally {
