@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, User, Settings, Phone, Mail } from 'lucide-react';
+import { Building2, User, Settings, Phone, Mail, AlertTriangle } from 'lucide-react';
 
 interface BusinessFormData {
   name: string;
@@ -94,58 +94,7 @@ export const NewBusinessForm: React.FC = () => {
 
       console.log('✅ Business created successfully:', business.name);
 
-      // Step 2: Create user with default password 123456
-      console.log('👤 Creating admin user...');
-      
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.admin_email,
-        password: '123456',
-        email_confirm: true,
-        user_metadata: {
-          full_name: formData.admin_full_name,
-          business_id: business.id,
-          role: 'business_admin'
-        }
-      });
-
-      if (authError) {
-        console.error('Error creating user:', authError);
-        
-        // Try to clean up the business if user creation failed
-        await supabase.from('businesses').delete().eq('id', business.id);
-        throw new Error('שגיאה ביצירת המשתמש למנהל העסק');
-      }
-
-      console.log('✅ User created successfully:', authData.user.email);
-
-      // Step 3: Update business with owner_id
-      const { error: updateError } = await supabase
-        .from('businesses')
-        .update({ owner_id: authData.user.id })
-        .eq('id', business.id);
-
-      if (updateError) {
-        console.error('Error updating business owner:', updateError);
-        // Don't fail the entire process for this
-      }
-
-      // Step 4: Create profile record for the new user
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: authData.user.id,
-          email: formData.admin_email,
-          full_name: formData.admin_full_name,
-          role: 'business_admin',
-          business_id: business.id
-        });
-
-      if (profileError) {
-        console.error('Error creating profile:', profileError);
-        // Don't fail for profile creation error
-      }
-
-      // Step 5: Create selected business module configurations
+      // Step 2: Create selected business module configurations
       if (selectedModules.length > 0) {
         const { error: modulesError } = await supabase
           .from('business_module_config')
@@ -154,7 +103,6 @@ export const NewBusinessForm: React.FC = () => {
               business_id: business.id,
               module_key,
               is_enabled: true,
-              enabled_by: authData.user.id,
               enabled_at: new Date().toISOString()
             }))
           );
@@ -165,7 +113,7 @@ export const NewBusinessForm: React.FC = () => {
         }
       }
 
-      // Step 6: Log the business creation activity
+      // Step 3: Log the business creation activity
       const { data: currentUser } = await supabase.auth.getUser();
       if (currentUser.user) {
         const { error: logError } = await supabase
@@ -188,15 +136,15 @@ export const NewBusinessForm: React.FC = () => {
         }
       }
 
-      // Show success message
+      // Show success message with instructions
       toast({
         title: 'הצלחה! 🎉',
-        description: `העסק "${business.name}" נוצר והמשתמש נוצר בהצלחה`,
+        description: `העסק "${business.name}" נוצר בהצלחה`,
       });
       
       toast({
-        title: 'פרטי כניסה ראשוניים',
-        description: `המייל: ${formData.admin_email}\nהסיסמה הראשונית: 123456`,
+        title: 'הנחיות למנהל העסק',
+        description: `יש להנחות את מנהל העסק להירשם במייל: ${formData.admin_email} ולבקש גישה לעסק דרך המערכת`,
         variant: 'default',
       });
 
@@ -302,7 +250,7 @@ export const NewBusinessForm: React.FC = () => {
               <User className="h-5 w-5" />
               פרטי המנהל הראשי
             </CardTitle>
-            <CardDescription>משתמש זה יקבל הרשאות מנהל מלאות בעסק</CardDescription>
+            <CardDescription>פרטי מנהל העסק לצורך יצירת קשר</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -331,15 +279,19 @@ export const NewBusinessForm: React.FC = () => {
               />
             </div>
             
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2 text-blue-700">
-                <Mail className="h-4 w-4" />
-                <span className="font-medium">סיסמה ראשונית</span>
+            <div className="bg-amber-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 text-amber-700">
+                <AlertTriangle className="h-4 w-4" />
+                <span className="font-medium">הנחיות חשובות</span>
               </div>
-              <p className="text-blue-600 text-sm mt-1">
-                המנהל יקבל סיסמה ראשונית: <strong>123456</strong>
+              <p className="text-amber-600 text-sm mt-1">
+                לאחר יצירת העסק, יש להנחות את המנהל:
                 <br />
-                יש להחליף אותה בהתחברות הראשונה.
+                1. להירשם למערכת עם המייל שצוין
+                <br />
+                2. לבקש גישה לעסק דרך טופס בקשת גישה
+                <br />
+                3. המנהל הראשי יאשר את הבקשה
               </p>
             </div>
           </CardContent>
