@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Building, Users, Settings, Eye, Plus, Search } from 'lucide-react';
+import { useBusinessesData } from '@/hooks/useRealData';
+import { useQuery } from '@tanstack/react-query';
 
 interface Business {
   id: string;
@@ -20,34 +23,21 @@ interface Business {
 }
 
 export const BusinessManagement: React.FC = () => {
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchBusinesses();
-  }, []);
+  // Use the secure hook that automatically filters by business permissions
+  const { data: businesses = [], loading, error } = useBusinessesData();
 
-  const fetchBusinesses = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch businesses
-      const { data: businessData, error: businessError } = await supabase
-        .from('businesses')
-        .select('*')
-        .order('created_at', { ascending: false });
+  // Enrich businesses with employee count
+  const { data: enrichedBusinesses = [] } = useQuery({
+    queryKey: ['enriched-businesses', businesses],
+    queryFn: async () => {
+      if (!businesses.length) return [];
 
-      if (businessError) {
-        console.error('Error fetching businesses:', businessError);
-        throw businessError;
-      }
-
-      // Enrich with employee count
-      const enrichedBusinesses = await Promise.all(
-        (businessData || []).map(async (business) => {
+      const enriched = await Promise.all(
+        businesses.map(async (business) => {
           const { count } = await supabase
             .from('employees')
             .select('*', { count: 'exact', head: true })
@@ -61,32 +51,22 @@ export const BusinessManagement: React.FC = () => {
         })
       );
 
-      setBusinesses(enrichedBusinesses);
-    } catch (error) {
-      console.error('Error in fetchBusinesses:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן לטעון את רשימת העסקים',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      return enriched;
+    },
+    enabled: !!businesses.length,
+  });
 
-  const filteredBusinesses = businesses.filter(business =>
+  const filteredBusinesses = enrichedBusinesses.filter(business =>
     business.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     business.contact_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     business.admin_email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleViewBusiness = (businessId: string) => {
-    // Navigate to business dashboard
     navigate(`/business/${businessId}/dashboard`);
   };
 
   const handleManageBusiness = (businessId: string) => {
-    // Navigate to business settings
     navigate(`/business/${businessId}/modules/settings`);
   };
 
@@ -99,6 +79,17 @@ export const BusinessManagement: React.FC = () => {
       <div className="container mx-auto px-4 py-8" dir="rtl">
         <div className="flex items-center justify-center min-h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8" dir="rtl">
+        <div className="text-center py-8">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">שגיאה בטעינת העסקים</h3>
+          <p className="text-gray-600">אנא נסה לרענן את הדף</p>
         </div>
       </div>
     );
@@ -129,7 +120,7 @@ export const BusinessManagement: React.FC = () => {
             <div className="flex items-center">
               <Building className="h-8 w-8 text-blue-600" />
               <div className="mr-4">
-                <p className="text-2xl font-bold text-gray-900">{businesses.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{enrichedBusinesses.length}</p>
                 <p className="text-gray-600">סך הכל עסקים</p>
               </div>
             </div>
@@ -142,7 +133,7 @@ export const BusinessManagement: React.FC = () => {
               <Building className="h-8 w-8 text-green-600" />
               <div className="mr-4">
                 <p className="text-2xl font-bold text-gray-900">
-                  {businesses.filter(b => b.is_active).length}
+                  {enrichedBusinesses.filter(b => b.is_active).length}
                 </p>
                 <p className="text-gray-600">עסקים פעילים</p>
               </div>
@@ -156,7 +147,7 @@ export const BusinessManagement: React.FC = () => {
               <Users className="h-8 w-8 text-purple-600" />
               <div className="mr-4">
                 <p className="text-2xl font-bold text-gray-900">
-                  {businesses.reduce((sum, b) => sum + (b.employee_count || 0), 0)}
+                  {enrichedBusinesses.reduce((sum, b) => sum + (b.employee_count || 0), 0)}
                 </p>
                 <p className="text-gray-600">סך הכל עובדים</p>
               </div>
