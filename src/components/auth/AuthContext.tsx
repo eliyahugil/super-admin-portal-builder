@@ -38,9 +38,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string, retryCount = 0): Promise<Profile | null> => {
+  const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
-      console.log('🔍 Starting fetchProfile for user ID:', userId, 'retry:', retryCount);
+      console.log('🔍 Fetching profile for user:', userId);
       
       const { data, error } = await supabase
         .from('profiles')
@@ -48,35 +48,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
-      console.log('📊 Profile query result:', { data, error, retryCount });
-
       if (error) {
-        console.error('❌ Error fetching profile:', error);
-        
-        // If profile doesn't exist and we haven't retried too many times, wait and retry
-        if (error.code === 'PGRST116' && retryCount < 3) {
-          console.log('⏰ Profile not found, retrying in 1 second...');
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          return fetchProfile(userId, retryCount + 1);
-        }
-        
-        // If it's a different error or we've retried enough, return null
-        console.error('❌ Profile fetch failed permanently:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        console.error('❌ Profile fetch error:', error);
         return null;
       }
 
-      if (data) {
-        console.log('✅ Profile fetched successfully:', data);
-        return data;
-      } else {
-        console.log('⚠️ No profile data returned from query');
-        return null;
-      }
+      console.log('✅ Profile fetched:', data);
+      return data;
     } catch (error) {
       console.error('💥 Exception in fetchProfile:', error);
       return null;
@@ -94,90 +72,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('🚀 Setting up auth state listener');
     
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔄 Auth state changed:', event, session?.user?.email || 'no session');
-        console.log('📱 Event details:', event);
-        console.log('🆔 Session user ID:', session?.user?.id);
+    let mounted = true;
+
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        console.log('🔍 Initial session:', initialSession?.user?.email || 'no session');
         
-        setSession(session);
-        setUser(session?.user ?? null);
+        if (!mounted) return;
+
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
         
-        if (session?.user) {
-          console.log('👥 User logged in, fetching profile for:', session.user.id);
-          console.log('📧 User email:', session.user.email);
-          console.log('🕐 User created at:', session.user.created_at);
-          
-          // Clear any existing profile first
-          console.log('🧹 Clearing existing profile before fetch');
-          setProfile(null);
-          
-          // Fetch profile with retry logic
-          const profileData = await fetchProfile(session.user.id);
-          console.log('📋 Setting profile data:', profileData);
-          setProfile(profileData);
-        } else {
-          console.log('🚪 No user session, clearing profile');
-          setProfile(null);
+        if (initialSession?.user) {
+          const profileData = await fetchProfile(initialSession.user.id);
+          if (mounted) {
+            setProfile(profileData);
+          }
         }
         
-        console.log('⏳ Setting loading to false');
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('💥 Error getting initial session:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        console.log('🔄 Auth state changed:', event, newSession?.user?.email || 'no session');
+        
+        if (!mounted) return;
+        
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        if (newSession?.user) {
+          const profileData = await fetchProfile(newSession.user.id);
+          if (mounted) {
+            setProfile(profileData);
+          }
+        } else {
+          setProfile(null);
+        }
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('🔍 Initial session check:', session?.user?.email || 'no session');
-      console.log('📋 Initial session details:', {
-        hasSession: !!session,
-        userId: session?.user?.id,
-        userEmail: session?.user?.email
-      });
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        console.log('🎯 Found existing session, fetching profile for user:', session.user.email);
-        const profileData = await fetchProfile(session.user.id);
-        console.log('📋 Initial profile fetch result:', profileData);
-        setProfile(profileData);
-      } else {
-        console.log('❌ No existing session found');
-      }
-      setLoading(false);
-    });
+    getInitialSession();
 
     return () => {
+      mounted = false;
       console.log('🧹 Cleaning up auth subscription');
       subscription.unsubscribe();
     };
   }, []);
-
-  // Debug effect to track profile changes
-  useEffect(() => {
-    console.log('📊 Profile state changed:', profile);
-    console.log('🔐 Is super admin:', profile?.role === 'super_admin');
-    console.log('👤 Profile details:', {
-      hasProfile: !!profile,
-      profileId: profile?.id,
-      profileEmail: profile?.email,
-      profileRole: profile?.role,
-      profileName: profile?.full_name
-    });
-  }, [profile]);
-
-  // Debug effect to track loading state
-  useEffect(() => {
-    console.log('⏳ Loading state changed:', loading);
-  }, [loading]);
-
-  // Debug effect to track user changes
-  useEffect(() => {
-    console.log('👥 User state changed:', user?.email || 'no user');
-  }, [user]);
 
   const signIn = async (email: string, password: string) => {
     console.log('🔑 Attempting to sign in with email:', email);
