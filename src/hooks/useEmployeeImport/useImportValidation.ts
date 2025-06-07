@@ -37,6 +37,8 @@ export const useImportValidation = ({
   setDuplicateErrors,
 }: UseImportValidationProps) => {
   const { toast } = useToast();
+  const [currentValidationErrors, setCurrentValidationErrors] = useState<ValidationError[]>([]);
+  const [currentDuplicateErrors, setCurrentDuplicateErrors] = useState<DuplicateError[]>([]);
 
   const validateImportData = () => {
     if (!validateBusinessId(businessId)) {
@@ -118,6 +120,9 @@ export const useImportValidation = ({
       }
     });
 
+    // Update both local state and parent state
+    setCurrentValidationErrors(validationErrors);
+    setCurrentDuplicateErrors(duplicateErrors);
     setValidationErrors(validationErrors);
     setDuplicateErrors(duplicateErrors);
 
@@ -127,9 +132,9 @@ export const useImportValidation = ({
   const getValidationSummary = () => {
     return {
       totalRows: rawData.length,
-      validRows: rawData.length - duplicateErrors.length - validationErrors.filter(e => e.severity === 'error').length,
-      errorRows: validationErrors.filter(e => e.severity === 'error').length,
-      warningRows: validationErrors.filter(e => e.severity === 'warning').length + duplicateErrors.length,
+      validRows: rawData.length - currentDuplicateErrors.length - currentValidationErrors.filter(e => e.severity === 'error').length,
+      errorRows: currentValidationErrors.filter(e => e.severity === 'error').length,
+      warningRows: currentValidationErrors.filter(e => e.severity === 'warning').length + currentDuplicateErrors.length,
     };
   };
 
