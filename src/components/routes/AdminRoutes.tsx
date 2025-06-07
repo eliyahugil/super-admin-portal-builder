@@ -2,12 +2,11 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
 import { SuperAdminRoute } from '@/components/SuperAdminRoute';
-import { Dashboard } from '@/components/dashboard/Dashboard';
-import CreateBusinessPage from '@/pages/CreateBusinessPage';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { BusinessManagement } from '@/components/admin/BusinessManagement';
 import { AccessRequestsManager } from '@/components/admin/AccessRequestsManager';
-import { AppLayout } from '@/components/layout/AppLayout';
+import CreateBusinessPage from '@/pages/CreateBusinessPage';
 
 export const AdminRoutes = () => [
   <Route
@@ -15,7 +14,9 @@ export const AdminRoutes = () => [
     path="/admin"
     element={
       <SuperAdminRoute>
-        <Dashboard />
+        <AppLayout>
+          <SuperAdminDashboard />
+        </AppLayout>
       </SuperAdminRoute>
     }
   />,
@@ -24,7 +25,9 @@ export const AdminRoutes = () => [
     path="/admin/dashboard"
     element={
       <SuperAdminRoute>
-        <SuperAdminDashboard />
+        <AppLayout>
+          <SuperAdminDashboard />
+        </AppLayout>
       </SuperAdminRoute>
     }
   />,
