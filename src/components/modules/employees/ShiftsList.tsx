@@ -1,163 +1,182 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar, Clock, Users, Plus } from 'lucide-react';
-import { useRealData } from '@/hooks/useRealData';
-import { RealDataView } from '@/components/ui/RealDataView';
-import { useBusiness } from '@/hooks/useBusiness';
+import { Input } from '@/components/ui/input';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Search, Calendar, Clock, User } from 'lucide-react';
 
 interface ShiftData {
   id: string;
   shift_date: string;
-  is_assigned: boolean;
+  start_time: string;
+  end_time: string;
+  status: string;
   notes?: string;
-  employee?: {
+  created_at: string;
+  employee: {
     first_name: string;
     last_name: string;
-    employee_id: string;
-  } | null;
-  shift_template?: {
-    name: string;
-    start_time: string;
-    end_time: string;
-    shift_type: string;
-    branch?: {
-      name: string;
-    } | null;
-  } | null;
+    email?: string;
+  };
 }
 
-export const ShiftsList: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const { businessId, isLoading } = useBusiness();
+interface ShiftsListProps {
+  businessId?: string;
+}
 
-  const { data: shifts, loading, error, refetch } = useRealData<ShiftData>({
-    queryKey: ['scheduled-shifts', selectedDate, businessId],
-    tableName: 'scheduled_shifts',
-    select: `
-      *,
-      employee:employees(first_name, last_name, employee_id),
-      shift_template:shift_templates(
-        name,
-        start_time,
-        end_time,
-        shift_type,
-        branch:branches(name)
-      )
-    `,
-    filters: { shift_date: selectedDate },
-    orderBy: { column: 'created_at', ascending: false },
-    enabled: !!businessId && !isLoading
+export const ShiftsList: React.FC<ShiftsListProps> = ({ businessId }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const { data: shifts = [], isLoading, error } = useQuery({
+    queryKey: ['shifts-list', businessId],
+    queryFn: async (): Promise<ShiftData[]> => {
+      let query = supabase
+        .from('employee_shift_requests')
+        .select(`
+          *,
+          employee:employees(first_name, last_name, email, business_id)
+        `)
+        .order('shift_date', { ascending: false });
+
+      if (businessId) {
+        query = query.eq('employee.business_id', businessId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!businessId,
   });
 
-  const getShiftTypeBadge = (shiftType: string) => {
-    const variants = {
-      'morning': 'bg-yellow-100 text-yellow-800',
-      'afternoon': 'bg-orange-100 text-orange-800',
-      'evening': 'bg-purple-100 text-purple-800',
-      'night': 'bg-blue-100 text-blue-800'
-    };
-    
-    const labels = {
-      'morning': 'בוקר',
-      'afternoon': 'צהריים',
-      'evening': 'ערב',
-      'night': 'לילה'
-    };
+  const filteredShifts = shifts.filter(shift =>
+    shift.employee.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    shift.employee.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    shift.employee.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-    return (
-      <Badge className={variants[shiftType as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>
-        {labels[shiftType as keyof typeof labels] || shiftType}
-      </Badge>
-    );
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">ממתין</Badge>;
+      case 'approved':
+        return <Badge variant="secondary" className="bg-green-100 text-green-800">אושר</Badge>;
+      case 'rejected':
+        return <Badge variant="secondary" className="bg-red-100 text-red-800">נדחה</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
   };
 
   if (isLoading) {
-    return <div className="container mx-auto px-4 py-8" dir="rtl">טוען...</div>;
+    return (
+      <div className="container mx-auto px-4 py-8" dir="rtl">
+        <div className="flex items-center justify-center min-h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8" dir="rtl">
+        <div className="text-center py-8">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">שגיאה בטעינת המשמרות</h3>
+          <p className="text-gray-600">אנא נסה לרענן את הדף</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">רשימת משמרות</h1>
-        <p className="text-gray-600">הצגת משמרות מתוכננות</p>
+        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+          <Calendar className="h-8 w-8" />
+          רשימת משמרות
+        </h1>
+        <p className="text-gray-600 mt-2">צפה בכל בקשות המשמרות</p>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-gray-500" />
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          הוסף משמרת
-        </Button>
-      </div>
-
-      <RealDataView
-        data={shifts || []}
-        loading={loading}
-        error={error}
-        emptyMessage="אין משמרות מתוכננות לתאריך שנבחר"
-        emptyIcon={<Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />}
-        renderItem={(shift) => (
-          <div key={shift.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold">
-                  {shift.shift_template?.name || 'משמרת'}
-                </h3>
-                {shift.shift_template?.shift_type && 
-                  getShiftTypeBadge(shift.shift_template.shift_type)
-                }
-              </div>
-              <Badge variant={shift.is_assigned ? "default" : "secondary"}>
-                {shift.is_assigned ? 'מאויש' : 'לא מאויש'}
-              </Badge>
-            </div>
-
-            <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-              <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                {shift.shift_template?.start_time} - {shift.shift_template?.end_time}
-              </div>
-              {shift.shift_template?.branch && (
-                <span>{shift.shift_template.branch.name}</span>
-              )}
-            </div>
-
-            {shift.employee ? (
-              <div className="flex items-center justify-between">
-                <span className="text-sm">
-                  {shift.employee.first_name} {shift.employee.last_name}
-                  {shift.employee.employee_id && ` (${shift.employee.employee_id})`}
-                </span>
-                <Button size="sm" variant="outline">
-                  שנה עובד
-                </Button>
-              </div>
-            ) : (
-              <Button size="sm" className="w-full">
-                הקצה עובד
-              </Button>
-            )}
-
-            {shift.notes && (
-              <div className="mt-3 p-2 bg-gray-50 rounded-md">
-                <p className="text-xs text-gray-600">{shift.notes}</p>
-              </div>
-            )}
+      {/* Search */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="relative">
+            <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="חיפוש עובדים..."
+              className="pr-10"
+            />
           </div>
-        )}
-      />
+        </CardContent>
+      </Card>
+
+      {filteredShifts.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {searchTerm ? 'לא נמצאו תוצאות' : 'אין בקשות משמרות'}
+            </h3>
+            <p className="text-gray-600">
+              {searchTerm ? 'נסה לשנות את החיפוש' : 'עדיין לא נשלחו בקשות משמרות'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredShifts.map((shift) => (
+            <Card key={shift.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      {shift.employee.first_name} {shift.employee.last_name}
+                    </CardTitle>
+                    <p className="text-sm text-gray-600 mt-1">{shift.employee.email}</p>
+                  </div>
+                  {getStatusBadge(shift.status)}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">
+                      {new Date(shift.shift_date).toLocaleDateString('he-IL')}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">
+                      {shift.start_time} - {shift.end_time}
+                    </span>
+                  </div>
+                  
+                  {shift.notes && (
+                    <div>
+                      <h4 className="font-medium mb-1 text-sm">הערות:</h4>
+                      <p className="text-sm text-gray-700">{shift.notes}</p>
+                    </div>
+                  )}
+                  
+                  <div className="text-xs text-gray-500 pt-2 border-t">
+                    נשלח ב: {new Date(shift.created_at).toLocaleDateString('he-IL')}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

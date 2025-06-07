@@ -1,223 +1,183 @@
 
 import React, { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Calendar, Clock, Edit, Trash2, Save, X } from 'lucide-react';
-import { useRealData } from '@/hooks/useRealData';
-import { RealDataView } from '@/components/ui/RealDataView';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { Search, Calendar, Clock, User } from 'lucide-react';
 
 interface ShiftData {
   id: string;
   shift_date: string;
-  employee?: {
+  start_time: string;
+  end_time: string;
+  status: string;
+  notes?: string;
+  created_at: string;
+  employee: {
     first_name: string;
     last_name: string;
-  } | null;
-  shift_template?: {
-    start_time: string;
-    end_time: string;
-    name: string;
-  } | null;
+    email?: string;
+  };
 }
 
-export const ShiftsAdminTable: React.FC = () => {
-  const { businessId, isLoading } = useBusiness();
-  const { toast } = useToast();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState<any>({});
+interface ShiftsAdminTableProps {
+  businessId?: string;
+}
 
-  const { data: shifts, loading, error, refetch } = useRealData<ShiftData>({
-    queryKey: ['scheduled-shifts-admin', businessId],
-    tableName: 'scheduled_shifts',
-    select: `
-      *,
-      employee:employees(first_name, last_name),
-      shift_template:shift_templates(start_time, end_time, name)
-    `,
-    orderBy: { column: 'shift_date', ascending: false },
-    enabled: !!businessId && !isLoading
+export const ShiftsAdminTable: React.FC<ShiftsAdminTableProps> = ({ businessId }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const { data: shifts = [], isLoading, error } = useQuery({
+    queryKey: ['shifts-admin', businessId],
+    queryFn: async (): Promise<ShiftData[]> => {
+      let query = supabase
+        .from('employee_shift_requests')
+        .select(`
+          *,
+          employee:employees(first_name, last_name, email, business_id)
+        `)
+        .order('shift_date', { ascending: false });
+
+      if (businessId) {
+        query = query.eq('employee.business_id', businessId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!businessId,
   });
 
-  const handleDelete = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('scheduled_shifts')
-        .delete()
-        .eq('id', id);
+  const filteredShifts = shifts.filter(shift =>
+    shift.employee.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    shift.employee.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    shift.employee.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-      if (error) throw error;
-
-      toast({
-        title: "הצלחה",
-        description: "המשמרת נמחקה בהצלחה"
-      });
-      
-      refetch();
-    } catch (error: any) {
-      toast({
-        title: "שגיאה",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleUpdate = async () => {
-    try {
-      const { error } = await supabase
-        .from('scheduled_shifts')
-        .update(editData)
-        .eq('id', editingId);
-
-      if (error) throw error;
-
-      toast({
-        title: "הצלחה",
-        description: "המשמרת עודכנה בהצלחה"
-      });
-      
-      setEditingId(null);
-      setEditData({});
-      refetch();
-    } catch (error: any) {
-      toast({
-        title: "שגיאה",
-        description: error.message,
-        variant: "destructive"
-      });
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">ממתין</Badge>;
+      case 'approved':
+        return <Badge variant="secondary" className="bg-green-100 text-green-800">אושר</Badge>;
+      case 'rejected':
+        return <Badge variant="secondary" className="bg-red-100 text-red-800">נדחה</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
   if (isLoading) {
-    return <div className="p-6" dir="rtl">טוען...</div>;
+    return (
+      <div className="container mx-auto px-4 py-8" dir="rtl">
+        <div className="flex items-center justify-center min-h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8" dir="rtl">
+        <div className="text-center py-8">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">שגיאה בטעינת המשמרות</h3>
+          <p className="text-gray-600">אנא נסה לרענן את הדף</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6" dir="rtl">
-      <div className="flex items-center gap-3 mb-6">
-        <Calendar className="h-6 w-6 text-blue-600" />
-        <h2 className="text-xl font-semibold text-gray-800">ניהול משמרות</h2>
+    <div className="container mx-auto px-4 py-8" dir="rtl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+          <Calendar className="h-8 w-8" />
+          ניהול משמרות - תצוגת מנהל
+        </h1>
+        <p className="text-gray-600 mt-2">צפה ונהל את כל בקשות המשמרות</p>
       </div>
 
-      <RealDataView
-        data={shifts || []}
-        loading={loading}
-        error={error}
-        emptyMessage="אין משמרות במערכת"
-        emptyIcon={<Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />}
-        renderItem={(shift) => (
-          <div key={shift.id} className="bg-gray-50 rounded-xl p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">עובד</label>
-                <p className="font-medium text-gray-900">
-                  {shift.employee ? 
-                    `${shift.employee.first_name} ${shift.employee.last_name}` : 
-                    'לא משויך'
-                  }
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">תאריך</label>
-                {editingId === shift.id ? (
-                  <Input
-                    type="date"
-                    value={editData.shift_date || shift.shift_date}
-                    onChange={(e) => setEditData({ ...editData, shift_date: e.target.value })}
-                    className="border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
-                ) : (
-                  <p className="font-medium text-gray-900">{new Date(shift.shift_date).toLocaleDateString('he-IL')}</p>
-                )}
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">שעות</label>
-                {editingId === shift.id ? (
-                  <div className="flex gap-2">
-                    <Input
-                      type="time"
-                      placeholder="כניסה"
-                      value={editData.start_time || shift.shift_template?.start_time}
-                      onChange={(e) => setEditData({ ...editData, start_time: e.target.value })}
-                      className="border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    />
-                    <Input
-                      type="time"
-                      placeholder="יציאה" 
-                      value={editData.end_time || shift.shift_template?.end_time}
-                      onChange={(e) => setEditData({ ...editData, end_time: e.target.value })}
-                      className="border rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    />
-                  </div>
-                ) : (
-                  <p className="font-medium text-gray-900">
-                    {shift.shift_template?.start_time && shift.shift_template?.end_time ?
-                      `${shift.shift_template.start_time}–${shift.shift_template.end_time}` :
-                      'לא הוגדר'
-                    }
-                  </p>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                {editingId === shift.id ? (
-                  <>
-                    <Button 
-                      size="sm" 
-                      onClick={handleUpdate} 
-                      className="bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-1"
-                    >
-                      <Save className="h-4 w-4" />
-                      שמור
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => {
-                        setEditingId(null);
-                        setEditData({});
-                      }}
-                      className="border rounded-xl flex items-center gap-1"
-                    >
-                      <X className="h-4 w-4" />
-                      ביטול
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => { 
-                        setEditingId(shift.id); 
-                        setEditData(shift); 
-                      }}
-                      className="border rounded-xl flex items-center gap-1"
-                    >
-                      <Edit className="h-4 w-4" />
-                      ערוך
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleDelete(shift.id)}
-                      className="bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center gap-1"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      מחק
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
+      {/* Search */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="relative">
+            <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="חיפוש עובדים..."
+              className="pr-10"
+            />
           </div>
-        )}
-      />
+        </CardContent>
+      </Card>
+
+      {filteredShifts.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {searchTerm ? 'לא נמצאו תוצאות' : 'אין בקשות משמרות'}
+            </h3>
+            <p className="text-gray-600">
+              {searchTerm ? 'נסה לשנות את החיפוש' : 'עדיין לא נשלחו בקשות משמרות'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredShifts.map((shift) => (
+            <Card key={shift.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      {shift.employee.first_name} {shift.employee.last_name}
+                    </CardTitle>
+                    <p className="text-sm text-gray-600 mt-1">{shift.employee.email}</p>
+                  </div>
+                  {getStatusBadge(shift.status)}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">
+                      {new Date(shift.shift_date).toLocaleDateString('he-IL')}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">
+                      {shift.start_time} - {shift.end_time}
+                    </span>
+                  </div>
+                  
+                  {shift.notes && (
+                    <div>
+                      <h4 className="font-medium mb-1 text-sm">הערות:</h4>
+                      <p className="text-sm text-gray-700">{shift.notes}</p>
+                    </div>
+                  )}
+                  
+                  <div className="text-xs text-gray-500 pt-2 border-t">
+                    נשלח ב: {new Date(shift.created_at).toLocaleDateString('he-IL')}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
