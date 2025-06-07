@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { ExcelRow } from '@/services/ExcelImportService';
 import { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
-import { validateEmployeeData, validateBusinessId } from '@/utils/employeeValidation';
+import { validateEmployeeData, validateBusinessId, sanitizeEmployeeData } from '@/utils/employeeValidation';
 
 interface ValidationError {
   rowIndex: number;
@@ -41,6 +41,8 @@ export const useImportValidation = ({
   const [currentDuplicateErrors, setCurrentDuplicateErrors] = useState<DuplicateError[]>([]);
 
   const validateImportData = () => {
+    console.log('Starting comprehensive validation...');
+    
     if (!validateBusinessId(businessId)) {
       toast({
         title: 'שגיאת הרשאה',
@@ -52,6 +54,8 @@ export const useImportValidation = ({
 
     const localValidationErrors: ValidationError[] = [];
     const localDuplicateErrors: DuplicateError[] = [];
+
+    console.log('Validating', rawData.length, 'rows of data');
 
     rawData.forEach((row, index) => {
       // Build employee data from mappings
@@ -71,8 +75,11 @@ export const useImportValidation = ({
         }
       });
 
-      // Validate employee data
-      const validation = validateEmployeeData(employeeData, businessId!);
+      // Sanitize the employee data
+      const sanitizedData = sanitizeEmployeeData(employeeData);
+
+      // Validate employee data structure
+      const validation = validateEmployeeData(sanitizedData, businessId!);
       if (!validation.isValid) {
         validation.errors.forEach(error => {
           localValidationErrors.push({
@@ -84,19 +91,25 @@ export const useImportValidation = ({
         });
       }
 
-      // Check for duplicates
-      const checkFields = ['email', 'phone', 'id_number', 'employee_id'];
-      checkFields.forEach(field => {
-        if (employeeData[field]) {
+      // Enhanced duplicate checking
+      const checkFields = [
+        { field: 'email', label: 'אימייל' },
+        { field: 'phone', label: 'טלפון' },
+        { field: 'id_number', label: 'תעודת זהות' },
+        { field: 'employee_id', label: 'מספר עובד' }
+      ];
+      
+      checkFields.forEach(({ field, label }) => {
+        if (sanitizedData[field]) {
           const isDuplicate = existingEmployees.some(emp => 
-            emp[field] && emp[field] === employeeData[field]
+            emp[field] && emp[field].toString().trim() === sanitizedData[field].toString().trim()
           );
           
           if (isDuplicate) {
             localDuplicateErrors.push({
               rowIndex: index + 1,
-              duplicateField: field,
-              existingValue: employeeData[field],
+              duplicateField: label,
+              existingValue: sanitizedData[field],
               severity: 'warning'
             });
           }
@@ -104,8 +117,8 @@ export const useImportValidation = ({
       });
 
       // Additional business logic validations
-      if (employeeData.hire_date) {
-        const hireDate = new Date(employeeData.hire_date);
+      if (sanitizedData.hire_date) {
+        const hireDate = new Date(sanitizedData.hire_date);
         const futureDate = new Date();
         futureDate.setFullYear(futureDate.getFullYear() + 1);
         
@@ -118,6 +131,33 @@ export const useImportValidation = ({
           });
         }
       }
+
+      // Validate weekly hours
+      if (sanitizedData.weekly_hours_required && sanitizedData.weekly_hours_required > 168) {
+        localValidationErrors.push({
+          rowIndex: index + 1,
+          field: 'weekly_hours_required',
+          error: 'שעות שבועיות לא יכולות לעלות על 168',
+          severity: 'error'
+        });
+      }
+
+      // Validate employee type
+      const validEmployeeTypes = ['permanent', 'temporary', 'contractor', 'intern'];
+      if (sanitizedData.employee_type && !validEmployeeTypes.includes(sanitizedData.employee_type)) {
+        localValidationErrors.push({
+          rowIndex: index + 1,
+          field: 'employee_type',
+          error: 'סוג עובד לא תקין',
+          severity: 'warning'
+        });
+      }
+    });
+
+    console.log('Validation completed:', {
+      validationErrors: localValidationErrors.length,
+      duplicateErrors: localDuplicateErrors.length,
+      criticalErrors: localValidationErrors.filter(e => e.severity === 'error').length
     });
 
     // Update both local state and parent state
@@ -126,15 +166,20 @@ export const useImportValidation = ({
     setValidationErrors(localValidationErrors);
     setDuplicateErrors(localDuplicateErrors);
 
-    return localValidationErrors.filter(e => e.severity === 'error').length === 0;
+    // Only block import if there are critical errors
+    const criticalErrors = localValidationErrors.filter(e => e.severity === 'error').length;
+    return criticalErrors === 0;
   };
 
   const getValidationSummary = () => {
+    const criticalErrors = currentValidationErrors.filter(e => e.severity === 'error').length;
+    const warnings = currentValidationErrors.filter(e => e.severity === 'warning').length;
+    
     return {
       totalRows: rawData.length,
-      validRows: rawData.length - currentDuplicateErrors.length - currentValidationErrors.filter(e => e.severity === 'error').length,
-      errorRows: currentValidationErrors.filter(e => e.severity === 'error').length,
-      warningRows: currentValidationErrors.filter(e => e.severity === 'warning').length + currentDuplicateErrors.length,
+      validRows: rawData.length - currentDuplicateErrors.length - criticalErrors,
+      errorRows: criticalErrors,
+      warningRows: warnings + currentDuplicateErrors.length,
     };
   };
 

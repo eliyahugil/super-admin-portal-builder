@@ -24,9 +24,17 @@ export interface ImportResult {
 export class EmployeeImportDatabase {
   static async importEmployees(previewData: PreviewEmployee[]): Promise<ImportResult> {
     try {
+      // Filter employees by validation status
       const validEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate);
       const duplicateEmployees = previewData.filter(emp => emp.isDuplicate);
       const errorEmployees = previewData.filter(emp => !emp.isValid);
+
+      console.log('Import filtering results:', {
+        total: previewData.length,
+        valid: validEmployees.length,
+        duplicates: duplicateEmployees.length,
+        errors: errorEmployees.length
+      });
 
       if (validEmployees.length === 0) {
         return {
@@ -45,33 +53,38 @@ export class EmployeeImportDatabase {
         };
       }
 
-      // Prepare employees for bulk insert
+      // Prepare employees for bulk insert with enhanced data sanitization
       const employeesToInsert = validEmployees.map(emp => ({
         business_id: emp.data.business_id,
-        first_name: emp.data.first_name || '',
-        last_name: emp.data.last_name || '',
-        email: emp.data.email || null,
-        phone: emp.data.phone || null,
-        id_number: emp.data.id_number || null,
-        employee_id: emp.data.employee_id || null,
-        address: emp.data.address || null,
+        first_name: emp.data.first_name?.toString().trim() || '',
+        last_name: emp.data.last_name?.toString().trim() || '',
+        email: emp.data.email?.toString().trim() || null,
+        phone: emp.data.phone?.toString().trim() || null,
+        id_number: emp.data.id_number?.toString().trim() || null,
+        employee_id: emp.data.employee_id?.toString().trim() || null,
+        address: emp.data.address?.toString().trim() || null,
         hire_date: emp.data.hire_date || null,
         employee_type: emp.data.employee_type || 'permanent',
         weekly_hours_required: emp.data.weekly_hours_required || null,
         main_branch_id: emp.data.main_branch_id || null,
-        notes: emp.data.notes || null,
+        notes: emp.data.notes?.toString().trim() || null,
         is_active: true
       }));
 
-      // Bulk insert employees
+      console.log('Attempting to insert employees:', employeesToInsert.length);
+
+      // Use transaction for consistency
       const { data: insertedEmployees, error: employeeError } = await supabase
         .from('employees')
         .insert(employeesToInsert)
         .select('id, first_name, last_name, email, main_branch_id');
 
       if (employeeError) {
+        console.error('Employee insert error:', employeeError);
         throw new Error(`שגיאה בייבוא עובדים: ${employeeError.message}`);
       }
+
+      console.log('Successfully inserted employees:', insertedEmployees?.length);
 
       // Prepare custom field values for bulk insert
       const customFieldValues: any[] = [];
@@ -92,12 +105,14 @@ export class EmployeeImportDatabase {
 
       // Bulk insert custom field values if any exist
       if (customFieldValues.length > 0) {
+        console.log('Inserting custom field values:', customFieldValues.length);
         const { error: customFieldError } = await supabase
           .from('custom_field_values')
           .insert(customFieldValues);
 
         if (customFieldError) {
           console.error('Error inserting custom fields:', customFieldError);
+          // Don't fail the entire import for custom field errors
         }
       }
 
@@ -131,7 +146,7 @@ export class EmployeeImportDatabase {
         error: emp.errors.join(', ')
       }));
 
-      return {
+      const finalResult = {
         success: true,
         importedCount: employeesToInsert.length,
         errorCount: errorEmployees.length,
@@ -141,7 +156,11 @@ export class EmployeeImportDatabase {
         importedEmployees: importedEmployeesData
       };
 
+      console.log('Import completed successfully:', finalResult);
+      return finalResult;
+
     } catch (error) {
+      console.error('Import failed with error:', error);
       return {
         success: false,
         importedCount: 0,

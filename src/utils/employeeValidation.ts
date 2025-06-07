@@ -2,24 +2,55 @@
 export const validateEmployeeData = (data: any, businessId: string) => {
   const errors: string[] = [];
   
-  if (!data.first_name) {
+  // Required field validation
+  if (!data.first_name || !data.first_name.toString().trim()) {
     errors.push('שם פרטי חובה');
   }
   
-  if (!data.last_name) {
+  if (!data.last_name || !data.last_name.toString().trim()) {
     errors.push('שם משפחה חובה');
   }
   
-  if (data.email && !data.email.includes('@')) {
-    errors.push('כתובת מייל לא תקינה');
+  // Email validation
+  if (data.email) {
+    const email = data.email.toString().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      errors.push('כתובת מייל לא תקינה');
+    }
   }
   
-  if (data.phone && typeof data.phone !== 'string') {
-    errors.push('מספר טלפון לא תקין');
+  // Phone validation
+  if (data.phone) {
+    const phone = data.phone.toString().trim();
+    const phoneRegex = /^[\d\-\+\(\)\s]{7,20}$/;
+    if (!phoneRegex.test(phone)) {
+      errors.push('מספר טלפון לא תקין');
+    }
   }
   
-  if (data.id_number && (typeof data.id_number !== 'string' || data.id_number.length < 9)) {
-    errors.push('מספר זהות לא תקין');
+  // ID number validation
+  if (data.id_number) {
+    const idNumber = data.id_number.toString().trim();
+    if (idNumber.length < 7 || idNumber.length > 9 || !/^\d+$/.test(idNumber)) {
+      errors.push('מספר זהות לא תקין (צריך להיות 7-9 ספרות)');
+    }
+  }
+  
+  // Weekly hours validation
+  if (data.weekly_hours_required !== null && data.weekly_hours_required !== undefined) {
+    const hours = Number(data.weekly_hours_required);
+    if (isNaN(hours) || hours < 0 || hours > 168) {
+      errors.push('שעות שבועיות חייבות להיות בין 0 ל-168');
+    }
+  }
+  
+  // Date validation
+  if (data.hire_date) {
+    const hireDate = new Date(data.hire_date);
+    if (isNaN(hireDate.getTime())) {
+      errors.push('תאריך תחילת עבודה לא תקין');
+    }
   }
   
   return { 
@@ -42,6 +73,22 @@ export const sanitizeEmployeeData = (data: any) => {
     id_number: data.id_number?.toString().trim() || null,
     employee_id: data.employee_id?.toString().trim() || null,
     address: data.address?.toString().trim() || null,
-    notes: data.notes?.toString().trim() || null
+    notes: data.notes?.toString().trim() || null,
+    weekly_hours_required: data.weekly_hours_required ? Number(data.weekly_hours_required) : null,
+    hire_date: data.hire_date || null,
+    employee_type: data.employee_type || 'permanent'
   };
+};
+
+export const validateFileSize = (file: File, maxSizeMB: number = 10): boolean => {
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  return file.size <= maxSizeBytes;
+};
+
+export const validateFileType = (file: File): boolean => {
+  const allowedTypes = [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+    'application/vnd.ms-excel', // .xls
+  ];
+  return allowedTypes.includes(file.type);
 };

@@ -63,14 +63,21 @@ export const useImportActions = ({
 
   const handleFileUpload = async (uploadedFile: File) => {
     try {
+      console.log('Starting file upload process for:', uploadedFile.name);
       setFile(uploadedFile);
+      
       const parsedData = await ExcelImportService.parseExcelFile(uploadedFile);
+      console.log('Excel file parsed successfully:', {
+        headers: parsedData.headers.length,
+        rows: parsedData.data.length
+      });
       
       setHeaders(parsedData.headers);
       setRawData(parsedData.data);
       setStep('mapping');
       setShowMappingDialog(true);
     } catch (error) {
+      console.error('File upload error:', error);
       toast({
         title: 'שגיאה בקריאת הקובץ',
         description: error instanceof Error ? error.message : 'אנא ודא שהקובץ הוא Excel תקין',
@@ -80,8 +87,16 @@ export const useImportActions = ({
   };
 
   const handleMappingConfirm = (mappings: FieldMapping[]) => {
-    if (!businessId) return;
+    if (!businessId) {
+      toast({
+        title: 'שגיאה',
+        description: 'זיהוי עסק לא תקין',
+        variant: 'destructive'
+      });
+      return;
+    }
     
+    console.log('Mapping confirmed, generating preview...');
     setFieldMappings(mappings);
     setShowMappingDialog(false);
     
@@ -95,6 +110,12 @@ export const useImportActions = ({
       employeeTypes
     );
     
+    console.log('Preview generated:', {
+      total: preview.length,
+      valid: preview.filter(p => p.isValid).length,
+      duplicates: preview.filter(p => p.isDuplicate).length
+    });
+    
     setPreviewData(preview);
     
     // Trigger advanced validation
@@ -106,11 +127,13 @@ export const useImportActions = ({
   };
 
   const handleImport = async () => {
+    console.log('Starting import process...');
+    
     // Final validation before import
     if (!validation.validateImportData()) {
       toast({
         title: 'שגיאות בולידציה',
-        description: 'אנא תקן את השגיאות לפני הייבוא',
+        description: 'אנא תקן את השגיאות הקריטיות לפני הייבוא',
         variant: 'destructive'
       });
       return;
@@ -119,17 +142,26 @@ export const useImportActions = ({
     setIsImporting(true);
     
     try {
+      // Show initial progress toast
+      toast({
+        title: 'מתחיל ייבוא',
+        description: 'מעבד את הנתונים...',
+      });
+
+      console.log('Calling import service with preview data:', previewData.length);
       const result = await ExcelImportService.importEmployees(previewData);
+      
+      console.log('Import completed with result:', result);
       setImportResult(result);
       
       if (result.success) {
         toast({
-          title: 'ייבוא הושלם בהצלחה',
-          description: result.message,
+          title: 'ייבוא הושלם בהצלחה! 🎉',
+          description: `${result.importedCount} עובדים נוספו למערכת`,
         });
       } else {
         toast({
-          title: 'שגיאה בייבוא',
+          title: 'ייבוא הושלם עם שגיאות',
           description: result.message,
           variant: 'destructive'
         });
@@ -137,18 +169,19 @@ export const useImportActions = ({
       
       setStep('summary');
     } catch (error) {
+      console.error('Import error:', error);
       const errorResult: ImportResult = {
         success: false,
         importedCount: 0,
         errorCount: previewData.length,
-        message: 'שגיאה לא צפויה - אנא נסה שוב'
+        message: error instanceof Error ? error.message : 'שגיאה לא צפויה - אנא נסה שוב'
       };
       setImportResult(errorResult);
       setStep('summary');
       
       toast({
-        title: 'שגיאה לא צפויה',
-        description: 'אנא נסה שוב',
+        title: 'שגיאה בייבוא',
+        description: 'שגיאה לא צפויה - אנא נסה שוב',
         variant: 'destructive'
       });
     } finally {
@@ -157,6 +190,7 @@ export const useImportActions = ({
   };
 
   const resetForm = () => {
+    console.log('Resetting import form');
     setStep('upload');
     setFile(null);
     setRawData([]);
@@ -169,7 +203,12 @@ export const useImportActions = ({
   };
 
   const downloadTemplate = () => {
+    console.log('Generating Excel template');
     ExcelImportService.generateTemplate();
+    toast({
+      title: 'תבנית הורדה',
+      description: 'קובץ התבנית הורד בהצלחה',
+    });
   };
 
   return {
