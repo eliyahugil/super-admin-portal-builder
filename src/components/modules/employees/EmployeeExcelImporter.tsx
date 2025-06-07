@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { DialogTrigger } from '@/components/ui/dialog';
+import { Dialog } from '@/components/ui/dialog';
 import { ImportButton } from './ImportButton';
 import { ImportDialog } from './ImportDialog';
 import { EmployeeImportMappingStep } from './steps/EmployeeImportMappingStep';
@@ -25,14 +25,13 @@ export const EmployeeExcelImporter: React.FC = () => {
 
   return (
     <>
-      <DialogTrigger asChild>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <ImportButton onClick={() => setIsOpen(true)} />
-      </DialogTrigger>
-
-      <ImportDialog
-        open={isOpen}
-        onOpenChange={setIsOpen}
-      />
+        <ImportDialog
+          open={isOpen}
+          onOpenChange={setIsOpen}
+        />
+      </Dialog>
 
       <EmployeeImportMappingStep
         open={showMappingDialog}

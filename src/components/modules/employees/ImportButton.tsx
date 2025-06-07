@@ -5,21 +5,17 @@ import { Upload } from 'lucide-react';
 
 interface ImportButtonProps {
   onClick: () => void;
-  disabled?: boolean;
 }
 
-export const ImportButton: React.FC<ImportButtonProps> = ({
-  onClick,
-  disabled = false,
-}) => {
+export const ImportButton: React.FC<ImportButtonProps> = ({ onClick }) => {
   return (
     <Button 
       onClick={onClick}
-      disabled={disabled}
+      variant="outline" 
       className="flex items-center gap-2"
     >
       <Upload className="h-4 w-4" />
-      ייבוא מקובץ Excel
+      ייבא מאקסל
     </Button>
   );
 };
