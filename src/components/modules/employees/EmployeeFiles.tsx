@@ -38,6 +38,43 @@ export const EmployeeFiles: React.FC = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // Helper function to check authentication
+  const checkAuthSession = async (): Promise<boolean> => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('❌ Session check error:', error);
+        toast({
+          title: 'שגיאת אותנטיקציה',
+          description: 'נדרש להתחבר מחדש למערכת',
+          variant: 'destructive'
+        });
+        return false;
+      }
+
+      if (!session?.access_token) {
+        console.warn('⚠️ No valid session found');
+        toast({
+          title: 'נדרש להתחבר מחדש',
+          description: 'הסשן פג תוקף - אנא התחבר מחדש כדי להמשיך',
+          variant: 'destructive'
+        });
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('💥 Authentication check failed:', error);
+      toast({
+        title: 'שגיאת מערכת',
+        description: 'לא ניתן לאמת את הסשן - אנא רענן את הדף',
+        variant: 'destructive'
+      });
+      return false;
+    }
+  };
+
   const { data: employees } = useQuery({
     queryKey: ['employees', businessId],
     queryFn: async () => {
@@ -89,6 +126,12 @@ export const EmployeeFiles: React.FC = () => {
 
   const uploadFileMutation = useMutation({
     mutationFn: async ({ file, employeeId }: { file: File; employeeId: string }) => {
+      // Check authentication before upload
+      const isAuthenticated = await checkAuthSession();
+      if (!isAuthenticated) {
+        throw new Error('Authentication required');
+      }
+
       if (!businessId || !file || !user?.id) throw new Error('Missing required data');
 
       // Generate unique file path
@@ -136,7 +179,9 @@ export const EmployeeFiles: React.FC = () => {
       console.error('Upload error:', error);
       toast({
         title: 'שגיאה',
-        description: 'שגיאה בהעלאת הקובץ',
+        description: error instanceof Error && error.message === 'Authentication required' 
+          ? 'נדרש להתחבר מחדש כדי להעלות קובץ'
+          : 'שגיאה בהעלאת הקובץ',
         variant: 'destructive',
       });
     },
@@ -144,6 +189,12 @@ export const EmployeeFiles: React.FC = () => {
 
   const deleteFileMutation = useMutation({
     mutationFn: async (file: EmployeeFile) => {
+      // Check authentication before delete
+      const isAuthenticated = await checkAuthSession();
+      if (!isAuthenticated) {
+        throw new Error('Authentication required');
+      }
+
       // Delete from storage
       const { error: storageError } = await supabase.storage
         .from('employee-files')
@@ -170,7 +221,9 @@ export const EmployeeFiles: React.FC = () => {
       console.error('Delete error:', error);
       toast({
         title: 'שגיאה',
-        description: 'שגיאה במחיקת הקובץ',
+        description: error instanceof Error && error.message === 'Authentication required'
+          ? 'נדרש להתחבר מחדש כדי למחוק קובץ'
+          : 'שגיאה במחיקת הקובץ',
         variant: 'destructive',
       });
     },
@@ -183,14 +236,26 @@ export const EmployeeFiles: React.FC = () => {
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (selectedFile && uploadingEmployeeId) {
+      // Check authentication before starting upload
+      const isAuthenticated = await checkAuthSession();
+      if (!isAuthenticated) {
+        return;
+      }
+      
       uploadFileMutation.mutate({ file: selectedFile, employeeId: uploadingEmployeeId });
     }
   };
 
   const handleDownload = async (file: EmployeeFile) => {
     try {
+      // Check authentication before download
+      const isAuthenticated = await checkAuthSession();
+      if (!isAuthenticated) {
+        return;
+      }
+
       const { data, error } = await supabase.storage
         .from('employee-files')
         .download(file.file_path);

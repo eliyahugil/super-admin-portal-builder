@@ -28,7 +28,7 @@ if (typeof window !== 'undefined') {
       if (error) {
         console.error('❌ Supabase connection error:', error);
       } else {
-        console.log('✅ Supabase connected successfully');
+        console.log('✅ Supabase connected successfully', data.session ? 'with session' : 'without session');
       }
     })
     .catch(error => {

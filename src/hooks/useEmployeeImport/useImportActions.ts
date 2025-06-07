@@ -1,4 +1,3 @@
-
 import { useToast } from '@/hooks/use-toast';
 import { EmployeeImportDatabase } from '@/services/excel/EmployeeImportDatabase';
 import type { ImportStep, ImportActions, ImportValidation } from './types';
@@ -6,6 +5,7 @@ import type { ExcelRow, PreviewEmployee, ImportResult } from '@/services/ExcelIm
 import { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
 import { employeeTypes, initialImportResult } from './constants';
 import { ExcelImportService } from '@/services/ExcelImportService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ValidationError {
   rowIndex: number;
@@ -62,9 +62,54 @@ export const useImportActions = ({
 }: UseImportActionsProps): ImportActions => {
   const { toast } = useToast();
 
+  // Helper function to check authentication
+  const checkAuthSession = async (): Promise<boolean> => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('❌ Session check error:', error);
+        toast({
+          title: 'שגיאת אותנטיקציה',
+          description: 'נדרש להתחבר מחדש למערכת',
+          variant: 'destructive'
+        });
+        return false;
+      }
+
+      if (!session?.access_token) {
+        console.warn('⚠️ No valid session found');
+        toast({
+          title: 'נדרש להתחבר מחדש',
+          description: 'הסשן פג תוקף - אנא התחבר מחדש כדי להמשיך',
+          variant: 'destructive'
+        });
+        return false;
+      }
+
+      console.log('✅ Valid session confirmed');
+      return true;
+    } catch (error) {
+      console.error('💥 Authentication check failed:', error);
+      toast({
+        title: 'שגיאת מערכת',
+        description: 'לא ניתן לאמת את הסשן - אנא רענן את הדף',
+        variant: 'destructive'
+      });
+      return false;
+    }
+  };
+
   const handleFileUpload = async (uploadedFile: File) => {
     try {
       console.log('Starting file upload process for:', uploadedFile.name);
+      
+      // Check authentication before proceeding
+      const isAuthenticated = await checkAuthSession();
+      if (!isAuthenticated) {
+        return;
+      }
+
       setFile(uploadedFile);
       
       const parsedData = await ExcelImportService.parseExcelFile(uploadedFile);
@@ -87,13 +132,19 @@ export const useImportActions = ({
     }
   };
 
-  const handleMappingConfirm = (mappings: FieldMapping[]) => {
+  const handleMappingConfirm = async (mappings: FieldMapping[]) => {
     if (!businessId) {
       toast({
         title: 'שגיאה',
         description: 'זיהוי עסק לא תקין',
         variant: 'destructive'
       });
+      return;
+    }
+
+    // Check authentication before proceeding with mapping
+    const isAuthenticated = await checkAuthSession();
+    if (!isAuthenticated) {
       return;
     }
     
@@ -130,6 +181,12 @@ export const useImportActions = ({
   const handleImport = async () => {
     console.log('Starting import process...');
     
+    // Check authentication before starting import
+    const isAuthenticated = await checkAuthSession();
+    if (!isAuthenticated) {
+      return;
+    }
+    
     // Final validation before import
     if (!validation.validateImportData()) {
       toast({
@@ -151,6 +208,13 @@ export const useImportActions = ({
 
       console.log('Calling import service with preview data:', previewData.length);
       
+      // Double-check session before actual import
+      const finalAuthCheck = await checkAuthSession();
+      if (!finalAuthCheck) {
+        setIsImporting(false);
+        return;
+      }
+
       // Use the new EmployeeImportDatabase service
       const result = await EmployeeImportDatabase.importEmployees(previewData);
       

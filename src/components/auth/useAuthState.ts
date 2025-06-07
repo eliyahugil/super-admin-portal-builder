@@ -169,7 +169,7 @@ export const useAuthState = () => {
         console.log('🎧 Setting up auth state listener...');
         
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (event, newSession) => {
+          async (event, newSession) => {
             console.log('🔄 Auth state changed:', event, {
               hasSession: !!newSession,
               userEmail: newSession?.user?.email || 'no session'
@@ -178,6 +178,21 @@ export const useAuthState = () => {
             if (!isMounted) {
               console.log('❌ Component unmounted, ignoring auth change');
               return;
+            }
+
+            // Handle specific auth events for better debugging
+            if (event === 'TOKEN_REFRESHED') {
+              console.log('✅ Token refreshed successfully');
+            } else if (event === 'SIGNED_OUT') {
+              console.log('👋 User signed out');
+              // Clear all state on sign out
+              setSession(null);
+              setUser(null);
+              setProfile(null);
+              setLoading(false);
+              return;
+            } else if (event === 'SIGNED_IN') {
+              console.log('👤 User signed in');
             }
             
             // Update session and user immediately
@@ -222,12 +237,17 @@ export const useAuthState = () => {
 
         console.log('✅ Auth listener set up successfully');
 
-        // Get initial session
+        // Get initial session with improved error handling
         console.log('⏳ Getting initial session...');
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('💥 Error getting initial session:', error);
+          if (error.message.includes('refresh_token_not_found') || error.message.includes('Invalid Refresh Token')) {
+            console.warn('🔄 Refresh token not found - user needs to re-authenticate');
+            // Clear any stale auth state
+            await supabase.auth.signOut();
+          }
           if (isMounted) {
             setSession(null);
             setUser(null);
