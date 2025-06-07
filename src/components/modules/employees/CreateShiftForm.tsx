@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +21,6 @@ export const CreateShiftForm: React.FC = () => {
   const { data: employees } = useRealData<any>({
     queryKey: ['employees-for-shift', businessId],
     tableName: 'employees',
-    select: 'id, first_name, last_name, employee_id',
     filters: { is_active: true },
     enabled: !!businessId && !isLoading
   });
@@ -30,7 +28,6 @@ export const CreateShiftForm: React.FC = () => {
   const { data: shiftTemplates } = useRealData<any>({
     queryKey: ['shift-templates', businessId],
     tableName: 'shift_templates',
-    select: 'id, name, start_time, end_time, shift_type',
     filters: { is_active: true },
     enabled: !!businessId && !isLoading
   });

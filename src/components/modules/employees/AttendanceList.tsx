@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,6 @@ export const AttendanceList: React.FC = () => {
   const { data: employees } = useRealData<any>({
     queryKey: ['employees', businessId],
     tableName: 'employees',
-    select: 'id, first_name, last_name, employee_id',
     filters: businessId !== 'super_admin' ? { business_id: businessId } : {},
     orderBy: { column: 'first_name', ascending: true },
     enabled: !!businessId && !isLoading
@@ -41,14 +39,9 @@ export const AttendanceList: React.FC = () => {
     ...selectedEmployee ? { employee_id: selectedEmployee } : {}
   };
 
-  const { data: attendanceRecords, loading, error } = useRealData<AttendanceRecord>({
+  const { data: attendanceRecords, isLoading: loading, error } = useRealData<AttendanceRecord>({
     queryKey: ['attendance-records', selectedDate, selectedEmployee, businessId],
     tableName: 'attendance_records',
-    select: `
-      *,
-      employee:employees(first_name, last_name, employee_id),
-      branch:branches(name)
-    `,
     filters: attendanceFilters,
     orderBy: { column: 'recorded_at', ascending: false },
     enabled: !!businessId && !isLoading

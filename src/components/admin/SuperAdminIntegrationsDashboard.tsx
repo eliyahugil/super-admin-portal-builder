@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,12 +29,27 @@ interface BusinessIntegrationStats {
   active_integrations: number;
 }
 
+interface IntegrationType {
+  id: string;
+  integration_name: string;
+  display_name: string;
+  description: string;
+  category: string;
+  icon?: string;
+  requires_global_key: boolean;
+  requires_business_credentials: boolean;
+  is_active: boolean;
+  credential_fields: any[];
+  created_at: string;
+  documentation_url?: string;
+}
+
 export const SuperAdminIntegrationsDashboard: React.FC = () => {
   const { data: integrations, isLoading: integrationsLoading, error: integrationsError } = useIntegrationsData();
   const { toast } = useToast();
   const [testingIntegration, setTestingIntegration] = useState<string | null>(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
+  const [selectedIntegration, setSelectedIntegration] = useState<IntegrationType | null>(null);
 
   // Get all business integration statistics with proper joins
   const { data: businessStats, isLoading: businessStatsLoading } = useQuery({
@@ -172,7 +186,7 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
     }
   };
 
-  const openIntegrationSettings = (integration: any) => {
+  const openIntegrationSettings = (integration: IntegrationType) => {
     console.log('=== OPENING INTEGRATION SETTINGS ===');
     console.log('Integration:', integration);
     
@@ -298,7 +312,7 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
                 error={integrationsError}
                 emptyMessage="אין אינטגרציות רשומות במערכת"
                 emptyIcon={<Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />}
-                renderItem={(integration) => (
+                renderItem={(integration: IntegrationType) => (
                   <div 
                     key={integration.id} 
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
@@ -431,7 +445,7 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
               <h3 className="font-medium mb-2">פרטי האינטגרציה</h3>
               <div className="space-y-2 text-sm">
                 <p><strong>שם:</strong> {selectedIntegration?.display_name}</p>
-                <p><strong>קטגוריה:</strong> {getCategoryDisplayName(selectedIntegration?.category)}</p>
+                <p><strong>קטגוריה:</strong> {getCategoryDisplayName(selectedIntegration?.category || '')}</p>
                 <p><strong>תיאור:</strong> {selectedIntegration?.description}</p>
                 <p><strong>דורש מפתח גלובלי:</strong> {selectedIntegration?.requires_global_key ? 'כן' : 'לא'}</p>
                 <p><strong>דורש הגדרות עסק:</strong> {selectedIntegration?.requires_business_credentials ? 'כן' : 'לא'}</p>

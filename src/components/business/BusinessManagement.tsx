@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,7 +27,7 @@ export const BusinessManagement: React.FC = () => {
   const { toast } = useToast();
 
   // Use the secure hook that automatically filters by business permissions
-  const { data: businesses = [], loading, error } = useBusinessesData();
+  const { data: businesses = [], isLoading: loading, error } = useBusinessesData();
 
   // Enrich businesses with employee count
   const { data: enrichedBusinesses = [] } = useQuery({
