@@ -1,155 +1,25 @@
-import { useState, useEffect, useCallback } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile } from './types';
+import { useSessionManagement } from './hooks/useSessionManagement';
+import { useProfileFetching } from './hooks/useProfileFetching';
 
 export const useAuthState = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  // Stable fetchProfile function that doesn't change on re-renders
-  const fetchProfile = useCallback(async (userId: string): Promise<void> => {
-    try {
-      console.log('🔍 Fetching profile for user:', userId);
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+  const {
+    user,
+    session,
+    loading,
+    setLoading,
+    handleAuthStateChange,
+    getInitialSession
+  } = useSessionManagement();
 
-      if (error) {
-        console.error('❌ Profile fetch error:', error);
-        
-        // If profile doesn't exist, try to create one
-        console.log('🔧 Profile not found, creating new profile...');
-        try {
-          const { data: userData } = await supabase.auth.getUser();
-          if (userData.user) {
-            const newProfile = {
-              id: userId,
-              email: userData.user.email || '',
-              full_name: userData.user.user_metadata?.full_name || userData.user.email || '',
-              role: 'business_user' as const,
-              business_id: null // New users start without business assignment
-            };
-            
-            const { data: createdProfile, error: createError } = await supabase
-              .from('profiles')
-              .insert([newProfile])
-              .select()
-              .single();
-              
-            if (createError) {
-              console.error('❌ שגיאה ביצירת פרופיל:', createError);
-              // If creation fails, return a default profile
-              setProfile({
-                id: userId,
-                email: userData.user.email || '',
-                full_name: userData.user.email || '',
-                role: 'business_user' as const,
-                business_id: null
-              });
-              return;
-            }
-            
-            console.log('✅ פרופיל חדש נוצר:', createdProfile);
-            setProfile(createdProfile);
-            return;
-          }
-        } catch (createError) {
-          console.error('💥 Exception ביצירת פרופיל:', createError);
-        }
-        
-        // Return a default profile if everything fails
-        setProfile({
-          id: userId,
-          email: user?.email || '',
-          full_name: user?.email || '',
-          role: 'business_user' as const,
-          business_id: null
-        });
-        return;
-      }
-
-      if (!data) {
-        console.warn('⚠️ לא נמצא פרופיל למשתמש:', userId);
-        
-        // Try to create a new profile automatically
-        try {
-          const { data: userData } = await supabase.auth.getUser();
-          if (userData.user) {
-            console.log('🔧 מנסה ליצור פרופיל חדש...');
-            
-            const newProfile = {
-              id: userId,
-              email: userData.user.email || '',
-              full_name: userData.user.user_metadata?.full_name || userData.user.email || '',
-              role: 'business_user' as const,
-              business_id: null // New users start without business assignment
-            };
-            
-            const { data: createdProfile, error: createError } = await supabase
-              .from('profiles')
-              .insert([newProfile])
-              .select()
-              .single();
-              
-            if (createError) {
-              console.error('❌ שגיאה ביצירת פרופיל:', createError);
-              // Return default profile if creation fails
-              setProfile({
-                id: userId,
-                email: userData.user.email || '',
-                full_name: userData.user.email || '',
-                role: 'business_user' as const,
-                business_id: null
-              });
-              return;
-            }
-            
-            console.log('✅ פרופיל חדש נוצר:', createdProfile);
-            setProfile(createdProfile);
-            return;
-          }
-        } catch (createError) {
-          console.error('💥 Exception ביצירת פרופיל:', createError);
-        }
-        
-        // Return default profile
-        setProfile({
-          id: userId,
-          email: user?.email || '',
-          full_name: user?.email || '',
-          role: 'business_user' as const,
-          business_id: null
-        });
-        return;
-      }
-
-      console.log('✅ Profile fetched successfully:', data);
-      setProfile(data);
-    } catch (error) {
-      console.error('💥 Exception in fetchProfile:', error);
-      // Return default profile on any error
-      setProfile({
-        id: userId,
-        email: user?.email || '',
-        full_name: user?.email || '',
-        role: 'business_user' as const,
-        business_id: null
-      });
-    }
-  }, [user?.email]);
-
-  const refreshProfile = useCallback(async () => {
-    if (user?.id) {
-      console.log('🔄 Refreshing profile for user:', user.id);
-      await fetchProfile(user.id);
-    }
-  }, [user?.id, fetchProfile]);
+  const {
+    profile,
+    setProfile,
+    fetchProfile,
+    refreshProfile
+  } = useProfileFetching(user);
 
   useEffect(() => {
     console.log('🚀 useAuthState - Starting auth setup');
@@ -170,34 +40,12 @@ export const useAuthState = () => {
         
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, newSession) => {
-            console.log('🔄 Auth state changed:', event, {
-              hasSession: !!newSession,
-              userEmail: newSession?.user?.email || 'no session'
-            });
-            
             if (!isMounted) {
               console.log('❌ Component unmounted, ignoring auth change');
               return;
             }
 
-            // Handle specific auth events for better debugging
-            if (event === 'TOKEN_REFRESHED') {
-              console.log('✅ Token refreshed successfully');
-            } else if (event === 'SIGNED_OUT') {
-              console.log('👋 User signed out');
-              // Clear all state on sign out
-              setSession(null);
-              setUser(null);
-              setProfile(null);
-              setLoading(false);
-              return;
-            } else if (event === 'SIGNED_IN') {
-              console.log('👤 User signed in');
-            }
-            
-            // Update session and user immediately
-            setSession(newSession);
-            setUser(newSession?.user ?? null);
+            handleAuthStateChange(event, newSession);
             
             if (newSession?.user) {
               console.log('👤 User detected, fetching profile...');
@@ -238,38 +86,12 @@ export const useAuthState = () => {
         console.log('✅ Auth listener set up successfully');
 
         // Get initial session with improved error handling
-        console.log('⏳ Getting initial session...');
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('💥 Error getting initial session:', error);
-          if (error.message.includes('refresh_token_not_found') || error.message.includes('Invalid Refresh Token')) {
-            console.warn('🔄 Refresh token not found - user needs to re-authenticate');
-            // Clear any stale auth state
-            await supabase.auth.signOut();
-          }
-          if (isMounted) {
-            setSession(null);
-            setUser(null);
-            setProfile(null);
-            setLoading(false);
-          }
-          return;
-        }
-
-        console.log('🔍 Initial session check:', {
-          hasSession: !!initialSession,
-          userEmail: initialSession?.user?.email || 'no user'
-        });
+        const initialSession = await getInitialSession();
         
         if (!isMounted) {
           console.log('❌ Component unmounted during session check');
           return;
         }
-
-        // Update state with initial session
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
         
         if (initialSession?.user) {
           console.log('👤 Initial user found, fetching profile...');
