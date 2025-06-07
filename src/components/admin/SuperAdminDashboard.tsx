@@ -18,8 +18,16 @@ import {
   Mail,
   Activity,
   Shield,
-  AlertCircle
+  AlertCircle,
+  Menu,
+  MoreVertical
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface Business {
   id: string;
@@ -36,6 +44,7 @@ export const SuperAdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [moduleKeys] = useState([
     'shift_management',
     'employee_documents', 
@@ -224,27 +233,32 @@ export const SuperAdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6" dir="rtl">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6" dir="rtl">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <Shield className="h-8 w-8" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <Shield className="h-6 w-6 sm:h-8 sm:w-8" />
             דשבורד סופר אדמין
           </h1>
-          <p className="text-gray-600 mt-2">מרכז שליטה על כל העסקים במערכת</p>
-          <p className="text-sm text-gray-500">מחובר כ: {profile?.email}</p>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">מרכז שליטה על כל העסקים במערכת</p>
+          <p className="text-xs sm:text-sm text-gray-500">מחובר כ: {profile?.email}</p>
         </div>
         
-        <div className="flex gap-3">
-          <Button onClick={() => navigate('/admin/new-business')} className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+          <Button 
+            onClick={() => navigate('/admin/new-business')} 
+            className="flex items-center gap-2 text-sm"
+            size="sm"
+          >
             <Plus className="h-4 w-4" />
             עסק חדש (מהיר)
           </Button>
           <Button 
             variant="outline"
             onClick={() => navigate('/admin/businesses/create')} 
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 text-sm"
+            size="sm"
           >
             <Plus className="h-4 w-4" />
             עסק חדש (מתקדם)
@@ -253,115 +267,131 @@ export const SuperAdminDashboard: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center">
-              <Building className="h-8 w-8 text-blue-600" />
-              <div className="mr-4">
-                <p className="text-2xl font-bold text-gray-900">{totalStats.totalBusinesses}</p>
-                <p className="text-gray-600">סך הכל עסקים</p>
+              <Building className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+              <div className="mr-3 sm:mr-4">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{totalStats.totalBusinesses}</p>
+                <p className="text-gray-600 text-xs sm:text-sm">סך הכל עסקים</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center">
-              <Activity className="h-8 w-8 text-green-600" />
-              <div className="mr-4">
-                <p className="text-2xl font-bold text-gray-900">{totalStats.activeBusinesses}</p>
-                <p className="text-gray-600">עסקים פעילים</p>
+              <Activity className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
+              <div className="mr-3 sm:mr-4">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{totalStats.activeBusinesses}</p>
+                <p className="text-gray-600 text-xs sm:text-sm">עסקים פעילים</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center">
-              <Users className="h-8 w-8 text-purple-600" />
-              <div className="mr-4">
-                <p className="text-2xl font-bold text-gray-900">{totalStats.totalEmployees}</p>
-                <p className="text-gray-600">סך הכל עובדים</p>
+              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
+              <div className="mr-3 sm:mr-4">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{totalStats.totalEmployees}</p>
+                <p className="text-gray-600 text-xs sm:text-sm">סך הכל עובדים</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center">
-              <Settings className="h-8 w-8 text-orange-600" />
-              <div className="mr-4">
-                <p className="text-2xl font-bold text-gray-900">{totalStats.avgModulesPerBusiness}</p>
-                <p className="text-gray-600">ממוצע מודולים לעסק</p>
+              <Settings className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
+              <div className="mr-3 sm:mr-4">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{totalStats.avgModulesPerBusiness}</p>
+                <p className="text-gray-600 text-xs sm:text-sm">ממוצע מודולים לעסק</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search */}
+      {/* Search and View Toggle */}
       <Card>
         <CardContent className="p-4">
-          <div className="relative">
-            <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="חיפוש לפי שם עסק או כתובת מייל..."
-              className="pr-10"
-            />
+          <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="חיפוש לפי שם עסק או כתובת מייל..."
+                className="pr-10"
+              />
+            </div>
+            <div className="hidden sm:flex gap-2">
+              <Button
+                variant={viewMode === 'cards' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('cards')}
+              >
+                כרטיסים
+              </Button>
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+              >
+                טבלה
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Businesses Table */}
+      {/* Businesses Content */}
       <Card>
         <CardHeader>
-          <CardTitle>רשימת עסקים ({filtered.length})</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>רשימת עסקים ({filtered.length})</span>
+            <div className="sm:hidden">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewMode(viewMode === 'cards' ? 'table' : 'cards')}
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-right p-3">שם עסק</th>
-                  <th className="text-right p-3">מייל ליצירת קשר</th>
-                  <th className="text-right p-3">עובדים</th>
-                  <th className="text-right p-3">סטטוס</th>
-                  <th className="text-right p-3">מודולים פעילים</th>
-                  <th className="text-right p-3">פעולות</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((business) => (
-                  <tr key={business.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">
-                      <div className="flex items-center gap-2">
-                        <Building className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">{business.name}</span>
+          {viewMode === 'cards' || window.innerWidth < 768 ? (
+            // Cards View (Mobile and when selected)
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map((business) => (
+                <Card key={business.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-base text-gray-900 mb-2 line-clamp-1">
+                          {business.name}
+                        </h3>
+                        <div className="space-y-1 text-sm text-gray-600">
+                          <p className="truncate">📧 {business.contact_email || 'לא צוין'}</p>
+                          <p>👥 {business.employee_count} עובדים</p>
+                        </div>
                       </div>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-gray-500" />
-                        {business.contact_email || 'לא צוין'}
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <Badge variant="outline">{business.employee_count}</Badge>
-                    </td>
-                    <td className="p-3">
-                      <Badge variant={business.is_active ? 'default' : 'secondary'}>
+                      <Badge variant={business.is_active ? 'default' : 'secondary'} className="text-xs">
                         {business.is_active ? 'פעיל' : 'לא פעיל'}
                       </Badge>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex flex-wrap gap-2 max-w-xs">
-                        {moduleKeys.map((moduleKey) => {
+                    </div>
+
+                    {/* Modules - Compact View */}
+                    <div className="mb-3">
+                      <div className="flex flex-wrap gap-1">
+                        {moduleKeys.slice(0, 3).map((moduleKey) => {
                           const moduleState = business.modules.find(m => m.module_key === moduleKey);
                           const isEnabled = moduleState?.is_enabled || false;
                           
@@ -370,46 +400,162 @@ export const SuperAdminDashboard: React.FC = () => {
                               <Switch
                                 checked={isEnabled}
                                 onCheckedChange={() => toggleModule(business.id, moduleKey, isEnabled)}
+                                className="scale-75"
                               />
-                              <span className="text-xs truncate max-w-20" title={moduleKey}>
-                                {moduleKey.replace('_', ' ')}
+                              <span className="text-xs truncate max-w-16" title={moduleKey}>
+                                {moduleKey.split('_')[0]}
                               </span>
                             </div>
                           );
                         })}
+                        {moduleKeys.length > 3 && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                <MoreVertical className="h-3 w-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              {moduleKeys.slice(3).map((moduleKey) => {
+                                const moduleState = business.modules.find(m => m.module_key === moduleKey);
+                                const isEnabled = moduleState?.is_enabled || false;
+                                
+                                return (
+                                  <DropdownMenuItem key={moduleKey} className="flex items-center gap-2">
+                                    <Switch
+                                      checked={isEnabled}
+                                      onCheckedChange={() => toggleModule(business.id, moduleKey, isEnabled)}
+                                      className="scale-75"
+                                    />
+                                    <span className="text-xs">{moduleKey}</span>
+                                  </DropdownMenuItem>
+                                );
+                              })}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => navigate(`/business/${business.id}/modules/settings`)}
-                        >
-                          נהל עסק
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => navigate(`/business/${business.id}/modules/settings`)}
-                        >
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
 
-            {filtered.length === 0 && (
-              <div className="text-center py-8">
-                <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">לא נמצאו עסקים</h3>
-                <p className="text-gray-600">נסה לשנות את החיפוש או צור עסק חדש</p>
-              </div>
-            )}
-          </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => navigate(`/business/${business.id}/modules/settings`)}
+                        className="flex-1 text-xs"
+                      >
+                        נהל עסק
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => navigate(`/business/${business.id}/modules/settings`)}
+                        className="px-2"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            // Table View (Desktop only)
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-right p-3">שם עסק</th>
+                    <th className="text-right p-3">מייל ליצירת קשר</th>
+                    <th className="text-right p-3">עובדים</th>
+                    <th className="text-right p-3">סטטוס</th>
+                    <th className="text-right p-3">מודולים פעילים</th>
+                    <th className="text-right p-3">פעולות</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((business) => (
+                    <tr key={business.id} className="border-b hover:bg-gray-50">
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <Building className="h-4 w-4 text-gray-500" />
+                          <span className="font-medium">{business.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-gray-500" />
+                          {business.contact_email || 'לא צוין'}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <Badge variant="outline">{business.employee_count}</Badge>
+                      </td>
+                      <td className="p-3">
+                        <Badge variant={business.is_active ? 'default' : 'secondary'}>
+                          {business.is_active ? 'פעיל' : 'לא פעיל'}
+                        </Badge>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex flex-wrap gap-2 max-w-xs">
+                          {moduleKeys.map((moduleKey) => {
+                            const moduleState = business.modules.find(m => m.module_key === moduleKey);
+                            const isEnabled = moduleState?.is_enabled || false;
+                            
+                            return (
+                              <div key={moduleKey} className="flex items-center gap-1">
+                                <Switch
+                                  checked={isEnabled}
+                                  onCheckedChange={() => toggleModule(business.id, moduleKey, isEnabled)}
+                                />
+                                <span className="text-xs truncate max-w-20" title={moduleKey}>
+                                  {moduleKey.replace('_', ' ')}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => navigate(`/business/${business.id}/modules/settings`)}
+                          >
+                            נהל עסק
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => navigate(`/business/${business.id}/modules/settings`)}
+                          >
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {filtered.length === 0 && (
+                <div className="text-center py-8">
+                  <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">לא נמצאו עסקים</h3>
+                  <p className="text-gray-600">נסה לשנות את החיפוש או צור עסק חדש</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {filtered.length === 0 && (
+            <div className="text-center py-8">
+              <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">לא נמצאו עסקים</h3>
+              <p className="text-gray-600">נסה לשנות את החיפוש או צור עסק חדש</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

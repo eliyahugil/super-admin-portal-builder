@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './AuthContext';
 import { AccessRequestForm } from './AccessRequestForm';
+import { Building, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 export const AuthForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +16,7 @@ export const AuthForm: React.FC = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -33,7 +35,7 @@ export const AuthForm: React.FC = () => {
     console.error('❌ AuthForm - Failed to get auth context:', error);
     // Return loading state if auth context is not ready
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-2 text-gray-600">מאתחל מערכת אימות...</p>
@@ -133,7 +135,7 @@ export const AuthForm: React.FC = () => {
   if (authLoading) {
     console.log('AuthForm - Auth still loading...');
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-2 text-gray-600">טוען...</p>
@@ -152,87 +154,162 @@ export const AuthForm: React.FC = () => {
   console.log('AuthForm - Rendering auth form');
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4" dir="rtl">
+      <div className="w-full max-w-md space-y-6">
+        {/* Header */}
+        <div className="text-center">
+          <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+            <Building className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
             מערכת ניהול עסקית
-          </CardTitle>
-          <CardDescription>
+          </h1>
+          <p className="text-gray-600 text-sm sm:text-base mt-2">
             {isLogin ? 'התחבר לחשבון שלך' : 'צור חשבון חדש'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+          </p>
+        </div>
+
+        {/* Auth Form */}
+        <Card className="shadow-lg">
+          <CardHeader className="text-center pb-4">
+            <CardTitle className="text-xl font-semibold">
+              {isLogin ? 'התחברות' : 'הרשמה'}
+            </CardTitle>
+            <CardDescription className="text-sm">
+              {isLogin 
+                ? 'הכנס את פרטי החשבון שלך' 
+                : 'מלא את הפרטים כדי ליצור חשבון חדש'
+              }
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className="flex items-center gap-2 text-sm font-medium">
+                    <User className="h-4 w-4" />
+                    שם מלא
+                  </Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="הכנס את שמך המלא"
+                    required
+                    dir="rtl"
+                    className="text-right"
+                  />
+                </div>
+              )}
+              
               <div className="space-y-2">
-                <Label htmlFor="fullName">שם מלא</Label>
+                <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium">
+                  <Mail className="h-4 w-4" />
+                  כתובת מייל
+                </Label>
                 <Input
-                  id="fullName"
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="example@company.com"
                   required
-                  dir="rtl"
+                  dir="ltr"
+                  className="text-left"
                 />
               </div>
-            )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="password" className="flex items-center gap-2 text-sm font-medium">
+                  <Lock className="h-4 w-4" />
+                  סיסמה
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="הכנס סיסמה"
+                    required
+                    dir="ltr"
+                    className="text-left pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                {!isLogin && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    הסיסמה חייבת להכיל לפחות 6 תווים
+                  </p>
+                )}
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full mt-6" 
+                disabled={loading || authLoading}
+                size="lg"
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>מעבד...</span>
+                  </div>
+                ) : (
+                  isLogin ? 'התחבר' : 'הירשם'
+                )}
+              </Button>
+            </form>
             
-            <div className="space-y-2">
-              <Label htmlFor="email">אימייל</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+            {/* Switch Mode */}
+            <div className="mt-6 text-center">
+              <Button
+                variant="link"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setEmail('');
+                  setPassword('');
+                  setFullName('');
+                }}
+                className="text-sm text-blue-600 hover:text-blue-800"
+                disabled={loading || authLoading}
+              >
+                {isLogin ? 'אין לך חשבון? הירשם כאן' : 'יש לך חשבון? התחבר כאן'}
+              </Button>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">סיסמה</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={loading || authLoading}
-            >
-              {loading ? 'מעבד...' : (isLogin ? 'התחבר' : 'הירשם')}
-            </Button>
-          </form>
-          
-          <div className="mt-4 text-center">
-            <Button
-              variant="link"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm"
-              disabled={loading || authLoading}
-            >
-              {isLogin ? 'אין לך חשבון? הירשם כאן' : 'יש לך חשבון? התחבר כאן'}
-            </Button>
-          </div>
 
-          {/* Debug info in development */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 p-3 bg-gray-100 rounded text-xs">
-              <div>User: {user?.email || 'None'}</div>
-              <div>Profile: {profile?.role || 'None'}</div>
-              <div>Business ID: {profile?.business_id || 'None'}</div>
-              <div>Auth Loading: {authLoading ? 'Yes' : 'No'}</div>
-              <div>Form Loading: {loading ? 'Yes' : 'No'}</div>
-              <div>Current Path: {location.pathname}</div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            {/* Debug info in development */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-4 p-3 bg-gray-100 rounded text-xs space-y-1">
+                <div><strong>Debug Info:</strong></div>
+                <div>User: {user?.email || 'None'}</div>
+                <div>Profile: {profile?.role || 'None'}</div>
+                <div>Business ID: {profile?.business_id || 'None'}</div>
+                <div>Auth Loading: {authLoading ? 'Yes' : 'No'}</div>
+                <div>Form Loading: {loading ? 'Yes' : 'No'}</div>
+                <div>Current Path: {location.pathname}</div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Additional Info */}
+        <div className="text-center text-xs text-gray-500">
+          <p>בהתחברות אתה מסכים לתנאי השימוש ולמדיניות הפרטיות</p>
+        </div>
+      </div>
     </div>
   );
 };

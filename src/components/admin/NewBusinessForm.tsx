@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, User, Settings, Phone, Mail, AlertTriangle, Sparkles } from 'lucide-react';
+import { Building2, User, Settings, Phone, Mail, AlertTriangle, Sparkles, ArrowRight } from 'lucide-react';
 
 interface BusinessFormData {
   name: string;
@@ -42,6 +42,7 @@ export const NewBusinessForm: React.FC = () => {
   
   const [selectedModules, setSelectedModules] = useState<string[]>(['shift_management', 'employee_documents']);
   const [loading, setLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -57,8 +58,33 @@ export const NewBusinessForm: React.FC = () => {
     );
   };
 
+  const validateStep = (step: number): boolean => {
+    switch (step) {
+      case 1:
+        return !!(formData.name && formData.admin_email && formData.admin_full_name);
+      case 2:
+        return true; // Optional fields
+      case 3:
+        return selectedModules.length > 0;
+      default:
+        return false;
+    }
+  };
+
+  const nextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, 3));
+    } else {
+      toast({
+        title: 'שגיאה',
+        description: 'יש למלא את כל השדות הנדרשים',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const createBusinessWithAutoAdmin = async () => {
-    if (!formData.name || !formData.admin_email || !formData.admin_full_name) {
+    if (!validateStep(1)) {
       toast({
         title: 'שגיאה',
         description: 'יש למלא את כל השדות הנדרשים',
@@ -128,6 +154,7 @@ export const NewBusinessForm: React.FC = () => {
         admin_full_name: ''
       });
       setSelectedModules(['shift_management', 'employee_documents']);
+      setCurrentStep(1);
 
       // Navigate back to admin dashboard
       navigate('/admin');
@@ -144,24 +171,40 @@ export const NewBusinessForm: React.FC = () => {
     }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto p-6" dir="rtl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-          <Building2 className="h-8 w-8" />
-          יצירת עסק חדש + מנהל אוטומטי
-        </h1>
-        <p className="text-gray-600 mt-2 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-blue-500" />
-          המערכת תיצור אוטומטית את העסק ואת חשבון המנהל
-        </p>
+  const renderStepIndicator = () => (
+    <div className="flex items-center justify-center mb-6 sm:mb-8">
+      <div className="flex items-center space-x-2 space-x-reverse">
+        {[1, 2, 3].map((step) => (
+          <React.Fragment key={step}>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                step <= currentStep
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-600'
+              }`}
+            >
+              {step}
+            </div>
+            {step < 3 && (
+              <ArrowRight
+                className={`w-4 h-4 ${
+                  step < currentStep ? 'text-blue-600' : 'text-gray-300'
+                }`}
+              />
+            )}
+          </React.Fragment>
+        ))}
       </div>
+    </div>
+  );
 
+  const renderStep1 = () => (
+    <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Business Details */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Building2 className="h-5 w-5" />
               פרטי העסק
             </CardTitle>
@@ -189,37 +232,13 @@ export const NewBusinessForm: React.FC = () => {
                 rows={3}
               />
             </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  טלפון
-                </Label>
-                <Input
-                  id="phone"
-                  value={formData.contact_phone}
-                  onChange={(e) => handleInputChange('contact_phone', e.target.value)}
-                  placeholder="03-1234567"
-                />
-              </div>
-              <div>
-                <Label htmlFor="address">כתובת</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder="כתובת העסק"
-                />
-              </div>
-            </div>
           </CardContent>
         </Card>
 
         {/* Admin Details */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <User className="h-5 w-5" />
               פרטי המנהל הראשי
             </CardTitle>
@@ -251,88 +270,175 @@ export const NewBusinessForm: React.FC = () => {
                 required
               />
             </div>
-            
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2 text-blue-700">
-                <Sparkles className="h-4 w-4" />
-                <span className="font-medium">יצירה אוטומטית</span>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Auto Creation Info */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-center gap-2 text-blue-700 mb-3">
+            <Sparkles className="h-5 w-5" />
+            <span className="font-medium">יצירה אוטומטית</span>
+          </div>
+          <ul className="text-blue-600 text-sm space-y-1">
+            <li>• המערכת תיצור חשבון אוטומטית למנהל</li>
+            <li>• הסיסמה הראשונית: 123456</li>
+            <li>• המנהל יקבל הרשאות מלאות לעסק</li>
+            <li>• יש להחליף את הסיסמה בכניסה הראשונה</li>
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderStep2 = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Phone className="h-5 w-5" />
+          פרטי יצירת קשר נוספים
+        </CardTitle>
+        <CardDescription>פרטים נוספים (אופציונלי)</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="phone" className="flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              טלפון
+            </Label>
+            <Input
+              id="phone"
+              value={formData.contact_phone}
+              onChange={(e) => handleInputChange('contact_phone', e.target.value)}
+              placeholder="03-1234567"
+            />
+          </div>
+          <div>
+            <Label htmlFor="address">כתובת</Label>
+            <Input
+              id="address"
+              value={formData.address}
+              onChange={(e) => handleInputChange('address', e.target.value)}
+              placeholder="כתובת העסק"
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderStep3 = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Settings className="h-5 w-5" />
+          מודולים זמינים לעסק
+        </CardTitle>
+        <CardDescription>בחר את המודולים שיהיו זמינים לעסק זה</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {availableModules.map((module) => (
+            <div
+              key={module.key}
+              className="flex items-start space-x-3 space-x-reverse p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Checkbox
+                checked={selectedModules.includes(module.key)}
+                onCheckedChange={() => handleToggleModule(module.key)}
+                className="mt-1"
+              />
+              <div className="flex-1 min-w-0">
+                <Label className="font-medium cursor-pointer text-sm sm:text-base">
+                  {module.label}
+                </Label>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">
+                  {module.description}
+                </p>
               </div>
-              <ul className="text-blue-600 text-sm mt-1 space-y-1">
-                <li>• המערכת תיצור חשבון אוטומטית למנהל</li>
-                <li>• הסיסמה הראשונית: 123456</li>
-                <li>• המנהל יקבל הרשאות מלאות לעסק</li>
-                <li>• יש להחליף את הסיסמה בכניסה הראשונה</li>
-              </ul>
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
+        
+        <div className="mt-4 text-sm text-gray-600">
+          נבחרו {selectedModules.length} מודולים
+        </div>
+      </CardContent>
+    </Card>
+  );
 
-        {/* Module Selection */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              מודולים זמינים לעסק
-            </CardTitle>
-            <CardDescription>בחר את המודולים שיהיו זמינים לעסק זה</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {availableModules.map((module) => (
-                <div
-                  key={module.key}
-                  className="flex items-start space-x-3 space-x-reverse p-3 border rounded-lg hover:bg-gray-50"
-                >
-                  <Checkbox
-                    checked={selectedModules.includes(module.key)}
-                    onCheckedChange={() => handleToggleModule(module.key)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <Label className="font-medium cursor-pointer">
-                      {module.label}
-                    </Label>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {module.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="mt-4 text-sm text-gray-600">
-              נבחרו {selectedModules.length} מודולים
-            </div>
-          </CardContent>
-        </Card>
+  return (
+    <div className="max-w-6xl mx-auto p-4 sm:p-6" dir="rtl">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2 mb-2">
+          <Building2 className="h-6 w-6 sm:h-8 sm:w-8" />
+          יצירת עסק חדש + מנהל אוטומטי
+        </h1>
+        <p className="text-gray-600 flex items-center gap-2 text-sm sm:text-base">
+          <Sparkles className="h-4 w-4 text-blue-500" />
+          המערכת תיצור אוטומטית את העסק ואת חשבון המנהל
+        </p>
+      </div>
 
-        {/* Action Buttons */}
-        <div className="lg:col-span-2 flex justify-between items-center pt-6">
-          <Button 
-            variant="outline"
-            onClick={() => navigate('/admin')}
-          >
-            ביטול
-          </Button>
-          
-          <Button 
-            onClick={createBusinessWithAutoAdmin}
-            disabled={loading || !formData.name || !formData.admin_email || !formData.admin_full_name}
-            size="lg"
-            className="flex items-center gap-2"
-          >
-            {loading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                יוצר עסק ומנהל...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                צור עסק + מנהל אוטומטי
-              </>
+      {renderStepIndicator()}
+
+      <div className="space-y-6">
+        {currentStep === 1 && renderStep1()}
+        {currentStep === 2 && renderStep2()}
+        {currentStep === 3 && renderStep3()}
+
+        {/* Navigation Buttons */}
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 pt-6">
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => navigate('/admin')}
+              className="flex-1 sm:flex-initial"
+            >
+              ביטול
+            </Button>
+            {currentStep > 1 && (
+              <Button 
+                variant="outline"
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                className="flex-1 sm:flex-initial"
+              >
+                חזור
+              </Button>
             )}
-          </Button>
+          </div>
+          
+          {currentStep < 3 ? (
+            <Button 
+              onClick={nextStep}
+              disabled={!validateStep(currentStep)}
+              className="flex items-center gap-2"
+            >
+              המשך
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button 
+              onClick={createBusinessWithAutoAdmin}
+              disabled={loading || !validateStep(1)}
+              size="lg"
+              className="flex items-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  יוצר עסק ומנהל...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  צור עסק + מנהל אוטומטי
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </div>
     </div>
