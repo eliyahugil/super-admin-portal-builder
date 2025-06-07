@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,11 +15,11 @@ interface AccessRequest {
   request_reason?: string | null;
   status: string;
   created_at: string;
-  profiles?: {
+  profiles: {
     email?: string;
     full_name?: string;
   } | null;
-  businesses?: {
+  businesses: {
     name?: string;
   } | null;
 }
