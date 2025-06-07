@@ -22,13 +22,17 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 });
 
 // Test connection on initialization with better error handling
-supabase.auth.getSession().then(({ data, error }) => {
-  if (error) {
-    console.error('❌ Supabase connection error:', error);
-  } else {
-    console.log('✅ Supabase connected successfully');
-  }
-}).catch(error => {
-  console.error('💥 Failed to connect to Supabase:', error);
-  // Don't throw here to prevent app crash
-});
+if (typeof window !== 'undefined') {
+  supabase.auth.getSession()
+    .then(({ data, error }) => {
+      if (error) {
+        console.error('❌ Supabase connection error:', error);
+      } else {
+        console.log('✅ Supabase connected successfully');
+      }
+    })
+    .catch(error => {
+      console.error('💥 Failed to connect to Supabase:', error);
+      // Don't throw here to prevent app crash
+    });
+}
