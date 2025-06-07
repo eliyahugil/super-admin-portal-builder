@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -203,7 +202,8 @@ export const useAuthState = () => {
                         id: newSession.user.id,
                         email: newSession.user.email || '',
                         full_name: newSession.user.email || '',
-                        role: 'business_user' as const
+                        role: 'business_user' as const,
+                        business_id: null
                       });
                       setLoading(false);
                     }
@@ -266,7 +266,8 @@ export const useAuthState = () => {
                 id: initialSession.user.id,
                 email: initialSession.user.email || '',
                 full_name: initialSession.user.email || '',
-                role: 'business_user' as const
+                role: 'business_user' as const,
+                business_id: null
               });
             }
           }
@@ -315,6 +316,7 @@ export const useAuthState = () => {
       userEmail: user?.email,
       hasProfile: !!profile,
       profileRole: profile?.role,
+      businessId: profile?.business_id,
       loading,
       timestamp: new Date().toISOString()
     });

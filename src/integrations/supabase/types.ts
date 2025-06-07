@@ -2129,6 +2129,53 @@ export type Database = {
         }
         Relationships: []
       }
+      user_access_requests: {
+        Row: {
+          created_at: string
+          id: string
+          request_reason: string | null
+          requested_business_id: string | null
+          requested_role: Database["public"]["Enums"]["user_role"]
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          request_reason?: string | null
+          requested_business_id?: string | null
+          requested_role?: Database["public"]["Enums"]["user_role"]
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          request_reason?: string | null
+          requested_business_id?: string | null
+          requested_role?: Database["public"]["Enums"]["user_role"]
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_access_requests_requested_business_id_fkey"
+            columns: ["requested_business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_business_permissions: {
         Row: {
           business_id: string

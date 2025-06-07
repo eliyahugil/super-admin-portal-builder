@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './AuthContext';
+import { AccessRequestForm } from './AccessRequestForm';
 
 export const AuthForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -64,21 +65,24 @@ export const AuthForm: React.FC = () => {
       return;
     }
 
-    console.log('AuthForm - User authenticated, redirecting:', {
+    console.log('AuthForm - User authenticated, checking business access:', {
       user: user.email,
-      role: profile.role
+      role: profile.role,
+      businessId: profile.business_id
     });
     
-    // Small delay to ensure state is stable
-    setTimeout(() => {
-      if (profile.role === 'super_admin') {
-        console.log('AuthForm - Redirecting super admin to /admin');
-        navigate('/admin', { replace: true });
-      } else {
-        console.log('AuthForm - Redirecting regular user to /modules/employees');
-        navigate('/modules/employees', { replace: true });
-      }
-    }, 100);
+    // Check if user has business access or is super admin
+    if (profile.role === 'super_admin') {
+      console.log('AuthForm - Redirecting super admin to /admin');
+      navigate('/admin', { replace: true });
+    } else if (profile.business_id) {
+      console.log('AuthForm - User has business access, redirecting to modules');
+      navigate('/modules/employees', { replace: true });
+    } else {
+      console.log('AuthForm - User needs to request business access');
+      // User is authenticated but has no business access - show access request form
+      return;
+    }
   }, [user, profile, authLoading, navigate, location.pathname]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,7 +143,13 @@ export const AuthForm: React.FC = () => {
     );
   }
 
-  console.log('AuthForm - Rendering form');
+  // If user is authenticated but has no business access, show access request form
+  if (user && profile && profile.role !== 'super_admin' && !profile.business_id) {
+    console.log('AuthForm - Showing access request form for user without business');
+    return <AccessRequestForm />;
+  }
+
+  console.log('AuthForm - Rendering auth form');
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
@@ -215,6 +225,7 @@ export const AuthForm: React.FC = () => {
             <div className="mt-4 p-3 bg-gray-100 rounded text-xs">
               <div>User: {user?.email || 'None'}</div>
               <div>Profile: {profile?.role || 'None'}</div>
+              <div>Business ID: {profile?.business_id || 'None'}</div>
               <div>Auth Loading: {authLoading ? 'Yes' : 'No'}</div>
               <div>Form Loading: {loading ? 'Yes' : 'No'}</div>
               <div>Current Path: {location.pathname}</div>
