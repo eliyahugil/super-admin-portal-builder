@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -273,8 +272,8 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[280px] sm:w-[320px] p-0">
-        <SheetHeader className="px-4 py-6 border-b">
+      <SheetContent side="right" className="w-[280px] sm:w-[320px] p-0 flex flex-col">
+        <SheetHeader className="px-4 py-6 border-b flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="text-right">
               <SheetTitle className="text-lg font-bold">
@@ -292,8 +291,8 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
           </div>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 px-0 py-4">
-          <div className="space-y-6">
+        <ScrollArea className="flex-1 h-0">
+          <div className="px-0 py-4 space-y-6">
             {renderMenuSection('ראשי', coreMenuItems)}
             <Separator className="mx-4" />
             {renderMenuSection('עסקי', businessMenuItems)}
