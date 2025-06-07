@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, Link } from 'lucide-react';
-import { FieldMapping } from './FieldMappingDialog';
+import { FieldMapping } from './types/FieldMappingTypes';
 import { MultiColumnSelector } from './MultiColumnSelector';
 
 interface FieldMappingRowProps {

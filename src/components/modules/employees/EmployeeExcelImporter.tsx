@@ -410,7 +410,7 @@ export const EmployeeExcelImporter: React.FC = () => {
                 <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                 <Label htmlFor="file-upload" className="cursor-pointer">
                   <span className="text-lg font-medium">העלה קובץ Excel</span>
-                  <p className="text-sm text-gray-500 mt-2">קבצים נתמכים: .xlsx, .csv</p>
+                  <p className="text-sm text-gray-500 mt-2">קבצים נתמכים: .xlsx, .xls, .csv</p>
                 </Label>
                 <Input
                   id="file-upload"
