@@ -24,11 +24,12 @@ export const useImportProcess = ({
   const { checkAuthSession } = useAuthUtils();
 
   const handleImport = async () => {
-    console.log('Starting import process...');
+    console.log('🚀 Starting final import process...');
     
     // Check authentication before starting import
     const isAuthenticated = await checkAuthSession();
     if (!isAuthenticated) {
+      console.error('❌ Authentication failed, aborting import');
       return;
     }
     
@@ -42,34 +43,51 @@ export const useImportProcess = ({
       return;
     }
 
+    const validEmployees = previewData.filter(emp => emp.isValid);
+    if (validEmployees.length === 0) {
+      toast({
+        title: 'אין עובדים לייבוא',
+        description: 'לא נמצאו עובדים תקינים לייבוא למערכת',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsImporting(true);
     
     try {
       // Show initial progress toast
       toast({
-        title: 'מתחיל ייבוא',
-        description: 'מעבד את הנתונים...',
+        title: 'מתחיל ייבוא עובדים...',
+        description: `מעבד ${validEmployees.length} עובדים למערכת`,
       });
 
-      console.log('Calling import service with preview data:', previewData.length);
+      console.log('📤 Calling import service with valid employees:', validEmployees.length);
       
       // Double-check session before actual import
       const finalAuthCheck = await checkAuthSession();
       if (!finalAuthCheck) {
+        console.error('❌ Final auth check failed');
         setIsImporting(false);
         return;
       }
 
-      // Use the new EmployeeImportDatabase service
+      // Use the EmployeeImportDatabase service for actual import
       const result = await EmployeeImportDatabase.importEmployees(previewData);
       
-      console.log('Import completed with result:', result);
+      console.log('✅ Import completed with result:', result);
       setImportResult(result);
       
-      if (result.success) {
+      if (result.success && result.importedCount > 0) {
         toast({
           title: 'ייבוא הושלם בהצלחה! 🎉',
           description: `${result.importedCount} עובדים נוספו/עודכנו במערכת`,
+        });
+      } else if (result.success && result.importedCount === 0) {
+        toast({
+          title: 'ייבוא הושלם',
+          description: result.message,
+          variant: 'destructive'
         });
       } else {
         toast({
@@ -80,13 +98,20 @@ export const useImportProcess = ({
       }
       
       setStep('summary');
+      
+      // Refresh the employees list by triggering a page reload
+      // This ensures the new data is visible immediately
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('employeesImported'));
+      }, 1000);
+
     } catch (error) {
-      console.error('Import error:', error);
+      console.error('💥 Import error:', error);
       const errorResult: ImportResult = {
         success: false,
         importedCount: 0,
         errorCount: previewData.length,
-        message: error instanceof Error ? error.message : 'שגיאה לא צפויה - אנא נסה שוב'
+        message: error instanceof Error ? error.message : 'שגיאה לא צפויה בייבוא - אנא נסה שוב'
       };
       setImportResult(errorResult);
       setStep('summary');

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,15 +21,17 @@ export const EmployeeManagement = () => {
   const { data: employees, refetch: refetchEmployees } = useQuery({
     queryKey: ['employees'],
     queryFn: async () => {
+      console.log('🔄 Fetching employees...');
       const { data, error } = await supabase
         .from('employees')
         .select('*, main_branch:branches(name)')
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('Error fetching employees:', error);
+        console.error('❌ Error fetching employees:', error);
         throw error;
       }
+      console.log('✅ Employees fetched:', data?.length || 0);
       return data || [];
     },
   });
@@ -49,6 +51,24 @@ export const EmployeeManagement = () => {
       return data || [];
     },
   });
+
+  // Listen for successful imports and refresh the employees list
+  useEffect(() => {
+    const handleEmployeesImported = () => {
+      console.log('👂 Received employeesImported event, refreshing employees list...');
+      refetchEmployees();
+      toast({
+        title: 'רשימת העובדים עודכנה',
+        description: 'הנתונים החדשים מוצגים ברשימה',
+      });
+    };
+
+    window.addEventListener('employeesImported', handleEmployeesImported);
+    
+    return () => {
+      window.removeEventListener('employeesImported', handleEmployeesImported);
+    };
+  }, [refetchEmployees, toast]);
 
   const handleEmployeeCreated = () => {
     refetchEmployees();
