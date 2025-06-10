@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useBusinessId } from '@/hooks/useBusinessId';
+import { useBusiness } from '@/hooks/useBusiness';
 import { useFileUpload } from './actions/useFileUpload';
 import { useImportProcess } from './actions/useImportProcess';
 import { useImportUtils } from './actions/useImportUtils';
@@ -15,7 +16,14 @@ import { FieldMapping } from '@/components/modules/employees/types/FieldMappingT
 
 export function useEmployeeImport(): EmployeeImportHook {
   const businessId = useBusinessId();
+  const { isSuperAdmin } = useBusiness();
   const { toast } = useToast();
+
+  console.log('🏢 useEmployeeImport - Business context:', {
+    businessId,
+    isSuperAdmin,
+    hasBusinessContext: !!businessId
+  });
 
   // State management
   const [step, setStep] = useState<ImportStep>('upload');
@@ -32,10 +40,10 @@ export function useEmployeeImport(): EmployeeImportHook {
   const [validationErrors, setValidationErrors] = useState<any[]>([]);
   const [duplicateErrors, setDuplicateErrors] = useState<any[]>([]);
 
-  // Initialize data fetching
+  // Initialize data fetching - for super admin, allow without business ID
   useImportData(businessId, setBranches, setExistingEmployees);
 
-  // Initialize validation with enhanced validation logic
+  // Enhanced validation logic
   const validation = useImportValidation({
     rawData,
     fieldMappings,
@@ -81,8 +89,10 @@ export function useEmployeeImport(): EmployeeImportHook {
   const handleMappingConfirm = useCallback(async (mappings: FieldMapping[]) => {
     try {
       console.log('🎯 Starting mapping confirmation with mappings:', mappings.length);
+      console.log('🏢 Business context in mapping:', { businessId, isSuperAdmin });
       
-      if (!businessId) {
+      // For super admin without business context, we need to handle this differently
+      if (!businessId && !isSuperAdmin) {
         toast({
           title: 'שגיאה',
           description: 'לא נמצא מזהה עסק',
@@ -91,6 +101,9 @@ export function useEmployeeImport(): EmployeeImportHook {
         return;
       }
 
+      // For super admin, we can proceed without specific business ID
+      const effectiveBusinessId = businessId || 'super-admin-context';
+      
       setFieldMappings(mappings);
       setShowMappingDialog(false);
 
@@ -103,7 +116,7 @@ export function useEmployeeImport(): EmployeeImportHook {
       console.log('📊 Generating preview data with:', {
         rawDataRows: rawData.length,
         mappingsCount: mappings.length,
-        businessId,
+        effectiveBusinessId,
         branchesCount: branches.length,
         existingEmployeesCount: existingEmployees.length
       });
@@ -112,7 +125,7 @@ export function useEmployeeImport(): EmployeeImportHook {
       const preview = ExcelImportService.generatePreview(
         rawData,
         mappings,
-        businessId,
+        effectiveBusinessId,
         branches,
         existingEmployees,
         employeeTypes
@@ -145,7 +158,7 @@ export function useEmployeeImport(): EmployeeImportHook {
         variant: 'destructive'
       });
     }
-  }, [rawData, businessId, branches, existingEmployees, toast, validation]);
+  }, [rawData, businessId, isSuperAdmin, branches, existingEmployees, toast, validation]);
 
   return {
     // State

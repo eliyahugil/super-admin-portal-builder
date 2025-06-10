@@ -28,8 +28,20 @@ export const EmployeeExcelImporter: React.FC = () => {
     showMappingDialog,
     showValidationSummary,
     hasHeaders: headers.length > 0,
-    hasSampleData: sampleData.length > 0
+    hasSampleData: sampleData.length > 0,
+    headersPreview: headers.slice(0, 5),
+    sampleDataPreview: sampleData.slice(0, 2)
   });
+
+  // Log when mapping dialog state changes
+  React.useEffect(() => {
+    console.log('🔄 Mapping dialog state changed:', {
+      showMappingDialog,
+      headers: headers.length,
+      sampleData: sampleData.length,
+      timestamp: new Date().toISOString()
+    });
+  }, [showMappingDialog, headers.length, sampleData.length]);
 
   return (
     <>
@@ -51,12 +63,15 @@ export const EmployeeExcelImporter: React.FC = () => {
       <EmployeeImportMappingStep
         open={showMappingDialog}
         onOpenChange={(open) => {
-          console.log('🔄 Mapping dialog state changed:', open);
+          console.log('🔄 Mapping dialog state manually changed:', open);
           setShowMappingDialog(open);
         }}
         fileColumns={headers}
         sampleData={sampleData}
-        onConfirm={handleMappingConfirm}
+        onConfirm={(mappings) => {
+          console.log('✅ Mapping confirmed with mappings:', mappings.length);
+          handleMappingConfirm(mappings);
+        }}
         systemFields={systemFields}
       />
 
