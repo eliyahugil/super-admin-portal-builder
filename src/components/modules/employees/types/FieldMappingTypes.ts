@@ -3,6 +3,8 @@ export interface FieldMapping {
   id: string;
   systemField: string;
   mappedColumns: string[];
+  required?: boolean;
+  excelColumn?: string;
   isCustomField?: boolean;
   customFieldName?: string;
 }
