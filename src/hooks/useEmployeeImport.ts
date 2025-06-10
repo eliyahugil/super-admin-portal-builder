@@ -75,25 +75,36 @@ export const useEmployeeImport = (): EmployeeImportHook => {
 
   return {
     // State
-    ...state,
+    step: state.step,
+    file: state.file,
+    rawData: state.rawData,
+    headers: state.headers,
+    fieldMappings: state.fieldMappings,
+    previewData: state.previewData,
+    branches: state.branches,
+    existingEmployees: state.existingEmployees,
+    isImporting: state.isImporting,
+    showMappingDialog: state.showMappingDialog,
+    importResult: state.importResult,
+    validationErrors: state.validationErrors,
+    duplicateErrors: state.duplicateErrors,
+    sampleData: state.rawData.slice(0, 5),
     
     // Constants
     systemFields,
     employeeTypes,
     
-    // Actions - using the new focused hooks
+    // Actions
     handleFileUpload,
     handleMappingConfirm: confirmMapping,
     handleImport: executeImport,
     resetForm,
     downloadTemplate,
+    setShowMappingDialog: state.setShowMappingDialog,
     
     // Validation methods
     runValidation: validation.runValidation,
     validateImportData: validation.validateImportData,
     getValidationSummary: validation.getValidationSummary,
-    
-    // Sample data for mapping dialog
-    sampleData: state.rawData.slice(0, 5)
   };
 };

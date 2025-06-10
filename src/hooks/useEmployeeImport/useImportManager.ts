@@ -105,7 +105,7 @@ export const useImportManager = ({
     } finally {
       setIsImporting(false);
     }
-  }, [previewData, validation, toast]);
+  }, [previewData, validation, toast, setIsImporting, setImportResult, setStep]);
 
   return {
     executeImport,
