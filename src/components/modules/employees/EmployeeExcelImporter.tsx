@@ -5,6 +5,7 @@ import { ImportButton } from './ImportButton';
 import { ImportDialog } from './ImportDialog';
 import { EmployeeImportMappingStep } from './steps/EmployeeImportMappingStep';
 import { ValidationSummaryDialog } from './ValidationSummaryDialog';
+import { EmployeeImportErrorBoundary } from './EmployeeImportErrorBoundary';
 import { useEmployeeImport } from '@/hooks/useEmployeeImport';
 
 export const EmployeeExcelImporter: React.FC = () => {
@@ -63,18 +64,8 @@ export const EmployeeExcelImporter: React.FC = () => {
     }
   }, [showMappingDialog, headers.length, sampleData.length]);
 
-  // Additional effect to track showMappingDialog specifically
-  useEffect(() => {
-    console.log('🎯 showMappingDialog value changed to:', showMappingDialog);
-    if (showMappingDialog) {
-      console.log('🎉 MAPPING DIALOG SHOULD NOW BE VISIBLE!');
-    } else {
-      console.log('🚫 Mapping dialog is hidden');
-    }
-  }, [showMappingDialog]);
-
   return (
-    <>
+    <EmployeeImportErrorBoundary>
       <ImportButton onClick={() => {
         console.log('🚀 Opening import dialog...');
         setIsOpen(true);
@@ -89,13 +80,6 @@ export const EmployeeExcelImporter: React.FC = () => {
           onOpenChange={setIsOpen}
         />
       </Dialog>
-
-      {/* CRITICAL: Log when this component renders */}
-      {console.log('🎭 Rendering EmployeeImportMappingStep with:', {
-        open: showMappingDialog,
-        hasHeaders: headers.length > 0,
-        hasSampleData: sampleData.length > 0
-      })}
 
       <EmployeeImportMappingStep
         open={showMappingDialog}
@@ -119,6 +103,6 @@ export const EmployeeExcelImporter: React.FC = () => {
         duplicateErrors={duplicateErrors}
         summary={getValidationSummary()}
       />
-    </>
+    </EmployeeImportErrorBoundary>
   );
 };

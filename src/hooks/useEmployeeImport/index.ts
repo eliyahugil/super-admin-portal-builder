@@ -67,13 +67,25 @@ export function useEmployeeImport(): EmployeeImportHook {
     setShowMappingDialog,
   });
 
-  // Initialize file upload with proper state setters
+  // Initialize file upload with enhanced error handling
   const { handleFileUpload } = useFileUpload({
-    setFile,
-    setRawData,
-    setHeaders,
+    setFile: (file: File | null) => {
+      console.log('🔧 Setting file:', file?.name || 'null');
+      setFile(file);
+    },
+    setRawData: (data: ExcelRow[]) => {
+      console.log('🔧 Setting raw data:', data.length, 'rows');
+      setRawData(data);
+    },
+    setHeaders: (headers: string[]) => {
+      console.log('🔧 Setting headers:', headers);
+      setHeaders(headers);
+    },
     setStep,
-    setShowMappingDialog,
+    setShowMappingDialog: (show: boolean) => {
+      console.log('🔧 Setting mapping dialog visibility:', show);
+      setShowMappingDialog(show);
+    },
   });
 
   // Initialize import process
