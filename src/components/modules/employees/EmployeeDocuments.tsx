@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,12 +24,21 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 }) => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const queryClient = useQueryClient();
+
+  console.log('📋 EmployeeDocuments - Auth state:', { 
+    hasProfile: !!profile, 
+    hasUser: !!user,
+    profileId: profile?.id,
+    userId: user?.id,
+    employeeId 
+  });
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ['employee-documents', employeeId],
     queryFn: async () => {
+      console.log('📄 Fetching documents for employee:', employeeId);
       const { data, error } = await supabase
         .from('employee_documents')
         .select(`
@@ -38,7 +48,11 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         .eq('employee_id', employeeId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching documents:', error);
+        throw error;
+      }
+      console.log('✅ Documents fetched:', data?.length || 0);
       return data;
     },
     enabled: !!employeeId,
@@ -46,12 +60,17 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 
   const deleteDocumentMutation = useMutation({
     mutationFn: async ({ documentId, filePath }: { documentId: string; filePath: string }) => {
+      console.log('🗑️ Deleting document:', { documentId, filePath });
+      
       // Delete from storage
       const { error: storageError } = await supabase.storage
         .from('employee-files')
         .remove([filePath]);
 
-      if (storageError) throw storageError;
+      if (storageError) {
+        console.error('❌ Storage delete error:', storageError);
+        throw storageError;
+      }
 
       // Delete from database
       const { error: dbError } = await supabase
@@ -59,7 +78,12 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         .delete()
         .eq('id', documentId);
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('❌ Database delete error:', dbError);
+        throw dbError;
+      }
+      
+      console.log('✅ Document deleted successfully');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
@@ -68,7 +92,8 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         description: 'המסמך נמחק בהצלחה',
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('❌ Delete mutation error:', error);
       toast({
         title: 'שגיאה',
         description: 'לא ניתן למחוק את המסמך',
@@ -79,13 +104,50 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !profile?.id) return;
+    if (!file) {
+      console.log('❌ No file selected');
+      return;
+    }
+
+    console.log('📤 Starting file upload process:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      employeeId,
+      profileId: profile?.id,
+      userId: user?.id
+    });
+
+    if (!profile?.id && !user?.id) {
+      console.error('❌ No user authentication found');
+      toast({
+        title: 'שגיאה',
+        description: 'נדרש להתחבר למערכת כדי להעלות קבצים',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     try {
       setUploading(true);
-      console.log('📤 Starting document upload for employee:', employeeId);
       
-      // Upload file to Supabase Storage
+      // Check auth session first
+      console.log('🔐 Checking authentication session...');
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('❌ Session error:', sessionError);
+        throw new Error(`Session error: ${sessionError.message}`);
+      }
+      
+      if (!sessionData.session) {
+        console.error('❌ No active session found');
+        throw new Error('No active session - please login again');
+      }
+      
+      console.log('✅ Valid session confirmed');
+      
+      // Generate unique file path
       const fileExt = file.name.split('.').pop();
       const timestamp = Date.now();
       const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
@@ -93,6 +155,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       
       console.log('📁 Uploading to path:', filePath);
       
+      // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('employee-files')
         .upload(filePath, file, {
@@ -105,23 +168,30 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
-      console.log('✅ File uploaded successfully:', uploadData.path);
+      console.log('✅ File uploaded to storage successfully:', uploadData.path);
 
       // Get public URL
       const { data: urlData } = supabase.storage
         .from('employee-files')
         .getPublicUrl(filePath);
 
+      console.log('🔗 Generated public URL:', urlData.publicUrl);
+
       // Save document record
-      const { error: insertError } = await supabase
+      const uploadedBy = profile?.id || user?.id;
+      console.log('💾 Saving document record with uploadedBy:', uploadedBy);
+      
+      const { data: documentData, error: insertError } = await supabase
         .from('employee_documents')
         .insert({
           employee_id: employeeId,
           document_name: file.name,
           document_type: getFileType(file.name),
           file_url: urlData.publicUrl,
-          uploaded_by: profile.id,
-        });
+          uploaded_by: uploadedBy,
+        })
+        .select()
+        .single();
 
       if (insertError) {
         console.error('❌ Database insert error:', insertError);
@@ -130,7 +200,8 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         throw new Error(`Database error: ${insertError.message}`);
       }
       
-      console.log('✅ Document record saved successfully');
+      console.log('✅ Document record saved successfully:', documentData);
+      
       toast({
         title: 'הצלחה',
         description: 'המסמך הועלה בהצלחה',
@@ -138,10 +209,12 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       
       queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
     } catch (error) {
-      console.error('Error uploading document:', error);
+      console.error('💥 File upload error:', error);
       toast({
         title: 'שגיאה',
-        description: error instanceof Error ? `שגיאה בהעלאת המסמך: ${error.message}` : 'לא ניתן להעלות את המסמך',
+        description: error instanceof Error 
+          ? `שגיאה בהעלאת המסמך: ${error.message}` 
+          : 'לא ניתן להעלות את המסמך',
         variant: 'destructive',
       });
     } finally {
