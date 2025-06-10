@@ -4,6 +4,17 @@ import type { FieldMapping } from '@/components/modules/employees/types/FieldMap
 
 export type ImportStep = 'upload' | 'mapping' | 'preview' | 'summary';
 
+export interface ImportValidation {
+  runValidation: () => void;
+  validateImportData: () => boolean;
+  getValidationSummary: () => {
+    totalRows: number;
+    validRows: number;
+    errorRows: number;
+    warningRows: number;
+  };
+}
+
 export interface EmployeeImportHook {
   // State
   step: ImportStep;

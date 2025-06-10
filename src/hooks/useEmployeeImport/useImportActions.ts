@@ -133,12 +133,14 @@ export const useImportActions = ({
     try {
       setIsImporting(true);
       
-      const result = await ExcelImportService.importEmployees(previewData, businessId!);
+      // Fix: Call with only one argument (previewData)
+      const result = await ExcelImportService.importEmployees(previewData);
       
       setImportResult(result);
       setStep('summary');
       
-      if (result.success > 0) {
+      // Fix: Check result.importedCount instead of result.success > 0
+      if (result.success && result.importedCount > 0) {
         window.dispatchEvent(new CustomEvent('employeesImported'));
       }
       
@@ -152,7 +154,7 @@ export const useImportActions = ({
     } finally {
       setIsImporting(false);
     }
-  }, [previewData, businessId, toast]);
+  }, [previewData, toast]);
 
   return {
     handleMappingConfirm,
