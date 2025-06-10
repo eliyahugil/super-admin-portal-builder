@@ -50,18 +50,7 @@ export const useFileUpload = ({
         description: 'מעלה את הקובץ לשרת ומעבד את הנתונים',
       });
       
-      // Try to upload the file to storage, but don't fail if it doesn't work
-      let filePath: string | null = null;
-      try {
-        console.log('📤 Attempting to upload file to Supabase storage...');
-        filePath = await StorageService.uploadEmployeeFile(uploadedFile, user.id);
-        console.log('✅ File uploaded to storage:', filePath);
-      } catch (uploadError) {
-        console.warn('⚠️ Storage upload failed, continuing with Excel parsing only:', uploadError);
-        // Continue with Excel parsing even if storage upload fails
-      }
-      
-      // Parse the Excel file (this is the main functionality we need)
+      // Parse the Excel file first (this is the main functionality we need)
       console.log('📄 Parsing Excel file...');
       const parsedData = await ExcelImportService.parseExcelFile(uploadedFile);
       console.log('✅ Excel file parsed successfully:', {
@@ -77,12 +66,31 @@ export const useFileUpload = ({
         throw new Error('הקובץ לא מכיל נתונים');
       }
       
+      // Try to upload the file to storage (optional - don't fail if it doesn't work)
+      let uploadSuccess = false;
+      try {
+        console.log('📤 Attempting to upload file to Supabase storage...');
+        
+        // Check bucket access first
+        const hasAccess = await StorageService.checkBucketAccess();
+        if (hasAccess) {
+          const filePath = await StorageService.uploadEmployeeFile(uploadedFile, user.id);
+          console.log('✅ File uploaded to storage:', filePath);
+          uploadSuccess = true;
+        } else {
+          console.warn('⚠️ No bucket access - continuing without storage upload');
+        }
+      } catch (uploadError) {
+        console.warn('⚠️ Storage upload failed, continuing with Excel parsing only:', uploadError);
+        // Continue with Excel parsing even if storage upload fails
+      }
+      
       console.log('📋 Setting headers and data...');
       setHeaders(parsedData.headers);
       setRawData(parsedData.data);
       
       // Show success message
-      const successMessage = filePath 
+      const successMessage = uploadSuccess 
         ? `הקובץ הועלה לשרת ונמצאו ${parsedData.data.length} שורות נתונים`
         : `הקובץ נקרא בהצלחה ונמצאו ${parsedData.data.length} שורות נתונים`;
       

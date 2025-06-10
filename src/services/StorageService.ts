@@ -2,61 +2,18 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export class StorageService {
-  static async createEmployeeFilesBucket() {
-    try {
-      // First, check if bucket already exists
-      const { data: existingBuckets, error: listError } = await supabase.storage.listBuckets();
-      
-      if (listError) {
-        console.warn('⚠️ Could not list buckets, assuming bucket exists:', listError);
-        return null; // Continue anyway
-      }
-
-      const bucketExists = existingBuckets?.some(bucket => bucket.name === 'employee-files');
-      
-      if (bucketExists) {
-        console.log('✅ Employee files bucket already exists');
-        return null;
-      }
-
-      // Try to create bucket, but don't fail if we can't
-      const { data, error } = await supabase.storage.createBucket('employee-files', {
-        public: false,
-        allowedMimeTypes: [
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'application/vnd.ms-excel',
-          'text/csv'
-        ],
-        fileSizeLimit: 10485760 // 10MB
-      });
-
-      if (error) {
-        console.warn('⚠️ Could not create bucket (this might be expected):', error);
-        // Don't throw error, continue with upload attempt
-        return null;
-      }
-
-      console.log('✅ Employee files bucket created successfully');
-      return data;
-    } catch (error) {
-      console.warn('⚠️ Error in bucket creation (continuing anyway):', error);
-      // Don't throw, let upload attempt proceed
-      return null;
-    }
-  }
+  private static readonly BUCKET_NAME = 'employee-files';
 
   static async uploadEmployeeFile(file: File, userId: string): Promise<string> {
     try {
-      // Try to ensure bucket exists (but don't fail if we can't create it)
-      await this.createEmployeeFilesBucket();
-
       const timestamp = new Date().toISOString();
       const fileName = `employee-imports/${userId}/${timestamp}-${file.name}`;
 
-      console.log('📤 Attempting to upload file to employee-files bucket:', fileName);
+      console.log('📤 Attempting to upload file to bucket:', this.BUCKET_NAME, 'Path:', fileName);
 
+      // ניסיון העלאה ישירות ל-bucket (מניחים שהוא קיים)
       const { data, error } = await supabase.storage
-        .from('employee-files')
+        .from(this.BUCKET_NAME)
         .upload(fileName, file, {
           cacheControl: '3600',
           upsert: false
@@ -78,7 +35,7 @@ export class StorageService {
   static async getFileUrl(filePath: string): Promise<string> {
     try {
       const { data } = await supabase.storage
-        .from('employee-files')
+        .from(this.BUCKET_NAME)
         .createSignedUrl(filePath, 3600); // 1 hour expiry
 
       if (!data?.signedUrl) {
@@ -89,6 +46,26 @@ export class StorageService {
     } catch (error) {
       console.error('❌ Error getting file URL:', error);
       throw error;
+    }
+  }
+
+  static async checkBucketAccess(): Promise<boolean> {
+    try {
+      // בדיקה פשוטה אם יש גישה ל-bucket
+      const { data, error } = await supabase.storage.from(this.BUCKET_NAME).list('', {
+        limit: 1
+      });
+
+      if (error) {
+        console.warn('⚠️ Bucket access check failed:', error.message);
+        return false;
+      }
+
+      console.log('✅ Bucket access confirmed');
+      return true;
+    } catch (error) {
+      console.warn('⚠️ Error checking bucket access:', error);
+      return false;
     }
   }
 }
