@@ -65,7 +65,10 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
       case 'upload':
         return (
           <EmployeeImportUploadStep
-            onFileUpload={handleFileUpload}
+            onFileUpload={(file) => {
+              console.log('📄 File selected in ImportDialog:', file.name);
+              handleFileUpload(file);
+            }}
             onDownloadTemplate={downloadTemplate}
           />
         );
@@ -104,18 +107,16 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{getDialogTitle()}</DialogTitle>
-          <DialogDescription>
-            {getDialogDescription()}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-4">
-          {renderStepContent()}
-        </div>
-      </DialogContent>
-    </Dialog>
+    <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>{getDialogTitle()}</DialogTitle>
+        <DialogDescription>
+          {getDialogDescription()}
+        </DialogDescription>
+      </DialogHeader>
+      <div className="mt-4">
+        {renderStepContent()}
+      </div>
+    </DialogContent>
   );
 };

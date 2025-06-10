@@ -37,6 +37,12 @@ export const useFileUpload = ({
       console.log('✅ Authentication confirmed, proceeding with file processing');
       setFile(uploadedFile);
       
+      // Show loading state
+      toast({
+        title: 'מעבד קובץ...',
+        description: 'קורא את נתוני הקובץ',
+      });
+      
       console.log('📄 Parsing Excel file...');
       const parsedData = await ExcelImportService.parseExcelFile(uploadedFile);
       console.log('✅ Excel file parsed successfully:', {
@@ -56,7 +62,13 @@ export const useFileUpload = ({
       setHeaders(parsedData.headers);
       setRawData(parsedData.data);
       
-      // DON'T change step - stay on upload until mapping is confirmed
+      // Show success message
+      toast({
+        title: 'קובץ נקרא בהצלחה',
+        description: `נמצאו ${parsedData.data.length} שורות נתונים`,
+      });
+      
+      // Open mapping dialog immediately
       console.log('📋 Opening mapping dialog...');
       setShowMappingDialog(true);
       

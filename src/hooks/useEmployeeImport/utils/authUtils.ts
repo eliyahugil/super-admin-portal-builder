@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 export const useAuthUtils = () => {
   const { toast } = useToast();
 
-  // Helper function to check authentication
   const checkAuthSession = async (): Promise<boolean> => {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -30,7 +29,6 @@ export const useAuthUtils = () => {
         return false;
       }
 
-      console.log('✅ Valid session confirmed');
       return true;
     } catch (error) {
       console.error('💥 Authentication check failed:', error);

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { ImportButton } from './ImportButton';
 import { ImportDialog } from './ImportDialog';
@@ -20,13 +20,28 @@ export const EmployeeExcelImporter: React.FC = () => {
     getValidationSummary,
   } = useEmployeeImport();
 
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [showValidationSummary, setShowValidationSummary] = React.useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [showValidationSummary, setShowValidationSummary] = useState(false);
+
+  console.log('📋 EmployeeExcelImporter - Current state:', {
+    isOpen,
+    showMappingDialog,
+    showValidationSummary,
+    hasHeaders: headers.length > 0,
+    hasSampleData: sampleData.length > 0
+  });
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <ImportButton onClick={() => setIsOpen(true)} />
+      <ImportButton onClick={() => {
+        console.log('🚀 Opening import dialog...');
+        setIsOpen(true);
+      }} />
+
+      <Dialog open={isOpen} onOpenChange={(open) => {
+        console.log('📂 Import dialog state changed:', open);
+        setIsOpen(open);
+      }}>
         <ImportDialog
           open={isOpen}
           onOpenChange={setIsOpen}
@@ -35,7 +50,10 @@ export const EmployeeExcelImporter: React.FC = () => {
 
       <EmployeeImportMappingStep
         open={showMappingDialog}
-        onOpenChange={setShowMappingDialog}
+        onOpenChange={(open) => {
+          console.log('🔄 Mapping dialog state changed:', open);
+          setShowMappingDialog(open);
+        }}
         fileColumns={headers}
         sampleData={sampleData}
         onConfirm={handleMappingConfirm}
