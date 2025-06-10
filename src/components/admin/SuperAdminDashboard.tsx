@@ -1,14 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthContext';
-import { Building, Users, Settings, Activity, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { SuperAdminStats } from './dashboard/SuperAdminStats';
+import { SuperAdminQuickActions } from './dashboard/SuperAdminQuickActions';
+import { SuperAdminModulesManagement } from './dashboard/SuperAdminModulesManagement';
+import { SuperAdminHeader } from './dashboard/SuperAdminHeader';
 
 export const SuperAdminDashboard: React.FC = () => {
   const { profile, isSuperAdmin } = useAuth();
@@ -162,158 +162,34 @@ export const SuperAdminDashboard: React.FC = () => {
   };
 
   if (!isSuperAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">אין הרשאה</h2>
-          <p className="text-gray-600">אין לך הרשאות מנהל ראשי</p>
-        </div>
-      </div>
-    );
+    return <SuperAdminHeader.Unauthorized />;
   }
 
   if (businessesLoading || modulesLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">טוען נתונים...</p>
-        </div>
-      </div>
-    );
+    return <SuperAdminHeader.Loading />;
   }
 
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">לוח בקרה - מנהל ראשי</h1>
-          <p className="text-gray-600">ברוך הבא, {profile?.full_name}</p>
-        </div>
+        <SuperAdminHeader profile={profile} />
+        
+        <SuperAdminStats 
+          businesses={businesses}
+          moduleConfigs={moduleConfigs}
+          businessModules={businessModules}
+        />
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Building className="h-8 w-8 text-blue-600" />
-                <div className="mr-4">
-                  <p className="text-2xl font-bold text-gray-900">{businesses.length}</p>
-                  <p className="text-gray-600">עסקים במערכת</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <SuperAdminQuickActions navigate={navigate} />
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Users className="h-8 w-8 text-green-600" />
-                <div className="mr-4">
-                  <p className="text-2xl font-bold text-gray-900">
-                    {businesses.filter(b => b.is_active).length}
-                  </p>
-                  <p className="text-gray-600">עסקים פעילים</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Settings className="h-8 w-8 text-purple-600" />
-                <div className="mr-4">
-                  <p className="text-2xl font-bold text-gray-900">{moduleConfigs.length}</p>
-                  <p className="text-gray-600">מודולים זמינים</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Activity className="h-8 w-8 text-orange-600" />
-                <div className="mr-4">
-                  <p className="text-2xl font-bold text-gray-900">{businessModules.length}</p>
-                  <p className="text-gray-600">הגדרות מודולים</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Button 
-            onClick={() => navigate('/admin/businesses')}
-            className="h-16 text-lg"
-          >
-            <Building className="h-6 w-6 ml-2" />
-            ניהול עסקים
-          </Button>
-          
-          <Button 
-            onClick={() => navigate('/admin/integrations')}
-            variant="outline"
-            className="h-16 text-lg"
-          >
-            <Settings className="h-6 w-6 ml-2" />
-            אינטגרציות גלובליות
-          </Button>
-          
-          <Button 
-            onClick={() => navigate('/admin/access-requests')}
-            variant="outline"
-            className="h-16 text-lg"
-          >
-            <Users className="h-6 w-6 ml-2" />
-            בקשות גישה
-          </Button>
-        </div>
-
-        {/* Businesses and Modules Management */}
-        <Card>
-          <CardHeader>
-            <CardTitle>ניהול מודולים לעסקים</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {businesses.map((business) => (
-                <div key={business.id} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">{business.name}</h3>
-                      <p className="text-sm text-gray-600">{business.contact_email}</p>
-                    </div>
-                    <Badge variant={business.is_active ? 'default' : 'secondary'}>
-                      {business.is_active ? 'פעיל' : 'לא פעיל'}
-                    </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {moduleConfigs.map((module) => (
-                      <div key={module.module_key} className="flex items-center justify-between p-3 border rounded">
-                        <div>
-                          <p className="font-medium">{module.module_name}</p>
-                          <p className="text-xs text-gray-500">{module.module_key}</p>
-                        </div>
-                        <Switch
-                          checked={isModuleEnabled(business.id, module.module_key)}
-                          onCheckedChange={() => handleToggleModule(business.id, module.module_key)}
-                          disabled={toggleModuleMutation.isPending}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <SuperAdminModulesManagement
+          businesses={businesses}
+          moduleConfigs={moduleConfigs}
+          businessModules={businessModules}
+          isModuleEnabled={isModuleEnabled}
+          handleToggleModule={handleToggleModule}
+          toggleModuleMutation={toggleModuleMutation}
+        />
       </div>
     </div>
   );

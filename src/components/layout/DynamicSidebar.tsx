@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -7,9 +6,6 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
   useSidebar,
@@ -37,6 +33,7 @@ import { useBusiness } from '@/hooks/useBusiness';
 import { useBusinessModules } from '@/hooks/useBusinessModules';
 import { getModuleRoutes } from '@/utils/routeMapping';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SidebarMenuItems } from './sidebar/SidebarMenuItems';
 
 interface MenuItem {
   path: string;
@@ -170,14 +167,10 @@ export const DynamicSidebar: React.FC = () => {
 
   const getVisibleItems = (items: MenuItem[]) => {
     return items.filter(item => {
-      // Check super admin requirement
       if (item.requiresSuperAdmin && !isSuperAdmin) return false;
-      
-      // Check module requirement - skip module check if still loading or if super admin
       if (item.moduleKey && !isSuperAdmin && !modulesLoading) {
         return isModuleEnabled(item.moduleKey);
       }
-      
       return true;
     });
   };
@@ -198,45 +191,15 @@ export const DynamicSidebar: React.FC = () => {
           {title}
         </SidebarGroupLabel>
         <SidebarGroupContent>
-          <SidebarMenu>
-            {visibleItems.map((item) => (
-              <SidebarMenuItem key={item.path}>
-                <SidebarMenuButton asChild isActive={isActive(item.path)}>
-                  <NavLink 
-                    to={item.path} 
-                    className="flex items-center gap-3 px-3 py-2 text-right hover:bg-gray-100 rounded-lg transition-colors"
-                    onClick={handleMenuItemClick}
-                  >
-                    <span className="flex-1 text-right text-sm font-medium">{item.label}</span>
-                    <item.icon className="h-4 w-4 flex-shrink-0" />
-                  </NavLink>
-                </SidebarMenuButton>
-                {item.subItems && isActive(item.path) && (
-                  <div className="mr-6 mt-1 space-y-1">
-                    {item.subItems
-                      .filter(subItem => {
-                        if (subItem.moduleKey && !isSuperAdmin && !modulesLoading) {
-                          return isModuleEnabled(subItem.moduleKey);
-                        }
-                        return true;
-                      })
-                      .map((subItem) => (
-                        <SidebarMenuButton key={subItem.path} asChild size="sm">
-                          <NavLink
-                            to={subItem.path}
-                            className="flex items-center gap-2 px-4 py-1 text-right text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                            onClick={handleMenuItemClick}
-                          >
-                            <span className="flex-1 text-right">{subItem.label}</span>
-                            <subItem.icon className="h-3 w-3 flex-shrink-0" />
-                          </NavLink>
-                        </SidebarMenuButton>
-                      ))}
-                  </div>
-                )}
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
+          <SidebarMenuItems 
+            items={visibleItems}
+            isActive={isActive}
+            isModuleEnabled={isModuleEnabled}
+            isSuperAdmin={isSuperAdmin}
+            modulesLoading={modulesLoading}
+            collapsed={false}
+            onMenuItemClick={handleMenuItemClick}
+          />
         </SidebarGroupContent>
       </SidebarGroup>
     );

@@ -1,41 +1,11 @@
 
 import { useState } from 'react';
-import type { ImportState, ImportStep } from './types';
-import { initialImportResult } from './constants';
+import type { ImportStep } from './types';
 import type { ExcelRow, PreviewEmployee, ImportResult } from '@/services/ExcelImportService';
 import { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
+import { initialImportResult } from './constants';
 
-interface ValidationError {
-  rowIndex: number;
-  field: string;
-  error: string;
-  severity: 'error' | 'warning';
-}
-
-interface DuplicateError {
-  rowIndex: number;
-  duplicateField: string;
-  existingValue: string;
-  severity: 'error' | 'warning';
-}
-
-export const useImportState = (): ImportState & {
-  validationErrors: ValidationError[];
-  duplicateErrors: DuplicateError[];
-  setStep: (step: ImportStep) => void;
-  setFile: (file: File | null) => void;
-  setRawData: (data: ExcelRow[]) => void;
-  setHeaders: (headers: string[]) => void;
-  setFieldMappings: (mappings: FieldMapping[]) => void;
-  setPreviewData: (data: PreviewEmployee[]) => void;
-  setBranches: (branches: any[]) => void;
-  setExistingEmployees: (employees: any[]) => void;
-  setIsImporting: (importing: boolean) => void;
-  setShowMappingDialog: (show: boolean) => void;
-  setImportResult: (result: ImportResult) => void;
-  setValidationErrors: (errors: ValidationError[]) => void;
-  setDuplicateErrors: (errors: DuplicateError[]) => void;
-} => {
+export const useImportState = () => {
   const [step, setStep] = useState<ImportStep>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [rawData, setRawData] = useState<ExcelRow[]>([]);
@@ -47,8 +17,8 @@ export const useImportState = (): ImportState & {
   const [isImporting, setIsImporting] = useState(false);
   const [showMappingDialog, setShowMappingDialog] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult>(initialImportResult);
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
-  const [duplicateErrors, setDuplicateErrors] = useState<DuplicateError[]>([]);
+  const [validationErrors, setValidationErrors] = useState<any[]>([]);
+  const [duplicateErrors, setDuplicateErrors] = useState<any[]>([]);
 
   return {
     step,

@@ -1,56 +1,27 @@
 
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useBusiness } from '@/hooks/useBusiness';
-
-// Module Components
-import { BusinessSettings } from './settings/BusinessSettings';
-import { BusinessSettingsMain } from './settings/BusinessSettingsMain';
-import { BusinessProfileEdit } from './settings/BusinessProfileEdit';
-import { UsersManagement } from './settings/UsersManagement';
-import { EmployeeManagement } from './employees/EmployeeManagement';
-import { ShiftManagement } from './employees/ShiftManagement';
-import { ModuleManagement } from './ModuleManagement';
+import { ModuleRouteHandler } from './routing/ModuleRouteHandler';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { BusinessManagement } from '@/components/business/BusinessManagement';
-import { AttendanceManagement } from './employees/AttendanceManagement';
 import { EmployeeProfilePage } from './employees/EmployeeProfilePage';
-import BusinessModulesPage from './settings/BusinessModulesPage';
-import { BranchManagement } from './branches/BranchManagement';
-import { BranchCreation } from './branches/BranchCreation';
-import { BranchRoles } from './branches/BranchRoles';
-import { FinanceManagement } from './finance/FinanceManagement';
-import { InventoryManagement } from './inventory/InventoryManagement';
-import { OrdersManagement } from './orders/OrdersManagement';
-import { ProjectsManagement } from './projects/ProjectsManagement';
-import { IntegrationManagement } from './integrations/IntegrationManagement';
+import { ModuleManagement } from './ModuleManagement';
 
 export const ModuleWrapper: React.FC = () => {
   const { businessId, moduleRoute, subModule, employeeId } = useParams();
   const { profile, isSuperAdmin, loading } = useAuth();
   const { business, ownedBusinesses, isBusinessOwner } = useBusiness();
-  const navigate = useNavigate();
 
   console.log('ModuleWrapper - Current params:', {
-    businessId: { _type: typeof businessId, value: businessId },
-    moduleRoute: { _type: typeof moduleRoute, value: moduleRoute },
-    subModule: { _type: typeof subModule, value: subModule },
-    employeeId: { _type: typeof employeeId, value: employeeId }
-  });
-
-  console.log('ModuleWrapper - Auth state:', {
-    profile,
-    isSuperAdmin,
-    loading,
-    user: profile?.email,
-    business: business?.name,
-    isBusinessOwner,
-    totalOwnedBusinesses: ownedBusinesses.length
+    businessId,
+    moduleRoute,
+    subModule,
+    employeeId
   });
 
   if (loading) {
-    console.log('ModuleWrapper - Auth still loading');
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -61,9 +32,7 @@ export const ModuleWrapper: React.FC = () => {
     );
   }
 
-  // If no profile but not loading, it means profile fetch failed
-  if (!loading && !profile) {
-    console.log('ModuleWrapper - No profile available after loading');
+  if (!profile) {
     return (
       <div className="max-w-7xl mx-auto p-6 text-center">
         <h2 className="text-xl font-semibold mb-4">שגיאה בטעינת הפרופיל</h2>
@@ -73,9 +42,7 @@ export const ModuleWrapper: React.FC = () => {
     );
   }
 
-  // Check if user should have access to business data
   if (!isSuperAdmin && !isBusinessOwner && !business && ownedBusinesses.length === 0) {
-    console.log('ModuleWrapper - User has no business access, redirecting to auth');
     return (
       <div className="max-w-7xl mx-auto p-6 text-center">
         <h2 className="text-xl font-semibold mb-4">אין לך גישה לעסק</h2>
@@ -87,9 +54,7 @@ export const ModuleWrapper: React.FC = () => {
 
   // Handle super admin routes
   if (!businessId && !moduleRoute) {
-    console.log('ModuleWrapper - Handling admin route, isSuperAdmin:', isSuperAdmin);
     if (isSuperAdmin) {
-      console.log('ModuleWrapper - Rendering SuperAdminDashboard');
       return <SuperAdminDashboard />;
     }
     return (
@@ -100,9 +65,8 @@ export const ModuleWrapper: React.FC = () => {
     );
   }
 
-  // Handle business management for super admin - check for admin in businessId
-  if (businessId === 'admin' && moduleRoute === 'businesses') {
-    console.log('ModuleWrapper - Rendering BusinessManagement for super admin via admin route');
+  // Handle business management routes
+  if ((businessId === 'admin' && moduleRoute === 'businesses') || (moduleRoute === 'businesses' && isSuperAdmin)) {
     if (isSuperAdmin) {
       return <BusinessManagement />;
     }
@@ -114,126 +78,24 @@ export const ModuleWrapper: React.FC = () => {
     );
   }
 
-  // Handle business management for super admin - direct businesses route
-  if (moduleRoute === 'businesses' && isSuperAdmin) {
-    console.log('ModuleWrapper - Rendering BusinessManagement for super admin');
-    return <BusinessManagement />;
-  }
-
   // Handle employee profile route specifically
   if (moduleRoute === 'employees' && subModule === 'profile') {
-    console.log('ModuleWrapper - Rendering EmployeeProfilePage for employeeId:', employeeId);
     return <EmployeeProfilePage />;
   }
 
-  // Handle module routes
-  const fullRoute = subModule ? `${moduleRoute}/${subModule}` : moduleRoute;
-  console.log('ModuleWrapper - Rendering component for route:', fullRoute);
-
-  switch (fullRoute) {
-    // Settings routes
-    case 'settings':
-      return businessId ? <BusinessSettingsMain /> : <BusinessSettings />;
-    case 'settings/main':
-      return <BusinessSettingsMain />;
-    case 'settings/profile':
-      return <BusinessProfileEdit />;
-    case 'settings/users':
-      return <UsersManagement />;
-    case 'settings/modules':
-      return <BusinessModulesPage />;
-    case 'settings/permissions':
-      return <div className="p-6 text-center">רכיב הרשאות בפיתוח</div>;
-
-    // Employee routes
-    case 'employees':
-      return <EmployeeManagement />;
-    case 'employees/profile':
-      return <EmployeeProfilePage />;
-    case 'employees/attendance':
-      return <AttendanceManagement />;
-    case 'employees/employee-files':
-      return <div className="p-6 text-center">רכיב קבצי עובדים בפיתוח</div>;
-    case 'employees/employee-requests':
-      return <div className="p-6 text-center">רכיב בקשות עובדים בפיתוח</div>;
-    case 'employees/employee-docs':
-      return <div className="p-6 text-center">רכיב מסמכים חתומים בפיתוח</div>;
-    case 'employees/shifts':
-      return <ShiftManagement />;
-    case 'employees/import':
-      return <div className="p-6 text-center">רכיב ייבוא עובדים בפיתוח</div>;
-
-    // Branch routes
-    case 'branches':
-      return <BranchManagement />;
-    case 'branches/create':
-      return <BranchCreation />;
-    case 'branches/branch-roles':
-      return <BranchRoles />;
-
-    // Shift routes
-    case 'shifts':
-      return <ShiftManagement />;
-    case 'shifts/requests':
-      return <div className="p-6 text-center">רכיב בקשות משמרת בפיתוח</div>;
-    case 'shifts/approval':
-      return <div className="p-6 text-center">רכיב אישור משמרות בפיתוח</div>;
-    case 'shifts/schedule':
-      return <div className="p-6 text-center">רכיב לוח משמרות בפיתוח</div>;
-    case 'shifts/admin':
-      return <div className="p-6 text-center">רכיב כלי מנהל בפיתוח</div>;
-    case 'shifts/tokens':
-      return <div className="p-6 text-center">רכיב טוקני הגשה בפיתוח</div>;
-
-    // Business modules
-    case 'finance':
-      return <FinanceManagement />;
-    case 'inventory':
-      return <InventoryManagement />;
-    case 'orders':
-      return <OrdersManagement />;
-    case 'projects':
-      return <ProjectsManagement />;
-
-    // Integration routes
-    case 'integrations':
-      return <IntegrationManagement />;
-    case 'integrations/google-maps':
-      return <div className="p-6 text-center">רכיב Google Maps בפיתוח</div>;
-    case 'integrations/whatsapp':
-      return <div className="p-6 text-center">רכיב WhatsApp בפיתוח</div>;
-    case 'integrations/facebook':
-      return <div className="p-6 text-center">רכיב Facebook בפיתוח</div>;
-    case 'integrations/invoices':
-      return <div className="p-6 text-center">רכיב חשבוניות בפיתוח</div>;
-    case 'integrations/crm':
-      return <div className="p-6 text-center">רכיב CRM בפיתוח</div>;
-    case 'integrations/payments':
-      return <div className="p-6 text-center">רכיב תשלומים בפיתוח</div>;
-
-    // Admin routes
-    case 'modules':
-      return <ModuleManagement />;
-    case 'businesses':
-      if (isSuperAdmin) {
-        return <BusinessManagement />;
-      }
-      return <div className="p-6 text-center">אין הרשאות מנהל ראשי</div>;
-
-    default:
-      return (
-        <div className="p-6 text-center">
-          <h2 className="text-xl font-semibold mb-4">המודול לא נמצא</h2>
-          <p>הנתיב "{fullRoute}" אינו קיים במערכת</p>
-          <div className="mt-4 text-sm text-gray-500">
-            <p>נתיבים זמינים:</p>
-            <ul className="list-disc list-inside mt-2">
-              <li>employees, branches, shifts</li>
-              <li>finance, inventory, orders, projects</li>
-              <li>integrations, settings</li>
-            </ul>
-          </div>
-        </div>
-      );
+  // Handle modules route
+  if (moduleRoute === 'modules') {
+    return <ModuleManagement />;
   }
+
+  // Handle general module routes
+  const fullRoute = subModule ? `${moduleRoute}/${subModule}` : moduleRoute;
+  
+  return (
+    <ModuleRouteHandler 
+      fullRoute={fullRoute} 
+      employeeId={employeeId}
+      businessId={businessId}
+    />
+  );
 };

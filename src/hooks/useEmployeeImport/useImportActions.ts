@@ -1,45 +1,28 @@
 
-import type { ImportStep, ImportActions, ImportValidation } from './types';
-import type { ExcelRow, PreviewEmployee, ImportResult } from '@/services/ExcelImportService';
-import { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
-
-import { useFileUpload } from './actions/useFileUpload';
-import { useMappingConfirm } from './actions/useMappingConfirm';
-import { useImportProcess } from './actions/useImportProcess';
-import { useImportUtils } from './actions/useImportUtils';
-
-interface ValidationError {
-  rowIndex: number;
-  field: string;
-  error: string;
-  severity: 'error' | 'warning';
-}
-
-interface DuplicateError {
-  rowIndex: number;
-  duplicateField: string;
-  existingValue: string;
-  severity: 'error' | 'warning';
-}
+import { useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { ExcelImportService } from '@/services/ExcelImportService';
+import { employeeTypes } from './constants';
+import type { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
 
 interface UseImportActionsProps {
   businessId: string | null;
-  rawData: ExcelRow[];
+  rawData: any[];
   branches: any[];
   existingEmployees: any[];
-  previewData: PreviewEmployee[];
-  validation: ImportValidation;
-  setStep: (step: ImportStep) => void;
+  previewData: any[];
+  validation: any;
+  setStep: (step: any) => void;
   setFile: (file: File | null) => void;
-  setRawData: (data: ExcelRow[]) => void;
+  setRawData: (data: any[]) => void;
   setHeaders: (headers: string[]) => void;
   setFieldMappings: (mappings: FieldMapping[]) => void;
-  setPreviewData: (data: PreviewEmployee[]) => void;
+  setPreviewData: (data: any[]) => void;
   setIsImporting: (importing: boolean) => void;
   setShowMappingDialog: (show: boolean) => void;
-  setImportResult: (result: ImportResult) => void;
-  setValidationErrors: (errors: ValidationError[]) => void;
-  setDuplicateErrors: (errors: DuplicateError[]) => void;
+  setImportResult: (result: any) => void;
+  setValidationErrors: (errors: any[]) => void;
+  setDuplicateErrors: (errors: any[]) => void;
 }
 
 export const useImportActions = ({
@@ -60,59 +43,110 @@ export const useImportActions = ({
   setImportResult,
   setValidationErrors,
   setDuplicateErrors,
-}: UseImportActionsProps): ImportActions => {
+}: UseImportActionsProps) => {
+  const { toast } = useToast();
 
-  // File upload functionality
-  const { handleFileUpload } = useFileUpload({
-    setFile,
-    setRawData,
-    setHeaders,
-    setStep,
-    setShowMappingDialog,
-  });
+  const handleMappingConfirm = useCallback(async (mappings: FieldMapping[]) => {
+    try {
+      console.log('🎯 Starting mapping confirmation with mappings:', mappings.length);
+      
+      if (!businessId) {
+        toast({
+          title: 'שגיאה',
+          description: 'לא נמצא מזהה עסק',
+          variant: 'destructive'
+        });
+        return;
+      }
 
-  // Mapping confirmation functionality
-  const { handleMappingConfirm } = useMappingConfirm({
-    businessId,
-    rawData,
-    branches,
-    existingEmployees,
-    validation,
-    setFieldMappings,
-    setShowMappingDialog,
-    setPreviewData,
-    setStep,
-  });
+      setFieldMappings(mappings);
+      setShowMappingDialog(false);
 
-  // Import process functionality
-  const { handleImport } = useImportProcess({
-    previewData,
-    validation,
-    setIsImporting,
-    setImportResult,
-    setStep,
-  });
+      toast({
+        title: 'מעבד נתונים...',
+        description: 'יוצר תצוגה מקדימה של הנתונים',
+      });
 
-  // Utility functions
-  const { resetForm, downloadTemplate } = useImportUtils({
-    setStep,
-    setFile,
-    setRawData,
-    setHeaders,
-    setFieldMappings,
-    setPreviewData,
-    setImportResult,
-    setValidationErrors,
-    setDuplicateErrors,
-    setShowMappingDialog,
-  });
+      const preview = ExcelImportService.generatePreview(
+        rawData,
+        mappings,
+        businessId,
+        branches,
+        existingEmployees,
+        employeeTypes
+      );
+
+      console.log('✅ Preview generated successfully:', {
+        totalRows: preview.length,
+        validRows: preview.filter(p => p.isValid).length,
+        errorRows: preview.filter(p => !p.isValid).length
+      });
+
+      setPreviewData(preview);
+      validation.runValidation();
+      setStep('preview');
+
+      toast({
+        title: 'תצוגה מקדימה מוכנה! 📊',
+        description: `נמצאו ${preview.length} עובדים לעיון ואישור`,
+      });
+
+    } catch (error) {
+      console.error('💥 Error in mapping confirmation:', error);
+      toast({
+        title: 'שגיאה במיפוי שדות',
+        description: error instanceof Error ? error.message : 'שגיאה לא צפויה',
+        variant: 'destructive'
+      });
+    }
+  }, [rawData, businessId, branches, existingEmployees, toast, validation]);
+
+  const resetForm = useCallback(() => {
+    setStep('upload');
+    setFile(null);
+    setRawData([]);
+    setHeaders([]);
+    setFieldMappings([]);
+    setPreviewData([]);
+    setImportResult({ successful: 0, failed: 0, errors: [] });
+    setValidationErrors([]);
+    setDuplicateErrors([]);
+    setShowMappingDialog(false);
+  }, []);
+
+  const downloadTemplate = useCallback(() => {
+    ExcelImportService.downloadTemplate();
+  }, []);
+
+  const handleImport = useCallback(async () => {
+    try {
+      setIsImporting(true);
+      
+      const result = await ExcelImportService.importEmployees(previewData, businessId!);
+      
+      setImportResult(result);
+      setStep('summary');
+      
+      if (result.successful > 0) {
+        window.dispatchEvent(new CustomEvent('employeesImported'));
+      }
+      
+    } catch (error) {
+      console.error('Error importing employees:', error);
+      toast({
+        title: 'שגיאה בייבוא',
+        description: error instanceof Error ? error.message : 'שגיאה לא צפויה',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  }, [previewData, businessId, toast]);
 
   return {
-    handleFileUpload,
     handleMappingConfirm,
-    handleImport,
     resetForm,
     downloadTemplate,
-    setShowMappingDialog,
+    handleImport,
   };
 };

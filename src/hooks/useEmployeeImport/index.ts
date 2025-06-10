@@ -1,221 +1,79 @@
 
-import { useState, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { useBusinessId } from '@/hooks/useBusinessId';
 import { useBusiness } from '@/hooks/useBusiness';
-import { useFileUpload } from './actions/useFileUpload';
-import { useImportProcess } from './actions/useImportProcess';
-import { useImportUtils } from './actions/useImportUtils';
+import { useImportState } from './useImportState';
 import { useImportData } from './useImportData';
+import { useImportActions } from './useImportActions';
 import { useImportValidation } from './useImportValidation';
-import { ExcelImportService } from '@/services/ExcelImportService';
-import { systemFields, employeeTypes, initialImportResult } from './constants';
-import type { ImportState, ImportStep, EmployeeImportHook } from './types';
-import type { ExcelRow, PreviewEmployee, ImportResult } from '@/services/ExcelImportService';
-import { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
+import { useFileUpload } from './actions/useFileUpload';
+import { systemFields, employeeTypes } from './constants';
+import type { EmployeeImportHook } from './types';
 
-export function useEmployeeImport(): EmployeeImportHook {
-  const businessId = useBusinessId();
-  const { isSuperAdmin } = useBusiness();
-  const { toast } = useToast();
+export type { ImportStep } from './types';
 
-  console.log('🏢 useEmployeeImport - Business context:', {
-    businessId,
-    isSuperAdmin,
-    hasBusinessContext: !!businessId
-  });
+export const useEmployeeImport = (): EmployeeImportHook => {
+  const { businessId } = useBusiness();
+  
+  const state = useImportState();
 
-  // State management
-  const [step, setStep] = useState<ImportStep>('upload');
-  const [file, setFile] = useState<File | null>(null);
-  const [rawData, setRawData] = useState<ExcelRow[]>([]);
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
-  const [previewData, setPreviewData] = useState<PreviewEmployee[]>([]);
-  const [branches, setBranches] = useState<any[]>([]);
-  const [existingEmployees, setExistingEmployees] = useState<any[]>([]);
-  const [isImporting, setIsImporting] = useState(false);
-  const [showMappingDialog, setShowMappingDialog] = useState(false);
-  const [importResult, setImportResult] = useState<ImportResult>(initialImportResult);
-  const [validationErrors, setValidationErrors] = useState<any[]>([]);
-  const [duplicateErrors, setDuplicateErrors] = useState<any[]>([]);
-
-  // Initialize data fetching - for super admin, allow without business ID
-  useImportData(businessId, setBranches, setExistingEmployees);
+  // Fetch branches and existing employees
+  useImportData(businessId, state.setBranches, state.setExistingEmployees);
 
   // Enhanced validation logic
   const validation = useImportValidation({
-    rawData,
-    fieldMappings,
-    existingEmployees,
+    rawData: state.rawData,
+    fieldMappings: state.fieldMappings,
+    existingEmployees: state.existingEmployees,
     businessId,
-    setValidationErrors,
-    setDuplicateErrors,
+    setValidationErrors: state.setValidationErrors,
+    setDuplicateErrors: state.setDuplicateErrors,
   });
 
-  // Initialize utility functions
-  const { resetForm, downloadTemplate } = useImportUtils({
-    setStep,
-    setFile,
-    setRawData,
-    setHeaders,
-    setFieldMappings,
-    setPreviewData,
-    setImportResult,
-    setValidationErrors,
-    setDuplicateErrors,
-    setShowMappingDialog,
-  });
-
-  // Initialize file upload with enhanced error handling
-  const { handleFileUpload } = useFileUpload({
-    setFile: (file: File | null) => {
-      console.log('🔧 Setting file:', file?.name || 'null');
-      setFile(file);
-    },
-    setRawData: (data: ExcelRow[]) => {
-      console.log('🔧 Setting raw data:', data.length, 'rows');
-      setRawData(data);
-    },
-    setHeaders: (headers: string[]) => {
-      console.log('🔧 Setting headers:', headers);
-      setHeaders(headers);
-    },
-    setStep,
-    setShowMappingDialog: (show: boolean) => {
-      console.log('🔧 Setting mapping dialog visibility:', show);
-      setShowMappingDialog(show);
-    },
-  });
-
-  // Initialize import process
-  const { handleImport } = useImportProcess({
-    previewData,
+  // Import actions
+  const actions = useImportActions({
+    businessId,
+    rawData: state.rawData,
+    branches: state.branches,
+    existingEmployees: state.existingEmployees,
+    previewData: state.previewData,
     validation,
-    setIsImporting,
-    setImportResult,
-    setStep,
+    setStep: state.setStep,
+    setFile: state.setFile,
+    setRawData: state.setRawData,
+    setHeaders: state.setHeaders,
+    setFieldMappings: state.setFieldMappings,
+    setPreviewData: state.setPreviewData,
+    setIsImporting: state.setIsImporting,
+    setShowMappingDialog: state.setShowMappingDialog,
+    setImportResult: state.setImportResult,
+    setValidationErrors: state.setValidationErrors,
+    setDuplicateErrors: state.setDuplicateErrors,
   });
 
-  // Handle mapping confirmation and generate preview
-  const handleMappingConfirm = useCallback(async (mappings: FieldMapping[]) => {
-    try {
-      console.log('🎯 Starting mapping confirmation with mappings:', mappings.length);
-      console.log('🏢 Business context in mapping:', { businessId, isSuperAdmin });
-      
-      // For super admin without business context, we need to handle this differently
-      if (!businessId && !isSuperAdmin) {
-        toast({
-          title: 'שגיאה',
-          description: 'לא נמצא מזהה עסק',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // For super admin, we can proceed without specific business ID
-      const effectiveBusinessId = businessId || 'super-admin-context';
-      
-      setFieldMappings(mappings);
-      setShowMappingDialog(false);
-
-      // Show processing message
-      toast({
-        title: 'מעבד נתונים...',
-        description: 'יוצר תצוגה מקדימה של הנתונים',
-      });
-
-      console.log('📊 Generating preview data with:', {
-        rawDataRows: rawData.length,
-        mappingsCount: mappings.length,
-        effectiveBusinessId,
-        branchesCount: branches.length,
-        existingEmployeesCount: existingEmployees.length
-      });
-
-      // Generate preview data
-      const preview = ExcelImportService.generatePreview(
-        rawData,
-        mappings,
-        effectiveBusinessId,
-        branches,
-        existingEmployees,
-        employeeTypes
-      );
-
-      console.log('✅ Preview generated successfully:', {
-        totalRows: preview.length,
-        validRows: preview.filter(p => p.isValid).length,
-        errorRows: preview.filter(p => !p.isValid).length
-      });
-
-      setPreviewData(preview);
-
-      // Run validation
-      validation.runValidation();
-
-      // Move to preview step
-      setStep('preview');
-
-      toast({
-        title: 'תצוגה מקדימה מוכנה! 📊',
-        description: `נמצאו ${preview.length} עובדים לעיון ואישור`,
-      });
-
-    } catch (error) {
-      console.error('💥 Error in mapping confirmation:', error);
-      toast({
-        title: 'שגיאה במיפוי שדות',
-        description: error instanceof Error ? error.message : 'שגיאה לא צפויה',
-        variant: 'destructive'
-      });
-    }
-  }, [rawData, businessId, isSuperAdmin, branches, existingEmployees, toast, validation]);
-
-  // Log state changes for debugging
-  console.log('🔄 useEmployeeImport state:', {
-    step,
-    hasFile: !!file,
-    headersCount: headers.length,
-    rawDataCount: rawData.length,
-    showMappingDialog,
-    branchesCount: branches.length,
-    existingEmployeesCount: existingEmployees.length
+  // File upload handling
+  const { handleFileUpload } = useFileUpload({
+    setFile: state.setFile,
+    setRawData: state.setRawData,
+    setHeaders: state.setHeaders,
+    setStep: state.setStep,
+    setShowMappingDialog: state.setShowMappingDialog,
   });
 
   return {
     // State
-    step,
-    file,
-    rawData,
-    headers,
-    fieldMappings,
-    previewData,
-    branches,
-    existingEmployees,
-    isImporting,
-    showMappingDialog,
-    importResult,
-    validationErrors,
-    duplicateErrors,
-
-    // Actions
-    handleFileUpload,
-    handleMappingConfirm,
-    handleImport,
-    resetForm,
-    downloadTemplate,
-    setShowMappingDialog,
-
-    // Validation
-    validateImportData: validation.validateImportData,
-    getValidationSummary: validation.getValidationSummary,
-
+    ...state,
+    
     // Constants
     systemFields,
     employeeTypes,
-    sampleData: rawData.slice(0, 3), // Show first 3 rows as sample
+    
+    // Actions
+    handleFileUpload,
+    ...actions,
+    
+    // Validation methods
+    ...validation,
+    
+    // Sample data for mapping dialog
+    sampleData: state.rawData.slice(0, 5)
   };
-}
-
-export type { ImportStep } from './types';
+};
