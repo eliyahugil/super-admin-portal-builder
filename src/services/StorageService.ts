@@ -11,7 +11,7 @@ export class StorageService {
 
       console.log('📤 Attempting to upload file to bucket:', this.BUCKET_NAME, 'Path:', fileName);
 
-      // Upload file to the existing bucket
+      // Upload file to the existing bucket with proper 3 arguments
       const { data, error } = await supabase.storage
         .from(this.BUCKET_NAME)
         .upload(fileName, file, {
