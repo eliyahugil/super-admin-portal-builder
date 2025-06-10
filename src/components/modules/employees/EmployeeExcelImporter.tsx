@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { ImportButton } from './ImportButton';
 import { ImportDialog } from './ImportDialog';
@@ -33,14 +33,27 @@ export const EmployeeExcelImporter: React.FC = () => {
     sampleDataPreview: sampleData.slice(0, 2)
   });
 
-  // Log when mapping dialog state changes
-  React.useEffect(() => {
-    console.log('🔄 Mapping dialog state changed:', {
+  // Enhanced logging for mapping dialog state changes
+  useEffect(() => {
+    console.log('🔔 MAPPING DIALOG STATE CHANGE:', {
       showMappingDialog,
       headers: headers.length,
       sampleData: sampleData.length,
+      hasData: headers.length > 0 && sampleData.length > 0,
       timestamp: new Date().toISOString()
     });
+
+    if (showMappingDialog && headers.length === 0) {
+      console.error('❌ Mapping dialog opened but no headers available!');
+    }
+
+    if (showMappingDialog && sampleData.length === 0) {
+      console.error('❌ Mapping dialog opened but no sample data available!');
+    }
+
+    if (showMappingDialog && headers.length > 0 && sampleData.length > 0) {
+      console.log('✅ Mapping dialog should be working correctly now');
+    }
   }, [showMappingDialog, headers.length, sampleData.length]);
 
   return (
@@ -63,7 +76,7 @@ export const EmployeeExcelImporter: React.FC = () => {
       <EmployeeImportMappingStep
         open={showMappingDialog}
         onOpenChange={(open) => {
-          console.log('🔄 Mapping dialog state manually changed:', open);
+          console.log('🔄 Mapping dialog state manually changed by user:', open);
           setShowMappingDialog(open);
         }}
         fileColumns={headers}

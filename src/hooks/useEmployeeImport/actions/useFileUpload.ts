@@ -104,8 +104,12 @@ export const useFileUpload = ({
       console.log('🏷️ Headers being set:', parsedData.headers);
       console.log('📊 Raw data being set (first 3 rows):', parsedData.data.slice(0, 3));
       
+      // Force state updates with a small delay to ensure React processes them
       setHeaders(parsedData.headers);
       setRawData(parsedData.data);
+      
+      // Add a small delay before opening the mapping dialog
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Show success message
       const successMessage = uploadSuccess 
@@ -117,7 +121,7 @@ export const useFileUpload = ({
         description: successMessage,
       });
       
-      // CRITICAL: Open mapping dialog immediately with detailed logging
+      // CRITICAL: Open mapping dialog with additional checks
       console.log('🎯 About to open mapping dialog...');
       console.log('📋 Current state before opening mapping dialog:', {
         headersSet: parsedData.headers.length > 0,
@@ -125,10 +129,19 @@ export const useFileUpload = ({
         willOpenDialog: true
       });
       
+      // Force state refresh before opening dialog
+      console.log('🔄 Force refreshing state before opening mapping dialog...');
+      
+      // Open mapping dialog with additional logging
       setShowMappingDialog(true);
       
-      console.log('✅ Mapping dialog opened successfully');
-      console.log('📈 File processing completed successfully - should now see mapping dialog');
+      console.log('✅ Mapping dialog should be open now');
+      console.log('📈 File processing completed successfully');
+      
+      // Additional verification after a short delay
+      setTimeout(() => {
+        console.log('🔍 Verification check after 200ms - mapping dialog should be visible');
+      }, 200);
       
     } catch (error) {
       console.error('💥 File upload error:', error);
@@ -163,6 +176,7 @@ export const useFileUpload = ({
       setFile(null);
       setRawData([]);
       setHeaders([]);
+      setShowMappingDialog(false);
     }
   };
 

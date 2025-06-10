@@ -67,7 +67,7 @@ export function useEmployeeImport(): EmployeeImportHook {
     setShowMappingDialog,
   });
 
-  // Initialize file upload
+  // Initialize file upload with proper state setters
   const { handleFileUpload } = useFileUpload({
     setFile,
     setRawData,
@@ -159,6 +159,17 @@ export function useEmployeeImport(): EmployeeImportHook {
       });
     }
   }, [rawData, businessId, isSuperAdmin, branches, existingEmployees, toast, validation]);
+
+  // Log state changes for debugging
+  console.log('🔄 useEmployeeImport state:', {
+    step,
+    hasFile: !!file,
+    headersCount: headers.length,
+    rawDataCount: rawData.length,
+    showMappingDialog,
+    branchesCount: branches.length,
+    existingEmployeesCount: existingEmployees.length
+  });
 
   return {
     // State
