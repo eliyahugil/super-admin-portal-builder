@@ -11,7 +11,7 @@ export const ImportManager: React.FC = () => {
 
   return (
     <ImportErrorBoundary>
-      <ImportButton onClick={() => importHook.setStep('upload')} />
+      <ImportButton onClick={() => importHook.resetForm()} />
       
       <ImportProcessDialog importHook={importHook} />
       
