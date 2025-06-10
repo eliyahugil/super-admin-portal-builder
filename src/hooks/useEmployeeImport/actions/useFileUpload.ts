@@ -104,12 +104,9 @@ export const useFileUpload = ({
       console.log('🏷️ Headers being set:', parsedData.headers);
       console.log('📊 Raw data being set (first 3 rows):', parsedData.data.slice(0, 3));
       
-      // Force state updates with a small delay to ensure React processes them
+      // Set state data immediately
       setHeaders(parsedData.headers);
       setRawData(parsedData.data);
-      
-      // Add a small delay before opening the mapping dialog
-      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Show success message
       const successMessage = uploadSuccess 
@@ -121,27 +118,14 @@ export const useFileUpload = ({
         description: successMessage,
       });
       
-      // CRITICAL: Open mapping dialog with additional checks
-      console.log('🎯 About to open mapping dialog...');
-      console.log('📋 Current state before opening mapping dialog:', {
-        headersSet: parsedData.headers.length > 0,
-        dataSet: parsedData.data.length > 0,
-        willOpenDialog: true
-      });
-      
-      // Force state refresh before opening dialog
-      console.log('🔄 Force refreshing state before opening mapping dialog...');
-      
-      // Open mapping dialog with additional logging
-      setShowMappingDialog(true);
-      
-      console.log('✅ Mapping dialog should be open now');
-      console.log('📈 File processing completed successfully');
-      
-      // Additional verification after a short delay
+      // Wait a moment to ensure state has been updated, then open mapping dialog
+      console.log('🎯 Opening mapping dialog...');
       setTimeout(() => {
-        console.log('🔍 Verification check after 200ms - mapping dialog should be visible');
-      }, 200);
+        setShowMappingDialog(true);
+        console.log('✅ Mapping dialog opened - state should be ready');
+      }, 100);
+      
+      console.log('📈 File processing completed successfully');
       
     } catch (error) {
       console.error('💥 File upload error:', error);
