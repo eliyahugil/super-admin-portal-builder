@@ -2,10 +2,6 @@
 import type { ExcelRow, PreviewEmployee, ImportResult } from '@/services/ExcelImportService';
 import type { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
 
-export interface ExcelRow {
-  [key: string]: any;
-}
-
 export type ImportStep = 'upload' | 'mapping' | 'validation' | 'importing' | 'complete' | 'preview' | 'summary';
 
 export interface ImportValidation {
