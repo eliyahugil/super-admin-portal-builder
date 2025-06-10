@@ -11,7 +11,7 @@ export class StorageService {
 
       console.log('📤 Attempting to upload file to bucket:', this.BUCKET_NAME, 'Path:', fileName);
 
-      // ניסיון העלאה ישירות ל-bucket (מניחים שהוא קיים)
+      // Upload file to the existing bucket
       const { data, error } = await supabase.storage
         .from(this.BUCKET_NAME)
         .upload(fileName, file, {
@@ -51,7 +51,7 @@ export class StorageService {
 
   static async checkBucketAccess(): Promise<boolean> {
     try {
-      // בדיקה פשוטה אם יש גישה ל-bucket
+      // Check if we can access the bucket by listing files
       const { data, error } = await supabase.storage.from(this.BUCKET_NAME).list('', {
         limit: 1
       });
