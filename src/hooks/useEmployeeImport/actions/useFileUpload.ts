@@ -62,6 +62,8 @@ export const useFileUpload = ({
       
       // Parse the Excel file first (this is the main functionality we need)
       console.log('📄 Starting Excel file parsing...');
+      console.log('🔍 About to call ExcelImportService.parseExcelFile...');
+      
       const parsedData = await ExcelImportService.parseExcelFile(uploadedFile);
       
       console.log('📊 Excel parsing completed:', {
@@ -71,12 +73,18 @@ export const useFileUpload = ({
         firstRowSample: parsedData.data[0] || 'No data rows'
       });
       
-      if (parsedData.headers.length === 0) {
+      console.log('🔍 CRITICAL CHECK - Parsed data validation:');
+      console.log('   Headers exist?', parsedData.headers && parsedData.headers.length > 0);
+      console.log('   Data exists?', parsedData.data && parsedData.data.length > 0);
+      console.log('   Headers array:', parsedData.headers);
+      console.log('   Data array length:', parsedData.data?.length);
+      
+      if (!parsedData.headers || parsedData.headers.length === 0) {
         console.error('❌ No headers found in file');
         throw new Error('הקובץ לא מכיל כותרות תקינות');
       }
       
-      if (parsedData.data.length === 0) {
+      if (!parsedData.data || parsedData.data.length === 0) {
         console.error('❌ No data rows found in file');
         throw new Error('הקובץ לא מכיל נתונים');
       }
@@ -100,12 +108,15 @@ export const useFileUpload = ({
         // Continue with Excel parsing even if storage upload fails
       }
       
-      console.log('📋 Setting parsed data to state...');
+      console.log('📋 CRITICAL STEP: Setting parsed data to state...');
       console.log('🏷️ Headers being set:', parsedData.headers);
       console.log('📊 Raw data being set (first 3 rows):', parsedData.data.slice(0, 3));
       
       // Set state data immediately
+      console.log('🔧 Calling setHeaders with:', parsedData.headers);
       setHeaders(parsedData.headers);
+      
+      console.log('🔧 Calling setRawData with:', parsedData.data.length, 'rows');
       setRawData(parsedData.data);
       
       // Show success message
@@ -118,11 +129,15 @@ export const useFileUpload = ({
         description: successMessage,
       });
       
+      // CRITICAL STEP: Open the mapping dialog
+      console.log('🎯 CRITICAL STEP: About to open mapping dialog...');
+      console.log('🔧 Calling setShowMappingDialog(true)...');
+      
       // Wait a moment to ensure state has been updated, then open mapping dialog
-      console.log('🎯 Opening mapping dialog...');
       setTimeout(() => {
+        console.log('🚀 EXECUTING setShowMappingDialog(true) NOW!');
         setShowMappingDialog(true);
-        console.log('✅ Mapping dialog opened - state should be ready');
+        console.log('✅ setShowMappingDialog(true) called - dialog should open now');
       }, 100);
       
       console.log('📈 File processing completed successfully');

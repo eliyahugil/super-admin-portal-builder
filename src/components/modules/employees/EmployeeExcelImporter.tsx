@@ -54,7 +54,24 @@ export const EmployeeExcelImporter: React.FC = () => {
     if (showMappingDialog && headers.length > 0 && sampleData.length > 0) {
       console.log('✅ Mapping dialog should be working correctly now');
     }
+
+    // CRITICAL: Log when showMappingDialog becomes true
+    if (showMappingDialog) {
+      console.log('🚨 MAPPING DIALOG IS NOW TRUE - SHOULD BE VISIBLE!');
+      console.log('📊 Headers available:', headers);
+      console.log('📊 Sample data available:', sampleData);
+    }
   }, [showMappingDialog, headers.length, sampleData.length]);
+
+  // Additional effect to track showMappingDialog specifically
+  useEffect(() => {
+    console.log('🎯 showMappingDialog value changed to:', showMappingDialog);
+    if (showMappingDialog) {
+      console.log('🎉 MAPPING DIALOG SHOULD NOW BE VISIBLE!');
+    } else {
+      console.log('🚫 Mapping dialog is hidden');
+    }
+  }, [showMappingDialog]);
 
   return (
     <>
@@ -72,6 +89,13 @@ export const EmployeeExcelImporter: React.FC = () => {
           onOpenChange={setIsOpen}
         />
       </Dialog>
+
+      {/* CRITICAL: Log when this component renders */}
+      {console.log('🎭 Rendering EmployeeImportMappingStep with:', {
+        open: showMappingDialog,
+        hasHeaders: headers.length > 0,
+        hasSampleData: sampleData.length > 0
+      })}
 
       <EmployeeImportMappingStep
         open={showMappingDialog}
