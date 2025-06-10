@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -299,7 +298,7 @@ export const SuperAdminDashboard: React.FC = () => {
                     {moduleConfigs.map((module) => (
                       <div key={module.module_key} className="flex items-center justify-between p-3 border rounded">
                         <div>
-                          <p className="font-medium">{module.display_name}</p>
+                          <p className="font-medium">{module.module_name}</p>
                           <p className="text-xs text-gray-500">{module.module_key}</p>
                         </div>
                         <Switch
