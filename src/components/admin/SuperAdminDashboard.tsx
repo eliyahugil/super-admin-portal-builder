@@ -1,196 +1,172 @@
 
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { SuperAdminHeader } from './dashboard/SuperAdminHeader';
 import { SuperAdminStats } from './dashboard/SuperAdminStats';
 import { SuperAdminQuickActions } from './dashboard/SuperAdminQuickActions';
+import { SuperAdminSystemAlerts } from './dashboard/SuperAdminSystemAlerts';
+import { SuperAdminRecentActivity } from './dashboard/SuperAdminRecentActivity';
 import { SuperAdminModulesManagement } from './dashboard/SuperAdminModulesManagement';
-import { SuperAdminHeader } from './dashboard/SuperAdminHeader';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 export const SuperAdminDashboard: React.FC = () => {
   const { profile, isSuperAdmin } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  console.log('SuperAdminDashboard - Profile state:', {
-    profile,
-    isSuperAdmin
-  });
-
-  // Fetch businesses
+  // Get businesses
   const { data: businesses = [], isLoading: businessesLoading } = useQuery({
-    queryKey: ['businesses-admin'],
+    queryKey: ['admin-businesses'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('businesses')
         .select('*')
         .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching businesses:', error);
-        throw error;
-      }
+
+      if (error) throw error;
       return data || [];
     },
-    enabled: isSuperAdmin
+    enabled: isSuperAdmin,
   });
 
-  // Fetch modules configuration
+  // Get module configurations
   const { data: moduleConfigs = [], isLoading: modulesLoading } = useQuery({
-    queryKey: ['modules-config'],
+    queryKey: ['admin-module-configs'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('modules_config')
         .select('*')
-        .order('display_order', { ascending: true });
-      
-      if (error) {
-        console.error('Error fetching modules config:', error);
-        throw error;
-      }
+        .order('module_name');
+
+      if (error) throw error;
       return data || [];
     },
-    enabled: isSuperAdmin
+    enabled: isSuperAdmin,
   });
 
-  // Fetch business module configurations
-  const { data: businessModules = [] } = useQuery({
-    queryKey: ['business-modules-all'],
+  // Get business modules
+  const { data: businessModules = [], isLoading: businessModulesLoading } = useQuery({
+    queryKey: ['admin-business-modules'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('business_module_config')
         .select('*');
-      
-      if (error) {
-        console.error('Error fetching business modules:', error);
-        return [];
-      }
+
+      if (error) throw error;
       return data || [];
     },
-    enabled: isSuperAdmin
+    enabled: isSuperAdmin,
   });
 
-  // Toggle module for business mutation
+  // Toggle module mutation
   const toggleModuleMutation = useMutation({
-    mutationFn: async ({ businessId, moduleKey, isEnabled }: {
-      businessId: string;
-      moduleKey: string;
-      isEnabled: boolean;
-    }) => {
-      console.log('Toggling module:', { businessId, moduleKey, isEnabled });
+    mutationFn: async ({ businessId, moduleKey }: { businessId: string; moduleKey: string }) => {
+      const existingConfig = businessModules.find(
+        bm => bm.business_id === businessId && bm.module_key === moduleKey
+      );
 
-      // First, validate that the module exists in modules_config
-      const { data: moduleExists, error: checkError } = await supabase
-        .from('modules_config')
-        .select('module_key')
-        .eq('module_key', moduleKey)
-        .single();
-
-      if (checkError || !moduleExists) {
-        console.error('Module does not exist in modules_config:', moduleKey);
-        throw new Error(`המודול ${moduleKey} לא קיים במערכת`);
-      }
-
-      if (isEnabled) {
-        // Enable module
+      if (existingConfig) {
         const { error } = await supabase
           .from('business_module_config')
-          .upsert({
-            business_id: businessId,
-            module_key: moduleKey,
-            is_enabled: true,
-            enabled_by: profile?.id,
-            enabled_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'business_id,module_key'
-          });
+          .update({ is_enabled: !existingConfig.is_enabled })
+          .eq('id', existingConfig.id);
 
         if (error) throw error;
       } else {
-        // Disable module
         const { error } = await supabase
           .from('business_module_config')
-          .update({
-            is_enabled: false,
-            disabled_by: profile?.id,
-            disabled_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('business_id', businessId)
-          .eq('module_key', moduleKey);
+          .insert({
+            business_id: businessId,
+            module_key: moduleKey,
+            is_enabled: true
+          });
 
         if (error) throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['business-modules-all'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-business-modules'] });
       toast({
         title: 'הצלחה',
-        description: 'הגדרות המודול עודכנו בהצלחה',
+        description: 'הגדרות המודול עודכנו',
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error toggling module:', error);
       toast({
         title: 'שגיאה',
-        description: error instanceof Error ? error.message : 'שגיאה בעדכון המודול',
+        description: 'לא ניתן לעדכן את הגדרות המודול',
         variant: 'destructive',
       });
-    },
+    }
   });
 
   const isModuleEnabled = (businessId: string, moduleKey: string) => {
-    return businessModules.some(
-      bm => bm.business_id === businessId && 
-           bm.module_key === moduleKey && 
-           bm.is_enabled
+    const config = businessModules.find(
+      bm => bm.business_id === businessId && bm.module_key === moduleKey
     );
+    return config?.is_enabled || false;
   };
 
   const handleToggleModule = (businessId: string, moduleKey: string) => {
-    const isCurrentlyEnabled = isModuleEnabled(businessId, moduleKey);
-    toggleModuleMutation.mutate({
-      businessId,
-      moduleKey,
-      isEnabled: !isCurrentlyEnabled
-    });
+    toggleModuleMutation.mutate({ businessId, moduleKey });
+  };
+
+  const systemStats = {
+    totalBusinesses: businesses.length,
+    activeBusinesses: businesses.filter(b => b.is_active).length,
+    totalUsers: 0, // This would need a separate query
+    activeModules: moduleConfigs.length,
+    pendingApprovals: 0, // This would need a separate query
+    systemHealth: 100
   };
 
   if (!isSuperAdmin) {
-    return <SuperAdminHeader.Unauthorized />;
+    return (
+      <div className="max-w-7xl mx-auto p-6 text-center">
+        <h2 className="text-xl font-semibold mb-4">אין הרשאה</h2>
+        <p className="text-gray-600">אין לך הרשאות מנהל ראשי</p>
+      </div>
+    );
   }
 
-  if (businessesLoading || modulesLoading) {
-    return <SuperAdminHeader.Loading />;
+  if (businessesLoading || modulesLoading || businessModulesLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">טוען נתונים...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" dir="rtl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <SuperAdminHeader profile={profile} />
-        
-        <SuperAdminStats 
-          businesses={businesses}
-          moduleConfigs={moduleConfigs}
-          businessModules={businessModules}
-        />
-
-        <SuperAdminQuickActions navigate={navigate} />
-
-        <SuperAdminModulesManagement
-          businesses={businesses}
-          moduleConfigs={moduleConfigs}
-          businessModules={businessModules}
-          isModuleEnabled={isModuleEnabled}
-          handleToggleModule={handleToggleModule}
-          toggleModuleMutation={toggleModuleMutation}
-        />
+    <div className="max-w-7xl mx-auto p-6" dir="rtl">
+      <SuperAdminHeader />
+      
+      <SuperAdminStats systemStats={systemStats} />
+      
+      <SuperAdminQuickActions systemStats={systemStats} />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <SuperAdminSystemAlerts pendingApprovals={systemStats.pendingApprovals} />
+        <SuperAdminRecentActivity />
       </div>
+
+      <SuperAdminModulesManagement
+        businesses={businesses}
+        moduleConfigs={moduleConfigs}
+        businessModules={businessModules}
+        isModuleEnabled={isModuleEnabled}
+        handleToggleModule={handleToggleModule}
+        toggleModuleMutation={toggleModuleMutation}
+      />
     </div>
   );
 };

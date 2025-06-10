@@ -108,14 +108,25 @@ export const useImportActions = ({
     setHeaders([]);
     setFieldMappings([]);
     setPreviewData([]);
-    setImportResult({ successful: 0, failed: 0, errors: [] });
+    setImportResult({ success: 0, failed: 0, errors: [] });
     setValidationErrors([]);
     setDuplicateErrors([]);
     setShowMappingDialog(false);
   }, []);
 
   const downloadTemplate = useCallback(() => {
-    ExcelImportService.downloadTemplate();
+    // Create and download Excel template
+    const headers = ['שם פרטי', 'שם משפחה', 'מייל', 'טלפון', 'כתובת', 'סוג עובד', 'תאריך תחילת עבודה'];
+    const csvContent = headers.join(',') + '\n';
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'employee_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }, []);
 
   const handleImport = useCallback(async () => {
@@ -127,7 +138,7 @@ export const useImportActions = ({
       setImportResult(result);
       setStep('summary');
       
-      if (result.successful > 0) {
+      if (result.success > 0) {
         window.dispatchEvent(new CustomEvent('employeesImported'));
       }
       

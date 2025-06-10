@@ -4,6 +4,7 @@ import { useImportState } from './useEmployeeImport/useImportState';
 import { useImportData } from './useEmployeeImport/useImportData';
 import { useImportActions } from './useEmployeeImport/useImportActions';
 import { useImportValidation } from './useEmployeeImport/useImportValidation';
+import { useFileUpload } from './useEmployeeImport/actions/useFileUpload';
 import { systemFields, employeeTypes } from './useEmployeeImport/constants';
 import type { EmployeeImportHook } from './useEmployeeImport/types';
 
@@ -75,6 +76,15 @@ export const useEmployeeImport = (): EmployeeImportHook => {
     setDuplicateErrors,
   });
 
+  // File upload handling
+  const { handleFileUpload } = useFileUpload({
+    setFile,
+    setRawData,
+    setHeaders,
+    setStep,
+    setShowMappingDialog,
+  });
+
   return {
     // State
     step,
@@ -96,10 +106,17 @@ export const useEmployeeImport = (): EmployeeImportHook => {
     employeeTypes,
     
     // Actions with enhanced validation
-    ...actions,
+    handleFileUpload,
+    handleMappingConfirm: actions.handleMappingConfirm,
+    resetForm: actions.resetForm,
+    downloadTemplate: actions.downloadTemplate,
+    handleImport: actions.handleImport,
+    setShowMappingDialog,
     
     // Enhanced validation methods
-    ...validation,
+    runValidation: validation.runValidation,
+    validateImportData: validation.validateImportData,
+    getValidationSummary: validation.getValidationSummary,
     
     // Sample data for mapping dialog
     sampleData: rawData.slice(0, 5)
