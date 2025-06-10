@@ -2,6 +2,9 @@
 import type { ExcelRow, PreviewEmployee, ImportResult } from '@/services/ExcelImportService';
 import type { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
 
+// Re-export types for use in other import hooks
+export type { ExcelRow, PreviewEmployee, ImportResult };
+
 export type ImportStep = 'upload' | 'mapping' | 'validation' | 'importing' | 'complete' | 'preview' | 'summary';
 
 export interface ImportValidation {
