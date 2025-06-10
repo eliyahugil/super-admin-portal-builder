@@ -1,6 +1,8 @@
 
 import { useEffect, useMemo } from 'react';
 import type { PreviewEmployee } from '@/services/ExcelImportService';
+import type { ExcelRow } from '@/services/ExcelImportService';
+import { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
 
 interface ValidationError {
   rowIndex: number;
@@ -16,50 +18,62 @@ interface DuplicateError {
   severity: 'error' | 'warning';
 }
 
-export const useImportValidation = (
-  previewData: PreviewEmployee[],
-  setValidationErrors: (errors: ValidationError[]) => void,
-  setDuplicateErrors: (errors: DuplicateError[]) => void
-) => {
+interface UseImportValidationProps {
+  rawData: ExcelRow[];
+  fieldMappings: FieldMapping[];
+  existingEmployees: any[];
+  businessId: string | null;
+  setValidationErrors: (errors: ValidationError[]) => void;
+  setDuplicateErrors: (errors: DuplicateError[]) => void;
+}
+
+export const useImportValidation = ({
+  rawData,
+  fieldMappings,
+  existingEmployees,
+  businessId,
+  setValidationErrors,
+  setDuplicateErrors,
+}: UseImportValidationProps) => {
   const runValidation = () => {
-    console.log('🔍 Running validation on preview data:', previewData.length);
+    console.log('🔍 Running enhanced validation on raw data:', rawData.length);
     
     const validationErrors: ValidationError[] = [];
     const duplicateErrors: DuplicateError[] = [];
 
-    previewData.forEach((employee) => {
-      // Add validation errors
-      employee.errors.forEach((error) => {
-        validationErrors.push({
-          rowIndex: employee.rowIndex,
-          field: 'general',
-          error,
-          severity: 'error' as const
-        });
+    // Enhanced validation logic based on field mappings and existing data
+    rawData.forEach((row, index) => {
+      // Check required fields based on field mappings
+      fieldMappings.forEach((mapping) => {
+        if (mapping.required && mapping.excelColumn) {
+          const cellValue = row[mapping.excelColumn];
+          if (!cellValue || cellValue.toString().trim() === '') {
+            validationErrors.push({
+              rowIndex: index + 1, // 1-based for user display
+              field: mapping.systemField,
+              error: `שדה חובה ריק: ${mapping.systemField}`,
+              severity: 'error' as const
+            });
+          }
+        }
       });
 
-      // Add warnings as validation errors with warning severity
-      employee.warnings.forEach((warning) => {
-        validationErrors.push({
-          rowIndex: employee.rowIndex,
-          field: 'general',
-          error: warning,
-          severity: 'warning' as const
-        });
-      });
-
-      // Add duplicate errors if employee is marked as duplicate
-      if (employee.isDuplicate) {
-        duplicateErrors.push({
-          rowIndex: employee.rowIndex,
-          duplicateField: 'email', // This could be more specific
-          existingValue: employee.data.email || 'N/A',
-          severity: 'warning' as const
-        });
+      // Check for duplicates against existing employees
+      const emailMapping = fieldMappings.find(m => m.systemField === 'email');
+      if (emailMapping && emailMapping.excelColumn) {
+        const email = row[emailMapping.excelColumn];
+        if (email && existingEmployees.some(emp => emp.email === email)) {
+          duplicateErrors.push({
+            rowIndex: index + 1,
+            duplicateField: 'email',
+            existingValue: email.toString(),
+            severity: 'warning' as const
+          });
+        }
       }
     });
 
-    console.log('📊 Validation results:', {
+    console.log('📊 Enhanced validation results:', {
       validationErrors: validationErrors.length,
       duplicateErrors: duplicateErrors.length
     });
@@ -69,34 +83,57 @@ export const useImportValidation = (
   };
 
   const validateImportData = () => {
-    const criticalErrors = previewData.filter(emp => !emp.isValid);
+    // Check for critical validation errors
+    const criticalErrors = rawData.filter((row, index) => {
+      return fieldMappings.some((mapping) => {
+        if (mapping.required && mapping.excelColumn) {
+          const cellValue = row[mapping.excelColumn];
+          return !cellValue || cellValue.toString().trim() === '';
+        }
+        return false;
+      });
+    });
     
     if (criticalErrors.length > 0) {
-      console.warn('⚠️ Found critical errors, cannot proceed with import');
+      console.warn('⚠️ Found critical validation errors, cannot proceed with import');
       return false;
     }
 
-    const validEmployees = previewData.filter(emp => emp.isValid);
-    if (validEmployees.length === 0) {
-      console.warn('⚠️ No valid employees found for import');
+    if (rawData.length === 0) {
+      console.warn('⚠️ No data found for import');
       return false;
     }
 
-    console.log('✅ Validation passed, ready for import');
+    console.log('✅ Enhanced validation passed, ready for import');
     return true;
   };
 
   const getValidationSummary = () => {
-    const totalRows = previewData.length;
-    const validRows = previewData.filter(emp => emp.isValid && !emp.isDuplicate).length;
-    const errorRows = previewData.filter(emp => !emp.isValid).length;
-    const warningRows = previewData.filter(emp => emp.hasWarnings).length;
+    const totalRows = rawData.length;
+    const requiredFieldErrors = rawData.filter((row, index) => {
+      return fieldMappings.some((mapping) => {
+        if (mapping.required && mapping.excelColumn) {
+          const cellValue = row[mapping.excelColumn];
+          return !cellValue || cellValue.toString().trim() === '';
+        }
+        return false;
+      });
+    }).length;
+
+    const duplicateRows = rawData.filter((row, index) => {
+      const emailMapping = fieldMappings.find(m => m.systemField === 'email');
+      if (emailMapping && emailMapping.excelColumn) {
+        const email = row[emailMapping.excelColumn];
+        return email && existingEmployees.some(emp => emp.email === email);
+      }
+      return false;
+    }).length;
 
     return {
       totalRows,
-      validRows,
-      errorRows,
-      warningRows,
+      validRows: totalRows - requiredFieldErrors,
+      errorRows: requiredFieldErrors,
+      warningRows: duplicateRows,
     };
   };
 

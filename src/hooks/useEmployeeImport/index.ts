@@ -35,8 +35,15 @@ export function useEmployeeImport(): EmployeeImportHook {
   // Initialize data fetching
   useImportData(businessId, setBranches, setExistingEmployees);
 
-  // Initialize validation
-  const validation = useImportValidation(previewData, setValidationErrors, setDuplicateErrors);
+  // Initialize validation with enhanced validation logic
+  const validation = useImportValidation({
+    rawData,
+    fieldMappings,
+    existingEmployees,
+    businessId,
+    setValidationErrors,
+    setDuplicateErrors,
+  });
 
   // Initialize utility functions
   const { resetForm, downloadTemplate } = useImportUtils({
