@@ -10,7 +10,38 @@ export interface ParsedExcelData {
   headers: string[];
 }
 
+export interface ValidationResult {
+  isValid: boolean;
+  error?: string;
+}
+
 export class ExcelParserService {
+  /**
+   * Validate file format before processing
+   */
+  static validateFileFormat(file: File): ValidationResult {
+    const validExtensions = ['.xlsx', '.xls', '.csv'];
+    const fileName = file.name.toLowerCase();
+    
+    const isValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+    
+    if (!isValidExtension) {
+      return {
+        isValid: false,
+        error: 'פורמט קובץ לא נתמך. אנא העלה קובץ Excel (.xlsx, .xls) או CSV'
+      };
+    }
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      return {
+        isValid: false,
+        error: 'גודל הקובץ גדול מדי. מקסימום 10MB'
+      };
+    }
+
+    return { isValid: true };
+  }
+
   /**
    * Parse Excel file and return structured data
    */

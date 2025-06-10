@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { ExcelImportService } from '@/services/ExcelImportService';
+import { ExcelParserService } from '@/services/excel/ExcelParserService';
 import type { ExcelRow, ImportStep } from '@/hooks/useEmployeeImport/types';
 
 interface UseFileUploadProps {
@@ -26,7 +26,7 @@ export const useFileUpload = ({
       console.log('🚀 Starting file upload process for:', uploadedFile.name);
       
       // Validate file format
-      const validation = ExcelImportService.validateFileFormat(uploadedFile);
+      const validation = ExcelParserService.validateFileFormat(uploadedFile);
       if (!validation.isValid) {
         toast({
           title: 'שגיאה בקובץ',
@@ -43,7 +43,7 @@ export const useFileUpload = ({
         description: 'קורא ומנתח את נתוני האקסל',
       });
 
-      const parsedData = await ExcelImportService.parseExcelFile(uploadedFile);
+      const parsedData = await ExcelParserService.parseExcelFile(uploadedFile);
       
       console.log('📊 Parsed Excel data:', {
         totalRows: parsedData.data.length,
