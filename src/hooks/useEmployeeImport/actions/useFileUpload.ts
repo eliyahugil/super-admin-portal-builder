@@ -50,13 +50,18 @@ export const useFileUpload = ({
         description: 'מעלה את הקובץ לשרת ומעבד את הנתונים',
       });
       
-      // First upload the file to storage using the StorageService
-      console.log('📤 Uploading file to Supabase storage...');
-      const filePath = await StorageService.uploadEmployeeFile(uploadedFile, user.id);
+      // Try to upload the file to storage, but don't fail if it doesn't work
+      let filePath: string | null = null;
+      try {
+        console.log('📤 Attempting to upload file to Supabase storage...');
+        filePath = await StorageService.uploadEmployeeFile(uploadedFile, user.id);
+        console.log('✅ File uploaded to storage:', filePath);
+      } catch (uploadError) {
+        console.warn('⚠️ Storage upload failed, continuing with Excel parsing only:', uploadError);
+        // Continue with Excel parsing even if storage upload fails
+      }
       
-      console.log('✅ File uploaded to storage:', filePath);
-      
-      // Then parse the Excel file
+      // Parse the Excel file (this is the main functionality we need)
       console.log('📄 Parsing Excel file...');
       const parsedData = await ExcelImportService.parseExcelFile(uploadedFile);
       console.log('✅ Excel file parsed successfully:', {
@@ -77,34 +82,38 @@ export const useFileUpload = ({
       setRawData(parsedData.data);
       
       // Show success message
+      const successMessage = filePath 
+        ? `הקובץ הועלה לשרת ונמצאו ${parsedData.data.length} שורות נתונים`
+        : `הקובץ נקרא בהצלחה ונמצאו ${parsedData.data.length} שורות נתונים`;
+      
       toast({
-        title: 'קובץ הועלה ונקרא בהצלחה! 🎉',
-        description: `הקובץ הועלה לשרת ונמצאו ${parsedData.data.length} שורות נתונים`,
+        title: 'קובץ נקרא בהצלחה! 🎉',
+        description: successMessage,
       });
       
       // Open mapping dialog immediately
       console.log('📋 Opening mapping dialog...');
       setShowMappingDialog(true);
       
-      console.log('✅ File upload and processing completed successfully');
+      console.log('✅ File processing completed successfully');
     } catch (error) {
       console.error('💥 File upload error:', error);
       
       let errorMessage = 'שגיאה לא צפויה';
       if (error instanceof Error) {
-        if (error.message.includes('not found') || error.message.includes('bucket')) {
-          errorMessage = 'שגיאה באחסון הקבצים - אנא פנה למנהל המערכת';
-        } else if (error.message.includes('Authentication')) {
+        if (error.message.includes('Authentication') || error.message.includes('access_token')) {
           errorMessage = 'נדרש להתחבר מחדש למערכת';
         } else if (error.message.includes('size')) {
           errorMessage = 'הקובץ גדול מדי - מקסימום 10MB';
-        } else {
+        } else if (error.message.includes('כותרות') || error.message.includes('נתונים')) {
           errorMessage = error.message;
+        } else {
+          errorMessage = 'שגיאה בעיבוד הקובץ - אנא ודא שהקובץ הוא Excel תקין';
         }
       }
       
       toast({
-        title: 'שגיאה בהעלאת הקובץ',
+        title: 'שגיאה בעיבוד הקובץ',
         description: errorMessage,
         variant: 'destructive'
       });
