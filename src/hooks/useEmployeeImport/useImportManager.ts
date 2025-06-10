@@ -1,11 +1,11 @@
 
+import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { EmployeeImportDatabase } from '@/services/excel/EmployeeImportDatabase';
-import type { ImportStep, ImportValidation } from '../types';
 import type { PreviewEmployee, ImportResult } from '@/services/ExcelImportService';
-import { useAuthUtils } from '../utils/authUtils';
+import type { ImportStep, ImportValidation } from './types';
 
-interface UseImportProcessProps {
+interface UseImportManagerProps {
   previewData: PreviewEmployee[];
   validation: ImportValidation;
   setIsImporting: (importing: boolean) => void;
@@ -13,25 +13,17 @@ interface UseImportProcessProps {
   setStep: (step: ImportStep) => void;
 }
 
-export const useImportProcess = ({
+export const useImportManager = ({
   previewData,
   validation,
   setIsImporting,
   setImportResult,
   setStep,
-}: UseImportProcessProps) => {
+}: UseImportManagerProps) => {
   const { toast } = useToast();
-  const { checkAuthSession } = useAuthUtils();
 
-  const handleImport = async () => {
+  const executeImport = useCallback(async () => {
     console.log('🚀 Starting final import process...');
-    
-    // Check authentication before starting import
-    const isAuthenticated = await checkAuthSession();
-    if (!isAuthenticated) {
-      console.error('❌ Authentication failed, aborting import');
-      return;
-    }
     
     // Final validation before import
     if (!validation.validateImportData()) {
@@ -56,7 +48,6 @@ export const useImportProcess = ({
     setIsImporting(true);
     
     try {
-      // Show initial progress toast
       toast({
         title: 'מתחיל ייבוא עובדים...',
         description: `מעבד ${validEmployees.length} עובדים למערכת`,
@@ -64,15 +55,6 @@ export const useImportProcess = ({
 
       console.log('📤 Calling import service with valid employees:', validEmployees.length);
       
-      // Double-check session before actual import
-      const finalAuthCheck = await checkAuthSession();
-      if (!finalAuthCheck) {
-        console.error('❌ Final auth check failed');
-        setIsImporting(false);
-        return;
-      }
-
-      // Use the EmployeeImportDatabase service for actual import
       const result = await EmployeeImportDatabase.importEmployees(previewData);
       
       console.log('✅ Import completed with result:', result);
@@ -99,8 +81,7 @@ export const useImportProcess = ({
       
       setStep('summary');
       
-      // Refresh the employees list by triggering a page reload
-      // This ensures the new data is visible immediately
+      // Refresh the employees list
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('employeesImported'));
       }, 1000);
@@ -124,7 +105,9 @@ export const useImportProcess = ({
     } finally {
       setIsImporting(false);
     }
-  };
+  }, [previewData, validation, toast]);
 
-  return { handleImport };
+  return {
+    executeImport,
+  };
 };

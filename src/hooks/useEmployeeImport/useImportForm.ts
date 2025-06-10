@@ -1,10 +1,11 @@
 
-import { useToast } from '@/hooks/use-toast';
+import { useCallback } from 'react';
 import { ExcelImportService } from '@/services/ExcelImportService';
-import type { ImportStep } from '../types';
+import { useToast } from '@/hooks/use-toast';
+import { initialImportResult } from './constants';
+import type { ImportStep } from './types';
 import type { ExcelRow, PreviewEmployee, ImportResult } from '@/services/ExcelImportService';
 import { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
-import { initialImportResult } from '../constants';
 
 interface ValidationError {
   rowIndex: number;
@@ -20,7 +21,7 @@ interface DuplicateError {
   severity: 'error' | 'warning';
 }
 
-interface UseImportUtilsProps {
+interface UseImportFormProps {
   setStep: (step: ImportStep) => void;
   setFile: (file: File | null) => void;
   setRawData: (data: ExcelRow[]) => void;
@@ -33,7 +34,7 @@ interface UseImportUtilsProps {
   setShowMappingDialog: (show: boolean) => void;
 }
 
-export const useImportUtils = ({
+export const useImportForm = ({
   setStep,
   setFile,
   setRawData,
@@ -44,10 +45,10 @@ export const useImportUtils = ({
   setValidationErrors,
   setDuplicateErrors,
   setShowMappingDialog,
-}: UseImportUtilsProps) => {
+}: UseImportFormProps) => {
   const { toast } = useToast();
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     console.log('🔄 Resetting import form');
     setStep('upload');
     setFile(null);
@@ -59,16 +60,20 @@ export const useImportUtils = ({
     setValidationErrors([]);
     setDuplicateErrors([]);
     setShowMappingDialog(false);
-  };
+  }, [
+    setStep, setFile, setRawData, setHeaders, setFieldMappings,
+    setPreviewData, setImportResult, setValidationErrors,
+    setDuplicateErrors, setShowMappingDialog
+  ]);
 
-  const downloadTemplate = () => {
+  const downloadTemplate = useCallback(() => {
     console.log('📥 Generating Excel template');
     ExcelImportService.generateTemplate();
     toast({
       title: 'תבנית הורדה',
       description: 'קובץ התבנית הורד בהצלחה',
     });
-  };
+  }, [toast]);
 
   return {
     resetForm,

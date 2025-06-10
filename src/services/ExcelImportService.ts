@@ -1,6 +1,5 @@
 
-import { ExcelParserService } from './excel/ExcelParserService';
-import { EmployeeDataTransformer } from './excel/EmployeeDataTransformer';
+import { ExcelFileManager } from './excel/ExcelFileManager';
 import { EmployeeImportDatabase } from './excel/EmployeeImportDatabase';
 
 // Re-export types for backward compatibility
@@ -9,12 +8,11 @@ export type { PreviewEmployee } from './excel/EmployeeDataTransformer';
 export type { ImportResult } from './excel/EmployeeImportDatabase';
 
 export class ExcelImportService {
-  // Excel parsing methods
-  static parseExcelFile = ExcelParserService.parseExcelFile;
-  static generateTemplate = ExcelParserService.generateTemplate;
-
-  // Data transformation methods
-  static generatePreview = EmployeeDataTransformer.generatePreview;
+  // File management methods
+  static parseExcelFile = ExcelFileManager.parseFile;
+  static generateTemplate = ExcelFileManager.generateTemplate;
+  static generatePreview = ExcelFileManager.generatePreview;
+  static validateFileFormat = ExcelFileManager.validateFileFormat;
 
   // Database import methods
   static importEmployees = EmployeeImportDatabase.importEmployees;
