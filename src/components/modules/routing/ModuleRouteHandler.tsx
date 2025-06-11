@@ -18,6 +18,7 @@ import { InventoryManagement } from '../inventory/InventoryManagement';
 import { OrdersManagement } from '../orders/OrdersManagement';
 import { ProjectsManagement } from '../projects/ProjectsManagement';
 import { IntegrationManagement } from '../integrations/IntegrationManagement';
+import { CustomerManagement } from '../customers/CustomerManagement';
 
 interface ModuleRouteHandlerProps {
   fullRoute: string;
@@ -63,7 +64,7 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
     case 'employees/shifts':
       return <ShiftManagement />;
     case 'employees/import':
-      return <div className="p-6 text-center">רכיב ייבוא עובדים בפיתוח</div>;
+      return <EmployeeManagement />;
 
     // Branch routes
     case 'branches':
@@ -86,6 +87,14 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
       return <div className="p-6 text-center">רכיב כלי מנהל בפיתוח</div>;
     case 'shifts/tokens':
       return <div className="p-6 text-center">רכיב טוקני הגשה בפיתוח</div>;
+
+    // Customer routes
+    case 'customers':
+      return <CustomerManagement />;
+    case 'customers/agreements':
+      return <CustomerManagement />;
+    case 'customers/signatures':
+      return <CustomerManagement />;
 
     // Business modules
     case 'finance':
@@ -121,7 +130,7 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
           <div className="mt-4 text-sm text-gray-500">
             <p>נתיבים זמינים:</p>
             <ul className="list-disc list-inside mt-2">
-              <li>employees, branches, shifts</li>
+              <li>employees, branches, shifts, customers</li>
               <li>finance, inventory, orders, projects</li>
               <li>integrations, settings</li>
             </ul>

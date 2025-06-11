@@ -27,7 +27,8 @@ import {
   CheckSquare,
   Calendar,
   User,
-  LinkIcon
+  LinkIcon,
+  ContactIcon
 } from 'lucide-react';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useBusinessModules } from '@/hooks/useBusinessModules';
@@ -85,6 +86,18 @@ export const DynamicSidebar: React.FC = () => {
         { path: moduleRoutes.employees.docs, label: 'מסמכים חתומים', icon: FileText, moduleKey: 'employee_documents' },
         { path: moduleRoutes.employees.shifts, label: 'משמרות עובדים', icon: Clock, moduleKey: 'shift_management' },
         { path: moduleRoutes.employees.import, label: 'ייבוא עובדים', icon: FileText, moduleKey: 'employee_management' },
+      ]
+    },
+    { 
+      path: '/modules/customers', 
+      label: 'לקוחות', 
+      icon: ContactIcon, 
+      category: 'main',
+      moduleKey: 'customer_management',
+      subItems: [
+        { path: '/modules/customers', label: 'ניהול לקוחות', icon: ContactIcon, moduleKey: 'customer_management' },
+        { path: '/modules/customers/agreements', label: 'הסכמים', icon: FileText, moduleKey: 'customer_management' },
+        { path: '/modules/customers/signatures', label: 'חתימות דיגיטליות', icon: FileText, moduleKey: 'customer_management' },
       ]
     },
     { 

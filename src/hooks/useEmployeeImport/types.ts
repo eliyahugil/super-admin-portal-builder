@@ -1,73 +1,48 @@
 
-import type { ExcelRow, PreviewEmployee, ImportResult } from '@/services/ExcelImportService';
-import type { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
+export type ImportStep = 'upload' | 'mapping' | 'preview' | 'importing' | 'results';
 
-// Re-export types for use in other import hooks
-export type { ExcelRow, PreviewEmployee, ImportResult };
-
-export type ImportStep = 'upload' | 'mapping' | 'validation' | 'importing' | 'complete' | 'preview' | 'summary';
-
-export interface ImportValidation {
-  runValidation: () => void;
-  validateImportData: () => boolean;
-  getValidationSummary: () => {
-    totalRows: number;
-    validRows: number;
-    errorRows: number;
-    warningRows: number;
-  };
+export interface ExcelRow {
+  [key: string]: any;
 }
 
-interface ValidationError {
-  rowIndex: number;
-  field: string;
-  error: string;
-  severity: 'error' | 'warning';
+export interface PreviewEmployee {
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  id_number?: string;
+  employee_id?: string;
+  address?: string;
+  hire_date?: string;
+  employee_type: 'permanent' | 'temporary' | 'youth' | 'contractor';
+  weekly_hours_required?: number;
+  main_branch_id?: string;
+  notes?: string;
+  business_id: string;
+  is_active: boolean;
+  isValid: boolean;
+  validationErrors?: string[];
+  isDuplicate?: boolean;
 }
 
-interface DuplicateError {
-  rowIndex: number;
-  duplicateField: string;
-  existingValue: string;
-  severity: 'error' | 'warning';
+export interface ImportResult {
+  success: boolean;
+  importedCount: number;
+  errorCount: number;
+  message: string;
+  errors: Array<{
+    row: number;
+    message: string;
+    data?: any;
+  }>;
+  importedEmployees: PreviewEmployee[];
 }
 
-export interface EmployeeImportHook {
-  // State
-  step: ImportStep;
-  file: File | null;
-  rawData: ExcelRow[];
-  headers: string[];
-  fieldMappings: FieldMapping[];
-  previewData: PreviewEmployee[];
-  branches: any[];
-  existingEmployees: any[];
-  isImporting: boolean;
-  showMappingDialog: boolean;
-  importResult: ImportResult;
-  validationErrors: ValidationError[];
-  duplicateErrors: DuplicateError[];
-  sampleData: ExcelRow[];
-  
-  // Constants
-  systemFields: Array<{ value: string; label: string }>;
-  employeeTypes: Array<{ value: string; label: string }>;
-  
-  // Actions
-  handleFileUpload: (file: File) => Promise<void>;
-  handleMappingConfirm: (mappings: FieldMapping[]) => Promise<void>;
-  resetForm: () => void;
-  downloadTemplate: () => void;
-  handleImport: () => Promise<void>;
-  setShowMappingDialog: (show: boolean) => void;
-  
-  // Validation methods
-  runValidation: () => void;
-  validateImportData: () => boolean;
-  getValidationSummary: () => {
-    totalRows: number;
-    validRows: number;
-    errorRows: number;
-    warningRows: number;
-  };
+export interface FieldMapping {
+  id: string;
+  systemField: string;
+  mappedColumns: string[];
+  isCustomField: boolean;
+  customFieldName?: string;
+  customFieldType?: string;
 }
