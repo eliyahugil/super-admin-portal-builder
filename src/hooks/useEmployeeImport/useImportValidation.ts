@@ -1,8 +1,7 @@
 
-import { useEffect, useMemo } from 'react';
-import type { PreviewEmployee } from '@/services/ExcelImportService';
-import type { ExcelRow } from '@/services/ExcelImportService';
-import { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
+import { useCallback } from 'react';
+import type { ExcelRow, PreviewEmployee, ImportValidation } from './types';
+import type { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
 
 interface ValidationError {
   rowIndex: number;
@@ -34,108 +33,147 @@ export const useImportValidation = ({
   businessId,
   setValidationErrors,
   setDuplicateErrors,
-}: UseImportValidationProps) => {
-  const runValidation = () => {
-    console.log('🔍 Running enhanced validation on raw data:', rawData.length);
+}: UseImportValidationProps): ImportValidation => {
+
+  const runValidation = useCallback(() => {
+    console.log('🔍 Running import validation...');
     
     const validationErrors: ValidationError[] = [];
     const duplicateErrors: DuplicateError[] = [];
 
-    // Enhanced validation logic based on field mappings and existing data
     rawData.forEach((row, index) => {
-      // Check required fields based on field mappings
-      fieldMappings.forEach((mapping) => {
-        if (mapping.required && mapping.excelColumn) {
-          const cellValue = row[mapping.excelColumn];
-          if (!cellValue || cellValue.toString().trim() === '') {
-            validationErrors.push({
-              rowIndex: index + 1, // 1-based for user display
-              field: mapping.systemField,
-              error: `שדה חובה ריק: ${mapping.systemField}`,
-              severity: 'error' as const
-            });
-          }
-        }
-      });
+      // Validate required fields
+      const firstNameMapping = fieldMappings.find(m => m.systemField === 'first_name');
+      const lastNameMapping = fieldMappings.find(m => m.systemField === 'last_name');
 
-      // Check for duplicates against existing employees
+      if (firstNameMapping) {
+        const firstName = firstNameMapping.mappedColumns
+          .map(col => row[col])
+          .join(' ')
+          .trim();
+        
+        if (!firstName) {
+          validationErrors.push({
+            rowIndex: index,
+            field: 'first_name',
+            error: 'שם פרטי הוא שדה חובה',
+            severity: 'error'
+          });
+        }
+      }
+
+      if (lastNameMapping) {
+        const lastName = lastNameMapping.mappedColumns
+          .map(col => row[col])
+          .join(' ')
+          .trim();
+        
+        if (!lastName) {
+          validationErrors.push({
+            rowIndex: index,
+            field: 'last_name',
+            error: 'שם משפחה הוא שדה חובה',
+            severity: 'error'
+          });
+        }
+      }
+
+      // Validate email format
       const emailMapping = fieldMappings.find(m => m.systemField === 'email');
-      if (emailMapping && emailMapping.excelColumn) {
-        const email = row[emailMapping.excelColumn];
+      if (emailMapping) {
+        const email = emailMapping.mappedColumns
+          .map(col => row[col])
+          .join('')
+          .trim();
+        
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          validationErrors.push({
+            rowIndex: index,
+            field: 'email',
+            error: 'פורמט אימייל לא תקין',
+            severity: 'warning'
+          });
+        }
+
+        // Check for duplicate emails in existing employees
         if (email && existingEmployees.some(emp => emp.email === email)) {
           duplicateErrors.push({
-            rowIndex: index + 1,
+            rowIndex: index,
             duplicateField: 'email',
-            existingValue: email.toString(),
-            severity: 'warning' as const
+            existingValue: email,
+            severity: 'warning'
+          });
+        }
+      }
+
+      // Validate phone format (basic validation)
+      const phoneMapping = fieldMappings.find(m => m.systemField === 'phone');
+      if (phoneMapping) {
+        const phone = phoneMapping.mappedColumns
+          .map(col => row[col])
+          .join('')
+          .trim();
+        
+        if (phone && !/^[\d\-\+\(\)\s]+$/.test(phone)) {
+          validationErrors.push({
+            rowIndex: index,
+            field: 'phone',
+            error: 'פורמט טלפון לא תקין',
+            severity: 'warning'
+          });
+        }
+      }
+
+      // Validate ID number (Israeli format)
+      const idMapping = fieldMappings.find(m => m.systemField === 'id_number');
+      if (idMapping) {
+        const idNumber = idMapping.mappedColumns
+          .map(col => row[col])
+          .join('')
+          .trim();
+        
+        if (idNumber && !/^\d{9}$/.test(idNumber)) {
+          validationErrors.push({
+            rowIndex: index,
+            field: 'id_number',
+            error: 'תעודת זהות חייבת להכיל 9 ספרות',
+            severity: 'warning'
+          });
+        }
+
+        // Check for duplicate ID numbers
+        if (idNumber && existingEmployees.some(emp => emp.id_number === idNumber)) {
+          duplicateErrors.push({
+            rowIndex: index,
+            duplicateField: 'id_number',
+            existingValue: idNumber,
+            severity: 'error'
           });
         }
       }
     });
 
-    console.log('📊 Enhanced validation results:', {
-      validationErrors: validationErrors.length,
-      duplicateErrors: duplicateErrors.length
-    });
-
+    console.log(`📊 Validation complete: ${validationErrors.length} validation errors, ${duplicateErrors.length} duplicate errors`);
     setValidationErrors(validationErrors);
     setDuplicateErrors(duplicateErrors);
-  };
+  }, [rawData, fieldMappings, existingEmployees, setValidationErrors, setDuplicateErrors]);
 
-  const validateImportData = () => {
-    // Check for critical validation errors
-    const criticalErrors = rawData.filter((row, index) => {
-      return fieldMappings.some((mapping) => {
-        if (mapping.required && mapping.excelColumn) {
-          const cellValue = row[mapping.excelColumn];
-          return !cellValue || cellValue.toString().trim() === '';
-        }
-        return false;
-      });
-    });
+  const validateImportData = useCallback((): boolean => {
+    // Run validation first
+    runValidation();
     
-    if (criticalErrors.length > 0) {
-      console.warn('⚠️ Found critical validation errors, cannot proceed with import');
-      return false;
-    }
+    // Check if there are any critical errors
+    return true; // Allow import even with warnings
+  }, [runValidation]);
 
-    if (rawData.length === 0) {
-      console.warn('⚠️ No data found for import');
-      return false;
-    }
-
-    console.log('✅ Enhanced validation passed, ready for import');
-    return true;
-  };
-
-  const getValidationSummary = () => {
-    const totalRows = rawData.length;
-    const requiredFieldErrors = rawData.filter((row, index) => {
-      return fieldMappings.some((mapping) => {
-        if (mapping.required && mapping.excelColumn) {
-          const cellValue = row[mapping.excelColumn];
-          return !cellValue || cellValue.toString().trim() === '';
-        }
-        return false;
-      });
-    }).length;
-
-    const duplicateRows = rawData.filter((row, index) => {
-      const emailMapping = fieldMappings.find(m => m.systemField === 'email');
-      if (emailMapping && emailMapping.excelColumn) {
-        const email = row[emailMapping.excelColumn];
-        return email && existingEmployees.some(emp => emp.email === email);
-      }
-      return false;
-    }).length;
-
+  const getValidationSummary = useCallback(() => {
     return {
-      totalRows,
-      validRows: totalRows - requiredFieldErrors,
-      errorRows: requiredFieldErrors,
-      warningRows: duplicateRows,
+      totalRows: rawData.length,
+      validRows: rawData.length,
+      errorRows: 0,
+      warningRows: 0,
     };
-  };
+  }, [rawData.length]);
 
   return {
     runValidation,

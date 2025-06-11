@@ -1,25 +1,8 @@
 
 import { useCallback } from 'react';
-import { ExcelImportService } from '@/services/ExcelImportService';
-import { useToast } from '@/hooks/use-toast';
-import { initialImportResult } from './constants';
-import type { ImportStep } from './types';
-import type { ExcelRow, PreviewEmployee, ImportResult } from '@/services/ExcelImportService';
-import { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
-
-interface ValidationError {
-  rowIndex: number;
-  field: string;
-  error: string;
-  severity: 'error' | 'warning';
-}
-
-interface DuplicateError {
-  rowIndex: number;
-  duplicateField: string;
-  existingValue: string;
-  severity: 'error' | 'warning';
-}
+import { ExcelParserService } from '@/services/excel/ExcelParserService';
+import type { ExcelRow, PreviewEmployee, ImportResult, ImportStep } from './types';
+import type { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
 
 interface UseImportFormProps {
   setStep: (step: ImportStep) => void;
@@ -29,8 +12,8 @@ interface UseImportFormProps {
   setFieldMappings: (mappings: FieldMapping[]) => void;
   setPreviewData: (data: PreviewEmployee[]) => void;
   setImportResult: (result: ImportResult) => void;
-  setValidationErrors: (errors: ValidationError[]) => void;
-  setDuplicateErrors: (errors: DuplicateError[]) => void;
+  setValidationErrors: (errors: any[]) => void;
+  setDuplicateErrors: (errors: any[]) => void;
   setShowMappingDialog: (show: boolean) => void;
 }
 
@@ -46,7 +29,6 @@ export const useImportForm = ({
   setDuplicateErrors,
   setShowMappingDialog,
 }: UseImportFormProps) => {
-  const { toast } = useToast();
 
   const resetForm = useCallback(() => {
     console.log('🔄 Resetting import form');
@@ -56,24 +38,34 @@ export const useImportForm = ({
     setHeaders([]);
     setFieldMappings([]);
     setPreviewData([]);
-    setImportResult(initialImportResult);
+    setImportResult({
+      success: false,
+      importedCount: 0,
+      errorCount: 0,
+      message: '',
+      errors: [],
+      importedEmployees: []
+    });
     setValidationErrors([]);
     setDuplicateErrors([]);
     setShowMappingDialog(false);
   }, [
-    setStep, setFile, setRawData, setHeaders, setFieldMappings,
-    setPreviewData, setImportResult, setValidationErrors,
-    setDuplicateErrors, setShowMappingDialog
+    setStep,
+    setFile,
+    setRawData,
+    setHeaders,
+    setFieldMappings,
+    setPreviewData,
+    setImportResult,
+    setValidationErrors,
+    setDuplicateErrors,
+    setShowMappingDialog,
   ]);
 
   const downloadTemplate = useCallback(() => {
-    console.log('📥 Generating Excel template');
-    ExcelImportService.generateTemplate();
-    toast({
-      title: 'תבנית הורדה',
-      description: 'קובץ התבנית הורד בהצלחה',
-    });
-  }, [toast]);
+    console.log('📥 Downloading Excel template');
+    ExcelParserService.generateTemplate();
+  }, []);
 
   return {
     resetForm,

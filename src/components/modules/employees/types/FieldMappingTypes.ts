@@ -3,10 +3,9 @@ export interface FieldMapping {
   id: string;
   systemField: string;
   mappedColumns: string[];
-  required?: boolean;
-  excelColumn?: string;
-  isCustomField?: boolean;
+  isCustomField: boolean;
   customFieldName?: string;
+  customFieldType?: string;
 }
 
 export interface FieldMappingDialogProps {

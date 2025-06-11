@@ -1,52 +1,51 @@
 
-import { FieldMapping } from '../types/FieldMappingTypes';
+import { useCallback } from 'react';
+import type { FieldMapping } from '../types/FieldMappingTypes';
 
 export const useFieldMappingAutoDetection = () => {
-  const autoDetectMappings = (columns: string[]): FieldMapping[] => {
-    const detectedMappings: FieldMapping[] = [];
+  const autoDetectMappings = useCallback((fileColumns: string[]): FieldMapping[] => {
+    const mappings: FieldMapping[] = [];
 
-    columns.forEach((column, index) => {
-      const lowerColumn = column.toLowerCase().trim();
-      let systemField = '';
+    // Auto-detection rules based on common Hebrew/English column names
+    const detectionRules = [
+      { pattern: /שם פרטי|first.?name|firstname/i, field: 'first_name' },
+      { pattern: /שם משפחה|last.?name|lastname|surname/i, field: 'last_name' },
+      { pattern: /אימייל|email|mail/i, field: 'email' },
+      { pattern: /טלפון|phone|פלאפון|נייד|mobile/i, field: 'phone' },
+      { pattern: /תעודת זהות|id.?number|identity|ת\.ז/i, field: 'id_number' },
+      { pattern: /מספר עובד|employee.?id|emp.?id/i, field: 'employee_id' },
+      { pattern: /כתובת|address|מען/i, field: 'address' },
+      { pattern: /תאריך התחלה|hire.?date|start.?date/i, field: 'hire_date' },
+      { pattern: /סוג עובד|employee.?type|type/i, field: 'employee_type' },
+      { pattern: /שעות|hours|weekly/i, field: 'weekly_hours_required' },
+      { pattern: /סניף|branch|מחלקה/i, field: 'main_branch_id' },
+      { pattern: /הערות|notes|remarks|comment/i, field: 'notes' },
+    ];
 
-      // Auto-detection logic
-      if (lowerColumn.includes('שם') && (lowerColumn.includes('מלא') || lowerColumn.includes('שלם'))) {
-        systemField = 'full_name';
-      } else if (lowerColumn.includes('שם') && lowerColumn.includes('פרטי')) {
-        systemField = 'first_name';
-      } else if (lowerColumn.includes('שם') && lowerColumn.includes('משפחה')) {
-        systemField = 'last_name';
-      } else if (lowerColumn.includes('טלפון') || lowerColumn.includes('נייד')) {
-        systemField = 'phone';
-      } else if (lowerColumn.includes('מייל') || lowerColumn.includes('email')) {
-        systemField = 'email';
-      } else if (lowerColumn.includes('זהות')) {
-        systemField = 'id_number';
-      } else if (lowerColumn.includes('עובד') && lowerColumn.includes('מספר')) {
-        systemField = 'employee_id';
-      } else if (lowerColumn.includes('כתובת')) {
-        systemField = 'address';
-      } else if (lowerColumn.includes('תאריך') && lowerColumn.includes('תחילת')) {
-        systemField = 'hire_date';
-      } else if (lowerColumn.includes('סניף')) {
-        systemField = 'branch_name';
-      } else if (lowerColumn.includes('תפקיד')) {
-        systemField = 'role';
-      } else if (lowerColumn.includes('הערות')) {
-        systemField = 'notes';
+    fileColumns.forEach((column) => {
+      const matchedRule = detectionRules.find(rule => rule.pattern.test(column));
+      if (matchedRule) {
+        // Check if this system field is already mapped
+        const existingMapping = mappings.find(m => m.systemField === matchedRule.field);
+        if (existingMapping) {
+          // Add to existing mapping if not already there
+          if (!existingMapping.mappedColumns.includes(column)) {
+            existingMapping.mappedColumns.push(column);
+          }
+        } else {
+          // Create new mapping
+          mappings.push({
+            id: `auto-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            systemField: matchedRule.field,
+            mappedColumns: [column],
+            isCustomField: false,
+          });
+        }
       }
-
-      detectedMappings.push({
-        id: `mapping-${index}`,
-        systemField: systemField || '',
-        mappedColumns: [column],
-        isCustomField: !systemField,
-        customFieldName: !systemField ? column : undefined,
-      });
     });
 
-    return detectedMappings;
-  };
+    return mappings;
+  }, []);
 
   return { autoDetectMappings };
 };

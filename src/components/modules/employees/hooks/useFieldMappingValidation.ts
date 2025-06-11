@@ -1,45 +1,41 @@
 
+import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { FieldMapping } from '../types/FieldMappingTypes';
+import type { FieldMapping } from '../types/FieldMappingTypes';
 
 export const useFieldMappingValidation = () => {
   const { toast } = useToast();
 
-  const validateMappings = (mappings: FieldMapping[]): boolean => {
-    // Check for duplicate system fields
-    const usedFields = mappings
-      .filter(m => m.systemField)
-      .map(m => m.systemField);
-    
-    const duplicates = usedFields.filter((field, index) => 
-      usedFields.indexOf(field) !== index
+  const validateMappings = useCallback((mappings: FieldMapping[]): boolean => {
+    const validMappings = mappings.filter(m => 
+      m.systemField && m.mappedColumns.length > 0
     );
 
-    if (duplicates.length > 0) {
+    if (validMappings.length === 0) {
       toast({
-        title: 'שגיאה במיפוי',
-        description: 'אותו שדה מערכת לא יכול להיות ממופה פעמיים',
-        variant: 'destructive',
+        title: 'שגיאת מיפוי',
+        description: 'יש לבחור לפחות שדה אחד לייבוא',
+        variant: 'destructive'
       });
       return false;
     }
 
-    // Check that all mappings have at least one column
-    const emptyMappings = mappings.filter(m => 
-      m.systemField && m.mappedColumns.length === 0
-    );
+    // Check for required fields
+    const requiredFields = ['first_name', 'last_name'];
+    const mappedSystemFields = validMappings.map(m => m.systemField);
+    const missingRequired = requiredFields.filter(field => !mappedSystemFields.includes(field));
 
-    if (emptyMappings.length > 0) {
+    if (missingRequired.length > 0) {
       toast({
-        title: 'שגיאה במיפוי',
-        description: 'כל שדה מערכת חייב להיות ממופה לעמודה אחת לפחות',
-        variant: 'destructive',
+        title: 'שדות חובה חסרים',
+        description: `יש למפות את השדות הבאים: ${missingRequired.join(', ')}`,
+        variant: 'destructive'
       });
       return false;
     }
 
     return true;
-  };
+  }, [toast]);
 
   return { validateMappings };
 };
