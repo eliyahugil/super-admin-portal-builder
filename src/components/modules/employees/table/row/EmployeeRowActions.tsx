@@ -32,7 +32,8 @@ export const EmployeeRowActions: React.FC<EmployeeRowActionsProps> = ({
     console.log('🔗 Navigating to employee profile:', {
       employeeId: employee.id,
       employeeName,
-      targetPath: profilePath
+      targetPath: profilePath,
+      currentPath: window.location.pathname
     });
     navigate(profilePath);
   };

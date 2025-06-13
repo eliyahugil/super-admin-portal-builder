@@ -38,6 +38,12 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
     currentPath: window.location.pathname
   });
 
+  // Special handling for employee profile routes
+  if (fullRoute === 'employees/profile' || (fullRoute === 'employees' && employeeId)) {
+    console.log('🔍 Rendering EmployeeProfilePage with employeeId:', employeeId);
+    return <EmployeeProfilePage />;
+  }
+
   switch (fullRoute) {
     // Settings routes
     case 'settings':
@@ -56,9 +62,6 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
     // Employee routes
     case 'employees':
       return <EmployeeManagement />;
-    case 'employees/profile':
-      console.log('🔍 Rendering EmployeeProfilePage with employeeId:', employeeId);
-      return <EmployeeProfilePage />;
     case 'employees/attendance':
       return <AttendanceManagement />;
     case 'employees/employee-files':

@@ -18,7 +18,8 @@ export const ModuleWrapper: React.FC = () => {
     businessId,
     moduleRoute,
     subModule,
-    employeeId
+    employeeId,
+    fullPath: window.location.pathname
   });
 
   if (loading) {
@@ -78,8 +79,9 @@ export const ModuleWrapper: React.FC = () => {
     );
   }
 
-  // Handle employee profile route specifically
-  if (moduleRoute === 'employees' && subModule === 'profile') {
+  // Handle employee profile route specifically - check for URL pattern like /modules/employees/profile/123
+  if (moduleRoute === 'employees' && subModule === 'profile' && employeeId) {
+    console.log('🎯 Detected employee profile route, rendering EmployeeProfilePage for:', employeeId);
     return <EmployeeProfilePage />;
   }
 
@@ -90,6 +92,12 @@ export const ModuleWrapper: React.FC = () => {
 
   // Handle general module routes
   const fullRoute = subModule ? `${moduleRoute}/${subModule}` : moduleRoute;
+  
+  console.log('🔀 Routing to ModuleRouteHandler with:', {
+    fullRoute,
+    employeeId,
+    businessId
+  });
   
   return (
     <ModuleRouteHandler 
