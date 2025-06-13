@@ -12,6 +12,13 @@ export const EmployeeProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { employee, loading, refetchEmployee } = useEmployeeProfile(employeeId);
 
+  console.log('🏠 EmployeeProfilePage - State:', {
+    employeeId,
+    hasEmployee: !!employee,
+    loading,
+    employeeName: employee ? `${employee.first_name} ${employee.last_name}` : 'N/A'
+  });
+
   const handleGoBack = () => {
     navigate('/modules/employees');
   };
@@ -21,7 +28,8 @@ export const EmployeeProfilePage: React.FC = () => {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="mr-3">טוען פרטי עובד...</span>
           </div>
         </CardContent>
       </Card>
@@ -32,7 +40,18 @@ export const EmployeeProfilePage: React.FC = () => {
     return (
       <Card>
         <CardContent className="p-6">
-          <p>העובד המבוקש לא נמצא.</p>
+          <div className="text-center py-8">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">העובד לא נמצא</h3>
+            <p className="text-gray-600 mb-4">
+              העובד המבוקש לא נמצא במערכת או שאין לך הרשאה לצפות בו.
+            </p>
+            <button
+              onClick={handleGoBack}
+              className="text-blue-600 hover:text-blue-800 underline"
+            >
+              חזרה לרשימת העובדים
+            </button>
+          </div>
         </CardContent>
       </Card>
     );
