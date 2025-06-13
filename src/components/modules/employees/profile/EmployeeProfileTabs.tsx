@@ -142,11 +142,29 @@ export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({ employ
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">אין הערות</h3>
-                  <p className="text-gray-500">לא נוספו הערות עבור עובד זה</p>
-                </div>
+                {employee.employee_notes && employee.employee_notes.length > 0 ? (
+                  <div className="space-y-4">
+                    {employee.employee_notes.map((note) => (
+                      <div key={note.id} className="p-4 border border-gray-200 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <Badge variant="outline">
+                            {note.note_type}
+                          </Badge>
+                          <span className="text-sm text-gray-500">
+                            {new Date(note.created_at).toLocaleDateString('he-IL')}
+                          </span>
+                        </div>
+                        <p className="text-gray-700">{note.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">אין הערות</h3>
+                    <p className="text-gray-500">לא נוספו הערות עבור עובד זה</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -160,11 +178,29 @@ export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({ employ
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">אין שיוכים</h3>
-                  <p className="text-gray-500">העובד לא משויך לאף סניף</p>
-                </div>
+                {employee.branch_assignments && employee.branch_assignments.length > 0 ? (
+                  <div className="space-y-4">
+                    {employee.branch_assignments.map((assignment) => (
+                      <div key={assignment.id} className="p-4 border border-gray-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">{assignment.branch.name}</h4>
+                            <p className="text-sm text-gray-500">{assignment.role_name}</p>
+                          </div>
+                          <Badge variant={assignment.is_active ? 'default' : 'secondary'}>
+                            {assignment.is_active ? 'פעיל' : 'לא פעיל'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">אין שיוכים</h3>
+                    <p className="text-gray-500">העובד לא משויך לאף סניף</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
