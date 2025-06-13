@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Edit, Trash } from 'lucide-react';
+import { Eye, Edit, Trash, User } from 'lucide-react';
 import { EmployeeTokenButton } from '../../EmployeeTokenButton';
 
 interface Employee {
@@ -28,7 +28,13 @@ export const EmployeeRowActions: React.FC<EmployeeRowActionsProps> = ({
   const employeeName = `${employee.first_name} ${employee.last_name}`;
 
   const handleViewProfile = () => {
-    navigate(`/modules/employees/profile/${employee.id}`);
+    const profilePath = `/modules/employees/profile/${employee.id}`;
+    console.log('🔗 Navigating to employee profile:', {
+      employeeId: employee.id,
+      employeeName,
+      targetPath: profilePath
+    });
+    navigate(profilePath);
   };
 
   const handleEditEmployee = () => {
@@ -45,12 +51,12 @@ export const EmployeeRowActions: React.FC<EmployeeRowActionsProps> = ({
   return (
     <div className="flex items-center space-x-2">
       <Button
-        variant="outline"
+        variant="default"
         size="sm"
         onClick={handleViewProfile}
-        className="flex items-center space-x-1"
+        className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white"
       >
-        <Eye className="h-3 w-3" />
+        <User className="h-4 w-4" />
         <span>פרופיל מלא</span>
       </Button>
       

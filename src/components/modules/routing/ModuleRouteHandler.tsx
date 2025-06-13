@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { EmployeeProfilePage } from '../employees/EmployeeProfilePage';
+import { EmployeeProfilePage } from '../employees/profile/EmployeeProfilePage';
 import { BusinessSettings } from '../settings/BusinessSettings';
 import { BusinessSettingsMain } from '../settings/BusinessSettingsMain';
 import { BusinessProfileEdit } from '../settings/BusinessProfileEdit';
@@ -31,7 +31,12 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
   employeeId,
   businessId 
 }) => {
-  console.log('ModuleRouteHandler - Rendering component for route:', fullRoute);
+  console.log('ModuleRouteHandler - Routing details:', {
+    fullRoute,
+    employeeId,
+    businessId,
+    currentPath: window.location.pathname
+  });
 
   switch (fullRoute) {
     // Settings routes
@@ -52,6 +57,7 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
     case 'employees':
       return <EmployeeManagement />;
     case 'employees/profile':
+      console.log('🔍 Rendering EmployeeProfilePage with employeeId:', employeeId);
       return <EmployeeProfilePage />;
     case 'employees/attendance':
       return <AttendanceManagement />;
@@ -128,12 +134,12 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
           <h2 className="text-xl font-semibold mb-4">המודול לא נמצא</h2>
           <p>הנתיב "{fullRoute}" אינו קיים במערכת</p>
           <div className="mt-4 text-sm text-gray-500">
-            <p>נתיבים זמינים:</p>
-            <ul className="list-disc list-inside mt-2">
-              <li>employees, branches, shifts, customers</li>
-              <li>finance, inventory, orders, projects</li>
-              <li>integrations, settings</li>
-            </ul>
+            <p>פרטי ניתוב נוכחיים:</p>
+            <div className="bg-gray-100 p-3 rounded mt-2 text-left font-mono">
+              <p>fullRoute: {fullRoute}</p>
+              <p>employeeId: {employeeId || 'לא הוגדר'}</p>
+              <p>window.location.pathname: {window.location.pathname}</p>
+            </div>
           </div>
         </div>
       );
