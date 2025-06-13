@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { Tabs } from '@/components/ui/tabs';
-import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-import { EmployeeTabsList } from './tabs/EmployeeTabsList';
-import { EmployeeTabsContent } from './tabs/EmployeeTabsContent';
-import { getAvailableTabs } from './tabs/getAvailableTabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { User, FileText, Calendar, Clock, DollarSign, AlertTriangle, Briefcase } from 'lucide-react';
+import { ShiftSubmissionHistory } from '../ShiftSubmissionHistory';
 import type { Employee } from '@/types/supabase';
 
 interface EmployeeProfileTabsProps {
@@ -12,29 +12,250 @@ interface EmployeeProfileTabsProps {
   employeeId: string;
 }
 
-export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({ 
-  employee, 
-  employeeId 
-}) => {
+export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({ employee, employeeId }) => {
   const [activeTab, setActiveTab] = useState('overview');
-  const { businessId } = useCurrentBusiness();
-  const availableTabs = getAvailableTabs(employee);
-  const employeeName = `${employee.first_name} ${employee.last_name}`;
+
+  console.log('🏷️ EmployeeProfileTabs - Props:', {
+    employeeId,
+    employeeName: `${employee.first_name} ${employee.last_name}`,
+    activeTab
+  });
 
   return (
-    <div className="md:w-2/3">
-      <Tabs defaultValue={activeTab} className="w-full">
-        <EmployeeTabsList 
-          availableTabs={availableTabs}
-          setActiveTab={setActiveTab}
-        />
+    <div className="flex-1">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            <span>סקירה</span>
+          </TabsTrigger>
+          <TabsTrigger value="shifts" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            <span>משמרות</span>
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            <span>מסמכים</span>
+          </TabsTrigger>
+          <TabsTrigger value="notes" className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            <span>הערות</span>
+          </TabsTrigger>
+          <TabsTrigger value="assignments" className="flex items-center gap-2">
+            <Briefcase className="h-4 w-4" />
+            <span>שיוכים</span>
+          </TabsTrigger>
+          <TabsTrigger value="salary" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            <span>שכר</span>
+          </TabsTrigger>
+        </TabsList>
 
-        <EmployeeTabsContent
-          employee={employee}
-          employeeId={employeeId}
-          employeeName={employeeName}
-          businessId={businessId || employee.business_id}
-        />
+        <div className="mt-6">
+          <TabsContent value="overview" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  פרטים כלליים
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-sm text-gray-500">סוג עובד:</span>
+                  <Badge variant="outline" className="mt-1">
+                    {employee.employee_type === 'permanent' ? 'קבוע' :
+                     employee.employee_type === 'temporary' ? 'זמני' :
+                     employee.employee_type === 'youth' ? 'נוער' :
+                     employee.employee_type === 'contractor' ? 'קבלן' : employee.employee_type}
+                  </Badge>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">תאריך תחילת עבודה:</span>
+                  <p className="font-medium">
+                    {employee.hire_date ? new Date(employee.hire_date).toLocaleDateString('he-IL') : 'לא הוגדר'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">שעות שבועיות נדרשות:</span>
+                  <p className="font-medium">{employee.weekly_hours_required || 'לא הוגדר'}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">סטטוס:</span>
+                  <Badge variant={employee.is_active ? 'default' : 'destructive'}>
+                    {employee.is_active ? 'פעיל' : 'לא פעיל'}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {employee.notes && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>הערות כלליות</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700">{employee.notes}</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="shifts" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  הגשות משמרות
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ShiftSubmissionHistory employeeId={employeeId} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="documents" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  מסמכים
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">אין מסמכים</h3>
+                  <p className="text-gray-500">לא הועלו מסמכים עבור עובד זה</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notes" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  הערות והתראות
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {employee.employee_notes && employee.employee_notes.length > 0 ? (
+                  <div className="space-y-3">
+                    {employee.employee_notes.map((note, index) => (
+                      <div key={index} className={`p-3 rounded ${note.is_warning ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <Badge variant={note.is_warning ? 'destructive' : 'secondary'}>
+                            {note.note_type === 'general' ? 'כללי' :
+                             note.note_type === 'warning' ? 'אזהרה' :
+                             note.note_type === 'performance' ? 'ביצועים' : note.note_type}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {new Date(note.created_at).toLocaleDateString('he-IL')}
+                          </span>
+                        </div>
+                        <p className="text-gray-700">{note.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">אין הערות</h3>
+                    <p className="text-gray-500">לא נוספו הערות עבור עובד זה</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="assignments" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5" />
+                  שיוכי סניפים
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {employee.branch_assignments && employee.branch_assignments.length > 0 ? (
+                  <div className="space-y-3">
+                    {employee.branch_assignments.map((assignment, index) => (
+                      <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                        <div>
+                          <p className="font-medium">{assignment.branch?.name}</p>
+                          <p className="text-sm text-gray-600">תפקיד: {assignment.role_name}</p>
+                        </div>
+                        <div className="text-left">
+                          <Badge variant={assignment.is_active ? 'default' : 'secondary'}>
+                            {assignment.is_active ? 'פעיל' : 'לא פעיל'}
+                          </Badge>
+                          {assignment.max_weekly_hours && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              מקס' שעות: {assignment.max_weekly_hours}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">אין שיוכים</h3>
+                    <p className="text-gray-500">העובד לא משויך לאף סניף</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="salary" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  היסטוריית שכר
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {employee.salary_history && employee.salary_history.length > 0 ? (
+                  <div className="space-y-3">
+                    {employee.salary_history.map((salary, index) => (
+                      <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                        <div>
+                          <p className="font-medium">{salary.amount} {salary.currency}</p>
+                          <p className="text-sm text-gray-600">
+                            {salary.type === 'hourly' ? 'שכר שעתי' : 'שכר חודשי'}
+                          </p>
+                          {salary.reason && (
+                            <p className="text-xs text-gray-500">{salary.reason}</p>
+                          )}
+                        </div>
+                        <div className="text-left">
+                          <p className="text-sm font-medium">
+                            {new Date(salary.effective_date).toLocaleDateString('he-IL')}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(salary.created_at).toLocaleDateString('he-IL')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">אין נתוני שכר</h3>
+                    <p className="text-gray-500">לא הוגדרו נתוני שכר עבור עובד זה</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );

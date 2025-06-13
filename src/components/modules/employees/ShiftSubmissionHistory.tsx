@@ -13,16 +13,29 @@ interface ShiftSubmissionHistoryProps {
 }
 
 export const ShiftSubmissionHistory: React.FC<ShiftSubmissionHistoryProps> = ({ employeeId }) => {
-  const { data: submissions, isLoading } = useQuery({
+  console.log('🔍 ShiftSubmissionHistory - Props:', { employeeId });
+
+  const { data: submissions, isLoading, error } = useQuery({
     queryKey: ['shift-submissions', employeeId],
     queryFn: async () => {
+      console.log('🔍 ShiftSubmissionHistory - Fetching submissions for employee:', employeeId);
+      
       const { data, error } = await supabase
         .from('shift_submissions')
         .select('*')
         .eq('employee_id', employeeId)
         .order('week_start_date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ ShiftSubmissionHistory - Error fetching submissions:', error);
+        throw error;
+      }
+
+      console.log('✅ ShiftSubmissionHistory - Fetched submissions:', {
+        count: data?.length || 0,
+        submissions: data
+      });
+
       return data;
     },
     enabled: !!employeeId,
@@ -66,6 +79,7 @@ export const ShiftSubmissionHistory: React.FC<ShiftSubmissionHistoryProps> = ({ 
   };
 
   if (isLoading) {
+    console.log('⏳ ShiftSubmissionHistory - Loading...');
     return (
       <div className="space-y-4">
         <div className="animate-pulse">
@@ -80,17 +94,50 @@ export const ShiftSubmissionHistory: React.FC<ShiftSubmissionHistoryProps> = ({ 
     );
   }
 
+  if (error) {
+    console.error('❌ ShiftSubmissionHistory - Error state:', error);
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-5 w-5 text-red-600" />
+          <h3 className="text-lg font-semibold">שגיאה בטעינת הגשות משמרות</h3>
+        </div>
+        <Card>
+          <CardContent className="text-center py-8">
+            <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">שגיאה בטעינת הנתונים</h3>
+            <p className="text-gray-500">לא ניתן לטעון את הגשות המשמרות. נסה לרענן את הדף.</p>
+            <p className="text-sm text-gray-400 mt-2">שגיאה: {error.message}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  console.log('📊 ShiftSubmissionHistory - Rendering with submissions:', submissions);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Calendar className="h-5 w-5 text-blue-600" />
         <h3 className="text-lg font-semibold">היסטוריית הגשות משמרות</h3>
+        <Badge variant="outline" className="ml-2">
+          {submissions?.length || 0} הגשות
+        </Badge>
       </div>
 
       {submissions && submissions.length > 0 ? (
         <div className="space-y-4">
           {submissions.map((submission) => {
             const shiftsData = parseShifts(submission.shifts);
+            console.log('📝 ShiftSubmissionHistory - Processing submission:', {
+              id: submission.id,
+              weekStart: submission.week_start_date,
+              weekEnd: submission.week_end_date,
+              shiftsCount: shiftsData.length,
+              status: submission.status
+            });
+
             return (
               <Card key={submission.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
