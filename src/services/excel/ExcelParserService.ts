@@ -6,6 +6,10 @@ export interface ParsedExcelData {
   headers: string[];
 }
 
+export interface ExcelRow {
+  [key: string]: string | number | boolean | undefined;
+}
+
 export class ExcelParserService {
   static async parseFile(file: File): Promise<ParsedExcelData> {
     console.log('📋 Parsing Excel file:', file.name);
@@ -73,6 +77,34 @@ export class ExcelParserService {
     });
   }
 
+  static async parseExcelFile(file: File): Promise<ExcelRow[]> {
+    console.log('📊 Parsing Excel file to rows:', file.name);
+    
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    const jsonData = XLSX.utils.sheet_to_json<ExcelRow>(worksheet);
+    
+    console.log(`✅ Parsed ${jsonData.length} rows from Excel`);
+    return jsonData;
+  }
+
+  static validateFileFormat(file: File): boolean {
+    const allowedTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv'
+    ];
+    
+    const validExtensions = ['.xlsx', '.xls', '.csv'];
+    const fileName = file.name.toLowerCase();
+    const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+    const hasValidType = allowedTypes.includes(file.type);
+    
+    return hasValidExtension || hasValidType;
+  }
+
   static generateTemplate(): void {
     console.log('📝 Generating employee import template');
     
@@ -87,15 +119,5 @@ export class ExcelParserService {
     
     // Download the file
     XLSX.writeFile(workbook, 'תבנית_ייבוא_עובדים.xlsx');
-  }
-
-  static validateFileFormat(file: File): boolean {
-    const allowedTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel',
-      'text/csv'
-    ];
-    
-    return allowedTypes.includes(file.type);
   }
 }

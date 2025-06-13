@@ -26,11 +26,11 @@ export const useFileUpload = ({
       console.log('🚀 Starting file upload process for:', uploadedFile.name);
       
       // Validate file format
-      const validation = ExcelParserService.validateFileFormat(uploadedFile);
-      if (!validation.isValid) {
+      const isValid = ExcelParserService.validateFileFormat(uploadedFile);
+      if (!isValid) {
         toast({
           title: 'שגיאה בקובץ',
-          description: validation.error,
+          description: 'אנא בחר קובץ Excel או CSV תקין (.xlsx, .xls, .csv)',
           variant: 'destructive'
         });
         return;
@@ -43,7 +43,7 @@ export const useFileUpload = ({
         description: 'קורא ומנתח את נתוני האקסל',
       });
 
-      const parsedData = await ExcelParserService.parseExcelFile(uploadedFile);
+      const parsedData = await ExcelParserService.parseFile(uploadedFile);
       
       console.log('📊 Parsed Excel data:', {
         totalRows: parsedData.data.length,
