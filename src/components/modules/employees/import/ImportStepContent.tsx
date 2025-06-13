@@ -22,10 +22,9 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
     showMappingDialog,
     setShowMappingDialog,
     headers,
-    fieldMappings,
-    setFieldMappings,
+    rawData,
+    confirmMapping,
     previewData,
-    setPreviewData,
     executeImport,
     importResult,
     resetForm
@@ -46,11 +45,8 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
           open={showMappingDialog}
           onOpenChange={setShowMappingDialog}
           fileColumns={headers}
-          sampleData={[]}
-          onConfirm={(mappings) => {
-            setFieldMappings(mappings);
-            setShowMappingDialog(false);
-          }}
+          sampleData={rawData.slice(0, 3)}
+          onConfirm={confirmMapping}
         />
       );
 

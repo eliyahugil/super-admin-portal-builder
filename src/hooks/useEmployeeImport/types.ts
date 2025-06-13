@@ -81,6 +81,7 @@ export interface EmployeeImportHook {
   // Field mapping
   fieldMappings: FieldMapping[];
   setFieldMappings: (mappings: FieldMapping[]) => void;
+  confirmMapping: (mappings: FieldMapping[]) => Promise<void>;
   
   // Preview data
   previewData: PreviewEmployee[];
