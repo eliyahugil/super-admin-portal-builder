@@ -13,7 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 import type { Employee, EmployeeType } from '@/types/supabase';
 
-interface EmployeeWithBranch extends Employee {
+interface EmployeeWithBranch extends Omit<Employee, 'employee_id'> {
+  employee_id?: string;
   main_branch?: { name: string } | null;
 }
 
@@ -193,6 +194,15 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
     filteredEmployees.every(emp => selectedEmployees.has(emp.id));
   const someFilteredSelected = filteredEmployees.some(emp => selectedEmployees.has(emp.id));
 
+  // Convert EmployeeWithBranch to Employee for the edit dialog
+  const convertToEmployee = (employee: EmployeeWithBranch): Employee => {
+    const { main_branch, ...employeeData } = employee;
+    return {
+      ...employeeData,
+      employee_id: employee.employee_id || undefined,
+    } as Employee;
+  };
+
   return (
     <div className="space-y-4">
       {/* Search and Actions Bar */}
@@ -367,7 +377,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
       {/* Edit Employee Dialog */}
       {editingEmployee && (
         <EmployeeEditDialog
-          employee={editingEmployee}
+          employee={convertToEmployee(editingEmployee)}
           open={!!editingEmployee}
           onOpenChange={(open) => !open && setEditingEmployee(null)}
           onSuccess={() => {
