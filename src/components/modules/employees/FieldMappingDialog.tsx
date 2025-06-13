@@ -27,7 +27,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   fileColumns,
   sampleData,
   onConfirm,
-  systemFields
+  systemFields = defaultSystemFields
 }) => {
   const [mappings, setMappings] = useState<FieldMapping[]>([]);
   const [activeTab, setActiveTab] = useState('mapping');
@@ -37,7 +37,9 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
 
   useEffect(() => {
     if (open && fileColumns.length > 0) {
+      console.log('🗺️ Auto-detecting field mappings for columns:', fileColumns);
       const detectedMappings = autoDetectMappings(fileColumns);
+      console.log('✅ Detected mappings:', detectedMappings);
       setMappings(detectedMappings);
     }
   }, [open, fileColumns, autoDetectMappings]);
@@ -78,6 +80,8 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   };
 
   const handleConfirm = async () => {
+    console.log('✅ Confirming field mappings:', mappings);
+    
     if (validateMappings(mappings)) {
       onConfirm(mappings);
     }
@@ -122,7 +126,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
                             <SelectValue placeholder="בחר שדה מערכת" />
                           </SelectTrigger>
                           <SelectContent>
-                            {(systemFields || defaultSystemFields).map((field) => (
+                            {systemFields.map((field) => (
                               <SelectItem key={field.value} value={field.value}>
                                 {field.label}
                               </SelectItem>

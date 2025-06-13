@@ -1,43 +1,15 @@
 
 import * as XLSX from 'xlsx';
 
-export interface ExcelRow {
-  [key: string]: any;
-}
-
 export interface ParsedExcelData {
-  data: ExcelRow[];
+  data: any[];
   headers: string[];
 }
 
-export interface FileValidation {
-  isValid: boolean;
-  error?: string;
-}
-
 export class ExcelParserService {
-  static validateFileFormat(file: File): FileValidation {
-    const validExtensions = ['.xlsx', '.xls'];
-    const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
-    
-    if (!validExtensions.includes(fileExtension)) {
-      return {
-        isValid: false,
-        error: 'סוג קובץ לא נתמך. אנא השתמש בקובץ Excel (.xlsx או .xls)'
-      };
-    }
-
-    if (file.size > 10 * 1024 * 1024) { // 10MB
-      return {
-        isValid: false,
-        error: 'הקובץ גדול מדי. גודל מקסימלי: 10MB'
-      };
-    }
-
-    return { isValid: true };
-  }
-
   static async parseFile(file: File): Promise<ParsedExcelData> {
+    console.log('📋 Parsing Excel file:', file.name);
+    
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
@@ -47,107 +19,83 @@ export class ExcelParserService {
           const workbook = XLSX.read(data, { type: 'array' });
           
           // Get the first worksheet
-          const worksheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[worksheetName];
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
           
-          // Convert to JSON with headers
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-            header: 1,
-            defval: ''
-          }) as any[][];
-
+          // Convert to JSON
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
           if (jsonData.length === 0) {
-            throw new Error('הקובץ ריק');
+            reject(new Error('הקובץ ריק או לא מכיל נתונים'));
+            return;
           }
-
+          
           // Extract headers from first row
-          const headers = jsonData[0].map(header => String(header).trim()).filter(Boolean);
+          const headers = (jsonData[0] as string[]).filter(header => header && header.trim() !== '');
           
           if (headers.length === 0) {
-            throw new Error('לא נמצאו כותרות בקובץ');
+            reject(new Error('לא נמצאו כותרות בקובץ'));
+            return;
           }
-
+          
           // Convert data rows to objects
-          const dataRows = jsonData.slice(1).filter(row => 
-            row.some(cell => cell !== undefined && cell !== null && cell !== '')
-          );
-
-          const parsedData = dataRows.map(row => {
-            const rowData: Record<string, any> = {};
+          const dataRows = jsonData.slice(1).filter(row => {
+            // Filter out empty rows
+            return (row as any[]).some(cell => cell !== null && cell !== undefined && cell !== '');
+          });
+          
+          const parsedData = dataRows.map((row: any) => {
+            const rowObject: any = {};
             headers.forEach((header, index) => {
-              const value = row[index];
-              rowData[header] = value !== undefined && value !== null ? String(value).trim() : '';
+              rowObject[header] = row[index] || '';
             });
-            return rowData;
+            return rowObject;
           });
-
-          console.log('📊 ExcelParserService - Parsed data:', {
-            headers,
-            dataCount: parsedData.length,
-            sampleData: parsedData.slice(0, 2)
-          });
-
+          
+          console.log(`✅ Parsed ${parsedData.length} rows with ${headers.length} columns`);
+          
           resolve({
             data: parsedData,
             headers
           });
-
+          
         } catch (error) {
-          console.error('💥 ExcelParserService - Parse error:', error);
-          reject(new Error(`שגיאה בקריאת הקובץ: ${error instanceof Error ? error.message : 'שגיאה לא צפויה'}`));
+          console.error('💥 Error parsing Excel file:', error);
+          reject(new Error('שגיאה בפיענוח קובץ האקסל'));
         }
       };
-
+      
       reader.onerror = () => {
         reject(new Error('שגיאה בקריאת הקובץ'));
       };
-
+      
       reader.readAsArrayBuffer(file);
     });
   }
 
-  static async parseExcelFile(file: File): Promise<ParsedExcelData> {
-    return this.parseFile(file);
+  static generateTemplate(): void {
+    console.log('📝 Generating employee import template');
+    
+    const templateData = [
+      ['שם פרטי', 'שם משפחה', 'אימייל', 'טלפון', 'תעודת זהות', 'מספר עובד', 'כתובת', 'תאריך התחלה', 'סוג עובד', 'שעות שבועיות', 'סניף ראשי', 'הערות'],
+      ['דוגמה', 'משתמש', 'example@email.com', '050-1234567', '123456789', 'EMP001', 'רחוב הדוגמה 1, תל אביב', '2024-01-01', 'קבוע', '40', 'סניף ראשי', 'הערות לדוגמה']
+    ];
+    
+    const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'עובדים');
+    
+    // Download the file
+    XLSX.writeFile(workbook, 'תבנית_ייבוא_עובדים.xlsx');
   }
 
-  static generateTemplate(): void {
-    const templateData = [
-      {
-        'שם פרטי': 'דוגמה',
-        'שם משפחה': 'עובד',
-        'אימייל': 'employee@example.com',
-        'טלפון': '050-1234567',
-        'תעודת זהות': '123456789',
-        'מספר עובד': 'EMP001',
-        'כתובת': 'רחוב הדוגמה 1, תל אביב',
-        'תאריך התחלה': '01/01/2024',
-        'סוג עובד': 'קבוע',
-        'שעות שבועיות נדרשות': '40',
-        'הערות': 'עובד דוגמה'
-      }
-    ];
-
-    const ws = XLSX.utils.json_to_sheet(templateData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'תבנית עובדים');
-    
-    // Set column widths
-    const columnWidths = [
-      { wch: 15 }, // שם פרטי
-      { wch: 15 }, // שם משפחה
-      { wch: 25 }, // אימייל
-      { wch: 15 }, // טלפון
-      { wch: 15 }, // תעודת זהות
-      { wch: 10 }, // מספר עובד
-      { wch: 30 }, // כתובת
-      { wch: 15 }, // תאריך התחלה
-      { wch: 10 }, // סוג עובד
-      { wch: 20 }, // שעות שבועיות
-      { wch: 30 }  // הערות
+  static validateFileFormat(file: File): boolean {
+    const allowedTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv'
     ];
     
-    ws['!cols'] = columnWidths;
-
-    XLSX.writeFile(wb, 'תבנית_ייבוא_עובדים.xlsx');
+    return allowedTypes.includes(file.type);
   }
 }
