@@ -2,21 +2,10 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmployeeListTable } from './EmployeeListTable';
+import type { Employee } from '@/types/supabase';
 
-// Use the same Employee interface as the parent component
-interface Employee {
-  id: string;
-  business_id: string;
-  employee_id?: string;
-  first_name: string;
-  last_name: string;
-  phone: string | null;
-  email: string | null;
-  employee_type: string;
-  is_active: boolean;
-  hire_date: string | null;
-  weekly_hours_required: number | null;
-  notes: string | null;
+// Extended interface for employees with additional joined data
+interface EmployeeWithExtensions extends Employee {
   main_branch?: { name: string } | null;
   branch_assignments?: Array<{
     branch: { name: string };
@@ -43,12 +32,12 @@ interface Employee {
 }
 
 interface EmployeeListContentProps {
-  employees: Employee[];
+  employees: EmployeeWithExtensions[];
   searchTerm: string;
   selectedEmployees: Set<string>;
   onSelectEmployee: (employeeId: string, checked: boolean) => void;
   onSelectAll: (checked: boolean) => void;
-  onDeleteEmployee: (employee: Employee) => void;
+  onDeleteEmployee: (employee: EmployeeWithExtensions) => void;
   onRefetch: () => void;
   loading: boolean;
   totalEmployees: number;

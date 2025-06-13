@@ -7,19 +7,10 @@ import { EmployeeBranchInfo } from './row/EmployeeBranchInfo';
 import { EmployeeWorkInfo } from './row/EmployeeWorkInfo';
 import { EmployeeQuickStats } from './row/EmployeeQuickStats';
 import { EmployeeRowActions } from './row/EmployeeRowActions';
+import type { Employee } from '@/types/supabase';
 
-interface Employee {
-  id: string;
-  employee_id: string | null;
-  first_name: string;
-  last_name: string;
-  phone: string | null;
-  email: string | null;
-  employee_type: string;
-  is_active: boolean;
-  hire_date: string | null;
-  weekly_hours_required: number | null;
-  notes: string | null;
+// Extended interface for employees with additional joined data
+interface EmployeeWithExtensions extends Employee {
   main_branch?: { name: string } | null;
   branch_assignments?: Array<{
     branch: { name: string };
@@ -40,9 +31,9 @@ interface Employee {
 }
 
 interface EmployeesTableRowProps {
-  employee: Employee;
+  employee: EmployeeWithExtensions;
   onTokenSent: () => void;
-  onDelete?: (employee: Employee) => void;
+  onDelete?: (employee: EmployeeWithExtensions) => void;
 }
 
 export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({

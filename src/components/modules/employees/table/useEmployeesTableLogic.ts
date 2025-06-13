@@ -4,21 +4,10 @@ import { useEmployeesData } from '@/hooks/useEmployeesData';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import type { Employee } from '@/types/supabase';
 
-// Use the same Employee interface as the unified hook
-interface Employee {
-  id: string;
-  business_id: string;
-  employee_id: string | null;
-  first_name: string;
-  last_name: string;
-  phone: string | null;
-  email: string | null;
-  employee_type: string;
-  is_active: boolean;
-  hire_date: string | null;
-  weekly_hours_required: number | null;
-  notes: string | null;
+// Extended interface for employees with additional joined data
+interface EmployeeWithExtensions extends Employee {
   main_branch?: { name: string } | null;
   branch_assignments?: Array<{
     branch: { name: string };

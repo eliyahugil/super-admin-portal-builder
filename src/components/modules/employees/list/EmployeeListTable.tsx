@@ -10,17 +10,39 @@ import { EmployeeEditButton } from '../edit/EmployeeEditButton';
 import { EmployeeTokenButton } from '../EmployeeTokenButton';
 import type { Employee, EmployeeType } from '@/types/supabase';
 
-interface EmployeeWithBranch extends Omit<Employee, 'employee_id'> {
-  employee_id?: string;
+// Extended interface for employees with additional joined data
+interface EmployeeWithExtensions extends Employee {
   main_branch?: { name: string } | null;
+  branch_assignments?: Array<{
+    branch: { name: string };
+    role_name: string;
+    is_active: boolean;
+  }>;
+  weekly_tokens?: Array<{
+    token: string;
+    week_start_date: string;
+    week_end_date: string;
+    is_active: boolean;
+  }>;
+  employee_notes?: Array<{
+    id: string;
+    content: string;
+    note_type: string;
+    created_at: string;
+  }>;
+  salary_info?: {
+    hourly_rate?: number;
+    monthly_salary?: number;
+    currency?: string;
+  };
 }
 
 interface EmployeeListTableProps {
-  employees: EmployeeWithBranch[];
+  employees: EmployeeWithExtensions[];
   selectedEmployees: Set<string>;
   onSelectEmployee: (employeeId: string, checked: boolean) => void;
   onSelectAll: (checked: boolean) => void;
-  onDeleteEmployee: (employee: EmployeeWithBranch) => void;
+  onDeleteEmployee: (employee: EmployeeWithExtensions) => void;
   onRefetch: () => void;
   loading: boolean;
 }
@@ -70,12 +92,9 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
   const allFilteredSelected = employees.length > 0 && 
     employees.every(emp => selectedEmployees.has(emp.id));
 
-  const convertToEmployee = (employee: EmployeeWithBranch): Employee => {
-    const { main_branch, ...employeeData } = employee;
-    return {
-      ...employeeData,
-      employee_id: employee.employee_id || null,
-    } as Employee;
+  const convertToEmployee = (employee: EmployeeWithExtensions): Employee => {
+    const { main_branch, branch_assignments, weekly_tokens, employee_notes, salary_info, ...employeeData } = employee;
+    return employeeData as Employee;
   };
 
   return (

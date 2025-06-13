@@ -3,20 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from './useCurrentBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
+import type { Employee } from '@/types/supabase';
 
-interface Employee {
-  id: string;
-  business_id: string; // Made required to match database reality
-  employee_id: string | null;
-  first_name: string;
-  last_name: string;
-  phone: string | null;
-  email: string | null;
-  employee_type: string;
-  is_active: boolean;
-  hire_date: string | null;
-  weekly_hours_required: number | null;
-  notes: string | null;
+// Extended interface for employees with additional joined data
+interface EmployeeWithExtensions extends Employee {
   main_branch?: { name: string } | null;
   branch_assignments?: Array<{
     branch: { name: string };
@@ -67,7 +57,7 @@ export function useEmployeesData(selectedBusinessId?: string | null) {
 
   return useQuery({
     queryKey: ['employees', effectiveBusinessId, isRealSuperAdmin, selectedBusinessId],
-    queryFn: async (): Promise<Employee[]> => {
+    queryFn: async (): Promise<EmployeeWithExtensions[]> => {
       console.log('🔄 useEmployeesData - Fetching employees with unified logic:', {
         effectiveBusinessId,
         isRealSuperAdmin,
@@ -133,7 +123,7 @@ export function useEmployeesData(selectedBusinessId?: string | null) {
         userType: isRealSuperAdmin ? 'super_admin' : 'business_user'
       });
       
-      return (data as Employee[]) || [];
+      return (data as EmployeeWithExtensions[]) || [];
     },
     enabled: !businessLoading && !!profile && (!!businessId || isRealSuperAdmin),
   });

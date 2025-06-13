@@ -5,12 +5,34 @@ import { supabase } from '@/integrations/supabase/client';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 import type { Employee } from '@/types/supabase';
 
-interface EmployeeWithBranch extends Omit<Employee, 'employee_id'> {
-  employee_id?: string;
+// Extended interface for employees with additional joined data
+interface EmployeeWithExtensions extends Employee {
   main_branch?: { name: string } | null;
+  branch_assignments?: Array<{
+    branch: { name: string };
+    role_name: string;
+    is_active: boolean;
+  }>;
+  weekly_tokens?: Array<{
+    token: string;
+    week_start_date: string;
+    week_end_date: string;
+    is_active: boolean;
+  }>;
+  employee_notes?: Array<{
+    id: string;
+    content: string;
+    note_type: string;
+    created_at: string;
+  }>;
+  salary_info?: {
+    hourly_rate?: number;
+    monthly_salary?: number;
+    currency?: string;
+  };
 }
 
-export const useEmployeeListLogic = (employees: EmployeeWithBranch[], onRefetch: () => void) => {
+export const useEmployeeListLogic = (employees: EmployeeWithExtensions[], onRefetch: () => void) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -55,7 +77,7 @@ export const useEmployeeListLogic = (employees: EmployeeWithBranch[], onRefetch:
     }
   };
 
-  const handleDeleteEmployee = async (employee: EmployeeWithBranch) => {
+  const handleDeleteEmployee = async (employee: EmployeeWithExtensions) => {
     if (!confirm(`האם אתה בטוח שברצונך למחוק את ${employee.first_name} ${employee.last_name}?`)) {
       return;
     }
