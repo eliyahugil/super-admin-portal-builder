@@ -38,6 +38,35 @@ export interface Employee {
   notes?: string;
   created_at?: string;
   updated_at?: string;
+  
+  // Extended properties from joins
+  main_branch?: { name: string } | null;
+  employee_notes?: Array<{
+    id: string;
+    content: string;
+    note_type: string;
+    created_at: string;
+  }>;
+  employee_documents?: Array<{
+    id: string;
+    document_name: string;
+    document_type: string;
+    file_url: string;
+    created_at: string;
+  }>;
+  branch_assignments?: Array<{
+    id: string;
+    branch: { name: string };
+    role_name: string;
+    is_active: boolean;
+  }>;
+  weekly_tokens?: Array<{
+    id: string;
+    token: string;
+    week_start_date: string;
+    week_end_date: string;
+    is_active: boolean;
+  }>;
 }
 
 export interface Module {

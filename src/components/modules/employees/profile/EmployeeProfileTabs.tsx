@@ -14,7 +14,7 @@ import {
   MessageSquare, 
   DollarSign,
   Activity,
-  Token,
+  KeyRound,
   Settings,
   BarChart3
 } from 'lucide-react';
@@ -26,6 +26,7 @@ import { RecentAttendance } from '../RecentAttendance';
 import { ShiftSubmissionHistory } from '../ShiftSubmissionHistory';
 import { EmployeeTokenManager } from '../EmployeeTokenManager';
 import { EmployeeCustomFields } from '../EmployeeCustomFields';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import type { Employee } from '@/types/supabase';
 
 interface TabItem {
@@ -91,7 +92,7 @@ const getAvailableTabs = (employee: Employee): TabItem[] => {
     { 
       id: 'tokens', 
       label: 'טוקנים', 
-      icon: Token as any,
+      icon: KeyRound,
       badge: activeTokens > 0 ? activeTokens : undefined,
       description: 'ניהול טוקני הגשת משמרות'
     },
@@ -121,6 +122,7 @@ export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({
   employeeId 
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const { businessId } = useCurrentBusiness();
   const availableTabs = getAvailableTabs(employee);
   const employeeName = `${employee.first_name} ${employee.last_name}`;
 
@@ -266,7 +268,11 @@ export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({
         </TabsContent>
 
         <TabsContent value="tokens">
-          <EmployeeTokenManager employeeId={employeeId} employeeName={employeeName} />
+          <EmployeeTokenManager 
+            employeeId={employeeId} 
+            employeeName={employeeName}
+            phone={employee.phone}
+          />
         </TabsContent>
 
         <TabsContent value="salary">
@@ -274,7 +280,10 @@ export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({
         </TabsContent>
 
         <TabsContent value="custom">
-          <EmployeeCustomFields employeeId={employeeId} />
+          <EmployeeCustomFields 
+            employeeId={employeeId} 
+            businessId={businessId || employee.business_id}
+          />
         </TabsContent>
 
         <TabsContent value="analytics" className="mt-6">

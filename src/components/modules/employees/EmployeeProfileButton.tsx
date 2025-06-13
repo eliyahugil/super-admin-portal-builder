@@ -12,7 +12,7 @@ interface EmployeeProfileButtonProps {
   hasDocuments?: boolean;
   hasBranchAssignments?: boolean;
   variant?: 'default' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'default' | 'lg';
   showPreview?: boolean;
 }
 
