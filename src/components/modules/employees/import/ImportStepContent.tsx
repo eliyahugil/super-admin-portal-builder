@@ -16,6 +16,8 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
   step,
   importHook
 }) => {
+  console.log('🎯 ImportStepContent rendering with step:', step);
+  
   const {
     processFile,
     downloadTemplate,
@@ -30,8 +32,18 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
     resetForm
   } = importHook;
 
+  console.log('📊 ImportStepContent state:', {
+    step,
+    showMappingDialog,
+    headersCount: headers.length,
+    rawDataCount: rawData.length,
+    previewDataCount: previewData.length,
+    hasImportResult: !!importResult
+  });
+
   switch (step) {
     case 'upload':
+      console.log('📤 Rendering upload step');
       return (
         <ImportFileUpload
           onFileSelect={processFile}
@@ -40,6 +52,7 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
       );
 
     case 'mapping':
+      console.log('🗺️ Rendering mapping step, showDialog:', showMappingDialog);
       return (
         <FieldMappingDialog
           open={showMappingDialog}
@@ -51,6 +64,7 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
       );
 
     case 'preview':
+      console.log('👁️ Rendering preview step with data count:', previewData.length);
       return (
         <ImportPreview
           previewData={previewData}
@@ -60,6 +74,7 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
       );
 
     case 'importing':
+      console.log('⏳ Rendering importing step');
       return (
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -68,6 +83,7 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
       );
 
     case 'results':
+      console.log('📋 Rendering results step');
       return (
         <ImportResults 
           result={importResult} 
@@ -76,6 +92,7 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
       );
 
     case 'summary':
+      console.log('📊 Rendering summary step');
       return (
         <EmployeeImportSummary 
           result={importResult}
@@ -85,6 +102,7 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
       );
 
     default:
+      console.log('❌ Unknown step:', step);
       return null;
   }
 };

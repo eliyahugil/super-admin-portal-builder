@@ -18,9 +18,20 @@ export const ImportPreview: React.FC<ImportPreviewProps> = ({
   onConfirm,
   onCancel
 }) => {
+  console.log('👁️ ImportPreview rendered with data:', {
+    total: previewData.length,
+    sample: previewData.slice(0, 2)
+  });
+
   const validEmployees = previewData.filter(emp => emp.isValid);
   const invalidEmployees = previewData.filter(emp => !emp.isValid);
   const duplicateEmployees = previewData.filter(emp => emp.isDuplicate);
+
+  console.log('📊 ImportPreview statistics:', {
+    valid: validEmployees.length,
+    invalid: invalidEmployees.length,
+    duplicates: duplicateEmployees.length
+  });
 
   const getEmployeeTypeLabel = (type: string) => {
     const types: Record<string, string> = {
@@ -30,6 +41,16 @@ export const ImportPreview: React.FC<ImportPreviewProps> = ({
       contractor: 'קבלן',
     };
     return types[type] || type;
+  };
+
+  const handleConfirm = () => {
+    console.log('✅ ImportPreview - Confirm button clicked');
+    onConfirm();
+  };
+
+  const handleCancel = () => {
+    console.log('❌ ImportPreview - Cancel button clicked');
+    onCancel();
   };
 
   return (
@@ -124,12 +145,13 @@ export const ImportPreview: React.FC<ImportPreviewProps> = ({
       </div>
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={onCancel}>
+        <Button variant="outline" onClick={handleCancel}>
           ביטול
         </Button>
         <Button 
-          onClick={onConfirm}
+          onClick={handleConfirm}
           disabled={validEmployees.length === 0}
+          className="bg-blue-600 hover:bg-blue-700"
         >
           ייבא {validEmployees.length} עובדים
         </Button>

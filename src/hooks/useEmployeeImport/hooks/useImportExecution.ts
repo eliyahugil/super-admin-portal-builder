@@ -20,9 +20,14 @@ export const useImportExecution = ({
   const { toast } = useToast();
 
   const executeImport = useCallback(async () => {
-    console.log('🚀 Starting import execution with data:', previewData.length);
+    console.log('🚀 executeImport called with:', {
+      businessId,
+      previewDataCount: previewData.length,
+      sampleData: previewData.slice(0, 2)
+    });
     
     if (!businessId) {
+      console.error('❌ No business ID found');
       toast({
         title: 'שגיאה',
         description: 'לא נמצא מזהה עסק',
@@ -32,6 +37,7 @@ export const useImportExecution = ({
     }
 
     if (previewData.length === 0) {
+      console.error('❌ No preview data found');
       toast({
         title: 'שגיאה',
         description: 'אין נתוני עובדים לייבוא',
@@ -41,12 +47,16 @@ export const useImportExecution = ({
     }
 
     try {
+      console.log('📈 Setting step to importing');
       setStep('importing');
 
       // Filter only valid employees for import
       const validEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate);
       
+      console.log('✅ Valid employees for import:', validEmployees.length);
+      
       if (validEmployees.length === 0) {
+        console.error('❌ No valid employees to import');
         toast({
           title: 'שגיאה',
           description: 'אין עובדים תקינים לייבוא',
@@ -56,17 +66,18 @@ export const useImportExecution = ({
         return;
       }
 
-      console.log('📤 Importing valid employees:', validEmployees.length);
+      console.log('📤 Calling ExcelImportService.importEmployees');
       
       // Use the EmployeeImportService
       const result = await ExcelImportService.importEmployees(validEmployees);
       
-      console.log('📊 Import execution completed:', result);
+      console.log('📊 Import execution completed with result:', result);
       
       setImportResult(result);
       setStep('results');
 
       if (result.success) {
+        console.log('🎉 Import successful!');
         toast({
           title: 'הצלחה! 🎉',
           description: `יובאו בהצלחה ${result.importedCount} עובדים`,
@@ -77,6 +88,7 @@ export const useImportExecution = ({
           window.dispatchEvent(new CustomEvent('employeesImported'));
         }, 1000);
       } else {
+        console.log('⚠️ Import completed with errors');
         toast({
           title: 'הייבוא הסתיים עם שגיאות',
           description: result.message,
@@ -85,7 +97,7 @@ export const useImportExecution = ({
       }
 
     } catch (error) {
-      console.error('💥 Error in executeImport:', error);
+      console.error('💥 Critical error in executeImport:', error);
       
       const errorResult: ImportResult = {
         success: false,
