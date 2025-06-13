@@ -65,7 +65,8 @@ export const useFileProcessing = ({
     try {
       console.log('📄 Parsing Excel file...');
       
-      const parsedData = await ExcelImportService.parseExcelFile(file);
+      // Use the correct parseFile method that returns ParsedExcelData
+      const parsedData = await ExcelImportService.parseFile(file);
       
       console.log('📊 File parsed successfully:', {
         headersCount: parsedData.headers.length,

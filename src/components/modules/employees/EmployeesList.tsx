@@ -11,26 +11,14 @@ import { EmployeeEditDialog } from './EmployeeEditDialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
+import type { Employee, EmployeeType } from '@/types/supabase';
 
-interface Employee {
-  id: string;
-  employee_id: string | null;
-  first_name: string;
-  last_name: string;
-  email: string | null;
-  phone: string | null;
-  employee_type: string;
-  is_active: boolean;
-  hire_date: string | null;
-  weekly_hours_required: number | null;
-  address: string | null;
-  notes: string | null;
-  main_branch_id: string | null;
+interface EmployeeWithBranch extends Employee {
   main_branch?: { name: string } | null;
 }
 
 interface EmployeesListProps {
-  employees: Employee[];
+  employees: EmployeeWithBranch[];
   onRefetch: () => void;
 }
 
@@ -40,7 +28,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
-  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [editingEmployee, setEditingEmployee] = useState<EmployeeWithBranch | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { logActivity } = useActivityLogger();
@@ -89,7 +77,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
     }
   };
 
-  const handleDeleteEmployee = async (employee: Employee) => {
+  const handleDeleteEmployee = async (employee: EmployeeWithBranch) => {
     if (!confirm(`האם אתה בטוח שברצונך למחוק את ${employee.first_name} ${employee.last_name}?`)) {
       return;
     }
@@ -181,8 +169,8 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
     }
   };
 
-  const getEmployeeTypeLabel = (type: string) => {
-    const types: Record<string, string> = {
+  const getEmployeeTypeLabel = (type: EmployeeType) => {
+    const types: Record<EmployeeType, string> = {
       permanent: 'קבוע',
       temporary: 'זמני',
       youth: 'נוער',
@@ -191,8 +179,8 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
     return types[type] || type;
   };
 
-  const getEmployeeTypeVariant = (type: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  const getEmployeeTypeVariant = (type: EmployeeType) => {
+    const variants: Record<EmployeeType, 'default' | 'secondary' | 'destructive' | 'outline'> = {
       permanent: 'default',
       temporary: 'secondary',
       youth: 'outline',
