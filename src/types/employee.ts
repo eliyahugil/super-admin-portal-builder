@@ -72,3 +72,35 @@ export const mapEmployeeType = (type: string): EmployeeType => {
   const validTypes: EmployeeType[] = ['permanent', 'temporary', 'youth', 'contractor'];
   return validTypes.includes(type as EmployeeType) ? (type as EmployeeType) : 'permanent';
 };
+
+// Helper function to normalize Supabase employee data to our type
+export const normalizeEmployee = (data: any): Employee => {
+  return {
+    id: data.id,
+    business_id: data.business_id,
+    employee_id: data.employee_id || null,
+    first_name: data.first_name || '',
+    last_name: data.last_name || '',
+    email: data.email || null,
+    phone: data.phone || null,
+    address: data.address || null,
+    id_number: data.id_number || null,
+    employee_type: mapEmployeeType(data.employee_type || 'permanent'),
+    hire_date: data.hire_date || null,
+    termination_date: data.termination_date || null,
+    is_active: data.is_active ?? true,
+    main_branch_id: data.main_branch_id || null,
+    preferred_shift_type: data.preferred_shift_type || null,
+    weekly_hours_required: data.weekly_hours_required || null,
+    notes: data.notes || null,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    
+    // Extended properties
+    main_branch: data.main_branch || null,
+    employee_notes: data.employee_notes || [],
+    employee_documents: data.employee_documents || [],
+    branch_assignments: data.branch_assignments || [],
+    weekly_tokens: data.weekly_tokens || []
+  };
+};

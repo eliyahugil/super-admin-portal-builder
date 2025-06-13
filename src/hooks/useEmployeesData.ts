@@ -1,114 +1,115 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useCurrentBusiness } from './useCurrentBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
-import { mapEmployeeType } from '@/types/employee';
-import type { Employee } from '@/types/employee';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { normalizeEmployee, type Employee } from '@/types/employee';
 
-// רשימת המשתמשים המורשים לראות את כל העסקים
-const AUTHORIZED_SUPER_USERS = [
-  'HABULGARTI@gmail.com',
-  'eligil1308@gmail.com'
-];
+export const useEmployeesData = (selectedBusinessId?: string | null) => {
+  const { profile } = useAuth();
+  const { businessId, isSuperAdmin } = useCurrentBusiness();
 
-/**
- * Unified hook for fetching employee data with consistent business filtering
- * This ensures all components use the same data source and filtering logic
- */
-export function useEmployeesData(selectedBusinessId?: string | null) {
-  const { profile, user } = useAuth();
-  const { businessId, isSuperAdmin, loading: businessLoading } = useCurrentBusiness();
+  const targetBusinessId = selectedBusinessId || businessId;
 
-  const userEmail = user?.email?.toLowerCase();
-  const isRealSuperAdmin = (userEmail && AUTHORIZED_SUPER_USERS.includes(userEmail)) || 
-                          profile?.role === 'super_admin' || 
-                          isSuperAdmin;
-
-  // For super admin, use selectedBusinessId if provided, otherwise use their businessId
-  // For regular users, always use their businessId
-  const effectiveBusinessId = isRealSuperAdmin ? (selectedBusinessId || businessId) : businessId;
+  console.log('🔍 useEmployeesData - Query parameters:', {
+    userRole: profile?.role,
+    businessId,
+    selectedBusinessId,
+    targetBusinessId,
+    isSuperAdmin
+  });
 
   return useQuery({
-    queryKey: ['employees', effectiveBusinessId, isRealSuperAdmin, selectedBusinessId],
+    queryKey: ['employees', targetBusinessId, profile?.role],
     queryFn: async (): Promise<Employee[]> => {
-      console.log('🔄 useEmployeesData - Fetching employees with unified logic:', {
-        effectiveBusinessId,
-        isRealSuperAdmin,
-        selectedBusinessId,
-        userType: isRealSuperAdmin ? 'super_admin' : 'business_user'
-      });
+      console.log('📊 useEmployeesData - Starting query...');
       
+      if (!profile) {
+        console.log('❌ No profile available');
+        throw new Error('User profile not available');
+      }
+
+      if (!targetBusinessId && !isSuperAdmin) {
+        console.log('❌ No business ID available for non-super admin');
+        throw new Error('Business ID required');
+      }
+
       let query = supabase
         .from('employees')
         .select(`
           *,
-          main_branch:branches!main_branch_id(name),
+          main_branch:branches!main_branch_id(
+            id,
+            name,
+            address
+          ),
           branch_assignments:employee_branch_assignments(
             id,
             role_name,
             is_active,
-            branch:branches(name)
+            max_weekly_hours,
+            priority_order,
+            created_at,
+            branch:branches!employee_branch_assignments_branch_id_fkey(
+              id,
+              name,
+              address
+            )
           ),
           weekly_tokens:employee_weekly_tokens(
             id,
             token,
             week_start_date,
             week_end_date,
-            is_active
+            is_active,
+            created_at,
+            expires_at
           ),
           employee_notes:employee_notes(
             id,
             content,
             note_type,
-            created_at
+            is_warning,
+            created_at,
+            created_by
           )
-        `)
-        .order('created_at', { ascending: false });
+        `);
 
-      // Apply business filter based on user type and selection
-      if (isRealSuperAdmin) {
-        if (effectiveBusinessId) {
-          // Super admin with specific business selected
-          console.log('🎯 Super admin filtering by business:', effectiveBusinessId);
-          query = query.eq('business_id', effectiveBusinessId);
-        } else {
-          // Super admin wants to see all businesses - no filter needed
-          console.log('👁️ Super admin viewing all employees across all businesses');
-        }
-      } else {
-        // Regular user - filter by their business
-        if (!businessId) {
-          console.log('⚠️ No business ID available for non-super admin user');
-          return [];
-        }
-        console.log('🏢 Regular user filtering by business:', businessId);
-        query = query.eq('business_id', businessId);
+      // Apply business filter for non-super admins or when specific business is selected
+      if (targetBusinessId) {
+        console.log('🔒 Adding business filter:', targetBusinessId);
+        query = query.eq('business_id', targetBusinessId);
       }
-      
+
+      // Order by creation date (newest first)
+      query = query.order('created_at', { ascending: false });
+
       const { data, error } = await query;
-      
+
       if (error) {
-        console.error('❌ useEmployeesData - Error fetching employees:', error);
+        console.error('❌ Error fetching employees:', error);
         throw error;
       }
-      
-      // Map and sanitize the data to ensure type safety
-      const mappedData = (data || []).map(employee => ({
-        ...employee,
-        employee_type: mapEmployeeType(employee.employee_type), // Ensure proper type mapping
-        phone: employee.phone || undefined, // Ensure undefined rather than null
-        email: employee.email || undefined, // Ensure undefined rather than null
-      })) as Employee[];
-      
-      console.log('✅ useEmployeesData - Successfully fetched employees:', {
-        count: mappedData.length,
-        businessFilter: effectiveBusinessId || 'all',
-        userType: isRealSuperAdmin ? 'super_admin' : 'business_user'
+
+      console.log('✅ Raw employees data fetched:', data?.length || 0);
+
+      // Normalize the data to our Employee type
+      const normalizedEmployees = (data || []).map(normalizeEmployee);
+
+      console.log('✅ Normalized employees data:', {
+        count: normalizedEmployees.length,
+        sample: normalizedEmployees[0] ? {
+          name: `${normalizedEmployees[0].first_name} ${normalizedEmployees[0].last_name}`,
+          hasPhone: !!normalizedEmployees[0].phone,
+          hasEmail: !!normalizedEmployees[0].email,
+          type: normalizedEmployees[0].employee_type
+        } : null
       });
-      
-      return mappedData;
+
+      return normalizedEmployees;
     },
-    enabled: !businessLoading && !!profile && (!!businessId || isRealSuperAdmin),
+    enabled: !!profile && (!!targetBusinessId || isSuperAdmin),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
-}
+};

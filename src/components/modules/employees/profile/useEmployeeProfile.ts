@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthContext';
-import type { Employee } from '@/types/supabase';
+import { normalizeEmployee, type Employee } from '@/types/employee';
 
 export const useEmployeeProfile = (employeeId: string | undefined) => {
   const [employee, setEmployee] = useState<Employee | null>(null);
@@ -123,16 +123,26 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
         return;
       }
 
-      console.log('✅ Employee profile loaded successfully:', {
+      console.log('✅ Raw employee profile loaded:', {
         name: `${data.first_name} ${data.last_name}`,
         businessId: data.business_id,
-        employeeId: data.id,
-        hasBranchAssignments: data.branch_assignments?.length || 0,
-        hasNotes: data.employee_notes?.length || 0,
-        hasTokens: data.weekly_tokens?.length || 0
+        employeeId: data.id
       });
 
-      setEmployee(data);
+      // Normalize the data to our Employee type
+      const normalizedEmployee = normalizeEmployee(data);
+
+      console.log('✅ Normalized employee profile:', {
+        name: `${normalizedEmployee.first_name} ${normalizedEmployee.last_name}`,
+        hasPhone: !!normalizedEmployee.phone,
+        hasEmail: !!normalizedEmployee.email,
+        type: normalizedEmployee.employee_type,
+        hasBranchAssignments: normalizedEmployee.branch_assignments?.length || 0,
+        hasNotes: normalizedEmployee.employee_notes?.length || 0,
+        hasTokens: normalizedEmployee.weekly_tokens?.length || 0
+      });
+
+      setEmployee(normalizedEmployee);
     } catch (error) {
       console.error('💥 Unexpected error:', error);
       toast({
