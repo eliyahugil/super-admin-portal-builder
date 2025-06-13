@@ -7,7 +7,7 @@ export class EmployeeImportService {
     console.log('🚀 EmployeeImportService - Starting import:', employees.length);
 
     const errors: Array<{ row: number; employee: string; error: string }> = [];
-    const importedEmployees: PreviewEmployee[] = [];
+    const importedEmployees: Array<{ name: string; email?: string; branch?: string }> = [];
     let importedCount = 0;
 
     try {
@@ -63,7 +63,12 @@ export class EmployeeImportService {
               });
             } else {
               console.log(`✅ Successfully imported employee ${globalIndex + 1}:`, data);
-              importedEmployees.push({ ...employee, id: data.id });
+              // Transform to match the expected type
+              importedEmployees.push({
+                name: `${employee.first_name} ${employee.last_name}`,
+                email: employee.email,
+                branch: employee.main_branch_id
+              });
               importedCount++;
             }
 
