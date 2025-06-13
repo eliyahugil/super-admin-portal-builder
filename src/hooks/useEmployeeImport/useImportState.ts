@@ -1,9 +1,7 @@
 
 import { useState } from 'react';
-import type { ExcelRow, PreviewEmployee, ImportResult } from '@/services/ExcelImportService';
-import type { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
+import type { ExcelRow, PreviewEmployee, ImportResult, FieldMapping } from './types';
 import type { ImportStep } from './types';
-import { initialImportResult } from './constants';
 
 interface ValidationError {
   rowIndex: number;
@@ -18,6 +16,15 @@ interface DuplicateError {
   existingValue: string;
   severity: 'error' | 'warning';
 }
+
+const initialImportResult: ImportResult = {
+  success: false,
+  importedCount: 0,
+  errorCount: 0,
+  message: '',
+  errors: [],
+  importedEmployees: []
+};
 
 export const useImportState = () => {
   const [step, setStep] = useState<ImportStep>('upload');

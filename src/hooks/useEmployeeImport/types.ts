@@ -36,7 +36,11 @@ export interface ImportResult {
     employee: string;
     error: string;
   }>;
-  importedEmployees: PreviewEmployee[];
+  importedEmployees: Array<{
+    name: string;
+    email?: string;
+    branch?: string;
+  }>;
 }
 
 export interface FieldMapping {

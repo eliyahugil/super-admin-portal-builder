@@ -18,8 +18,6 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
     file,
     previewData,
     importResult,
-    validationErrors,
-    duplicateErrors,
     handleFileSelect,
     handleConfirmImport,
     resetForm,
@@ -69,8 +67,6 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
         return (
           <ImportPreview
             previewData={previewData}
-            validationErrors={validationErrors}
-            duplicateErrors={duplicateErrors}
             onConfirm={handleConfirmImport}
             onCancel={resetForm}
           />
