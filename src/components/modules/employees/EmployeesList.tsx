@@ -97,7 +97,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
         target_id: employee.id,
         details: { 
           employee_name: `${employee.first_name} ${employee.last_name}`,
-          employee_id: employee.employee_id 
+          employee_id: employee.employee_id || 'לא הוגדר'
         }
       });
 
