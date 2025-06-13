@@ -11,6 +11,10 @@ import { EmployeeTokenManager } from '../../EmployeeTokenManager';
 import { EmployeeCustomFields } from '../../EmployeeCustomFields';
 import { EmployeeOverviewTab } from './EmployeeOverviewTab';
 import { EmployeeAnalyticsTab } from './EmployeeAnalyticsTab';
+import { EmployeeNotesTab } from './EmployeeNotesTab';
+import { EmployeeDocumentsTab } from './EmployeeDocumentsTab';
+import { EmployeeBranchAssignmentsTab } from './EmployeeBranchAssignmentsTab';
+import { EmployeeSalaryTab } from './EmployeeSalaryTab';
 import type { Employee } from '@/types/supabase';
 
 interface EmployeeTabsContentProps {
@@ -33,15 +37,15 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
       </TabsContent>
 
       <TabsContent value="notes">
-        <EmployeeNotes employeeId={employeeId} employeeName={employeeName} />
+        <EmployeeNotesTab employee={employee} employeeId={employeeId} employeeName={employeeName} />
       </TabsContent>
 
       <TabsContent value="documents">
-        <EmployeeDocuments employeeId={employeeId} employeeName={employeeName} />
+        <EmployeeDocumentsTab employeeId={employeeId} employeeName={employeeName} />
       </TabsContent>
 
       <TabsContent value="branches">
-        <EmployeeBranchAssignments employeeId={employeeId} />
+        <EmployeeBranchAssignmentsTab employee={employee} employeeId={employeeId} />
       </TabsContent>
 
       <TabsContent value="attendance">
@@ -61,7 +65,7 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
       </TabsContent>
 
       <TabsContent value="salary">
-        <SalaryHistory employeeId={employeeId} employeeName={employeeName} />
+        <EmployeeSalaryTab employeeId={employeeId} employeeName={employeeName} />
       </TabsContent>
 
       <TabsContent value="custom">
