@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useEmployeesData } from '@/hooks/useEmployeesData';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -41,87 +41,25 @@ interface Employee {
   };
 }
 
-export const useEmployeesTableLogic = () => {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
+export const useEmployeesTableLogic = (selectedBusinessId?: string | null) => {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const { businessId } = useBusiness();
+  const { businessId, isSuperAdmin } = useCurrentBusiness();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const fetchEmployees = async () => {
-    try {
-      console.log('=== FETCHING EMPLOYEES FOR ENHANCED TABLE ===');
-      console.log('Business ID:', businessId);
-      
-      const { data, error } = await supabase
-        .from('employees')
-        .select(`
-          id,
-          employee_id,
-          first_name,
-          last_name,
-          phone,
-          email,
-          employee_type,
-          is_active,
-          hire_date,
-          weekly_hours_required,
-          notes,
-          main_branch:branches!main_branch_id(name),
-          branch_assignments:employee_branch_assignments(
-            role_name,
-            is_active,
-            branch:branches(name)
-          ),
-          weekly_tokens:employee_weekly_tokens(
-            token,
-            week_start_date,
-            week_end_date,
-            is_active
-          ),
-          employee_notes:employee_notes(
-            content,
-            note_type,
-            created_at
-          )
-        `)
-        .eq('business_id', businessId)
-        .order('created_at', { ascending: false });
+  // Use the unified employees data hook
+  const { data: employees, isLoading: loading, refetch } = useEmployeesData(selectedBusinessId);
 
-      if (error) {
-        console.error('Error fetching employees:', error);
-        toast({
-          title: 'שגיאה',
-          description: 'לא ניתן לטעון את רשימת העובדים',
-          variant: 'destructive',
-        });
-        return;
-      }
+  console.log('=== EMPLOYEES TABLE LOGIC ===');
+  console.log('Using unified useEmployeesData hook');
+  console.log('Business ID:', businessId);
+  console.log('Selected Business ID:', selectedBusinessId);
+  console.log('Is Super Admin:', isSuperAdmin);
+  console.log('Employees count:', employees?.length || 0);
 
-      console.log('Enhanced employees fetched:', data?.length);
-      setEmployees(data || []);
-    } catch (error) {
-      console.error('Exception in fetchEmployees:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'אירעה שגיאה בטעינת הנתונים',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (businessId) {
-      fetchEmployees();
-    }
-  }, [businessId]);
-
-  const filteredEmployees = employees.filter((emp) => {
+  const filteredEmployees = (employees || []).filter((emp) => {
     const searchTerm = search.toLowerCase();
     const fullName = `${emp.first_name} ${emp.last_name}`.toLowerCase();
     const employeeId = emp.employee_id?.toLowerCase() || '';
@@ -144,11 +82,11 @@ export const useEmployeesTableLogic = () => {
   };
 
   const handleTokenSent = () => {
-    fetchEmployees();
+    refetch();
   };
 
   return {
-    employees,
+    employees: employees || [],
     filteredEmployees,
     loading,
     search,
@@ -159,6 +97,6 @@ export const useEmployeesTableLogic = () => {
     setFilterStatus,
     handleCreateEmployee,
     handleTokenSent,
-    refetch: fetchEmployees,
+    refetch,
   };
 };

@@ -5,8 +5,15 @@ import { EmployeesTableHeader } from './table/EmployeesTableHeader';
 import { EmployeesTableFilters } from './table/EmployeesTableFilters';
 import { EmployeesTableContent } from './table/EmployeesTableContent';
 import { useEmployeesTableLogic } from './table/useEmployeesTableLogic';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
-export const EmployeesTable: React.FC = () => {
+interface EmployeesTableProps {
+  selectedBusinessId?: string | null;
+}
+
+export const EmployeesTable: React.FC<EmployeesTableProps> = ({ selectedBusinessId }) => {
+  const { isSuperAdmin } = useCurrentBusiness();
+  
   const {
     employees,
     filteredEmployees,
@@ -19,7 +26,7 @@ export const EmployeesTable: React.FC = () => {
     setFilterStatus,
     handleCreateEmployee,
     handleTokenSent,
-  } = useEmployeesTableLogic();
+  } = useEmployeesTableLogic(isSuperAdmin ? selectedBusinessId : undefined);
 
   if (loading) {
     return (
