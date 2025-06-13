@@ -3,6 +3,9 @@ import { ExcelParserService } from './excel/ExcelParserService';
 import { ExcelFileManager } from './excel/ExcelFileManager';
 import { EmployeeImportService } from './excel/EmployeeImportService';
 
+// Re-export the service class
+export { ExcelParserService };
+
 // Re-export types for backward compatibility
 export type { ParsedExcelData, ExcelRow } from './excel/ExcelParserService';
 export type { PreviewEmployee } from '@/hooks/useEmployeeImport/types';

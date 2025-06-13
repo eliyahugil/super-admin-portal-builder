@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/useBusiness';
@@ -68,8 +67,11 @@ export const useEmployeeImport = () => {
       const parsedData = await ExcelImportService.parseExcelFile(selectedFile);
       console.log('📊 Parsed data:', parsedData);
 
-      setRawData(parsedData.data);
-      setHeaders(parsedData.headers);
+      // Extract headers from the first row
+      const extractedHeaders = Object.keys(parsedData[0] || {});
+
+      setRawData(parsedData);
+      setHeaders(extractedHeaders);
       setShowMappingDialog(true);
 
     } catch (error) {
