@@ -30,6 +30,7 @@ interface Employee {
     is_active: boolean;
   }>;
   employee_notes?: Array<{
+    id: string;
     content: string;
     note_type: string;
     created_at: string;
@@ -91,6 +92,7 @@ export function useEmployeesData(selectedBusinessId?: string | null) {
             is_active
           ),
           employee_notes:employee_notes(
+            id,
             content,
             note_type,
             created_at

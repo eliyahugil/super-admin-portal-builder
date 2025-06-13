@@ -31,6 +31,7 @@ interface Employee {
     is_active: boolean;
   }>;
   employee_notes?: Array<{
+    id: string;
     content: string;
     note_type: string;
     created_at: string;

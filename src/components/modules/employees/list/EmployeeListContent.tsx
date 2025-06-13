@@ -2,20 +2,53 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmployeeListTable } from './EmployeeListTable';
-import type { Employee } from '@/types/supabase';
 
-interface EmployeeWithBranch extends Omit<Employee, 'employee_id'> {
+// Use the same Employee interface as the parent component
+interface Employee {
+  id: string;
+  business_id: string;
   employee_id?: string;
+  first_name: string;
+  last_name: string;
+  phone: string | null;
+  email: string | null;
+  employee_type: string;
+  is_active: boolean;
+  hire_date: string | null;
+  weekly_hours_required: number | null;
+  notes: string | null;
   main_branch?: { name: string } | null;
+  branch_assignments?: Array<{
+    branch: { name: string };
+    role_name: string;
+    is_active: boolean;
+  }>;
+  weekly_tokens?: Array<{
+    token: string;
+    week_start_date: string;
+    week_end_date: string;
+    is_active: boolean;
+  }>;
+  employee_notes?: Array<{
+    id: string;
+    content: string;
+    note_type: string;
+    created_at: string;
+  }>;
+  salary_info?: {
+    hourly_rate?: number;
+    monthly_salary?: number;
+    currency?: string;
+  };
 }
 
 interface EmployeeListContentProps {
-  employees: EmployeeWithBranch[];
+  employees: Employee[];
   searchTerm: string;
   selectedEmployees: Set<string>;
   onSelectEmployee: (employeeId: string, checked: boolean) => void;
   onSelectAll: (checked: boolean) => void;
-  onDeleteEmployee: (employee: EmployeeWithBranch) => void;
+  onDeleteEmployee: (employee: Employee) => void;
   onRefetch: () => void;
   loading: boolean;
   totalEmployees: number;
