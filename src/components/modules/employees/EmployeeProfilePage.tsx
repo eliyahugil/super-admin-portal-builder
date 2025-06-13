@@ -12,11 +12,12 @@ export const EmployeeProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { employee, loading, refetchEmployee } = useEmployeeProfile(employeeId);
 
-  console.log('🏠 EmployeeProfilePage - State:', {
+  console.log('🏠 EmployeeProfilePage - Render state:', {
     employeeId,
     hasEmployee: !!employee,
     loading,
-    employeeName: employee ? `${employee.first_name} ${employee.last_name}` : 'N/A'
+    employeeName: employee ? `${employee.first_name} ${employee.last_name}` : 'N/A',
+    route: window.location.pathname
   });
 
   const handleGoBack = () => {
@@ -45,6 +46,10 @@ export const EmployeeProfilePage: React.FC = () => {
             <p className="text-gray-600 mb-4">
               העובד המבוקש לא נמצא במערכת או שאין לך הרשאה לצפות בו.
             </p>
+            <div className="text-sm text-gray-500 mb-4">
+              <p>מזהה עובד: {employeeId || 'לא הוגדר'}</p>
+              <p>נתיב נוכחי: {window.location.pathname}</p>
+            </div>
             <button
               onClick={handleGoBack}
               className="text-blue-600 hover:text-blue-800 underline"
