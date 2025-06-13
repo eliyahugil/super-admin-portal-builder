@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -152,7 +153,8 @@ export const EmployeeProfilePage: React.FC = () => {
     return variants[type] || 'default';
   };
 
-  const availableTabs = getAvailableTabs(employee!);
+  const availableTabs = getAvailableTabs(employee);
+  const employeeName = `${employee.first_name} ${employee.last_name}`;
 
   return (
     <Card>
@@ -169,7 +171,7 @@ export const EmployeeProfilePage: React.FC = () => {
         <div className="md:flex gap-4">
           <div className="md:w-1/3">
             <div className="bg-gray-100 rounded-md p-4">
-              <div className="text-lg font-semibold">{employee.first_name} {employee.last_name}</div>
+              <div className="text-lg font-semibold">{employeeName}</div>
               <div className="text-sm text-gray-500">
                 {employee.is_active ? (
                   <Badge variant="default" className="bg-green-100 text-green-800">
@@ -241,10 +243,10 @@ export const EmployeeProfilePage: React.FC = () => {
                 </div>
               </TabsContent>
               <TabsContent value="notes">
-                <EmployeeNotes employeeId={employeeId} />
+                <EmployeeNotes employeeId={employeeId} employeeName={employeeName} />
               </TabsContent>
               <TabsContent value="documents">
-                <EmployeeDocuments employeeId={employeeId} />
+                <EmployeeDocuments employeeId={employeeId} employeeName={employeeName} />
               </TabsContent>
               <TabsContent value="branches">
                 <EmployeeBranchAssignments employeeId={employeeId} />
@@ -256,7 +258,7 @@ export const EmployeeProfilePage: React.FC = () => {
                 <ShiftSubmissionHistory employeeId={employeeId} />
               </TabsContent>
               <TabsContent value="salary">
-                <SalaryHistory employeeId={employeeId} />
+                <SalaryHistory employeeId={employeeId} employeeName={employeeName} />
               </TabsContent>
             </Tabs>
           </div>
