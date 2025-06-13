@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,32 +8,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Edit } from 'lucide-react';
-import type { EmployeeType } from '@/types/supabase';
-
-interface Employee {
-  id: string;
-  employee_id: string | null;
-  first_name: string;
-  last_name: string;
-  email: string | null;
-  phone: string | null;
-  address: string | null;
-  employee_type: EmployeeType;
-  is_active: boolean;
-  hire_date: string | null;
-  weekly_hours_required: number | null;
-  notes: string | null;
-  main_branch_id: string | null;
-}
+import type { Employee, EmployeeType } from '@/types/supabase';
 
 interface EmployeeEditDialogProps {
   employee: Employee;
-  onUpdate: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
 }
 
-export const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({ employee, onUpdate }) => {
-  const [open, setOpen] = useState(false);
+export const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({ 
+  employee, 
+  open, 
+  onOpenChange, 
+  onSuccess 
+}) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     first_name: employee.first_name,
@@ -42,7 +31,7 @@ export const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({ employee
     phone: employee.phone || '',
     address: employee.address || '',
     employee_type: employee.employee_type as EmployeeType,
-    is_active: employee.is_active,
+    is_active: employee.is_active ?? true,
     hire_date: employee.hire_date || '',
     weekly_hours_required: employee.weekly_hours_required || 0,
     notes: employee.notes || '',
@@ -82,8 +71,8 @@ export const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({ employee
         description: 'פרטי העובד עודכנו בהצלחה',
       });
 
-      setOpen(false);
-      onUpdate();
+      onOpenChange(false);
+      onSuccess();
     } catch (error) {
       console.error('Error updating employee:', error);
       toast({
@@ -97,13 +86,7 @@ export const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({ employee
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Edit className="h-4 w-4" />
-          ערוך פרטים
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>עריכת פרטי העובד</DialogTitle>
@@ -219,7 +202,7 @@ export const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({ employee
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               ביטול
             </Button>
             <Button type="submit" disabled={loading}>
