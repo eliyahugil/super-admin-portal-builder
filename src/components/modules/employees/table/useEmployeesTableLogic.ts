@@ -5,8 +5,10 @@ import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
+// Use the same Employee interface as the unified hook
 interface Employee {
   id: string;
+  business_id: string;
   employee_id: string | null;
   first_name: string;
   last_name: string;

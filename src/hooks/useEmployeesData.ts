@@ -6,6 +6,7 @@ import { useAuth } from '@/components/auth/AuthContext';
 
 interface Employee {
   id: string;
+  business_id: string; // Made required to match database reality
   employee_id: string | null;
   first_name: string;
   last_name: string;
