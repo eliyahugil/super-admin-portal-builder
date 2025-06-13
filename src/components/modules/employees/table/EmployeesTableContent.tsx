@@ -6,34 +6,8 @@ import { User } from 'lucide-react';
 import { EmployeesTableGrid } from './EmployeesTableGrid';
 import type { Employee } from '@/types/supabase';
 
-// Extended interface for employees with additional joined data
-interface EmployeeWithExtensions extends Employee {
-  main_branch?: { name: string } | null;
-  branch_assignments?: Array<{
-    branch: { name: string };
-    role_name: string;
-    is_active: boolean;
-  }>;
-  weekly_tokens?: Array<{
-    token: string;
-    week_start_date: string;
-    week_end_date: string;
-    is_active: boolean;
-  }>;
-  employee_notes?: Array<{
-    content: string;
-    note_type: string;
-    created_at: string;
-  }>;
-  salary_info?: {
-    hourly_rate?: number;
-    monthly_salary?: number;
-    currency?: string;
-  };
-}
-
 interface EmployeesTableContentProps {
-  filteredEmployees: EmployeeWithExtensions[];
+  filteredEmployees: Employee[];
   search: string;
   filterType: string;
   filterStatus: string;

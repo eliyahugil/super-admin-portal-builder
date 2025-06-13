@@ -39,7 +39,7 @@ export interface Employee {
   created_at?: string;
   updated_at?: string;
   
-  // Extended properties from joins
+  // Extended properties from joins - matching actual Supabase query structure
   main_branch?: { name: string } | null;
   employee_notes?: Array<{
     id: string;
@@ -149,3 +149,9 @@ export type AttendanceAction = 'check_in' | 'check_out';
 export type ShiftType = 'morning' | 'afternoon' | 'evening' | 'night' | 'full_day';
 export type EmployeeType = 'permanent' | 'temporary' | 'youth' | 'contractor';
 export type UserRole = 'super_admin' | 'business_admin' | 'business_user';
+
+// Helper function to safely map employee types from strings
+export const mapEmployeeType = (type: string): EmployeeType => {
+  const validTypes: EmployeeType[] = ['permanent', 'temporary', 'youth', 'contractor'];
+  return validTypes.includes(type as EmployeeType) ? (type as EmployeeType) : 'permanent';
+};

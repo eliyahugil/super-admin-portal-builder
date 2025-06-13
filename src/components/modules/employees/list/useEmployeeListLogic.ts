@@ -5,34 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 import type { Employee } from '@/types/supabase';
 
-// Extended interface for employees with additional joined data
-interface EmployeeWithExtensions extends Employee {
-  main_branch?: { name: string } | null;
-  branch_assignments?: Array<{
-    branch: { name: string };
-    role_name: string;
-    is_active: boolean;
-  }>;
-  weekly_tokens?: Array<{
-    token: string;
-    week_start_date: string;
-    week_end_date: string;
-    is_active: boolean;
-  }>;
-  employee_notes?: Array<{
-    id: string;
-    content: string;
-    note_type: string;
-    created_at: string;
-  }>;
-  salary_info?: {
-    hourly_rate?: number;
-    monthly_salary?: number;
-    currency?: string;
-  };
-}
-
-export const useEmployeeListLogic = (employees: EmployeeWithExtensions[], onRefetch: () => void) => {
+export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => void) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -77,7 +50,7 @@ export const useEmployeeListLogic = (employees: EmployeeWithExtensions[], onRefe
     }
   };
 
-  const handleDeleteEmployee = async (employee: EmployeeWithExtensions) => {
+  const handleDeleteEmployee = async (employee: Employee) => {
     if (!confirm(`האם אתה בטוח שברצונך למחוק את ${employee.first_name} ${employee.last_name}?`)) {
       return;
     }

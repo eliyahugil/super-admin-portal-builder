@@ -3,34 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from './useCurrentBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
-import type { Employee } from '@/types/supabase';
-
-// Extended interface for employees with additional joined data
-interface EmployeeWithExtensions extends Employee {
-  main_branch?: { name: string } | null;
-  branch_assignments?: Array<{
-    branch: { name: string };
-    role_name: string;
-    is_active: boolean;
-  }>;
-  weekly_tokens?: Array<{
-    token: string;
-    week_start_date: string;
-    week_end_date: string;
-    is_active: boolean;
-  }>;
-  employee_notes?: Array<{
-    id: string;
-    content: string;
-    note_type: string;
-    created_at: string;
-  }>;
-  salary_info?: {
-    hourly_rate?: number;
-    monthly_salary?: number;
-    currency?: string;
-  };
-}
+import type { Employee, mapEmployeeType } from '@/types/supabase';
 
 // רשימת המשתמשים המורשים לראות את כל העסקים
 const AUTHORIZED_SUPER_USERS = [
@@ -57,7 +30,7 @@ export function useEmployeesData(selectedBusinessId?: string | null) {
 
   return useQuery({
     queryKey: ['employees', effectiveBusinessId, isRealSuperAdmin, selectedBusinessId],
-    queryFn: async (): Promise<EmployeeWithExtensions[]> => {
+    queryFn: async (): Promise<Employee[]> => {
       console.log('🔄 useEmployeesData - Fetching employees with unified logic:', {
         effectiveBusinessId,
         isRealSuperAdmin,
@@ -71,11 +44,13 @@ export function useEmployeesData(selectedBusinessId?: string | null) {
           *,
           main_branch:branches!main_branch_id(name),
           branch_assignments:employee_branch_assignments(
+            id,
             role_name,
             is_active,
             branch:branches(name)
           ),
           weekly_tokens:employee_weekly_tokens(
+            id,
             token,
             week_start_date,
             week_end_date,
@@ -117,13 +92,21 @@ export function useEmployeesData(selectedBusinessId?: string | null) {
         throw error;
       }
       
+      // Map and sanitize the data to ensure type safety
+      const mappedData = (data || []).map(employee => ({
+        ...employee,
+        employee_type: mapEmployeeType(employee.employee_type), // Ensure proper type mapping
+        phone: employee.phone || undefined, // Ensure undefined rather than null
+        email: employee.email || undefined, // Ensure undefined rather than null
+      })) as Employee[];
+      
       console.log('✅ useEmployeesData - Successfully fetched employees:', {
-        count: data?.length || 0,
+        count: mappedData.length,
         businessFilter: effectiveBusinessId || 'all',
         userType: isRealSuperAdmin ? 'super_admin' : 'business_user'
       });
       
-      return (data as EmployeeWithExtensions[]) || [];
+      return mappedData;
     },
     enabled: !businessLoading && !!profile && (!!businessId || isRealSuperAdmin),
   });
