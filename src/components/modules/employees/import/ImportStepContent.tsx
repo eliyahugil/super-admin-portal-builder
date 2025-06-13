@@ -27,7 +27,8 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
     previewData,
     setPreviewData,
     executeImport,
-    importResult
+    importResult,
+    resetForm
   } = importHook;
 
   switch (step) {
@@ -44,10 +45,12 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
         <FieldMappingDialog
           open={showMappingDialog}
           onOpenChange={setShowMappingDialog}
-          headers={headers}
-          fieldMappings={fieldMappings}
-          onMappingsChange={setFieldMappings}
-          onPreviewData={setPreviewData}
+          fileColumns={headers}
+          sampleData={[]}
+          onConfirm={(mappings) => {
+            setFieldMappings(mappings);
+            setShowMappingDialog(false);
+          }}
         />
       );
 
@@ -55,7 +58,8 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
       return (
         <ImportPreview
           previewData={previewData}
-          onExecuteImport={executeImport}
+          onConfirm={executeImport}
+          onCancel={resetForm}
         />
       );
 
@@ -69,12 +73,19 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
 
     case 'results':
       return (
-        <ImportResults result={importResult} />
+        <ImportResults 
+          result={importResult} 
+          onClose={resetForm} 
+        />
       );
 
     case 'summary':
       return (
-        <EmployeeImportSummary result={importResult} />
+        <EmployeeImportSummary 
+          result={importResult}
+          onStartOver={resetForm}
+          onClose={resetForm}
+        />
       );
 
     default:

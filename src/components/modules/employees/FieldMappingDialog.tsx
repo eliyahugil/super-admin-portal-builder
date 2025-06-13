@@ -10,7 +10,7 @@ import { X, Plus, Eye } from 'lucide-react';
 import { defaultSystemFields } from './constants/FieldMappingConstants';
 import { useFieldMappingAutoDetection } from './hooks/useFieldMappingAutoDetection';
 import { useFieldMappingValidation } from './hooks/useFieldMappingValidation';
-import type { FieldMapping } from './types/FieldMappingTypes';
+import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
 interface FieldMappingDialogProps {
   open: boolean;
@@ -18,7 +18,7 @@ interface FieldMappingDialogProps {
   fileColumns: string[];
   sampleData: any[];
   onConfirm: (mappings: FieldMapping[]) => void;
-  systemFields: Array<{ value: string; label: string }>;
+  systemFields?: Array<{ value: string; label: string }>;
 }
 
 export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({

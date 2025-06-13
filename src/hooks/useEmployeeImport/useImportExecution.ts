@@ -2,7 +2,7 @@
 import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { EmployeeImportService } from '@/services/excel/EmployeeImportService';
-import type { PreviewEmployee, ImportResult, ImportStep } from './types';
+import type { ImportStep, PreviewEmployee, ImportResult } from './types';
 
 interface UseImportExecutionProps {
   businessId: string | null;
@@ -11,78 +11,84 @@ interface UseImportExecutionProps {
   setImportResult: (result: ImportResult) => void;
 }
 
-export const useImportExecution = ({
-  businessId,
-  previewData,
-  setStep,
-  setImportResult,
-}: UseImportExecutionProps) => {
+export const useImportExecution = (props: UseImportExecutionProps) => {
+  const {
+    businessId,
+    previewData,
+    setStep,
+    setImportResult,
+  } = props;
+
   const { toast } = useToast();
 
   const executeImport = useCallback(async () => {
-    try {
-      console.log('🚀 Starting import execution');
-      
-      if (!businessId) {
-        toast({
-          title: 'שגיאה',
-          description: 'לא נמצא מזהה עסק',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      if (!previewData || previewData.length === 0) {
-        toast({
-          title: 'שגיאה',
-          description: 'אין נתונים לייבוא',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      setStep('importing');
-
+    if (!businessId) {
       toast({
-        title: 'מייבא עובדים...',
-        description: 'אנא המתן, זה עלול לקחת כמה רגעים',
+        title: 'שגיאה',
+        description: 'לא נמצא מזהה עסק',
+        variant: 'destructive',
       });
+      return;
+    }
+
+    if (previewData.length === 0) {
+      toast({
+        title: 'שגיאה',
+        description: 'אין נתוני עובדים לייבוא',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      console.log('🚀 Starting import execution with data:', previewData.length);
+      setStep('importing');
 
       // Filter only valid employees for import
       const validEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate);
-      console.log('✅ Valid employees for import:', validEmployees.length);
+      
+      if (validEmployees.length === 0) {
+        toast({
+          title: 'שגיאה',
+          description: 'אין עובדים תקינים לייבוא',
+          variant: 'destructive',
+        });
+        setStep('preview');
+        return;
+      }
 
-      // Execute the import
       const result = await EmployeeImportService.importEmployees(validEmployees);
-      console.log('📊 Import result:', result);
-
+      
+      console.log('📊 Import execution completed:', result);
+      
       setImportResult(result);
       setStep('results');
 
       if (result.success) {
         toast({
-          title: 'ייבוא הושלם בהצלחה! 🎉',
-          description: `יובאו ${result.importedCount} עובדים מתוך ${previewData.length}`,
+          title: 'הצלחה',
+          description: `יובאו בהצלחה ${result.importedCount} עובדים`,
         });
       } else {
         toast({
-          title: 'הייבוא נכשל',
+          title: 'הייבוא הסתיים עם שגיאות',
           description: result.message,
-          variant: 'destructive'
+          variant: 'destructive',
         });
       }
 
     } catch (error) {
-      console.error('💥 Import execution error:', error);
+      console.error('💥 Error in executeImport:', error);
       
       const errorResult: ImportResult = {
         success: false,
         importedCount: 0,
         errorCount: previewData.length,
-        message: error instanceof Error ? error.message : 'שגיאה לא צפויה בייבוא',
+        message: `שגיאה בייבוא: ${error instanceof Error ? error.message : 'שגיאה לא צפויה'}`,
         errors: [{
           row: 0,
-          message: error instanceof Error ? error.message : 'שגיאה לא צפויה'
+          employee: 'כללי',
+          error: error instanceof Error ? error.message : 'שגיאה לא צפויה'
         }],
         importedEmployees: []
       };
@@ -91,9 +97,9 @@ export const useImportExecution = ({
       setStep('results');
 
       toast({
-        title: 'שגיאה בייבוא',
-        description: error instanceof Error ? error.message : 'שגיאה לא צפויה',
-        variant: 'destructive'
+        title: 'שגיאה',
+        description: 'אירעה שגיאה בייבוא העובדים',
+        variant: 'destructive',
       });
     }
   }, [businessId, previewData, setStep, setImportResult, toast]);

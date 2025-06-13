@@ -31,11 +31,14 @@ export const CustomerManagement = () => {
         throw error;
       }
       console.log('✅ Customers fetched:', data?.length || 0);
-      return data || [];
+      return (data || []).map(customer => ({
+        ...customer,
+        customer_type: customer.customer_type as 'individual' | 'business'
+      }));
     },
   });
 
-  const { data: agreements } = useQuery({
+  const { data: agreements, refetch: refetchAgreements } = useQuery({
     queryKey: ['customer-agreements'],
     queryFn: async (): Promise<CustomerAgreement[]> => {
       const { data, error } = await supabase
@@ -47,7 +50,11 @@ export const CustomerManagement = () => {
         console.error('Error fetching agreements:', error);
         throw error;
       }
-      return data || [];
+      return (data || []).map(agreement => ({
+        ...agreement,
+        type: agreement.type as 'service' | 'purchase' | 'rental' | 'other',
+        status: agreement.status as 'draft' | 'active' | 'signed' | 'expired'
+      }));
     },
   });
 
@@ -56,6 +63,14 @@ export const CustomerManagement = () => {
     toast({
       title: 'הצלחה',
       description: 'הלקוח נוצר בהצלחה',
+    });
+  };
+
+  const handleAgreementCreated = () => {
+    refetchAgreements();
+    toast({
+      title: 'הצלחה',
+      description: 'ההסכם נוצר בהצלחה',
     });
   };
 
@@ -99,7 +114,8 @@ export const CustomerManagement = () => {
             <CardContent>
               <CustomerAgreements 
                 agreements={agreements || []} 
-                customers={customers || []} 
+                customers={customers || []}
+                onSuccess={handleAgreementCreated}
               />
             </CardContent>
           </Card>

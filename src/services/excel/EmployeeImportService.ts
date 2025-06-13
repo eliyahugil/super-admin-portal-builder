@@ -6,7 +6,7 @@ export class EmployeeImportService {
   static async importEmployees(employees: PreviewEmployee[]): Promise<ImportResult> {
     console.log('🚀 EmployeeImportService - Starting import:', employees.length);
 
-    const errors: Array<{ row: number; message: string; data?: any }> = [];
+    const errors: Array<{ row: number; employee: string; error: string }> = [];
     const importedEmployees: PreviewEmployee[] = [];
     let importedCount = 0;
 
@@ -58,8 +58,8 @@ export class EmployeeImportService {
               console.error(`❌ Error importing employee ${globalIndex + 1}:`, error);
               errors.push({
                 row: globalIndex + 1,
-                message: `שגיאה בייבוא ${employee.first_name} ${employee.last_name}: ${error.message}`,
-                data: employeeData
+                employee: `${employee.first_name} ${employee.last_name}`,
+                error: error.message
               });
             } else {
               console.log(`✅ Successfully imported employee ${globalIndex + 1}:`, data);
@@ -71,8 +71,8 @@ export class EmployeeImportService {
             console.error(`💥 Unexpected error importing employee ${globalIndex + 1}:`, err);
             errors.push({
               row: globalIndex + 1,
-              message: `שגיאה לא צפויה בייבוא ${employee.first_name} ${employee.last_name}`,
-              data: employee
+              employee: `${employee.first_name} ${employee.last_name}`,
+              error: 'שגיאה לא צפויה בייבוא'
             });
           }
         }
@@ -108,7 +108,8 @@ export class EmployeeImportService {
         message: `שגיאה קריטית בייבוא: ${error instanceof Error ? error.message : 'שגיאה לא צפויה'}`,
         errors: [{
           row: 0,
-          message: error instanceof Error ? error.message : 'שגיאה לא צפויה'
+          employee: 'כללי',
+          error: error instanceof Error ? error.message : 'שגיאה לא צפויה'
         }],
         importedEmployees: []
       };

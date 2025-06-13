@@ -10,11 +10,13 @@ import type { Customer, CustomerAgreement } from '@/types/customers';
 interface CustomerAgreementsProps {
   agreements: CustomerAgreement[];
   customers: Customer[];
+  onSuccess: () => void;
 }
 
 export const CustomerAgreements: React.FC<CustomerAgreementsProps> = ({
   agreements,
-  customers
+  customers,
+  onSuccess
 }) => {
   const [createAgreementOpen, setCreateAgreementOpen] = useState(false);
 
@@ -97,6 +99,7 @@ export const CustomerAgreements: React.FC<CustomerAgreementsProps> = ({
         open={createAgreementOpen}
         onOpenChange={setCreateAgreementOpen}
         customers={customers}
+        onSuccess={onSuccess}
       />
     </div>
   );

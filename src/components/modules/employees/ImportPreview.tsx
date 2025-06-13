@@ -5,9 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, XCircle, AlertTriangle, User } from 'lucide-react';
+import type { PreviewEmployee } from '@/hooks/useEmployeeImport/types';
 
 interface ImportPreviewProps {
-  previewData: any[];
+  previewData: PreviewEmployee[];
   onConfirm: () => void;
   onCancel: () => void;
 }

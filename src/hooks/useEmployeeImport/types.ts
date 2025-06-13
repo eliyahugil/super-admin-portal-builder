@@ -23,6 +23,7 @@ export interface PreviewEmployee {
   isValid: boolean;
   validationErrors?: string[];
   isDuplicate?: boolean;
+  name?: string; // For compatibility with summary component
 }
 
 export interface ImportResult {
