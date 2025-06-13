@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +15,7 @@ import { Building2, Check, ChevronDown, User, AlertCircle } from 'lucide-react';
 import { useUserBusinesses } from '@/hooks/useUserBusinesses';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
+import { cn } from '@/lib/utils';
 
 export const BusinessSwitcher: React.FC = () => {
   const { profile, user } = useAuth();
@@ -22,6 +23,13 @@ export const BusinessSwitcher: React.FC = () => {
   const { businessId, isSuperAdmin } = useCurrentBusiness();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    // קובע את כיוון הדף כ־RTL באופן גלובלי (אם טרם נעשה)
+    if (!document.documentElement.getAttribute('dir')) {
+      document.documentElement.setAttribute('dir', 'rtl');
+    }
+  }, []);
 
   console.log('🏢 BusinessSwitcher - Current state:', {
     userBusinesses: userBusinesses.length,
@@ -81,8 +89,7 @@ export const BusinessSwitcher: React.FC = () => {
 
       <DropdownMenuContent 
         align="end" 
-        className="w-64 text-right"
-        style={{ direction: 'rtl' }}
+        className={cn('w-64 text-right', isOpen && 'animate-in')}
       >
         <DropdownMenuLabel className="text-right">
           <div className="flex flex-col">
@@ -105,7 +112,10 @@ export const BusinessSwitcher: React.FC = () => {
             <DropdownMenuItem
               key={userBusiness.business_id}
               onClick={() => handleBusinessSelect(userBusiness.business_id)}
-              className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50"
+              className={cn(
+                'flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50',
+                userBusiness.business_id === businessId && 'bg-muted font-medium'
+              )}
             >
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
