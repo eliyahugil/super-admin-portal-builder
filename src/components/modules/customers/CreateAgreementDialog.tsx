@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -64,8 +63,8 @@ export const CreateAgreementDialog: React.FC<CreateAgreementDialogProps> = ({
       const agreementData = {
         business_id: businessId,
         customer_id: data.customer_id,
-        title: data.title,
-        content: data.content,
+        title: data.title || 'הסכם ללא כותרת',
+        content: data.content || 'תוכן ריק',
         type: data.type,
         status: data.status,
         valid_from: data.valid_from || null,

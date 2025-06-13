@@ -52,6 +52,13 @@ export interface ImportValidation {
   isValid: boolean;
   errors: string[];
   warnings: string[];
+  validateImportData: () => boolean;
+  getValidationSummary: () => {
+    totalRows: number;
+    validRows: number;
+    errorRows: number;
+    warningRows: number;
+  };
 }
 
 export interface EmployeeImportHook {

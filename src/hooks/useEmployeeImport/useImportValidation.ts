@@ -176,7 +176,9 @@ export const useImportValidation = ({
   }, [rawData.length]);
 
   return {
-    runValidation,
+    isValid: true,
+    errors: [],
+    warnings: [],
     validateImportData,
     getValidationSummary,
   };

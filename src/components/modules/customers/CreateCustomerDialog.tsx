@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -61,7 +60,7 @@ export const CreateCustomerDialog: React.FC<CreateCustomerDialogProps> = ({
 
       const customerData = {
         business_id: businessId,
-        name: data.name,
+        name: data.name || 'לקוח ללא שם',
         email: data.email || null,
         phone: data.phone || null,
         address: data.address || null,
