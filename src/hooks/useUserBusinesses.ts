@@ -22,23 +22,39 @@ export function useUserBusinesses() {
   const { user, profile } = useAuth();
 
   return useQuery({
-    queryKey: ['user-businesses', user?.id],
+    queryKey: ['user-businesses', user?.id, profile?.role],
     queryFn: async (): Promise<UserBusiness[]> => {
-      if (!user?.id) return [];
+      if (!user?.id || !profile) {
+        console.log('⚠️ useUserBusinesses: No user or profile available');
+        return [];
+      }
 
-      // If super admin, they can access all businesses
-      if (profile?.role === 'super_admin') {
+      console.log('🔍 useUserBusinesses: Fetching businesses for user:', {
+        userId: user.id,
+        role: profile.role,
+        isSuperAdmin: profile.role === 'super_admin'
+      });
+
+      // If super admin, they can access all active businesses
+      if (profile.role === 'super_admin') {
+        console.log('👑 Fetching all businesses for super admin');
+        
         const { data, error } = await supabase
           .from('businesses')
           .select('*')
           .eq('is_active', true)
           .order('name', { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Error fetching businesses for super admin:', error);
+          throw error;
+        }
+
+        console.log('✅ Super admin businesses fetched:', data?.length || 0);
 
         // Transform to match UserBusiness interface
         return data?.map(business => ({
-          id: business.id,
+          id: `super_admin_${business.id}`, // Unique ID for super admin access
           user_id: user.id,
           business_id: business.id,
           role: 'super_admin',
@@ -54,11 +70,13 @@ export function useUserBusinesses() {
       }
 
       // For regular users, get their business associations
+      console.log('👤 Fetching user business associations');
+      
       const { data, error } = await supabase
         .from('user_businesses')
         .select(`
           *,
-          business:businesses (
+          business:businesses!inner (
             id,
             name,
             description,
@@ -69,10 +87,18 @@ export function useUserBusinesses() {
         .eq('user_id', user.id)
         .eq('business.is_active', true);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching user businesses:', error);
+        throw error;
+      }
+
+      console.log('✅ User businesses fetched:', data?.length || 0);
+      
       return data || [];
     },
     enabled: !!user?.id && !!profile,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false,
   });
 }
 
