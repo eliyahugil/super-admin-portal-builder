@@ -2,16 +2,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Edit, Trash, User } from 'lucide-react';
+import { Eye, Edit, Trash } from 'lucide-react';
 import { EmployeeTokenButton } from '../../EmployeeTokenButton';
-
-interface Employee {
-  id: string;
-  first_name: string;
-  last_name: string;
-  phone: string | null;
-  email: string | null;
-}
+import type { Employee } from '@/types/employee';
 
 interface EmployeeRowActionsProps {
   employee: Employee;

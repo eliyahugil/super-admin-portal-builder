@@ -3,7 +3,7 @@ import React from 'react';
 import { EmployeeListHeader } from './list/EmployeeListHeader';
 import { EmployeeListContent } from './list/EmployeeListContent';
 import { useEmployeeListLogic } from './list/useEmployeeListLogic';
-import type { Employee } from '@/types/supabase';
+import type { Employee } from '@/types/employee';
 
 interface EmployeesListProps {
   employees: Employee[];

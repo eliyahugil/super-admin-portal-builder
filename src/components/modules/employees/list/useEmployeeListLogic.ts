@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
-import type { Employee } from '@/types/supabase';
+import type { Employee } from '@/types/employee';
 
 export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => void) => {
   const [searchTerm, setSearchTerm] = useState('');

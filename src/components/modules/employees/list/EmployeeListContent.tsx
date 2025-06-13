@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmployeeListTable } from './EmployeeListTable';
-import type { Employee } from '@/types/supabase';
+import type { Employee } from '@/types/employee';
 
 interface EmployeeListContentProps {
   employees: Employee[];

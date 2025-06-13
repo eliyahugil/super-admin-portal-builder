@@ -10,42 +10,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { EmployeeActions } from '../EmployeeActions';
-
-interface Employee {
-  id: string;
-  employee_id: string | null;
-  first_name: string;
-  last_name: string;
-  phone: string | null;
-  email: string | null;
-  employee_type: string;
-  is_active: boolean;
-  hire_date: string | null;
-  weekly_hours_required: number | null;
-  notes: string | null;
-  main_branch?: { name: string } | null;
-  branch_assignments?: Array<{
-    branch: { name: string };
-    role_name: string;
-    is_active: boolean;
-  }>;
-  weekly_tokens?: Array<{
-    token: string;
-    week_start_date: string;
-    week_end_date: string;
-    is_active: boolean;
-  }>;
-  employee_notes?: Array<{
-    content: string;
-    note_type: string;
-    created_at: string;
-  }>;
-  salary_info?: {
-    hourly_rate?: number;
-    monthly_salary?: number;
-    currency?: string;
-  };
-}
+import type { Employee, EmployeeType } from '@/types/employee';
 
 interface EmployeesTableGridProps {
   employees: Employee[];
@@ -56,24 +21,24 @@ export const EmployeesTableGrid: React.FC<EmployeesTableGridProps> = ({
   employees,
   onTokenSent,
 }) => {
-  const getEmployeeTypeLabel = (type: string) => {
-    const types: Record<string, string> = {
+  const getEmployeeTypeLabel = (type: EmployeeType) => {
+    const types: Record<EmployeeType, string> = {
       permanent: 'קבוע',
       temporary: 'זמני',
       youth: 'נוער',
       contractor: 'קבלן',
     };
-    return types[type] || type;
+    return types[type];
   };
 
-  const getEmployeeTypeVariant = (type: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  const getEmployeeTypeVariant = (type: EmployeeType) => {
+    const variants: Record<EmployeeType, 'default' | 'secondary' | 'destructive' | 'outline'> = {
       permanent: 'default',
       temporary: 'secondary',
       youth: 'outline',
       contractor: 'destructive',
     };
-    return variants[type] || 'default';
+    return variants[type];
   };
 
   const getActiveBranches = (employee: Employee) => {

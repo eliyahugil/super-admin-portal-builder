@@ -7,7 +7,7 @@ import { EmployeeBranchInfo } from './row/EmployeeBranchInfo';
 import { EmployeeWorkInfo } from './row/EmployeeWorkInfo';
 import { EmployeeQuickStats } from './row/EmployeeQuickStats';
 import { EmployeeRowActions } from './row/EmployeeRowActions';
-import type { Employee } from '@/types/supabase';
+import type { Employee } from '@/types/employee';
 
 interface EmployeesTableRowProps {
   employee: Employee;
@@ -42,7 +42,7 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
       {/* Status & Type */}
       <td className="px-4 py-3">
         <EmployeeStatusBadges
-          isActive={employee.is_active}
+          isActive={employee.is_active ?? true}
           employeeType={employee.employee_type}
         />
       </td>

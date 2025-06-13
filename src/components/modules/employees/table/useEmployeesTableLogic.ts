@@ -1,10 +1,10 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useEmployeesData } from '@/hooks/useEmployeesData';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import type { Employee } from '@/types/supabase';
+import type { Employee } from '@/types/employee';
 
 export const useEmployeesTableLogic = (selectedBusinessId?: string | null) => {
   const [search, setSearch] = useState('');

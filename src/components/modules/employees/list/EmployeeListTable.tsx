@@ -8,7 +8,7 @@ import { Phone, Building, CheckCircle, XCircle, Trash2, Eye } from 'lucide-react
 import { useNavigate } from 'react-router-dom';
 import { EmployeeEditButton } from '../edit/EmployeeEditButton';
 import { EmployeeTokenButton } from '../EmployeeTokenButton';
-import type { Employee, EmployeeType } from '@/types/supabase';
+import type { Employee, EmployeeType } from '@/types/employee';
 
 interface EmployeeListTableProps {
   employees: Employee[];
@@ -38,7 +38,7 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
       youth: 'נוער',
       contractor: 'קבלן',
     };
-    return types[type] || type;
+    return types[type];
   };
 
   const getEmployeeTypeVariant = (type: EmployeeType) => {
@@ -48,7 +48,7 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
       youth: 'outline',
       contractor: 'destructive',
     };
-    return variants[type] || 'default';
+    return variants[type];
   };
 
   const handleViewProfile = (employeeId: string, employeeName: string) => {

@@ -4,7 +4,7 @@ import { CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { User } from 'lucide-react';
 import { EmployeesTableGrid } from './EmployeesTableGrid';
-import type { Employee } from '@/types/supabase';
+import type { Employee } from '@/types/employee';
 
 interface EmployeesTableContentProps {
   filteredEmployees: Employee[];

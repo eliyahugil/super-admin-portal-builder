@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from './useCurrentBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
-import type { Employee, mapEmployeeType } from '@/types/supabase';
+import { mapEmployeeType } from '@/types/employee';
+import type { Employee } from '@/types/employee';
 
 // רשימת המשתמשים המורשים לראות את כל העסקים
 const AUTHORIZED_SUPER_USERS = [
