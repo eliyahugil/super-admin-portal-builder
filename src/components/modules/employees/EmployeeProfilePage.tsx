@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,7 +30,7 @@ import { EmployeeDocuments } from './EmployeeDocuments';
 import { EmployeeNotes } from './EmployeeNotes';
 import { SalaryHistory } from './SalaryHistory';
 import { WeeklyTokenButton } from './WeeklyTokenButton';
-import { EmployeeEditDialog } from './EmployeeEditDialog';
+import { EmployeeEditProfileButton } from './edit/EmployeeEditProfileButton';
 import { EmployeeBranchAssignments } from './EmployeeBranchAssignments';
 import { EmployeeContacts } from './EmployeeContacts';
 import { RecentAttendance } from './RecentAttendance';
@@ -250,7 +249,7 @@ export const EmployeeProfilePage: React.FC = () => {
 
       {/* Action Buttons */}
       <div className="flex gap-3 mb-6">
-        <EmployeeEditDialog employee={employee} onUpdate={fetchEmployeeDetails} />
+        <EmployeeEditProfileButton employee={employee} onUpdate={fetchEmployeeDetails} />
         <CloneEmployeeDialog employee={employee} />
         {employee.phone && (
           <>

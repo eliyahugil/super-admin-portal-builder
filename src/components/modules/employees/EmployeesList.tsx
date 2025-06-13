@@ -5,8 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Edit, Trash2, Phone, Building, CheckCircle, XCircle } from 'lucide-react';
-import { EmployeeEditDialog } from './EmployeeEditDialog';
+import { Search, Trash2, Phone, Building, CheckCircle, XCircle } from 'lucide-react';
+import { EmployeeEditButton } from './edit/EmployeeEditButton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
@@ -348,13 +348,10 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditingEmployee(employee)}
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
+                        <EmployeeEditButton
+                          employee={convertToEmployee(employee)}
+                          onSuccess={onRefetch}
+                        />
                         <Button
                           variant="outline"
                           size="sm"
