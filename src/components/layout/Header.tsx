@@ -3,10 +3,11 @@ import React from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { BackButton } from '@/components/ui/BackButton';
+import { BusinessSwitcher } from './BusinessSwitcher';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useLocation } from 'react-router-dom';
-import { LogOut, User, Menu } from 'lucide-react';
+import { LogOut, Menu } from 'lucide-react';
 
 interface HeaderProps {
   showMobileMenu?: boolean;
@@ -18,17 +19,13 @@ export const Header: React.FC<HeaderProps> = ({
   onMobileMenuToggle 
 }) => {
   const { business, isSuperAdmin } = useBusiness();
-  const { profile, user, session, loading, signOut } = useAuth();
+  const { user, session, loading, signOut } = useAuth();
   const location = useLocation();
 
   console.log('🎯 Header render - Auth state:', {
     hasUser: !!user,
     hasSession: !!session,
-    hasProfile: !!profile,
     loading,
-    profileRole: profile?.role,
-    profileName: profile?.full_name,
-    profileEmail: profile?.email,
     isSuperAdmin
   });
 
@@ -41,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   // Only show user info if we have both user and session (truly logged in)
-  const isAuthenticated = user && session && profile;
+  const isAuthenticated = user && session;
 
   // Show back button for deep navigation paths
   const showBackButton = location.pathname.split('/').length > 3;
@@ -86,23 +83,8 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="text-sm text-gray-400">טוען...</span>
         ) : isAuthenticated ? (
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* User Profile - Hidden on Small Mobile */}
-            <div className="hidden sm:flex items-center gap-2 text-sm">
-              <User className="h-4 w-4 text-gray-500" />
-              <div className="flex flex-col items-end">
-                <span className="text-gray-900 font-medium truncate max-w-[120px] sm:max-w-none">
-                  {profile.full_name || 'משתמש'}
-                </span>
-                <span className="text-xs text-gray-500 truncate max-w-[120px] sm:max-w-none">
-                  {user.email}
-                </span>
-              </div>
-            </div>
-            
-            {/* Role Badge - Hidden on Extra Small Mobile */}
-            <div className="hidden sm:block text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
-              {profile.role === 'super_admin' ? 'מנהל על' : 'משתמש עסקי'}
-            </div>
+            {/* Business Switcher */}
+            <BusinessSwitcher />
             
             {/* Logout Button */}
             <Button

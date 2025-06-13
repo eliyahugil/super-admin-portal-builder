@@ -142,31 +142,11 @@ export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({ employ
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {employee.employee_notes && employee.employee_notes.length > 0 ? (
-                  <div className="space-y-3">
-                    {employee.employee_notes.map((note, index) => (
-                      <div key={index} className={`p-3 rounded ${note.is_warning ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
-                        <div className="flex justify-between items-start mb-2">
-                          <Badge variant={note.is_warning ? 'destructive' : 'secondary'}>
-                            {note.note_type === 'general' ? 'כללי' :
-                             note.note_type === 'warning' ? 'אזהרה' :
-                             note.note_type === 'performance' ? 'ביצועים' : note.note_type}
-                          </Badge>
-                          <span className="text-xs text-gray-500">
-                            {new Date(note.created_at).toLocaleDateString('he-IL')}
-                          </span>
-                        </div>
-                        <p className="text-gray-700">{note.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">אין הערות</h3>
-                    <p className="text-gray-500">לא נוספו הערות עבור עובד זה</p>
-                  </div>
-                )}
+                <div className="text-center py-8">
+                  <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">אין הערות</h3>
+                  <p className="text-gray-500">לא נוספו הערות עבור עובד זה</p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -180,34 +160,11 @@ export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({ employ
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {employee.branch_assignments && employee.branch_assignments.length > 0 ? (
-                  <div className="space-y-3">
-                    {employee.branch_assignments.map((assignment, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                        <div>
-                          <p className="font-medium">{assignment.branch?.name}</p>
-                          <p className="text-sm text-gray-600">תפקיד: {assignment.role_name}</p>
-                        </div>
-                        <div className="text-left">
-                          <Badge variant={assignment.is_active ? 'default' : 'secondary'}>
-                            {assignment.is_active ? 'פעיל' : 'לא פעיל'}
-                          </Badge>
-                          {assignment.max_weekly_hours && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              מקס' שעות: {assignment.max_weekly_hours}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">אין שיוכים</h3>
-                    <p className="text-gray-500">העובד לא משויך לאף סניף</p>
-                  </div>
-                )}
+                <div className="text-center py-8">
+                  <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">אין שיוכים</h3>
+                  <p className="text-gray-500">העובד לא משויך לאף סניף</p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -221,37 +178,11 @@ export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({ employ
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {employee.salary_history && employee.salary_history.length > 0 ? (
-                  <div className="space-y-3">
-                    {employee.salary_history.map((salary, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                        <div>
-                          <p className="font-medium">{salary.amount} {salary.currency}</p>
-                          <p className="text-sm text-gray-600">
-                            {salary.type === 'hourly' ? 'שכר שעתי' : 'שכר חודשי'}
-                          </p>
-                          {salary.reason && (
-                            <p className="text-xs text-gray-500">{salary.reason}</p>
-                          )}
-                        </div>
-                        <div className="text-left">
-                          <p className="text-sm font-medium">
-                            {new Date(salary.effective_date).toLocaleDateString('he-IL')}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(salary.created_at).toLocaleDateString('he-IL')}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">אין נתוני שכר</h3>
-                    <p className="text-gray-500">לא הוגדרו נתוני שכר עבור עובד זה</p>
-                  </div>
-                )}
+                <div className="text-center py-8">
+                  <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">אין נתוני שכר</h3>
+                  <p className="text-gray-500">לא הוגדרו נתוני שכר עבור עובד זה</p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
