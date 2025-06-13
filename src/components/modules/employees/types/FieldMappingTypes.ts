@@ -3,7 +3,7 @@ export interface FieldMapping {
   id: string;
   systemField: string;
   mappedColumns: string[];
-  isCustomField: boolean;
+  isCustomField?: boolean;
   customFieldName?: string;
   customFieldType?: string;
 }

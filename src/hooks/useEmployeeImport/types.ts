@@ -6,6 +6,10 @@ export interface ParsedExcelData {
   data: any[];
 }
 
+export interface ExcelRow {
+  [key: string]: any;
+}
+
 export interface PreviewEmployee {
   business_id: string;
   first_name: string;
@@ -16,7 +20,7 @@ export interface PreviewEmployee {
   employee_id?: string;
   address?: string;
   hire_date?: string;
-  employee_type: string;
+  employee_type: 'permanent' | 'temporary' | 'youth' | 'contractor';
   weekly_hours_required?: number;
   main_branch_id?: string;
   main_branch_name?: string;
@@ -48,8 +52,8 @@ export interface EmployeeImportHook {
   step: ImportStep;
   setStep: (step: ImportStep) => void;
   file: File | null;
-  rawData: any[];
-  setRawData: (data: any[]) => void;
+  rawData: ExcelRow[];
+  setRawData: (data: ExcelRow[]) => void;
   headers: string[];
   setHeaders: (headers: string[]) => void;
   fieldMappings: FieldMapping[];
