@@ -15,6 +15,12 @@ interface UseCurrentBusinessResult {
   error: string | null;
 }
 
+// רשימת המשתמשים המורשים לראות את כל העסקים
+const AUTHORIZED_SUPER_USERS = [
+  'HABULGARTI@gmail.com',
+  'eligil1308@gmail.com'
+];
+
 export function useCurrentBusiness(): UseCurrentBusinessResult {
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
@@ -25,7 +31,9 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
   const { data: userBusinesses, isLoading: businessesLoading, error: businessesError } = useUserBusinesses();
   const { businessId: urlBusinessId } = useParams();
 
-  const isSuperAdmin = profile?.role === 'super_admin';
+  const userEmail = user?.email?.toLowerCase();
+  const isAuthorizedSuperUser = userEmail && AUTHORIZED_SUPER_USERS.includes(userEmail);
+  const isSuperAdmin = isAuthorizedSuperUser;
   const loading = authLoading || businessesLoading;
 
   useEffect(() => {
@@ -57,16 +65,16 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
         return;
       } else {
         console.warn('⚠️ useCurrentBusiness: URL business not found in user businesses');
-        if (!isSuperAdmin) {
+        if (!isAuthorizedSuperUser) {
           setError('אין לך הרשאה לעסק זה');
           return;
         }
       }
     }
 
-    // If super admin without URL business ID, don't set a specific business
-    if (isSuperAdmin && !urlBusinessId) {
-      console.log('👑 useCurrentBusiness: Super admin without specific business');
+    // If authorized super user without URL business ID, don't set a specific business
+    if (isAuthorizedSuperUser && !urlBusinessId) {
+      console.log('👑 useCurrentBusiness: Authorized super user without specific business');
       setBusinessId(null);
       setBusinessName('מנהל ראשי');
       return;
@@ -78,13 +86,13 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
       console.log('🏢 useCurrentBusiness: Using first available business:', firstBusiness.business.name);
       setBusinessId(firstBusiness.business_id);
       setBusinessName(firstBusiness.business.name);
-    } else if (!isSuperAdmin) {
+    } else if (!isAuthorizedSuperUser) {
       console.warn('⚠️ useCurrentBusiness: No businesses available for regular user');
       setBusinessId(null);
       setBusinessName(null);
       setError('לא נמצאו עסקים זמינים');
     }
-  }, [user, profile, userBusinesses, urlBusinessId, isSuperAdmin, loading, businessesError]);
+  }, [user, profile, userBusinesses, urlBusinessId, isAuthorizedSuperUser, loading, businessesError]);
 
   console.log('📊 useCurrentBusiness - Current state:', {
     businessId,
@@ -93,7 +101,8 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
     isSuperAdmin,
     loading,
     availableBusinesses: userBusinesses?.length || 0,
-    error
+    error,
+    isAuthorizedSuperUser
   });
 
   return { 

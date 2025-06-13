@@ -18,6 +18,12 @@ interface UserBusiness {
   };
 }
 
+// רשימת המשתמשים המורשים לראות את כל העסקים
+const AUTHORIZED_SUPER_USERS = [
+  'HABULGARTI@gmail.com',
+  'eligil1308@gmail.com'
+];
+
 export function useUserBusinesses() {
   const { user, profile } = useAuth();
 
@@ -29,15 +35,20 @@ export function useUserBusinesses() {
         return [];
       }
 
+      const userEmail = user.email?.toLowerCase();
+      const isAuthorizedSuperUser = userEmail && AUTHORIZED_SUPER_USERS.includes(userEmail);
+
       console.log('🔍 useUserBusinesses: Fetching businesses for user:', {
         userId: user.id,
+        email: userEmail,
         role: profile.role,
+        isAuthorizedSuperUser,
         isSuperAdmin: profile.role === 'super_admin'
       });
 
-      // If super admin, they can access all active businesses
-      if (profile.role === 'super_admin') {
-        console.log('👑 Fetching all businesses for super admin');
+      // רק משתמשים מורשים יכולים לראות את כל העסקים
+      if (isAuthorizedSuperUser) {
+        console.log('👑 Fetching all businesses for authorized super user');
         
         const { data, error } = await supabase
           .from('businesses')
@@ -46,11 +57,11 @@ export function useUserBusinesses() {
           .order('name', { ascending: true });
 
         if (error) {
-          console.error('❌ Error fetching businesses for super admin:', error);
+          console.error('❌ Error fetching businesses for authorized super user:', error);
           throw error;
         }
 
-        console.log('✅ Super admin businesses fetched:', data?.length || 0);
+        console.log('✅ Authorized super user businesses fetched:', data?.length || 0);
 
         // Transform to match UserBusiness interface
         return data?.map(business => ({
@@ -69,8 +80,8 @@ export function useUserBusinesses() {
         })) || [];
       }
 
-      // For regular users, get their business associations
-      console.log('👤 Fetching user business associations');
+      // לכל שאר המשתמשים - רק העסקים שלהם
+      console.log('👤 Fetching user business associations for regular user');
       
       const { data, error } = await supabase
         .from('user_businesses')
