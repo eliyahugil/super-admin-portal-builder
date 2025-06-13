@@ -1,8 +1,8 @@
 
 import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { ExcelParserService } from '@/services/excel/ExcelParserService';
-import type { ExcelRow, ImportStep } from '@/hooks/useEmployeeImport/types';
+import { ExcelParserService, ExcelRow } from '@/services/ExcelImportService';
+import type { ImportStep } from '@/hooks/useEmployeeImport/types';
 
 interface UseFileUploadProps {
   setFile: (file: File | null) => void;
@@ -43,15 +43,14 @@ export const useFileUpload = ({
         description: 'קורא ומנתח את נתוני האקסל',
       });
 
-      const parsedData = await ExcelParserService.parseFile(uploadedFile);
+      const parsedData = await ExcelParserService.parseExcelFile(uploadedFile);
       
       console.log('📊 Parsed Excel data:', {
-        totalRows: parsedData.data.length,
-        headers: parsedData.headers.length,
-        sample: parsedData.data.slice(0, 3)
+        totalRows: parsedData.length,
+        sample: parsedData.slice(0, 3)
       });
 
-      if (parsedData.data.length === 0) {
+      if (parsedData.length === 0) {
         toast({
           title: 'קובץ ריק',
           description: 'הקובץ לא מכיל נתונים או שכל השורות ריקות',
@@ -60,13 +59,17 @@ export const useFileUpload = ({
         return;
       }
 
-      setRawData(parsedData.data);
-      setHeaders(parsedData.headers);
+      // Extract headers from the first row
+      const headers = Object.keys(parsedData[0] || {});
+      
+      setRawData(parsedData);
+      setHeaders(headers);
+      setStep('mapping');
       setShowMappingDialog(true);
 
       toast({
         title: 'קובץ נטען בהצלחה! 📄',
-        description: `נמצאו ${parsedData.data.length} שורות נתונים`,
+        description: `נמצאו ${parsedData.length} שורות נתונים`,
       });
 
     } catch (error) {
@@ -77,7 +80,7 @@ export const useFileUpload = ({
         variant: 'destructive'
       });
     }
-  }, [setFile, setRawData, setHeaders, setShowMappingDialog, toast]);
+  }, [setFile, setRawData, setHeaders, setStep, setShowMappingDialog, toast]);
 
   return {
     handleFileUpload,
