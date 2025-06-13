@@ -484,6 +484,66 @@ export type Database = {
           },
         ]
       }
+      customer_agreements: {
+        Row: {
+          business_id: string
+          content: string
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          id: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          business_id: string
+          content: string
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          id?: string
+          status?: string
+          title: string
+          type?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          business_id?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          id?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_agreements_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_agreements_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_numbers: {
         Row: {
           business_id: string
@@ -506,6 +566,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "customer_numbers_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          address: string | null
+          business_id: string
+          company: string | null
+          contact_person: string | null
+          created_at: string
+          customer_type: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          business_id: string
+          company?: string | null
+          contact_person?: string | null
+          created_at?: string
+          customer_type?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          business_id?: string
+          company?: string | null
+          contact_person?: string | null
+          created_at?: string
+          customer_type?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"

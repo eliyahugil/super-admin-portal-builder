@@ -5,22 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, FileText, Edit, Eye } from 'lucide-react';
 import { CreateAgreementDialog } from './CreateAgreementDialog';
-
-interface Agreement {
-  id: string;
-  title: string;
-  content: string;
-  status: 'draft' | 'active' | 'signed' | 'expired';
-  customer_id: string;
-  created_at: string;
-  customer?: {
-    name: string;
-  };
-}
+import type { Customer, CustomerAgreement } from '@/types/customers';
 
 interface CustomerAgreementsProps {
-  agreements: Agreement[];
-  customers: any[];
+  agreements: CustomerAgreement[];
+  customers: Customer[];
 }
 
 export const CustomerAgreements: React.FC<CustomerAgreementsProps> = ({

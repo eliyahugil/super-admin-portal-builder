@@ -1,58 +1,83 @@
 
 import React from 'react';
-import { EmployeeImportUploadStep } from '../steps/EmployeeImportUploadStep';
-import { EmployeeValidationResults } from '../EmployeeValidationResults';
+import { ImportFileUpload } from '../ImportFileUpload';
+import { FieldMappingDialog } from '../FieldMappingDialog';
+import { ImportPreview } from '../ImportPreview';
+import { ImportResults } from '../ImportResults';
 import { EmployeeImportSummary } from '../steps/EmployeeImportSummary';
-import type { EmployeeImportHook } from '@/hooks/useEmployeeImport/types';
+import type { ImportStep, EmployeeImportHook } from '@/hooks/useEmployeeImport/types';
 
 interface ImportStepContentProps {
+  step: ImportStep;
   importHook: EmployeeImportHook;
 }
 
 export const ImportStepContent: React.FC<ImportStepContentProps> = ({
+  step,
   importHook
 }) => {
-  console.log('🎬 Rendering step content for:', importHook.step);
-  
-  switch (importHook.step) {
+  const {
+    processFile,
+    downloadTemplate,
+    showMappingDialog,
+    setShowMappingDialog,
+    headers,
+    fieldMappings,
+    setFieldMappings,
+    previewData,
+    setPreviewData,
+    executeImport,
+    importResult
+  } = importHook;
+
+  switch (step) {
     case 'upload':
       return (
-        <EmployeeImportUploadStep
-          onFileUpload={(file) => {
-            console.log('📄 File selected:', file.name);
-            importHook.handleFileUpload(file);
-          }}
-          onDownloadTemplate={importHook.downloadTemplate}
+        <ImportFileUpload
+          onFileSelect={processFile}
+          onDownloadTemplate={downloadTemplate}
         />
       );
-    
+
+    case 'mapping':
+      return (
+        <FieldMappingDialog
+          open={showMappingDialog}
+          onOpenChange={setShowMappingDialog}
+          headers={headers}
+          fieldMappings={fieldMappings}
+          onMappingsChange={setFieldMappings}
+          onPreviewData={setPreviewData}
+        />
+      );
+
     case 'preview':
       return (
-        <EmployeeValidationResults
-          validationErrors={importHook.validationErrors}
-          duplicateErrors={importHook.duplicateErrors}
-          summary={importHook.getValidationSummary()}
-          onContinueImport={importHook.handleImport}
-          onBackToMapping={() => importHook.setShowMappingDialog(true)}
-          isImporting={importHook.isImporting}
+        <ImportPreview
+          previewData={previewData}
+          onExecuteImport={executeImport}
         />
       );
-    
-    case 'summary':
-      return (
-        <EmployeeImportSummary
-          result={importHook.importResult}
-          onStartOver={importHook.resetForm}
-          onClose={() => importHook.resetForm()}
-        />
-      );
-    
-    default:
-      console.warn('⚠️ Unknown step:', importHook.step);
+
+    case 'importing':
       return (
         <div className="text-center py-8">
-          <p>שלב לא מזוהה: {importHook.step}</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">מייבא עובדים...</p>
         </div>
       );
+
+    case 'results':
+      return (
+        <ImportResults result={importResult} />
+      );
+
+    case 'summary':
+      return (
+        <EmployeeImportSummary result={importResult} />
+      );
+
+    default:
+      return null;
   }
 };

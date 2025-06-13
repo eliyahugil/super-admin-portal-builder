@@ -5,18 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Edit, Trash2, User, Building } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface Customer {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  customer_type: 'individual' | 'business';
-  company?: string;
-  contact_person?: string;
-  is_active: boolean;
-  created_at: string;
-}
+import type { Customer } from '@/types/customers';
 
 interface CustomersListProps {
   customers: Customer[];

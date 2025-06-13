@@ -1,5 +1,5 @@
 
-export type ImportStep = 'upload' | 'mapping' | 'preview' | 'importing' | 'results';
+export type ImportStep = 'upload' | 'mapping' | 'preview' | 'importing' | 'results' | 'summary';
 
 export interface ExcelRow {
   [key: string]: any;
@@ -45,4 +45,35 @@ export interface FieldMapping {
   isCustomField: boolean;
   customFieldName?: string;
   customFieldType?: string;
+}
+
+export interface EmployeeImportHook {
+  // Import state
+  step: ImportStep;
+  setStep: (step: ImportStep) => void;
+  showMappingDialog: boolean;
+  setShowMappingDialog: (show: boolean) => void;
+  
+  // File processing
+  rawData: ExcelRow[];
+  setRawData: (data: ExcelRow[]) => void;
+  headers: string[];
+  setHeaders: (headers: string[]) => void;
+  
+  // Field mapping
+  fieldMappings: FieldMapping[];
+  setFieldMappings: (mappings: FieldMapping[]) => void;
+  
+  // Preview data
+  previewData: PreviewEmployee[];
+  setPreviewData: (data: PreviewEmployee[]) => void;
+  
+  // Import result
+  importResult: ImportResult | null;
+  setImportResult: (result: ImportResult) => void;
+  
+  // Functions
+  processFile: (file: File) => Promise<void>;
+  executeImport: () => Promise<void>;
+  downloadTemplate: () => void;
 }

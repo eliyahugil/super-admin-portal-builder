@@ -11,6 +11,7 @@ import { CreateCustomerDialog } from './CreateCustomerDialog';
 import { CustomersList } from './CustomersList';
 import { CustomerAgreements } from './CustomerAgreements';
 import { DigitalSignatures } from './DigitalSignatures';
+import type { Customer, CustomerAgreement } from '@/types/customers';
 
 export const CustomerManagement = () => {
   const [createCustomerOpen, setCreateCustomerOpen] = useState(false);
@@ -18,7 +19,7 @@ export const CustomerManagement = () => {
 
   const { data: customers, refetch: refetchCustomers } = useQuery({
     queryKey: ['customers'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Customer[]> => {
       console.log('🔄 Fetching customers...');
       const { data, error } = await supabase
         .from('customers')
@@ -36,7 +37,7 @@ export const CustomerManagement = () => {
 
   const { data: agreements } = useQuery({
     queryKey: ['customer-agreements'],
-    queryFn: async () => {
+    queryFn: async (): Promise<CustomerAgreement[]> => {
       const { data, error } = await supabase
         .from('customer_agreements')
         .select('*, customer:customers(name)')

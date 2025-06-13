@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/useBusiness';
+import type { Customer } from '@/types/customers';
 
 const agreementSchema = z.object({
   title: z.string().min(2, 'כותרת חייבת להכיל לפחות 2 תווים'),
@@ -27,7 +28,7 @@ type AgreementFormData = z.infer<typeof agreementSchema>;
 interface CreateAgreementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  customers: any[];
+  customers: Customer[];
 }
 
 export const CreateAgreementDialog: React.FC<CreateAgreementDialogProps> = ({
