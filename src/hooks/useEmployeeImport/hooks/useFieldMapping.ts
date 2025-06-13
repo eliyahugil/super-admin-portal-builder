@@ -9,7 +9,7 @@ interface UseFieldMappingProps {
   rawData: any[];
   branches: Array<{ id: string; name: string }>;
   existingEmployees: Array<{ email?: string; id_number?: string; employee_id?: string }>;
-  setFieldMappings: (mappings: Record<string, string>) => void;
+  setFieldMappings: (mappings: FieldMapping[]) => void;
   setPreviewData: (data: PreviewEmployee[]) => void;
   setStep: (step: ImportStep) => void;
   setShowMappingDialog: (show: boolean) => void;
@@ -27,7 +27,7 @@ export const useFieldMapping = ({
 }: UseFieldMappingProps) => {
   const { toast } = useToast();
 
-  const confirmMapping = useCallback(async (fieldMappings: Record<string, string>) => {
+  const confirmMapping = useCallback(async (fieldMappings: FieldMapping[]) => {
     console.log('🗺️ useFieldMapping - confirmMapping called:', {
       fieldMappings,
       rawDataCount: rawData.length,
@@ -45,10 +45,18 @@ export const useFieldMapping = ({
     }
 
     try {
+      // Convert FieldMapping[] to Record<string, string> for the service
+      const mappingRecord: Record<string, string> = {};
+      fieldMappings.forEach(mapping => {
+        if (mapping.systemField && mapping.mappedColumns.length > 0) {
+          mappingRecord[mapping.systemField] = mapping.mappedColumns[0];
+        }
+      });
+
       // Generate preview data using the service
       const previewData = await ExcelImportService.generatePreview({
         rawData,
-        fieldMappings,
+        fieldMappings: mappingRecord,
         businessId,
         branches,
         existingEmployees

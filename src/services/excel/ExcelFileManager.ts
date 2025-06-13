@@ -68,7 +68,6 @@ export class ExcelFileManager {
           isValid: validation.isValid,
           isDuplicate,
           validationErrors: validation.errors,
-          rowNumber: i + 1
         };
 
         previewData.push(previewEmployee);
@@ -92,7 +91,6 @@ export class ExcelFileManager {
           isValid: false,
           isDuplicate: false,
           validationErrors: [`שגיאה בעיבוד השורה: ${error instanceof Error ? error.message : 'שגיאה לא צפויה'}`],
-          rowNumber: i + 1
         };
 
         previewData.push(errorEmployee);

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Edit, Trash2, Phone, Building, CheckCircle, XCircle, SelectAll } from 'lucide-react';
+import { Search, Edit, Trash2, Phone, Building, CheckCircle, XCircle } from 'lucide-react';
 import { EmployeeEditDialog } from './EmployeeEditDialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +23,9 @@ interface Employee {
   is_active: boolean;
   hire_date: string | null;
   weekly_hours_required: number | null;
+  address: string | null;
+  notes: string | null;
+  main_branch_id: string | null;
   main_branch?: { name: string } | null;
 }
 
@@ -260,11 +263,6 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
                     <Checkbox
                       checked={allFilteredSelected}
                       onCheckedChange={handleSelectAll}
-                      ref={(input) => {
-                        if (input) {
-                          input.indeterminate = someFilteredSelected && !allFilteredSelected;
-                        }
-                      }}
                     />
                   </TableHead>
                   <TableHead className="text-right">שם מלא</TableHead>
