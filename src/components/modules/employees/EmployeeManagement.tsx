@@ -4,9 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Plus, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { CreateEmployeeDialog } from './CreateEmployeeDialog';
 import { CreateBranchDialog } from './CreateBranchDialog';
 import { EmployeesList } from './EmployeesList';
@@ -17,15 +19,28 @@ export const EmployeeManagement = () => {
   const [createEmployeeOpen, setCreateEmployeeOpen] = useState(false);
   const [createBranchOpen, setCreateBranchOpen] = useState(false);
   const { toast } = useToast();
+  const { businessId, isSuperAdmin, loading: businessLoading } = useCurrentBusiness();
 
   const { data: employees, refetch: refetchEmployees } = useQuery({
-    queryKey: ['employees'],
+    queryKey: ['employees', businessId],
     queryFn: async () => {
-      console.log('🔄 Fetching employees...');
-      const { data, error } = await supabase
+      console.log('🔄 Fetching employees for business:', businessId);
+      
+      let query = supabase
         .from('employees')
         .select('*, main_branch:branches(name)')
         .order('created_at', { ascending: false });
+
+      // If not super admin or has specific business, filter by business
+      if (!isSuperAdmin || businessId) {
+        if (!businessId) {
+          console.log('⚠️ No business ID available for non-super admin user');
+          return [];
+        }
+        query = query.eq('business_id', businessId);
+      }
+      
+      const { data, error } = await query;
       
       if (error) {
         console.error('❌ Error fetching employees:', error);
@@ -34,15 +49,27 @@ export const EmployeeManagement = () => {
       console.log('✅ Employees fetched:', data?.length || 0);
       return data || [];
     },
+    enabled: !businessLoading && (!!businessId || isSuperAdmin),
   });
 
   const { data: branches, refetch: refetchBranches } = useQuery({
-    queryKey: ['branches'],
+    queryKey: ['branches', businessId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('branches')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // If not super admin or has specific business, filter by business
+      if (!isSuperAdmin || businessId) {
+        if (!businessId) {
+          console.log('⚠️ No business ID available for branches');
+          return [];
+        }
+        query = query.eq('business_id', businessId);
+      }
+
+      const { data, error } = await query;
       
       if (error) {
         console.error('Error fetching branches:', error);
@@ -50,6 +77,7 @@ export const EmployeeManagement = () => {
       }
       return data || [];
     },
+    enabled: !businessLoading && (!!businessId || isSuperAdmin),
   });
 
   // Listen for successful imports and refresh the employees list
@@ -86,12 +114,36 @@ export const EmployeeManagement = () => {
     });
   };
 
+  // Show loading state
+  if (businessLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">טוען...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">ניהול עובדים וסניפים</h1>
-        <p className="text-gray-600">נהל את העובדים והסניפים של העסק</p>
+        <p className="text-gray-600">
+          {isSuperAdmin && !businessId 
+            ? 'ניהול עובדים וסניפים - תצוגת מנהל מערכת' 
+            : 'נהל את העובדים והסניפים של העסק'
+          }
+        </p>
       </div>
+
+      {isSuperAdmin && !businessId && (
+        <Alert className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            אתה מחובר כמנהל מערכת. הנתונים מוצגים מכל העסקים. 
+            לביצוע פעולות ניהול יש לבחור עסק ספציפי או להשתמש בבורר העסקים.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs defaultValue="employees" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">

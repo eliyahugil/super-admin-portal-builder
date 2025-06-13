@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,9 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { useQuery } from '@tanstack/react-query';
 
 interface CreateEmployeeDialogProps {
   open: boolean;
@@ -41,10 +46,36 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
     hire_date: '',
     notes: '',
     is_active: true,
+    selected_business_id: '', // Add this for super admin
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { logActivity } = useActivityLogger();
+  const { businessId, isSuperAdmin } = useCurrentBusiness();
+
+  // Get all businesses for super admin selection
+  const { data: businesses = [] } = useQuery({
+    queryKey: ['all-businesses'],
+    queryFn: async () => {
+      if (!isSuperAdmin) return [];
+      
+      const { data, error } = await supabase
+        .from('businesses')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) {
+        console.error('Error fetching businesses:', error);
+        return [];
+      }
+      
+      return data || [];
+    },
+    enabled: isSuperAdmin && open,
+  });
+
+  const effectiveBusinessId = businessId || formData.selected_business_id;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,25 +89,20 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
       return;
     }
 
+    if (!effectiveBusinessId) {
+      toast({
+        title: 'שגיאה',
+        description: 'יש לבחור עסק להוספת העובד',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Get current user's business_id (assuming super admin for now)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
-
-      if (!profile) {
-        throw new Error('Unable to get user profile');
-      }
-
-      // For now, we'll use a default business_id - in production this should come from user context
-      const businessId = 'default-business-id'; // This should be properly handled
-
       const employeeData = {
-        business_id: businessId,
+        business_id: effectiveBusinessId,
         employee_id: formData.employee_id.trim() || null,
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
@@ -93,6 +119,8 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
         is_active: formData.is_active,
       };
 
+      console.log('🚀 Creating employee with data:', employeeData);
+
       const { data: createdEmployee, error } = await supabase
         .from('employees')
         .insert(employeeData)
@@ -100,7 +128,7 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
         .single();
 
       if (error) {
-        console.error('Error creating employee:', error);
+        console.error('❌ Error creating employee:', error);
         
         logActivity({
           action: 'create_failed',
@@ -114,11 +142,13 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
 
         toast({
           title: 'שגיאה',
-          description: 'לא ניתן ליצור את העובד',
+          description: `לא ניתן ליצור את העובד: ${error.message}`,
           variant: 'destructive',
         });
         return;
       }
+
+      console.log('✅ Employee created successfully:', createdEmployee);
 
       logActivity({
         action: 'create',
@@ -128,12 +158,13 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
           employee_name: `${formData.first_name} ${formData.last_name}`,
           employee_id: formData.employee_id,
           employee_type: formData.employee_type,
+          business_id: effectiveBusinessId,
           success: true 
         }
       });
 
       toast({
-        title: 'הצלחה',
+        title: 'הצלחה! 🎉',
         description: 'העובד נוצר בהצלחה',
       });
 
@@ -152,12 +183,13 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
         hire_date: '',
         notes: '',
         is_active: true,
+        selected_business_id: '',
       });
       
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error in handleSubmit:', error);
+      console.error('💥 Error in handleSubmit:', error);
       
       logActivity({
         action: 'create_failed',
@@ -186,7 +218,38 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
           <DialogTitle>הוסף עובד חדש</DialogTitle>
         </DialogHeader>
         
+        {isSuperAdmin && !businessId && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              כסופר אדמין, עליך לבחור עסק להוספת העובד
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Business selection for super admin */}
+          {isSuperAdmin && !businessId && (
+            <div>
+              <Label htmlFor="selected_business_id">בחר עסק *</Label>
+              <Select
+                value={formData.selected_business_id}
+                onValueChange={(value) => setFormData({ ...formData, selected_business_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר עסק" />
+                </SelectTrigger>
+                <SelectContent>
+                  {businesses.map((business) => (
+                    <SelectItem key={business.id} value={business.id}>
+                      {business.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="first_name">שם פרטי *</Label>
@@ -372,7 +435,10 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
             >
               ביטול
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading || (!effectiveBusinessId)}
+            >
               {loading ? 'יוצר...' : 'צור עובד'}
             </Button>
           </div>
