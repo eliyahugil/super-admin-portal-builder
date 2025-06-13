@@ -1,19 +1,20 @@
 
+import { ExcelParserService } from './excel/ExcelParserService';
 import { ExcelFileManager } from './excel/ExcelFileManager';
-import { EmployeeImportDatabase } from './excel/EmployeeImportDatabase';
+import { EmployeeImportService } from './excel/EmployeeImportService';
 
 // Re-export types for backward compatibility
-export type { ExcelRow, ParsedExcelData } from './excel/ExcelParserService';
-export type { PreviewEmployee } from './excel/EmployeeDataTransformer';
-export type { ImportResult } from './excel/EmployeeImportDatabase';
+export type { ParsedExcelData } from './excel/ExcelParserService';
+export type { PreviewEmployee } from '@/hooks/useEmployeeImport/types';
+export type { ImportResult } from '@/hooks/useEmployeeImport/types';
 
 export class ExcelImportService {
   // File management methods
-  static parseExcelFile = ExcelFileManager.parseFile;
-  static generateTemplate = ExcelFileManager.generateTemplate;
+  static parseExcelFile = ExcelParserService.parseFile;
+  static generateTemplate = ExcelParserService.generateTemplate;
   static generatePreview = ExcelFileManager.generatePreview;
-  static validateFileFormat = ExcelFileManager.validateFileFormat;
+  static validateFileFormat = ExcelParserService.validateFileFormat;
 
   // Database import methods
-  static importEmployees = EmployeeImportDatabase.importEmployees;
+  static importEmployees = EmployeeImportService.importEmployees;
 }

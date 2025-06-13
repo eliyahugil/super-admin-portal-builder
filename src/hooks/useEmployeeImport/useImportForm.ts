@@ -1,8 +1,7 @@
 
 import { useCallback } from 'react';
 import { ExcelParserService } from '@/services/excel/ExcelParserService';
-import type { ExcelRow, PreviewEmployee, ImportResult, ImportStep } from './types';
-import type { FieldMapping } from '@/components/modules/employees/types/FieldMappingTypes';
+import type { ImportStep, ExcelRow, PreviewEmployee, ImportResult, FieldMapping } from './types';
 
 interface UseImportFormProps {
   setStep: (step: ImportStep) => void;
@@ -17,21 +16,21 @@ interface UseImportFormProps {
   setShowMappingDialog: (show: boolean) => void;
 }
 
-export const useImportForm = ({
-  setStep,
-  setFile,
-  setRawData,
-  setHeaders,
-  setFieldMappings,
-  setPreviewData,
-  setImportResult,
-  setValidationErrors,
-  setDuplicateErrors,
-  setShowMappingDialog,
-}: UseImportFormProps) => {
+export const useImportForm = (props: UseImportFormProps) => {
+  const {
+    setStep,
+    setFile,
+    setRawData,
+    setHeaders,
+    setFieldMappings,
+    setPreviewData,
+    setImportResult,
+    setValidationErrors,
+    setDuplicateErrors,
+    setShowMappingDialog,
+  } = props;
 
   const resetForm = useCallback(() => {
-    console.log('🔄 Resetting import form');
     setStep('upload');
     setFile(null);
     setRawData([]);
@@ -63,7 +62,6 @@ export const useImportForm = ({
   ]);
 
   const downloadTemplate = useCallback(() => {
-    console.log('📥 Downloading Excel template');
     ExcelParserService.generateTemplate();
   }, []);
 

@@ -2,20 +2,29 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, XCircle, AlertTriangle, Users } from 'lucide-react';
 
 interface ImportResultsProps {
-  result: any;
+  result: {
+    success: boolean;
+    importedCount: number;
+    errorCount: number;
+    message: string;
+    errors: Array<{
+      row: number;
+      employee: string;
+      error: string;
+    }>;
+    importedEmployees: any[];
+  } | null;
   onClose: () => void;
 }
 
 export const ImportResults: React.FC<ImportResultsProps> = ({ result, onClose }) => {
-  const handleClose = () => {
-    onClose();
-    // Trigger a custom event to refresh the employees list
-    window.dispatchEvent(new CustomEvent('employeesImported'));
-  };
+  if (!result) {
+    return <div>אין תוצאות זמינות</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -34,7 +43,7 @@ export const ImportResults: React.FC<ImportResultsProps> = ({ result, onClose })
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <Users className="h-8 w-8 text-green-500 mx-auto mb-2" />
+            <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
             <div className="text-2xl font-bold text-green-600">{result.importedCount}</div>
             <div className="text-sm text-gray-600">עובדים יובאו</div>
           </CardContent>
@@ -53,16 +62,16 @@ export const ImportResults: React.FC<ImportResultsProps> = ({ result, onClose })
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
               שגיאות בייבוא
             </CardTitle>
           </CardHeader>
-          <CardContent className="max-h-48 overflow-y-auto">
-            <div className="space-y-2">
-              {result.errors.map((error: any, index: number) => (
+          <CardContent>
+            <div className="max-h-40 overflow-y-auto space-y-2">
+              {result.errors.map((error, index) => (
                 <Alert key={index} variant="destructive">
                   <AlertDescription>
-                    שורה {error.row}: {error.message}
+                    שורה {error.row}: {error.employee} - {error.error}
                   </AlertDescription>
                 </Alert>
               ))}
@@ -71,33 +80,8 @@ export const ImportResults: React.FC<ImportResultsProps> = ({ result, onClose })
         </Card>
       )}
 
-      {result.importedEmployees && result.importedEmployees.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              עובדים שיובאו בהצלחה
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="max-h-48 overflow-y-auto">
-            <div className="space-y-2">
-              {result.importedEmployees.map((employee: any, index: number) => (
-                <div key={index} className="p-2 bg-green-50 rounded border border-green-200">
-                  <div className="font-medium">
-                    {employee.first_name} {employee.last_name}
-                  </div>
-                  {employee.email && (
-                    <div className="text-sm text-gray-600">{employee.email}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <div className="flex justify-center">
-        <Button onClick={handleClose} className="px-8">
+        <Button onClick={onClose}>
           סגור
         </Button>
       </div>

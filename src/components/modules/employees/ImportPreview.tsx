@@ -8,21 +8,18 @@ import { CheckCircle, XCircle, AlertTriangle, User } from 'lucide-react';
 
 interface ImportPreviewProps {
   previewData: any[];
-  validationErrors: any[];
-  duplicateErrors: any[];
   onConfirm: () => void;
   onCancel: () => void;
 }
 
 export const ImportPreview: React.FC<ImportPreviewProps> = ({
   previewData,
-  validationErrors,
-  duplicateErrors,
   onConfirm,
   onCancel
 }) => {
   const validEmployees = previewData.filter(emp => emp.isValid);
   const invalidEmployees = previewData.filter(emp => !emp.isValid);
+  const duplicateEmployees = previewData.filter(emp => emp.isDuplicate);
 
   const getEmployeeTypeLabel = (type: string) => {
     const types: Record<string, string> = {
@@ -56,26 +53,26 @@ export const ImportPreview: React.FC<ImportPreviewProps> = ({
         <Card>
           <CardContent className="p-4 text-center">
             <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-yellow-600">{duplicateErrors.length}</div>
+            <div className="text-2xl font-bold text-yellow-600">{duplicateEmployees.length}</div>
             <div className="text-sm text-gray-600">עובדים כפולים</div>
           </CardContent>
         </Card>
       </div>
 
-      {validationErrors.length > 0 && (
+      {invalidEmployees.length > 0 && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            נמצאו {validationErrors.length} שגיאות בולידציה. אנא תקן את השגיאות לפני ההמשך.
+            נמצאו {invalidEmployees.length} שגיאות בולידציה. אנא תקן את השגיאות לפני ההמשך.
           </AlertDescription>
         </Alert>
       )}
 
-      {duplicateErrors.length > 0 && (
+      {duplicateEmployees.length > 0 && (
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            נמצאו {duplicateErrors.length} עובדים כפולים. הם לא ייובאו.
+            נמצאו {duplicateEmployees.length} עובדים כפולים. הם לא ייובאו.
           </AlertDescription>
         </Alert>
       )}

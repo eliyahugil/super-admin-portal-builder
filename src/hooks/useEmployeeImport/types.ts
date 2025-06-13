@@ -32,8 +32,8 @@ export interface ImportResult {
   message: string;
   errors: Array<{
     row: number;
-    message: string;
-    data?: any;
+    employee: string;
+    error: string;
   }>;
   importedEmployees: PreviewEmployee[];
 }
@@ -45,6 +45,12 @@ export interface FieldMapping {
   isCustomField: boolean;
   customFieldName?: string;
   customFieldType?: string;
+}
+
+export interface ImportValidation {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
 }
 
 export interface EmployeeImportHook {
@@ -76,4 +82,5 @@ export interface EmployeeImportHook {
   processFile: (file: File) => Promise<void>;
   executeImport: () => Promise<void>;
   downloadTemplate: () => void;
+  resetForm: () => void;
 }

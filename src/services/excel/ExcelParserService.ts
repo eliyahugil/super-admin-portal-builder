@@ -1,12 +1,42 @@
 
 import * as XLSX from 'xlsx';
 
+export interface ExcelRow {
+  [key: string]: any;
+}
+
 export interface ParsedExcelData {
-  data: Record<string, any>[];
+  data: ExcelRow[];
   headers: string[];
 }
 
+export interface FileValidation {
+  isValid: boolean;
+  error?: string;
+}
+
 export class ExcelParserService {
+  static validateFileFormat(file: File): FileValidation {
+    const validExtensions = ['.xlsx', '.xls'];
+    const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+    
+    if (!validExtensions.includes(fileExtension)) {
+      return {
+        isValid: false,
+        error: 'סוג קובץ לא נתמך. אנא השתמש בקובץ Excel (.xlsx או .xls)'
+      };
+    }
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB
+      return {
+        isValid: false,
+        error: 'הקובץ גדול מדי. גודל מקסימלי: 10MB'
+      };
+    }
+
+    return { isValid: true };
+  }
+
   static async parseFile(file: File): Promise<ParsedExcelData> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -74,6 +104,10 @@ export class ExcelParserService {
 
       reader.readAsArrayBuffer(file);
     });
+  }
+
+  static async parseExcelFile(file: File): Promise<ParsedExcelData> {
+    return this.parseFile(file);
   }
 
   static generateTemplate(): void {

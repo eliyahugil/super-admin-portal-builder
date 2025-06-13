@@ -92,13 +92,13 @@ export const useEmployeeImport = () => {
   });
 
   // Main handlers
-  const handleFileSelect = useCallback(async (selectedFile: File) => {
+  const processFile = useCallback(async (selectedFile: File) => {
     console.log('🎯 File selected:', selectedFile.name);
     setFile(selectedFile);
     await fileProcessing.processFile(selectedFile);
   }, [fileProcessing]);
 
-  const handleConfirmImport = useCallback(async () => {
+  const executeImport = useCallback(async () => {
     console.log('🚀 Starting import with preview data:', previewData.length);
     await importExecution.executeImport();
   }, [importExecution, previewData]);
@@ -106,20 +106,26 @@ export const useEmployeeImport = () => {
   return {
     // State
     step,
+    setStep,
     file,
     rawData,
+    setRawData,
     headers,
+    setHeaders,
     fieldMappings,
+    setFieldMappings,
     previewData,
+    setPreviewData,
     importResult,
+    setImportResult,
     validationErrors,
     duplicateErrors,
     showMappingDialog,
     setShowMappingDialog,
 
     // Handlers
-    handleFileSelect,
-    handleConfirmImport,
+    processFile,
+    executeImport,
     confirmMapping: fieldMapping.confirmMapping,
 
     // Utilities
