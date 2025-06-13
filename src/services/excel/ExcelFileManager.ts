@@ -54,8 +54,8 @@ export class ExcelFileManager {
           mappedData.main_branch_id = branch?.id || null;
         }
 
-        // Validate employee data
-        const validation = validateEmployeeData(mappedData, businessId);
+        // Validate employee data - only pass the mapped data
+        const validation = validateEmployeeData(mappedData);
         
         // Check for duplicates
         const isDuplicate = this.checkForDuplicates(mappedData, existingEmployees);
