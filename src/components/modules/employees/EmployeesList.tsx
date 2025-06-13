@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -194,13 +193,13 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
     filteredEmployees.every(emp => selectedEmployees.has(emp.id));
   const someFilteredSelected = filteredEmployees.some(emp => selectedEmployees.has(emp.id));
 
-  // Convert EmployeeWithBranch to Employee for the edit dialog
+  // Convert EmployeeWithBranch to the format expected by EmployeeEditDialog
   const convertToEmployee = (employee: EmployeeWithBranch): Employee => {
     const { main_branch, ...employeeData } = employee;
     return {
       ...employeeData,
-      employee_id: employee.employee_id || undefined,
-    } as Employee;
+      employee_id: employee.employee_id || '', // Ensure it's always a string, not undefined
+    };
   };
 
   return (
