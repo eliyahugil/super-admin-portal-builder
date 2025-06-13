@@ -20,7 +20,9 @@ export const ImportPreview: React.FC<ImportPreviewProps> = ({
 }) => {
   console.log('👁️ ImportPreview rendered with data:', {
     total: previewData.length,
-    sample: previewData.slice(0, 2)
+    sample: previewData.slice(0, 2),
+    onConfirmType: typeof onConfirm,
+    onCancelType: typeof onCancel
   });
 
   const validEmployees = previewData.filter(emp => emp.isValid);
@@ -43,9 +45,24 @@ export const ImportPreview: React.FC<ImportPreviewProps> = ({
     return types[type] || type;
   };
 
-  const handleConfirm = () => {
-    console.log('✅ ImportPreview - Confirm button clicked');
-    onConfirm();
+  const handleConfirm = async () => {
+    console.log('✅ ImportPreview - Confirm button clicked, calling onConfirm');
+    console.log('🔍 onConfirm function details:', {
+      type: typeof onConfirm,
+      isFunction: typeof onConfirm === 'function',
+      functionString: onConfirm.toString()
+    });
+    
+    if (typeof onConfirm === 'function') {
+      try {
+        await onConfirm();
+        console.log('✅ ImportPreview - onConfirm executed successfully');
+      } catch (error) {
+        console.error('❌ ImportPreview - onConfirm failed:', error);
+      }
+    } else {
+      console.error('❌ ImportPreview - onConfirm is not a function!');
+    }
   };
 
   const handleCancel = () => {

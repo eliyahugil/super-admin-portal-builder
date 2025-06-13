@@ -38,8 +38,19 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
     headersCount: headers.length,
     rawDataCount: rawData.length,
     previewDataCount: previewData.length,
-    hasImportResult: !!importResult
+    hasImportResult: !!importResult,
+    executeImportFunction: typeof executeImport
   });
+
+  const handleExecuteImport = async () => {
+    console.log('🚀 ImportStepContent - handleExecuteImport called');
+    try {
+      await executeImport();
+      console.log('✅ ImportStepContent - executeImport completed successfully');
+    } catch (error) {
+      console.error('❌ ImportStepContent - executeImport failed:', error);
+    }
+  };
 
   switch (step) {
     case 'upload':
@@ -68,7 +79,7 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
       return (
         <ImportPreview
           previewData={previewData}
-          onConfirm={executeImport}
+          onConfirm={handleExecuteImport}
           onCancel={resetForm}
         />
       );
