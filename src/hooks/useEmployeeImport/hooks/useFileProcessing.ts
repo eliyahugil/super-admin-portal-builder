@@ -31,12 +31,12 @@ export const useFileProcessing = ({
       businessId
     });
 
-    // Check if business is selected (important for import)
+    // Check if business is selected (critical for import)
     if (!businessId) {
       console.error('❌ No business ID available for import');
       toast({
-        title: 'שגיאה',
-        description: 'יש לבחור עסק לפני ייבוא עובדים',
+        title: 'יש לבחור עסק',
+        description: 'אנא בחר עסק ספציפי מהרשימה כדי לייבא עובדים אליו. כמנהל ראשי, עליך לבחור לאיזה עסק להוסיף את העובדים.',
         variant: 'destructive',
       });
       return;

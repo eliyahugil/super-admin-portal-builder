@@ -2,7 +2,9 @@
 import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
-import { Upload, FileSpreadsheet, Download } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Upload, FileSpreadsheet, Download, AlertTriangle } from 'lucide-react';
+import { useBusiness } from '@/hooks/useBusiness';
 
 interface ImportFileUploadProps {
   onFileSelect: (file: File) => void;
@@ -13,6 +15,8 @@ export const ImportFileUpload: React.FC<ImportFileUploadProps> = ({
   onFileSelect,
   onDownloadTemplate
 }) => {
+  const { businessId, isSuperAdmin } = useBusiness();
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       onFileSelect(acceptedFiles[0]);
@@ -27,6 +31,38 @@ export const ImportFileUpload: React.FC<ImportFileUploadProps> = ({
     },
     multiple: false
   });
+
+  // Show business selection warning for Super Admin without selected business
+  if (isSuperAdmin && !businessId) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            כמנהל ראשי, עליך לבחור עסק ספציפי לפני ייבוא עובדים. 
+            אנא בחר עסק מהרשימה בחלק העליון של המסך.
+          </AlertDescription>
+        </Alert>
+        
+        <div className="text-center opacity-50 pointer-events-none">
+          <h3 className="text-lg font-medium mb-2">העלאת קובץ אקסל</h3>
+          <p className="text-gray-600 mb-4">
+            בחר קובץ אקסל המכיל רשימת עובדים או גרור אותו לכאן
+          </p>
+          
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 mb-2">
+              גרור קובץ אקסל לכאן או לחץ לבחירה
+            </p>
+            <p className="text-sm text-gray-500">
+              נתמכים: .xlsx, .xls
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
