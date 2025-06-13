@@ -50,17 +50,19 @@ export const EmployeeRowActions: React.FC<EmployeeRowActionsProps> = ({
   };
 
   return (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center gap-2">
+      {/* Profile Button - Main CTA */}
       <Button
         variant="default"
         size="sm"
         onClick={handleViewProfile}
-        className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white"
+        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium"
       >
-        <User className="h-4 w-4" />
+        <Eye className="h-4 w-4" />
         <span>פרופיל מלא</span>
       </Button>
       
+      {/* Token Button */}
       <EmployeeTokenButton
         employeeId={employee.id}
         employeeName={employeeName}
@@ -70,22 +72,27 @@ export const EmployeeRowActions: React.FC<EmployeeRowActionsProps> = ({
         size="sm"
       />
 
+      {/* Edit Button */}
       <Button
         variant="outline"
         size="sm"
         onClick={handleEditEmployee}
+        className="flex items-center gap-1"
       >
         <Edit className="h-3 w-3" />
+        <span className="sr-only">עריכה</span>
       </Button>
 
+      {/* Delete Button */}
       {onDelete && (
         <Button
           variant="outline"
           size="sm"
           onClick={handleDeleteEmployee}
-          className="text-red-600 hover:text-red-800"
+          className="text-red-600 hover:text-red-800 hover:bg-red-50"
         >
           <Trash className="h-3 w-3" />
+          <span className="sr-only">מחיקה</span>
         </Button>
       )}
     </div>
