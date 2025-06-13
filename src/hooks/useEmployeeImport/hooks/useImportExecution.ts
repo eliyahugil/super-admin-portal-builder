@@ -1,8 +1,8 @@
 
 import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { EmployeeImportService } from '@/services/excel/EmployeeImportService';
-import type { ImportStep, PreviewEmployee, ImportResult } from './types';
+import { ExcelImportService } from '@/services/ExcelImportService';
+import type { ImportStep, PreviewEmployee, ImportResult } from '../types';
 
 interface UseImportExecutionProps {
   businessId: string | null;
@@ -11,17 +11,17 @@ interface UseImportExecutionProps {
   setImportResult: (result: ImportResult) => void;
 }
 
-export const useImportExecution = (props: UseImportExecutionProps) => {
-  const {
-    businessId,
-    previewData,
-    setStep,
-    setImportResult,
-  } = props;
-
+export const useImportExecution = ({
+  businessId,
+  previewData,
+  setStep,
+  setImportResult,
+}: UseImportExecutionProps) => {
   const { toast } = useToast();
 
   const executeImport = useCallback(async () => {
+    console.log('🚀 Starting import execution with data:', previewData.length);
+    
     if (!businessId) {
       toast({
         title: 'שגיאה',
@@ -41,7 +41,6 @@ export const useImportExecution = (props: UseImportExecutionProps) => {
     }
 
     try {
-      console.log('🚀 Starting import execution with data:', previewData.length);
       setStep('importing');
 
       // Filter only valid employees for import
@@ -57,7 +56,10 @@ export const useImportExecution = (props: UseImportExecutionProps) => {
         return;
       }
 
-      const result = await EmployeeImportService.importEmployees(validEmployees);
+      console.log('📤 Importing valid employees:', validEmployees.length);
+      
+      // Use the EmployeeImportService
+      const result = await ExcelImportService.importEmployees(validEmployees);
       
       console.log('📊 Import execution completed:', result);
       
@@ -66,9 +68,14 @@ export const useImportExecution = (props: UseImportExecutionProps) => {
 
       if (result.success) {
         toast({
-          title: 'הצלחה',
+          title: 'הצלחה! 🎉',
           description: `יובאו בהצלחה ${result.importedCount} עובדים`,
         });
+        
+        // Refresh the employees list
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('employeesImported'));
+        }, 1000);
       } else {
         toast({
           title: 'הייבוא הסתיים עם שגיאות',
