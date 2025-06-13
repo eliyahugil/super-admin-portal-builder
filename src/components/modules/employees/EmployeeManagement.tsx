@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,12 @@ import { EmployeeExcelImporter } from './EmployeeExcelImporter';
 import { BusinessFilterSelector } from './BusinessFilterSelector';
 import { EmployeesTableAdvanced } from './table/EmployeesTableAdvanced';
 import { EmployeesTable } from './EmployeesTable';
+
+// רשימת המשתמשים המורשים לראות את כל העסקים
+const AUTHORIZED_SUPER_USERS = [
+  'HABULGARTI@gmail.com',
+  'eligil1308@gmail.com'
+];
 
 export const EmployeeManagement = () => {
   const [createEmployeeOpen, setCreateEmployeeOpen] = useState(false);

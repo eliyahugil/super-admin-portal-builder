@@ -33,7 +33,9 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
 
   const userEmail = user?.email?.toLowerCase();
   const isAuthorizedSuperUser = userEmail && AUTHORIZED_SUPER_USERS.includes(userEmail);
-  const isSuperAdmin = isAuthorizedSuperUser;
+  
+  // התיקון הוא כאן - השתמש בבדיקה הנכונה לsuperAdmin
+  const isSuperAdmin = isAuthorizedSuperUser || profile?.role === 'super_admin';
   const loading = authLoading || businessesLoading;
 
   useEffect(() => {
@@ -65,7 +67,7 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
         return;
       } else {
         console.warn('⚠️ useCurrentBusiness: URL business not found in user businesses');
-        if (!isAuthorizedSuperUser) {
+        if (!isSuperAdmin) {
           setError('אין לך הרשאה לעסק זה');
           return;
         }
@@ -73,8 +75,8 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
     }
 
     // If authorized super user without URL business ID, don't set a specific business
-    if (isAuthorizedSuperUser && !urlBusinessId) {
-      console.log('👑 useCurrentBusiness: Authorized super user without specific business');
+    if (isSuperAdmin && !urlBusinessId) {
+      console.log('👑 useCurrentBusiness: Super admin without specific business');
       setBusinessId(null);
       setBusinessName('מנהל ראשי');
       return;
@@ -86,13 +88,13 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
       console.log('🏢 useCurrentBusiness: Using first available business:', firstBusiness.business.name);
       setBusinessId(firstBusiness.business_id);
       setBusinessName(firstBusiness.business.name);
-    } else if (!isAuthorizedSuperUser) {
+    } else if (!isSuperAdmin) {
       console.warn('⚠️ useCurrentBusiness: No businesses available for regular user');
       setBusinessId(null);
       setBusinessName(null);
       setError('לא נמצאו עסקים זמינים');
     }
-  }, [user, profile, userBusinesses, urlBusinessId, isAuthorizedSuperUser, loading, businessesError]);
+  }, [user, profile, userBusinesses, urlBusinessId, isSuperAdmin, loading, businessesError]);
 
   console.log('📊 useCurrentBusiness - Current state:', {
     businessId,
@@ -102,7 +104,8 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
     loading,
     availableBusinesses: userBusinesses?.length || 0,
     error,
-    isAuthorizedSuperUser
+    isAuthorizedSuperUser,
+    userEmail
   });
 
   return { 

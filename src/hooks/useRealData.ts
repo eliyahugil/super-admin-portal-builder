@@ -14,6 +14,12 @@ interface UseRealDataOptions {
   orderBy?: { column: string; ascending: boolean };
 }
 
+// רשימת המשתמשים המורשים לראות את כל העסקים
+const AUTHORIZED_SUPER_USERS = [
+  'HABULGARTI@gmail.com',
+  'eligil1308@gmail.com'
+];
+
 /**
  * UPDATED: Enhanced useRealData with mandatory business isolation
  * This ensures all data queries respect business boundaries and RLS policies
@@ -27,8 +33,14 @@ export function useRealData<T = any>({
   select = '*',
   orderBy
 }: UseRealDataOptions) {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { businessId, isSuperAdmin } = useCurrentBusiness();
+  
+  // בדיקה נוספת לוודא שה-super admin מזוהה כראוי
+  const userEmail = user?.email?.toLowerCase();
+  const isRealSuperAdmin = (userEmail && AUTHORIZED_SUPER_USERS.includes(userEmail)) || 
+                          profile?.role === 'super_admin' || 
+                          isSuperAdmin;
 
   return useQuery({
     queryKey: [...queryKey, businessId], // Include businessId in query key for proper caching
@@ -36,9 +48,10 @@ export function useRealData<T = any>({
       console.log(`useRealData - Fetching from ${tableName} with business security`, { 
         filters, 
         businessId, 
-        isSuperAdmin,
+        isSuperAdmin: isRealSuperAdmin,
         enforceBusinessFilter,
-        userProfile: profile?.email
+        userProfile: profile?.email,
+        userEmail: userEmail
       });
       
       let query = supabase.from(tableName as any).select(select);
@@ -52,7 +65,7 @@ export function useRealData<T = any>({
       });
       
       // CRITICAL SECURITY: Automatically enforce business filtering for non-super-admins
-      if (enforceBusinessFilter && !isSuperAdmin && businessId) {
+      if (enforceBusinessFilter && !isRealSuperAdmin && businessId) {
         // Define which tables are global and don't need business filtering
         const globalTables = [
           'businesses', 
@@ -89,20 +102,25 @@ export function useRealData<T = any>({
 
 // Business-specific secure hooks with automatic business_id filtering
 export function useBusinessesData() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { isSuperAdmin } = useCurrentBusiness();
+  
+  const userEmail = user?.email?.toLowerCase();
+  const isRealSuperAdmin = (userEmail && AUTHORIZED_SUPER_USERS.includes(userEmail)) || 
+                          profile?.role === 'super_admin' || 
+                          isSuperAdmin;
   
   console.log('useBusinessesData - Called with profile:', {
     userEmail: profile?.email,
     userRole: profile?.role,
-    isSuperAdmin,
+    isSuperAdmin: isRealSuperAdmin,
     userId: profile?.id
   });
   
   return useRealData<any>({
     queryKey: ['businesses'],
     tableName: 'businesses',
-    filters: isSuperAdmin ? {} : { owner_id: profile?.id }, // Super admins see all, others see only owned
+    filters: isRealSuperAdmin ? {} : { owner_id: profile?.id }, // Super admins see all, others see only owned
     enforceBusinessFilter: false, // businesses table doesn't need business_id filter
     orderBy: { column: 'name', ascending: true }
   });
