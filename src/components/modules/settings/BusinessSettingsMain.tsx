@@ -156,7 +156,8 @@ export const BusinessSettingsMain: React.FC = () => {
     fetchData();
   }, [effectiveBusinessId, toast]);
 
-  const updateBusinessField = async (field: keyof BusinessDetails, value: string) => {
+  // FIX: Accept string | boolean for value param
+  const updateBusinessField = async (field: keyof BusinessDetails, value: string | boolean) => {
     if (!effectiveBusinessId) return;
 
     try {
@@ -292,7 +293,7 @@ export const BusinessSettingsMain: React.FC = () => {
         )}
       </div>
       
-      {/* General Employee Settings Card: NEW */}
+      {/* General Employee Settings Card: FIXED SWITCH HANDLERS */}
       <Card>
         <CardHeader>
           <CardTitle>הגדרות כלליות לעובדים</CardTitle>
@@ -308,8 +309,8 @@ export const BusinessSettingsMain: React.FC = () => {
                 <div className="text-sm text-gray-500">אם כבוי, ניתן לדווח רק מהאפליקציה.</div>
               </div>
               <Switch
-                checked={details.allow_employee_reporting_web}
-                onCheckedChange={val => updateBusinessField('allow_employee_reporting_web', val)}
+                checked={!!details.allow_employee_reporting_web}
+                onCheckedChange={(val: boolean) => updateBusinessField('allow_employee_reporting_web', val)}
               />
             </div>
             <div className="flex items-center justify-between border-b py-2">
@@ -318,8 +319,8 @@ export const BusinessSettingsMain: React.FC = () => {
                 <div className="text-sm text-gray-500">האם לחייב אימות מיקום בדיווח משמרת?</div>
               </div>
               <Switch
-                checked={details.require_employee_gps}
-                onCheckedChange={val => updateBusinessField('require_employee_gps', val)}
+                checked={!!details.require_employee_gps}
+                onCheckedChange={(val: boolean) => updateBusinessField('require_employee_gps', val)}
               />
             </div>
             <div className="flex items-center justify-between border-b py-2">
@@ -328,8 +329,8 @@ export const BusinessSettingsMain: React.FC = () => {
                 <div className="text-sm text-gray-500">חובת צילום תמונה בעת כניסה/יציאה ממשמרת</div>
               </div>
               <Switch
-                checked={details.require_employee_image}
-                onCheckedChange={val => updateBusinessField('require_employee_image', val)}
+                checked={!!details.require_employee_image}
+                onCheckedChange={(val: boolean) => updateBusinessField('require_employee_image', val)}
               />
             </div>
             <div className="flex items-center justify-between border-b py-2">
@@ -338,8 +339,8 @@ export const BusinessSettingsMain: React.FC = () => {
                 <div className="text-sm text-gray-500">האם לאפשר לעובדים לערוך משמרות לאחר השליחה</div>
               </div>
               <Switch
-                checked={details.allow_shift_editing}
-                onCheckedChange={val => updateBusinessField('allow_shift_editing', val)}
+                checked={!!details.allow_shift_editing}
+                onCheckedChange={(val: boolean) => updateBusinessField('allow_shift_editing', val)}
               />
             </div>
             <div className="flex items-center justify-between border-b py-2">
@@ -348,8 +349,8 @@ export const BusinessSettingsMain: React.FC = () => {
                 <div className="text-sm text-gray-500">האם לאפשר עריכה של משמרות לאחר הזמן שהיו אמורות להסתיים</div>
               </div>
               <Switch
-                checked={details.allow_past_shift_editing}
-                onCheckedChange={val => updateBusinessField('allow_past_shift_editing', val)}
+                checked={!!details.allow_past_shift_editing}
+                onCheckedChange={(val: boolean) => updateBusinessField('allow_past_shift_editing', val)}
               />
             </div>
             <div className="flex items-center justify-between py-2">
@@ -358,8 +359,8 @@ export const BusinessSettingsMain: React.FC = () => {
                 <div className="text-sm text-gray-500">האם לאפשר דיווח גם אם לא נדרש טוקן?</div>
               </div>
               <Switch
-                checked={details.allow_shift_submission_without_token}
-                onCheckedChange={val => updateBusinessField('allow_shift_submission_without_token', val)}
+                checked={!!details.allow_shift_submission_without_token}
+                onCheckedChange={(val: boolean) => updateBusinessField('allow_shift_submission_without_token', val)}
               />
             </div>
           </div>
@@ -534,3 +535,5 @@ export const BusinessSettingsMain: React.FC = () => {
     </div>
   );
 };
+
+export default BusinessSettingsMain;
