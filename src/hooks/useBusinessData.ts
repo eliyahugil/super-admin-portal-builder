@@ -12,7 +12,7 @@ interface UseBusinessDataOptions {
   filter: DataFilter;
   selectedBusinessId?: string | null;
   select?: string;
-  statusField?: string; // For pending filter - defaults to 'status'
+  statusField?: string;
 }
 
 interface BaseEntity {
@@ -36,30 +36,32 @@ export const useBusinessData = <T extends BaseEntity = BaseEntity>({
       throw new Error('Business ID is missing');
     }
 
-    let query = supabase
-      .from(tableName)
-      .select(select)
-      .eq('business_id', businessId);
+    // Start with base query
+    let queryBuilder = supabase.from(tableName).select(select);
+    
+    // Add business filter
+    queryBuilder = queryBuilder.eq('business_id', businessId);
 
     // Apply filter-specific conditions
     switch (filter) {
       case 'active':
-        query = query.eq('is_archived', false);
+        queryBuilder = queryBuilder.eq('is_archived', false);
         break;
       case 'archived':
-        query = query.eq('is_archived', true);
+        queryBuilder = queryBuilder.eq('is_archived', true);
         break;
       case 'deleted':
-        query = query.eq('is_deleted', true);
+        queryBuilder = queryBuilder.eq('is_deleted', true);
         break;
       case 'pending':
-        query = query.eq(statusField, 'pending');
+        queryBuilder = queryBuilder.eq(statusField, 'pending');
         break;
       default:
         throw new Error(`Unsupported filter: ${filter}`);
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
+    // Add ordering and execute
+    const { data, error } = await queryBuilder.order('created_at', { ascending: false });
 
     if (error) {
       throw new Error(error.message);
