@@ -13,6 +13,7 @@ import {
   getDocumentTypeLabel
 } from './helpers/documentHelpers';
 import { EmployeeDocumentReminders } from './EmployeeDocumentReminders';
+import { SendToSignatureButton } from './SendToSignatureButton';
 
 interface Props {
   document: any;
@@ -25,6 +26,7 @@ interface Props {
   handleDelete: (document: any) => void;
   sendReminder: (doc: any) => void;
   fetchReminders: (docId: string) => Promise<void>;
+  onDocumentUpdated?: () => void;
 }
 
 export const EmployeeDocumentCard: React.FC<Props> = ({
@@ -37,7 +39,8 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
   handleDownload,
   handleDelete,
   sendReminder,
-  fetchReminders
+  fetchReminders,
+  onDocumentUpdated
 }) => (
   <Card key={document.id} className="hover:shadow-md transition-shadow">
     <CardContent className="p-4">
@@ -95,6 +98,18 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
           >
             <Download className="h-4 w-4" />
           </Button>
+          
+          {/* כפתור שליחה לחתימה - רק אם המסמך לא נשלח עדיין לחתימה */}
+          {canEdit && !document.assignee && !document.is_template && (
+            <SendToSignatureButton
+              documentId={document.id}
+              documentName={document.document_name}
+              onSent={onDocumentUpdated}
+              variant="outline"
+              size="sm"
+            />
+          )}
+          
           {canEdit && (
             <Button
               variant="outline"

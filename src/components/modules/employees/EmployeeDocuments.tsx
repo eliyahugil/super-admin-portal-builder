@@ -1,7 +1,6 @@
-
 import React, { useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthContext';
 import { getFileType } from './helpers/documentHelpers';
@@ -31,6 +30,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 }) => {
   const { profile, user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // בדיקת גישה לדלי בעת טעינת הקומפוננט
   useEffect(() => {
@@ -119,6 +119,11 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     },
     enabled: !!(employeeId !== undefined),
   });
+
+  // פונקציה לעדכון מסמכים אחרי שליחה לחתימה
+  const handleDocumentUpdated = () => {
+    queryClient.invalidateQueries({ queryKey: uploadQueryKey });
+  };
 
   // פונקציות הורדה/צפייה/מחיקה
   const handleDownload = async (document: any) => {
@@ -240,6 +245,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
                   handleDelete={handleDelete}
                   sendReminder={() => {}}
                   fetchReminders={async () => {}}
+                  onDocumentUpdated={handleDocumentUpdated}
                 />
               ))}
             </div>
@@ -285,6 +291,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
                   handleDelete={handleDelete}
                   sendReminder={sendReminder}
                   fetchReminders={fetchReminders}
+                  onDocumentUpdated={handleDocumentUpdated}
                 />
                 {canEdit && !document.assignee && !document.is_template && (
                   <AssignToEmployeeSelect
