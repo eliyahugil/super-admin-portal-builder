@@ -6,10 +6,13 @@ import type { Employee } from '@/types/employee';
 
 interface BranchAssignment {
   id: string;
-  role_name: string;
+  employee_id: string;
+  branch_id: string;
+  role: string;
+  start_date: string;
+  end_date?: string;
   is_active: boolean;
   branch: {
-    id: string;
     name: string;
     address?: string;
   };
@@ -29,26 +32,20 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
   return (
     <Card>
       <CardHeader>
-        <CardTitle>שיוכים לסניפים</CardTitle>
+        <CardTitle>שיוך לסניפים</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {assignments.map((assignment) => (
-            <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center space-x-3 space-x-reverse">
-                <div>
-                  <div>
-                    <h4 className="font-medium">{assignment.branch.name}</h4>
-                    <p className="text-sm text-gray-500">{assignment.role_name}</p>
-                    {assignment.branch.address && (
-                      <p className="text-xs text-gray-400">{assignment.branch.address}</p>
-                    )}
-                  </div>
-                  <Badge variant={assignment.is_active ? 'default' : 'secondary'}>
-                    {assignment.is_active ? 'פעיל' : 'לא פעיל'}
-                  </Badge>
-                </div>
+            <div key={assignment.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <h4 className="font-medium">{assignment.branch?.name || 'סניף לא ידוע'}</h4>
+                <p className="text-sm text-gray-600">{assignment.branch?.address || 'כתובת לא זמינה'}</p>
+                <p className="text-sm text-gray-500">תפקיד: {assignment.role}</p>
               </div>
+              <Badge variant={assignment.is_active ? "default" : "secondary"}>
+                {assignment.is_active ? "פעיל" : "לא פעיל"}
+              </Badge>
             </div>
           ))}
           {assignments.length === 0 && (

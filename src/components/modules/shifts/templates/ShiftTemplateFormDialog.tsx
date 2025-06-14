@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 type ShiftType = 'morning' | 'afternoon' | 'evening' | 'night';
 
@@ -25,7 +24,6 @@ interface ShiftTemplateFormDialogProps {
   setFormData: (data: FormData) => void;
   onSubmit: (e: React.FormEvent) => void;
   branches: any[];
-  triggerButton?: React.ReactNode;
 }
 
 export const ShiftTemplateFormDialog: React.FC<ShiftTemplateFormDialogProps> = ({
@@ -34,16 +32,10 @@ export const ShiftTemplateFormDialog: React.FC<ShiftTemplateFormDialogProps> = (
   formData,
   setFormData,
   onSubmit,
-  branches,
-  triggerButton
+  branches
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {triggerButton && (
-        <DialogTrigger asChild>
-          {triggerButton}
-        </DialogTrigger>
-      )}
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>תבנית משמרת חדשה</DialogTitle>

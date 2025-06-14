@@ -7,8 +7,6 @@ import { ShiftTemplateFormDialog } from './templates/ShiftTemplateFormDialog';
 import { ShiftTemplateCard } from './templates/ShiftTemplateCard';
 import { ShiftTemplateEmptyState } from './templates/ShiftTemplateEmptyState';
 import { useShiftTemplatesLogic } from './templates/useShiftTemplatesLogic';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 
 type ShiftType = 'morning' | 'afternoon' | 'evening' | 'night';
 
@@ -67,12 +65,6 @@ export const ShiftTemplatesManagement: React.FC = () => {
         setFormData={setFormData}
         onSubmit={handleSubmit}
         branches={branches || []}
-        triggerButton={
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            הוסף תבנית חדשה
-          </Button>
-        }
       />
 
       {templates && templates.length > 0 ? (
