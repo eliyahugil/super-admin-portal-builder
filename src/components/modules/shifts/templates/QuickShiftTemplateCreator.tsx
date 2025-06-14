@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Clock, MapPin, Users } from 'lucide-react';
+import { Plus, Clock, MapPin, Users, Trash2 } from 'lucide-react';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useRealData } from '@/hooks/useRealData';
 import { supabase } from '@/integrations/supabase/client';
@@ -56,6 +55,9 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
     { name: 'משמרת ערב', start_time: '17:00', end_time: '01:00', shift_type: 'evening' as ShiftType },
     { name: 'משמרת לילה', start_time: '23:00', end_time: '07:00', shift_type: 'night' as ShiftType }
   ];
+
+  // This new state manages which quick templates are visible
+  const [hiddenQuickTemplates, setHiddenQuickTemplates] = useState<number[]>([]);
 
   const handleQuickCreate = async (template: typeof quickTemplates[0]) => {
     if (!businessId || !branches || branches.length === 0) {
@@ -160,6 +162,11 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
     }
   };
 
+  // Handler to 'delete' quick template (hide from local list)
+  const handleDeleteQuickTemplate = (index: number) => {
+    setHiddenQuickTemplates((prev) => [...prev, index]);
+  };
+
   return (
     <Card className="border-2 border-dashed border-blue-200 hover:border-blue-400 transition-colors">
       <CardHeader>
@@ -174,21 +181,33 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
           <Label className="text-sm font-medium mb-3 block">תבניות מהירות</Label>
           <div className="grid grid-cols-2 gap-2">
             {quickTemplates.map((template, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                onClick={() => handleQuickCreate(template)}
-                disabled={submitting || !branches || branches.length === 0}
-                className="h-auto p-3 flex flex-col items-start text-right"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Clock className="h-4 w-4" />
-                  <span className="font-medium">{template.name}</span>
+              hiddenQuickTemplates.includes(index) ? null : (
+                <div className="relative" key={index}>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleQuickCreate(template)}
+                    disabled={submitting || !branches || branches.length === 0}
+                    className="h-auto p-3 flex flex-col items-start text-right w-full"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="h-4 w-4" />
+                      <span className="font-medium">{template.name}</span>
+                    </div>
+                    <span className="text-sm text-gray-600">
+                      {template.start_time} - {template.end_time}
+                    </span>
+                  </Button>
+                  {/* Delete icon (X) to hide quick template */}
+                  <button
+                    type="button"
+                    aria-label="הסתר תבנית"
+                    className="absolute top-2 left-2 text-gray-400 hover:text-red-500 transition"
+                    onClick={() => handleDeleteQuickTemplate(index)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-                <span className="text-sm text-gray-600">
-                  {template.start_time} - {template.end_time}
-                </span>
-              </Button>
+              )
             ))}
           </div>
         </div>

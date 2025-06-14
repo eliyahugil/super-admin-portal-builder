@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -9,8 +10,9 @@ export const useCreateShiftForm = (
 ) => {
   const { toast } = useToast();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
+  // now for multi branch selection
+  const [selectedBranchId, setSelectedBranchId] = useState<string[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
-  const [selectedBranchId, setSelectedBranchId] = useState('');
   const [shiftDates, setShiftDates] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -18,7 +20,7 @@ export const useCreateShiftForm = (
   const resetForm = () => {
     setSelectedEmployeeId('');
     setSelectedTemplateId('');
-    setSelectedBranchId('');
+    setSelectedBranchId([]);
     setShiftDates([]);
     setNotes('');
   };
@@ -26,10 +28,10 @@ export const useCreateShiftForm = (
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedTemplateId || shiftDates.length === 0 || !selectedBranchId) {
+    if (!selectedTemplateId || shiftDates.length === 0 || !selectedBranchId || selectedBranchId.length === 0) {
       toast({
         title: "שגיאה",
-        description: "אנא מלא את כל השדות הנדרשים (תבנית, תאריכים, סניף)",
+        description: "אנא מלא את כל השדות הנדרשים (תבנית, תאריכים, סניפים)",
         variant: "destructive"
       });
       return;
@@ -47,17 +49,21 @@ export const useCreateShiftForm = (
     setSubmitting(true);
 
     try {
-      const newShifts = shiftDates.map((shiftDate) => {
-        const shiftData: any = {
-          shift_template_id: selectedTemplateId,
-          shift_date: shiftDate, // FIX: use the argument value
-          branch_id: selectedBranchId,
-          is_assigned: !!selectedEmployeeId,
-          notes: notes || null
-        };
-        if (selectedEmployeeId) shiftData.employee_id = selectedEmployeeId;
-        return shiftData;
-      });
+      // For every date and every branch, create a shift row
+      const branchIds = Array.isArray(selectedBranchId) ? selectedBranchId : [selectedBranchId];
+      const newShifts = shiftDates.flatMap((shiftDate) =>
+        branchIds.map(branch_id => {
+          const shiftData: any = {
+            shift_template_id: selectedTemplateId,
+            shift_date: shiftDate,
+            branch_id,
+            is_assigned: !!selectedEmployeeId,
+            notes: notes || null
+          };
+          if (selectedEmployeeId) shiftData.employee_id = selectedEmployeeId;
+          return shiftData;
+        })
+      );
 
       const { error } = await supabase
         .from('scheduled_shifts')

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +12,7 @@ import { AttendanceManagement } from './AttendanceManagement';
 import { ArchiveManagement } from '@/components/shared/ArchiveManagement';
 import type { Employee } from '@/types/employee';
 import type { Branch } from '@/types/branch';
+import { useState } from 'react';
 
 interface EmployeeTabsContentProps {
   activeTab: string;
@@ -35,6 +35,8 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
   onRefetchBranches,
   onCreateBranch
 }) => {
+  const [showCreateBranch, setShowCreateBranch] = useState(false);
+
   return (
     <Card dir="rtl">
       <CardHeader>
@@ -76,7 +78,7 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
             <div className="space-y-4" dir="rtl">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">רשימת סניפים</h3>
-                <Button onClick={onCreateBranch}>
+                <Button onClick={() => setShowCreateBranch(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   הוסף סניף
                 </Button>
@@ -85,6 +87,24 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
                 branches={branches} 
                 onRefetch={onRefetchBranches} 
               />
+              {showCreateBranch && (
+                <div className="fixed z-50 inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+                  <div className="bg-white rounded-xl shadow-xl p-8 min-w-[350px]">
+                    <h3 className="font-semibold mb-4">יצירת סניף חדש</h3>
+                    {/* השתמש ברכיב יצירת סניף קיים בפרויקט */}
+                    {/*
+                      תוכל להכניס כאן את הרכיב הקיים ליצירת סניף,
+                      לדוג' <CreateBranchForm ... />
+                      או לשלוף את הדיאלוג הנוכחי שבו אתה משתמש.
+                    */}
+                    {/* כפתור סגירה */}
+                    <Button variant="ghost" className="mt-4 w-full" onClick={() => setShowCreateBranch(false)}>
+                      ביטול
+                    </Button>
+                    {/* הפעלת הפונקציית onCreateBranch של הממשק לאחר שליחה */}
+                  </div>
+                </div>
+              )}
             </div>
           </TabsContent>
 

@@ -5,22 +5,54 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Branch } from "@/types/branch";
 
 interface BranchSelectorProps {
-  selectedBranchId: string;
-  onBranchChange: (val: string) => void;
+  selectedBranchId: string[] | string;
+  onBranchChange: (val: string[] | string) => void;
   branches: Branch[] | undefined;
+  multiple?: boolean;
 }
 
 export const BranchSelector: React.FC<BranchSelectorProps> = ({
   selectedBranchId,
   onBranchChange,
-  branches
+  branches,
+  multiple = false
 }) => {
+  if (multiple) {
+    // Multi-select using native select (shadcn/ui Select does not support multiple)
+    return (
+      <div className="space-y-2">
+        <Label htmlFor="branch" className="text-sm text-gray-600">סניפים משויכים *</Label>
+        <select
+          id="branch"
+          multiple
+          className="border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full"
+          value={Array.isArray(selectedBranchId) ? selectedBranchId : []}
+          disabled={!branches || branches.length === 0}
+          onChange={e => {
+            const options = Array.from(e.target.selectedOptions).map(opt => opt.value);
+            onBranchChange(options);
+          }}
+        >
+          {branches?.map(branch => (
+            <option key={branch.id} value={branch.id}>
+              {branch.name}
+            </option>
+          ))}
+        </select>
+        {!branches || branches.length === 0 ? (
+          <div className="text-amber-600 bg-amber-50 rounded p-2 text-xs">לא נמצאו סניפים פעילים עבור העסק</div>
+        ): null}
+      </div>
+    );
+  }
+
+  // Default single select using shadcn/ui Select
   return (
     <div className="space-y-2">
       <Label htmlFor="branch" className="text-sm text-gray-600">סניף משייך *</Label>
       <Select
-        value={selectedBranchId}
-        onValueChange={onBranchChange}
+        value={typeof selectedBranchId === "string" ? selectedBranchId : ""}
+        onValueChange={val => onBranchChange(val)}
         disabled={!branches || branches.length === 0}
       >
         <SelectTrigger className="border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400">

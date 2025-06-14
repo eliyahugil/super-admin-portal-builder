@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CreateShiftFormHeader } from './CreateShiftFormHeader';
@@ -117,11 +116,12 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
           </div>
         </div>
 
-        {/* בחירת סניף */}
+        {/* בחירת סניפים מרובים */}
         <BranchSelector
           selectedBranchId={selectedBranchId}
           onBranchChange={setSelectedBranchId}
           branches={branches}
+          multiple={true}
         />
 
         <EmployeeSelector
