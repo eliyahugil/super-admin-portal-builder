@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock } from 'lucide-react';
 import { AccessRequest } from './types';
-import { DetailedAccessRequestCard } from './DetailedAccessRequestCard';
+import { CollapsedAccessRequestCard } from './CollapsedAccessRequestCard';
 
 interface PendingRequestsSectionProps {
   requests: AccessRequest[];
@@ -34,14 +34,15 @@ export const PendingRequestsSection: React.FC<PendingRequestsSectionProps> = ({
             <p className="text-gray-600">כל הבקשות טופלו</p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {requests.map((request) => (
-              <DetailedAccessRequestCard
+              <CollapsedAccessRequestCard
                 key={request.id}
                 request={request}
                 onApprove={onApprove}
                 onReject={onReject}
                 isLoading={isLoading}
+                showActions={true}
               />
             ))}
           </div>

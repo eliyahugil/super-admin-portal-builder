@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Building2, AlertCircle, Phone } from 'lucide-react';
+import { CheckCircle, XCircle, Building2, AlertCircle, Phone, ChevronUp } from 'lucide-react';
 import { AccessRequest } from './types';
 import { AccessRequestStatusBadge } from './AccessRequestStatusBadge';
 import { UserProfileDisplay } from './UserProfileDisplay';
@@ -13,13 +13,15 @@ interface DetailedAccessRequestCardProps {
   onApprove: (requestId: string, assignmentData: any) => void;
   onReject: (requestId: string, reviewNotes: string) => void;
   isLoading: boolean;
+  onCollapse?: () => void;
 }
 
 export const DetailedAccessRequestCard: React.FC<DetailedAccessRequestCardProps> = ({
   request,
   onApprove,
   onReject,
-  isLoading
+  isLoading,
+  onCollapse
 }) => {
   const [reviewNotes, setReviewNotes] = useState('');
 
@@ -41,7 +43,7 @@ export const DetailedAccessRequestCard: React.FC<DetailedAccessRequestCardProps>
   return (
     <Card className={`border-l-4 ${request.status === 'pending' ? 'border-l-yellow-500' : 'border-l-gray-300'}`}>
       <CardContent className="p-6">
-        {/* Header with status */}
+        {/* Header with status and collapse button */}
         <div className="flex justify-between items-start mb-6">
           <div className="flex-1">
             <UserProfileDisplay request={request} />
@@ -54,7 +56,19 @@ export const DetailedAccessRequestCard: React.FC<DetailedAccessRequestCardProps>
               </div>
             )}
           </div>
-          <AccessRequestStatusBadge status={request.status} />
+          <div className="flex items-center gap-2">
+            <AccessRequestStatusBadge status={request.status} />
+            {onCollapse && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onCollapse}
+                className="p-1"
+              >
+                <ChevronUp className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
         
         {/* Request reason */}

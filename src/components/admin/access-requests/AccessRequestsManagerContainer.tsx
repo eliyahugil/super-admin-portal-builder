@@ -5,7 +5,7 @@ import { AccessRequestsHeader } from './AccessRequestsHeader';
 import { AccessRequestsStats } from './AccessRequestsStats';
 import { AccessRequestsDebugCard } from './AccessRequestsDebugCard';
 import { PendingRequestsSection } from './PendingRequestsSection';
-import { ProcessedRequestsList } from './ProcessedRequestsList';
+import { MinimizedProcessedRequestsSection } from './MinimizedProcessedRequestsSection';
 
 export const AccessRequestsManagerContainer: React.FC = () => {
   const { requests, isLoading, handleRequestMutation } = useAccessRequests();
@@ -65,7 +65,7 @@ export const AccessRequestsManagerContainer: React.FC = () => {
         isLoading={handleRequestMutation.isPending}
       />
 
-      <ProcessedRequestsList requests={processedRequests} />
+      <MinimizedProcessedRequestsSection requests={processedRequests} />
     </div>
   );
 };
