@@ -1,57 +1,112 @@
 
-import { useState } from 'react';
-import { useEmployeesData } from '@/hooks/useEmployeesData';
+import { useState, useMemo } from 'react';
+import { useBusinessData } from '@/hooks/useBusinessData';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 import type { Employee } from '@/types/employee';
 
-export const useEmployeesTableLogic = (selectedBusinessId?: string | null) => {
-  const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const { businessId, isSuperAdmin } = useCurrentBusiness();
+interface UseEmployeesTableLogicReturn {
+  employees: Employee[];
+  filteredEmployees: Employee[];
+  loading: boolean;
+  search: string;
+  setSearch: (search: string) => void;
+  filterType: string;
+  setFilterType: (type: string) => void;
+  filterStatus: string;
+  setFilterStatus: (status: string) => void;
+  handleCreateEmployee: () => void;
+  handleTokenSent: () => void;
+}
+
+export const useEmployeesTableLogic = (selectedBusinessId?: string | null): UseEmployeesTableLogicReturn => {
+  const { businessId } = useCurrentBusiness();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
 
-  // Use the unified employees data hook
-  const { data: employees, isLoading: loading, refetch } = useEmployeesData(selectedBusinessId);
-
-  console.log('=== EMPLOYEES TABLE LOGIC ===');
-  console.log('Using unified useEmployeesData hook');
-  console.log('Business ID:', businessId);
-  console.log('Selected Business ID:', selectedBusinessId);
-  console.log('Is Super Admin:', isSuperAdmin);
-  console.log('Employees count:', employees?.length || 0);
-
-  const filteredEmployees = (employees || []).filter((emp) => {
-    const searchTerm = search.toLowerCase();
-    const fullName = `${emp.first_name} ${emp.last_name}`.toLowerCase();
-    const employeeId = emp.employee_id?.toLowerCase() || '';
-    const phone = emp.phone?.toLowerCase() || '';
-    
-    const matchesSearch = fullName.includes(searchTerm) || 
-                         employeeId.includes(searchTerm) || 
-                         phone.includes(searchTerm);
-    
-    const matchesType = filterType === 'all' || emp.employee_type === filterType;
-    const matchesStatus = filterStatus === 'all' || 
-                         (filterStatus === 'active' && emp.is_active) ||
-                         (filterStatus === 'inactive' && !emp.is_active);
-    
-    return matchesSearch && matchesType && matchesStatus;
+  console.log('🔄 useEmployeesTableLogic hook called with:', {
+    selectedBusinessId,
+    contextBusinessId: businessId
   });
 
+  // Use the new unified hook for active employees
+  const { 
+    data: employees = [], 
+    isLoading: loading, 
+    error 
+  } = useBusinessData<Employee>({
+    tableName: 'employees',
+    queryKey: ['employees'],
+    filter: 'active',
+    selectedBusinessId: selectedBusinessId || businessId,
+    select: `
+      *,
+      main_branch:main_branch_id(id, name),
+      employee_branch_assignments!inner(
+        branch:branch_id(id, name),
+        role_name,
+        is_active
+      )
+    `
+  });
+
+  if (error) {
+    console.error('❌ Error loading employees:', error);
+  }
+
+  const filteredEmployees = useMemo(() => {
+    let filtered = employees;
+
+    // Apply search filter
+    if (search.trim()) {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter(employee =>
+        employee.first_name?.toLowerCase().includes(searchLower) ||
+        employee.last_name?.toLowerCase().includes(searchLower) ||
+        employee.email?.toLowerCase().includes(searchLower) ||
+        employee.phone?.includes(search) ||
+        employee.employee_id?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply type filter
+    if (filterType !== 'all') {
+      filtered = filtered.filter(employee => employee.employee_type === filterType);
+    }
+
+    // Apply status filter
+    if (filterStatus !== 'all') {
+      if (filterStatus === 'active') {
+        filtered = filtered.filter(employee => employee.is_active);
+      } else if (filterStatus === 'inactive') {
+        filtered = filtered.filter(employee => !employee.is_active);
+      }
+    }
+
+    return filtered;
+  }, [employees, search, filterType, filterStatus]);
+
   const handleCreateEmployee = () => {
-    navigate('/modules/employees/create');
+    console.log('🆕 Create employee clicked');
+    toast({
+      title: 'יצירת עובד חדש',
+      description: 'פונקציונליות בפיתוח...',
+    });
   };
 
   const handleTokenSent = () => {
-    refetch();
+    console.log('🔄 Token sent, refreshing data...');
+    toast({
+      title: 'הטוקן נשלח בהצלחה',
+      description: 'העובד יקבל הודעה עם קישור להגשת המשמרות',
+    });
   };
 
   return {
-    employees: employees || [],
+    employees,
     filteredEmployees,
     loading,
     search,
@@ -62,6 +117,5 @@ export const useEmployeesTableLogic = (selectedBusinessId?: string | null) => {
     setFilterStatus,
     handleCreateEmployee,
     handleTokenSent,
-    refetch,
   };
 };

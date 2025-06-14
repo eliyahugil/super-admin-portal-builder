@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Archive } from 'lucide-react';
-import { useArchivedData } from '@/hooks/useArchivedData';
+import { useBusinessData } from '@/hooks/useBusinessData';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { GenericArchiveButton } from './GenericArchiveButton';
 
@@ -31,9 +30,10 @@ export const GenericArchivedList: React.FC<GenericArchivedListProps> = ({
   select
 }) => {
   const { businessId } = useCurrentBusiness();
-  const { data: archivedItems = [], isLoading, error } = useArchivedData({
+  const { data: archivedItems = [], isLoading, error } = useBusinessData({
     tableName,
     queryKey,
+    filter: 'archived',
     selectedBusinessId: selectedBusinessId || businessId,
     select
   });
