@@ -1814,6 +1814,7 @@ export type Database = {
           created_at: string | null
           employee_id: string | null
           id: string
+          is_archived: boolean
           is_assigned: boolean | null
           notes: string | null
           shift_date: string
@@ -1825,6 +1826,7 @@ export type Database = {
           created_at?: string | null
           employee_id?: string | null
           id?: string
+          is_archived?: boolean
           is_assigned?: boolean | null
           notes?: string | null
           shift_date: string
@@ -1836,6 +1838,7 @@ export type Database = {
           created_at?: string | null
           employee_id?: string | null
           id?: string
+          is_archived?: boolean
           is_assigned?: boolean | null
           notes?: string | null
           shift_date?: string

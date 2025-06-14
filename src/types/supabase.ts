@@ -1,4 +1,3 @@
-
 // ===========================
 // 🌐 כל הטיפוסים של המערכת
 // ===========================
@@ -155,3 +154,16 @@ export const mapEmployeeType = (type: string): EmployeeType => {
   const validTypes: EmployeeType[] = ['permanent', 'temporary', 'youth', 'contractor'];
   return validTypes.includes(type as EmployeeType) ? (type as EmployeeType) : 'permanent';
 };
+
+export interface ScheduledShift {
+  id: string;
+  shift_template_id: string;
+  shift_date: string;
+  branch_id: string | null;
+  is_assigned: boolean;
+  notes?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  employee_id?: string | null;
+  is_archived: boolean;
+}

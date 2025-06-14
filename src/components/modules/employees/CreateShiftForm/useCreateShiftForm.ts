@@ -4,6 +4,48 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Branch } from '@/types/branch';
 
+// Archive/unarchive helpers for scheduled shifts
+export const useScheduledShiftsArchiver = () => {
+  const { toast } = useToast();
+  // Archive a scheduled shift (set is_archived = true)
+  const archiveShift = async (shiftId: string) => {
+    const { error } = await supabase
+      .from('scheduled_shifts')
+      .update({ is_archived: true })
+      .eq('id', shiftId);
+    if (error) {
+      toast({
+        title: "שגיאה",
+        description: "שגיאה בארכוב משמרת: " + (error.message || ''),
+        variant: "destructive"
+      });
+      return false;
+    }
+    toast({ title: "המשמרת הועברה לארכיון" });
+    return true;
+  };
+
+  // Restore a scheduled shift (set is_archived = false)
+  const unarchiveShift = async (shiftId: string) => {
+    const { error } = await supabase
+      .from('scheduled_shifts')
+      .update({ is_archived: false })
+      .eq('id', shiftId);
+    if (error) {
+      toast({
+        title: "שגיאה",
+        description: "שגיאה בשחזור משמרת: " + (error.message || ''),
+        variant: "destructive"
+      });
+      return false;
+    }
+    toast({ title: "המשמרת שוחזרה מארכיון" });
+    return true;
+  };
+
+  return { archiveShift, unarchiveShift };
+};
+
 export const useCreateShiftForm = (
   businessId?: string,
   branches?: Branch[]

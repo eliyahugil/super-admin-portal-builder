@@ -29,6 +29,7 @@ interface ShiftsListProps {
 export const ShiftsList: React.FC<ShiftsListProps> = ({ businessId }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Exclude archived shifts by default!
   const { data: shifts = [], isLoading, error } = useQuery({
     queryKey: ['shifts-list', businessId],
     queryFn: async (): Promise<ShiftData[]> => {
@@ -43,9 +44,10 @@ export const ShiftsList: React.FC<ShiftsListProps> = ({ businessId }) => {
       if (businessId) {
         query = query.eq('employee.business_id', businessId);
       }
+      // If the list was for scheduled_shifts - exclude archived:
+      // query = query.eq('is_archived', false);
 
       const { data, error } = await query;
-
       if (error) throw error;
       return data || [];
     },
