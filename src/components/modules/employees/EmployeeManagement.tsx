@@ -11,6 +11,7 @@ import { EmployeeManagementLoading } from './EmployeeManagementLoading';
 import { EmployeeManagementEmptyState } from './EmployeeManagementEmptyState';
 import { ManagementToolsSection } from './ManagementToolsSection';
 import { useEmployeeManagement } from './hooks/useEmployeeManagement';
+import type { Employee } from '@/types/employee';
 
 export const EmployeeManagement: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -59,6 +60,9 @@ export const EmployeeManagement: React.FC = () => {
     );
   }
 
+  // Ensure employees is typed correctly
+  const typedEmployees: Employee[] = employees || [];
+
   return (
     <div className="max-w-7xl mx-auto p-6" dir="rtl">
       {/* Branch Filter Header */}
@@ -104,13 +108,13 @@ export const EmployeeManagement: React.FC = () => {
         hideFilters={!!branchId} // Hide branch filter when filtering by specific branch
       />
 
-      <EmployeeStatsCards employees={employees} />
+      <EmployeeStatsCards employees={typedEmployees} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2">
-          {employees && employees.length > 0 ? (
+          {typedEmployees && typedEmployees.length > 0 ? (
             <EmployeesTable 
-              employees={employees} 
+              employees={typedEmployees} 
               onRefetch={refetch}
               showBranchFilter={!branchId} // Don't show branch column when filtering by branch
             />
@@ -126,4 +130,3 @@ export const EmployeeManagement: React.FC = () => {
     </div>
   );
 };
-
