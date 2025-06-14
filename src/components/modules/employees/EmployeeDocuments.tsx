@@ -8,10 +8,12 @@ import { getFileType } from './helpers/documentHelpers';
 import { EmployeeDocumentCard } from './EmployeeDocumentCard';
 import { EmployeeDocumentsEmptyState } from './EmployeeDocumentsEmptyState';
 import { EmployeeDocumentsHeader } from './EmployeeDocumentsHeader';
+import { TemplateDocumentsHeader } from './TemplateDocumentsHeader';
 import { useEmployeeDocumentReminders } from './hooks/useEmployeeDocumentReminders';
 import { useEmployeeDocumentDelete } from './hooks/useEmployeeDocumentDelete';
 import { AssignToEmployeeSelect } from './AssignToEmployeeSelect';
 import { useEmployeeDocumentUpload } from './hooks/useEmployeeDocumentUpload';
+import { useTemplateDocumentUpload } from './hooks/useTemplateDocumentUpload';
 import { useEmployeeDocumentAssignment } from './hooks/useEmployeeDocumentAssignment';
 import { StorageService } from '@/services/StorageService';
 import { useToast } from '@/hooks/use-toast';
@@ -30,7 +32,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   const { profile, user } = useAuth();
   const { toast } = useToast();
 
-  // Check bucket access on component mount
+  // בדיקת גישה לדלי בעת טעינת הקומפוננט
   useEffect(() => {
     const checkBucket = async () => {
       try {
@@ -39,7 +41,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         if (!hasAccess) {
           console.warn('⚠️ Storage bucket access issue detected');
           toast({
-            title: 'تحذير',
+            title: 'אזהרה',
             description: 'יש בעיה בגישה למערכת האחסון. ייתכן שלא ניתן יהיה להעלות או לצפות בקבצים.',
             variant: 'destructive',
           });
@@ -54,7 +56,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     checkBucket();
   }, [toast]);
 
-  // Fetch employees for assignment
+  // שליפת עובדים להקצאה
   const { data: employees, isLoading: employeesLoading } = useQuery({
     queryKey: ['employees-for-assignee'],
     queryFn: async () => {
@@ -69,9 +71,10 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     enabled: canEdit,
   });
 
-  // Upload and assignment hooks
+  // Hooks להעלאה והקצאה
   const uploadQueryKey = ['employee-documents', employeeId];
-  const { uploading, handleFileUpload, setUploading } = useEmployeeDocumentUpload(employeeId, uploadQueryKey);
+  const { uploading, handleFileUpload } = useEmployeeDocumentUpload(employeeId, uploadQueryKey);
+  const { uploading: templateUploading, handleTemplateUpload } = useTemplateDocumentUpload(uploadQueryKey);
   const { assigningId, handleAssignAssignee } = useEmployeeDocumentAssignment(employeeId, uploadQueryKey);
 
   const {
@@ -79,18 +82,14 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     reminderLoading,
     fetchReminders,
     sendReminder,
-    setReminderLog
   } = useEmployeeDocumentReminders(employeeId);
 
   const deleteDocumentMutation = useEmployeeDocumentDelete(employeeId);
 
-  // --- QUERY for docs ---
-  // 1. Templates: is_template = true, employee_id IS NULL (only when employeeId is falsy/empty)
-  // 2. Regular: employee docs (employee_id matches or assignee), OR is_template = false and employee_id is NOT NULL
+  // שאילתה למסמכים
   const { data: documents, isLoading } = useQuery({
     queryKey: ['employee-documents', employeeId],
     queryFn: async () => {
-      // Fetch all docs for this employeeId, or all (if no employeeId)
       let query = supabase
         .from('employee_documents')
         .select(`
@@ -100,12 +99,10 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         `)
         .order('created_at', { ascending: false });
 
-      // For "כל העובדים" (employeeId falsy) - show everything, templates first
-      // For specific employee: show their docs and assigned docs, exclude templates.
       if (!employeeId) {
-        // No filtering needed: will filter in code below into templates and records
+        // עבור "כל העובדים" - הצג הכל
       } else {
-        // Only non-templates for the selected employee
+        // עבור עובד ספציפי - רק מסמכי העובד (לא תבניות)
         query = query
           .eq('is_template', false)
           .eq('employee_id', employeeId);
@@ -118,13 +115,12 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     enabled: !!(employeeId !== undefined),
   });
 
-  // Download/view/delete logic
+  // פונקציות הורדה/צפייה/מחיקה
   const handleDownload = async (document: any) => {
     try {
       if (document.file_url) {
         console.log('📥 Attempting to download document:', document.document_name);
         
-        // Check bucket access before attempting download
         const hasAccess = await StorageService.checkBucketAccess();
         if (!hasAccess) {
           toast({
@@ -155,7 +151,6 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       if (document.file_url) {
         console.log('👁️ Attempting to view document:', document.document_name);
         
-        // Check bucket access before attempting to view
         const hasAccess = await StorageService.checkBucketAccess();
         if (!hasAccess) {
           toast({
@@ -199,7 +194,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     );
   }
 
-  // For "כל העובדים", separate template docs and normal ones
+  // הפרדת תבניות ממסמכים רגילים
   let templates: any[] = [];
   let others: any[] = [];
   if (!employeeId && documents) {
@@ -209,87 +204,104 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     others = documents || [];
   }
 
-  // Disable upload: uploading OR (if employeeId is undefined, only allow for templates)
-  let disableUpload = uploading;
-  // For "כל העובדים", allow upload; for specific employee, as before.
-  // Always allow uploading template when in "כל העובדים"
-  // (employeeId === '' means templates)
-  // uploading state already disables input.
+  const isShowingAllEmployees = !employeeId;
 
   return (
-    <div className="space-y-4">
-      <EmployeeDocumentsHeader
-        canEdit={canEdit}
-        uploading={uploading}
-        handleFileUpload={handleFileUpload}
-        disableUpload={disableUpload}
-      />
-      {/* Show templates block if relevant */}
-      {(!employeeId && templates.length > 0) && (
+    <div className="space-y-6">
+      {/* הצגת תבניות רק בעמוד "כל העובדים" */}
+      {isShowingAllEmployees && (
         <div>
-          <div className="mb-2 text-right text-purple-700 font-semibold">תבניות מסמכים</div>
+          <TemplateDocumentsHeader
+            uploading={templateUploading}
+            handleTemplateUpload={handleTemplateUpload}
+          />
+          {templates.length > 0 ? (
+            <div className="space-y-3">
+              {templates.map((document: any) => (
+                <EmployeeDocumentCard
+                  key={document.id}
+                  document={document}
+                  canEdit={canEdit}
+                  uploading={false}
+                  reminderLoading={null}
+                  reminderLog={{}}
+                  handleView={handleView}
+                  handleDownload={handleDownload}
+                  handleDelete={handleDelete}
+                  sendReminder={() => {}}
+                  fetchReminders={async () => {}}
+                />
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center text-gray-500">
+                אין תבניות מסמכים עדיין. הוסף תבנית חדשה למעלה.
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* מסמכים רגילים */}
+      <div>
+        {!isShowingAllEmployees && (
+          <EmployeeDocumentsHeader
+            canEdit={canEdit}
+            uploading={uploading}
+            handleFileUpload={handleFileUpload}
+            disableUpload={uploading}
+          />
+        )}
+        
+        {isShowingAllEmployees && (
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="text-lg font-semibold">מסמכי עובדים</h3>
+          </div>
+        )}
+
+        {others && others.length > 0 ? (
           <div className="space-y-3">
-            {templates.map((document: any) => (
-              <EmployeeDocumentCard
-                key={document.id}
-                document={document}
-                canEdit={false} // No actions on template docs
-                uploading={false}
-                reminderLoading={null}
-                reminderLog={{}}
-                handleView={handleView}
-                handleDownload={handleDownload}
-                handleDelete={() => {}} // can't delete from here
-                sendReminder={() => {}}
-                fetchReminders={async () => {}}
-              />
+            {others.map((document: any) => (
+              <div key={document.id} className="space-y-2">
+                <EmployeeDocumentCard
+                  document={document}
+                  canEdit={canEdit}
+                  uploading={uploading}
+                  reminderLoading={reminderLoading}
+                  reminderLog={reminderLog}
+                  handleView={handleView}
+                  handleDownload={handleDownload}
+                  handleDelete={handleDelete}
+                  sendReminder={sendReminder}
+                  fetchReminders={fetchReminders}
+                />
+                {canEdit && !document.assignee && !document.is_template && (
+                  <AssignToEmployeeSelect
+                    docId={document.id}
+                    employees={employees ?? []}
+                    assigningId={assigningId}
+                    uploading={uploading}
+                    onAssign={handleAssignAssignee}
+                  />
+                )}
+              </div>
             ))}
           </div>
-        </div>
-      )}
-      {/* Show regular/assigned docs */}
-      {others && others.length > 0 ? (
-        <div className="space-y-3">
-          {others.map((document: any) => (
-            <div key={document.id} className="space-y-2">
-              <EmployeeDocumentCard
-                document={document}
+        ) : (
+          <Card>
+            <CardContent>
+              <EmployeeDocumentsEmptyState
+                employeeName={employeeName}
                 canEdit={canEdit}
                 uploading={uploading}
-                reminderLoading={reminderLoading}
-                reminderLog={reminderLog}
-                handleView={handleView}
-                handleDownload={handleDownload}
-                handleDelete={handleDelete}
-                sendReminder={sendReminder}
-                fetchReminders={fetchReminders}
+                handleFileUpload={handleFileUpload}
+                disableUpload={uploading}
               />
-              {/* Show 'Assign to Employee' if needed, skip on template docs */}
-              {canEdit && !document.assignee && !document.is_template &&
-                <AssignToEmployeeSelect
-                  docId={document.id}
-                  employees={employees ?? []}
-                  assigningId={assigningId}
-                  uploading={uploading}
-                  onAssign={handleAssignAssignee}
-                />
-              }
-            </div>
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <CardContent>
-            <EmployeeDocumentsEmptyState
-              employeeName={employeeName}
-              canEdit={canEdit}
-              uploading={uploading}
-              handleFileUpload={handleFileUpload}
-              disableUpload={disableUpload}
-            />
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };
