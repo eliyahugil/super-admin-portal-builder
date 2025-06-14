@@ -18,6 +18,7 @@ export const BusinessManagement: React.FC = () => {
     loading,
     error,
     stats,
+    isDeleting,
     handlers
   } = useBusinessManagement();
 
@@ -27,11 +28,14 @@ export const BusinessManagement: React.FC = () => {
     isSuperAdmin: profile?.role === 'super_admin'
   });
 
-  if (loading) {
+  if (loading || isDeleting) {
     return (
       <div className="max-w-7xl mx-auto p-6" dir="rtl">
         <div className="flex items-center justify-center min-h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600">
+            {isDeleting ? 'מוחק עסק...' : 'טוען...'}
+          </p>
         </div>
       </div>
     );
@@ -87,6 +91,7 @@ export const BusinessManagement: React.FC = () => {
         onView={handlers.handleView}
         onSettings={handlers.handleSettings}
         onEdit={handlers.handleEdit}
+        onDelete={handlers.handleDelete}
       />
     </div>
   );

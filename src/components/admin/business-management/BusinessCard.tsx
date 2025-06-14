@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Settings, Edit, CheckCircle, XCircle } from 'lucide-react';
+import { Eye, Settings, Edit, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 
 interface EnrichedBusiness {
   id: string;
@@ -22,13 +22,15 @@ interface BusinessCardProps {
   onView: (businessId: string) => void;
   onSettings: (businessId: string) => void;
   onEdit: (businessId: string) => void;
+  onDelete: (businessId: string) => void;
 }
 
 export const BusinessCard: React.FC<BusinessCardProps> = ({
   business,
   onView,
   onSettings,
-  onEdit
+  onEdit,
+  onDelete
 }) => {
   const getStatusBadge = (status: boolean) => {
     return status ? (
@@ -44,6 +46,12 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
     ) : (
       <XCircle className="h-4 w-4 text-red-500" />
     );
+  };
+
+  const handleDelete = () => {
+    if (confirm(`האם אתה בטוח שברצונך למחוק את העסק "${business.name}"? פעולה זו לא ניתנת לביטול ותמחק את כל הנתונים הקשורים לעסק.`)) {
+      onDelete(business.id);
+    }
   };
 
   return (
@@ -100,6 +108,15 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
           >
             <Edit className="h-4 w-4 mr-1" />
             עריכה
+          </Button>
+          <Button 
+            variant="destructive" 
+            size="sm"
+            onClick={handleDelete}
+            className="text-red-600 hover:text-red-800 border-red-300 hover:border-red-400"
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            מחק
           </Button>
         </div>
       </div>

@@ -23,6 +23,7 @@ interface BusinessListProps {
   onView: (businessId: string) => void;
   onSettings: (businessId: string) => void;
   onEdit: (businessId: string) => void;
+  onDelete: (businessId: string) => void;
 }
 
 export const BusinessList: React.FC<BusinessListProps> = ({
@@ -30,7 +31,8 @@ export const BusinessList: React.FC<BusinessListProps> = ({
   totalBusinesses,
   onView,
   onSettings,
-  onEdit
+  onEdit,
+  onDelete
 }) => {
   return (
     <Card>
@@ -60,6 +62,7 @@ export const BusinessList: React.FC<BusinessListProps> = ({
                 onView={onView}
                 onSettings={onSettings}
                 onEdit={onEdit}
+                onDelete={onDelete}
               />
             ))
           )}

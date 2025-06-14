@@ -1,9 +1,10 @@
 
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useBusinessesData } from '@/hooks/useRealData';
+import { useToast } from '@/hooks/use-toast';
 
 interface EnrichedBusiness {
   id: string;
@@ -22,8 +23,48 @@ export const useBusinessManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: businesses = [], isLoading: loading, error } = useBusinessesData();
+
+  // Delete business mutation
+  const deleteBusiness = useMutation({
+    mutationFn: async (businessId: string) => {
+      console.log('Deleting business:', businessId);
+      
+      const { error } = await supabase
+        .from('businesses')
+        .delete()
+        .eq('id', businessId);
+
+      if (error) {
+        console.error('Error deleting business:', error);
+        throw new Error(`שגיאה במחיקת העסק: ${error.message}`);
+      }
+      
+      return businessId;
+    },
+    onSuccess: (deletedBusinessId) => {
+      console.log('Business deleted successfully:', deletedBusinessId);
+      toast({
+        title: 'הצלחה',
+        description: 'העסק נמחק בהצלחה',
+      });
+      
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['businesses'] });
+      queryClient.invalidateQueries({ queryKey: ['enriched-businesses'] });
+    },
+    onError: (error) => {
+      console.error('Business deletion failed:', error);
+      toast({
+        title: 'שגיאה',
+        description: error instanceof Error ? error.message : 'אירעה שגיאה במחיקת העסק',
+        variant: 'destructive',
+      });
+    },
+  });
 
   // Enrich businesses with employee and branch counts
   const { data: enrichedBusinesses = [] } = useQuery({
@@ -120,6 +161,10 @@ export const useBusinessManagement = () => {
     navigate(`/modules/employees?business=${businessId}`);
   };
 
+  const handleDelete = (businessId: string) => {
+    deleteBusiness.mutate(businessId);
+  };
+
   const handleCreateBusiness = () => {
     navigate('/admin/businesses/create');
   };
@@ -134,10 +179,12 @@ export const useBusinessManagement = () => {
     loading,
     error,
     stats,
+    isDeleting: deleteBusiness.isPending,
     handlers: {
       handleView,
       handleSettings,
       handleEdit,
+      handleDelete,
       handleCreateBusiness
     }
   };
