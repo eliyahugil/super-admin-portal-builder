@@ -41,14 +41,17 @@ export const EmployeeManagement: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 flex flex-col space-y-4 sm:space-y-6" dir="rtl">
+    <div
+      className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 flex flex-col gap-4 sm:gap-6"
+      dir="rtl"
+    >
       {/* Header */}
-      <div className="px-2 sm:px-0">
+      <div className="px-0 sm:px-0">
         <EmployeeManagementHeader />
       </div>
 
       {/* Stats Cards */}
-      <div>
+      <div className="w-full">
         <EmployeeStatsCards
           totalEmployees={employees.length}
           activeEmployees={activeEmployees.length}
@@ -59,7 +62,7 @@ export const EmployeeManagement: React.FC = () => {
       </div>
 
       {/* Management Tools */}
-      <div>
+      <div className="w-full">
         <ManagementToolsSection 
           onCreateEmployee={() => setCreateEmployeeOpen(true)}
           onCreateBranch={() => setCreateBranchOpen(true)}
@@ -67,7 +70,7 @@ export const EmployeeManagement: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div>
+      <div className="w-full">
         <EmployeeTabsContent
           activeTab={activeTab}
           onActiveTabChange={setActiveTab}
@@ -96,4 +99,3 @@ export const EmployeeManagement: React.FC = () => {
     </div>
   );
 };
-

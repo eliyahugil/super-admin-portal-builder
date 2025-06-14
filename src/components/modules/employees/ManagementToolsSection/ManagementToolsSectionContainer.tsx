@@ -13,7 +13,7 @@ export const ManagementToolsSectionContainer: React.FC<ManagementToolsSectionPro
   const { businessId } = useBusiness();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 w-full">
       {/* Quick Actions */}
       <QuickActionsCard 
         onCreateEmployee={onCreateEmployee}
@@ -21,10 +21,14 @@ export const ManagementToolsSectionContainer: React.FC<ManagementToolsSectionPro
       />
 
       {/* Shift Template Creator */}
-      <ShiftTemplateManagementSection />
+      <div className="w-full">
+        <ShiftTemplateManagementSection />
+      </div>
 
       {/* Management Tools Grid */}
-      <ManagementToolsGrid businessId={businessId} />
+      <div className="w-full">
+        <ManagementToolsGrid businessId={businessId} />
+      </div>
     </div>
   );
 };

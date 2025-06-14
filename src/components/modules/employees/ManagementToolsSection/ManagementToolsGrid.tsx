@@ -8,9 +8,13 @@ export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({
   businessId
 }) => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <ShiftsAdminTable businessId={businessId} />
-      <CreateShiftForm businessId={businessId} />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      <div className="w-full order-2 md:order-1">
+        <ShiftsAdminTable businessId={businessId} />
+      </div>
+      <div className="w-full order-1 md:order-2">
+        <CreateShiftForm businessId={businessId} />
+      </div>
     </div>
   );
 };
