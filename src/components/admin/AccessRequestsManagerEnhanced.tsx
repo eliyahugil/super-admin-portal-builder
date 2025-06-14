@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAccessRequests } from '@/hooks/useAccessRequests';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CheckCircle, XCircle, Clock, UserPlus, Building2, Plus, User, Users, ShoppingCart, Phone } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, UserPlus, Building2, Plus, User, Users, ShoppingCart, Phone, AlertCircle } from 'lucide-react';
 import { AccessRequest } from '@/types/access-request';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,6 +39,14 @@ const AccessRequestCard: React.FC<{
   const [customUserType, setCustomUserType] = useState('');
   const [isCreateBusinessDialogOpen, setIsCreateBusinessDialogOpen] = useState(false);
   const { toast } = useToast();
+
+  // Debug logging for profile data
+  console.log('🔍 AccessRequestCard - Request data:', {
+    id: request.id,
+    user_id: request.user_id,
+    profiles: request.profiles,
+    businesses: request.businesses
+  });
 
   const { data: businesses = [] } = useQuery({
     queryKey: ['businesses-for-assignment'],
@@ -83,6 +90,12 @@ const AccessRequestCard: React.FC<{
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
+
+  // Handle missing profile data
+  const profileFullName = request.profiles?.full_name;
+  const profileEmail = request.profiles?.email;
+  const profilePhone = request.profiles?.phone;
+  const hasProfileData = profileFullName || profileEmail || profilePhone;
 
   const handleApprove = () => {
     const assignmentData = {
@@ -175,20 +188,53 @@ const AccessRequestCard: React.FC<{
           <div className="flex-1">
             <div className="bg-blue-50 p-4 rounded-lg mb-4">
               <h3 className="text-lg font-semibold text-blue-900 mb-2">פרטי המבקש</h3>
+              
+              {/* Show warning if profile data is missing */}
+              {!hasProfileData && (
+                <div className="bg-red-50 border border-red-200 p-3 rounded-lg mb-3">
+                  <div className="flex items-center gap-2 text-red-800">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="font-medium">חסרים פרטי משתמש!</span>
+                  </div>
+                  <p className="text-sm text-red-700 mt-1">
+                    לא ניתן לטעון את פרטי המשתמש מהמסד נתונים. User ID: {request.user_id}
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="font-medium text-gray-700">שם מלא:</span>
-                  <p className="text-gray-900">{request.profiles?.full_name || 'לא צוין'}</p>
+                  <p className="text-gray-900 font-medium">
+                    {profileFullName || (
+                      <span className="text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        לא זמין
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700">אימייל:</span>
-                  <p className="text-gray-900">{request.profiles?.email || 'לא צוין'}</p>
+                  <p className="text-gray-900">
+                    {profileEmail || (
+                      <span className="text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        לא זמין
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700">טלפון:</span>
                   <p className="text-gray-900 flex items-center gap-1">
                     <Phone className="h-3 w-3" />
-                    {request.profiles?.phone || 'לא צוין'}
+                    {profilePhone || (
+                      <span className="text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        לא זמין
+                      </span>
+                    )}
                   </p>
                 </div>
                 <div>
@@ -207,6 +253,10 @@ const AccessRequestCard: React.FC<{
                     {' בשעה '}
                     {new Date(request.created_at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
                   </p>
+                </div>
+                <div className="col-span-2">
+                  <span className="font-medium text-gray-700">מזהה משתמש:</span>
+                  <p className="text-xs text-gray-500 font-mono">{request.user_id}</p>
                 </div>
               </div>
             </div>
@@ -231,7 +281,8 @@ const AccessRequestCard: React.FC<{
           </div>
         )}
         
-        {request.status === 'pending' && (
+        {
+        request.status === 'pending' && (
           <div className="space-y-6 border-t pt-6">
             <div>
               <Label className="text-lg font-semibold text-gray-800 mb-4 block">אישור הבקשה ושיוך משתמש</Label>
@@ -382,7 +433,8 @@ const AccessRequestCard: React.FC<{
               </Button>
             </div>
           </div>
-        )}
+        )
+        }
         
         {request.status !== 'pending' && request.review_notes && (
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border-l-4 border-l-gray-400">
@@ -404,6 +456,9 @@ const AccessRequestCard: React.FC<{
 
 export const AccessRequestsManagerEnhanced: React.FC = () => {
   const { requests, isLoading, handleRequestMutation } = useAccessRequests();
+
+  // Debug logging for all requests
+  console.log('📋 AccessRequestsManagerEnhanced - All requests:', requests);
 
   const handleApprove = (requestId: string, assignmentData: any) => {
     console.log('🔄 Approving request with assignment:', { requestId, assignmentData });
@@ -448,6 +503,21 @@ export const AccessRequestsManagerEnhanced: React.FC = () => {
         </h1>
         <p className="text-gray-600 mt-2">סקור פרטי משתמשים, שייך לעסק או צור עסק חדש, ואשר בקשות גישה למערכת</p>
       </div>
+      
+      {/* Debug Card for troubleshooting */}
+      <Card className="mb-6 bg-yellow-50 border-yellow-200">
+        <CardContent className="p-4">
+          <h3 className="font-medium mb-2 text-yellow-800">מידע דיבוג למפתח:</h3>
+          <div className="text-sm space-y-1">
+            <p>סה"כ בקשות: {requests.length}</p>
+            <p>בקשות ממתינות: {pendingRequests.length}</p>
+            <p>בקשות מעובדות: {processedRequests.length}</p>
+            <p className="text-xs text-yellow-700 mt-2">
+              אם אינך רואה פרטי משתמש, בדוק את הקונסול לפרטים נוספים
+            </p>
+          </div>
+        </CardContent>
+      </Card>
       
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">

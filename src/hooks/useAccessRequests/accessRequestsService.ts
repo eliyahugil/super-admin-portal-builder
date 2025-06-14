@@ -21,8 +21,11 @@ export const fetchAccessRequests = async (): Promise<AccessRequestEnriched[]> =>
     return [];
   }
 
+  console.log('📊 Raw access requests data:', requestsData);
+
   // Step 2: Get unique user IDs
   const userIds = [...new Set(requestsData.map(r => r.user_id))].filter(Boolean);
+  console.log('👥 User IDs to fetch:', userIds);
   
   let profilesData: any[] = [];
   if (userIds.length > 0) {
@@ -32,9 +35,10 @@ export const fetchAccessRequests = async (): Promise<AccessRequestEnriched[]> =>
       .in('id', userIds);
 
     if (profilesError) {
-      console.warn('⚠️ Error fetching profiles:', profilesError);
+      console.error('⚠️ Error fetching profiles:', profilesError);
     } else {
       profilesData = profiles || [];
+      console.log('👤 Fetched profiles:', profilesData);
     }
   }
 
@@ -52,9 +56,10 @@ export const fetchAccessRequests = async (): Promise<AccessRequestEnriched[]> =>
       .in('id', businessIds);
 
     if (businessesError) {
-      console.warn('⚠️ Error fetching businesses:', businessesError);
+      console.error('⚠️ Error fetching businesses:', businessesError);
     } else {
       businessesData = businesses || [];
+      console.log('🏢 Fetched businesses:', businessesData);
     }
   }
 
@@ -63,13 +68,25 @@ export const fetchAccessRequests = async (): Promise<AccessRequestEnriched[]> =>
   const businessesMap = new Map(businessesData.map(business => [business.id, business]));
 
   // Step 5: Merge data and convert to proper type
-  const accessRequests: AccessRequestEnriched[] = requestsData.map(request => ({
-    ...request,
-    status: request.status as 'pending' | 'approved' | 'rejected',
-    profiles: profilesMap.get(request.user_id) || null,
-    businesses: request.requested_business_id ? businessesMap.get(request.requested_business_id) || null : null,
-  }));
+  const accessRequests: AccessRequestEnriched[] = requestsData.map(request => {
+    const profile = profilesMap.get(request.user_id);
+    const business = request.requested_business_id ? businessesMap.get(request.requested_business_id) : null;
+    
+    console.log(`🔗 Mapping request ${request.id}:`, {
+      user_id: request.user_id,
+      profile: profile,
+      business_id: request.requested_business_id,
+      business: business
+    });
 
-  console.log('✅ Fetched access requests:', accessRequests.length);
+    return {
+      ...request,
+      status: request.status as 'pending' | 'approved' | 'rejected',
+      profiles: profile || null,
+      businesses: business || null,
+    };
+  });
+
+  console.log('✅ Final access requests with profiles:', accessRequests);
   return accessRequests;
 };
