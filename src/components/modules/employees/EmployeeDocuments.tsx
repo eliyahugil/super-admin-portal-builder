@@ -24,9 +24,26 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   canEdit = true
 }) => {
   const [uploading, setUploading] = useState(false);
+  const [assigneeId, setAssigneeId] = useState<string>('');
   const { toast } = useToast();
   const { profile, user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Fetch employee options only if employeeId === '' (כל העובדים)
+  const { data: employees, isLoading: employeesLoading } = useQuery({
+    queryKey: ['employees-for-assignee'],
+    queryFn: async () => {
+      if (employeeId) return []; // not needed for specific employee
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, employee_id')
+        .eq('is_active', true)
+        .order('first_name', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: employeeId === '',
+  });
 
   const {
     reminderLog,
@@ -45,6 +62,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         .from('employee_documents')
         .select(`
           *,
+          assignee:employees!employee_documents_assignee_id_fkey(first_name, last_name, employee_id),
           uploaded_by_profile:profiles!employee_documents_uploaded_by_fkey(full_name)
         `)
         .eq('employee_id', employeeId)
@@ -56,12 +74,22 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     enabled: !!employeeId,
   });
 
-  // File upload handler
+  // File upload handler (now with support for selecting assignee)
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    // Prevent upload for "כל העובדים" (empty employeeId)
-    if (!employeeId) {
+    // Prevent upload for "כל העובדים" (empty employeeId) unless assignee selected
+    if (!employeeId && !assigneeId) {
+      toast({
+        title: 'נא לבחור עובד לחתימה',
+        description: 'עליך לבחור למי מוקצה המסמך לחתימה.',
+        variant: 'destructive'
+      });
+      event.target.value = '';
+      return;
+    }
+    // Prevent upload for "כל העובדים" with no assignee
+    if (!employeeId && !assigneeId) {
       toast({
         title: 'לא ניתן להעלות מסמך עבור כל העובדים',
         description: 'יש לבחור עובד ספציפי להעלאת מסמכים. העלאת מסמך לכלל העובדים אינה נתמכת.',
@@ -86,7 +114,9 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       const fileExt = file.name.split('.').pop();
       const timestamp = Date.now();
       const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-      const filePath = `employee-documents/${employeeId}/${fileName}`;
+      // Use assigneeId for file path if set, else employeeId
+      const fileEmployeeId = employeeId || assigneeId;
+      const filePath = `employee-documents/${fileEmployeeId}/${fileName}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('employee-files')
@@ -106,7 +136,8 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       const { error: insertError } = await supabase
         .from('employee_documents')
         .insert({
-          employee_id: employeeId,
+          employee_id: employeeId || assigneeId, // save document under the specific employee
+          assignee_id: assigneeId || null, // assign to selected employee
           document_name: file.name,
           document_type: getFileType(file.name),
           file_url: urlData.publicUrl,
@@ -133,6 +164,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     } finally {
       setUploading(false);
       event.target.value = '';
+      setAssigneeId('');
     }
   };
 
@@ -157,7 +189,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     deleteDocumentMutation.mutate({ documentId: document.id, filePath });
   };
 
-  if (isLoading) {
+  if (isLoading || (employeeId === '' && employeesLoading)) {
     return (
       <div className="space-y-4">
         <div className="animate-pulse">
@@ -172,11 +204,36 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     );
   }
 
-  // Disable upload if employeeId is empty ("כל העובדים")
-  const disableUpload = !employeeId;
+  // Disable upload if employeeId is empty AND no assigneeId selected
+  const disableUpload = !employeeId && !assigneeId;
+
+  // Assignee select component (for all employees view)
+  const AssigneeSelector = () => {
+    if (employeeId !== '' || !canEdit) return null;
+    return (
+      <div className="mb-2 flex items-center gap-2">
+        <label className="text-sm font-medium">בחר עובד לחתימה:</label>
+        <select
+          className="px-3 py-1 border rounded bg-white text-sm"
+          value={assigneeId}
+          onChange={e => setAssigneeId(e.target.value)}
+          disabled={uploading || employeesLoading}
+        >
+          <option value="">—</option>
+          {employees?.map((emp: any) => (
+            <option key={emp.id} value={emp.id}>
+              {emp.first_name} {emp.last_name} ({emp.employee_id || ''})
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
+      {/* Show assignee selector if needed */}
+      <AssigneeSelector />
       <EmployeeDocumentsHeader
         canEdit={canEdit}
         uploading={uploading}
@@ -204,6 +261,8 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       ) : (
         <Card>
           <CardContent>
+            {/* Assignee selector for empty state */}
+            <AssigneeSelector />
             <EmployeeDocumentsEmptyState
               employeeName={employeeName}
               canEdit={canEdit}

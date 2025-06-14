@@ -61,6 +61,12 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
                   • הועלה על ידי {document.uploaded_by_profile.full_name}
                 </span>
               )}
+              {/* Show assignee if available */}
+              {document.assignee && (
+                <span className="text-sm text-blue-700 bg-blue-50 px-2 py-0.5 rounded ml-1">
+                  מיועד לחתימה: {document.assignee.first_name} {document.assignee.last_name} ({document.assignee.employee_id || ''})
+                </span>
+              )}
               {typeof document.reminder_count === 'number' && (
                 <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded ml-1">
                   תזכורות: {document.reminder_count}

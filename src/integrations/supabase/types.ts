@@ -991,6 +991,7 @@ export type Database = {
       }
       employee_documents: {
         Row: {
+          assignee_id: string | null
           created_at: string | null
           digital_signature_data: Json | null
           document_name: string
@@ -1004,6 +1005,7 @@ export type Database = {
           uploaded_by: string
         }
         Insert: {
+          assignee_id?: string | null
           created_at?: string | null
           digital_signature_data?: Json | null
           document_name: string
@@ -1017,6 +1019,7 @@ export type Database = {
           uploaded_by: string
         }
         Update: {
+          assignee_id?: string | null
           created_at?: string | null
           digital_signature_data?: Json | null
           document_name?: string
@@ -1030,6 +1033,13 @@ export type Database = {
           uploaded_by?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "employee_documents_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "employee_documents_employee_id_fkey"
             columns: ["employee_id"]
