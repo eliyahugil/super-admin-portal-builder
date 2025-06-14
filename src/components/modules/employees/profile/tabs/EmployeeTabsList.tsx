@@ -20,29 +20,25 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   availableTabs,
   setActiveTab
 }) => {
-  // Reverse tab order for RTL so first tab is at right and last tab is left.
-  const tabsRtl = [...availableTabs].reverse();
-
+  // לא לבצע reverse - לשמור את הסדר כפי שהוגדר
   return (
     <TabsList 
-      className="w-full grid grid-cols-5 lg:grid-cols-10 gap-1 mb-2 rtl:direction-rtl"
+      className="w-full flex overflow-x-auto rtl:flex-row-reverse gap-2 px-1 mb-2 min-w-0"
       dir="rtl"
-      style={{
-        direction: 'rtl'
-      }}
+      style={{ direction: 'rtl' }}
     >
-      {tabsRtl.map((tab) => (
+      {availableTabs.map((tab) => (
         <TabsTrigger 
           key={tab.id} 
           value={tab.id} 
           onClick={() => setActiveTab(tab.id)}
-          className="relative flex flex-row-reverse items-center justify-end gap-1 whitespace-nowrap px-2 py-1 text-[13px] rounded-md focus:z-10"
+          className="relative flex flex-row-reverse items-center justify-end gap-1 whitespace-nowrap px-3 py-2 text-[14px] rounded-md focus:z-10 min-w-[110px] max-w-xs"
           title={tab.description}
         >
-          <tab.icon className="h-4 w-4 ml-1" />
-          <span className="hidden lg:inline">{tab.label}</span>
+          <tab.icon className="h-4 w-4 ml-1 shrink-0" />
+          <span className="hidden lg:inline truncate">{tab.label}</span>
           {tab.badge && (
-            <Badge variant="secondary" className="h-4 min-w-4 text-xs ltr:ml-1 rtl:mr-1">
+            <Badge variant="secondary" className="h-4 min-w-4 text-xs ltr:ml-1 rtl:mr-1 shrink-0">
               {tab.badge}
             </Badge>
           )}
