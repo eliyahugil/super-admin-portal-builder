@@ -19,6 +19,7 @@ import { OrdersManagement } from '../orders/OrdersManagement';
 import { ProjectsManagement } from '../projects/ProjectsManagement';
 import { IntegrationManagement } from '../integrations/IntegrationManagement';
 import { CustomerManagement } from '../customers/CustomerManagement';
+import { EmployeeFilesManagement } from '../employees/EmployeeFilesManagement';
 
 interface ModuleRouteHandlerProps {
   fullRoute: string;
@@ -65,7 +66,7 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
     case 'employees/attendance':
       return <AttendanceManagement />;
     case 'employees/employee-files':
-      return <div className="p-6 text-center">רכיב קבצי עובדים בפיתוח</div>;
+      return <EmployeeFilesManagement />;
     case 'employees/employee-requests':
       return <div className="p-6 text-center">רכיב בקשות עובדים בפיתוח</div>;
     case 'employees/employee-docs':
