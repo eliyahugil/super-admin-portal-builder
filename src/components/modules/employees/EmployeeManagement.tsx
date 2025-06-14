@@ -41,36 +41,44 @@ export const EmployeeManagement: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6" dir="rtl">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 flex flex-col space-y-4 sm:space-y-6" dir="rtl">
       {/* Header */}
-      <EmployeeManagementHeader />
+      <div className="px-2 sm:px-0">
+        <EmployeeManagementHeader />
+      </div>
 
       {/* Stats Cards */}
-      <EmployeeStatsCards
-        totalEmployees={employees.length}
-        activeEmployees={activeEmployees.length}
-        inactiveEmployees={inactiveEmployees.length}
-        archivedEmployees={archivedEmployees.length}
-        branches={branches.length}
-      />
+      <div>
+        <EmployeeStatsCards
+          totalEmployees={employees.length}
+          activeEmployees={activeEmployees.length}
+          inactiveEmployees={inactiveEmployees.length}
+          archivedEmployees={archivedEmployees.length}
+          branches={branches.length}
+        />
+      </div>
 
       {/* Management Tools */}
-      <ManagementToolsSection 
-        onCreateEmployee={() => setCreateEmployeeOpen(true)}
-        onCreateBranch={() => setCreateBranchOpen(true)}
-      />
+      <div>
+        <ManagementToolsSection 
+          onCreateEmployee={() => setCreateEmployeeOpen(true)}
+          onCreateBranch={() => setCreateBranchOpen(true)}
+        />
+      </div>
 
       {/* Main Content */}
-      <EmployeeTabsContent
-        activeTab={activeTab}
-        onActiveTabChange={setActiveTab}
-        employees={employees}
-        archivedEmployees={archivedEmployees}
-        branches={branches as Branch[]}
-        onRefetchEmployees={refetchEmployees}
-        onRefetchBranches={refetchBranches}
-        onCreateBranch={() => setCreateBranchOpen(true)}
-      />
+      <div>
+        <EmployeeTabsContent
+          activeTab={activeTab}
+          onActiveTabChange={setActiveTab}
+          employees={employees}
+          archivedEmployees={archivedEmployees}
+          branches={branches as Branch[]}
+          onRefetchEmployees={refetchEmployees}
+          onRefetchBranches={refetchBranches}
+          onCreateBranch={() => setCreateBranchOpen(true)}
+        />
+      </div>
 
       {/* Dialogs */}
       <CreateEmployeeDialog
@@ -88,3 +96,4 @@ export const EmployeeManagement: React.FC = () => {
     </div>
   );
 };
+
