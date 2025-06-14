@@ -16,7 +16,7 @@ interface UseBusinessDataOptions {
   statusField?: string;
 }
 
-// Simplified base interface without complex generics
+// Simple record type without complex generics
 interface DatabaseRecord {
   id: string;
   business_id?: string;
@@ -27,7 +27,7 @@ interface DatabaseRecord {
  * Hook אוניברסלי לשליפת נתוני מודול עסקי בצורה בטוחה ושטוחה.
  * מבטיח הפרדת נתונים בין עסקים
  */
-export function useBusinessData<T = DatabaseRecord>(
+export function useBusinessData<T>(
   options: UseBusinessDataOptions
 ): UseQueryResult<T[], Error> {
   const {
@@ -91,9 +91,9 @@ export function useBusinessData<T = DatabaseRecord>(
 
     console.log(`✅ Security check passed - fetched ${data?.length || 0} records for business ${businessId}`);
 
-    // Return only valid records with proper business_id - using safer type handling
+    // Return only valid records with proper business_id
     const rawData = data || [];
-    const validRecords = rawData.filter((record: any) => {
+    const validRecords = rawData.filter((record: DatabaseRecord) => {
       if (!record || typeof record !== 'object' || !record.id) {
         return false;
       }
@@ -109,14 +109,15 @@ export function useBusinessData<T = DatabaseRecord>(
       return true;
     });
 
-    // Safe conversion via unknown intermediate type
-    return validRecords as unknown as T[];
+    // Direct type assertion without complex intermediate types
+    return validRecords as T[];
   };
 
-  return useQuery<T[], Error>({
+  // Simplified useQuery without complex type inference
+  return useQuery({
     queryKey: [...queryKey, filter, businessId],
     queryFn: fetchData,
     enabled: !!businessId || isSuperAdmin,
     retry: false,
-  });
+  }) as UseQueryResult<T[], Error>;
 }
