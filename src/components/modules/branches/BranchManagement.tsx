@@ -1,14 +1,21 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building, MapPin, Users, Settings, Plus } from 'lucide-react';
+import { Building, MapPin, Users, Settings, Plus, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { BranchEditDialog } from './BranchEditDialog';
+import { Branch } from '@/types/branch';
 
 export const BranchManagement: React.FC = () => {
-  const { data: branches } = useQuery({
+  const navigate = useNavigate();
+  const [editBranchOpen, setEditBranchOpen] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+
+  const { data: branches, refetch } = useQuery({
     queryKey: ['branches-detailed'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -24,6 +31,38 @@ export const BranchManagement: React.FC = () => {
     },
   });
 
+  const handleEditBranch = (branch: any) => {
+    const normalizedBranch: Branch = {
+      id: branch.id,
+      name: branch.name,
+      address: branch.address,
+      business_id: branch.business_id,
+      latitude: branch.latitude,
+      longitude: branch.longitude,
+      gps_radius: branch.gps_radius,
+      is_active: branch.is_active,
+      created_at: branch.created_at,
+      updated_at: branch.updated_at,
+    };
+    
+    setSelectedBranch(normalizedBranch);
+    setEditBranchOpen(true);
+  };
+
+  const handleViewEmployees = (branchId: string, branchName: string) => {
+    // Navigate to employees page with branch filter
+    navigate(`/modules/employees?branch=${branchId}&branchName=${encodeURIComponent(branchName)}`);
+  };
+
+  const handleCreateBranch = () => {
+    navigate('/modules/branches/create');
+  };
+
+  const handleEditSuccess = () => {
+    refetch();
+    setSelectedBranch(null);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
       <div className="mb-8">
@@ -33,7 +72,7 @@ export const BranchManagement: React.FC = () => {
 
       {/* Add Branch Button */}
       <div className="mb-6">
-        <Button className="flex items-center gap-2">
+        <Button onClick={handleCreateBranch} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           הוסף סניף חדש
         </Button>
@@ -51,7 +90,11 @@ export const BranchManagement: React.FC = () => {
                     {branch.is_active ? 'פעיל' : 'לא פעיל'}
                   </Badge>
                 </div>
-                <Button size="sm" variant="outline">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleEditBranch(branch)}
+                >
                   <Settings className="h-4 w-4" />
                 </Button>
               </div>
@@ -82,10 +125,20 @@ export const BranchManagement: React.FC = () => {
               )}
 
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => handleEditBranch(branch)}
+                >
+                  <Edit className="h-4 w-4 ml-1" />
                   ערוך
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleViewEmployees(branch.id, branch.name)}
+                >
                   צפה בעובדים
                 </Button>
               </div>
@@ -98,9 +151,20 @@ export const BranchManagement: React.FC = () => {
         <div className="text-center py-12">
           <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">אין סניפים</h3>
-          <p className="text-gray-600">התחל על ידי הוספת הסניף הראשון</p>
+          <p className="text-gray-600 mb-4">התחל על ידי הוספת הסניף הראשון</p>
+          <Button onClick={handleCreateBranch}>
+            <Plus className="h-4 w-4 ml-2" />
+            הוסף סניף ראשון
+          </Button>
         </div>
       )}
+
+      <BranchEditDialog
+        open={editBranchOpen}
+        onOpenChange={setEditBranchOpen}
+        onSuccess={handleEditSuccess}
+        branch={selectedBranch}
+      />
     </div>
   );
 };
