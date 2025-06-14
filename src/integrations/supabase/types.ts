@@ -257,6 +257,63 @@ export type Database = {
           },
         ]
       }
+      business_module_subscriptions: {
+        Row: {
+          business_id: string
+          created_at: string
+          current_usage: number | null
+          end_date: string | null
+          id: string
+          is_active: boolean
+          module_key: string
+          start_date: string
+          subscription_id: string | null
+          updated_at: string
+          usage_limit: number | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          current_usage?: number | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          module_key: string
+          start_date: string
+          subscription_id?: string | null
+          updated_at?: string
+          usage_limit?: number | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          current_usage?: number | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          module_key?: string
+          start_date?: string
+          subscription_id?: string | null
+          updated_at?: string
+          usage_limit?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_module_subscriptions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_module_subscriptions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "business_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_modules: {
         Row: {
           business_id: string
@@ -330,6 +387,57 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: true
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_subscriptions: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean
+          plan_id: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          plan_id: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          plan_id?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_subscriptions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -1770,6 +1878,41 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_module_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          is_included: boolean
+          module_key: string
+          plan_id: string
+          usage_limit: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_included?: boolean
+          module_key: string
+          plan_id: string
+          usage_limit?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_included?: boolean
+          module_key?: string
+          plan_id?: string
+          usage_limit?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_module_permissions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           business_id: string | null
@@ -2296,6 +2439,42 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          billing_cycle: string
+          created_at: string
+          description: string | null
+          duration_months: number | null
+          id: string
+          is_active: boolean
+          name: string
+          plan_type: string
+          updated_at: string
+        }
+        Insert: {
+          billing_cycle: string
+          created_at?: string
+          description?: string | null
+          duration_months?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          plan_type: string
+          updated_at?: string
+        }
+        Update: {
+          billing_cycle?: string
+          created_at?: string
+          description?: string | null
+          duration_months?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          plan_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       supported_integrations: {
         Row: {
           category: string
@@ -2474,6 +2653,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_business_module_access: {
+        Args: { business_id_param: string; module_key_param: string }
+        Returns: boolean
+      }
       clone_employees_to_business: {
         Args: {
           from_business_id: string
