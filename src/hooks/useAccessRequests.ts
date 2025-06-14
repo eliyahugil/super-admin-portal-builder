@@ -56,10 +56,10 @@ export const useAccessRequests = () => {
 
       // Create lookup maps with proper typing
       const profilesMap = new Map<string, any>(
-        profilesData?.map(p => [p.id, p] as [string, any]) || []
+        (profilesData ?? []).map(p => [p.id, p] as [string, any])
       );
       const businessesMap = new Map<string, any>(
-        businessesData?.map(b => [b.id, b] as [string, any]) || []
+        (businessesData ?? []).map(b => [b.id, b] as [string, any])
       );
 
       // Combine the data
