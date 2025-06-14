@@ -17,7 +17,7 @@ interface EmployeeTabsListProps {
 }
 
 /**
- * תצוגת טאבים רספונסיבית ללא גלילה אופקית – הטאבים נשברים לשורות נוספות במקרה הצורך.
+ * תצוגת טאבים רספונסיבית קומפקטית – הטאבים נשברים לשורות, רווח קטן, גובה מקסימלי, אין חפיפה עם תוכן הטאב.
  */
 export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   availableTabs,
@@ -26,8 +26,8 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   return (
     <TabsList
       className="
-        w-full flex flex-wrap justify-start gap-2 px-1 mb-2 min-w-0
-        bg-muted/40
+        w-full flex flex-wrap justify-start gap-1 px-1 mb-1 min-w-0
+        border-b border-muted bg-background max-h-20 overflow-y-auto
       "
       dir="rtl"
       style={{ direction: 'rtl' }}
@@ -37,12 +37,13 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
           key={tab.id}
           value={tab.id}
           onClick={() => setActiveTab(tab.id)}
-          // התאמות עיצוב לטאבים בשורות מרובות
+          // התאמות עיצוב לטאבים קומפקטיים
           className="
             relative flex items-center
             justify-end flex-row-reverse gap-1 whitespace-nowrap
-            px-3 py-2 text-[14px] rounded-md focus:z-10 min-w-[110px] max-w-xs transition-colors
-            shadow-sm bg-background
+            px-3 py-1.5 text-[14px] rounded-md focus:z-10 min-w-[100px] max-w-xs
+            transition-colors shadow-sm
+            bg-background
           "
           title={tab.description}
         >
