@@ -56,7 +56,9 @@ export const useBusinessData = <T = any>({
 
     const { data, error } = await query.order('created_at', { ascending: false });
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      throw new Error(error.message);
+    }
 
     return Array.isArray(data) ? data : [];
   };
