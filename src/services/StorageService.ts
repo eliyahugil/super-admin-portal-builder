@@ -47,7 +47,7 @@ export class StorageService {
       // First check if bucket is accessible
       const hasAccess = await this.checkBucketAccess();
       if (!hasAccess) {
-        throw new Error('מערכת האחסון אינה זמינה. אנא נסה שוב מאוחר יותר או פנה לתמיכה.');
+        throw new Error('מערכת האחסון אינה זמינה. הדלי לא נמצא או שאין הרשאות גישה מתאימות.');
       }
 
       const timestamp = new Date().toISOString();
@@ -58,8 +58,10 @@ export class StorageService {
       // Verify session before upload
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session) {
-        throw new Error('לא קיימת חיבור פעיל למערכת');
+        throw new Error('לא קיימת חיבור פעיל למערכת. יש להתחבר מחדש.');
       }
+
+      console.log('🔐 Session verified, user authenticated:', sessionData.session.user.id);
 
       // Upload file to the bucket
       const { data, error } = await supabase.storage
@@ -71,7 +73,7 @@ export class StorageService {
 
       if (error) {
         console.error('❌ Upload failed:', error);
-        throw error;
+        throw new Error(`שגיאה בהעלאת הקובץ: ${error.message}`);
       }
 
       console.log('✅ File uploaded successfully:', fileName);
@@ -87,7 +89,7 @@ export class StorageService {
       // First check if bucket is accessible
       const hasAccess = await this.checkBucketAccess();
       if (!hasAccess) {
-        throw new Error('מערכת האחסון אינה זמינה. אנא נסה שוב מאוחר יותר או פנה לתמיכה.');
+        throw new Error('מערכת האחסון אינה זמינה. הדלי לא נמצא או שאין הרשאות גישה מתאימות.');
       }
 
       // Try to get public URL first (since our bucket is public)
@@ -122,7 +124,7 @@ export class StorageService {
       // First check if bucket is accessible
       const hasAccess = await this.checkBucketAccess();
       if (!hasAccess) {
-        throw new Error('מערכת האחסון אינה זמינה. אנא נסה שוב מאוחר יותר או פנה לתמיכה.');
+        throw new Error('מערכת האחסון אינה זמינה. הדלי לא נמצא או שאין הרשאות גישה מתאימות.');
       }
 
       const { data, error } = await supabase.storage

@@ -41,8 +41,8 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         if (!hasAccess) {
           console.warn('⚠️ Storage bucket access issue detected');
           toast({
-            title: 'אזהרה',
-            description: 'יש בעיה בגישה למערכת האחסון. ייתכן שלא ניתן יהיה להעלות או לצפות בקבצים.',
+            title: 'בעיה במערכת האחסון',
+            description: 'הדלי לא נמצא או שאין הרשאות גישה מתאימות. פנו למנהל המערכת.',
             variant: 'destructive',
           });
         } else {
@@ -50,6 +50,11 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         }
       } catch (error) {
         console.error('💥 Error checking bucket access:', error);
+        toast({
+          title: 'שגיאה במערכת האחסון',
+          description: 'לא ניתן לבדוק את מצב מערכת האחסון. נסו לרענן את הדף.',
+          variant: 'destructive',
+        });
       }
     };
 
@@ -125,7 +130,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         if (!hasAccess) {
           toast({
             title: 'שגיאה',
-            description: 'לא ניתן לגשת למערכת האחסון כרגע',
+            description: 'לא ניתן לגשת למערכת האחסון כרגע. פנו למנהל המערכת.',
             variant: 'destructive',
           });
           return;
@@ -145,7 +150,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       console.error('💥 Download error:', error);
       toast({
         title: 'שגיאה',
-        description: 'שגיאה בהורדת הקובץ',
+        description: 'שגיאה בהורדת הקובץ. נסו שוב או פנו למנהל המערכת.',
         variant: 'destructive',
       });
     }
@@ -160,7 +165,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         if (!hasAccess) {
           toast({
             title: 'שגיאה',
-            description: 'לא ניתן לגשת למערכת האחסון כרגע',
+            description: 'לא ניתן לגשת למערכת האחסון כרגע. פנו למנהל המערכת.',
             variant: 'destructive',
           });
           return;
@@ -172,7 +177,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       console.error('💥 View error:', error);
       toast({
         title: 'שגיאה',
-        description: 'שגיאה בפתיחת הקובץ',
+        description: 'שגיאה בפתיחת הקובץ. נסו שוב או פנו למנהל המערכת.',
         variant: 'destructive',
       });
     }
