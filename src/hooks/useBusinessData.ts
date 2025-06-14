@@ -36,6 +36,7 @@ export const useBusinessData = <T extends BaseEntity = BaseEntity>({
       throw new Error('Business ID is missing');
     }
 
+    // Always fetch as unknown[], cast at the end
     let query = supabase
       .from(tableName)
       .select(select)
@@ -58,15 +59,18 @@ export const useBusinessData = <T extends BaseEntity = BaseEntity>({
         throw new Error(`Unsupported filter: ${filter}`);
     }
 
+    // Use type: { data: unknown[] | null; error: any }
     const { data, error } = await query;
 
     if (error) {
       throw new Error(error.message);
     }
-    // Fix for TS error: convert to unknown first, then T[]
-    return Array.isArray(data) ? (data as unknown as T[]) : [];
+
+    // Cast only at this point
+    return Array.isArray(data) ? (data as T[]) : [];
   };
 
+  // Explicitly type the result to <T[]>
   return useQuery<T[], Error>({
     queryKey: [...queryKey, filter, businessId],
     queryFn: fetchData,
