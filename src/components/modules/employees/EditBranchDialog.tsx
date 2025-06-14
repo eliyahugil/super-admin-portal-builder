@@ -9,16 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
-
-interface Branch {
-  id: string;
-  name: string;
-  address: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  gps_radius: number | null;
-  is_active: boolean;
-}
+import { Branch } from '@/types/branch';
 
 interface EditBranchDialogProps {
   open: boolean;
@@ -53,7 +44,7 @@ export const EditBranchDialog: React.FC<EditBranchDialogProps> = ({
         latitude: branch.latitude?.toString() || '',
         longitude: branch.longitude?.toString() || '',
         gps_radius: branch.gps_radius || 100,
-        is_active: branch.is_active,
+        is_active: branch.is_active ?? true,
       });
     }
   }, [branch]);

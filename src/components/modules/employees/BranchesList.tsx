@@ -7,16 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { EditBranchDialog } from './EditBranchDialog';
-
-interface Branch {
-  id: string;
-  name: string;
-  address: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  gps_radius: number | null;
-  is_active: boolean;
-}
+import { Branch } from '@/types/branch';
 
 interface BranchesListProps {
   branches: Branch[];

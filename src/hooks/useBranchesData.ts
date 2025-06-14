@@ -3,19 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-
-export interface Branch {
-  id: string;
-  name: string;
-  address: string | null;
-  business_id: string;
-  latitude?: number | null;
-  longitude?: number | null;
-  gps_radius?: number | null;
-  is_active?: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
+import { Branch, normalizeBranch } from '@/types/branch';
 
 export const useBranchesData = (selectedBusinessId?: string | null) => {
   const { profile } = useAuth();
@@ -71,10 +59,14 @@ export const useBranchesData = (selectedBusinessId?: string | null) => {
         targetBusinessId
       });
 
-      return data || [];
+      // נרמל את הנתונים לפני החזרה
+      return (data || []).map(normalizeBranch);
     },
     enabled: !!profile && (!!targetBusinessId || isSuperAdmin),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };
+
+// ייצוא מחדש של הטיפוס למען תאימות
+export type { Branch };

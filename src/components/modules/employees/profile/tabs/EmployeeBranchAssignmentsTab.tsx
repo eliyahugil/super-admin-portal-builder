@@ -31,6 +31,9 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
                   <div>
                     <h4 className="font-medium">{assignment.branch.name}</h4>
                     <p className="text-sm text-gray-500">{assignment.role_name}</p>
+                    {assignment.branch.address && (
+                      <p className="text-xs text-gray-400">{assignment.branch.address}</p>
+                    )}
                   </div>
                   <Badge variant={assignment.is_active ? 'default' : 'secondary'}>
                     {assignment.is_active ? 'פעיל' : 'לא פעיל'}
