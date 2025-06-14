@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { EmployeesTableRow } from './EmployeesTableRow';
-import { Employee } from '@/types/employee';
+import type { Employee } from '@/types/employee';
 
 interface EmployeesTableGridProps {
   employees: Employee[];

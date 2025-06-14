@@ -50,4 +50,3 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
     </Card>
   );
 };
-

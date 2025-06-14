@@ -26,7 +26,7 @@ export const ArchivedEmployeesList: React.FC = () => {
     return variants[type];
   };
 
-  const renderEmployeeCard = (employee: any) => {
+  const renderEmployeeCard = (employee: Employee) => {
     const employeeName = `${employee.first_name} ${employee.last_name}`;
     
     return (
@@ -73,7 +73,7 @@ export const ArchivedEmployeesList: React.FC = () => {
       entityName="העובד"
       entityNamePlural="עובדים"
       queryKey={['employees']}
-      getEntityDisplayName={(emp) => `${emp.first_name} ${emp.last_name}`}
+      getEntityDisplayName={(emp: Employee) => `${emp.first_name} ${emp.last_name}`}
       renderEntityCard={renderEmployeeCard}
       select={`
         *,
