@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -11,24 +12,26 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { 
-  LayoutDashboard, 
   Users, 
-  Building, 
-  Clock, 
-  Plug, 
+  User, 
+  UserCheck,
+  CheckSquare,
+  FileText,
+  Clock,
+  Building,
+  Calendar,
+  Plug,
   Settings,
   Shield,
-  FileText,
   Calculator,
   Package,
   ShoppingCart,
   Briefcase,
-  UserCheck,
-  CheckSquare,
-  Calendar,
-  User,
   LinkIcon,
-  ContactIcon
+  ContactIcon,
+  MessageCircle,
+  ListChecks,
+  FolderInput,
 } from 'lucide-react';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useBusinessModules } from '@/hooks/useBusinessModules';
@@ -36,6 +39,7 @@ import { getModuleRoutes } from '@/utils/routeMapping';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarMenuItems } from './sidebar/SidebarMenuItems';
 
+// סדר הלינקים הרלוונטי לעובדים. תתי קישורים מופיעים בתת־קבוצה.
 interface MenuItem {
   path: string;
   label: string;
@@ -59,74 +63,33 @@ export const DynamicSidebar: React.FC = () => {
   const location = useLocation();
   const currentPath = location.pathname;
 
-  console.log('DynamicSidebar - Current state:', {
-    business: business?.name,
-    businessId,
-    isSuperAdmin,
-    businessLoading,
-    modulesLoading
-  });
-
-  // Get module routes based on business context
+  // קבל את ה־routes עם businessId אם יש
   const moduleRoutes = getModuleRoutes(business?.id);
 
-  // Core menu items with module requirements
-  const coreMenuItems: MenuItem[] = [
+  // --- עובדים: תפריט מורחב הכולל כל מה שרלוונטי לניהול עובדים ---
+  const employeesMenuItems: MenuItem[] = [
     { 
-      path: moduleRoutes.employees.base, 
-      label: 'עובדים', 
-      icon: Users, 
-      category: 'main',
+      path: moduleRoutes.employees.base,
+      label: 'ניהול עובדים',
+      icon: Users,
+      category: 'employees',
       moduleKey: 'employee_management',
       subItems: [
-        { path: moduleRoutes.employees.files, label: 'קבצי עובדים', icon: FileText, moduleKey: 'employee_management' },
+        { path: moduleRoutes.employees.base, label: 'רשימת עובדים', icon: Users, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.profile, label: 'פרופיל עובד', icon: User, moduleKey: 'employee_management' },
-        { path: moduleRoutes.employees.attendance, label: 'נוכחות', icon: UserCheck, moduleKey: 'employee_management' },
+        { path: moduleRoutes.employees.tasks, label: 'משימות עובדים', icon: ListChecks, moduleKey: 'employee_management' },
+        { path: moduleRoutes.employees.attendance, label: 'דוח נוכחות', icon: UserCheck, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.requests, label: 'בקשות עובדים', icon: CheckSquare, moduleKey: 'employee_management' },
-        { path: moduleRoutes.employees.docs, label: 'מסמכים חתומים', icon: FileText, moduleKey: 'employee_documents' },
+        { path: moduleRoutes.employees.documents, label: 'מסמכי עובדים', icon: FileText, moduleKey: 'employee_documents' },
+        { path: moduleRoutes.employees.chat, label: 'צ׳אט צוות', icon: MessageCircle, moduleKey: 'employee_management' },
+        { path: moduleRoutes.employees.import, label: 'ייבוא עובדים', icon: FolderInput, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.shifts, label: 'משמרות עובדים', icon: Clock, moduleKey: 'shift_management' },
-        { path: moduleRoutes.employees.import, label: 'ייבוא עובדים', icon: FileText, moduleKey: 'employee_management' },
-      ]
-    },
-    { 
-      path: '/modules/customers', 
-      label: 'לקוחות', 
-      icon: ContactIcon, 
-      category: 'main',
-      moduleKey: 'customer_management',
-      subItems: [
-        { path: '/modules/customers', label: 'ניהול לקוחות', icon: ContactIcon, moduleKey: 'customer_management' },
-        { path: '/modules/customers/agreements', label: 'הסכמים', icon: FileText, moduleKey: 'customer_management' },
-        { path: '/modules/customers/signatures', label: 'חתימות דיגיטליות', icon: FileText, moduleKey: 'customer_management' },
-      ]
-    },
-    { 
-      path: moduleRoutes.branches.base, 
-      label: 'סניפים', 
-      icon: Building, 
-      category: 'main',
-      moduleKey: 'branch_management',
-      subItems: [
-        { path: moduleRoutes.branches.roles, label: 'תפקידי סניף', icon: Users, moduleKey: 'branch_management' },
-        { path: moduleRoutes.branches.create, label: 'יצירת סניף', icon: Building, moduleKey: 'branch_management' },
-      ]
-    },
-    { 
-      path: moduleRoutes.shifts.base, 
-      label: 'ניהול משמרות', 
-      icon: Clock, 
-      category: 'main',
-      moduleKey: 'shift_management',
-      subItems: [
-        { path: moduleRoutes.shifts.requests, label: 'בקשות משמרת', icon: CheckSquare, moduleKey: 'shift_management' },
-        { path: moduleRoutes.shifts.approval, label: 'אישור משמרות', icon: UserCheck, moduleKey: 'shift_management' },
-        { path: moduleRoutes.shifts.schedule, label: 'לוח משמרות', icon: Calendar, moduleKey: 'shift_management' },
-        { path: moduleRoutes.shifts.admin, label: 'כלי מנהל', icon: Settings, moduleKey: 'shift_management' },
-        { path: `${moduleRoutes.shifts.base}/tokens`, label: 'טוקני הגשה', icon: LinkIcon, moduleKey: 'shift_management' },
+        { path: moduleRoutes.branches.base, label: 'ניהול סניפים', icon: Building, moduleKey: 'branch_management' },
       ]
     },
   ];
 
+  // יתר הקבוצות נשארות כמו שהיו:
   const businessMenuItems: MenuItem[] = [
     { path: '/modules/finance', label: 'כספים', icon: Calculator, category: 'business', moduleKey: 'finance_management' },
     { path: '/modules/inventory', label: 'מלאי', icon: Package, category: 'business', moduleKey: 'inventory_management' },
@@ -155,7 +118,6 @@ export const DynamicSidebar: React.FC = () => {
       label: 'הגדרות', 
       icon: Settings, 
       category: 'system',
-      // Settings is always available
       subItems: [
         { path: moduleRoutes.settings.profile, label: 'פרטי עסק', icon: Building },
         { path: moduleRoutes.settings.users, label: 'משתמשים', icon: Users },
@@ -165,7 +127,7 @@ export const DynamicSidebar: React.FC = () => {
   ];
 
   const adminMenuItems: MenuItem[] = [
-    { path: '/admin', label: 'לוח בקרה', icon: LayoutDashboard, category: 'admin', requiresSuperAdmin: true },
+    { path: '/admin', label: 'לוח בקרה', icon: Users, category: 'admin', requiresSuperAdmin: true },
     { path: '/admin/businesses', label: 'ניהול עסקים', icon: Building, category: 'admin', requiresSuperAdmin: true },
     { path: '/admin/modules', label: 'ניהול מודולים', icon: FileText, category: 'admin', requiresSuperAdmin: true },
     { path: '/admin/integrations', label: 'ניהול אינטגרציות', icon: Plug, category: 'admin', requiresSuperAdmin: true },
@@ -218,7 +180,6 @@ export const DynamicSidebar: React.FC = () => {
     );
   };
 
-  // Show loading state only if business is loading
   if (businessLoading) {
     return (
       <Sidebar side="right" className="border-r border-border hidden md:flex">
@@ -252,7 +213,7 @@ export const DynamicSidebar: React.FC = () => {
 
       <SidebarContent className="px-2 py-4">
         <div className="space-y-6">
-          {renderMenuGroup('ראשי', coreMenuItems)}
+          {renderMenuGroup('עובדים', employeesMenuItems)}
           {renderMenuGroup('עסקי', businessMenuItems)}
           {renderMenuGroup('מערכת', systemMenuItems)}
           {isSuperAdmin && renderMenuGroup('ניהול', adminMenuItems)}
