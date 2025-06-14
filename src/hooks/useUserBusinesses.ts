@@ -18,11 +18,8 @@ interface UserBusiness {
   };
 }
 
-// רשימת המשתמשים המורשים לראות את כל העסקים
-const AUTHORIZED_SUPER_USERS = [
-  'HABULGARTI@gmail.com',
-  'eligil1308@gmail.com'
-];
+// רק המשתמש הזה מורשה לראות את כל העסקים
+const AUTHORIZED_SUPER_USER = 'eligil1308@gmail.com';
 
 export function useUserBusinesses() {
   const { user, profile } = useAuth();
@@ -36,7 +33,7 @@ export function useUserBusinesses() {
       }
 
       const userEmail = user.email?.toLowerCase();
-      const isAuthorizedSuperUser = userEmail && AUTHORIZED_SUPER_USERS.includes(userEmail);
+      const isAuthorizedSuperUser = userEmail === AUTHORIZED_SUPER_USER;
 
       console.log('🔍 useUserBusinesses: Fetching businesses for user:', {
         userId: user.id,
@@ -46,9 +43,9 @@ export function useUserBusinesses() {
         isSuperAdmin: profile.role === 'super_admin'
       });
 
-      // רק משתמשים מורשים יכולים לראות את כל העסקים
-      if (isAuthorizedSuperUser) {
-        console.log('👑 Fetching all businesses for authorized super user');
+      // רק המשתמש המורשה יכול לראות את כל העסקים אם הוא super_admin
+      if (isAuthorizedSuperUser && profile.role === 'super_admin') {
+        console.log('👑 Fetching all businesses for authorized super admin');
         
         const { data, error } = await supabase
           .from('businesses')
@@ -57,11 +54,11 @@ export function useUserBusinesses() {
           .order('name', { ascending: true });
 
         if (error) {
-          console.error('❌ Error fetching businesses for authorized super user:', error);
+          console.error('❌ Error fetching businesses for authorized super admin:', error);
           throw error;
         }
 
-        console.log('✅ Authorized super user businesses fetched:', data?.length || 0);
+        console.log('✅ Authorized super admin businesses fetched:', data?.length || 0);
 
         // Transform to match UserBusiness interface
         return data?.map(business => ({

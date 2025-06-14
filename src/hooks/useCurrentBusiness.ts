@@ -15,11 +15,8 @@ interface UseCurrentBusinessResult {
   error: string | null;
 }
 
-// רשימת המשתמשים המורשים לראות את כל העסקים
-const AUTHORIZED_SUPER_USERS = [
-  'HABULGARTI@gmail.com',
-  'eligil1308@gmail.com'
-];
+// רק המשתמש הזה יוכל לגשת למצב super admin
+const AUTHORIZED_SUPER_USER = 'eligil1308@gmail.com';
 
 export function useCurrentBusiness(): UseCurrentBusinessResult {
   const [businessId, setBusinessId] = useState<string | null>(null);
@@ -32,10 +29,10 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
   const { businessId: urlBusinessId } = useParams();
 
   const userEmail = user?.email?.toLowerCase();
-  const isAuthorizedSuperUser = userEmail && AUTHORIZED_SUPER_USERS.includes(userEmail);
+  const isAuthorizedSuperUser = userEmail === AUTHORIZED_SUPER_USER;
   
-  // התיקון הוא כאן - השתמש בבדיקה הנכונה לsuperAdmin
-  const isSuperAdmin = isAuthorizedSuperUser || profile?.role === 'super_admin';
+  // המשתמש יהיה super admin רק אם הוא המשתמש המורשה AND הפרופיל שלו מוגדר כ super_admin
+  const isSuperAdmin = isAuthorizedSuperUser && profile?.role === 'super_admin';
   const loading = authLoading || businessesLoading;
 
   useEffect(() => {

@@ -26,13 +26,15 @@ function buildQuery(
   select: string,
   statusField: string
 ) {
-  // Use any to avoid complex type inference
-  let query: any = supabase.from(tableName).select(select);
+  // Start with the base query
+  let query = supabase.from(tableName).select(select);
 
+  // Add business filter - CRITICAL for security
   if (businessId) {
     query = query.eq('business_id', businessId);
   }
 
+  // Apply status filters
   switch (filter) {
     case 'active':
       return query.eq('is_archived', false).order('created_at', { ascending: false });
@@ -95,12 +97,12 @@ export function useBusinessData<T = any>(
       return [];
     }
 
-    // Simple validation without complex type filtering
+    // Double-check business isolation for security
     const validRecords = data.filter((record: any) => {
       if (!record || typeof record !== 'object' || !record.id) {
         return false;
       }
-      // Double-check business isolation
+      // Critical security check: ensure record belongs to correct business
       if (businessId && record.business_id !== businessId) {
         console.error('⚠️ SECURITY BREACH: Record with wrong business_id detected!', {
           recordBusinessId: record.business_id,
