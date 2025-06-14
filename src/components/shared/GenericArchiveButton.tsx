@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Archive, ArchiveRestore, Loader2 } from 'lucide-react';
 import { useGenericArchive } from '@/hooks/useGenericArchive';
 
+type AllowedTableNames = 'employees' | 'branches' | 'customers';
+
 interface GenericArchiveButtonProps<T extends { id: string; [key: string]: any }> {
   entity: T;
-  tableName: string;
+  tableName: AllowedTableNames;
   entityName: string;
   queryKey: string[];
   getEntityDisplayName: (entity: T) => string;

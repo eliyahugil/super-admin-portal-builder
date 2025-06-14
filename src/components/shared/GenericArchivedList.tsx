@@ -7,8 +7,10 @@ import { useArchivedData } from '@/hooks/useArchivedData';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { GenericArchiveButton } from './GenericArchiveButton';
 
+type AllowedTableNames = 'employees' | 'branches' | 'customers';
+
 interface GenericArchivedListProps<T extends { id: string; [key: string]: any }> {
-  tableName: 'employees' | 'branches' | 'customers';
+  tableName: AllowedTableNames;
   entityName: string;
   entityNamePlural: string;
   queryKey: string[];

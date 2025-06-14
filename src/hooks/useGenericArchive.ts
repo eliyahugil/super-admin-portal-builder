@@ -4,13 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 
+type AllowedTableNames = 'employees' | 'branches' | 'customers';
+
 interface ArchiveableEntity {
   id: string;
   [key: string]: any;
 }
 
 interface UseGenericArchiveOptions {
-  tableName: 'employees' | 'branches' | 'customers';
+  tableName: AllowedTableNames;
   entityName: string;
   queryKey: string[];
   getEntityDisplayName: (entity: ArchiveableEntity) => string;
@@ -31,7 +33,7 @@ export const useGenericArchive = <T extends ArchiveableEntity>({
   const archiveEntity = useMutation({
     mutationFn: async (entity: T) => {
       const { error } = await supabase
-        .from(tableName as any)
+        .from(tableName)
         .update({ is_archived: true })
         .eq('id', getEntityId(entity));
 
@@ -72,7 +74,7 @@ export const useGenericArchive = <T extends ArchiveableEntity>({
   const restoreEntity = useMutation({
     mutationFn: async (entity: T) => {
       const { error } = await supabase
-        .from(tableName as any)
+        .from(tableName)
         .update({ is_archived: false })
         .eq('id', getEntityId(entity));
 
