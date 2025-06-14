@@ -15,14 +15,19 @@ interface UseBusinessDataOptions {
   statusField?: string; // For pending filter - defaults to 'status'
 }
 
-export const useBusinessData = <T = any>({
+interface BaseEntity {
+  id: string;
+  [key: string]: any;
+}
+
+export const useBusinessData = <T extends BaseEntity = BaseEntity>({
   tableName,
   queryKey,
   filter,
   selectedBusinessId,
   select = '*',
   statusField = 'status',
-}: UseBusinessDataOptions): UseQueryResult<T[]> => {
+}: UseBusinessDataOptions): UseQueryResult<T[], Error> => {
   const { businessId: contextBusinessId } = useCurrentBusiness();
   const businessId = selectedBusinessId || contextBusinessId;
 
@@ -60,10 +65,10 @@ export const useBusinessData = <T = any>({
       throw new Error(error.message);
     }
 
-    return Array.isArray(data) ? data : [];
+    return (data as T[]) || [];
   };
 
-  return useQuery<T[]>({
+  return useQuery<T[], Error>({
     queryKey: [...queryKey, filter, businessId],
     queryFn: fetchData,
     enabled: !!businessId,

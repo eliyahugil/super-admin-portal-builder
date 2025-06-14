@@ -12,13 +12,18 @@ interface UsePendingDataOptions {
   statusField?: string;
 }
 
-export const usePendingData = <T = any>({
+interface BaseEntity {
+  id: string;
+  [key: string]: any;
+}
+
+export const usePendingData = <T extends BaseEntity = BaseEntity>({
   tableName,
   queryKey,
   selectedBusinessId,
   select = '*',
   statusField = 'status',
-}: UsePendingDataOptions): UseQueryResult<T[]> => {
+}: UsePendingDataOptions): UseQueryResult<T[], Error> => {
   return useBusinessData<T>({
     tableName: tableName as any, // Type assertion needed due to different table types
     queryKey,

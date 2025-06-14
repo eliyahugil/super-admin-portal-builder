@@ -11,12 +11,17 @@ interface UseActiveDataOptions {
   select?: string;
 }
 
-export const useActiveData = <T = any>({
+interface BaseEntity {
+  id: string;
+  [key: string]: any;
+}
+
+export const useActiveData = <T extends BaseEntity = BaseEntity>({
   tableName,
   queryKey,
   selectedBusinessId,
   select = '*',
-}: UseActiveDataOptions): UseQueryResult<T[]> => {
+}: UseActiveDataOptions): UseQueryResult<T[], Error> => {
   return useBusinessData<T>({
     tableName,
     queryKey,

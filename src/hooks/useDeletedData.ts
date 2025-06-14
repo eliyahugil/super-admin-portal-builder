@@ -11,12 +11,17 @@ interface UseDeletedDataOptions {
   select?: string;
 }
 
-export const useDeletedData = <T = any>({
+interface BaseEntity {
+  id: string;
+  [key: string]: any;
+}
+
+export const useDeletedData = <T extends BaseEntity = BaseEntity>({
   tableName,
   queryKey,
   selectedBusinessId,
   select = '*',
-}: UseDeletedDataOptions): UseQueryResult<T[]> => {
+}: UseDeletedDataOptions): UseQueryResult<T[], Error> => {
   return useBusinessData<T>({
     tableName,
     queryKey,

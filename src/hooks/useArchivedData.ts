@@ -11,12 +11,17 @@ interface UseArchivedDataOptions {
   select?: string;
 }
 
-export const useArchivedData = <T = any>({
+interface BaseEntity {
+  id: string;
+  [key: string]: any;
+}
+
+export const useArchivedData = <T extends BaseEntity = BaseEntity>({
   tableName,
   queryKey,
   selectedBusinessId,
   select = '*',
-}: UseArchivedDataOptions): UseQueryResult<T[]> => {
+}: UseArchivedDataOptions): UseQueryResult<T[], Error> => {
   return useBusinessData<T>({
     tableName,
     queryKey,
