@@ -36,38 +36,36 @@ export const useBusinessData = <T extends BaseEntity = BaseEntity>({
       throw new Error('Business ID is missing');
     }
 
-    // Start with base query
-    let queryBuilder = supabase.from(tableName).select(select);
-    
-    // Add business filter
-    queryBuilder = queryBuilder.eq('business_id', businessId);
+    // Build query conditions
+    let baseQuery = supabase.from(tableName).select(select).eq('business_id', businessId);
 
     // Apply filter-specific conditions
+    let finalQuery;
     switch (filter) {
       case 'active':
-        queryBuilder = queryBuilder.eq('is_archived', false);
+        finalQuery = baseQuery.eq('is_archived', false);
         break;
       case 'archived':
-        queryBuilder = queryBuilder.eq('is_archived', true);
+        finalQuery = baseQuery.eq('is_archived', true);
         break;
       case 'deleted':
-        queryBuilder = queryBuilder.eq('is_deleted', true);
+        finalQuery = baseQuery.eq('is_deleted', true);
         break;
       case 'pending':
-        queryBuilder = queryBuilder.eq(statusField, 'pending');
+        finalQuery = baseQuery.eq(statusField, 'pending');
         break;
       default:
         throw new Error(`Unsupported filter: ${filter}`);
     }
 
     // Add ordering and execute
-    const { data, error } = await queryBuilder.order('created_at', { ascending: false });
+    const { data, error } = await finalQuery.order('created_at', { ascending: false });
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return (data as T[]) || [];
+    return data as T[] || [];
   };
 
   return useQuery<T[], Error>({
