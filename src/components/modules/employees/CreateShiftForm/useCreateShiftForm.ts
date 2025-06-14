@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -51,7 +50,7 @@ export const useCreateShiftForm = (
       const newShifts = shiftDates.map((shiftDate) => {
         const shiftData: any = {
           shift_template_id: selectedTemplateId,
-          shift_date,
+          shift_date: shiftDate, // FIX: use the argument value
           branch_id: selectedBranchId,
           is_assigned: !!selectedEmployeeId,
           notes: notes || null
