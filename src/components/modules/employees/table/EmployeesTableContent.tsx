@@ -42,7 +42,7 @@ export const EmployeesTableContent: React.FC<EmployeesTableContentProps> = ({
   return (
     <CardContent>
       <div className="overflow-x-auto" dir="rtl">
-        <EmployeesTableGrid employees={filteredEmployees} onTokenSent={onTokenSent} />
+        <EmployeesTableGrid employees={filteredEmployees} onRefetch={onTokenSent} />
       </div>
     </CardContent>
   );

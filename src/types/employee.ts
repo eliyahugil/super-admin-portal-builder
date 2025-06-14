@@ -45,7 +45,7 @@ export interface Employee {
   employee_type: EmployeeType;
   hire_date?: string | null;
   termination_date?: string | null;
-  is_active: boolean; // Made required and non-optional
+  is_active?: boolean; // Made optional to match Supabase type
   is_archived?: boolean; // New field for archiving
   main_branch_id?: string | null;
   preferred_shift_type?: 'morning' | 'afternoon' | 'evening' | 'night' | 'full_day' | null;

@@ -12,6 +12,11 @@ export const useEmployeeManagement = () => {
   const [selectedEmployeeType, setSelectedEmployeeType] = useState('');
   const [isArchived, setIsArchived] = useState(false);
 
+  // Type guard for safe EmployeeType conversion
+  const isValidEmployeeType = (value: string): value is EmployeeType => {
+    return ['permanent', 'temporary', 'contractor', 'youth'].includes(value);
+  };
+
   const { data: employees, isLoading, error, refetch } = useQuery({
     queryKey: ['employees', businessId, searchTerm, selectedBranch, selectedEmployeeType, isArchived],
     queryFn: async (): Promise<Employee[]> => {
@@ -57,12 +62,9 @@ export const useEmployeeManagement = () => {
         query = query.eq('main_branch_id', selectedBranch);
       }
 
-      // Apply employee type filter - ensure it's a valid EmployeeType
-      if (selectedEmployeeType) {
-        const validEmployeeTypes: EmployeeType[] = ['permanent', 'temporary', 'contractor', 'youth'];
-        if (validEmployeeTypes.includes(selectedEmployeeType as EmployeeType)) {
-          query = query.eq('employee_type', selectedEmployeeType);
-        }
+      // Apply employee type filter with safe type checking
+      if (selectedEmployeeType && isValidEmployeeType(selectedEmployeeType)) {
+        query = query.eq('employee_type', selectedEmployeeType);
       }
 
       // Order by creation date

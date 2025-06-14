@@ -36,6 +36,9 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
     return 'לא משויך';
   };
 
+  // Handle optional is_active with default value
+  const isActive = employee.is_active ?? true;
+
   return (
     <TableRow>
       <TableCell className="font-medium">
@@ -58,8 +61,8 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
         </Badge>
       </TableCell>
       <TableCell>
-        <Badge variant={employee.is_active ? "default" : "secondary"}>
-          {employee.is_active ? 'פעיל' : 'לא פעיל'}
+        <Badge variant={isActive ? "default" : "secondary"}>
+          {isActive ? 'פעיל' : 'לא פעיל'}
         </Badge>
       </TableCell>
       <TableCell>
