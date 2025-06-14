@@ -63,20 +63,24 @@ export const processAccessRequest = async (
 
       case 'customer':
         userRole = 'business_user';
-        // Create customer record
-        console.log('👤 Creating customer record for user:', request.user_id);
-        const { error: customerError } = await supabase
-          .from('customers')
-          .insert({
-            name: request.profiles?.full_name || request.profiles?.email || 'לקוח חדש',
-            email: request.profiles?.email,
-            customer_type: 'individual',
-            notes: `נוצר מבקשת גישה - ${new Date().toLocaleDateString('he-IL')}`,
-            is_active: true
-          });
+        // Only create customer record if we have a business to assign to
+        if (finalBusinessId || assignmentData.businessId) {
+          const businessId = finalBusinessId || assignmentData.businessId;
+          console.log('👤 Creating customer record for user:', request.user_id, 'in business:', businessId);
+          const { error: customerError } = await supabase
+            .from('customers')
+            .insert({
+              business_id: businessId,
+              name: request.profiles?.full_name || request.profiles?.email || 'לקוח חדש',
+              email: request.profiles?.email,
+              customer_type: 'individual',
+              notes: `נוצר מבקשת גישה - ${new Date().toLocaleDateString('he-IL')}`,
+              is_active: true
+            });
 
-        if (customerError) {
-          console.warn('⚠️ Error creating customer record:', customerError);
+          if (customerError) {
+            console.warn('⚠️ Error creating customer record:', customerError);
+          }
         }
         break;
 
