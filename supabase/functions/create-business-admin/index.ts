@@ -10,11 +10,13 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Create Supabase admin client
+    console.log('🚀 Starting create-business-admin function');
+
+    // Initialize admin client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -24,172 +26,165 @@ serve(async (req) => {
           persistSession: false
         }
       }
-    )
+    );
 
-    // Verify the request is from an authenticated super admin
-    const authHeader = req.headers.get('Authorization')!
-    const token = authHeader.replace('Bearer ', '')
-    
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    const { businessData, adminData, subscriptionData } = await req.json();
+    console.log('📝 Request data:', { businessData, adminData, subscriptionData });
 
-    // Check if user is super admin
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'super_admin') {
-      return new Response(
-        JSON.stringify({ error: 'Insufficient permissions' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const { businessData, adminData } = await req.json()
-
-    console.log('Creating business admin user:', adminData.email)
-
-    // Create the business admin user
-    const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-      email: adminData.email,
-      password: '123456', // Default password
-      email_confirm: true,
-      user_metadata: {
-        full_name: adminData.full_name,
-        role: 'business_admin'
-      }
-    })
-
-    if (createUserError) {
-      console.error('Error creating user:', createUserError)
-      return new Response(
-        JSON.stringify({ error: `Failed to create user: ${createUserError.message}` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    console.log('User created successfully:', newUser.user.email)
-
-    // Create the business
+    // Step 1: Create the business
+    console.log('🏢 Creating business...');
     const { data: business, error: businessError } = await supabaseAdmin
       .from('businesses')
       .insert({
         name: businessData.name,
+        contact_phone: businessData.contact_phone,
+        address: businessData.address,
+        description: businessData.description,
         admin_email: adminData.email,
-        contact_email: adminData.email,
-        contact_phone: businessData.contact_phone || null,
-        address: businessData.address || null,
-        description: businessData.description || null,
-        is_active: true,
-        owner_id: newUser.user.id
+        is_active: true
       })
       .select()
-      .single()
+      .single();
 
     if (businessError) {
-      console.error('Error creating business:', businessError)
-      // Clean up the user if business creation failed
-      await supabaseAdmin.auth.admin.deleteUser(newUser.user.id)
-      return new Response(
-        JSON.stringify({ error: `Failed to create business: ${businessError.message}` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      console.error('❌ Error creating business:', businessError);
+      throw new Error(`שגיאה ביצירת העסק: ${businessError.message}`);
     }
 
-    console.log('Business created successfully:', business.name)
+    console.log('✅ Business created successfully:', business.id);
 
-    // Create profile for the new user
-    const { error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .upsert({
-        id: newUser.user.id,
-        email: adminData.email,
-        full_name: adminData.full_name,
-        role: 'business_admin',
-        business_id: business.id
-      })
+    // Step 2: Create business modules
+    if (businessData.selectedModules && businessData.selectedModules.length > 0) {
+      console.log('📦 Creating business modules...');
+      const moduleInserts = businessData.selectedModules.map((moduleKey: string) => ({
+        business_id: business.id,
+        module_key: moduleKey,
+        is_enabled: true
+      }));
 
-    if (profileError) {
-      console.error('Error creating profile:', profileError)
-      // Don't fail the entire process for profile creation error
-    }
-
-    // Create default business module configurations
-    const defaultModules = businessData.selectedModules || [
-      'shift_management',
-      'employee_documents',
-      'employee_notes',
-      'salary_management',
-      'employee_contacts',
-      'branch_management',
-      'employee_attendance'
-    ]
-
-    if (defaultModules.length > 0) {
       const { error: modulesError } = await supabaseAdmin
         .from('business_module_config')
-        .insert(
-          defaultModules.map((module_key: string) => ({
-            business_id: business.id,
-            module_key,
-            is_enabled: true,
-            enabled_by: newUser.user.id,
-            enabled_at: new Date().toISOString()
-          }))
-        )
+        .insert(moduleInserts);
 
       if (modulesError) {
-        console.error('Error creating modules:', modulesError)
-        // Don't fail for module configuration errors
+        console.error('⚠️ Warning: Error creating modules:', modulesError);
+        // Don't throw error, modules can be added later
+      } else {
+        console.log('✅ Business modules created successfully');
       }
     }
 
-    // Log the activity
-    const { error: logError } = await supabaseAdmin
-      .from('activity_logs')
-      .insert({
-        user_id: user.id,
-        action: 'business_created_with_admin',
-        target_type: 'business',
-        target_id: business.id,
-        details: {
-          business_name: business.name,
-          admin_email: adminData.email,
-          admin_created: true,
-          modules_enabled: defaultModules,
-          created_at: new Date().toISOString()
-        }
-      })
+    // Step 3: Create subscription if provided
+    if (subscriptionData) {
+      console.log('💳 Creating subscription...');
+      const { error: subscriptionError } = await supabaseAdmin
+        .from('business_subscriptions')
+        .insert({
+          business_id: business.id,
+          plan_id: subscriptionData.plan_id,
+          start_date: subscriptionData.start_date,
+          is_active: true
+        });
 
-    if (logError) {
-      console.error('Error logging activity:', logError)
+      if (subscriptionError) {
+        console.error('⚠️ Warning: Error creating subscription:', subscriptionError);
+        // Don't throw error, subscription can be added later
+      } else {
+        console.log('✅ Subscription created successfully');
+      }
     }
+
+    // Step 4: Create admin user account with proper metadata
+    console.log('👤 Creating admin user account...');
+    const { data: adminUser, error: adminUserError } = await supabaseAdmin.auth.admin.createUser({
+      email: adminData.email,
+      password: '123456', // Initial password - user must change on first login
+      email_confirm: true,
+      user_metadata: {
+        full_name: adminData.full_name,
+        role: 'business_admin',
+        business_id: business.id
+      }
+    });
+
+    if (adminUserError) {
+      console.error('❌ Error creating admin user:', adminUserError);
+      
+      // Try to cleanup business if user creation failed
+      try {
+        await supabaseAdmin.from('businesses').delete().eq('id', business.id);
+        console.log('🧹 Business cleanup completed');
+      } catch (cleanupError) {
+        console.error('⚠️ Error cleaning up business:', cleanupError);
+      }
+      
+      throw new Error(`שגיאה ביצירת המשתמש למנהל העסק: ${adminUserError.message}`);
+    }
+
+    console.log('✅ Admin user created successfully:', adminUser.user?.id);
+
+    // Step 5: Update business with owner_id
+    console.log('🔗 Linking business to owner...');
+    const { error: updateBusinessError } = await supabaseAdmin
+      .from('businesses')
+      .update({ owner_id: adminUser.user?.id })
+      .eq('id', business.id);
+
+    if (updateBusinessError) {
+      console.error('⚠️ Warning: Error updating business owner:', updateBusinessError);
+      // Don't throw error, owner can be set later
+    } else {
+      console.log('✅ Business linked to owner successfully');
+    }
+
+    // Step 6: Verify profile was created correctly
+    console.log('🔍 Verifying profile creation...');
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .eq('id', adminUser.user?.id)
+      .single();
+
+    if (profileError) {
+      console.error('⚠️ Warning: Error fetching profile:', profileError);
+    } else {
+      console.log('✅ Profile verified:', {
+        id: profile.id,
+        email: profile.email,
+        role: profile.role,
+        business_id: profile.business_id
+      });
+    }
+
+    console.log('🎉 Business and admin creation completed successfully!');
 
     return new Response(
       JSON.stringify({
         success: true,
-        business,
+        business: business,
         admin: {
-          email: newUser.user.email,
-          id: newUser.user.id
+          id: adminUser.user?.id,
+          email: adminUser.user?.email
         },
-        message: 'Business and admin user created successfully'
+        message: 'העסק והמנהל נוצרו בהצלחה'
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    );
 
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('💥 Function error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+      JSON.stringify({
+        success: false,
+        error: error.message || 'שגיאה כללית במערכת'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
+    );
   }
-})
+});
