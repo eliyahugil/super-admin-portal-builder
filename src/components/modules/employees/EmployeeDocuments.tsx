@@ -49,21 +49,19 @@ export const EmployeeDocuments: React.FC<Props> = ({
         query = query.eq('employee_id', employeeId);
       } else if (businessId) {
         // אחרת נסנן לפי עסק באמצעות join עם employees
-        query = query
-          .select(`
-            *,
-            uploaded_by_profile:profiles!employee_documents_uploaded_by_fkey(full_name),
-            assignee:employees!employee_documents_assignee_id_fkey(
-              id,
-              first_name,
-              last_name,
-              employee_id
-            ),
-            employee:employees!employee_documents_employee_id_fkey(
-              business_id
-            )
-          `)
-          .eq('employee.business_id', businessId);
+        const { data: employeeData, error: employeeError } = await supabase
+          .from('employees')
+          .select('id')
+          .eq('business_id', businessId);
+
+        if (employeeError) throw employeeError;
+        
+        const employeeIds = employeeData?.map(emp => emp.id) || [];
+        if (employeeIds.length > 0) {
+          query = query.in('employee_id', employeeIds);
+        } else {
+          return [];
+        }
       }
 
       const { data, error } = await query;
@@ -73,13 +71,13 @@ export const EmployeeDocuments: React.FC<Props> = ({
     enabled: !!(employeeId || businessId),
   });
 
-  const { deleteDocument } = useEmployeeDocumentDelete();
+  const deleteDocumentMutation = useEmployeeDocumentDelete(employeeId || '');
   const { 
     sendReminder, 
     reminderLoading, 
     reminderLog, 
     fetchReminders 
-  } = useEmployeeDocumentReminders();
+  } = useEmployeeDocumentReminders(employeeId || '');
 
   const handleView = (document: any) => {
     setSelectedDocument(document);
@@ -110,7 +108,10 @@ export const EmployeeDocuments: React.FC<Props> = ({
 
   const handleDelete = async (document: any) => {
     if (window.confirm('האם אתה בטוח שברצונך למחוק את המסמך?')) {
-      await deleteDocument(document.id);
+      await deleteDocumentMutation.mutate({
+        documentId: document.id,
+        filePath: document.file_url
+      });
       refetch();
     }
   };
@@ -128,15 +129,24 @@ export const EmployeeDocuments: React.FC<Props> = ({
   }
 
   if (documents.length === 0) {
-    return <EmployeeDocumentsEmptyState canEdit={canEdit} />;
+    return (
+      <EmployeeDocumentsEmptyState 
+        canEdit={canEdit}
+        employeeName={employeeName || 'העובד'}
+        uploading={false}
+        handleFileUpload={() => {}}
+        disableUpload={!employeeId}
+      />
+    );
   }
 
   return (
     <div className="space-y-6" dir="rtl">
       <EmployeeDocumentsHeader 
-        employeeName={employeeName}
-        documentCount={documents.length}
         canEdit={canEdit}
+        uploading={false}
+        handleFileUpload={() => {}}
+        disableUpload={!employeeId}
       />
       
       <div className="space-y-4">

@@ -19,9 +19,9 @@ export const EmployeeDocumentsHeader: React.FC<Props> = ({
   <div className="flex items-center justify-between">
     <div className="flex items-center gap-2">
       <FileText className="h-5 w-5 text-blue-600" />
-      <h3 className="text-lg font-semibold">מסמכי העובד</h3>
+      <h3 className="text-lg font-semibold">מסמכים</h3>
     </div>
-    {canEdit && (
+    {canEdit && !disableUpload && (
       <div className="relative">
         <input
           type="file"

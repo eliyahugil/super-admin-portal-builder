@@ -1,170 +1,65 @@
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { FileText, Download, Calendar } from 'lucide-react';
+import { X } from 'lucide-react';
 
-interface Document {
-  id: string;
-  document_name: string;
-  file_url: string;
-  document_type: string;
-  created_at: string;
+interface Props {
+  document: any;
+  onClose: () => void;
 }
 
-interface EmployeeDocumentsViewerProps {
-  employeeId: string;
-}
+export const EmployeeDocumentsViewer: React.FC<Props> = ({ document, onClose }) => {
+  const isImage = document.file_url && (
+    document.file_url.includes('.jpg') || 
+    document.file_url.includes('.jpeg') || 
+    document.file_url.includes('.png')
+  );
 
-export const EmployeeDocumentsViewer: React.FC<EmployeeDocumentsViewerProps> = ({ employeeId }) => {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('employee_documents')
-          .select('id, document_name, file_url, document_type, created_at')
-          .eq('employee_id', employeeId)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching documents:', error);
-          toast({
-            title: 'שגיאה',
-            description: 'לא ניתן לטעון את המסמכים',
-            variant: 'destructive',
-          });
-          return;
-        }
-
-        setDocuments(data || []);
-      } catch (error) {
-        console.error('Exception fetching documents:', error);
-        toast({
-          title: 'שגיאה',
-          description: 'לא ניתן לטעון את המסמכים',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (employeeId) {
-      fetchDocuments();
-    }
-  }, [employeeId, toast]);
-
-  const downloadFile = async (fileUrl: string, fileName: string) => {
-    try {
-      // For direct file URLs, we can just open them in a new tab
-      // If these are stored in Supabase storage, we might need to handle them differently
-      const link = document.createElement('a');
-      link.href = fileUrl;
-      link.download = fileName;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast({
-        title: 'הורדה הושלמה',
-        description: `הקובץ ${fileName} הורד בהצלחה`,
-      });
-    } catch (error) {
-      console.error('Exception downloading file:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן להוריד את הקובץ',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const getDocumentTypeLabel = (type: string) => {
-    const types: Record<string, string> = {
-      contract: 'חוזה עבודה',
-      id_copy: 'צילום תעודת זהות',
-      certificate: 'תעודות הכשרה',
-      medical: 'מסמכים רפואיים',
-      other: 'אחר',
-    };
-    return types[type] || type;
-  };
-
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            מסמכים
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const isPdf = document.file_url && document.file_url.includes('.pdf');
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          מסמכים ({documents.length})
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {documents.length === 0 ? (
-          <div className="text-center text-gray-500 py-8">
-            <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p>אין מסמכים</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {documents.map((doc) => (
-              <div
-                key={doc.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between">
+            <span>{document.document_name}</span>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="mt-4">
+          {isImage && (
+            <img 
+              src={document.file_url} 
+              alt={document.document_name}
+              className="max-w-full h-auto mx-auto"
+            />
+          )}
+          
+          {isPdf && (
+            <iframe
+              src={document.file_url}
+              className="w-full h-[600px] border"
+              title={document.document_name}
+            />
+          )}
+          
+          {!isImage && !isPdf && (
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">לא ניתן להציג את הקובץ בדפדפן</p>
+              <Button 
+                onClick={() => window.open(document.file_url, '_blank')}
+                variant="outline"
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <FileText className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 truncate">
-                      {doc.document_name}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {getDocumentTypeLabel(doc.document_type)}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
-                      <Calendar className="h-3 w-3" />
-                      {new Date(doc.created_at).toLocaleDateString('he-IL')}
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => downloadFile(doc.file_url, doc.document_name)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  הורד
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                פתח בכרטיסייה חדשה
+              </Button>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
