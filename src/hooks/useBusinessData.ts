@@ -17,39 +17,6 @@ interface UseBusinessDataOptions {
 }
 
 /**
- * פונקציה נפרדת לבניית השאילתה - מונעת רקורסיה אין-סופית של TypeScript
- */
-function buildQuery(
-  tableName: AllowedTableNames,
-  businessId: string | null,
-  filter: DataFilter,
-  select: string,
-  statusField: string
-) {
-  // Start with the base query
-  let query = supabase.from(tableName).select(select);
-
-  // Add business filter - CRITICAL for security
-  if (businessId) {
-    query = query.eq('business_id', businessId);
-  }
-
-  // Apply status filters
-  switch (filter) {
-    case 'active':
-      return query.eq('is_archived', false).order('created_at', { ascending: false });
-    case 'archived':
-      return query.eq('is_archived', true).order('created_at', { ascending: false });
-    case 'deleted':
-      return query.eq('is_deleted', true).order('created_at', { ascending: false });
-    case 'pending':
-      return query.eq(statusField, 'pending').order('created_at', { ascending: false });
-    default:
-      throw new Error(`Unsupported filter: ${filter}`);
-  }
-}
-
-/**
  * Hook אוניברסלי לשליפת נתוני מודול עסקי בצורה בטוחה ושטוחה.
  * מבטיח הפרדת נתונים בין עסקים
  */
@@ -82,7 +49,30 @@ export function useBusinessData<T = any>(
       throw new Error('Business ID is required for data access');
     }
 
-    const query = buildQuery(tableName, businessId, filter, select, statusField);
+    // Start with base query - using any to avoid complex type inference
+    let query: any = supabase.from(tableName).select(select);
+
+    // Add business filter - CRITICAL for security
+    if (businessId) {
+      query = query.eq('business_id', businessId);
+    }
+
+    // Apply status filters based on filter type
+    if (filter === 'active') {
+      query = query.eq('is_archived', false);
+    } else if (filter === 'archived') {
+      query = query.eq('is_archived', true);
+    } else if (filter === 'deleted') {
+      query = query.eq('is_deleted', true);
+    } else if (filter === 'pending') {
+      query = query.eq(statusField, 'pending');
+    } else {
+      throw new Error(`Unsupported filter: ${filter}`);
+    }
+
+    // Add ordering
+    query = query.order('created_at', { ascending: false });
+
     const { data, error } = await query;
 
     if (error) {
