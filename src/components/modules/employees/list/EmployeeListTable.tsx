@@ -9,7 +9,8 @@ import { EmployeeListBranchCell } from './EmployeeListBranchCell';
 import { EmployeeListWeeklyHoursCell } from './EmployeeListWeeklyHoursCell';
 import { EmployeeListStatusCell } from './EmployeeListStatusCell';
 import { EmployeeListActionsCell } from './EmployeeListActionsCell';
-import type { Employee, EmployeeType } from '@/types/employee';
+import { EmployeeListCard } from './EmployeeListCard';
+import type { Employee } from '@/types/employee';
 
 interface EmployeeListTableProps {
   employees: Employee[];
@@ -21,6 +22,20 @@ interface EmployeeListTableProps {
   loading: boolean;
 }
 
+function useIsMobile() {
+  // basic hook to detect mobile window! (server-safe)
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  return isMobile;
+}
+
 export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
   employees,
   selectedEmployees,
@@ -30,8 +45,42 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
   onRefetch,
   loading,
 }) => {
+  const isMobile = useIsMobile();
+
   const allFilteredSelected = employees.length > 0 && employees.every(emp => selectedEmployees.has(emp.id));
 
+  // Mobile view: show cards
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-2 w-full" dir="rtl">
+        <div className="flex items-center justify-end mb-2">
+          <label className="flex items-center gap-1 text-sm">
+            <input
+              type="checkbox"
+              checked={allFilteredSelected}
+              onChange={e => onSelectAll(e.target.checked)}
+              className="accent-blue-600"
+              aria-label="בחר/י הכל"
+            />
+            בחר/י הכל
+          </label>
+        </div>
+        {employees.map(employee => (
+          <EmployeeListCard
+            key={employee.id}
+            employee={employee}
+            selected={selectedEmployees.has(employee.id)}
+            onSelect={onSelectEmployee}
+            onDeleteEmployee={onDeleteEmployee}
+            onRefetch={onRefetch}
+            loading={loading}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // Desktop view: table
   return (
     <div dir="rtl" className="overflow-x-auto w-full">
       <Table className="min-w-[750px] sm:min-w-full">
