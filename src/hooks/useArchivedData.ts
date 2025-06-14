@@ -12,23 +12,17 @@ interface UseArchivedDataOptions {
   select?: string;
 }
 
-type Result<T> =
-  | { success: true; data: T[] }
-  | { success: false; error: string };
-
 export const useArchivedData = <T = any>({
   tableName,
   queryKey,
   selectedBusinessId,
   select = '*',
-}: UseArchivedDataOptions): UseQueryResult<Result<T>> => {
+}: UseArchivedDataOptions): UseQueryResult<T[]> => {
   const { businessId: contextBusinessId } = useCurrentBusiness();
   const businessId = selectedBusinessId || contextBusinessId;
 
-  const fetchArchivedData = async (): Promise<Result<T>> => {
-    if (!businessId) {
-      return { success: false, error: 'לא נמצא מזהה עסק' };
-    }
+  const fetchData = async (): Promise<T[]> => {
+    if (!businessId) return [];
 
     const { data, error } = await supabase
       .from(tableName)
@@ -37,20 +31,14 @@ export const useArchivedData = <T = any>({
       .eq('is_archived', true)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error(`שגיאה בעת טעינת ${tableName} מהארכיון:`, error.message);
-      return { success: false, error: error.message };
-    }
+    if (error) throw new Error(error.message);
 
-    return {
-      success: true,
-      data: Array.isArray(data) ? data : [],
-    };
+    return Array.isArray(data) ? data : [];
   };
 
-  return useQuery<Result<T>>({
+  return useQuery<T[]>({
     queryKey: [...queryKey, 'archived', businessId],
-    queryFn: fetchArchivedData,
+    queryFn: fetchData,
     enabled: !!businessId,
     retry: false,
   });

@@ -12,23 +12,17 @@ interface UseActiveDataOptions {
   select?: string;
 }
 
-type Result<T> =
-  | { success: true; data: T[] }
-  | { success: false; error: string };
-
 export const useActiveData = <T = any>({
   tableName,
   queryKey,
   selectedBusinessId,
   select = '*',
-}: UseActiveDataOptions): UseQueryResult<Result<T>> => {
+}: UseActiveDataOptions): UseQueryResult<T[]> => {
   const { businessId: contextBusinessId } = useCurrentBusiness();
   const businessId = selectedBusinessId || contextBusinessId;
 
-  const fetchActiveData = async (): Promise<Result<T>> => {
-    if (!businessId) {
-      return { success: false, error: 'לא נמצא מזהה עסק' };
-    }
+  const fetchData = async (): Promise<T[]> => {
+    if (!businessId) return [];
 
     const { data, error } = await supabase
       .from(tableName)
@@ -37,20 +31,14 @@ export const useActiveData = <T = any>({
       .eq('is_archived', false)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error(`שגיאה בעת טעינת ${tableName}:`, error.message);
-      return { success: false, error: error.message };
-    }
+    if (error) throw new Error(error.message);
 
-    return {
-      success: true,
-      data: Array.isArray(data) ? data : [],
-    };
+    return Array.isArray(data) ? data : [];
   };
 
-  return useQuery<Result<T>>({
+  return useQuery<T[]>({
     queryKey: [...queryKey, 'active', businessId],
-    queryFn: fetchActiveData,
+    queryFn: fetchData,
     enabled: !!businessId,
     retry: false,
   });
