@@ -1,4 +1,5 @@
 
+
 // ===========================
 // 🌐 כל הטיפוסים של המערכת
 // ===========================
@@ -57,7 +58,13 @@ export interface EmployeeDocument {
   digital_signature_data?: any;
   uploaded_by: string;
   created_at?: string;
-  employee?: Employee;
+  employee?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    employee_type: string;
+    is_active?: boolean;
+  };
 }
 
 export interface EmployeeBranchPriority {
@@ -67,7 +74,13 @@ export interface EmployeeBranchPriority {
   priority_order: number;
   weekly_hours_limit?: number;
   created_at?: string;
-  employee?: Employee;
+  employee?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    employee_type: string;
+    is_active?: boolean;
+  };
   branch?: Branch;
 }
 
@@ -92,7 +105,13 @@ export interface EmployeeRequest {
   reviewed_at?: string;
   review_notes?: string;
   created_at?: string;
-  employee?: Employee;
+  employee?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    employee_type: string;
+    is_active?: boolean;
+  };
 }
 
 export type RequestType = 'vacation' | 'shift_change' | 'equipment' | 'other';
@@ -113,3 +132,4 @@ export interface ScheduledShift {
   employee_id?: string | null;
   is_archived: boolean;
 }
+
