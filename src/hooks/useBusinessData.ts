@@ -21,10 +21,10 @@ interface BaseEntity {
 }
 
 /**
- * The main fix is to:
- * - Inline the fetch function inside the hook (not generic-outside), so TypeScript isn't forced to "pre-resolve" T for too long.
- * - Force-cast with `as unknown as T[]` at the return (safe, since developer controls `select` structure).
- * - Use a non-generic fetch function for better inference.
+ * TS Deep Instantiation Fix:
+ * - Remove all generics from fetchData, always operate on BaseEntity[] internally.
+ * - Only provide the T generic at the useQuery level.
+ * - Cast the returned array to T[] as the final step.
  */
 export function useBusinessData<T extends BaseEntity = BaseEntity>(
   options: UseBusinessDataOptions
@@ -41,8 +41,8 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
   const { businessId: contextBusinessId } = useCurrentBusiness();
   const businessId = selectedBusinessId || contextBusinessId;
 
-  // Inline fetch function (avoid generic at root scope)
-  const fetchData = async (): Promise<T[]> => {
+  // NOT generic fetch - always returns BaseEntity[]
+  const fetchData = async (): Promise<BaseEntity[]> => {
     if (!businessId) {
       throw new Error('Business ID is missing');
     }
@@ -69,20 +69,22 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
         throw new Error(`Unsupported filter: ${filter}`);
     }
 
-    // TypeScript may infer type as GenericStringError[] in some error cases. Cast defensively.
     const { data, error } = await query;
 
     if (error) {
       throw new Error(error.message);
     }
 
-    // Fix for TS2352: first to unknown, then to T[]
-    return Array.isArray(data) ? (data as unknown as T[]) : [];
+    return Array.isArray(data) ? data as BaseEntity[] : [];
   };
 
+  // Only generic here (no deep generic chaining)
   return useQuery<T[], Error>({
     queryKey: [...queryKey, filter, businessId],
-    queryFn: fetchData,
+    queryFn: async () => {
+      const res = await fetchData();
+      return res as T[];
+    },
     enabled: !!businessId,
     retry: false,
   });
