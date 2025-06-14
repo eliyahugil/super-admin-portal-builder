@@ -16,7 +16,8 @@ interface UseBusinessDataOptions {
   statusField?: string;
 }
 
-interface BaseEntity {
+// Simplified base interface without complex generics
+interface DatabaseRecord {
   id: string;
   business_id?: string;
   [key: string]: any;
@@ -26,7 +27,7 @@ interface BaseEntity {
  * Hook אוניברסלי לשליפת נתוני מודול עסקי בצורה בטוחה ושטוחה.
  * מבטיח הפרדת נתונים בין עסקים
  */
-export function useBusinessData<T extends BaseEntity = BaseEntity>(
+export function useBusinessData<T = DatabaseRecord>(
   options: UseBusinessDataOptions
 ): UseQueryResult<T[], Error> {
   const {
@@ -90,8 +91,9 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
 
     console.log(`✅ Security check passed - fetched ${data?.length || 0} records for business ${businessId}`);
 
-    // Return only valid records with proper business_id
-    const validRecords = (data || []).filter((record: any) => {
+    // Return only valid records with proper business_id - using safer type handling
+    const rawData = data || [];
+    const validRecords = rawData.filter((record: any) => {
       if (!record || typeof record !== 'object' || !record.id) {
         return false;
       }
@@ -107,8 +109,8 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
       return true;
     });
 
-    // Type assertion to T[] - we trust our validation above
-    return validRecords as T[];
+    // Safe conversion via unknown intermediate type
+    return validRecords as unknown as T[];
   };
 
   return useQuery<T[], Error>({
