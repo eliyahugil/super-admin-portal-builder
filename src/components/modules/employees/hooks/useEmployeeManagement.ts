@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-import type { Employee, EmployeeType } from '@/types/employee';
+import type { Employee, EmployeeType, normalizeEmployee } from '@/types/employee';
 
 export const useEmployeeManagement = () => {
   const { businessId, isSuperAdmin } = useCurrentBusiness();
@@ -78,7 +78,9 @@ export const useEmployeeManagement = () => {
       }
 
       console.log('Employees fetched successfully:', data?.length || 0);
-      return data || [];
+      
+      // Normalize the data to ensure consistent typing
+      return (data || []).map(normalizeEmployee);
     },
     enabled: !!businessId || isSuperAdmin,
   });

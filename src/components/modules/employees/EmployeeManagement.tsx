@@ -11,6 +11,7 @@ import { EmployeeManagementLoading } from './EmployeeManagementLoading';
 import { EmployeeManagementEmptyState } from './EmployeeManagementEmptyState';
 import { ManagementToolsSection } from './ManagementToolsSection';
 import { useEmployeeManagement } from './hooks/useEmployeeManagement';
+import type { Employee } from '@/types/employee';
 
 export const EmployeeManagement: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -43,6 +44,12 @@ export const EmployeeManagement: React.FC = () => {
     setSelectedBranch('');
     setSearchParams({});
   };
+
+  // Normalize employees to ensure is_active is always defined
+  const normalizedEmployees: Employee[] = employees.map(emp => ({
+    ...emp,
+    is_active: emp.is_active ?? true
+  }));
 
   if (isLoading) {
     return <EmployeeManagementLoading />;
@@ -102,13 +109,13 @@ export const EmployeeManagement: React.FC = () => {
         hideFilters={!!branchId} // Hide branch filter when filtering by specific branch
       />
 
-      <EmployeeStatsCards employees={employees} />
+      <EmployeeStatsCards employees={normalizedEmployees} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2">
-          {employees && employees.length > 0 ? (
+          {normalizedEmployees && normalizedEmployees.length > 0 ? (
             <EmployeesTable 
-              employees={employees} 
+              employees={normalizedEmployees} 
               onRefetch={refetch}
               showBranchFilter={!branchId} // Don't show branch column when filtering by branch
             />
