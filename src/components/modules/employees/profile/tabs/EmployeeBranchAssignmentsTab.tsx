@@ -14,7 +14,6 @@ interface BranchAssignment {
   is_active: boolean;
   branch: {
     name: string;
-    address?: string;
   };
 }
 
@@ -40,8 +39,7 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
             <div key={assignment.id} className="flex items-center justify-between p-4 border rounded-lg">
               <div>
                 <h4 className="font-medium">{assignment.branch?.name || 'סניף לא ידוע'}</h4>
-                <p className="text-sm text-gray-600">{assignment.branch?.address || 'כתובת לא זמינה'}</p>
-                <p className="text-sm text-gray-500">תפקיד: {assignment.role}</p>
+                <p className="text-sm text-gray-500">תפקיד: {assignment.role_name}</p>
               </div>
               <Badge variant={assignment.is_active ? "default" : "secondary"}>
                 {assignment.is_active ? "פעיל" : "לא פעיל"}
