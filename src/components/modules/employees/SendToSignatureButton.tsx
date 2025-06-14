@@ -28,6 +28,8 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
 
+  console.log('🔍 SendToSignatureButton rendered for document:', documentName, 'ID:', documentId);
+
   // שליפת רשימת עובדים פעילים
   const { data: employees, isLoading: employeesLoading } = useQuery({
     queryKey: ['active-employees-for-signature'],
@@ -55,6 +57,8 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
     }
 
     setIsSending(true);
+    console.log('📤 Sending document to signature:', { documentId, selectedEmployeeId });
+    
     try {
       // עדכון מסמך עם פרטי העובד המיועד לחתימה
       const { error: updateError } = await supabase
@@ -100,6 +104,7 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
           variant={variant}
           size={size}
           className="flex items-center gap-2"
+          onClick={() => console.log('📌 SendToSignature button clicked for:', documentName)}
         >
           <Send className="h-4 w-4" />
           שלח לחתימה

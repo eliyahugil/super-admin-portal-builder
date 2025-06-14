@@ -99,13 +99,13 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
             <Download className="h-4 w-4" />
           </Button>
           
-          {/* כפתור שליחה לחתימה - רק אם המסמך לא נשלח עדיין לחתימה */}
-          {canEdit && !document.assignee && !document.is_template && (
+          {/* כפתור שליחה לחתימה - תמיד נציג אותו עבור מסמכים שאינם תבניות ועדיין לא נשלחו */}
+          {canEdit && !document.is_template && (
             <SendToSignatureButton
               documentId={document.id}
               documentName={document.document_name}
               onSent={onDocumentUpdated}
-              variant="outline"
+              variant={document.assignee ? "ghost" : "default"}
               size="sm"
             />
           )}
