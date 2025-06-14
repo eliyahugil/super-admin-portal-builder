@@ -8,13 +8,15 @@ interface Props {
   canEdit: boolean;
   uploading: boolean;
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  disableUpload?: boolean;
 }
 
 export const EmployeeDocumentsEmptyState: React.FC<Props> = ({
   employeeName,
   canEdit,
   uploading,
-  handleFileUpload
+  handleFileUpload,
+  disableUpload = false
 }) => (
   <div className="text-center py-8">
     <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -27,12 +29,17 @@ export const EmployeeDocumentsEmptyState: React.FC<Props> = ({
           onChange={handleFileUpload}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-          disabled={uploading}
+          disabled={uploading || disableUpload}
         />
-        <Button disabled={uploading}>
+        <Button disabled={uploading || disableUpload}>
           <Plus className="h-4 w-4 mr-2" />
           העלה מסמך ראשון
         </Button>
+      </div>
+    )}
+    {canEdit && disableUpload && (
+      <div className="mt-3 text-sm text-red-500">
+        לא ניתן להעלות מסמכים כאשר נבחר "כל העובדים". יש לבחור עובד מסוים.
       </div>
     )}
   </div>

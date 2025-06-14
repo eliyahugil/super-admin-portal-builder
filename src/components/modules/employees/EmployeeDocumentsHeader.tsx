@@ -7,12 +7,14 @@ interface Props {
   canEdit: boolean;
   uploading: boolean;
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  disableUpload?: boolean;
 }
 
 export const EmployeeDocumentsHeader: React.FC<Props> = ({
   canEdit,
   uploading,
   handleFileUpload,
+  disableUpload = false,
 }) => (
   <div className="flex items-center justify-between">
     <div className="flex items-center gap-2">
@@ -26,10 +28,10 @@ export const EmployeeDocumentsHeader: React.FC<Props> = ({
           onChange={handleFileUpload}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-          disabled={uploading}
+          disabled={uploading || disableUpload}
         />
         <Button
-          disabled={uploading}
+          disabled={uploading || disableUpload}
           className="flex items-center gap-2"
         >
           {uploading ? (
@@ -48,4 +50,3 @@ export const EmployeeDocumentsHeader: React.FC<Props> = ({
     )}
   </div>
 );
-

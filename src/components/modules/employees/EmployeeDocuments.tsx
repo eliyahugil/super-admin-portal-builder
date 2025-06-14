@@ -1,6 +1,4 @@
 
-// Refactored: clean orchestrator with focused logic, helpers and header extracted.
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,8 +9,6 @@ import { getFileType } from './helpers/documentHelpers';
 import { EmployeeDocumentCard } from './EmployeeDocumentCard';
 import { EmployeeDocumentsEmptyState } from './EmployeeDocumentsEmptyState';
 import { EmployeeDocumentsHeader } from './EmployeeDocumentsHeader';
-
-// hooks - חדשים
 import { useEmployeeDocumentReminders } from './hooks/useEmployeeDocumentReminders';
 import { useEmployeeDocumentDelete } from './hooks/useEmployeeDocumentDelete';
 
@@ -32,7 +28,6 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   const { profile, user } = useAuth();
   const queryClient = useQueryClient();
 
-  // תזכורות באמצעות hook חדש
   const {
     reminderLog,
     reminderLoading,
@@ -41,10 +36,8 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     setReminderLog
   } = useEmployeeDocumentReminders(employeeId);
 
-  // מחיקת מסמך - hook חדש
   const deleteDocumentMutation = useEmployeeDocumentDelete(employeeId);
 
-  // Query: Get employee documents
   const { data: documents, isLoading } = useQuery({
     queryKey: ['employee-documents', employeeId],
     queryFn: async () => {
@@ -67,6 +60,16 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    // Prevent upload for "כל העובדים" (empty employeeId)
+    if (!employeeId) {
+      toast({
+        title: 'לא ניתן להעלות מסמך עבור כל העובדים',
+        description: 'יש לבחור עובד ספציפי להעלאת מסמכים. העלאת מסמך לכלל העובדים אינה נתמכת.',
+        variant: 'destructive'
+      });
+      event.target.value = '';
+      return;
+    }
     if (!profile?.id && !user?.id) {
       toast({
         title: 'שגיאה',
@@ -133,7 +136,6 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     }
   };
 
-  // Actions
   const handleDownload = (document: any) => {
     if (document.file_url) {
       const link = document.createElement('a');
@@ -155,7 +157,6 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     deleteDocumentMutation.mutate({ documentId: document.id, filePath });
   };
 
-  // Loading skeleton
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -171,12 +172,16 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     );
   }
 
+  // Disable upload if employeeId is empty ("כל העובדים")
+  const disableUpload = !employeeId;
+
   return (
     <div className="space-y-4">
       <EmployeeDocumentsHeader
         canEdit={canEdit}
         uploading={uploading}
         handleFileUpload={handleFileUpload}
+        disableUpload={disableUpload}
       />
       {documents && documents.length > 0 ? (
         <div className="space-y-3">
@@ -204,6 +209,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
               canEdit={canEdit}
               uploading={uploading}
               handleFileUpload={handleFileUpload}
+              disableUpload={disableUpload}
             />
           </CardContent>
         </Card>
