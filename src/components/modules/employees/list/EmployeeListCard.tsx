@@ -28,66 +28,83 @@ export const EmployeeListCard: React.FC<EmployeeListCardProps> = ({
 }) => {
   return (
     <div
-      className="w-full max-w-full bg-white border border-gray-300 rounded-2xl shadow-sm overflow-hidden flex flex-col gap-4 px-4 py-5"
-      style={{ fontSize: "17px", boxSizing: "border-box" }}
+      className="
+        w-full
+        max-w-full
+        bg-white
+        border border-gray-200
+        rounded-2xl
+        shadow-sm
+        flex flex-col
+        gap-4
+        px-4 py-5
+        overflow-x-hidden
+        box-border
+        "
       dir="rtl"
+      style={{
+        fontSize: "18px",
+        WebkitOverflowScrolling: "touch",
+        boxSizing: "border-box",
+        minWidth: 0,
+      }}
     >
-      {/* כותרת הכרטיס */}
-      <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-3">
+      {/* Header: employee selection and status */}
+      <div className="flex flex-row items-center justify-between w-full gap-3 min-w-0">
+        <div className="flex flex-row items-center gap-3 min-w-0">
           <input
             type="checkbox"
             checked={selected}
             onChange={(e) => onSelect(employee.id, e.target.checked)}
-            className="accent-blue-600"
+            className="accent-blue-600 border-2 border-gray-300 rounded-md"
+            style={{ minWidth: 28, minHeight: 28, width: 28, height: 28 }}
             aria-label="בחר עובד"
-            style={{ minWidth: 22, minHeight: 22 }}
           />
-          <div className="min-w-0 w-full">
+          <div className="min-w-0 w-full overflow-hidden">
             <EmployeeListProfileCell employee={employee} />
           </div>
         </div>
-        <EmployeeListStatusCell isActive={!!employee.is_active} />
+        <div className="flex-shrink-0 min-w-fit">
+          <EmployeeListStatusCell isActive={!!employee.is_active} />
+        </div>
       </div>
-
-      {/* פרטי עובד */}
-      <div className="flex flex-col w-full gap-4 mt-1">
-        <div className="flex flex-col">
-          <span className="text-base text-gray-400 mb-1">מספר עובד</span>
-          <span className="font-bold text-lg break-words w-full">
+      {/* פרטי עובד, בתצוגה ברורה ובשורות ברורות */}
+      <div className="flex flex-col w-full gap-4 mt-2" style={{ minWidth: 0 }}>
+        <div className="flex flex-col gap-1 min-w-0">
+          <span className="text-[17px] font-medium text-gray-500">מספר עובד</span>
+          <span className="font-extrabold text-lg break-words w-full">
             {employee.employee_id || (
-              <span className="text-gray-400">לא הוגדר</span>
+              <span className="text-gray-400 font-normal">לא הוגדר</span>
             )}
           </span>
         </div>
-        <div className="flex flex-col">
-          <span className="text-base text-gray-400 mb-1">טלפון</span>
+        <div className="flex flex-col gap-1 min-w-0">
+          <span className="text-[17px] font-medium text-gray-500">טלפון</span>
           <EmployeeListPhoneCell employee={employee} />
         </div>
-        <div className="flex flex-col">
-          <span className="text-base text-gray-400 mb-1">סוג עובד</span>
+        <div className="flex flex-col gap-1 min-w-0">
+          <span className="text-[17px] font-medium text-gray-500">סוג עובד</span>
           <EmployeeListTypeCell type={employee.employee_type} />
         </div>
-        <div className="flex flex-col">
-          <span className="text-base text-gray-400 mb-1">סניף ראשי</span>
+        <div className="flex flex-col gap-1 min-w-0">
+          <span className="text-[17px] font-medium text-gray-500">סניף ראשי</span>
           <EmployeeListBranchCell employee={employee} />
         </div>
-        <div className="flex flex-col">
-          <span className="text-base text-gray-400 mb-1">שעות שבועיות</span>
+        <div className="flex flex-col gap-1 min-w-0">
+          <span className="text-[17px] font-medium text-gray-500">שעות שבועיות</span>
           <EmployeeListWeeklyHoursCell weeklyHoursRequired={employee.weekly_hours_required} />
         </div>
         {employee.hire_date && (
-          <div className="flex flex-col">
-            <span className="text-base text-gray-400 mb-1">תאריך תחילה</span>
-            <span className="text-lg break-words">
+          <div className="flex flex-col gap-1 min-w-0">
+            <span className="text-[17px] font-medium text-gray-500">תאריך תחילה</span>
+            <span className="font-semibold text-lg break-words">
               {new Date(employee.hire_date).toLocaleDateString("he-IL")}
             </span>
           </div>
         )}
       </div>
-
       {/* פעולות */}
-      <div className="flex flex-col gap-3 w-full mt-4">
+      <div className="flex flex-col gap-3 w-full mt-3 min-w-0">
         <EmployeeListActionsCell
           employee={employee}
           onDeleteEmployee={onDeleteEmployee}
