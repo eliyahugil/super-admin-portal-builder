@@ -26,7 +26,7 @@ export const EmployeeProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <Card>
+      <Card dir="rtl">
         <CardContent className="p-6">
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -39,7 +39,7 @@ export const EmployeeProfilePage: React.FC = () => {
 
   if (!employee) {
     return (
-      <Card>
+      <Card dir="rtl">
         <CardContent className="p-6">
           <div className="text-center py-8">
             <h3 className="text-lg font-medium text-gray-900 mb-2">העובד לא נמצא</h3>
@@ -63,14 +63,14 @@ export const EmployeeProfilePage: React.FC = () => {
   }
 
   return (
-    <Card>
+    <Card dir="rtl">
       <EmployeeProfileHeader
         employee={employee}
         onGoBack={handleGoBack}
         onEmployeeUpdated={refetchEmployee}
       />
       <CardContent>
-        <div className="md:flex gap-4">
+        <div className="md:flex gap-4" dir="rtl">
           <EmployeeProfileSidebar employee={employee} />
           <EmployeeProfileTabs employee={employee} employeeId={employeeId!} />
         </div>

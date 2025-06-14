@@ -29,7 +29,7 @@ export const EmployeesTableAdvanced: React.FC<EmployeesTableAdvancedProps> = ({ 
 
   if (loading) {
     return (
-      <Card>
+      <Card dir="rtl">
         <EmployeesTableHeader
           employeesCount={0}
           onCreateEmployee={handleCreateEmployee}
@@ -42,7 +42,7 @@ export const EmployeesTableAdvanced: React.FC<EmployeesTableAdvancedProps> = ({ 
   }
 
   return (
-    <Card>
+    <Card dir="rtl">
       <EmployeesTableHeader
         employeesCount={employees.length}
         onCreateEmployee={handleCreateEmployee}

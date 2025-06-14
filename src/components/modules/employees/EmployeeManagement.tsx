@@ -96,7 +96,7 @@ export const EmployeeManagement: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6" dir="rtl">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
@@ -153,13 +153,13 @@ export const EmployeeManagement: React.FC = () => {
       />
 
       {/* Main Content */}
-      <Card>
+      <Card dir="rtl">
         <CardHeader>
           <CardTitle>ניהול עובדים וסניפים</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5">
+          <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
+            <TabsList className="grid w-full grid-cols-5" dir="rtl">
               <TabsTrigger value="employees">עובדים</TabsTrigger>
               <TabsTrigger value="branches">סניפים</TabsTrigger>
               <TabsTrigger value="shifts">משמרות</TabsTrigger>
@@ -176,7 +176,7 @@ export const EmployeeManagement: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="branches" className="mt-6">
-              <div className="space-y-4">
+              <div className="space-y-4" dir="rtl">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-semibold">רשימת סניפים</h3>
                   <Button onClick={() => setCreateBranchOpen(true)}>

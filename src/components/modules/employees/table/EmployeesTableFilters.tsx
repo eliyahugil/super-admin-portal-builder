@@ -21,7 +21,7 @@ export const EmployeesTableFilters: React.FC<EmployeesTableFiltersProps> = ({
   onFilterStatusChange,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4" dir="rtl">
       <div className="flex items-center gap-2">
         <Search className="h-4 w-4 text-gray-500" />
         <Input
@@ -29,6 +29,7 @@ export const EmployeesTableFilters: React.FC<EmployeesTableFiltersProps> = ({
           placeholder="חיפוש לפי שם, מספר עובד או טלפון..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
+          dir="rtl"
         />
       </div>
       
@@ -36,6 +37,7 @@ export const EmployeesTableFilters: React.FC<EmployeesTableFiltersProps> = ({
         value={filterType} 
         onChange={(e) => onFilterTypeChange(e.target.value)}
         className="border rounded-md px-3 py-2 text-sm"
+        dir="rtl"
       >
         <option value="all">כל הסוגים</option>
         <option value="permanent">קבוע</option>
@@ -48,6 +50,7 @@ export const EmployeesTableFilters: React.FC<EmployeesTableFiltersProps> = ({
         value={filterStatus} 
         onChange={(e) => onFilterStatusChange(e.target.value)}
         className="border rounded-md px-3 py-2 text-sm"
+        dir="rtl"
       >
         <option value="all">כל הסטטוסים</option>
         <option value="active">פעיל</option>

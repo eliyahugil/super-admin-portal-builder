@@ -26,7 +26,7 @@ export const EmployeesTableGrid: React.FC<EmployeesTableGridProps> = ({
     <div className="overflow-x-auto" dir="rtl">
       <table className="w-full border-collapse bg-white" dir="rtl">
         <thead>
-          <tr className="bg-gray-50 border-b">
+          <tr className="bg-gray-50 border-b" dir="rtl">
             <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">פרטי עובד</th>
             <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">קשר</th>
             <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">סטטוס וסוג</th>
