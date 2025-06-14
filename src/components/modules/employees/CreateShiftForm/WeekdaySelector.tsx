@@ -36,20 +36,32 @@ export const WeekdaySelector: React.FC<WeekdaySelectorProps> = ({
         ימים חוזרים (ניתן לבחור כמה שרוצים)
       </div>
       <div className="flex flex-wrap gap-2">
-        {WEEKDAYS.map((day) => (
-          <button
-            type="button"
-            key={day.value}
-            className={`px-3 py-2 rounded-xl border bg-white transition-colors
-              ${selectedWeekdays.includes(day.value) ? "bg-blue-600 text-white" : "text-gray-700 border-gray-300"}
-              ${disabled ? "opacity-50 cursor-not-allowed" : ""}
-            `}
-            onClick={() => handleToggle(day.value)}
-            disabled={disabled}
-          >
-            {day.label}
-          </button>
-        ))}
+        {WEEKDAYS.map((day) => {
+          const isSelected = selectedWeekdays.includes(day.value);
+          return (
+            <button
+              type="button"
+              key={day.value}
+              className={
+                `px-3 py-2 rounded-xl border font-semibold transition-colors 
+                ${isSelected
+                  ? "bg-blue-700 text-white border-blue-700 shadow-sm"
+                  : "bg-white text-blue-700 border-blue-300 hover:bg-blue-50"}
+                ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+                `
+              }
+              onClick={() => handleToggle(day.value)}
+              disabled={disabled}
+              tabIndex={0}
+              aria-pressed={isSelected}
+              style={{
+                minWidth: 58,
+              }}
+            >
+              {day.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

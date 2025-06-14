@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CreateShiftFormHeader } from './CreateShiftFormHeader';
@@ -8,7 +7,7 @@ import { EmployeeSelector } from './EmployeeSelector';
 import { ShiftNotesInput } from './ShiftNotesInput';
 import { useCreateShiftForm } from './useCreateShiftForm';
 import { QuickShiftTemplateCreatorDialog } from './QuickShiftTemplateCreatorDialog';
-import { BranchSelector } from './BranchSelector';
+import { BranchMultiSelect } from './BranchMultiSelect';
 import { useBranchesData } from '@/hooks/useBranchesData';
 import { WeekdaySelector } from './WeekdaySelector';
 
@@ -75,16 +74,8 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
     }
   }, [templates, selectedTemplateId, setSelectedTemplateId]);
 
-  const handleBranchChange = (val: string | string[]) => {
-    if (Array.isArray(val)) {
-      setSelectedBranchId(val);
-    } else {
-      setSelectedBranchId(val ? [val] : []);
-    }
-  };
-
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6 space-y-4" dir="rtl">
+    <div className="bg-white rounded-2xl shadow-md p-4 md:p-6 space-y-4 max-w-full" dir="rtl">
       <CreateShiftFormHeader />
       <form onSubmit={handleSubmit} className="space-y-4">
         <ShiftTemplateSelector
@@ -94,14 +85,13 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
           onOpenCreator={() => setShowTemplateDialog(true)}
         />
 
-        {/* בחירת תאריכים מרובים בודדים */}
         <div className="space-y-2">
           <label className="text-sm text-gray-600 font-medium">
             תאריך משמרת (ניתן לבחור מספר תאריכים) *
           </label>
           <input
             type="date"
-            className="border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full"
+            className="border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full text-base"
             value=""
             onChange={e => {
               if (!e.target.value) return;
@@ -125,7 +115,6 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
           </div>
         </div>
 
-        {/* מבנה חדש: ימים + טווח */}
         <div className="space-y-2 bg-blue-50 rounded-xl p-3">
           <WeekdaySelector
             selectedWeekdays={selectedWeekdays}
@@ -159,11 +148,11 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
           </div>
         </div>
 
-        <BranchSelector
-          selectedBranchId={selectedBranchId}
-          onBranchChange={handleBranchChange}
+        <BranchMultiSelect
           branches={branches}
-          multiple={true}
+          selectedBranchIds={Array.isArray(selectedBranchId) ? selectedBranchId : []}
+          onChange={setSelectedBranchId}
+          disabled={submitting || !branches || branches.length === 0}
         />
 
         <EmployeeSelector
@@ -180,7 +169,7 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
         <Button 
           type="submit" 
           disabled={submitting || !templates || templates.length === 0 || (branches && branches.length === 0)}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors text-base"
         >
           {submitting ? 'יוצר...' : 'צור משמרות'}
         </Button>
