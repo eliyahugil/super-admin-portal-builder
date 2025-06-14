@@ -24,7 +24,9 @@ export const usePendingData = <T = any>({
   const businessId = selectedBusinessId || contextBusinessId;
 
   const fetchData = async (): Promise<T[]> => {
-    if (!businessId) return [];
+    if (!businessId) {
+      throw new Error('Business ID is missing');
+    }
 
     const { data, error } = await supabase
       .from(tableName)
@@ -35,7 +37,7 @@ export const usePendingData = <T = any>({
 
     if (error) throw new Error(error.message);
 
-    return data || [];
+    return Array.isArray(data) ? data : [];
   };
 
   return useQuery<T[]>({
