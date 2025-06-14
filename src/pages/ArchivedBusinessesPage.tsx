@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
-import { Archive, RotateCcw, Search, Building } from 'lucide-react';
+import { Archive, RotateCcw, Search, Building, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface ArchivedBusiness {
   id: string;
@@ -23,6 +25,7 @@ export const ArchivedBusinessesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const { logActivity } = useActivityLogger();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchArchivedBusinesses();
@@ -113,13 +116,22 @@ export const ArchivedBusinessesPage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8 space-y-6" dir="rtl">
       {/* Header */}
-      <div>
+      <div className="flex items-center gap-2 mb-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-gray-700 hover:text-blue-700 px-2 py-1"
+          onClick={() => navigate('/admin/businesses')}
+        >
+          <ChevronRight className="h-5 w-5" />
+          חזור לניהול עסקים
+        </Button>
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
           <Archive className="h-8 w-8" />
           עסקים בארכיון
         </h1>
-        <p className="text-gray-600 mt-2">נהל עסקים שהועברו לארכיון</p>
       </div>
+      <p className="text-gray-600 mt-2">נהל עסקים שהועברו לארכיון</p>
 
       {/* Stats */}
       <Card>

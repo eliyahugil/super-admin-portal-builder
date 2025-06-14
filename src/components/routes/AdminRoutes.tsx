@@ -9,6 +9,9 @@ import { AccessRequestsManager } from '@/components/admin/AccessRequestsManager'
 import { CreateBusinessForm } from '@/components/admin/CreateBusinessForm';
 import { NewBusinessForm } from '@/components/admin/NewBusinessForm';
 
+// NEW - import archived businesses page
+import ArchivedBusinessesPage from '@/pages/ArchivedBusinessesPage';
+
 export const AdminRoutes = () => [
   <Route
     key="admin"
@@ -39,6 +42,17 @@ export const AdminRoutes = () => [
       <SuperAdminRoute>
         <AppLayout>
           <BusinessManagement />
+        </AppLayout>
+      </SuperAdminRoute>
+    }
+  />,
+  <Route
+    key="admin-archived-businesses"
+    path="/admin/businesses/archived"
+    element={
+      <SuperAdminRoute>
+        <AppLayout>
+          <ArchivedBusinessesPage />
         </AppLayout>
       </SuperAdminRoute>
     }
