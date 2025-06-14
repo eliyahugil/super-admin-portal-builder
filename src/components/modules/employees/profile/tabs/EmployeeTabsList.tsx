@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
@@ -20,9 +20,19 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   availableTabs,
   setActiveTab
 }) => {
+  const listRef = useRef<HTMLDivElement | null>(null);
+
+  // גלילה אוטומטית לצד ימין אחרי רינדור (ברירת מחדל RTL – מימין)
+  useEffect(() => {
+    const el = listRef.current;
+    if (el) {
+      el.scrollLeft = el.scrollWidth;
+    }
+  }, [availableTabs.length]);
+
   return (
     <TabsList
-      // שומרים על סדר טבעי, RTL יעבוד ויזואלית: הטאב הראשון בצד ימין
+      ref={listRef}
       className="w-full flex gap-2 overflow-x-auto px-1 mb-2 min-w-0 scrollbar-thin scrollbar-thumb-gray-200"
       dir="rtl"
       style={{ direction: 'rtl' }}
@@ -47,3 +57,4 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
     </TabsList>
   );
 };
+
