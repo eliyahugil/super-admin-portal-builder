@@ -9,7 +9,7 @@ export const fetchAccessRequests = async (): Promise<AccessRequestEnriched[]> =>
     .from('user_access_requests')
     .select(`
       *,
-      profiles:profiles!user_access_requests_user_id_fkey (
+      profiles:user_id (
         email,
         full_name,
         phone

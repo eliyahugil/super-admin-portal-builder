@@ -92,8 +92,8 @@ export const SystemNotificationManager: React.FC = () => {
             id: `access_request_${payload.new.id}`,
             type: 'access_request',
             title: 'בקשת גישה חדשה',
-            message: `משתמש ${userProfile?.full_name || userProfile?.email} ביקש גישה למערכת`,
-            phone: userProfile?.phone,
+            message: `משתמש ${userProfile?.full_name || userProfile?.email || 'לא ידוע'} ביקש גישה למערכת`,
+            phone: userProfile?.phone || undefined,
             created_at: new Date().toISOString(),
             acknowledged: false
           };
