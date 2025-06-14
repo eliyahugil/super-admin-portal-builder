@@ -1810,6 +1810,7 @@ export type Database = {
       }
       scheduled_shifts: {
         Row: {
+          branch_id: string | null
           created_at: string | null
           employee_id: string | null
           id: string
@@ -1820,6 +1821,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          branch_id?: string | null
           created_at?: string | null
           employee_id?: string | null
           id?: string
@@ -1830,6 +1832,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          branch_id?: string | null
           created_at?: string | null
           employee_id?: string | null
           id?: string
@@ -1840,6 +1843,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "scheduled_shifts_branch_fk"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "scheduled_shifts_employee_id_fkey"
             columns: ["employee_id"]

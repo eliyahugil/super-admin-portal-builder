@@ -2,29 +2,35 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { Branch } from '@/types/branch';
 
-export const useCreateShiftForm = (businessId?: string) => {
+export const useCreateShiftForm = (
+  businessId?: string,
+  branches?: Branch[]
+) => {
   const { toast } = useToast();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
-  const [shiftDate, setShiftDate] = useState('');
+  const [selectedBranchId, setSelectedBranchId] = useState('');
+  const [shiftDates, setShiftDates] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const resetForm = () => {
     setSelectedEmployeeId('');
     setSelectedTemplateId('');
-    setShiftDate('');
+    setSelectedBranchId('');
+    setShiftDates([]);
     setNotes('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!selectedTemplateId || !shiftDate) {
+
+    if (!selectedTemplateId || shiftDates.length === 0 || !selectedBranchId) {
       toast({
         title: "שגיאה",
-        description: "אנא מלא את כל השדות הנדרשים",
+        description: "אנא מלא את כל השדות הנדרשים (תבנית, תאריכים, סניף)",
         variant: "destructive"
       });
       return;
@@ -42,34 +48,35 @@ export const useCreateShiftForm = (businessId?: string) => {
     setSubmitting(true);
 
     try {
-      const shiftData: any = {
-        shift_template_id: selectedTemplateId,
-        shift_date: shiftDate,
-        is_assigned: !!selectedEmployeeId,
-        notes: notes || null
-      };
-
-      if (selectedEmployeeId) {
-        shiftData.employee_id = selectedEmployeeId;
-      }
+      const newShifts = shiftDates.map((shiftDate) => {
+        const shiftData: any = {
+          shift_template_id: selectedTemplateId,
+          shift_date,
+          branch_id: selectedBranchId,
+          is_assigned: !!selectedEmployeeId,
+          notes: notes || null
+        };
+        if (selectedEmployeeId) shiftData.employee_id = selectedEmployeeId;
+        return shiftData;
+      });
 
       const { error } = await supabase
         .from('scheduled_shifts')
-        .insert([shiftData]);
+        .insert(newShifts);
 
       if (error) throw error;
 
       toast({
         title: "הצלחה",
-        description: "המשמרת נוצרה בהצלחה"
+        description: `נוצרו ${newShifts.length} משמרות בהצלחה`
       });
 
       resetForm();
     } catch (error: any) {
-      console.error('Error creating shift:', error);
+      console.error('Error creating shifts:', error);
       toast({
         title: "שגיאה",
-        description: error.message,
+        description: error.message || "שגיאה ביצירת משמרות",
         variant: "destructive"
       });
     } finally {
@@ -82,8 +89,10 @@ export const useCreateShiftForm = (businessId?: string) => {
     setSelectedEmployeeId,
     selectedTemplateId,
     setSelectedTemplateId,
-    shiftDate,
-    setShiftDate,
+    selectedBranchId,
+    setSelectedBranchId,
+    shiftDates,
+    setShiftDates,
     notes,
     setNotes,
     submitting,
