@@ -10,6 +10,7 @@ import { EmployeeDocumentsEmptyState } from './EmployeeDocumentsEmptyState';
 import { EmployeeDocumentsViewer } from './EmployeeDocumentsViewer';
 import { useEmployeeDocumentDelete } from './hooks/useEmployeeDocumentDelete';
 import { useEmployeeDocumentReminders } from './hooks/useEmployeeDocumentReminders';
+import { useEmployeeDocumentUpload } from './hooks/useEmployeeDocumentUpload';
 
 interface Props {
   employeeId: string;
@@ -26,9 +27,21 @@ export const EmployeeDocuments: React.FC<Props> = ({
   const { toast } = useToast();
   const { businessId } = useBusiness();
 
+  // Determine if we're uploading templates (when employeeId is empty or falsy)
+  const isTemplateMode = !employeeId;
+  const queryKey = isTemplateMode 
+    ? ['employee-documents-templates', businessId] 
+    : ['employee-documents', employeeId, businessId];
+
+  // Use the upload hook
+  const { uploading, handleFileUpload } = useEmployeeDocumentUpload(
+    isTemplateMode ? undefined : employeeId,
+    queryKey
+  );
+
   // שליפת מסמכים - אם אין employeeId נציג את כל המסמכים של העסק
   const { data: documents = [], isLoading, refetch } = useQuery({
-    queryKey: ['employee-documents', employeeId, businessId],
+    queryKey,
     queryFn: async () => {
       let query = supabase
         .from('employee_documents')
@@ -133,9 +146,9 @@ export const EmployeeDocuments: React.FC<Props> = ({
       <EmployeeDocumentsEmptyState 
         canEdit={canEdit}
         employeeName={employeeName || 'העובד'}
-        uploading={false}
-        handleFileUpload={() => {}}
-        disableUpload={!employeeId}
+        uploading={uploading}
+        handleFileUpload={handleFileUpload}
+        disableUpload={false}
       />
     );
   }
@@ -144,9 +157,9 @@ export const EmployeeDocuments: React.FC<Props> = ({
     <div className="space-y-6" dir="rtl">
       <EmployeeDocumentsHeader 
         canEdit={canEdit}
-        uploading={false}
-        handleFileUpload={() => {}}
-        disableUpload={!employeeId}
+        uploading={uploading}
+        handleFileUpload={handleFileUpload}
+        disableUpload={false}
       />
       
       <div className="space-y-4">
@@ -155,7 +168,7 @@ export const EmployeeDocuments: React.FC<Props> = ({
             key={document.id}
             document={document}
             canEdit={canEdit}
-            uploading={false}
+            uploading={uploading}
             reminderLoading={reminderLoading}
             reminderLog={reminderLog}
             handleView={handleView}

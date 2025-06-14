@@ -22,18 +22,27 @@ export const EmployeeDocumentsEmptyState: React.FC<Props> = ({
     <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
     <h3 className="text-lg font-medium text-gray-900 mb-2">אין מסמכים</h3>
     <p className="text-gray-500 mb-4">לא הועלו עדיין מסמכים עבור {employeeName}</p>
-    {canEdit && (
+    {canEdit && !disableUpload && (
       <div className="relative inline-block">
         <input
           type="file"
           onChange={handleFileUpload}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-          disabled={uploading || disableUpload}
+          disabled={uploading}
         />
-        <Button disabled={uploading || disableUpload}>
-          <Plus className="h-4 w-4 mr-2" />
-          העלה מסמך ראשון
+        <Button disabled={uploading}>
+          {uploading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              מעלה...
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-2" />
+              העלה מסמך ראשון
+            </>
+          )}
         </Button>
       </div>
     )}

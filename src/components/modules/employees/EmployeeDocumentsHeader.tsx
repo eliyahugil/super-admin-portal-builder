@@ -28,10 +28,10 @@ export const EmployeeDocumentsHeader: React.FC<Props> = ({
           onChange={handleFileUpload}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-          disabled={uploading || disableUpload}
+          disabled={uploading}
         />
         <Button
-          disabled={uploading || disableUpload}
+          disabled={uploading}
           className="flex items-center gap-2"
         >
           {uploading ? (
