@@ -1,14 +1,19 @@
+
+// Refactored: main orchestrator using new components and helpers
+
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { FileText, Download, Eye, Upload, Plus, Trash2 } from 'lucide-react';
+import { FileText, Upload } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthContext';
-import { format } from 'date-fns';
-import { he } from 'date-fns/locale';
+import {
+  getFileType
+} from './helpers/documentHelpers';
+import { EmployeeDocumentCard } from './EmployeeDocumentCard';
+import { EmployeeDocumentsEmptyState } from './EmployeeDocumentsEmptyState';
 
 interface EmployeeDocumentsProps {
   employeeId: string;
@@ -16,10 +21,10 @@ interface EmployeeDocumentsProps {
   canEdit?: boolean;
 }
 
-export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({ 
-  employeeId, 
+export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
+  employeeId,
   employeeName,
-  canEdit = true 
+  canEdit = true
 }) => {
   const [uploading, setUploading] = useState(false);
   const [reminderLoading, setReminderLoading] = useState<string | null>(null);
@@ -28,18 +33,9 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   const { profile, user } = useAuth();
   const queryClient = useQueryClient();
 
-  console.log('📋 EmployeeDocuments - Auth state:', { 
-    hasProfile: !!profile, 
-    hasUser: !!user,
-    profileId: profile?.id,
-    userId: user?.id,
-    employeeId 
-  });
-
   const { data: documents, isLoading } = useQuery({
     queryKey: ['employee-documents', employeeId],
     queryFn: async () => {
-      console.log('📄 Fetching documents for employee:', employeeId);
       const { data, error } = await supabase
         .from('employee_documents')
         .select(`
@@ -49,11 +45,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         .eq('employee_id', employeeId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('❌ Error fetching documents:', error);
-        throw error;
-      }
-      console.log('✅ Documents fetched:', data?.length || 0);
+      if (error) throw error;
       return data;
     },
     enabled: !!employeeId,
@@ -61,30 +53,8 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 
   const deleteDocumentMutation = useMutation({
     mutationFn: async ({ documentId, filePath }: { documentId: string; filePath: string }) => {
-      console.log('🗑️ Deleting document:', { documentId, filePath });
-      
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from('employee-files')
-        .remove([filePath]);
-
-      if (storageError) {
-        console.error('❌ Storage delete error:', storageError);
-        throw storageError;
-      }
-
-      // Delete from database
-      const { error: dbError } = await supabase
-        .from('employee_documents')
-        .delete()
-        .eq('id', documentId);
-
-      if (dbError) {
-        console.error('❌ Database delete error:', dbError);
-        throw dbError;
-      }
-      
-      console.log('✅ Document deleted successfully');
+      await supabase.storage.from('employee-files').remove([filePath]);
+      await supabase.from('employee_documents').delete().eq('id', documentId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
@@ -93,8 +63,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         description: 'המסמך נמחק בהצלחה',
       });
     },
-    onError: (error) => {
-      console.error('❌ Delete mutation error:', error);
+    onError: () => {
       toast({
         title: 'שגיאה',
         description: 'לא ניתן למחוק את המסמך',
@@ -105,22 +74,9 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) {
-      console.log('❌ No file selected');
-      return;
-    }
-
-    console.log('📤 Starting file upload process:', {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      employeeId,
-      profileId: profile?.id,
-      userId: user?.id
-    });
+    if (!file) return;
 
     if (!profile?.id && !user?.id) {
-      console.error('❌ No user authentication found');
       toast({
         title: 'שגיאה',
         description: 'נדרש להתחבר למערכת כדי להעלות קבצים',
@@ -131,32 +87,14 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 
     try {
       setUploading(true);
-      
-      // Check auth session first
-      console.log('🔐 Checking authentication session...');
+
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('❌ Session error:', sessionError);
-        throw new Error(`Session error: ${sessionError.message}`);
-      }
-      
-      if (!sessionData.session) {
-        console.error('❌ No active session found');
-        throw new Error('No active session - please login again');
-      }
-      
-      console.log('✅ Valid session confirmed');
-      
-      // Generate unique file path
+      if (sessionError || !sessionData.session) throw new Error('No active session!');
       const fileExt = file.name.split('.').pop();
       const timestamp = Date.now();
       const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
       const filePath = `employee-documents/${employeeId}/${fileName}`;
-      
-      console.log('📁 Uploading to path:', filePath);
-      
-      // Upload file to Supabase Storage
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('employee-files')
         .upload(filePath, file, {
@@ -164,25 +102,15 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
           upsert: false
         });
 
-      if (uploadError) {
-        console.error('❌ Storage upload error:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
-      }
+      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-      console.log('✅ File uploaded to storage successfully:', uploadData.path);
-
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from('employee-files')
         .getPublicUrl(filePath);
 
-      console.log('🔗 Generated public URL:', urlData.publicUrl);
-
-      // Save document record
       const uploadedBy = profile?.id || user?.id;
-      console.log('💾 Saving document record with uploadedBy:', uploadedBy);
-      
-      const { data: documentData, error: insertError } = await supabase
+
+      const { error: insertError } = await supabase
         .from('employee_documents')
         .insert({
           employee_id: employeeId,
@@ -190,32 +118,23 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
           document_type: getFileType(file.name),
           file_url: urlData.publicUrl,
           uploaded_by: uploadedBy,
-        })
-        .select()
-        .single();
+        });
 
       if (insertError) {
-        console.error('❌ Database insert error:', insertError);
-        // Clean up uploaded file if database insert fails
         await supabase.storage.from('employee-files').remove([uploadData.path]);
         throw new Error(`Database error: ${insertError.message}`);
       }
-      
-      console.log('✅ Document record saved successfully:', documentData);
-      
+
       toast({
         title: 'הצלחה',
         description: 'המסמך הועלה בהצלחה',
       });
-      
+
       queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
-    } catch (error) {
-      console.error('💥 File upload error:', error);
+    } catch (error: any) {
       toast({
         title: 'שגיאה',
-        description: error instanceof Error 
-          ? `שגיאה בהעלאת המסמך: ${error.message}` 
-          : 'לא ניתן להעלות את המסמך',
+        description: error?.message ?? 'שגיאה בהעלאת מסמך',
         variant: 'destructive',
       });
     } finally {
@@ -230,15 +149,12 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       .select('id, sent_at, message, reminder_type, sent_by')
       .eq('document_id', docId)
       .order('sent_at', { ascending: false });
-    if (!error) {
-      setReminderLog((prev) => ({ ...prev, [docId]: data }));
-    }
+    if (!error) setReminderLog((prev) => ({ ...prev, [docId]: data }));
   };
 
   const sendReminder = async (document: any) => {
     setReminderLoading(document.id);
     try {
-      // Insert a new reminder in the table, type is "system" for now
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.id) throw new Error('No authenticated user!');
       const { error } = await supabase
@@ -252,7 +168,6 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         });
       if (error) throw error;
 
-      // Update document reminder count & last sent
       await supabase.from('employee_documents').update({
         reminder_count: (document.reminder_count ?? 0) + 1,
         reminder_sent_at: new Date().toISOString()
@@ -264,64 +179,14 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       });
       fetchReminders(document.id);
       queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
-    } catch (e) {
+    } catch (e: any) {
       toast({
         title: 'שגיאה בשליחת תזכורת',
-        description: e instanceof Error ? e.message : 'תקלה בשליחת התזכורת. נסו שוב.',
+        description: e.message ?? 'תקלה בשליחת התזכורת. נסו שוב.',
         variant: 'destructive',
       });
     } finally {
       setReminderLoading(null);
-    }
-  };
-
-  const getFileType = (fileName: string) => {
-    const extension = fileName.split('.').pop()?.toLowerCase();
-    switch (extension) {
-      case 'pdf': return 'contract';
-      case 'doc':
-      case 'docx': return 'form';
-      case 'jpg':
-      case 'jpeg':
-      case 'png': return 'id';
-      default: return 'other';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'signed': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'pending': return 'ממתין לחתימה';
-      case 'signed': return 'נחתם';
-      case 'rejected': return 'נדחה';
-      default: return status;
-    }
-  };
-
-  const getDocumentTypeColor = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'contract': return 'bg-blue-100 text-blue-800';
-      case 'id': return 'bg-green-100 text-green-800';
-      case 'certificate': return 'bg-purple-100 text-purple-800';
-      case 'form': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getDocumentTypeLabel = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'contract': return 'חוזה';
-      case 'id': return 'תעודת זהות';
-      case 'certificate': return 'תעודה';
-      case 'form': return 'טופס';
-      default: return type;
     }
   };
 
@@ -368,7 +233,6 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
           <FileText className="h-5 w-5 text-blue-600" />
           <h3 className="text-lg font-semibold">מסמכי העובד</h3>
         </div>
-        
         {canEdit && (
           <div className="relative">
             <input
@@ -378,7 +242,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
               disabled={uploading}
             />
-            <Button 
+            <Button
               disabled={uploading}
               className="flex items-center gap-2"
             >
@@ -397,144 +261,33 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
           </div>
         )}
       </div>
-
       {documents && documents.length > 0 ? (
         <div className="space-y-3">
-          {documents.map((document) => (
-            <Card key={document.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-center gap-3 flex-1">
-                    <FileText className="h-8 w-8 text-blue-600" />
-                    <div className="flex-1">
-                      <h4 className="font-medium">{document.document_name}</h4>
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <Badge className={getDocumentTypeColor(document.document_type)}>
-                          {getDocumentTypeLabel(document.document_type)}
-                        </Badge>
-                        {document.status && (
-                          <Badge className={getStatusColor(document.status)}>{getStatusLabel(document.status)}</Badge>
-                        )}
-                        <span className="text-sm text-gray-500">
-                          {format(new Date(document.created_at), 'dd/MM/yyyy', { locale: he })}
-                        </span>
-                        {document.uploaded_by_profile?.full_name && (
-                          <span className="text-sm text-gray-500">
-                            • הועלה על ידי {document.uploaded_by_profile.full_name}
-                          </span>
-                        )}
-                        {typeof document.reminder_count === 'number' && (
-                          <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded ml-1">
-                            תזכורות: {document.reminder_count}
-                          </span>
-                        )}
-                        {document.reminder_sent_at && (
-                          <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded ml-1">
-                            עודכן לאחרונה: {format(new Date(document.reminder_sent_at), 'dd/MM/yyyy HH:mm', { locale: he })}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col md:flex-row items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleView(document)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleDownload(document)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    {/* Reminder button for admin/business roles */}
-                    {canEdit && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={reminderLoading === document.id}
-                        onClick={() => sendReminder(document)}
-                        className="text-purple-600 hover:text-purple-700"
-                        title="שלח תזכורת לעובד"
-                      >
-                        {reminderLoading === document.id
-                          ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
-                          : <Upload className="h-4 w-4" />}
-                        שלח תזכורת
-                      </Button>
-                    )}
-                    {canEdit && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleDelete(document)}
-                        disabled={deleteDocumentMutation.isPending}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                {/*         REMINDER LOG */}
-                <div className="mt-2">
-                  <details
-                    className="w-full"
-                    onClick={async () => {
-                      if (!reminderLog[document.id]) await fetchReminders(document.id);
-                    }}
-                  >
-                    <summary className="cursor-pointer text-xs text-gray-600">
-                      {reminderLog[document.id]?.length
-                        ? `היסטוריית תזכורות (${reminderLog[document.id].length})`
-                        : 'הצג תזכורות שנשלחו'}
-                    </summary>
-                    <ul className="text-xs bg-gray-50 border rounded p-2 mt-1 space-y-1">
-                      {reminderLog[document.id]?.length === 0 && (
-                        <li className="text-gray-400">לא נשלחו תזכורות למסמך זה</li>
-                      )}
-                      {reminderLog[document.id]?.map(rem => (
-                        <li key={rem.id} className="flex flex-row gap-2 items-center">
-                          <span className="text-purple-700 font-bold">{rem.reminder_type}</span>
-                          <span>{rem.message}</span>
-                          <span className="ml-auto text-gray-500">
-                            {format(new Date(rem.sent_at), 'dd/MM/yyyy HH:mm', { locale: he })}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                </div>
-              </CardContent>
-            </Card>
+          {documents.map((document: any) => (
+            <EmployeeDocumentCard
+              key={document.id}
+              document={document}
+              canEdit={canEdit}
+              uploading={uploading}
+              reminderLoading={reminderLoading}
+              reminderLog={reminderLog}
+              handleView={handleView}
+              handleDownload={handleDownload}
+              handleDelete={handleDelete}
+              sendReminder={sendReminder}
+              fetchReminders={fetchReminders}
+            />
           ))}
         </div>
       ) : (
         <Card>
-          <CardContent className="text-center py-8">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">אין מסמכים</h3>
-            <p className="text-gray-500 mb-4">לא הועלו עדיין מסמכים עבור {employeeName}</p>
-            {canEdit && (
-              <div className="relative inline-block">
-                <input
-                  type="file"
-                  onChange={handleFileUpload}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  disabled={uploading}
-                />
-                <Button disabled={uploading}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  העלה מסמך ראשון
-                </Button>
-              </div>
-            )}
+          <CardContent>
+            <EmployeeDocumentsEmptyState
+              employeeName={employeeName}
+              canEdit={canEdit}
+              uploading={uploading}
+              handleFileUpload={handleFileUpload}
+            />
           </CardContent>
         </Card>
       )}
