@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, RotateCcw } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,7 @@ interface SendToSignatureButtonProps {
   onSent?: () => void;
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'sm' | 'default' | 'lg';
+  isAlreadyAssigned?: boolean;
 }
 
 export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
@@ -21,14 +22,15 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
   documentName,
   onSent,
   variant = 'default',
-  size = 'sm'
+  size = 'sm',
+  isAlreadyAssigned = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
 
-  console.log('🔍 SendToSignatureButton rendered for document:', documentName, 'ID:', documentId);
+  console.log('🔍 SendToSignatureButton rendered for document:', documentName, 'ID:', documentId, 'Already assigned:', isAlreadyAssigned);
 
   // שליפת רשימת עובדים פעילים
   const { data: employees, isLoading: employeesLoading } = useQuery({
@@ -57,18 +59,25 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
     }
 
     setIsSending(true);
-    console.log('📤 Sending document to signature:', { documentId, selectedEmployeeId });
+    console.log('📤 Sending document to signature:', { documentId, selectedEmployeeId, isResend: isAlreadyAssigned });
     
     try {
       // עדכון מסמך עם פרטי העובד המיועד לחתימה
+      const updateData: any = {
+        assignee_id: selectedEmployeeId,
+        status: 'pending_signature',
+        reminder_count: 0,
+        reminder_sent_at: new Date().toISOString(),
+      };
+
+      // אם זה שליחה מחדש, נאפס את תאריך החתימה
+      if (isAlreadyAssigned) {
+        updateData.signed_at = null;
+      }
+
       const { error: updateError } = await supabase
         .from('employee_documents')
-        .update({
-          assignee_id: selectedEmployeeId,
-          status: 'pending_signature',
-          reminder_count: 0,
-          reminder_sent_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', documentId);
 
       if (updateError) throw updateError;
@@ -77,9 +86,10 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
       // const selectedEmployee = employees?.find(emp => emp.id === selectedEmployeeId);
       // await sendSignatureNotification(selectedEmployee, documentName);
 
+      const actionText = isAlreadyAssigned ? 'נשלח מחדש' : 'נשלח';
       toast({
         title: 'הצלחה',
-        description: `המסמך "${documentName}" נשלח לחתימה בהצלחה`,
+        description: `המסמך "${documentName}" ${actionText} לחתימה בהצלחה`,
       });
 
       setIsOpen(false);
@@ -97,6 +107,10 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
     }
   };
 
+  const buttonText = isAlreadyAssigned ? 'שלח מחדש' : 'שלח לחתימה';
+  const buttonIcon = isAlreadyAssigned ? RotateCcw : Send;
+  const IconComponent = buttonIcon;
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -106,14 +120,16 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
           className="flex items-center gap-2"
           onClick={() => console.log('📌 SendToSignature button clicked for:', documentName)}
         >
-          <Send className="h-4 w-4" />
-          שלח לחתימה
+          <IconComponent className="h-4 w-4" />
+          {buttonText}
         </Button>
       </DialogTrigger>
       
       <DialogContent className="sm:max-w-md" dir="rtl">
         <DialogHeader>
-          <DialogTitle>שלח מסמך לחתימה</DialogTitle>
+          <DialogTitle>
+            {isAlreadyAssigned ? 'שלח מסמך מחדש לחתימה' : 'שלח מסמך לחתימה'}
+          </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -121,6 +137,11 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
             <p className="text-sm text-gray-600 mb-2">
               מסמך: <span className="font-medium">{documentName}</span>
             </p>
+            {isAlreadyAssigned && (
+              <p className="text-sm text-amber-600 mb-2">
+                המסמך כבר נשלח לחתימה. שליחה מחדש תאפס את סטטוס החתימה.
+              </p>
+            )}
           </div>
           
           <div>
@@ -163,8 +184,8 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
                 </>
               ) : (
                 <>
-                  <Send className="h-4 w-4 ml-2" />
-                  שלח לחתימה
+                  <IconComponent className="h-4 w-4 ml-2" />
+                  {buttonText}
                 </>
               )}
             </Button>

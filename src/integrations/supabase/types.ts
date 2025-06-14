@@ -1002,6 +1002,7 @@ export type Database = {
           is_template: boolean
           reminder_count: number
           reminder_sent_at: string | null
+          signed_at: string | null
           status: string
           uploaded_by: string
         }
@@ -1017,6 +1018,7 @@ export type Database = {
           is_template?: boolean
           reminder_count?: number
           reminder_sent_at?: string | null
+          signed_at?: string | null
           status?: string
           uploaded_by: string
         }
@@ -1032,6 +1034,7 @@ export type Database = {
           is_template?: boolean
           reminder_count?: number
           reminder_sent_at?: string | null
+          signed_at?: string | null
           status?: string
           uploaded_by?: string
         }
