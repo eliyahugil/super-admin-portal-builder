@@ -7,9 +7,9 @@ export const AccessRequestsHeader: React.FC = () => {
     <div className="mb-8">
       <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
         <UserPlus className="h-8 w-8" />
-        ניהול בקשות גישה
+        ניהול בקשות גישה מתקדם
       </h1>
-      <p className="text-gray-600 mt-2">סקור ואשר בקשות גישה למערכת</p>
+      <p className="text-gray-600 mt-2">סקור פרטי משתמשים, שייך לעסק או צור עסק חדש, ואשר בקשות גישה למערכת</p>
     </div>
   );
 };

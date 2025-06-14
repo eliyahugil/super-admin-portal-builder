@@ -1,3 +1,3 @@
 
-// Import from the centralized types
+// Re-export from the centralized types
 export type { AccessRequest, AccessRequestMutationParams } from '@/types/access-request';
