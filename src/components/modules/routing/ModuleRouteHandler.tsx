@@ -20,6 +20,7 @@ import { IntegrationManagement } from '../integrations/IntegrationManagement';
 import { CustomerManagement } from '../customers/CustomerManagement';
 import { EmployeeFilesManagement } from '../employees/EmployeeFilesManagement';
 import { EmployeeRequestsList } from '../employees/EmployeeRequestsList';
+import { EmployeeDocuments } from '../employees/EmployeeDocuments';
 
 interface ModuleRouteHandlerProps {
   fullRoute: string;
@@ -70,7 +71,19 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
     case 'employees/employee-requests':
       return <EmployeeRequestsList businessId={businessId} />;
     case 'employees/employee-docs':
-      return <div className="p-6 text-center">רכיב מסמכים חתומים בפיתוח</div>;
+      return (
+        <div className="max-w-4xl mx-auto py-8" dir="rtl">
+          <h2 className="text-2xl font-bold mb-4">מסמכים לחתימה</h2>
+          <p className="bg-purple-50 rounded-lg p-4 mb-4 text-purple-700">
+            כאן ניתן להעלות מסמכים, לשלוח לעובדים לחתימה ולעקוב אחרי סטטוס המסמכים.
+          </p>
+          <EmployeeDocuments
+            employeeId={employeeId || ''}
+            employeeName="(כל העובדים)"
+            canEdit={true}
+          />
+        </div>
+      );
     case 'employees/shifts':
       return <ShiftManagement />;
     case 'employees/import':
