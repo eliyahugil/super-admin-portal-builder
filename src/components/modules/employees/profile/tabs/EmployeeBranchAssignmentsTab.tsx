@@ -2,32 +2,36 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase } from 'lucide-react';
-import type { Employee } from '@/types/supabase';
+
+interface BranchAssignment {
+  id: string;
+  role_name: string;
+  is_active: boolean;
+  branch: {
+    id: string;
+    name: string;
+    address?: string;
+  };
+}
 
 interface EmployeeBranchAssignmentsTabProps {
-  employee: Employee;
-  employeeId: string;
+  assignments: BranchAssignment[];
 }
 
 export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTabProps> = ({
-  employee,
-  employeeId
+  assignments
 }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Briefcase className="h-5 w-5" />
-          שיוכי סניפים
-        </CardTitle>
+        <CardTitle>שיוכים לסניפים</CardTitle>
       </CardHeader>
       <CardContent>
-        {employee.branch_assignments && employee.branch_assignments.length > 0 ? (
-          <div className="space-y-4">
-            {employee.branch_assignments.map((assignment) => (
-              <div key={assignment.id} className="p-4 border border-gray-200 rounded-lg">
-                <div className="flex items-center justify-between">
+        <div className="space-y-4">
+          {assignments.map((assignment) => (
+            <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="flex items-center space-x-3 space-x-reverse">
+                <div>
                   <div>
                     <h4 className="font-medium">{assignment.branch.name}</h4>
                     <p className="text-sm text-gray-500">{assignment.role_name}</p>
@@ -40,15 +44,12 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
                   </Badge>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">אין שיוכים</h3>
-            <p className="text-gray-500">העובד לא משויך לאף סניף</p>
-          </div>
-        )}
+            </div>
+          ))}
+          {assignments.length === 0 && (
+            <p className="text-gray-500 text-center py-4">אין שיוכים לסניפים</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

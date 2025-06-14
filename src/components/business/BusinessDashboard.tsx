@@ -31,7 +31,8 @@ export const BusinessDashboard: React.FC = () => {
     todayAttendance,
     requests,
     userRole,
-    isSuperAdmin
+    isSuperAdmin,
+    recentActivity
   } = useDashboardData();
 
   const { isModuleEnabled } = useBusinessModuleEnabled();
@@ -48,27 +49,6 @@ export const BusinessDashboard: React.FC = () => {
     }
     return `שלום${business?.name ? ` - ${business.name}` : ''}`;
   };
-
-  const recentActivity = [
-    {
-      title: 'נתונים אמיתיים זמינים',
-      description: 'המערכת מציגה נתונים אמיתיים מהמסד נתונים',
-      time: 'עכשיו',
-      type: 'system'
-    },
-    {
-      title: `${activeEmployees.length} עובדים פעילים`,
-      description: 'עובדים רשומים במערכת',
-      time: 'עדכון אחרון',
-      type: 'employee'
-    },
-    {
-      title: `${shifts?.length || 0} משמרות היום`,
-      description: 'משמרות מתוכננות להיום',
-      time: 'היום',
-      type: 'shift'
-    }
-  ];
 
   // Enhanced stats with more detailed information
   const enhancedStats = [
