@@ -31,7 +31,7 @@ export const SignDocumentPage: React.FC = () => {
     );
   }
 
-  const isAlreadySigned = document.status === 'signed' || document.signed_at;
+  const isAlreadySigned = document.status === 'signed' || !!document.signed_at;
   const signatureData = isValidSignatureData(document.digital_signature_data) 
     ? document.digital_signature_data 
     : null;
