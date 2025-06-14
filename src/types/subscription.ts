@@ -31,6 +31,9 @@ export interface BusinessSubscription {
   created_at: string;
   updated_at: string;
   subscription_plans?: SubscriptionPlan;
+  businesses?: {
+    name: string;
+  };
 }
 
 export interface BusinessModuleSubscription {

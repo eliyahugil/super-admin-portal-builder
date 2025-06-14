@@ -14,7 +14,13 @@ export const useSubscriptionPlans = () => {
         .order('plan_type, billing_cycle');
 
       if (error) throw error;
-      return data || [];
+      
+      // Type assertion to ensure proper typing
+      return (data || []).map(plan => ({
+        ...plan,
+        plan_type: plan.plan_type as 'basic' | 'intermediate' | 'full',
+        billing_cycle: plan.billing_cycle as 'monthly' | 'yearly' | 'trial'
+      }));
     },
   });
 

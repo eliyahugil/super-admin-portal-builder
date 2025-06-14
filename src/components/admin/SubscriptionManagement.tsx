@@ -7,14 +7,34 @@ import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Crown, Plus, Users, Calendar, Settings } from 'lucide-react';
-import { BusinessSubscription } from '@/types/subscription';
+
+// Extended interface for the joined query result
+interface BusinessSubscriptionWithDetails {
+  id: string;
+  business_id: string;
+  plan_id: string;
+  start_date: string;
+  end_date?: string;
+  is_active: boolean;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  subscription_plans: {
+    name: string;
+    plan_type: string;
+    billing_cycle: string;
+  };
+  businesses: {
+    name: string;
+  };
+}
 
 export const SubscriptionManagement: React.FC = () => {
   const { plans, isLoading: isLoadingPlans, getModulesForPlan } = useSubscriptionPlans();
   
   const { data: businessSubscriptions = [], isLoading: isLoadingSubscriptions } = useQuery({
     queryKey: ['business-subscriptions'],
-    queryFn: async (): Promise<BusinessSubscription[]> => {
+    queryFn: async (): Promise<BusinessSubscriptionWithDetails[]> => {
       const { data, error } = await supabase
         .from('business_subscriptions')
         .select(`
@@ -180,14 +200,14 @@ export const SubscriptionManagement: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">
-                          {(subscription as any).businesses?.name || 'עסק לא מזוהה'}
+                          {subscription.businesses?.name || 'עסק לא מזוהה'}
                         </h3>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          <Badge className={getPlanTypeColor((subscription as any).subscription_plans?.plan_type || '')}>
-                            {(subscription as any).subscription_plans?.name || 'תוכנית לא מזוהה'}
+                          <Badge className={getPlanTypeColor(subscription.subscription_plans?.plan_type || '')}>
+                            {subscription.subscription_plans?.name || 'תוכנית לא מזוהה'}
                           </Badge>
-                          <Badge className={getBillingCycleColor((subscription as any).subscription_plans?.billing_cycle || '')}>
-                            {getBillingCycleLabel((subscription as any).subscription_plans?.billing_cycle || '')}
+                          <Badge className={getBillingCycleColor(subscription.subscription_plans?.billing_cycle || '')}>
+                            {getBillingCycleLabel(subscription.subscription_plans?.billing_cycle || '')}
                           </Badge>
                         </div>
                         <div className="text-sm text-gray-600 mt-2">
