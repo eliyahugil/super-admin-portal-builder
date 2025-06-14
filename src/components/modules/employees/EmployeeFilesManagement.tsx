@@ -80,9 +80,9 @@ export const EmployeeFilesManagement: React.FC = () => {
   });
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return '0 בתים';
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ['בתים', 'ק״ב', 'מ״ב', 'ג״ב'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
@@ -183,7 +183,7 @@ export const EmployeeFilesManagement: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
-      <div className="mb-8">
+      <div className="mb-8 text-right">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">קבצי עובדים</h1>
         <p className="text-gray-600">ניהול וצפייה בקבצים של כל העובדים</p>
       </div>
@@ -191,45 +191,48 @@ export const EmployeeFilesManagement: React.FC = () => {
       {/* Filters */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 justify-end">
+            <span>סינון וחיפוש</span>
             <Filter className="h-5 w-5" />
-            סינון וחיפוש
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">חיפוש לפי שם עובד או קובץ</label>
+              <label className="text-sm font-medium text-right block">חיפוש לפי שם עובד או קובץ</label>
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="חפש עובד או קובץ..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10"
+                  className="pr-10 text-right"
+                  dir="rtl"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">סינון לפי תאריך העלאה</label>
+              <label className="text-sm font-medium text-right block">סינון לפי תאריך העלאה</label>
               <div className="relative">
                 <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="pr-10"
+                  className="pr-10 text-right"
+                  dir="rtl"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">סוג קובץ</label>
+              <label className="text-sm font-medium text-right block">סוג קובץ</label>
               <select
                 value={fileTypeFilter}
                 onChange={(e) => setFileTypeFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-right"
+                dir="rtl"
               >
                 <option value="">כל הסוגים</option>
                 <option value="pdf">PDF</option>
@@ -241,7 +244,7 @@ export const EmployeeFilesManagement: React.FC = () => {
           </div>
 
           {(searchTerm || dateFilter || fileTypeFilter) && (
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex gap-2 justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -259,7 +262,7 @@ export const EmployeeFilesManagement: React.FC = () => {
       </Card>
 
       {/* Results Summary */}
-      <div className="mb-6">
+      <div className="mb-6 text-right">
         <div className="text-sm text-gray-600">
           נמצאו {groupedFiles.length} עובדים עם {groupedFiles.reduce((sum, group) => sum + group.files.length, 0)} קבצים
         </div>
@@ -278,13 +281,20 @@ export const EmployeeFilesManagement: React.FC = () => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback>
-                        {group.employee.first_name.charAt(0)}{group.employee.last_name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
+                    {isExpanded ? (
+                      <ChevronUp className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 text-gray-400" />
+                    )}
                     
-                    <div>
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <span>{group.files.length} קבצים</span>
+                      <FileText className="h-3 w-3" />
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
                       <h3 className="font-semibold text-lg">
                         {group.employee.first_name} {group.employee.last_name}
                       </h3>
@@ -294,19 +304,12 @@ export const EmployeeFilesManagement: React.FC = () => {
                         </p>
                       )}
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      <FileText className="h-3 w-3" />
-                      {group.files.length} קבצים
-                    </Badge>
                     
-                    {isExpanded ? (
-                      <ChevronUp className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 text-gray-400" />
-                    )}
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback>
+                        {group.employee.first_name.charAt(0)}{group.employee.last_name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
                   </div>
                 </div>
               </CardHeader>
@@ -324,20 +327,23 @@ export const EmployeeFilesManagement: React.FC = () => {
                           <Card key={file.id} className="hover:shadow-md transition-shadow">
                             <CardContent className="p-4">
                               <div className="flex items-start justify-between mb-3">
-                                <FileText className="h-8 w-8 text-blue-600 flex-shrink-0" />
                                 <Badge variant="outline" className="text-xs">
                                   {getFileTypeLabel(file.file_type)}
                                 </Badge>
+                                <FileText className="h-8 w-8 text-blue-600 flex-shrink-0" />
                               </div>
                               
-                              <h4 className="font-medium text-sm mb-2 truncate" title={file.file_name}>
+                              <h4 className="font-medium text-sm mb-2 truncate text-right" title={file.file_name}>
                                 {file.file_name}
                               </h4>
                               
-                              <div className="space-y-1 text-xs text-gray-500 mb-3">
+                              <div className="space-y-1 text-xs text-gray-500 mb-3 text-right">
                                 <div>גודל: {formatFileSize(file.file_size)}</div>
-                                <div>
-                                  הועלה: {format(new Date(file.uploaded_at), 'dd/MM/yyyy', { locale: he })}
+                                <div className="flex items-center gap-1 justify-end">
+                                  <span>
+                                    {format(new Date(file.uploaded_at), 'dd/MM/yyyy', { locale: he })}
+                                  </span>
+                                  <Calendar className="h-3 w-3" />
                                 </div>
                               </div>
                               
@@ -347,8 +353,8 @@ export const EmployeeFilesManagement: React.FC = () => {
                                 className="w-full"
                                 onClick={() => handleDownload(file)}
                               >
-                                <Download className="h-3 w-3 ml-1" />
-                                הורד
+                                <span className="mr-1">הורד</span>
+                                <Download className="h-3 w-3" />
                               </Button>
                             </CardContent>
                           </Card>
