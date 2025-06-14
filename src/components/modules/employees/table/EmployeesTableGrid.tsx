@@ -23,17 +23,17 @@ export const EmployeesTableGrid: React.FC<EmployeesTableGridProps> = ({
   }
 
   return (
-    <div className="overflow-x-auto" dir="rtl">
-      <table className="w-full border-collapse bg-white" dir="rtl">
+    <div className="overflow-x-auto w-full" dir="rtl">
+      <table className="w-full min-w-[750px] sm:min-w-full border-collapse bg-white" dir="rtl">
         <thead>
           <tr className="bg-gray-50 border-b" dir="rtl">
-            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">פרטי עובד</th>
-            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">קשר</th>
-            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">סטטוס וסוג</th>
-            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">סניף</th>
-            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">פרטי עבודה</th>
-            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">סטטיסטיקות</th>
-            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">פעולות</th>
+            <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">פרטי עובד</th>
+            <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">קשר</th>
+            <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">סטטוס וסוג</th>
+            <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">סניף</th>
+            <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">פרטי עבודה</th>
+            <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">סטטיסטיקות</th>
+            <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-gray-700">פעולות</th>
           </tr>
         </thead>
         <tbody>
@@ -49,3 +49,4 @@ export const EmployeesTableGrid: React.FC<EmployeesTableGridProps> = ({
     </div>
   );
 };
+

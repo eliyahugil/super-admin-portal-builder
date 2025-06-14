@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CreateEmployeeDialog } from './CreateEmployeeDialog';
 import { CreateBranchDialog } from './CreateBranchDialog';
@@ -42,7 +41,7 @@ export const EmployeeManagement: React.FC = () => {
 
   return (
     <div
-      className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 flex flex-col gap-4 sm:gap-6"
+      className="container mx-auto px-2 sm:px-4 pt-2 pb-4 sm:py-8 flex flex-col gap-2 sm:gap-6"
       dir="rtl"
     >
       {/* Header */}
@@ -76,7 +75,7 @@ export const EmployeeManagement: React.FC = () => {
           onActiveTabChange={setActiveTab}
           employees={employees}
           archivedEmployees={archivedEmployees}
-          branches={branches as Branch[]}
+          branches={branches}
           onRefetchEmployees={refetchEmployees}
           onRefetchBranches={refetchBranches}
           onCreateBranch={() => setCreateBranchOpen(true)}
@@ -88,7 +87,7 @@ export const EmployeeManagement: React.FC = () => {
         open={createEmployeeOpen}
         onOpenChange={setCreateEmployeeOpen}
         onSuccess={handleEmployeeCreated}
-        branches={branches as Branch[]}
+        branches={branches}
       />
 
       <CreateBranchDialog

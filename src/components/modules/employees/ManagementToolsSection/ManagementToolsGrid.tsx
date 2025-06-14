@@ -8,7 +8,7 @@ export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({
   businessId
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
       <div className="w-full order-2 md:order-1">
         <ShiftsAdminTable businessId={businessId} />
       </div>
@@ -18,3 +18,4 @@ export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({
     </div>
   );
 };
+

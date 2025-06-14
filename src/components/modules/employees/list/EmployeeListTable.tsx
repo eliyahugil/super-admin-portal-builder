@@ -66,8 +66,8 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
     employees.every(emp => selectedEmployees.has(emp.id));
 
   return (
-    <div dir="rtl">
-      <Table>
+    <div dir="rtl" className="overflow-x-auto w-full">
+      <Table className="min-w-[750px] sm:min-w-full">
         <TableHeader>
           <TableRow dir="rtl">
             <TableHead className="w-12 text-right">
@@ -164,7 +164,7 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
                   )}
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {/* Profile Button - Primary Action */}
                     <Button
                       variant="default"
@@ -212,3 +212,4 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
     </div>
   );
 };
+
