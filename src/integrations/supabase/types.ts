@@ -1484,13 +1484,16 @@ export type Database = {
           id_number: string | null
           is_active: boolean | null
           is_archived: boolean
+          is_system_user: boolean
           last_name: string
           main_branch_id: string | null
           notes: string | null
+          password_hash: string | null
           phone: string | null
           preferred_shift_type: Database["public"]["Enums"]["shift_type"] | null
           termination_date: string | null
           updated_at: string | null
+          username: string | null
           weekly_hours_required: number | null
         }
         Insert: {
@@ -1506,15 +1509,18 @@ export type Database = {
           id_number?: string | null
           is_active?: boolean | null
           is_archived?: boolean
+          is_system_user?: boolean
           last_name: string
           main_branch_id?: string | null
           notes?: string | null
+          password_hash?: string | null
           phone?: string | null
           preferred_shift_type?:
             | Database["public"]["Enums"]["shift_type"]
             | null
           termination_date?: string | null
           updated_at?: string | null
+          username?: string | null
           weekly_hours_required?: number | null
         }
         Update: {
@@ -1530,15 +1536,18 @@ export type Database = {
           id_number?: string | null
           is_active?: boolean | null
           is_archived?: boolean
+          is_system_user?: boolean
           last_name?: string
           main_branch_id?: string | null
           notes?: string | null
+          password_hash?: string | null
           phone?: string | null
           preferred_shift_type?:
             | Database["public"]["Enums"]["shift_type"]
             | null
           termination_date?: string | null
           updated_at?: string | null
+          username?: string | null
           weekly_hours_required?: number | null
         }
         Relationships: [

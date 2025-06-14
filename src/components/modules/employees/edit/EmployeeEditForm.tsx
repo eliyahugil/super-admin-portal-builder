@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,6 +18,10 @@ interface EmployeeFormData {
   weekly_hours_required: number;
   notes: string;
   main_branch_id: string;
+  username?: string;
+  password?: string; // only for edit form
+  is_system_user?: boolean;
+  termination_date?: string | null;
 }
 
 interface EmployeeEditFormProps {
@@ -29,6 +33,9 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
   formData,
   setFormData,
 }) => {
+  // Toggle password reveal for the password field (optional—security)
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className="space-y-4" dir="rtl">
       <div className="grid grid-cols-2 gap-4">
@@ -110,21 +117,38 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
             id="hire_date"
             type="date"
             value={formData.hire_date}
-            onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
-            className="text-right"
+            readOnly
+            className="text-right bg-gray-100 pointer-events-none"
+            tabIndex={-1}
           />
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="weekly_hours_required">שעות שבועיות נדרשות</Label>
-        <Input
-          id="weekly_hours_required"
-          type="number"
-          value={formData.weekly_hours_required}
-          onChange={(e) => setFormData({ ...formData, weekly_hours_required: parseInt(e.target.value) || 0 })}
-          className="text-right"
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="termination_date">תאריך סיום</Label>
+          <Input
+            id="termination_date"
+            type="date"
+            value={formData.termination_date || ''}
+            onChange={(e) => setFormData({ ...formData, termination_date: e.target.value })}
+            className="text-right"
+            min={formData.hire_date || undefined}
+          />
+          <div className="text-xs text-gray-500 mt-1">
+            אם תציין תאריך סיום בעבר - העובד יעבור אוטומטית לארכיון.
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="weekly_hours_required">שעות שבועיות נדרשות</Label>
+          <Input
+            id="weekly_hours_required"
+            type="number"
+            value={formData.weekly_hours_required}
+            onChange={(e) => setFormData({ ...formData, weekly_hours_required: parseInt(e.target.value) || 0 })}
+            className="text-right"
+          />
+        </div>
       </div>
 
       <div>
@@ -138,7 +162,50 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
         />
       </div>
 
-      <div className="flex items-center gap-2 justify-end">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="username">שם משתמש למערכת</Label>
+          <Input
+            id="username"
+            value={formData.username || ''}
+            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+            placeholder="ליצירת גישת מערכת"
+            className="text-right"
+          />
+        </div>
+        <div>
+          <Label htmlFor="password">סיסמה חדשה</Label>
+          <div className="flex gap-2">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              value={formData.password || ''}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder="הזנת סיסמה תעשה עדכון"
+              autoComplete="new-password"
+              className="text-right"
+            />
+            <button
+              type="button"
+              tabIndex={-1}
+              className="px-2 rounded border text-xs"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label="הצג סיסמה"
+            >
+              {showPassword ? "🔒" : "👁"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 justify-end">
+        <Label htmlFor="is_system_user">משתמש מערכת</Label>
+        <input
+          id="is_system_user"
+          type="checkbox"
+          checked={!!formData.is_system_user}
+          onChange={(e) => setFormData({ ...formData, is_system_user: e.target.checked })}
+        />
         <Label htmlFor="is_active">עובד פעיל</Label>
         <input
           id="is_active"
