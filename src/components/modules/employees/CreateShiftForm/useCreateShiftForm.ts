@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Branch } from '@/types/branch';
+import { addDays, eachDayOfInterval, isWithinInterval } from "date-fns";
 
 // Archive/unarchive helpers for scheduled shifts
 export const useScheduledShiftsArchiver = () => {
@@ -46,16 +46,28 @@ export const useScheduledShiftsArchiver = () => {
   return { archiveShift, unarchiveShift };
 };
 
+function getDatesForSelectedWeekdays(start: string, end: string, weekdays: number[]): string[] {
+  // start & end are yyyy-MM-dd strings
+  if (!start || !end || weekdays.length === 0) return [];
+  const from = new Date(start);
+  const to = new Date(end);
+  const all = eachDayOfInterval({ start: from, end: to });
+  return all
+    .filter((d) => weekdays.includes(d.getDay()))
+    .map((d) => d.toISOString().slice(0,10));
+}
+
 export const useCreateShiftForm = (
   businessId?: string,
   branches?: Branch[]
 ) => {
   const { toast } = useToast();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
-  // now for multi branch selection
   const [selectedBranchId, setSelectedBranchId] = useState<string[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [shiftDates, setShiftDates] = useState<string[]>([]);
+  const [weekdayRange, setWeekdayRange] = useState<{start: string; end: string}>({start: '', end: ''});
+  const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([]);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -64,16 +76,26 @@ export const useCreateShiftForm = (
     setSelectedTemplateId('');
     setSelectedBranchId([]);
     setShiftDates([]);
+    setWeekdayRange({start: '', end: ''});
+    setSelectedWeekdays([]);
     setNotes('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedTemplateId || shiftDates.length === 0 || !selectedBranchId || selectedBranchId.length === 0) {
+    // חייב לבחור template & סניף
+    if (
+      !selectedTemplateId ||
+      !selectedBranchId || selectedBranchId.length === 0 ||
+      (
+        (shiftDates.length === 0) &&
+        (!(weekdayRange.start && weekdayRange.end && selectedWeekdays.length > 0))
+      )
+    ) {
       toast({
         title: "שגיאה",
-        description: "אנא מלא את כל השדות הנדרשים (תבנית, תאריכים, סניפים)",
+        description: "אנא מלא את כל השדות הנדרשים (תבנית, תאריכים/חזרות, סניפים)",
         variant: "destructive"
       });
       return;
@@ -91,9 +113,28 @@ export const useCreateShiftForm = (
     setSubmitting(true);
 
     try {
-      // For every date and every branch, create a shift row
+      let allDates: string[] = [];
+
+      // אם בחרו יום/ים בשבוע וטווח – חישוב כל התאריכים הרלוונטיים
+      if (weekdayRange.start && weekdayRange.end && selectedWeekdays.length > 0) {
+        allDates = getDatesForSelectedWeekdays(weekdayRange.start, weekdayRange.end, selectedWeekdays);
+      }
+
+      // להוסיף גם תאריכים בודדים (avoid duplicates)
+      const uniqueDates = Array.from(new Set([...shiftDates, ...allDates]));
+
+      if (uniqueDates.length === 0) {
+        toast({
+          title: "שגיאה",
+          description: "לא נבחרו תאריכים מתאימים.",
+          variant: "destructive"
+        });
+        setSubmitting(false);
+        return;
+      }
+
       const branchIds = Array.isArray(selectedBranchId) ? selectedBranchId : [selectedBranchId];
-      const newShifts = shiftDates.flatMap((shiftDate) =>
+      const newShifts = uniqueDates.flatMap((shiftDate) =>
         branchIds.map(branch_id => {
           const shiftData: any = {
             shift_template_id: selectedTemplateId,
@@ -101,7 +142,7 @@ export const useCreateShiftForm = (
             branch_id,
             is_assigned: !!selectedEmployeeId,
             notes: notes || null,
-            business_id: businessId // <-- Make sure business_id is always included!
+            business_id: businessId
           };
           if (selectedEmployeeId) shiftData.employee_id = selectedEmployeeId;
           return shiftData;
@@ -144,6 +185,10 @@ export const useCreateShiftForm = (
     notes,
     setNotes,
     submitting,
-    handleSubmit
+    handleSubmit,
+    weekdayRange,
+    setWeekdayRange,
+    selectedWeekdays,
+    setSelectedWeekdays,
   };
 };

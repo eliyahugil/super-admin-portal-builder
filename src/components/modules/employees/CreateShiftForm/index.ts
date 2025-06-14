@@ -8,3 +8,4 @@ export { ShiftNotesInput } from './ShiftNotesInput';
 export { EmployeeSelector } from './EmployeeSelector';
 export { ShiftTemplateSelector } from './ShiftTemplateSelector';
 export { useCreateShiftForm } from './useCreateShiftForm';
+export { WeekdaySelector } from './WeekdaySelector';

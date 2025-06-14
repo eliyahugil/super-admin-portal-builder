@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CreateShiftFormHeader } from './CreateShiftFormHeader';
@@ -9,6 +10,7 @@ import { useCreateShiftForm } from './useCreateShiftForm';
 import { QuickShiftTemplateCreatorDialog } from './QuickShiftTemplateCreatorDialog';
 import { BranchSelector } from './BranchSelector';
 import { useBranchesData } from '@/hooks/useBranchesData';
+import { WeekdaySelector } from './WeekdaySelector';
 
 interface Employee {
   id: string;
@@ -36,7 +38,6 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
   shiftTemplates
 }) => {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
-  // תבניות משמרת ב-state לריענון
   const [templates, setTemplates] = useState<ShiftTemplate[]>(shiftTemplates || []);
 
   React.useEffect(() => {
@@ -47,7 +48,6 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
     setTemplates(prev => [...prev, template]);
   };
 
-  // קבלת סניפים - לשיוך משמרת
   const { data: branches, isLoading: branchesLoading } = useBranchesData(businessId);
 
   const {
@@ -62,19 +62,19 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
     notes,
     setNotes,
     submitting,
-    handleSubmit
+    handleSubmit,
+    weekdayRange,
+    setWeekdayRange,
+    selectedWeekdays,
+    setSelectedWeekdays,
   } = useCreateShiftForm(businessId, branches);
 
   React.useEffect(() => {
-    // בוחרים אוטומטית תבנית חדשה אם זו היחידה
     if (!selectedTemplateId && templates.length === 1) {
       setSelectedTemplateId(templates[0].id);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [templates]);
+  }, [templates, selectedTemplateId, setSelectedTemplateId]);
 
-  // --- PATCH for setSelectedBranchId compatibility ---
-  // Always convert to string[] for multi-select, or [val] for single-select
   const handleBranchChange = (val: string | string[]) => {
     if (Array.isArray(val)) {
       setSelectedBranchId(val);
@@ -83,7 +83,6 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
     }
   };
 
-  // התממשקות חדשה: Multi-date shift creation + branch selection
   return (
     <div className="bg-white rounded-2xl shadow-md p-6 space-y-4" dir="rtl">
       <CreateShiftFormHeader />
@@ -95,7 +94,7 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
           onOpenCreator={() => setShowTemplateDialog(true)}
         />
 
-        {/* בחירת תאריכים מרובים */}
+        {/* בחירת תאריכים מרובים בודדים */}
         <div className="space-y-2">
           <label className="text-sm text-gray-600 font-medium">
             תאריך משמרת (ניתן לבחור מספר תאריכים) *
@@ -126,7 +125,40 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
           </div>
         </div>
 
-        {/* בחירת סניפים מרובים */}
+        {/* מבנה חדש: ימים + טווח */}
+        <div className="space-y-2 bg-blue-50 rounded-xl p-3">
+          <WeekdaySelector
+            selectedWeekdays={selectedWeekdays}
+            onChange={setSelectedWeekdays}
+            disabled={submitting}
+          />
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <div>
+              <label className="text-xs text-gray-600">מתאריך</label>
+              <input
+                type="date"
+                value={weekdayRange.start}
+                onChange={e => setWeekdayRange({...weekdayRange, start: e.target.value})}
+                className="border rounded-xl p-2 ml-2"
+                disabled={submitting}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-600">עד תאריך</label>
+              <input
+                type="date"
+                value={weekdayRange.end}
+                onChange={e => setWeekdayRange({...weekdayRange, end: e.target.value})}
+                className="border rounded-xl p-2"
+                disabled={submitting}
+              />
+            </div>
+            {selectedWeekdays.length === 0 && (weekdayRange.start || weekdayRange.end) && (
+              <span className="text-xs text-red-400 mr-4">יש לבחור לפחות יום אחד</span>
+            )}
+          </div>
+        </div>
+
         <BranchSelector
           selectedBranchId={selectedBranchId}
           onBranchChange={handleBranchChange}
@@ -154,7 +186,6 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
         </Button>
       </form>
 
-      {/* Dialog ליצירה מהירה של תבנית */}
       <QuickShiftTemplateCreatorDialog
         open={showTemplateDialog}
         onOpenChange={setShowTemplateDialog}
