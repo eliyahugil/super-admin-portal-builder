@@ -1,26 +1,15 @@
+
+// Refactored: Delegates routing to per-domain routers
+
 import React from 'react';
-import { useParams } from 'react-router-dom';
-import { EmployeeProfilePage } from '../employees/profile/EmployeeProfilePage';
-import { BusinessSettings } from '../settings/BusinessSettings';
-import { BusinessSettingsMain } from '../settings/BusinessSettingsMain';
-import { BusinessProfileEdit } from '../settings/BusinessProfileEdit';
-import { UsersManagement } from '../settings/UsersManagement';
-import { EmployeeManagement } from '../employees/EmployeeManagement';
-import { ShiftManagement } from '../employees/ShiftManagement';
-import { AttendanceManagement } from '../employees/AttendanceManagement';
-import BusinessModulesPage from '../settings/BusinessModulesPage';
-import { BranchManagement } from '../branches/BranchManagement';
-import { BranchCreation } from '../branches/BranchCreation';
-import { BranchRoles } from '../branches/BranchRoles';
-import { FinanceManagement } from '../finance/FinanceManagement';
-import { InventoryManagement } from '../inventory/InventoryManagement';
-import { OrdersManagement } from '../orders/OrdersManagement';
-import { ProjectsManagement } from '../projects/ProjectsManagement';
-import { IntegrationManagement } from '../integrations/IntegrationManagement';
-import { CustomerManagement } from '../customers/CustomerManagement';
-import { EmployeeFilesManagement } from '../employees/EmployeeFilesManagement';
-import { EmployeeRequestsList } from '../employees/EmployeeRequestsList';
-import { EmployeeDocuments } from '../employees/EmployeeDocuments';
+import { EmployeesModuleRouter } from './EmployeesModuleRouter';
+import { SettingsModuleRouter } from './SettingsModuleRouter';
+import { BranchesModuleRouter } from './BranchesModuleRouter';
+import { ShiftsModuleRouter } from './ShiftsModuleRouter';
+import { CustomersModuleRouter } from './CustomersModuleRouter';
+import { IntegrationsModuleRouter } from './IntegrationsModuleRouter';
+import { BusinessModuleRouter } from './BusinessModuleRouter';
+import { DefaultModuleRouter } from './DefaultModuleRouter';
 
 interface ModuleRouteHandlerProps {
   fullRoute: string;
@@ -28,137 +17,34 @@ interface ModuleRouteHandlerProps {
   businessId?: string;
 }
 
-export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({ 
-  fullRoute, 
+export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
+  fullRoute,
   employeeId,
-  businessId 
+  businessId
 }) => {
-  console.log('ModuleRouteHandler - Routing details:', {
-    fullRoute,
-    employeeId,
-    businessId,
-    currentPath: window.location.pathname
-  });
+  // fullRoute could be nested: e.g., "employees/employee-files"
+  const [main, ...restArr] = fullRoute.split('/');
+  const route = restArr.join('/');
 
-  // Special handling for employee profile routes
-  if (fullRoute === 'employees/profile' || (fullRoute === 'employees' && employeeId)) {
-    console.log('🔍 Rendering EmployeeProfilePage with employeeId:', employeeId);
-    return <EmployeeProfilePage />;
-  }
-
-  switch (fullRoute) {
-    // Settings routes
-    case 'settings':
-      return businessId ? <BusinessSettingsMain /> : <BusinessSettings />;
-    case 'settings/main':
-      return <BusinessSettingsMain />;
-    case 'settings/profile':
-      return <BusinessProfileEdit />;
-    case 'settings/users':
-      return <UsersManagement />;
-    case 'settings/modules':
-      return <BusinessModulesPage />;
-    case 'settings/permissions':
-      return <div className="p-6 text-center">רכיב הרשאות בפיתוח</div>;
-
-    // Employee routes
+  switch (main) {
     case 'employees':
-      return <EmployeeManagement />;
-    case 'employees/attendance':
-      return <AttendanceManagement />;
-    case 'employees/employee-files':
-      return <EmployeeFilesManagement />;
-    case 'employees/employee-requests':
-      return <EmployeeRequestsList businessId={businessId} />;
-    case 'employees/employee-docs':
-      return (
-        <div className="max-w-4xl mx-auto py-8" dir="rtl">
-          <h2 className="text-2xl font-bold mb-4">מסמכים לחתימה</h2>
-          <p className="bg-purple-50 rounded-lg p-4 mb-4 text-purple-700">
-            כאן ניתן להעלות מסמכים, לשלוח לעובדים לחתימה ולעקוב אחרי סטטוס המסמכים.
-          </p>
-          <EmployeeDocuments
-            employeeId={employeeId || ''}
-            employeeName="(כל העובדים)"
-            canEdit={true}
-          />
-        </div>
-      );
-    case 'employees/shifts':
-      return <ShiftManagement />;
-    case 'employees/import':
-      return <EmployeeManagement />;
-
-    // Branch routes
+      return <EmployeesModuleRouter route={route} employeeId={employeeId} businessId={businessId} />;
+    case 'settings':
+      return <SettingsModuleRouter route={route} businessId={businessId} />;
     case 'branches':
-      return <BranchManagement />;
-    case 'branches/create':
-      return <BranchCreation />;
-    case 'branches/branch-roles':
-      return <BranchRoles />;
-
-    // Shift routes
+      return <BranchesModuleRouter route={route} />;
     case 'shifts':
-      return <ShiftManagement />;
-    case 'shifts/requests':
-      return <div className="p-6 text-center">רכיב בקשות משמרת בפיתוח</div>;
-    case 'shifts/approval':
-      return <div className="p-6 text-center">רכיב אישור משמרות בפיתוח</div>;
-    case 'shifts/schedule':
-      return <div className="p-6 text-center">רכיב לוח משמרות בפיתוח</div>;
-    case 'shifts/admin':
-      return <div className="p-6 text-center">רכיב כלי מנהל בפיתוח</div>;
-    case 'shifts/tokens':
-      return <div className="p-6 text-center">רכיב טוקני הגשה בפיתוח</div>;
-
-    // Customer routes
+      return <ShiftsModuleRouter route={route} />;
     case 'customers':
-      return <CustomerManagement />;
-    case 'customers/agreements':
-      return <CustomerManagement />;
-    case 'customers/signatures':
-      return <CustomerManagement />;
-
-    // Business modules
-    case 'finance':
-      return <FinanceManagement />;
-    case 'inventory':
-      return <InventoryManagement />;
-    case 'orders':
-      return <OrdersManagement />;
-    case 'projects':
-      return <ProjectsManagement />;
-
-    // Integration routes
+      return <CustomersModuleRouter route={route} />;
     case 'integrations':
-      return <IntegrationManagement />;
-    case 'integrations/google-maps':
-      return <div className="p-6 text-center">רכיב Google Maps בפיתוח</div>;
-    case 'integrations/whatsapp':
-      return <div className="p-6 text-center">רכיב WhatsApp בפיתוח</div>;
-    case 'integrations/facebook':
-      return <div className="p-6 text-center">רכיב Facebook בפיתוח</div>;
-    case 'integrations/invoices':
-      return <div className="p-6 text-center">רכיב חשבוניות בפיתוח</div>;
-    case 'integrations/crm':
-      return <div className="p-6 text-center">רכיב CRM בפיתוח</div>;
-    case 'integrations/payments':
-      return <div className="p-6 text-center">רכיב תשלומים בפיתוח</div>;
-
+      return <IntegrationsModuleRouter route={route} />;
+    case 'finance':
+    case 'inventory':
+    case 'orders':
+    case 'projects':
+      return <BusinessModuleRouter route={main} />;
     default:
-      return (
-        <div className="p-6 text-center">
-          <h2 className="text-xl font-semibold mb-4">המודול לא נמצא</h2>
-          <p>הנתיב "{fullRoute}" אינו קיים במערכת</p>
-          <div className="mt-4 text-sm text-gray-500">
-            <p>פרטי ניתוב נוכחיים:</p>
-            <div className="bg-gray-100 p-3 rounded mt-2 text-left font-mono">
-              <p>fullRoute: {fullRoute}</p>
-              <p>employeeId: {employeeId || 'לא הוגדר'}</p>
-              <p>window.location.pathname: {window.location.pathname}</p>
-            </div>
-          </div>
-        </div>
-      );
+      return <DefaultModuleRouter fullRoute={fullRoute} employeeId={employeeId} />;
   }
 };
