@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
@@ -16,24 +16,19 @@ interface EmployeeTabsListProps {
   setActiveTab: (tab: string) => void;
 }
 
+/**
+ * תצוגת טאבים רספונסיבית ללא גלילה אופקית – הטאבים נשברים לשורות נוספות במקרה הצורך.
+ */
 export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   availableTabs,
   setActiveTab
 }) => {
-  const listRef = useRef<HTMLDivElement | null>(null);
-
-  // גלילה אוטומטית לצד ימין אחרי רינדור (ברירת מחדל RTL – מימין)
-  useEffect(() => {
-    const el = listRef.current;
-    if (el) {
-      el.scrollLeft = el.scrollWidth;
-    }
-  }, [availableTabs.length]);
-
   return (
     <TabsList
-      ref={listRef}
-      className="w-full flex gap-2 overflow-x-auto px-1 mb-2 min-w-0 scrollbar-thin scrollbar-thumb-gray-200"
+      className="
+        w-full flex flex-wrap justify-start gap-2 px-1 mb-2 min-w-0
+        bg-muted/40
+      "
       dir="rtl"
       style={{ direction: 'rtl' }}
     >
@@ -42,7 +37,13 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
           key={tab.id}
           value={tab.id}
           onClick={() => setActiveTab(tab.id)}
-          className="relative flex items-center justify-end flex-row-reverse gap-1 whitespace-nowrap px-3 py-2 text-[14px] rounded-md focus:z-10 min-w-[110px] max-w-xs transition-colors"
+          // התאמות עיצוב לטאבים בשורות מרובות
+          className="
+            relative flex items-center
+            justify-end flex-row-reverse gap-1 whitespace-nowrap
+            px-3 py-2 text-[14px] rounded-md focus:z-10 min-w-[110px] max-w-xs transition-colors
+            shadow-sm bg-background
+          "
           title={tab.description}
         >
           <tab.icon className="h-4 w-4 ml-1 shrink-0" />
@@ -57,4 +58,3 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
     </TabsList>
   );
 };
-
