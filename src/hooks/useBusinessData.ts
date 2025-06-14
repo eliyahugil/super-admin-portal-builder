@@ -36,9 +36,8 @@ export const useBusinessData = <T extends BaseEntity = BaseEntity>({
       throw new Error('Business ID is missing');
     }
 
-    // שמירה על טיפוס נכון מול Supabase Client - assert את שם הטבלה
     let query = supabase
-      .from(tableName as 'employees' | 'branches' | 'customers')
+      .from(tableName)
       .select(select)
       .eq('business_id', businessId);
 
@@ -64,8 +63,8 @@ export const useBusinessData = <T extends BaseEntity = BaseEntity>({
     if (error) {
       throw new Error(error.message);
     }
-
-    return Array.isArray(data) ? (data as T[]) : [];
+    // Fix for TS error: convert to unknown first, then T[]
+    return Array.isArray(data) ? (data as unknown as T[]) : [];
   };
 
   return useQuery<T[], Error>({
