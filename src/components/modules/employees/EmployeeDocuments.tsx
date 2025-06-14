@@ -1,8 +1,9 @@
+
 // Refactored: clean orchestrator with focused logic, helpers and header extracted.
 
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -10,6 +11,10 @@ import { getFileType } from './helpers/documentHelpers';
 import { EmployeeDocumentCard } from './EmployeeDocumentCard';
 import { EmployeeDocumentsEmptyState } from './EmployeeDocumentsEmptyState';
 import { EmployeeDocumentsHeader } from './EmployeeDocumentsHeader';
+
+// hooks - חדשים
+import { useEmployeeDocumentReminders } from './hooks/useEmployeeDocumentReminders';
+import { useEmployeeDocumentDelete } from './hooks/useEmployeeDocumentDelete';
 
 interface EmployeeDocumentsProps {
   employeeId: string;
@@ -23,11 +28,21 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   canEdit = true
 }) => {
   const [uploading, setUploading] = useState(false);
-  const [reminderLoading, setReminderLoading] = useState<string | null>(null);
-  const [reminderLog, setReminderLog] = useState<Record<string, any[]>>({});
   const { toast } = useToast();
   const { profile, user } = useAuth();
   const queryClient = useQueryClient();
+
+  // תזכורות באמצעות hook חדש
+  const {
+    reminderLog,
+    reminderLoading,
+    fetchReminders,
+    sendReminder,
+    setReminderLog
+  } = useEmployeeDocumentReminders(employeeId);
+
+  // מחיקת מסמך - hook חדש
+  const deleteDocumentMutation = useEmployeeDocumentDelete(employeeId);
 
   // Query: Get employee documents
   const { data: documents, isLoading } = useQuery({
@@ -46,28 +61,6 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       return data;
     },
     enabled: !!employeeId,
-  });
-
-  // Mutation: Delete document
-  const deleteDocumentMutation = useMutation({
-    mutationFn: async ({ documentId, filePath }: { documentId: string; filePath: string }) => {
-      await supabase.storage.from('employee-files').remove([filePath]);
-      await supabase.from('employee_documents').delete().eq('id', documentId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
-      toast({
-        title: 'הצלחה',
-        description: 'המסמך נמחק בהצלחה',
-      });
-    },
-    onError: () => {
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן למחוק את המסמך',
-        variant: 'destructive',
-      });
-    },
   });
 
   // File upload handler
@@ -137,54 +130,6 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     } finally {
       setUploading(false);
       event.target.value = '';
-    }
-  };
-
-  // Reminder fetch and send functions (logic unchanged, passing as props)
-  const fetchReminders = async (docId: string) => {
-    const { data, error } = await supabase
-      .from('employee_document_reminders')
-      .select('id, sent_at, message, reminder_type, sent_by')
-      .eq('document_id', docId)
-      .order('sent_at', { ascending: false });
-    if (!error) setReminderLog((prev) => ({ ...prev, [docId]: data }));
-  };
-
-  const sendReminder = async (document: any) => {
-    setReminderLoading(document.id);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.id) throw new Error('No authenticated user!');
-      const { error } = await supabase
-        .from('employee_document_reminders')
-        .insert({
-          document_id: document.id,
-          employee_id: document.employee_id,
-          sent_by: user.id,
-          reminder_type: 'system',
-          message: `תזכורת נשלחה על ידי מנהל המערכת בתאריך ${new Date().toLocaleString('he-IL')}`,
-        });
-      if (error) throw error;
-
-      await supabase.from('employee_documents').update({
-        reminder_count: (document.reminder_count ?? 0) + 1,
-        reminder_sent_at: new Date().toISOString()
-      }).eq('id', document.id);
-
-      toast({
-        title: 'תזכורת נשלחה',
-        description: 'נשלחה תזכורת לעובד עבור מסמך זה',
-      });
-      fetchReminders(document.id);
-      queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
-    } catch (e: any) {
-      toast({
-        title: 'שגיאה בשליחת תזכורת',
-        description: e.message ?? 'תקלה בשליחת התזכורת. נסו שוב.',
-        variant: 'destructive',
-      });
-    } finally {
-      setReminderLoading(null);
     }
   };
 
