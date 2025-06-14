@@ -1,4 +1,6 @@
 
+// תיקון טיפוסים ושיפור יציבות לטייפסקריפט
+
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
@@ -16,26 +18,11 @@ interface UseBusinessDataOptions {
   statusField?: string;
 }
 
-interface BaseEntity {
-  id: string;
-  [key: string]: unknown;
-}
-
-// Type Guard בסיסי עבור BaseEntity (למניעת פירוק טיפוס עמוק)
-function isBaseEntity(obj: unknown): obj is BaseEntity {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'id' in obj &&
-    typeof (obj as { id: unknown }).id === 'string'
-  );
-}
-
 /**
  * Hook אוניברסלי לשליפת נתוני מודול עסקי בצורה בטוחה ושטוחה.
  * Returns data: T[] רק עבור רשומות שיש להן id, אחרת [].
  */
-export function useBusinessData<T extends BaseEntity = BaseEntity>(
+export function useBusinessData<T = any>(
   options: UseBusinessDataOptions
 ): UseQueryResult<T[], Error> {
   const {
@@ -50,7 +37,6 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
   const { businessId: contextBusinessId } = useCurrentBusiness();
   const businessId = selectedBusinessId || contextBusinessId;
 
-  // הפונקציה תמיד מחזירה unknown[] ואחרי־כן מסננת ואופה
   const fetchData = async (): Promise<T[]> => {
     if (!businessId) throw new Error('Business ID is missing');
     let query = supabase
@@ -79,15 +65,18 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
 
     if (error) throw new Error(error.message);
 
-    // convert to array only if possible
+    // החזר רק רשומות עם id תקין
     const arr: unknown[] = Array.isArray(data) ? data : [];
-
-    // מסנן ידנית הרשומות עם id בלבד
-    const filtered: T[] = arr.filter(isBaseEntity) as T[];
+    // נזהה עצמים שהם אובייקט ויש להם id
+    const filtered: T[] = arr.filter(e =>
+      typeof e === 'object' &&
+      e !== null &&
+      'id' in e &&
+      typeof (e as any).id === 'string'
+    ) as T[];
     return filtered;
   };
 
-  // מניעת טיפוס עמוק ושגיאת TypeScript – עושים cast ידני אחרי השליפה
   return useQuery<T[], Error>({
     queryKey: [...queryKey, filter, businessId],
     queryFn: fetchData,
