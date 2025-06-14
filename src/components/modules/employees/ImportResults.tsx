@@ -5,19 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+interface ImportError {
+  row: number;
+  employee: string;
+  error: string;
+}
+
+interface ImportResult {
+  success: boolean;
+  importedCount: number;
+  errorCount: number;
+  message: string;
+  errors: ImportError[];
+  importedEmployees: any[];
+}
+
 interface ImportResultsProps {
-  result: {
-    success: boolean;
-    importedCount: number;
-    errorCount: number;
-    message: string;
-    errors: Array<{
-      row: number;
-      employee: string;
-      error: string;
-    }>;
-    importedEmployees: any[];
-  } | null;
+  result: ImportResult | null;
   onClose: () => void;
 }
 

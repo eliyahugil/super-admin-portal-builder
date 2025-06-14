@@ -21,8 +21,7 @@ interface BaseEntity {
 }
 
 /**
- * This hook avoids deep type instantiation by keeping all generics out of fetchers,
- * and applies a single cast with guards at the useQuery level.
+ * Simplified hook that fetches business data with proper type safety
  */
 export function useBusinessData<T extends BaseEntity = BaseEntity>(
   options: UseBusinessDataOptions
@@ -39,11 +38,11 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
   const { businessId: contextBusinessId } = useCurrentBusiness();
   const businessId = selectedBusinessId || contextBusinessId;
 
-  // Always fetch unknown[], strictly returning [] on error or non-array
-  const fetchData = async (): Promise<unknown[]> => {
+  const fetchData = async (): Promise<T[]> => {
     if (!businessId) {
       throw new Error('Business ID is missing');
     }
+
     let query = supabase
       .from(tableName)
       .select(select)
@@ -72,28 +71,22 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
       throw new Error(error.message);
     }
 
-    // Explicitly handle null and non-array data
-    if (!data || !Array.isArray(data)) {
-      return [];
-    }
-    if (data.length > 0 && typeof data[0] === "object" && data[0] && "error" in data[0]) {
-      // Defensive: skip errored array
+    // Return empty array if no data
+    if (!data) {
       return [];
     }
 
-    return data;
+    // Filter out invalid items and ensure they have required properties
+    const validItems = data.filter((item): item is T => {
+      return item && typeof item === 'object' && 'id' in item;
+    });
+
+    return validItems;
   };
 
   return useQuery<T[], Error>({
     queryKey: [...queryKey, filter, businessId],
-    queryFn: async () => {
-      const res = await fetchData();
-      // Defensive at runtime: only take items with an id property
-      const filtered = Array.isArray(res)
-        ? res.filter((d): d is T => typeof d === "object" && d !== null && "id" in d)
-        : [];
-      return filtered;
-    },
+    queryFn: fetchData,
     enabled: !!businessId,
     retry: false,
   });

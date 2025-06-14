@@ -27,7 +27,8 @@ export const IntegrationActions: React.FC<IntegrationActionsProps> = ({
 }) => {
   const handleDelete = () => {
     if (businessIntegration && onDelete) {
-      if (confirm(`האם אתה בטוח שברצונך למחוק את האינטגרציה "${businessIntegration.display_name}"?`)) {
+      const confirmed = window.confirm(`האם אתה בטוח שברצונך למחוק את האינטגרציה "${businessIntegration.display_name}"?`);
+      if (confirmed) {
         onDelete(businessIntegration.id);
       }
     }
