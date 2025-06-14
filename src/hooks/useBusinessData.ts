@@ -17,6 +17,36 @@ interface UseBusinessDataOptions {
 }
 
 /**
+ * פונקציה נפרדת לבניית השאילתה - מונעת רקורסיה אין-סופית של TypeScript
+ */
+function buildQuery(
+  tableName: AllowedTableNames,
+  businessId: string | null,
+  filter: DataFilter,
+  select: string,
+  statusField: string
+) {
+  let query = supabase.from(tableName).select(select);
+
+  if (businessId) {
+    query = query.eq('business_id', businessId);
+  }
+
+  switch (filter) {
+    case 'active':
+      return query.eq('is_archived', false).order('created_at', { ascending: false });
+    case 'archived':
+      return query.eq('is_archived', true).order('created_at', { ascending: false });
+    case 'deleted':
+      return query.eq('is_deleted', true).order('created_at', { ascending: false });
+    case 'pending':
+      return query.eq(statusField, 'pending').order('created_at', { ascending: false });
+    default:
+      throw new Error(`Unsupported filter: ${filter}`);
+  }
+}
+
+/**
  * Hook אוניברסלי לשליפת נתוני מודול עסקי בצורה בטוחה ושטוחה.
  * מבטיח הפרדת נתונים בין עסקים
  */
@@ -49,32 +79,7 @@ export function useBusinessData<T = any>(
       throw new Error('Business ID is required for data access');
     }
 
-    let query = supabase.from(tableName).select(select);
-
-    // MANDATORY: Apply business filter for data isolation
-    if (businessId) {
-      console.log(`🔒 SECURITY: Adding business filter: ${businessId}`);
-      query = query.eq('business_id', businessId);
-    }
-
-    // Apply status filters
-    switch (filter) {
-      case 'active':
-        query = query.eq('is_archived', false).order('created_at', { ascending: false });
-        break;
-      case 'archived':
-        query = query.eq('is_archived', true).order('created_at', { ascending: false });
-        break;
-      case 'deleted':
-        query = query.eq('is_deleted', true).order('created_at', { ascending: false });
-        break;
-      case 'pending':
-        query = query.eq(statusField, 'pending').order('created_at', { ascending: false });
-        break;
-      default:
-        throw new Error(`Unsupported filter: ${filter}`);
-    }
-
+    const query = buildQuery(tableName, businessId, filter, select, statusField);
     const { data, error } = await query;
 
     if (error) {
