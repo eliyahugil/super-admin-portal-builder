@@ -5,7 +5,7 @@ import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 type AllowedTableNames = 'employees' | 'branches' | 'customers';
 
-interface UseArchivedDataOptions {
+interface UseActiveDataOptions {
   tableName: AllowedTableNames;
   queryKey: string[];
   selectedBusinessId?: string | null;
@@ -16,16 +16,16 @@ type Result<T> =
   | { success: true; data: T[] }
   | { success: false; error: string };
 
-export const useArchivedData = <T = any>({
+export const useActiveData = <T = any>({
   tableName,
   queryKey,
   selectedBusinessId,
   select = '*',
-}: UseArchivedDataOptions): UseQueryResult<Result<T>> => {
+}: UseActiveDataOptions): UseQueryResult<Result<T>> => {
   const { businessId: contextBusinessId } = useCurrentBusiness();
   const businessId = selectedBusinessId || contextBusinessId;
 
-  const fetchArchivedData = async (): Promise<Result<T>> => {
+  const fetchActiveData = async (): Promise<Result<T>> => {
     if (!businessId) {
       return { success: false, error: 'לא נמצא מזהה עסק' };
     }
@@ -34,11 +34,11 @@ export const useArchivedData = <T = any>({
       .from(tableName)
       .select(select)
       .eq('business_id', businessId)
-      .eq('is_archived', true)
+      .eq('is_archived', false)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error(`שגיאה בעת טעינת ${tableName} מהארכיון:`, error.message);
+      console.error(`שגיאה בעת טעינת ${tableName}:`, error.message);
       return { success: false, error: error.message };
     }
 
@@ -49,8 +49,8 @@ export const useArchivedData = <T = any>({
   };
 
   return useQuery<Result<T>>({
-    queryKey: [...queryKey, 'archived', businessId],
-    queryFn: fetchArchivedData,
+    queryKey: [...queryKey, 'active', businessId],
+    queryFn: fetchActiveData,
     enabled: !!businessId,
     retry: false,
   });

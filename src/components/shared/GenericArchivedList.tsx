@@ -31,7 +31,7 @@ export const GenericArchivedList: React.FC<GenericArchivedListProps> = ({
   select
 }) => {
   const { businessId } = useCurrentBusiness();
-  const { data: archivedItems = [], isLoading } = useArchivedData({
+  const { data: archivedResult, isLoading } = useArchivedData({
     tableName,
     queryKey,
     selectedBusinessId: selectedBusinessId || businessId,
@@ -45,6 +45,22 @@ export const GenericArchivedList: React.FC<GenericArchivedListProps> = ({
       </div>
     );
   }
+
+  // Handle error case
+  if (archivedResult && !archivedResult.success) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center" dir="rtl">
+          <div className="text-red-500">
+            <h3 className="text-lg font-medium mb-2">שגיאה בטעינת הנתונים</h3>
+            <p>{archivedResult.error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const archivedItems = archivedResult?.success ? archivedResult.data : [];
 
   if (archivedItems.length === 0) {
     return (
