@@ -67,6 +67,7 @@ export const DynamicSidebar: React.FC = () => {
   const moduleRoutes = getModuleRoutes(business?.id);
 
   // --- עובדים: תפריט מורחב הכולל כל מה שרלוונטי לניהול עובדים ---
+  // נשתמש במפתחות כפי שמופיעים ב־routeMapping: base, files, profile, attendance, requests, docs, shifts, import
   const employeesMenuItems: MenuItem[] = [
     { 
       path: moduleRoutes.employees.base,
@@ -77,11 +78,11 @@ export const DynamicSidebar: React.FC = () => {
       subItems: [
         { path: moduleRoutes.employees.base, label: 'רשימת עובדים', icon: Users, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.profile, label: 'פרופיל עובד', icon: User, moduleKey: 'employee_management' },
-        { path: moduleRoutes.employees.tasks, label: 'משימות עובדים', icon: ListChecks, moduleKey: 'employee_management' },
+        { path: moduleRoutes.employees.files, label: 'קבצי עובדים', icon: FileText, moduleKey: 'employee_documents' },
         { path: moduleRoutes.employees.attendance, label: 'דוח נוכחות', icon: UserCheck, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.requests, label: 'בקשות עובדים', icon: CheckSquare, moduleKey: 'employee_management' },
-        { path: moduleRoutes.employees.documents, label: 'מסמכי עובדים', icon: FileText, moduleKey: 'employee_documents' },
-        { path: moduleRoutes.employees.chat, label: 'צ׳אט צוות', icon: MessageCircle, moduleKey: 'employee_management' },
+        { path: moduleRoutes.employees.docs, label: 'מסמכי עובדים', icon: FileText, moduleKey: 'employee_documents' },
+        { path: moduleRoutes.employees.base + '/chat', label: 'צ׳אט צוות', icon: MessageCircle, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.import, label: 'ייבוא עובדים', icon: FolderInput, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.shifts, label: 'משמרות עובדים', icon: Clock, moduleKey: 'shift_management' },
         { path: moduleRoutes.branches.base, label: 'ניהול סניפים', icon: Building, moduleKey: 'branch_management' },
