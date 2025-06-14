@@ -32,6 +32,8 @@ export const EmployeeManagement: React.FC = () => {
     setIsArchived,
   } = useEmployeeManagement();
 
+  console.log('🏢 EmployeeManagement rendering with employees:', employees?.length || 0);
+
   // Set branch filter from URL parameters
   useEffect(() => {
     if (branchId && branchId !== selectedBranch) {
@@ -124,3 +126,4 @@ export const EmployeeManagement: React.FC = () => {
     </div>
   );
 };
+

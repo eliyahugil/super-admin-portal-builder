@@ -3,7 +3,7 @@ import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { EmployeeRowActions } from './row/EmployeeRowActions';
-import { Employee } from '@/types/employee';
+import type { Employee } from '@/types/employee';
 
 interface EmployeesTableRowProps {
   employee: Employee;
@@ -16,6 +16,8 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
   onRefetch,
   showBranch = true 
 }) => {
+  console.log('📋 EmployeesTableRow rendering employee:', employee.first_name, employee.last_name);
+
   const getEmployeeTypeLabel = (type: string) => {
     const types: Record<string, string> = {
       permanent: 'קבוע',
@@ -36,7 +38,7 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
     return 'לא משויך';
   };
 
-  // Handle optional is_active with default value - now consistently optional
+  // Handle optional is_active with proper default - consistent with employee type definition
   const isActive = employee.is_active ?? true;
 
   return (
@@ -71,3 +73,4 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
     </TableRow>
   );
 };
+

@@ -16,6 +16,8 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
   onRefetch,
   showBranchFilter = true 
 }) => {
+  console.log('📋 EmployeesTable rendering with employees:', employees.length);
+
   return (
     <Card>
       <CardHeader>
@@ -48,3 +50,4 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
     </Card>
   );
 };
+

@@ -1,7 +1,11 @@
 
+
 // ===========================
 // 🌐 כל הטיפוסים של המערכת
 // ===========================
+
+// Import the unified Employee type
+import type { Employee, EmployeeType } from '@/types/employee';
 
 export interface Business {
   id: string;
@@ -18,7 +22,7 @@ export interface Business {
   is_active?: boolean;
 }
 
-// Use the unified Employee type from employee.ts instead of defining it here
+// Re-export the unified Employee type for consistency
 export type { Employee, EmployeeType } from '@/types/employee';
 
 export interface Module {
@@ -113,3 +117,4 @@ export interface ScheduledShift {
   employee_id?: string | null;
   is_archived: boolean;
 }
+

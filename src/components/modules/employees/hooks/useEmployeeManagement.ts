@@ -13,6 +13,15 @@ export const useEmployeeManagement = () => {
   const [selectedEmployeeType, setSelectedEmployeeType] = useState('');
   const [isArchived, setIsArchived] = useState(false);
 
+  console.log('🔍 useEmployeeManagement hook initialized with:', {
+    businessId,
+    isSuperAdmin,
+    searchTerm,
+    selectedBranch,
+    selectedEmployeeType,
+    isArchived
+  });
+
   // Type guard for safe EmployeeType conversion
   const isValidEmployeeType = (value: string): value is EmployeeType => {
     return ['permanent', 'temporary', 'contractor', 'youth'].includes(value);
@@ -22,11 +31,11 @@ export const useEmployeeManagement = () => {
     queryKey: ['employees', businessId, searchTerm, selectedBranch, selectedEmployeeType, isArchived],
     queryFn: async (): Promise<Employee[]> => {
       if (!businessId && !isSuperAdmin) {
-        console.log('No business ID and not super admin, returning empty array');
+        console.log('❌ No business ID and not super admin, returning empty array');
         return [];
       }
 
-      console.log('Fetching employees with filters:', {
+      console.log('🔄 Fetching employees with filters:', {
         businessId,
         searchTerm,
         selectedBranch,
@@ -74,14 +83,17 @@ export const useEmployeeManagement = () => {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching employees:', error);
+        console.error('❌ Error fetching employees:', error);
         throw error;
       }
 
-      console.log('Employees fetched successfully:', data?.length || 0);
+      console.log('✅ Employees fetched successfully:', data?.length || 0);
       
       // Normalize the data to ensure consistent typing
-      return (data || []).map(normalizeEmployee);
+      const normalizedEmployees = (data || []).map(normalizeEmployee);
+      console.log('🔄 Normalized employees:', normalizedEmployees.length);
+      
+      return normalizedEmployees;
     },
     enabled: !!businessId || isSuperAdmin,
   });
@@ -101,3 +113,4 @@ export const useEmployeeManagement = () => {
     setIsArchived,
   };
 };
+
