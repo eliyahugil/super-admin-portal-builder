@@ -20,6 +20,33 @@ interface BaseEntity {
   [key: string]: any;
 }
 
+// Separate function to build the query - no generics here to simplify TypeScript inference
+const buildQuery = (
+  tableName: string,
+  businessId: string,
+  filter: DataFilter,
+  select: string,
+  statusField: string
+) => {
+  const baseQuery = supabase
+    .from(tableName)
+    .select(select)
+    .eq('business_id', businessId);
+
+  switch (filter) {
+    case 'active':
+      return baseQuery.eq('is_archived', false).order('created_at', { ascending: false });
+    case 'archived':
+      return baseQuery.eq('is_archived', true).order('created_at', { ascending: false });
+    case 'deleted':
+      return baseQuery.eq('is_deleted', true).order('created_at', { ascending: false });
+    case 'pending':
+      return baseQuery.eq(statusField, 'pending').order('created_at', { ascending: false });
+    default:
+      throw new Error(`Unsupported filter: ${filter}`);
+  }
+};
+
 export const useBusinessData = <T extends BaseEntity = BaseEntity>({
   tableName,
   queryKey,
@@ -36,36 +63,14 @@ export const useBusinessData = <T extends BaseEntity = BaseEntity>({
       throw new Error('Business ID is missing');
     }
 
-    // Build query conditions
-    let baseQuery = supabase.from(tableName).select(select).eq('business_id', businessId);
-
-    // Apply filter-specific conditions
-    let finalQuery;
-    switch (filter) {
-      case 'active':
-        finalQuery = baseQuery.eq('is_archived', false);
-        break;
-      case 'archived':
-        finalQuery = baseQuery.eq('is_archived', true);
-        break;
-      case 'deleted':
-        finalQuery = baseQuery.eq('is_deleted', true);
-        break;
-      case 'pending':
-        finalQuery = baseQuery.eq(statusField, 'pending');
-        break;
-      default:
-        throw new Error(`Unsupported filter: ${filter}`);
-    }
-
-    // Add ordering and execute
-    const { data, error } = await finalQuery.order('created_at', { ascending: false });
+    const query = buildQuery(tableName, businessId, filter, select, statusField);
+    const { data, error } = await query;
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return data as T[] || [];
+    return Array.isArray(data) ? data : [];
   };
 
   return useQuery<T[], Error>({
