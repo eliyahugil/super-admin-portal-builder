@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { EmployeeProfilePage } from '../employees/profile/EmployeeProfilePage';
@@ -20,6 +19,7 @@ import { ProjectsManagement } from '../projects/ProjectsManagement';
 import { IntegrationManagement } from '../integrations/IntegrationManagement';
 import { CustomerManagement } from '../customers/CustomerManagement';
 import { EmployeeFilesManagement } from '../employees/EmployeeFilesManagement';
+import { EmployeeRequestsList } from '../employees/EmployeeRequestsList';
 
 interface ModuleRouteHandlerProps {
   fullRoute: string;
@@ -68,7 +68,7 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
     case 'employees/employee-files':
       return <EmployeeFilesManagement />;
     case 'employees/employee-requests':
-      return <div className="p-6 text-center">רכיב בקשות עובדים בפיתוח</div>;
+      return <EmployeeRequestsList businessId={businessId} />;
     case 'employees/employee-docs':
       return <div className="p-6 text-center">רכיב מסמכים חתומים בפיתוח</div>;
     case 'employees/shifts':
