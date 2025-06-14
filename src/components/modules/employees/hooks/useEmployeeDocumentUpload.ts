@@ -15,6 +15,16 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    // חסימת העלאה כאשר employeeId לא קיים (למשל, "כל העובדים")
+    if (!employeeId) {
+      toast({
+        title: 'לא נבחר עובד',
+        description: 'עליך לבחור עובד מסוים כדי להעלות מסמך.',
+        variant: 'destructive',
+      });
+      event.target.value = '';
+      return;
+    }
     if (!profile?.id && !user?.id) {
       toast({
         title: 'שגיאה',

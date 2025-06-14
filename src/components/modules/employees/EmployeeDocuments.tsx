@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
@@ -113,8 +112,8 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     );
   }
 
-  // Disable upload only בטעינה
-  const disableUpload = uploading;
+  // Disable upload אם אין employeeId (כל העובדים) או אם מעלה כרגע
+  const disableUpload = uploading || !employeeId;
 
   return (
     <div className="space-y-4">
