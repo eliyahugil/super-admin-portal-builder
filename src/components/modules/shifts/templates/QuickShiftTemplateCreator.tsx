@@ -81,12 +81,13 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
     }
     setSubmitting(true);
     try {
-      // Create shift_templates row (first branch for quick)
+      // נוסיף branch_id (הסניף הראשון)
       const { data: templateData, error } = await supabase
         .from('shift_templates')
         .insert({
           name: template.name,
           business_id: businessId,
+          branch_id: branches[0].id,
           start_time: template.start_time,
           end_time: template.end_time,
           shift_type: template.shift_type,
@@ -99,11 +100,7 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
 
       if (error || !templateData) throw error || new Error("כשל ביצירת תבנית");
 
-      // Insert shift_template_branches - only first branch for quick create
-      await supabase.from('shift_template_branches').insert({
-        shift_template_id: templateData.id,
-        branch_id: branches[0].id
-      });
+      // אין צורך להכניס לטבלת shift_template_branches (branch_id נשמר בתבנית)
 
       toast({
         title: "הצלחה",
@@ -124,7 +121,7 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
     }
   };
 
-  // Custom create for multi-branch, role support
+  // Custom create – עבור כמה סניפים, יבוצע insert נפרד לכל סניף
   const handleCustomCreate = async () => {
     if (!businessId || !templateData.name || selectedBranches.length === 0) {
       toast({
@@ -137,38 +134,33 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
 
     setSubmitting(true);
     try {
-      const { data: templateRow, error } = await supabase
+      // נבצע insert נפרד לכל branch_id
+      const inserts = selectedBranches.map(branchId => ({
+        name: templateData.name,
+        business_id: businessId,
+        branch_id: branchId,
+        start_time: templateData.start_time,
+        end_time: templateData.end_time,
+        shift_type: templateData.shift_type,
+        required_employees: templateData.required_employees,
+        is_active: true,
+        is_archived: false,
+        role_name: templateData.role_name || null,
+      }));
+
+      const { data: insertedTemplates, error } = await supabase
         .from('shift_templates')
-        .insert({
-          name: templateData.name,
-          business_id: businessId,
-          start_time: templateData.start_time,
-          end_time: templateData.end_time,
-          shift_type: templateData.shift_type,
-          required_employees: templateData.required_employees,
-          is_active: true,
-          is_archived: false,
-          role_name: templateData.role_name || null,
-        })
-        .select()
-        .single();
+        .insert(inserts)
+        .select();
 
-      if (error || !templateRow) throw error || new Error("בעיה בשמירת תבנית");
-
-      // Save shift_template_branches for all selected branches
-      await supabase.from('shift_template_branches').insert(
-        selectedBranches.map(branch_id => ({
-          shift_template_id: templateRow.id,
-          branch_id,
-        }))
-      );
+      if (error || !insertedTemplates) throw error || new Error("בעיה בשמירת תבניות");
 
       toast({
         title: "הצלחה",
-        description: `תבנית "${templateData.name}" נוצרה בהצלחה`
+        description: `נוצרו ${insertedTemplates.length} תבניות משמרות חדשות`
       });
 
-      // Reset form
+      // איפוס טופס
       setTemplateData({
         name: '',
         start_time: '09:00',
@@ -187,7 +179,7 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
     } catch (error: any) {
       toast({
         title: "שגיאה",
-        description: `שגיאה ביצירת התבנית: ${error.message}`,
+        description: `שגיאה ביצירת התבניות: ${error.message}`,
         variant: "destructive"
       });
     } finally {
