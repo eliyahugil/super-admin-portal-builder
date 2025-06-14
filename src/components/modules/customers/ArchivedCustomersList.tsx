@@ -60,7 +60,7 @@ export const ArchivedCustomersList: React.FC = () => {
   };
 
   return (
-    <GenericArchivedList<Customer>
+    <GenericArchivedList
       tableName="customers"
       entityName="הלקוח"
       entityNamePlural="לקוחות"

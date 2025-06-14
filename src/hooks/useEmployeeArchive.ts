@@ -1,9 +1,8 @@
 
 import { useGenericArchive } from '@/hooks/useGenericArchive';
-import type { Employee } from '@/types/employee';
 
 export const useEmployeeArchive = () => {
-  return useGenericArchive<Employee>({
+  return useGenericArchive({
     tableName: 'employees',
     entityName: 'העובד',
     queryKey: ['employees'],
