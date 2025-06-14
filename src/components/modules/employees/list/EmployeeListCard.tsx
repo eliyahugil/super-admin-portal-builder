@@ -26,9 +26,10 @@ export const EmployeeListCard: React.FC<EmployeeListCardProps> = ({
   onRefetch,
   loading
 }) => {
+  // כל המידע בכרטיס – מוצג בסטייל מובייל ידידותי
   return (
-    <div className="bg-white rounded-lg shadow p-4 mb-3 flex flex-col gap-2">
-      <div className="flex items-center justify-between mb-1">
+    <div className="bg-white rounded-xl shadow p-4 mb-3 flex flex-col gap-3 w-full">
+      <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -37,35 +38,49 @@ export const EmployeeListCard: React.FC<EmployeeListCardProps> = ({
             className="accent-blue-600"
             aria-label="בחר עובד"
           />
-          <span className="font-medium text-base">
+          <div>
             <EmployeeListProfileCell employee={employee} />
-          </span>
+          </div>
         </div>
         <EmployeeListStatusCell isActive={!!employee.is_active} />
       </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-700">
-        <div className="flex-1 min-w-[140px] flex gap-1 items-center">
-          <span className="font-semibold">מס' עובד:</span>
-          {employee.employee_id || <span className="text-gray-400">לא הוגדר</span>}
+      {/* מידע מורחב, כמו בטבלה */}
+      <div className="flex flex-col w-full gap-2">
+        <div className="flex flex-wrap gap-5">
+          <div className="flex flex-col text-xs min-w-[90px] flex-1">
+            <span className="text-[11px] text-gray-400 mb-0.5">מספר עובד</span>
+            <span className="font-medium">{employee.employee_id || <span className="text-gray-400">לא הוגדר</span>}</span>
+          </div>
+          <div className="flex flex-col text-xs min-w-[90px] flex-1">
+            <span className="text-[11px] text-gray-400 mb-0.5">טלפון</span>
+            <EmployeeListPhoneCell employee={employee} />
+          </div>
         </div>
-        <div className="flex-1 min-w-[140px] flex gap-1 items-center">
-          <span className="font-semibold">טלפון:</span>
-          <EmployeeListPhoneCell employee={employee} />
+        <div className="flex flex-wrap gap-5">
+          <div className="flex flex-col text-xs min-w-[90px] flex-1">
+            <span className="text-[11px] text-gray-400 mb-0.5">סוג עובד</span>
+            <EmployeeListTypeCell type={employee.employee_type} />
+          </div>
+          <div className="flex flex-col text-xs min-w-[90px] flex-1">
+            <span className="text-[11px] text-gray-400 mb-0.5">סניף ראשי</span>
+            <EmployeeListBranchCell employee={employee} />
+          </div>
         </div>
-        <div className="flex-1 min-w-[120px] flex gap-1 items-center">
-          <span className="font-semibold">סוג:</span>
-          <EmployeeListTypeCell type={employee.employee_type} />
+        <div className="flex flex-wrap gap-5">
+          <div className="flex flex-col text-xs min-w-[90px] flex-1">
+            <span className="text-[11px] text-gray-400 mb-0.5">שעות שבועיות</span>
+            <EmployeeListWeeklyHoursCell weeklyHoursRequired={employee.weekly_hours_required} />
+          </div>
+          {employee.hire_date && (
+            <div className="flex flex-col text-xs min-w-[90px] flex-1">
+              <span className="text-[11px] text-gray-400 mb-0.5">תאריך תחילה</span>
+              <span className="text-sm">{new Date(employee.hire_date).toLocaleDateString('he-IL')}</span>
+            </div>
+          )}
         </div>
-        <div className="flex-1 min-w-[120px] flex gap-1 items-center">
-          <span className="font-semibold">סניף:</span>
-          <EmployeeListBranchCell employee={employee} />
-        </div>
-        <div className="flex-1 min-w-[120px] flex gap-1 items-center">
-          <span className="font-semibold">שעות שבועיות:</span>
-          <EmployeeListWeeklyHoursCell weeklyHoursRequired={employee.weekly_hours_required} />
-        </div>
+        {/* אפשר להוסיף כאן שדות נוספים לפי הצורך */}
       </div>
-      <div className="mt-2">
+      <div className="mt-1 flex flex-col">
         <EmployeeListActionsCell
           employee={employee}
           onDeleteEmployee={onDeleteEmployee}
