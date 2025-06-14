@@ -12,6 +12,13 @@ interface BusinessSettings {
   use_whatsapp_api: boolean;
   created_at: string;
   updated_at: string;
+  // New fields for employee management general settings
+  allow_employee_reporting_web: boolean;
+  require_employee_gps: boolean;
+  require_employee_image: boolean;
+  allow_shift_editing: boolean;
+  allow_past_shift_editing: boolean;
+  allow_shift_submission_without_token: boolean;
 }
 
 export const useBusinessSettings = (businessId: string | undefined) => {

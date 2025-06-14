@@ -20,6 +20,12 @@ interface BusinessDetails {
   contact_email?: string;
   admin_email?: string;
   description?: string;
+  allow_employee_reporting_web?: boolean;
+  require_employee_gps?: boolean;
+  require_employee_image?: boolean;
+  allow_shift_editing?: boolean;
+  allow_past_shift_editing?: boolean;
+  allow_shift_submission_without_token?: boolean;
 }
 
 interface ModuleConfig {
@@ -50,7 +56,13 @@ export const BusinessSettingsMain: React.FC = () => {
     logo_url: '',
     contact_email: '',
     admin_email: '',
-    description: ''
+    description: '',
+    allow_employee_reporting_web: false,
+    require_employee_gps: false,
+    require_employee_image: false,
+    allow_shift_editing: false,
+    allow_past_shift_editing: false,
+    allow_shift_submission_without_token: false
   });
   const [modules, setModules] = useState<ModuleConfig[]>([]);
   const [schedule, setSchedule] = useState<ScheduleConfig>({
@@ -279,6 +291,80 @@ export const BusinessSettingsMain: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">מזהה עסק: {effectiveBusinessId}</p>
         )}
       </div>
+      
+      {/* General Employee Settings Card: NEW */}
+      <Card>
+        <CardHeader>
+          <CardTitle>הגדרות כלליות לעובדים</CardTitle>
+          <CardDescription>
+            קבע את התנהגות דיווח המשמרות לעובדים והרשאות כלליות
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-5">
+            <div className="flex items-center justify-between border-b py-2">
+              <div>
+                <div className="font-medium">אפשר דיווח משמרות גם מאתר</div>
+                <div className="text-sm text-gray-500">אם כבוי, ניתן לדווח רק מהאפליקציה.</div>
+              </div>
+              <Switch
+                checked={details.allow_employee_reporting_web}
+                onCheckedChange={val => updateBusinessField('allow_employee_reporting_web', val)}
+              />
+            </div>
+            <div className="flex items-center justify-between border-b py-2">
+              <div>
+                <div className="font-medium">חייב צילום GPS בדיווח</div>
+                <div className="text-sm text-gray-500">האם לחייב אימות מיקום בדיווח משמרת?</div>
+              </div>
+              <Switch
+                checked={details.require_employee_gps}
+                onCheckedChange={val => updateBusinessField('require_employee_gps', val)}
+              />
+            </div>
+            <div className="flex items-center justify-between border-b py-2">
+              <div>
+                <div className="font-medium">חייב צילום תמונה בעת דיווח</div>
+                <div className="text-sm text-gray-500">חובת צילום תמונה בעת כניסה/יציאה ממשמרת</div>
+              </div>
+              <Switch
+                checked={details.require_employee_image}
+                onCheckedChange={val => updateBusinessField('require_employee_image', val)}
+              />
+            </div>
+            <div className="flex items-center justify-between border-b py-2">
+              <div>
+                <div className="font-medium">אפשר עריכת משמרות</div>
+                <div className="text-sm text-gray-500">האם לאפשר לעובדים לערוך משמרות לאחר השליחה</div>
+              </div>
+              <Switch
+                checked={details.allow_shift_editing}
+                onCheckedChange={val => updateBusinessField('allow_shift_editing', val)}
+              />
+            </div>
+            <div className="flex items-center justify-between border-b py-2">
+              <div>
+                <div className="font-medium">אפשר עריכת משמרות בדיעבד</div>
+                <div className="text-sm text-gray-500">האם לאפשר עריכה של משמרות לאחר הזמן שהיו אמורות להסתיים</div>
+              </div>
+              <Switch
+                checked={details.allow_past_shift_editing}
+                onCheckedChange={val => updateBusinessField('allow_past_shift_editing', val)}
+              />
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <div className="font-medium">אפשר שליחת משמרות ללא טוקן</div>
+                <div className="text-sm text-gray-500">האם לאפשר דיווח גם אם לא נדרש טוקן?</div>
+              </div>
+              <Switch
+                checked={details.allow_shift_submission_without_token}
+                onCheckedChange={val => updateBusinessField('allow_shift_submission_without_token', val)}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Business Details Card */}
       <Card>

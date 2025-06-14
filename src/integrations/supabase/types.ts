@@ -355,30 +355,48 @@ export type Database = {
       }
       business_settings: {
         Row: {
+          allow_employee_reporting_web: boolean
+          allow_past_shift_editing: boolean
+          allow_shift_editing: boolean
+          allow_shift_submission_without_token: boolean
           auto_shift_reminders: boolean
           business_id: string
           created_at: string
           id: string
           reminder_day: string
           reminder_hour: number
+          require_employee_gps: boolean
+          require_employee_image: boolean
           updated_at: string
         }
         Insert: {
+          allow_employee_reporting_web?: boolean
+          allow_past_shift_editing?: boolean
+          allow_shift_editing?: boolean
+          allow_shift_submission_without_token?: boolean
           auto_shift_reminders?: boolean
           business_id: string
           created_at?: string
           id?: string
           reminder_day?: string
           reminder_hour?: number
+          require_employee_gps?: boolean
+          require_employee_image?: boolean
           updated_at?: string
         }
         Update: {
+          allow_employee_reporting_web?: boolean
+          allow_past_shift_editing?: boolean
+          allow_shift_editing?: boolean
+          allow_shift_submission_without_token?: boolean
           auto_shift_reminders?: boolean
           business_id?: string
           created_at?: string
           id?: string
           reminder_day?: string
           reminder_hour?: number
+          require_employee_gps?: boolean
+          require_employee_image?: boolean
           updated_at?: string
         }
         Relationships: [
