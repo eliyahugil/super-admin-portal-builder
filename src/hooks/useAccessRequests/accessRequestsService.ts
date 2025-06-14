@@ -9,7 +9,7 @@ export const fetchAccessRequests = async (): Promise<AccessRequestEnriched[]> =>
     .from('user_access_requests')
     .select(`
       *,
-      profiles:user_id (
+      profiles:profiles!user_access_requests_user_id_fkey (
         email,
         full_name,
         phone
@@ -27,7 +27,7 @@ export const fetchAccessRequests = async (): Promise<AccessRequestEnriched[]> =>
 
   console.log('✅ Fetched access requests:', data?.length || 0);
   
-  // המר את הנתונים לטיפוס הנכון
+  // Convert data to proper type
   const accessRequests: AccessRequestEnriched[] = (data || []).map(request => ({
     ...request,
     status: request.status as 'pending' | 'approved' | 'rejected'
