@@ -6,6 +6,7 @@ import { SuperAdminRoute } from '@/components/SuperAdminRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { CreateBusinessPage } from '@/components/admin/CreateBusinessPage';
+import { AccessRequestsManager } from '@/components/admin/AccessRequestsManager';
 
 export const SuperAdminRoutes: React.FC = () => {
   return (
@@ -16,6 +17,17 @@ export const SuperAdminRoutes: React.FC = () => {
           <SuperAdminRoute>
             <AppLayout>
               <SuperAdminDashboard />
+            </AppLayout>
+          </SuperAdminRoute>
+        </ProtectedRoute>
+      } />
+
+      {/* Access Requests Management */}
+      <Route path="/admin/access-requests" element={
+        <ProtectedRoute>
+          <SuperAdminRoute>
+            <AppLayout>
+              <AccessRequestsManager />
             </AppLayout>
           </SuperAdminRoute>
         </ProtectedRoute>

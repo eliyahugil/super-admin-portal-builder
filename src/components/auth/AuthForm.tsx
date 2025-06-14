@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './AuthContext';
-import { AccessRequestForm } from './AccessRequestForm';
+import { BusinessAccessRequestForm } from './BusinessAccessRequestForm';
 import { Building, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 export const AuthForm: React.FC = () => {
@@ -148,7 +148,7 @@ export const AuthForm: React.FC = () => {
   // If user is authenticated but has no business access, show access request form
   if (user && profile && profile.role !== 'super_admin' && !profile.business_id) {
     console.log('AuthForm - Showing access request form for user without business');
-    return <AccessRequestForm />;
+    return <BusinessAccessRequestForm />;
   }
 
   console.log('AuthForm - Rendering auth form');
