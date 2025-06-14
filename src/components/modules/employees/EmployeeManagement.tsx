@@ -26,7 +26,7 @@ export const EmployeeManagement = () => {
   const { toast } = useToast();
   const { businessId, isSuperAdmin, loading: businessLoading } = useCurrentBusiness();
 
-  // Use unified hooks for consistent data fetching
+  // Use unified hooks for consistent data fetching with the selected business filter
   const { data: employees, refetch: refetchEmployees } = useEmployeesData(selectedBusinessId);
   const { data: branches, refetch: refetchBranches } = useBranchesData(selectedBusinessId);
 
@@ -183,9 +183,9 @@ export const EmployeeManagement = () => {
             </Card>
           )}
 
-          {viewMode === 'advanced' && <EmployeesTableAdvanced />}
+          {viewMode === 'advanced' && <EmployeesTableAdvanced selectedBusinessId={selectedBusinessId} />}
           
-          {viewMode === 'enhanced' && <EmployeesTable />}
+          {viewMode === 'enhanced' && <EmployeesTable selectedBusinessId={selectedBusinessId} />}
         </TabsContent>
 
         <TabsContent value="branches">
