@@ -1,81 +1,78 @@
 
-import { useQuery, QueryKey } from '@tanstack/react-query';
+import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useCurrentBusiness } from './useCurrentBusiness';
-import { useAuth } from '@/components/auth/AuthContext';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 interface UseSecureBusinessDataOptions {
-  queryKey: QueryKey;
+  queryKey: string[];
   tableName: string;
-  filters?: Record<string, any>;
-  enabled?: boolean;
-  select?: string;
+  filter?: Record<string, any>;
   orderBy?: { column: string; ascending: boolean };
+  select?: string;
+  enabled?: boolean;
 }
 
 /**
- * Secure hook for fetching business data with automatic business_id filtering
- * Enforces data isolation between businesses unless user is super admin
+ * Hook מאובטח לשליפת נתוני עסק עם RLS policies
+ * תומך בפילטרים ומיון מתקדמים
  */
-export function useSecureBusinessData<T = any>({ 
-  queryKey, 
-  tableName, 
-  filters = {}, 
-  enabled = true,
-  select = '*',
-  orderBy
-}: UseSecureBusinessDataOptions) {
-  const { profile } = useAuth();
+export function useSecureBusinessData<T = any>(
+  options: UseSecureBusinessDataOptions
+): UseQueryResult<T[], Error> {
+  const {
+    queryKey,
+    tableName,
+    filter = {},
+    orderBy,
+    select = '*',
+    enabled = true
+  } = options;
+
   const { businessId, isSuperAdmin } = useCurrentBusiness();
 
-  return useQuery({
-    queryKey: [...queryKey, businessId],
-    queryFn: async (): Promise<T[]> => {
-      console.log(`useSecureBusinessData - Fetching from ${tableName}`, { 
-        filters, 
-        businessId, 
-        isSuperAdmin,
-        userProfile: profile?.email
-      });
-      
-      let query = supabase.from(tableName as any).select(select);
-      
-      // Apply user-provided filters first
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          query = query.eq(key, value);
-          console.log(`useSecureBusinessData - Applied filter: ${key} = ${value}`);
-        }
-      });
-      
-      // Automatically enforce business filtering for non-super-admins
-      // Super admins can see all data, regular users only see their business data
-      if (!isSuperAdmin && businessId) {
-        // Only apply business_id filter if the table is business-specific
-        // Skip for global tables like modules_config, supported_integrations
-        const globalTables = ['modules_config', 'supported_integrations', 'profiles'];
-        if (!globalTables.includes(tableName)) {
-          console.log(`useSecureBusinessData - Adding business security filter: ${businessId}`);
-          query = query.eq('business_id', businessId);
-        }
-      }
+  const fetchData = async (): Promise<T[]> => {
+    console.log(`🔒 useSecureBusinessData - Fetching ${tableName}:`, {
+      businessId,
+      filter,
+      orderBy,
+      isSuperAdmin
+    });
 
-      // Apply ordering if specified
-      if (orderBy) {
-        query = query.order(orderBy.column, { ascending: orderBy.ascending });
-        console.log(`useSecureBusinessData - Applied ordering: ${orderBy.column} ${orderBy.ascending ? 'ASC' : 'DESC'}`);
+    // Start with base query
+    let query = supabase.from(tableName).select(select);
+
+    // Apply filters
+    Object.entries(filter).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        query = query.eq(key, value);
       }
-      
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error(`useSecureBusinessData - Error fetching ${tableName}:`, error);
-        throw error;
-      }
-      
-      console.log(`useSecureBusinessData - Successfully fetched ${data?.length || 0} records from ${tableName}`);
-      return (data as T[]) || [];
-    },
-    enabled: enabled && !!profile && (!businessId || isSuperAdmin || !!businessId),
+    });
+
+    // Apply ordering if specified
+    if (orderBy) {
+      query = query.order(orderBy.column, { ascending: orderBy.ascending });
+    } else {
+      // Default ordering by created_at if available
+      query = query.order('created_at', { ascending: false });
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error(`❌ Database error for ${tableName}:`, error);
+      throw new Error(error.message);
+    }
+
+    console.log(`✅ Fetched ${data?.length || 0} records from ${tableName}`);
+    return (data || []) as T[];
+  };
+
+  return useQuery<T[], Error>({
+    queryKey: [...queryKey, businessId, filter, orderBy],
+    queryFn: fetchData,
+    enabled: enabled && (!!businessId || isSuperAdmin),
+    retry: 1,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 }

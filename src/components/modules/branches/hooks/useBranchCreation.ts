@@ -1,9 +1,9 @@
 
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useRequiredBusinessId } from '@/hooks/useBusinessId';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 interface BranchFormData {
@@ -27,15 +27,8 @@ export const useBranchCreation = () => {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { isSuperAdmin } = useCurrentBusiness();
-  
-  // Use the secure hook that validates business ID is present
-  let businessId: string | null = null;
-  try {
-    businessId = useRequiredBusinessId();
-  } catch (error) {
-    console.log('No business ID available - user may be super admin without business context');
-  }
+  const navigate = useNavigate();
+  const { businessId, isSuperAdmin } = useCurrentBusiness();
 
   console.log('useBranchCreation - Current state:', {
     businessId,
@@ -51,9 +44,9 @@ export const useBranchCreation = () => {
         throw new Error('לא נמצא מזהה עסק. אנא בחר עסק ספציפי ונסה שוב.');
       }
 
-      // Prepare the data with mandatory business_id for security
+      // Prepare the data with mandatory business_id for RLS
       const branchData = {
-        business_id: businessId, // This ensures RLS policies will work correctly
+        business_id: businessId,
         name: data.name.trim(),
         address: data.address.trim() || null,
         latitude: data.latitude ? parseFloat(data.latitude) : null,
@@ -62,14 +55,14 @@ export const useBranchCreation = () => {
         is_active: data.is_active,
       };
 
-      console.log('Inserting branch data to database with business_id:', branchData);
+      console.log('Inserting branch data with RLS security:', branchData);
 
-      // Validate required fields before insertion
+      // Validate required fields
       if (!branchData.name) {
         throw new Error('שם הסניף הוא שדה חובה');
       }
 
-      // The RLS policies will automatically ensure this user can only create branches for their business
+      // The new RLS policies will automatically handle authorization
       const { data: result, error } = await supabase
         .from('branches')
         .insert([branchData])
@@ -81,7 +74,7 @@ export const useBranchCreation = () => {
         throw new Error(`שגיאה ביצירת הסניף: ${error.message}`);
       }
       
-      console.log('Branch created successfully with business isolation:', result);
+      console.log('Branch created successfully with RLS authorization:', result);
       return result;
     },
     onSuccess: (result) => {
@@ -92,7 +85,7 @@ export const useBranchCreation = () => {
       });
       
       // Invalidate business-specific queries
-      queryClient.invalidateQueries({ queryKey: ['branches', businessId] });
+      queryClient.invalidateQueries({ queryKey: ['branches'] });
       queryClient.invalidateQueries({ queryKey: ['business-branches', businessId] });
       
       // Reset form
@@ -104,6 +97,9 @@ export const useBranchCreation = () => {
         gps_radius: 100,
         is_active: true,
       });
+
+      // Navigate to branches list
+      navigate('/branches');
     },
     onError: (error) => {
       console.error('Branch creation failed:', error);

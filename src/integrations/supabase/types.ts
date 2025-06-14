@@ -2431,6 +2431,10 @@ export type Database = {
         Args: { business_id_param: string }
         Returns: number
       }
+      get_user_business_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       insert_into_table: {
         Args: { table_name: string; columns_list: string; values_list: string }
         Returns: Json
