@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-import type { Employee, EmployeeType, normalizeEmployee } from '@/types/employee';
+import type { Employee, EmployeeType } from '@/types/employee';
+import { normalizeEmployee } from '@/types/employee';
 
 export const useEmployeeManagement = () => {
   const { businessId, isSuperAdmin } = useCurrentBusiness();
