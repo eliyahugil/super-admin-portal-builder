@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
 
 interface EmployeesTableFiltersProps {
@@ -33,29 +34,29 @@ export const EmployeesTableFilters: React.FC<EmployeesTableFiltersProps> = ({
         />
       </div>
       
-      <select 
-        value={filterType} 
-        onChange={(e) => onFilterTypeChange(e.target.value)}
-        className="border rounded-md px-3 py-2 text-sm"
-        dir="rtl"
-      >
-        <option value="all">כל הסוגים</option>
-        <option value="permanent">קבוע</option>
-        <option value="temporary">זמני</option>
-        <option value="youth">נוער</option>
-        <option value="contractor">קבלן</option>
-      </select>
+      <Select value={filterType || "all"} onValueChange={(value) => onFilterTypeChange(value === "all" ? "" : value)}>
+        <SelectTrigger>
+          <SelectValue placeholder="כל הסוגים" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">כל הסוגים</SelectItem>
+          <SelectItem value="permanent">קבוע</SelectItem>
+          <SelectItem value="temporary">זמני</SelectItem>
+          <SelectItem value="youth">נוער</SelectItem>
+          <SelectItem value="contractor">קבלן</SelectItem>
+        </SelectContent>
+      </Select>
       
-      <select 
-        value={filterStatus} 
-        onChange={(e) => onFilterStatusChange(e.target.value)}
-        className="border rounded-md px-3 py-2 text-sm"
-        dir="rtl"
-      >
-        <option value="all">כל הסטטוסים</option>
-        <option value="active">פעיל</option>
-        <option value="inactive">לא פעיל</option>
-      </select>
+      <Select value={filterStatus || "all"} onValueChange={(value) => onFilterStatusChange(value === "all" ? "" : value)}>
+        <SelectTrigger>
+          <SelectValue placeholder="כל הסטטוסים" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">כל הסטטוסים</SelectItem>
+          <SelectItem value="active">פעיל</SelectItem>
+          <SelectItem value="inactive">לא פעיל</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
   );
 };

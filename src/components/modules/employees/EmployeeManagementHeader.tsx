@@ -81,12 +81,12 @@ export const EmployeeManagementHeader: React.FC<EmployeeManagementHeaderProps> =
                 {/* Branch Filter */}
                 <div>
                   <Label htmlFor="branch-select">סניף</Label>
-                  <Select value={selectedBranch} onValueChange={onBranchChange}>
+                  <Select value={selectedBranch || "all"} onValueChange={(value) => onBranchChange(value === "all" ? "" : value)}>
                     <SelectTrigger id="branch-select">
                       <SelectValue placeholder="כל הסניפים" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">כל הסניפים</SelectItem>
+                      <SelectItem value="all">כל הסניפים</SelectItem>
                       {branches?.map((branch) => (
                         <SelectItem key={branch.id} value={branch.id}>
                           {branch.name}
@@ -99,12 +99,12 @@ export const EmployeeManagementHeader: React.FC<EmployeeManagementHeaderProps> =
                 {/* Employee Type Filter */}
                 <div>
                   <Label htmlFor="type-select">סוג עובד</Label>
-                  <Select value={selectedEmployeeType} onValueChange={onEmployeeTypeChange}>
+                  <Select value={selectedEmployeeType || "all"} onValueChange={(value) => onEmployeeTypeChange(value === "all" ? "" : value)}>
                     <SelectTrigger id="type-select">
                       <SelectValue placeholder="כל הסוגים" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">כל הסוגים</SelectItem>
+                      <SelectItem value="all">כל הסוגים</SelectItem>
                       <SelectItem value="permanent">קבוע</SelectItem>
                       <SelectItem value="temporary">זמני</SelectItem>
                       <SelectItem value="contractor">קבלן</SelectItem>

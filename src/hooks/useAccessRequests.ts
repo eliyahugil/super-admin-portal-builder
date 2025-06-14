@@ -54,9 +54,13 @@ export const useAccessRequests = () => {
         .select('id, name')
         .in('id', businessIds) : { data: [] };
 
-      // Create lookup maps
-      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-      const businessesMap = new Map(businessesData?.map(b => [b.id, b]) || []);
+      // Create lookup maps with proper typing
+      const profilesMap = new Map<string, any>(
+        profilesData?.map(p => [p.id, p] as [string, any]) || []
+      );
+      const businessesMap = new Map<string, any>(
+        businessesData?.map(b => [b.id, b] as [string, any]) || []
+      );
 
       // Combine the data
       const enrichedRequests: AccessRequest[] = requestsData.map(request => ({

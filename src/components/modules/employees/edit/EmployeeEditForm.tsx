@@ -90,7 +90,7 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
         <div>
           <Label htmlFor="employee_type">סוג עובד</Label>
           <Select
-            value={formData.employee_type}
+            value={formData.employee_type || "permanent"}
             onValueChange={(value: EmployeeType) => setFormData({ ...formData, employee_type: value })}
           >
             <SelectTrigger className="text-right">
