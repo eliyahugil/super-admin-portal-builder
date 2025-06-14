@@ -2,12 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, UserX, Clock } from 'lucide-react';
-
-interface Employee {
-  id: string;
-  employee_type: string;
-  is_active: boolean;
-}
+import type { Employee } from '@/types/employee';
 
 interface EmployeeStatsCardsProps {
   employees: Employee[];
@@ -15,7 +10,7 @@ interface EmployeeStatsCardsProps {
 
 export const EmployeeStatsCards: React.FC<EmployeeStatsCardsProps> = ({ employees }) => {
   const totalEmployees = employees.length;
-  const activeEmployees = employees.filter(emp => emp.is_active).length;
+  const activeEmployees = employees.filter(emp => emp.is_active ?? true).length;
   const inactiveEmployees = totalEmployees - activeEmployees;
   const permanentEmployees = employees.filter(emp => emp.employee_type === 'permanent').length;
 

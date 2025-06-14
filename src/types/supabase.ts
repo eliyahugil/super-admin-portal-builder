@@ -3,8 +3,8 @@
 // 🌐 כל הטיפוסים של המערכת
 // ===========================
 
-// Import the unified Employee type
-import type { Employee, EmployeeType } from '@/types/employee';
+// Import and re-export the unified Employee type from employee.ts
+export type { Employee, EmployeeType } from '@/types/employee';
 
 export interface Business {
   id: string;
@@ -20,9 +20,6 @@ export interface Business {
   logo_url?: string;
   is_active?: boolean;
 }
-
-// Re-export the unified Employee type for consistency
-export type { Employee, EmployeeType } from '@/types/employee';
 
 export interface Module {
   id: string;
