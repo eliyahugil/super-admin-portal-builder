@@ -1811,6 +1811,7 @@ export type Database = {
       scheduled_shifts: {
         Row: {
           branch_id: string | null
+          business_id: string | null
           created_at: string | null
           employee_id: string | null
           id: string
@@ -1823,6 +1824,7 @@ export type Database = {
         }
         Insert: {
           branch_id?: string | null
+          business_id?: string | null
           created_at?: string | null
           employee_id?: string | null
           id?: string
@@ -1835,6 +1837,7 @@ export type Database = {
         }
         Update: {
           branch_id?: string | null
+          business_id?: string | null
           created_at?: string | null
           employee_id?: string | null
           id?: string

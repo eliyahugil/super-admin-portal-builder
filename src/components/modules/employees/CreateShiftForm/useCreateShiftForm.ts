@@ -100,7 +100,8 @@ export const useCreateShiftForm = (
             shift_date: shiftDate,
             branch_id,
             is_assigned: !!selectedEmployeeId,
-            notes: notes || null
+            notes: notes || null,
+            business_id: businessId // <-- Make sure business_id is always included!
           };
           if (selectedEmployeeId) shiftData.employee_id = selectedEmployeeId;
           return shiftData;
