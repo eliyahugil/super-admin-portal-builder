@@ -26,7 +26,8 @@ function buildQuery(
   select: string,
   statusField: string
 ) {
-  let query = supabase.from(tableName).select(select);
+  // Use any to avoid complex type inference
+  let query: any = supabase.from(tableName).select(select);
 
   if (businessId) {
     query = query.eq('business_id', businessId);
