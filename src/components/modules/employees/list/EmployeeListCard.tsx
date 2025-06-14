@@ -28,84 +28,91 @@ export const EmployeeListCard: React.FC<EmployeeListCardProps> = ({
 }) => {
   return (
     <div
-      className={`
-        w-full
-        bg-white
-        border border-gray-200
-        rounded-2xl
-        shadow-sm
-        flex flex-col
-        gap-4
-        px-2 py-3 sm:px-4 sm:py-5
-        overflow-x-visible
-        box-border
-        min-w-0
-        max-w-full
-      `}
+      className="w-full bg-white border border-gray-200 rounded-lg shadow-sm p-4 mb-3"
       dir="rtl"
       style={{
-        fontSize: "18px",
-        WebkitOverflowScrolling: "touch",
-        boxSizing: "border-box",
         minWidth: 0,
+        maxWidth: '100%',
+        overflowX: 'hidden'
       }}
     >
-      {/* Header: employee selection and status */}
-      <div className="flex flex-row items-center justify-between w-full gap-3 min-w-0">
-        <div className="flex flex-row items-center gap-3 min-w-0">
+      {/* Header: checkbox, name and status */}
+      <div className="flex items-start justify-between mb-4 gap-3">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
           <input
             type="checkbox"
             checked={selected}
             onChange={(e) => onSelect(employee.id, e.target.checked)}
-            className="accent-blue-600 border-2 border-gray-300 rounded-md"
-            style={{ minWidth: 28, minHeight: 28, width: 28, height: 28 }}
+            className="mt-1 w-5 h-5 accent-blue-600 border-2 border-gray-300 rounded"
             aria-label="בחר עובד"
           />
-          <div className="min-w-0 w-full overflow-hidden">
-            <EmployeeListProfileCell employee={employee} />
+          <div className="flex-1 min-w-0">
+            <div className="text-lg font-bold text-gray-900 break-words leading-tight">
+              {`${employee.first_name} ${employee.last_name}`}
+            </div>
+            {employee.email && (
+              <div className="text-base text-gray-600 mt-1 break-words">
+                {employee.email}
+              </div>
+            )}
           </div>
         </div>
-        <div className="flex-shrink-0 min-w-fit">
+        <div className="flex-shrink-0">
           <EmployeeListStatusCell isActive={!!employee.is_active} />
         </div>
       </div>
-      {/* פרטי עובד, בתצוגה ברורה ובשורות ברורות */}
-      <div className="flex flex-col w-full gap-4 mt-2" style={{ minWidth: 0 }}>
-        <div className="flex flex-col gap-1 min-w-0">
-          <span className="text-[17px] font-medium text-gray-500">מספר עובד</span>
-          <span className="font-extrabold text-lg break-words w-full">
+
+      {/* Employee details in clear rows */}
+      <div className="space-y-4">
+        <div className="border-b border-gray-100 pb-3">
+          <div className="text-base font-medium text-gray-500 mb-1">מספר עובד</div>
+          <div className="text-lg font-semibold text-gray-900">
             {employee.employee_id || (
               <span className="text-gray-400 font-normal">לא הוגדר</span>
             )}
-          </span>
+          </div>
         </div>
-        <div className="flex flex-col gap-1 min-w-0">
-          <span className="text-[17px] font-medium text-gray-500">טלפון</span>
-          <EmployeeListPhoneCell employee={employee} />
+
+        <div className="border-b border-gray-100 pb-3">
+          <div className="text-base font-medium text-gray-500 mb-1">טלפון</div>
+          <div className="text-lg">
+            <EmployeeListPhoneCell employee={employee} />
+          </div>
         </div>
-        <div className="flex flex-col gap-1 min-w-0">
-          <span className="text-[17px] font-medium text-gray-500">סוג עובד</span>
-          <EmployeeListTypeCell type={employee.employee_type} />
+
+        <div className="border-b border-gray-100 pb-3">
+          <div className="text-base font-medium text-gray-500 mb-1">סוג עובד</div>
+          <div className="text-lg">
+            <EmployeeListTypeCell type={employee.employee_type} />
+          </div>
         </div>
-        <div className="flex flex-col gap-1 min-w-0">
-          <span className="text-[17px] font-medium text-gray-500">סניף ראשי</span>
-          <EmployeeListBranchCell employee={employee} />
+
+        <div className="border-b border-gray-100 pb-3">
+          <div className="text-base font-medium text-gray-500 mb-1">סניף ראשי</div>
+          <div className="text-lg">
+            <EmployeeListBranchCell employee={employee} />
+          </div>
         </div>
-        <div className="flex flex-col gap-1 min-w-0">
-          <span className="text-[17px] font-medium text-gray-500">שעות שבועיות</span>
-          <EmployeeListWeeklyHoursCell weeklyHoursRequired={employee.weekly_hours_required} />
+
+        <div className="border-b border-gray-100 pb-3">
+          <div className="text-base font-medium text-gray-500 mb-1">שעות שבועיות</div>
+          <div className="text-lg">
+            <EmployeeListWeeklyHoursCell weeklyHoursRequired={employee.weekly_hours_required} />
+          </div>
         </div>
+
         {employee.hire_date && (
-          <div className="flex flex-col gap-1 min-w-0">
-            <span className="text-[17px] font-medium text-gray-500">תאריך תחילה</span>
-            <span className="font-semibold text-lg break-words">
+          <div className="border-b border-gray-100 pb-3">
+            <div className="text-base font-medium text-gray-500 mb-1">תאריך תחילה</div>
+            <div className="text-lg font-semibold text-gray-900">
               {new Date(employee.hire_date).toLocaleDateString("he-IL")}
-            </span>
+            </div>
           </div>
         )}
       </div>
-      {/* פעולות */}
-      <div className="flex flex-col gap-3 w-full mt-3 min-w-0">
+
+      {/* Actions */}
+      <div className="mt-4 pt-4 border-t border-gray-100">
         <EmployeeListActionsCell
           employee={employee}
           onDeleteEmployee={onDeleteEmployee}

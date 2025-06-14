@@ -29,16 +29,17 @@ export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
   };
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex flex-col sm:flex-row gap-2 w-full">
       <Button
         variant="default"
         size="sm"
         onClick={handleViewProfile}
-        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+        className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-base px-4 py-2 w-full sm:w-auto"
       >
         <Eye className="h-4 w-4" />
         <span>פרופיל מלא</span>
       </Button>
+      
       <EmployeeTokenButton
         employeeId={employee.id}
         employeeName={employeeName}
@@ -47,18 +48,20 @@ export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
         onTokenSent={onRefetch}
         size="sm"
       />
+      
       <EmployeeEditButton
         employee={employee}
         onSuccess={onRefetch}
       />
+      
       <Button
         variant="outline"
         size="sm"
         onClick={() => onDeleteEmployee(employee)}
         disabled={loading}
-        className="text-red-600 hover:text-red-800 hover:bg-red-50"
+        className="text-red-600 hover:text-red-800 hover:bg-red-50 text-base px-4 py-2 w-full sm:w-auto"
       >
-        <Trash2 className="h-3 w-3" />
+        <Trash2 className="h-4 w-4" />
       </Button>
     </div>
   );

@@ -42,52 +42,52 @@ export const EmployeeManagement: React.FC = () => {
 
   return (
     <div
-      className={`
-        w-full
-        flex flex-col gap-2 sm:gap-6
-        pt-2 pb-4 sm:py-8
-        px-1 sm:px-0
-        max-w-full
-      `}
+      className="w-full min-h-screen"
       dir="rtl"
-      style={{minWidth: 0}} // קריטי נגד scroll ב־X, במיוחד למובייל!
+      style={{ 
+        minWidth: 0,
+        maxWidth: '100vw',
+        overflowX: 'hidden'
+      }}
     >
-      {/* Header */}
-      <div className="w-full">
-        <EmployeeManagementHeader />
-      </div>
+      <div className="w-full p-2 sm:p-6 space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="w-full">
+          <EmployeeManagementHeader />
+        </div>
 
-      {/* Stats Cards */}
-      <div className="w-full">
-        <EmployeeStatsCards
-          totalEmployees={employees.length}
-          activeEmployees={activeEmployees.length}
-          inactiveEmployees={inactiveEmployees.length}
-          archivedEmployees={archivedEmployees.length}
-          branches={branches.length}
-        />
-      </div>
+        {/* Stats Cards */}
+        <div className="w-full">
+          <EmployeeStatsCards
+            totalEmployees={employees.length}
+            activeEmployees={activeEmployees.length}
+            inactiveEmployees={inactiveEmployees.length}
+            archivedEmployees={archivedEmployees.length}
+            branches={branches.length}
+          />
+        </div>
 
-      {/* Management Tools */}
-      <div className="w-full">
-        <ManagementToolsSection 
-          onCreateEmployee={() => setCreateEmployeeOpen(true)}
-          onCreateBranch={() => setCreateBranchOpen(true)}
-        />
-      </div>
+        {/* Management Tools */}
+        <div className="w-full">
+          <ManagementToolsSection 
+            onCreateEmployee={() => setCreateEmployeeOpen(true)}
+            onCreateBranch={() => setCreateBranchOpen(true)}
+          />
+        </div>
 
-      {/* Main Content */}
-      <div className="w-full">
-        <EmployeeTabsContent
-          activeTab={activeTab}
-          onActiveTabChange={setActiveTab}
-          employees={employees}
-          archivedEmployees={archivedEmployees}
-          branches={branches}
-          onRefetchEmployees={refetchEmployees}
-          onRefetchBranches={refetchBranches}
-          onCreateBranch={() => setCreateBranchOpen(true)}
-        />
+        {/* Main Content */}
+        <div className="w-full">
+          <EmployeeTabsContent
+            activeTab={activeTab}
+            onActiveTabChange={setActiveTab}
+            employees={employees}
+            archivedEmployees={archivedEmployees}
+            branches={branches}
+            onRefetchEmployees={refetchEmployees}
+            onRefetchBranches={refetchBranches}
+            onCreateBranch={() => setCreateBranchOpen(true)}
+          />
+        </div>
       </div>
 
       {/* Dialogs */}

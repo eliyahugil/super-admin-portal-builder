@@ -23,7 +23,6 @@ interface EmployeeListTableProps {
 }
 
 function useIsMobile() {
-  // basic hook to detect mobile window! (server-safe)
   const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
@@ -46,36 +45,46 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
   loading,
 }) => {
   const isMobile = useIsMobile();
-
   const allFilteredSelected = employees.length > 0 && employees.every(emp => selectedEmployees.has(emp.id));
 
-  // Mobile view: show cards
+  // Mobile view: show cards in full width container
   if (isMobile) {
     return (
-      <div className="flex flex-col gap-2 w-full" dir="rtl">
-        <div className="flex items-center justify-end mb-2">
-          <label className="flex items-center gap-1 text-sm">
+      <div 
+        className="w-full" 
+        dir="rtl"
+        style={{
+          minWidth: 0,
+          maxWidth: '100%',
+          overflowX: 'hidden'
+        }}
+      >
+        <div className="flex items-center justify-between mb-4 px-1">
+          <label className="flex items-center gap-2 text-lg">
             <input
               type="checkbox"
               checked={allFilteredSelected}
               onChange={e => onSelectAll(e.target.checked)}
-              className="accent-blue-600"
+              className="w-5 h-5 accent-blue-600"
               aria-label="בחר/י הכל"
             />
-            בחר/י הכל
+            <span>בחר/י הכל</span>
           </label>
         </div>
-        {employees.map(employee => (
-          <EmployeeListCard
-            key={employee.id}
-            employee={employee}
-            selected={selectedEmployees.has(employee.id)}
-            onSelect={onSelectEmployee}
-            onDeleteEmployee={onDeleteEmployee}
-            onRefetch={onRefetch}
-            loading={loading}
-          />
-        ))}
+        
+        <div className="space-y-3">
+          {employees.map(employee => (
+            <EmployeeListCard
+              key={employee.id}
+              employee={employee}
+              selected={selectedEmployees.has(employee.id)}
+              onSelect={onSelectEmployee}
+              onDeleteEmployee={onDeleteEmployee}
+              onRefetch={onRefetch}
+              loading={loading}
+            />
+          ))}
+        </div>
       </div>
     );
   }
