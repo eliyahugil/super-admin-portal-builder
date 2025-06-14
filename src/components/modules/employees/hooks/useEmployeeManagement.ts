@@ -1,68 +1,94 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
-export const useEmployeeManagement = (employeeId: string | undefined) => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+export const useEmployeeManagement = () => {
+  const { businessId, isSuperAdmin } = useCurrentBusiness();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [selectedEmployeeType, setSelectedEmployeeType] = useState('');
+  const [isArchived, setIsArchived] = useState(false);
 
-  // Get employee details with all related data
-  const { data: employee, isLoading, refetch } = useQuery({
-    queryKey: ['employee-full-details', employeeId],
+  const { data: employees, isLoading, error, refetch } = useQuery({
+    queryKey: ['employees', businessId, searchTerm, selectedBranch, selectedEmployeeType, isArchived],
     queryFn: async () => {
-      if (!employeeId) return null;
-      
-      const { data, error } = await supabase
+      if (!businessId && !isSuperAdmin) {
+        console.log('No business ID and not super admin, returning empty array');
+        return [];
+      }
+
+      console.log('Fetching employees with filters:', {
+        businessId,
+        searchTerm,
+        selectedBranch,
+        selectedEmployeeType,
+        isArchived,
+        isSuperAdmin
+      });
+
+      let query = supabase
         .from('employees')
         .select(`
           *,
           main_branch:branches(name),
-          branch_assignments:employee_branch_assignments(
-            *,
+          employee_branch_assignments(
             branch:branches(name)
           )
-        `)
-        .eq('id', employeeId)
-        .single();
+        `);
 
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!employeeId,
-  });
+      // Apply business filter for non-super-admin users
+      if (!isSuperAdmin && businessId) {
+        query = query.eq('business_id', businessId);
+      }
 
-  // Update employee mutation
-  const updateEmployeeMutation = useMutation({
-    mutationFn: async (updates: any) => {
-      const { error } = await supabase
-        .from('employees')
-        .update(updates)
-        .eq('id', employeeId);
+      // Apply archive filter
+      query = query.eq('is_archived', isArchived);
 
-      if (error) throw error;
+      // Apply search filter
+      if (searchTerm) {
+        query = query.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      }
+
+      // Apply branch filter
+      if (selectedBranch) {
+        query = query.eq('main_branch_id', selectedBranch);
+      }
+
+      // Apply employee type filter
+      if (selectedEmployeeType) {
+        query = query.eq('employee_type', selectedEmployeeType);
+      }
+
+      // Order by creation date
+      query = query.order('created_at', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching employees:', error);
+        throw error;
+      }
+
+      console.log('Employees fetched successfully:', data?.length || 0);
+      return data || [];
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employee-full-details', employeeId] });
-      toast({
-        title: 'הצלחה',
-        description: 'פרטי העובד עודכנו בהצלחה',
-      });
-    },
-    onError: () => {
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן לעדכן את פרטי העובד',
-        variant: 'destructive',
-      });
-    },
+    enabled: !!businessId || isSuperAdmin,
   });
 
   return {
-    employee,
+    employees,
     isLoading,
+    error,
     refetch,
-    updateEmployee: updateEmployeeMutation.mutate,
-    isUpdating: updateEmployeeMutation.isPending,
+    searchTerm,
+    setSearchTerm,
+    selectedBranch,
+    setSelectedBranch,
+    selectedEmployeeType,
+    setSelectedEmployeeType,
+    isArchived,
+    setIsArchived,
   };
 };
