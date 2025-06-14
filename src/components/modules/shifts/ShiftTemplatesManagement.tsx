@@ -33,7 +33,7 @@ export const ShiftTemplatesManagement: React.FC = () => {
     enabled: !!businessId && !isLoading
   });
 
-  const { data: branches } = useRealData<any>({
+  const { data: branches, refetch: refetchBranches } = useRealData<any>({
     queryKey: ['branches-for-templates', businessId],
     tableName: 'branches',
     filters: { is_active: true },
@@ -65,6 +65,7 @@ export const ShiftTemplatesManagement: React.FC = () => {
         setFormData={setFormData}
         onSubmit={handleSubmit}
         branches={branches || []}
+        onBranchAdded={refetchBranches}
       />
 
       {templates && templates.length > 0 ? (

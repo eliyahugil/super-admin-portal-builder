@@ -5,6 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AddSelectOptionDialog } from '@/components/ui/AddSelectOptionDialog';
+import { useBusiness } from '@/hooks/useBusiness';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 type ShiftType = 'morning' | 'afternoon' | 'evening' | 'night';
 
@@ -24,6 +28,7 @@ interface ShiftTemplateFormDialogProps {
   setFormData: (data: FormData) => void;
   onSubmit: (e: React.FormEvent) => void;
   branches: any[];
+  onBranchAdded?: () => void;
 }
 
 export const ShiftTemplateFormDialog: React.FC<ShiftTemplateFormDialogProps> = ({
@@ -32,8 +37,54 @@ export const ShiftTemplateFormDialog: React.FC<ShiftTemplateFormDialogProps> = (
   formData,
   setFormData,
   onSubmit,
-  branches
+  branches,
+  onBranchAdded
 }) => {
+  const { businessId } = useBusiness();
+  const { toast } = useToast();
+
+  const handleAddBranch = async (branchName: string): Promise<boolean> => {
+    if (!businessId) {
+      toast({
+        title: "שגיאה",
+        description: "לא נמצא מזהה עסק",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .insert({
+          name: branchName,
+          business_id: businessId,
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update the form data to select the new branch
+      setFormData({ ...formData, branch_id: data.id });
+      
+      // Refresh branches list
+      if (onBranchAdded) {
+        onBranchAdded();
+      }
+
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "שגיאה",
+        description: `שגיאה ביצירת הסניף: ${error.message}`,
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -54,18 +105,27 @@ export const ShiftTemplateFormDialog: React.FC<ShiftTemplateFormDialogProps> = (
           
           <div>
             <Label htmlFor="branch">סניף *</Label>
-            <Select value={formData.branch_id} onValueChange={(value) => setFormData({ ...formData, branch_id: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="בחר סניף" />
-              </SelectTrigger>
-              <SelectContent>
-                {branches?.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center">
+              <Select value={formData.branch_id} onValueChange={(value) => setFormData({ ...formData, branch_id: value })}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="בחר סניף" />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches?.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <AddSelectOptionDialog
+                onAddOption={handleAddBranch}
+                placeholder="שם הסניף החדש"
+                buttonText="הוסף סניף חדש"
+                dialogTitle="הוספת סניף חדש"
+                optionLabel="שם הסניף"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
