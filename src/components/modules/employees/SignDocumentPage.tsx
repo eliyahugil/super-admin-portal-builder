@@ -12,6 +12,26 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Type for digital signature data
+interface DigitalSignatureData {
+  signature_text: string;
+  signed_by: string;
+  signed_at: string;
+  ip_address?: string;
+  user_agent?: string;
+}
+
+// Type guard to check if data is a valid signature object
+const isValidSignatureData = (data: any): data is DigitalSignatureData => {
+  return (
+    data &&
+    typeof data === 'object' &&
+    typeof data.signature_text === 'string' &&
+    typeof data.signed_by === 'string' &&
+    typeof data.signed_at === 'string'
+  );
+};
+
 // עמוד חתימה דיגיטלית לעובדים
 export const SignDocumentPage: React.FC = () => {
   const { documentId } = useParams();
@@ -51,7 +71,7 @@ export const SignDocumentPage: React.FC = () => {
         throw new Error('חתימה דיגיטלית נדרשת');
       }
 
-      const signatureData = {
+      const signatureData: DigitalSignatureData = {
         signature_text: digitalSignature.trim(),
         signed_by: document?.assignee?.first_name + ' ' + document?.assignee?.last_name,
         signed_at: new Date().toISOString(),
@@ -130,6 +150,9 @@ export const SignDocumentPage: React.FC = () => {
   }
 
   const isAlreadySigned = document.status === 'signed' || document.signed_at;
+  const signatureData = isValidSignatureData(document.digital_signature_data) 
+    ? document.digital_signature_data 
+    : null;
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4" dir="rtl">
@@ -249,7 +272,7 @@ export const SignDocumentPage: React.FC = () => {
         )}
 
         {/* מסמך חתום */}
-        {isAlreadySigned && document.digital_signature_data && (
+        {isAlreadySigned && signatureData && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-green-600">
@@ -260,8 +283,8 @@ export const SignDocumentPage: React.FC = () => {
             <CardContent>
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <div className="space-y-2">
-                  <p><strong>נחתם על ידי:</strong> {document.digital_signature_data.signed_by}</p>
-                  <p><strong>חתימה:</strong> {document.digital_signature_data.signature_text}</p>
+                  <p><strong>נחתם על ידי:</strong> {signatureData.signed_by}</p>
+                  <p><strong>חתימה:</strong> {signatureData.signature_text}</p>
                   <p><strong>תאריך חתימה:</strong> {format(new Date(document.signed_at), 'dd/MM/yyyy HH:mm', { locale: he })}</p>
                 </div>
               </div>
