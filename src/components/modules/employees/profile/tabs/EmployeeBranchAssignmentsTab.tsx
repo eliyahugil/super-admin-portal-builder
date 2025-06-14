@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import type { Employee } from '@/types/employee';
 
 interface BranchAssignment {
   id: string;
@@ -15,12 +16,16 @@ interface BranchAssignment {
 }
 
 interface EmployeeBranchAssignmentsTabProps {
-  assignments: BranchAssignment[];
+  employee: Employee;
+  employeeId: string;
 }
 
 export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTabProps> = ({
-  assignments
+  employee,
+  employeeId
 }) => {
+  const assignments = employee.branch_assignments || [];
+
   return (
     <Card>
       <CardHeader>

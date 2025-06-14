@@ -13,12 +13,14 @@ import { useRealData } from '@/hooks/useRealData';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+type ShiftType = 'morning' | 'afternoon' | 'evening' | 'night';
+
 interface ShiftTemplate {
   id: string;
   name: string;
   start_time: string;
   end_time: string;
-  shift_type: string;
+  shift_type: ShiftType;
   required_employees: number;
   is_active: boolean;
   branch_id: string;
@@ -34,7 +36,7 @@ export const ShiftTemplatesManagement: React.FC = () => {
     name: '',
     start_time: '',
     end_time: '',
-    shift_type: 'morning',
+    shift_type: 'morning' as ShiftType,
     required_employees: 1,
     branch_id: ''
   });
@@ -68,10 +70,10 @@ export const ShiftTemplatesManagement: React.FC = () => {
     try {
       const { error } = await supabase
         .from('shift_templates')
-        .insert([{
+        .insert({
           ...formData,
           business_id: businessId
-        }]);
+        });
 
       if (error) throw error;
 
@@ -197,7 +199,7 @@ export const ShiftTemplatesManagement: React.FC = () => {
 
               <div>
                 <Label htmlFor="shift_type">סוג משמרת</Label>
-                <Select value={formData.shift_type} onValueChange={(value) => setFormData({ ...formData, shift_type: value })}>
+                <Select value={formData.shift_type} onValueChange={(value: ShiftType) => setFormData({ ...formData, shift_type: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
