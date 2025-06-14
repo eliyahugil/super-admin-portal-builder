@@ -944,6 +944,51 @@ export type Database = {
           },
         ]
       }
+      employee_document_reminders: {
+        Row: {
+          document_id: string
+          employee_id: string
+          id: string
+          message: string | null
+          reminder_type: string
+          sent_at: string
+          sent_by: string | null
+        }
+        Insert: {
+          document_id: string
+          employee_id: string
+          id?: string
+          message?: string | null
+          reminder_type: string
+          sent_at?: string
+          sent_by?: string | null
+        }
+        Update: {
+          document_id?: string
+          employee_id?: string
+          id?: string
+          message?: string | null
+          reminder_type?: string
+          sent_at?: string
+          sent_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_document_reminders_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "employee_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_document_reminders_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_documents: {
         Row: {
           created_at: string | null
@@ -953,6 +998,9 @@ export type Database = {
           employee_id: string
           file_url: string
           id: string
+          reminder_count: number
+          reminder_sent_at: string | null
+          status: string
           uploaded_by: string
         }
         Insert: {
@@ -963,6 +1011,9 @@ export type Database = {
           employee_id: string
           file_url: string
           id?: string
+          reminder_count?: number
+          reminder_sent_at?: string | null
+          status?: string
           uploaded_by: string
         }
         Update: {
@@ -973,6 +1024,9 @@ export type Database = {
           employee_id?: string
           file_url?: string
           id?: string
+          reminder_count?: number
+          reminder_sent_at?: string | null
+          status?: string
           uploaded_by?: string
         }
         Relationships: [

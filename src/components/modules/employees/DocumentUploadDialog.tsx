@@ -59,6 +59,9 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({ open
           document_type: fileExt,
           file_url: urlData.publicUrl,
           uploaded_by: user.user?.id,
+          status: 'pending',
+          reminder_count: 0,
+          reminder_sent_at: null,
         });
 
       if (insertError) throw insertError;

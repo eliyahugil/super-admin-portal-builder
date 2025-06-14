@@ -1,11 +1,14 @@
 
 import React, { useState } from 'react';
 import { DocumentUploadDialog } from '@/components/modules/employees/DocumentUploadDialog';
+import { EmployeeDocuments } from '@/components/modules/employees/EmployeeDocuments';
 import { Button } from '@/components/ui/button';
 import { FilePlus } from 'lucide-react';
+import { useAuth } from '@/components/auth/AuthContext';
 
 const EmployeeDocumentsPage: React.FC = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <div className="max-w-7xl mx-auto py-10" dir="rtl">
@@ -24,7 +27,14 @@ const EmployeeDocumentsPage: React.FC = () => {
         כאן ניתן להעלות מסמכים, לשלוח אותם לעובדים לחתימה ולעקוב אחרי הסטטוס של כל מסמך.
       </div>
       <DocumentUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
-      {/* כאן גלריית מסמכים חתומים ו/או ממתינים לחתימה */}
+      {/* גלריית מסמכים למנהל - הצגת סטטוס ותזכורות */}
+      <div className="mt-8">
+        <EmployeeDocuments
+          employeeId={''} // עמוד זה הוא לריכוז כל המסמכים של העסק, למנהל. ניתן להוסיף פילטר עובד בהמשך
+          employeeName="(כל העובדים)"
+          canEdit={true}
+        />
+      </div>
     </div>
   );
 };

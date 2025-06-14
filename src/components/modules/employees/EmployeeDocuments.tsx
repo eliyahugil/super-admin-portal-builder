@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +22,8 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   canEdit = true 
 }) => {
   const [uploading, setUploading] = useState(false);
+  const [reminderLoading, setReminderLoading] = useState<string | null>(null);
+  const [reminderLog, setReminderLog] = useState<Record<string, any[]>>({});
   const { toast } = useToast();
   const { profile, user } = useAuth();
   const queryClient = useQueryClient();
@@ -223,6 +224,57 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     }
   };
 
+  const fetchReminders = async (docId: string) => {
+    const { data, error } = await supabase
+      .from('employee_document_reminders')
+      .select('id, sent_at, message, reminder_type, sent_by')
+      .eq('document_id', docId)
+      .order('sent_at', { ascending: false });
+    if (!error) {
+      setReminderLog((prev) => ({ ...prev, [docId]: data }));
+    }
+  };
+
+  const sendReminder = async (document: any) => {
+    setReminderLoading(document.id);
+    try {
+      // Insert a new reminder in the table, type is "system" for now
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error('No authenticated user!');
+      const { error } = await supabase
+        .from('employee_document_reminders')
+        .insert({
+          document_id: document.id,
+          employee_id: document.employee_id,
+          sent_by: user.id,
+          reminder_type: 'system',
+          message: `תזכורת נשלחה על ידי מנהל המערכת בתאריך ${new Date().toLocaleString('he-IL')}`,
+        });
+      if (error) throw error;
+
+      // Update document reminder count & last sent
+      await supabase.from('employee_documents').update({
+        reminder_count: (document.reminder_count ?? 0) + 1,
+        reminder_sent_at: new Date().toISOString()
+      }).eq('id', document.id);
+
+      toast({
+        title: 'תזכורת נשלחה',
+        description: 'נשלחה תזכורת לעובד עבור מסמך זה',
+      });
+      fetchReminders(document.id);
+      queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
+    } catch (e) {
+      toast({
+        title: 'שגיאה בשליחת תזכורת',
+        description: e instanceof Error ? e.message : 'תקלה בשליחת התזכורת. נסו שוב.',
+        variant: 'destructive',
+      });
+    } finally {
+      setReminderLoading(null);
+    }
+  };
+
   const getFileType = (fileName: string) => {
     const extension = fileName.split('.').pop()?.toLowerCase();
     switch (extension) {
@@ -233,6 +285,23 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       case 'jpeg':
       case 'png': return 'id';
       default: return 'other';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'signed': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending': return 'ממתין לחתימה';
+      case 'signed': return 'נחתם';
+      case 'rejected': return 'נדחה';
+      default: return status;
     }
   };
 
@@ -334,15 +403,18 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
           {documents.map((document) => (
             <Card key={document.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-center gap-3 flex-1">
                     <FileText className="h-8 w-8 text-blue-600" />
                     <div className="flex-1">
                       <h4 className="font-medium">{document.document_name}</h4>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
                         <Badge className={getDocumentTypeColor(document.document_type)}>
                           {getDocumentTypeLabel(document.document_type)}
                         </Badge>
+                        {document.status && (
+                          <Badge className={getStatusColor(document.status)}>{getStatusLabel(document.status)}</Badge>
+                        )}
                         <span className="text-sm text-gray-500">
                           {format(new Date(document.created_at), 'dd/MM/yyyy', { locale: he })}
                         </span>
@@ -351,11 +423,21 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
                             • הועלה על ידי {document.uploaded_by_profile.full_name}
                           </span>
                         )}
+                        {typeof document.reminder_count === 'number' && (
+                          <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded ml-1">
+                            תזכורות: {document.reminder_count}
+                          </span>
+                        )}
+                        {document.reminder_sent_at && (
+                          <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded ml-1">
+                            עודכן לאחרונה: {format(new Date(document.reminder_sent_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col md:flex-row items-center gap-2">
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -370,6 +452,22 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
                     >
                       <Download className="h-4 w-4" />
                     </Button>
+                    {/* Reminder button for admin/business roles */}
+                    {canEdit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={reminderLoading === document.id}
+                        onClick={() => sendReminder(document)}
+                        className="text-purple-600 hover:text-purple-700"
+                        title="שלח תזכורת לעובד"
+                      >
+                        {reminderLoading === document.id
+                          ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
+                          : <Upload className="h-4 w-4" />}
+                        שלח תזכורת
+                      </Button>
+                    )}
                     {canEdit && (
                       <Button 
                         variant="outline" 
@@ -382,6 +480,35 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
                       </Button>
                     )}
                   </div>
+                </div>
+                {/*         REMINDER LOG */}
+                <div className="mt-2">
+                  <details
+                    className="w-full"
+                    onClick={async () => {
+                      if (!reminderLog[document.id]) await fetchReminders(document.id);
+                    }}
+                  >
+                    <summary className="cursor-pointer text-xs text-gray-600">
+                      {reminderLog[document.id]?.length
+                        ? `היסטוריית תזכורות (${reminderLog[document.id].length})`
+                        : 'הצג תזכורות שנשלחו'}
+                    </summary>
+                    <ul className="text-xs bg-gray-50 border rounded p-2 mt-1 space-y-1">
+                      {reminderLog[document.id]?.length === 0 && (
+                        <li className="text-gray-400">לא נשלחו תזכורות למסמך זה</li>
+                      )}
+                      {reminderLog[document.id]?.map(rem => (
+                        <li key={rem.id} className="flex flex-row gap-2 items-center">
+                          <span className="text-purple-700 font-bold">{rem.reminder_type}</span>
+                          <span>{rem.message}</span>
+                          <span className="ml-auto text-gray-500">
+                            {format(new Date(rem.sent_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
                 </div>
               </CardContent>
             </Card>
