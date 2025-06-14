@@ -63,7 +63,7 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
         </Badge>
       </TableCell>
       <TableCell>
-        <EmployeeRowActions employee={employee} onRefetch={onRefetch} />
+        <EmployeeRowActions employee={employee} onTokenSent={onRefetch} />
       </TableCell>
     </TableRow>
   );

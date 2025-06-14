@@ -45,7 +45,7 @@ export interface Employee {
   employee_type: EmployeeType;
   hire_date?: string | null;
   termination_date?: string | null;
-  is_active?: boolean;
+  is_active: boolean; // Made required and non-optional
   is_archived?: boolean; // New field for archiving
   main_branch_id?: string | null;
   preferred_shift_type?: 'morning' | 'afternoon' | 'evening' | 'night' | 'full_day' | null;
@@ -89,7 +89,7 @@ export const normalizeEmployee = (data: any): Employee => {
     employee_type: mapEmployeeType(data.employee_type || 'permanent'),
     hire_date: data.hire_date || null,
     termination_date: data.termination_date || null,
-    is_active: data.is_active ?? true,
+    is_active: data.is_active ?? true, // Default to true, ensure it's always boolean
     is_archived: data.is_archived ?? false, // Default to false for backward compatibility
     main_branch_id: data.main_branch_id || null,
     preferred_shift_type: data.preferred_shift_type || null,

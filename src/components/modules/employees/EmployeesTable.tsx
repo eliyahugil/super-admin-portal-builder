@@ -1,25 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { EmployeesTableRow } from './table/EmployeesTableRow';
-
-interface Employee {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email?: string;
-  phone?: string;
-  employee_type: string;
-  is_active: boolean;
-  main_branch?: {
-    name: string;
-  };
-  employee_branch_assignments?: Array<{
-    branch: {
-      name: string;
-    };
-  }>;
-}
+import type { Employee } from '@/types/employee';
 
 interface EmployeesTableProps {
   employees: Employee[];

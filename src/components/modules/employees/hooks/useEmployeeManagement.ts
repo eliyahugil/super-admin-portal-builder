@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-import type { Employee } from '@/types/employee';
+import type { Employee, EmployeeType } from '@/types/employee';
 
 export const useEmployeeManagement = () => {
   const { businessId, isSuperAdmin } = useCurrentBusiness();
@@ -57,9 +57,12 @@ export const useEmployeeManagement = () => {
         query = query.eq('main_branch_id', selectedBranch);
       }
 
-      // Apply employee type filter
+      // Apply employee type filter - ensure it's a valid EmployeeType
       if (selectedEmployeeType) {
-        query = query.eq('employee_type', selectedEmployeeType);
+        const validEmployeeTypes: EmployeeType[] = ['permanent', 'temporary', 'contractor', 'youth'];
+        if (validEmployeeTypes.includes(selectedEmployeeType as EmployeeType)) {
+          query = query.eq('employee_type', selectedEmployeeType);
+        }
       }
 
       // Order by creation date
