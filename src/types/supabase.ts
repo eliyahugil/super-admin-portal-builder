@@ -1,5 +1,4 @@
 
-
 // ===========================
 // 🌐 כל הטיפוסים של המערכת
 // ===========================
@@ -117,4 +116,3 @@ export interface ScheduledShift {
   employee_id?: string | null;
   is_archived: boolean;
 }
-

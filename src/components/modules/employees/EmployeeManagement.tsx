@@ -60,8 +60,8 @@ export const EmployeeManagement: React.FC = () => {
     );
   }
 
-  // Ensure employees is typed correctly
-  const typedEmployees: Employee[] = employees || [];
+  // Use employees directly - they are already normalized by the hook
+  const employeesList: Employee[] = employees || [];
 
   return (
     <div className="max-w-7xl mx-auto p-6" dir="rtl">
@@ -108,13 +108,13 @@ export const EmployeeManagement: React.FC = () => {
         hideFilters={!!branchId} // Hide branch filter when filtering by specific branch
       />
 
-      <EmployeeStatsCards employees={typedEmployees} />
+      <EmployeeStatsCards employees={employeesList} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2">
-          {typedEmployees && typedEmployees.length > 0 ? (
+          {employeesList && employeesList.length > 0 ? (
             <EmployeesTable 
-              employees={typedEmployees} 
+              employees={employeesList} 
               onRefetch={refetch}
               showBranchFilter={!branchId} // Don't show branch column when filtering by branch
             />

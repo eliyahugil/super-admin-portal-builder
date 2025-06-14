@@ -38,7 +38,7 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
     return 'לא משויך';
   };
 
-  // Handle optional is_active with proper default - consistent with employee type definition
+  // Handle optional is_active with proper default
   const isActive = employee.is_active ?? true;
 
   return (
@@ -73,4 +73,3 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
     </TableRow>
   );
 };
-
