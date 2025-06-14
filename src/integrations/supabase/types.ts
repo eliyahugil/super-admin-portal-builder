@@ -996,7 +996,7 @@ export type Database = {
           digital_signature_data: Json | null
           document_name: string
           document_type: string
-          employee_id: string
+          employee_id: string | null
           file_url: string
           id: string
           is_template: boolean
@@ -1011,7 +1011,7 @@ export type Database = {
           digital_signature_data?: Json | null
           document_name: string
           document_type: string
-          employee_id: string
+          employee_id?: string | null
           file_url: string
           id?: string
           is_template?: boolean
@@ -1026,7 +1026,7 @@ export type Database = {
           digital_signature_data?: Json | null
           document_name?: string
           document_type?: string
-          employee_id?: string
+          employee_id?: string | null
           file_url?: string
           id?: string
           is_template?: boolean

@@ -1,4 +1,3 @@
-
 import type { Employee } from '@/types/employee';
 
 // ===========================
@@ -52,7 +51,7 @@ export interface Branch {
 
 export interface EmployeeDocument {
   id: string;
-  employee_id: string;
+  employee_id: string | null;
   document_name: string;
   document_type: string;
   file_url: string;
@@ -60,6 +59,13 @@ export interface EmployeeDocument {
   uploaded_by: string;
   created_at?: string;
   employee?: Employee;
+  assignee_id?: string | null;
+  is_template?: boolean;
+  status?: string;
+  reminder_sent_at?: string | null;
+  reminder_count?: number;
+  assignee?: any;
+  uploaded_by_profile?: any;
 }
 
 export interface EmployeeBranchPriority {
