@@ -6,19 +6,19 @@ import { useGenericArchive } from '@/hooks/useGenericArchive';
 
 type AllowedTableNames = 'employees' | 'branches' | 'customers';
 
-interface GenericArchiveButtonProps<T extends { id: string; [key: string]: any }> {
-  entity: T;
+interface GenericArchiveButtonProps {
+  entity: any;
   tableName: AllowedTableNames;
   entityName: string;
   queryKey: string[];
-  getEntityDisplayName: (entity: T) => string;
+  getEntityDisplayName: (entity: any) => string;
   isArchived?: boolean;
   variant?: 'default' | 'ghost' | 'outline';
   size?: 'sm' | 'default' | 'lg';
   showText?: boolean;
 }
 
-export const GenericArchiveButton = <T extends { id: string; [key: string]: any }>({
+export const GenericArchiveButton: React.FC<GenericArchiveButtonProps> = ({
   entity,
   tableName,
   entityName,
@@ -28,7 +28,7 @@ export const GenericArchiveButton = <T extends { id: string; [key: string]: any 
   variant = 'outline',
   size = 'sm',
   showText = true
-}: GenericArchiveButtonProps<T>) => {
+}) => {
   const { archiveEntity, restoreEntity, isArchiving, isRestoring } = useGenericArchive({
     tableName,
     entityName,

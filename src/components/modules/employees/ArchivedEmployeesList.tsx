@@ -26,7 +26,7 @@ export const ArchivedEmployeesList: React.FC = () => {
     return variants[type];
   };
 
-  const renderEmployeeCard = (employee: Employee) => {
+  const renderEmployeeCard = (employee: any) => {
     const employeeName = `${employee.first_name} ${employee.last_name}`;
     
     return (
@@ -68,7 +68,7 @@ export const ArchivedEmployeesList: React.FC = () => {
   };
 
   return (
-    <GenericArchivedList<Employee>
+    <GenericArchivedList
       tableName="employees"
       entityName="העובד"
       entityNamePlural="עובדים"

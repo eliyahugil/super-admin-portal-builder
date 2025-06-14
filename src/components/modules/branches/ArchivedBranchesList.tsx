@@ -6,7 +6,7 @@ import { GenericArchivedList } from '@/components/shared/GenericArchivedList';
 import type { Branch } from '@/types/branch';
 
 export const ArchivedBranchesList: React.FC = () => {
-  const renderBranchCard = (branch: Branch) => {
+  const renderBranchCard = (branch: any) => {
     return (
       <>
         <div className="flex items-center gap-3 mb-2">
@@ -40,7 +40,7 @@ export const ArchivedBranchesList: React.FC = () => {
   };
 
   return (
-    <GenericArchivedList<Branch>
+    <GenericArchivedList
       tableName="branches"
       entityName="הסניף"
       entityNamePlural="סניפים"

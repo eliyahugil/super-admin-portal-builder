@@ -12,7 +12,7 @@ interface UseArchivedDataOptions {
   select?: string;
 }
 
-export const useArchivedData = <T extends { id: string; [key: string]: any }>({
+export const useArchivedData = ({
   tableName,
   queryKey,
   selectedBusinessId,
@@ -40,7 +40,7 @@ export const useArchivedData = <T extends { id: string; [key: string]: any }>({
         throw error;
       }
 
-      return (data || []) as T[];
+      return data || [];
     },
     enabled: !!businessId,
   });

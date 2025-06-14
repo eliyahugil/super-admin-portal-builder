@@ -9,18 +9,18 @@ import { GenericArchiveButton } from './GenericArchiveButton';
 
 type AllowedTableNames = 'employees' | 'branches' | 'customers';
 
-interface GenericArchivedListProps<T extends { id: string; [key: string]: any }> {
+interface GenericArchivedListProps {
   tableName: AllowedTableNames;
   entityName: string;
   entityNamePlural: string;
   queryKey: string[];
-  getEntityDisplayName: (entity: T) => string;
-  renderEntityCard: (entity: T) => React.ReactNode;
+  getEntityDisplayName: (entity: any) => string;
+  renderEntityCard: (entity: any) => React.ReactNode;
   selectedBusinessId?: string | null;
   select?: string;
 }
 
-export const GenericArchivedList = <T extends { id: string; [key: string]: any }>({
+export const GenericArchivedList: React.FC<GenericArchivedListProps> = ({
   tableName,
   entityName,
   entityNamePlural,
@@ -29,9 +29,9 @@ export const GenericArchivedList = <T extends { id: string; [key: string]: any }
   renderEntityCard,
   selectedBusinessId,
   select
-}: GenericArchivedListProps<T>) => {
+}) => {
   const { businessId } = useCurrentBusiness();
-  const { data: archivedItems = [], isLoading } = useArchivedData<T>({
+  const { data: archivedItems = [], isLoading } = useArchivedData({
     tableName,
     queryKey,
     selectedBusinessId: selectedBusinessId || businessId,
@@ -70,7 +70,7 @@ export const GenericArchivedList = <T extends { id: string; [key: string]: any }
       </div>
 
       <div className="grid gap-4">
-        {archivedItems.map((item) => (
+        {archivedItems.map((item: any) => (
           <Card key={item.id} className="border-l-4 border-l-orange-400">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">

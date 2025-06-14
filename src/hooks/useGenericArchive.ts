@@ -6,20 +6,15 @@ import { useActivityLogger } from '@/hooks/useActivityLogger';
 
 type AllowedTableNames = 'employees' | 'branches' | 'customers';
 
-interface ArchiveableEntity {
-  id: string;
-  [key: string]: any;
-}
-
 interface UseGenericArchiveOptions {
   tableName: AllowedTableNames;
   entityName: string;
   queryKey: string[];
-  getEntityDisplayName: (entity: ArchiveableEntity) => string;
-  getEntityId?: (entity: ArchiveableEntity) => string;
+  getEntityDisplayName: (entity: any) => string;
+  getEntityId?: (entity: any) => string;
 }
 
-export const useGenericArchive = <T extends ArchiveableEntity>({
+export const useGenericArchive = ({
   tableName,
   entityName,
   queryKey,
@@ -31,7 +26,7 @@ export const useGenericArchive = <T extends ArchiveableEntity>({
   const queryClient = useQueryClient();
 
   const archiveEntity = useMutation({
-    mutationFn: async (entity: T) => {
+    mutationFn: async (entity: any) => {
       const { error } = await supabase
         .from(tableName)
         .update({ is_archived: true })
@@ -72,7 +67,7 @@ export const useGenericArchive = <T extends ArchiveableEntity>({
   });
 
   const restoreEntity = useMutation({
-    mutationFn: async (entity: T) => {
+    mutationFn: async (entity: any) => {
       const { error } = await supabase
         .from(tableName)
         .update({ is_archived: false })
