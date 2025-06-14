@@ -20,19 +20,19 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   availableTabs,
   setActiveTab
 }) => {
-  // לא לבצע reverse - לשמור את הסדר כפי שהוגדר
   return (
-    <TabsList 
-      className="w-full flex overflow-x-auto rtl:flex-row-reverse gap-2 px-1 mb-2 min-w-0"
+    <TabsList
+      // שומרים על סדר טבעי, RTL יעבוד ויזואלית: הטאב הראשון בצד ימין
+      className="w-full flex gap-2 overflow-x-auto px-1 mb-2 min-w-0 scrollbar-thin scrollbar-thumb-gray-200"
       dir="rtl"
       style={{ direction: 'rtl' }}
     >
       {availableTabs.map((tab) => (
-        <TabsTrigger 
-          key={tab.id} 
-          value={tab.id} 
+        <TabsTrigger
+          key={tab.id}
+          value={tab.id}
           onClick={() => setActiveTab(tab.id)}
-          className="relative flex flex-row-reverse items-center justify-end gap-1 whitespace-nowrap px-3 py-2 text-[14px] rounded-md focus:z-10 min-w-[110px] max-w-xs"
+          className="relative flex items-center justify-end flex-row-reverse gap-1 whitespace-nowrap px-3 py-2 text-[14px] rounded-md focus:z-10 min-w-[110px] max-w-xs transition-colors"
           title={tab.description}
         >
           <tab.icon className="h-4 w-4 ml-1 shrink-0" />
@@ -47,4 +47,3 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
     </TabsList>
   );
 };
-
