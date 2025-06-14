@@ -8,7 +8,6 @@ import { Plus, Clock } from 'lucide-react';
 import { useRealData } from '@/hooks/useRealData';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { AddSelectOptionDialog } from '@/components/ui/AddSelectOptionDialog';
 
 interface CreateShiftFormProps {
   businessId?: string;
@@ -36,68 +35,11 @@ export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({ businessId }) 
     enabled: !!businessId
   });
 
-  const { data: branches } = useRealData<any>({
-    queryKey: ['branches-for-shift-form', businessId],
-    tableName: 'branches',
-    filters: businessId ? { is_active: true, business_id: businessId } : { is_active: true },
-    enabled: !!businessId
-  });
-
   console.log('🔧 CreateShiftForm - Current state:', {
     businessId,
     employeesCount: employees?.length,
-    templatesCount: shiftTemplates?.length,
-    branchesCount: branches?.length
+    templatesCount: shiftTemplates?.length
   });
-
-  const handleAddShiftTemplate = async (templateName: string): Promise<boolean> => {
-    if (!businessId || !branches || branches.length === 0) {
-      toast({
-        title: "שגיאה",
-        description: "צריך להיות לפחות סניף אחד כדי ליצור תבנית משמרת",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('shift_templates')
-        .insert({
-          name: templateName,
-          business_id: businessId,
-          branch_id: branches[0].id, // Default to first branch
-          start_time: '09:00',
-          end_time: '17:00',
-          shift_type: 'morning',
-          required_employees: 1,
-          is_active: true
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Set the new template as selected
-      setSelectedTemplateId(data.id);
-      refetchTemplates();
-
-      toast({
-        title: "הצלחה",
-        description: "תבנית המשמרת נוצרה בהצלחה"
-      });
-
-      return true;
-    } catch (error: any) {
-      console.error('Error creating shift template:', error);
-      toast({
-        title: "שגיאה",
-        description: `שגיאה ביצירת תבנית המשמרת: ${error.message}`,
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,30 +125,27 @@ export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({ businessId }) 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="template" className="text-sm text-gray-600">תבנית משמרת *</Label>
-          <div className="flex items-center">
-            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-              <SelectTrigger className="border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 flex-1">
-                <SelectValue placeholder="בחר תבנית משמרת" />
-              </SelectTrigger>
-              <SelectContent className="bg-white rounded-xl shadow-lg border z-50">
-                {shiftTemplates?.map((template) => (
-                  <SelectItem key={template.id} value={template.id} className="p-3 hover:bg-gray-50">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      {template.name} ({template.start_time} - {template.end_time})
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <AddSelectOptionDialog
-              onAddOption={handleAddShiftTemplate}
-              placeholder="שם תבנית המשמרת"
-              buttonText="הוסף תבנית משמרת"
-              dialogTitle="יצירת תבנית משמרת חדשה"
-              optionLabel="שם התבנית"
-            />
-          </div>
+          <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+            <SelectTrigger className="border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400">
+              <SelectValue placeholder="בחר תבנית משמרת" />
+            </SelectTrigger>
+            <SelectContent className="bg-white rounded-xl shadow-lg border z-50">
+              {shiftTemplates?.map((template) => (
+                <SelectItem key={template.id} value={template.id} className="p-3 hover:bg-gray-50">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    {template.name} ({template.start_time} - {template.end_time})
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {(!shiftTemplates || shiftTemplates.length === 0) && (
+            <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded">
+              לא נמצאו תבניות משמרות. יש ליצור תבנית משמרת תחילה.
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -251,7 +190,7 @@ export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({ businessId }) 
 
         <Button 
           type="submit" 
-          disabled={submitting} 
+          disabled={submitting || !shiftTemplates || shiftTemplates.length === 0} 
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors"
         >
           {submitting ? 'יוצר...' : 'צור משמרת'}

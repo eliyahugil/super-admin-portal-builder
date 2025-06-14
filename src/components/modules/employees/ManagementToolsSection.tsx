@@ -2,9 +2,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, Building2 } from 'lucide-react';
+import { Plus, Users, Building2, Clock } from 'lucide-react';
 import { ShiftsAdminTable } from './ShiftsAdminTable';
 import { CreateShiftForm } from './CreateShiftForm';
+import { QuickShiftTemplateCreator } from '../shifts/templates/QuickShiftTemplateCreator';
 import { useBusiness } from '@/hooks/useBusiness';
 
 interface ManagementToolsSectionProps {
@@ -38,6 +39,15 @@ export const ManagementToolsSection: React.FC<ManagementToolsSectionProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Shift Template Creator */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Clock className="h-5 w-5" />
+          ניהול תבניות משמרות
+        </h3>
+        <QuickShiftTemplateCreator />
+      </div>
 
       {/* Management Tools Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
