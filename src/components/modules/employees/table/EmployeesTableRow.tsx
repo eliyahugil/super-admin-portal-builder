@@ -3,7 +3,7 @@ import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { EmployeeRowActions } from './row/EmployeeRowActions';
-import type { Employee } from '@/types/employee';
+import { Employee } from '@/types/employee';
 
 interface EmployeesTableRowProps {
   employee: Employee;
@@ -36,7 +36,7 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
     return 'לא משויך';
   };
 
-  // Handle optional is_active with default value
+  // Handle optional is_active with default value - now consistently optional
   const isActive = employee.is_active ?? true;
 
   return (
