@@ -10,6 +10,8 @@ const EmployeeDocumentsPage: React.FC = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
   const { user } = useAuth();
 
+  console.log('📄 EmployeeDocumentsPage - Rendering with user:', user?.role);
+
   return (
     <div className="max-w-7xl mx-auto py-10" dir="rtl">
       <div className="flex items-center justify-between mb-6">

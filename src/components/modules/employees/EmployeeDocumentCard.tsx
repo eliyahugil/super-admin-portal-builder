@@ -45,6 +45,15 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
   const isSigned = document.status === 'signed' || document.signed_at;
   const hasAssignee = !!document.assignee;
 
+  console.log('📋 EmployeeDocumentCard - Document info:', {
+    id: document.id,
+    name: document.document_name,
+    isTemplate: document.is_template,
+    hasAssignee,
+    canEdit,
+    shouldShowButton: canEdit && !document.is_template
+  });
+
   return (
     <Card key={document.id} className="hover:shadow-md transition-shadow">
       <CardContent className="p-4">
@@ -114,7 +123,7 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
               <Download className="h-4 w-4" />
             </Button>
             
-            {/* כפתור שליחה לחתימה - מציג לכל המסמכים שאינם תבניות */}
+            {/* כפתור שליחה לחתימה - מציג תמיד עבור מסמכים שאינם תבניות אם יש הרשאת עריכה */}
             {canEdit && !document.is_template && (
               <SendToSignatureButton
                 documentId={document.id}

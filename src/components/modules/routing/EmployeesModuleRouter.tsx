@@ -15,6 +15,8 @@ interface Props {
 }
 
 export const EmployeesModuleRouter: React.FC<Props> = ({ route, employeeId, businessId }) => {
+  console.log('🔄 EmployeesModuleRouter - Route:', route, 'EmployeeId:', employeeId);
+
   if (route === 'profile' || (!route && employeeId)) {
     return <EmployeeProfilePage />;
   }
