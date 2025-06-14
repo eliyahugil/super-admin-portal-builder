@@ -40,7 +40,9 @@ export const useArchivedData = ({
         throw error;
       }
 
-      return data || [];
+      // Return the data as unknown first, then cast to array
+      const safeData = Array.isArray(data) ? data : [];
+      return safeData;
     },
     enabled: !!businessId,
   });
