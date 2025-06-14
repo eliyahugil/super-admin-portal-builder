@@ -73,6 +73,16 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templates]);
 
+  // --- PATCH for setSelectedBranchId compatibility ---
+  // Always convert to string[] for multi-select, or [val] for single-select
+  const handleBranchChange = (val: string | string[]) => {
+    if (Array.isArray(val)) {
+      setSelectedBranchId(val);
+    } else {
+      setSelectedBranchId(val ? [val] : []);
+    }
+  };
+
   // התממשקות חדשה: Multi-date shift creation + branch selection
   return (
     <div className="bg-white rounded-2xl shadow-md p-6 space-y-4" dir="rtl">
@@ -119,7 +129,7 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
         {/* בחירת סניפים מרובים */}
         <BranchSelector
           selectedBranchId={selectedBranchId}
-          onBranchChange={setSelectedBranchId}
+          onBranchChange={handleBranchChange}
           branches={branches}
           multiple={true}
         />
