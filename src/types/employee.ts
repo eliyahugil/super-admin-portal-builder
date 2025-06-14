@@ -53,7 +53,12 @@ export interface Employee {
   notes?: string | null;
   created_at?: string;
   updated_at?: string;
-  
+
+  // --- שדות מערכת משתמש ---
+  username?: string | null;
+  password_hash?: string | null;
+  is_system_user?: boolean;
+
   // Extended properties from joins
   main_branch?: { name: string } | null;
   employee_notes?: EmployeeNote[];
@@ -89,15 +94,20 @@ export const normalizeEmployee = (data: any): Employee => {
     employee_type: mapEmployeeType(data.employee_type || 'permanent'),
     hire_date: data.hire_date || null,
     termination_date: data.termination_date || null,
-    is_active: data.is_active ?? true, // Ensure consistent default value
-    is_archived: data.is_archived ?? false, // Default to false for backward compatibility
+    is_active: data.is_active ?? true,
+    is_archived: data.is_archived ?? false,
     main_branch_id: data.main_branch_id || null,
     preferred_shift_type: data.preferred_shift_type || null,
     weekly_hours_required: data.weekly_hours_required || null,
     notes: data.notes || null,
     created_at: data.created_at,
     updated_at: data.updated_at,
-    
+
+    // New fields
+    username: data.username || null,
+    password_hash: data.password_hash || null,
+    is_system_user: data.is_system_user ?? false,
+
     // Extended properties
     main_branch: data.main_branch || null,
     employee_notes: data.employee_notes || [],
@@ -106,3 +116,4 @@ export const normalizeEmployee = (data: any): Employee => {
     weekly_tokens: data.weekly_tokens || []
   };
 };
+
