@@ -8,23 +8,7 @@ export class StorageService {
     try {
       console.log('🔍 Checking bucket access for:', this.BUCKET_NAME);
       
-      // First, try to list buckets to see what's available
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-      if (bucketsError) {
-        console.error('❌ Error listing buckets:', bucketsError);
-        return false;
-      }
-      
-      console.log('📦 Available buckets:', buckets?.map(b => b.name));
-      
-      // Check if our bucket exists
-      const bucketExists = buckets?.some(bucket => bucket.name === this.BUCKET_NAME);
-      if (!bucketExists) {
-        console.error('❌ Bucket not found in available buckets');
-        return false;
-      }
-
-      // Try to access the bucket by listing files - this will test the policies
+      // Try to list files in the bucket - this will test both bucket existence and policies
       const { data, error } = await supabase.storage.from(this.BUCKET_NAME).list('', {
         limit: 1
       });
@@ -44,16 +28,16 @@ export class StorageService {
 
   static async uploadEmployeeFile(file: File, userId: string): Promise<string> {
     try {
-      // First check if bucket is accessible
+      // Check if bucket is accessible
       const hasAccess = await this.checkBucketAccess();
       if (!hasAccess) {
-        throw new Error('מערכת האחסון אינה זמינה. הדלי לא נמצא או שאין הרשאות גישה מתאימות.');
+        throw new Error('מערכת האחסון אינה זמינה כרגע. אנא נסה שוב מאוחר יותר.');
       }
 
-      const timestamp = new Date().toISOString();
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const fileName = `employee-imports/${userId}/${timestamp}-${file.name}`;
 
-      console.log('📤 Attempting to upload file to bucket:', this.BUCKET_NAME, 'Path:', fileName);
+      console.log('📤 Uploading file to bucket:', this.BUCKET_NAME, 'Path:', fileName);
 
       // Verify session before upload
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -61,7 +45,7 @@ export class StorageService {
         throw new Error('לא קיימת חיבור פעיל למערכת. יש להתחבר מחדש.');
       }
 
-      console.log('🔐 Session verified, user authenticated:', sessionData.session.user.id);
+      console.log('🔐 Session verified, user authenticated');
 
       // Upload file to the bucket
       const { data, error } = await supabase.storage
@@ -86,33 +70,23 @@ export class StorageService {
 
   static async getFileUrl(filePath: string): Promise<string> {
     try {
-      // First check if bucket is accessible
+      // Check if bucket is accessible
       const hasAccess = await this.checkBucketAccess();
       if (!hasAccess) {
-        throw new Error('מערכת האחסון אינה זמינה. הדלי לא נמצא או שאין הרשאות גישה מתאימות.');
+        throw new Error('מערכת האחסון אינה זמינה כרגע. אנא נסה שוב מאוחר יותר.');
       }
 
-      // Try to get public URL first (since our bucket is public)
+      // Get public URL (since our bucket is public)
       const { data } = supabase.storage
         .from(this.BUCKET_NAME)
         .getPublicUrl(filePath);
 
       if (data?.publicUrl) {
-        console.log('✅ Public URL generated successfully:', data.publicUrl);
+        console.log('✅ Public URL generated successfully');
         return data.publicUrl;
       }
 
-      // Fallback to signed URL if public URL doesn't work
-      const { data: signedData, error } = await supabase.storage
-        .from(this.BUCKET_NAME)
-        .createSignedUrl(filePath, 3600); // 1 hour expiry
-
-      if (error || !signedData?.signedUrl) {
-        throw new Error('Failed to create file URL');
-      }
-
-      console.log('✅ Signed URL generated successfully');
-      return signedData.signedUrl;
+      throw new Error('Failed to create file URL');
     } catch (error) {
       console.error('❌ Error getting file URL:', error);
       throw error;
@@ -121,10 +95,10 @@ export class StorageService {
 
   static async downloadFile(filePath: string): Promise<Blob> {
     try {
-      // First check if bucket is accessible
+      // Check if bucket is accessible
       const hasAccess = await this.checkBucketAccess();
       if (!hasAccess) {
-        throw new Error('מערכת האחסון אינה זמינה. הדלי לא נמצא או שאין הרשאות גישה מתאימות.');
+        throw new Error('מערכת האחסון אינה זמינה כרגע. אנא נסה שוב מאוחר יותר.');
       }
 
       const { data, error } = await supabase.storage
