@@ -1,4 +1,7 @@
+// Re-export the enhanced version as the default
+export { AccessRequestsManagerEnhanced as AccessRequestsManager } from './AccessRequestsManagerEnhanced';
 
+// Keep the original for backwards compatibility if needed
 import React from 'react';
 import { useAccessRequests } from '@/hooks/useAccessRequests';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -112,7 +115,7 @@ const AccessRequestCard: React.FC<{
   );
 };
 
-export const AccessRequestsManager: React.FC = () => {
+export const AccessRequestsManagerBasic: React.FC = () => {
   const { requests, isLoading, handleRequestMutation } = useAccessRequests();
 
   console.log('📋 AccessRequestsManager - Total requests:', requests.length);
@@ -164,7 +167,7 @@ export const AccessRequestsManager: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
               <UserPlus className="h-8 w-8" />
-              ניהול בקשות גישה
+              ניהול בקשות גישה (בסיסי)
             </h1>
             <p className="text-gray-600 mt-2">סקור ואשר בקשות גישה למערכת</p>
           </div>

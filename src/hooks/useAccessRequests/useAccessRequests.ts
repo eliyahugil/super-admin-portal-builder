@@ -27,13 +27,27 @@ export const useAccessRequests = () => {
     },
     onSuccess: (data) => {
       console.log('✅ Mutation success:', data);
+      
+      let title, description;
+      
+      if (data.action === 'approve') {
+        title = 'בקשה אושרה בהצלחה';
+        description = data.assignmentType 
+          ? `המשתמש שויך בהצלחה ל${getAssignmentTypeLabel(data.assignmentType)}`
+          : 'המשתמש קיבל גישה למערכת';
+      } else {
+        title = 'בקשה נדחתה';
+        description = 'הבקשה נדחתה';
+      }
+      
       toast({
-        title: data.action === 'approve' ? 'בקשה אושרה' : 'בקשה נדחתה',
-        description: data.action === 'approve' 
-          ? 'המשתמש קיבל גישה לעסק'
-          : 'הבקשה נדחתה',
+        title,
+        description,
       });
+      
       queryClient.invalidateQueries({ queryKey: ['access-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['businesses-for-assignment'] });
+      
       // Force refetch
       refetch();
     },
@@ -41,7 +55,7 @@ export const useAccessRequests = () => {
       console.error('❌ Error handling request:', error);
       toast({
         title: 'שגיאה',
-        description: 'לא ניתן לעבד את הבקשה',
+        description: 'לא ניתן לעבד את הבקשה. אנא נסה שוב.',
         variant: 'destructive',
       });
     }
@@ -55,3 +69,14 @@ export const useAccessRequests = () => {
     handleRequestMutation
   };
 };
+
+function getAssignmentTypeLabel(type: string): string {
+  switch (type) {
+    case 'existing_business': return 'עסק קיים';
+    case 'new_business': return 'עסק חדש';
+    case 'customer': return 'לקוח';
+    case 'employee': return 'עובד';
+    case 'other': return 'סוג מותאם';
+    default: return 'לא מוגדר';
+  }
+}

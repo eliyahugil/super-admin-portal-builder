@@ -4,6 +4,18 @@ export interface AccessRequestMutationParams {
   action: 'approve' | 'reject';
   reviewNotes?: string;
   businessId?: string;
+  assignmentData?: {
+    type: 'existing_business' | 'new_business' | 'customer' | 'employee' | 'other';
+    businessId?: string;
+    newBusinessData?: {
+      name: string;
+      description: string;
+      contactEmail: string;
+      contactPhone: string;
+    };
+    customUserType?: string;
+    reviewNotes?: string;
+  };
 }
 
 export interface AccessRequestEnriched {
