@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CheckCircle, XCircle, Clock, UserPlus, Building2, Plus, User, Users, ShoppingCart } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, UserPlus, Building2, Plus, User, Users, ShoppingCart, Phone } from 'lucide-react';
 import { AccessRequest } from '@/types/access-request';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -185,6 +185,13 @@ const AccessRequestCard: React.FC<{
                   <p className="text-gray-900">{request.profiles?.email || 'לא צוין'}</p>
                 </div>
                 <div>
+                  <span className="font-medium text-gray-700">טלפון:</span>
+                  <p className="text-gray-900 flex items-center gap-1">
+                    <Phone className="h-3 w-3" />
+                    {request.profiles?.phone || 'לא צוין'}
+                  </p>
+                </div>
+                <div>
                   <span className="font-medium text-gray-700">תפקיד מבוקש:</span>
                   <p className="text-gray-900">
                     {request.requested_role === 'business_admin' ? 'מנהל עסק' : 
@@ -193,7 +200,7 @@ const AccessRequestCard: React.FC<{
                      request.requested_role}
                   </p>
                 </div>
-                <div>
+                <div className="col-span-2">
                   <span className="font-medium text-gray-700">תאריך בקשה:</span>
                   <p className="text-gray-900">
                     {new Date(request.created_at).toLocaleDateString('he-IL')} 

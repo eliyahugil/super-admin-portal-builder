@@ -8,13 +8,14 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './AuthContext';
 import { SimpleAccessRequestForm } from './SimpleAccessRequestForm';
-import { Building, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Building, User, Mail, Lock, Eye, EyeOff, Phone } from 'lucide-react';
 
 export const AuthForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
@@ -99,8 +100,8 @@ export const AuthForm: React.FC = () => {
         console.log('AuthForm - Attempting login');
         result = await signIn(email, password);
       } else {
-        console.log('AuthForm - Attempting signup');
-        result = await signUp(email, password, fullName);
+        console.log('AuthForm - Attempting signup with phone:', phone);
+        result = await signUp(email, password, fullName, phone);
       }
 
       if (result.error) {
@@ -203,6 +204,27 @@ export const AuthForm: React.FC = () => {
                   />
                 </div>
               )}
+
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium">
+                    <Phone className="h-4 w-4" />
+                    מספר טלפון
+                  </Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="הכנס מספר טלפון"
+                    dir="ltr"
+                    className="text-left"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    לדוגמה: 050-1234567
+                  </p>
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium">
@@ -282,6 +304,7 @@ export const AuthForm: React.FC = () => {
                   setEmail('');
                   setPassword('');
                   setFullName('');
+                  setPhone('');
                 }}
                 className="text-sm text-blue-600 hover:text-blue-800"
                 disabled={loading || authLoading}

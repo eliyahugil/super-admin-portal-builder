@@ -32,6 +32,7 @@ export interface AccessRequestEnriched {
   profiles?: {
     email?: string;
     full_name?: string;
+    phone?: string;
   } | null;
   businesses?: {
     name?: string;
