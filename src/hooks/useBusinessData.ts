@@ -105,9 +105,10 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
         return false;
       }
       return true;
-    }) as T[];
+    });
 
-    return validRecords;
+    // Type assertion to T[] - we trust our validation above
+    return validRecords as T[];
   };
 
   return useQuery<T[], Error>({
