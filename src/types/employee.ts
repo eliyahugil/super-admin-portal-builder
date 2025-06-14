@@ -46,6 +46,7 @@ export interface Employee {
   hire_date?: string | null;
   termination_date?: string | null;
   is_active?: boolean;
+  is_archived?: boolean; // New field for archiving
   main_branch_id?: string | null;
   preferred_shift_type?: 'morning' | 'afternoon' | 'evening' | 'night' | 'full_day' | null;
   weekly_hours_required?: number | null;
@@ -89,6 +90,7 @@ export const normalizeEmployee = (data: any): Employee => {
     hire_date: data.hire_date || null,
     termination_date: data.termination_date || null,
     is_active: data.is_active ?? true,
+    is_archived: data.is_archived ?? false, // Default to false for backward compatibility
     main_branch_id: data.main_branch_id || null,
     preferred_shift_type: data.preferred_shift_type || null,
     weekly_hours_required: data.weekly_hours_required || null,

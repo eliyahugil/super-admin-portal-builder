@@ -3,12 +3,14 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Users, UserCheck, Clock, FileText } from 'lucide-react';
+import { Plus, Users, UserCheck, Clock, FileText, Archive } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useBranchesData } from '@/hooks/useBranchesData';
 import { useEmployeesData } from '@/hooks/useEmployeesData';
+import { useArchivedEmployees } from '@/hooks/useArchivedEmployees';
 import { EmployeesList } from './EmployeesList';
+import { ArchivedEmployeesList } from './ArchivedEmployeesList';
 import { CreateEmployeeDialog } from './CreateEmployeeDialog';
 import { CreateBranchDialog } from './CreateBranchDialog';
 import { BranchesList } from './BranchesList';
@@ -33,6 +35,11 @@ export const EmployeeManagement: React.FC = () => {
   } = useEmployeesData(businessId);
 
   const { 
+    data: archivedEmployees = [], 
+    isLoading: archivedLoading 
+  } = useArchivedEmployees(businessId);
+
+  const { 
     data: branches = [], 
     isLoading: branchesLoading, 
     refetch: refetchBranches 
@@ -41,6 +48,7 @@ export const EmployeeManagement: React.FC = () => {
   console.log('EmployeeManagement - Current state:', {
     businessId,
     employeesCount: employees.length,
+    archivedCount: archivedEmployees.length,
     branchesCount: branches.length,
     activeTab,
     userRole: profile?.role
@@ -59,7 +67,7 @@ export const EmployeeManagement: React.FC = () => {
     setCreateBranchOpen(false);
   };
 
-  const isLoading = employeesLoading || branchesLoading;
+  const isLoading = employeesLoading || branchesLoading || archivedLoading;
 
   if (!businessId) {
     return (
@@ -96,7 +104,7 @@ export const EmployeeManagement: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6" dir="rtl">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6" dir="rtl">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
@@ -136,6 +144,18 @@ export const EmployeeManagement: React.FC = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
+              <Archive className="h-8 w-8 text-gray-600" />
+              <div className="mr-4">
+                <p className="text-2xl font-bold text-gray-900">{archivedEmployees.length}</p>
+                <p className="text-gray-600">עובדים בארכיון</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
               <FileText className="h-8 w-8 text-purple-600" />
               <div className="mr-4">
                 <p className="text-2xl font-bold text-gray-900">{branches.length}</p>
@@ -159,8 +179,9 @@ export const EmployeeManagement: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
-            <TabsList className="grid w-full grid-cols-5" dir="rtl">
+            <TabsList className="grid w-full grid-cols-6" dir="rtl">
               <TabsTrigger value="employees">עובדים</TabsTrigger>
+              <TabsTrigger value="archived">ארכיון</TabsTrigger>
               <TabsTrigger value="branches">סניפים</TabsTrigger>
               <TabsTrigger value="shifts">משמרות</TabsTrigger>
               <TabsTrigger value="import">יבוא נתונים</TabsTrigger>
@@ -173,6 +194,10 @@ export const EmployeeManagement: React.FC = () => {
                 onRefetch={refetchEmployees}
                 branches={branches as Branch[]}
               />
+            </TabsContent>
+
+            <TabsContent value="archived" className="mt-6">
+              <ArchivedEmployeesList />
             </TabsContent>
 
             <TabsContent value="branches" className="mt-6">

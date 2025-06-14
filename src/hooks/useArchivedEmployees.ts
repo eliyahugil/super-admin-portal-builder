@@ -5,13 +5,13 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { normalizeEmployee, type Employee } from '@/types/employee';
 
-export const useEmployeesData = (selectedBusinessId?: string | null) => {
+export const useArchivedEmployees = (selectedBusinessId?: string | null) => {
   const { profile } = useAuth();
   const { businessId, isSuperAdmin } = useCurrentBusiness();
 
   const targetBusinessId = selectedBusinessId || businessId;
 
-  console.log('🔍 useEmployeesData - Query parameters:', {
+  console.log('🗃️ useArchivedEmployees - Query parameters:', {
     userRole: profile?.role,
     businessId,
     selectedBusinessId,
@@ -20,9 +20,9 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
   });
 
   return useQuery({
-    queryKey: ['employees', targetBusinessId, profile?.role],
+    queryKey: ['archived-employees', targetBusinessId, profile?.role],
     queryFn: async (): Promise<Employee[]> => {
-      console.log('📊 useEmployeesData - Starting query...');
+      console.log('📊 useArchivedEmployees - Starting query...');
       
       if (!profile) {
         console.log('❌ No profile available');
@@ -74,7 +74,7 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
             created_by
           )
         `)
-        .eq('is_archived', false); // Exclude archived employees
+        .eq('is_archived', true); // Only fetch archived employees
 
       // Apply business filter for non-super admins or when specific business is selected
       if (targetBusinessId) {
@@ -88,16 +88,16 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
       const { data, error } = await query;
 
       if (error) {
-        console.error('❌ Error fetching employees:', error);
+        console.error('❌ Error fetching archived employees:', error);
         throw error;
       }
 
-      console.log('✅ Raw employees data fetched:', data?.length || 0);
+      console.log('✅ Raw archived employees data fetched:', data?.length || 0);
 
       // Normalize the data to our Employee type
       const normalizedEmployees = (data || []).map(normalizeEmployee);
 
-      console.log('✅ Normalized employees data:', {
+      console.log('✅ Normalized archived employees data:', {
         count: normalizedEmployees.length,
         sample: normalizedEmployees[0] ? {
           name: `${normalizedEmployees[0].first_name} ${normalizedEmployees[0].last_name}`,

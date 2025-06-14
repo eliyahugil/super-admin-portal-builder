@@ -1375,6 +1375,7 @@ export type Database = {
           id: string
           id_number: string | null
           is_active: boolean | null
+          is_archived: boolean
           last_name: string
           main_branch_id: string | null
           notes: string | null
@@ -1396,6 +1397,7 @@ export type Database = {
           id?: string
           id_number?: string | null
           is_active?: boolean | null
+          is_archived?: boolean
           last_name: string
           main_branch_id?: string | null
           notes?: string | null
@@ -1419,6 +1421,7 @@ export type Database = {
           id?: string
           id_number?: string | null
           is_active?: boolean | null
+          is_archived?: boolean
           last_name?: string
           main_branch_id?: string | null
           notes?: string | null

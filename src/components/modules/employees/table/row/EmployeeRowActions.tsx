@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Edit, Trash } from 'lucide-react';
 import { EmployeeTokenButton } from '../../EmployeeTokenButton';
+import { EmployeeArchiveButton } from '../../EmployeeArchiveButton';
 import type { Employee } from '@/types/employee';
 
 interface EmployeeRowActionsProps {
@@ -62,6 +63,14 @@ export const EmployeeRowActions: React.FC<EmployeeRowActionsProps> = ({
         phone={employee.phone}
         email={employee.email}
         onTokenSent={onTokenSent}
+        size="sm"
+      />
+
+      {/* Archive Button */}
+      <EmployeeArchiveButton
+        employee={employee}
+        isArchived={false}
+        variant="outline"
         size="sm"
       />
 
