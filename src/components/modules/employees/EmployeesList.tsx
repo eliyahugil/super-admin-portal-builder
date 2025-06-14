@@ -33,7 +33,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir="rtl">
       <EmployeeListHeader
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}

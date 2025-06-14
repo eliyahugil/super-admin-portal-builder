@@ -16,14 +16,14 @@ export const EmployeesTableGrid: React.FC<EmployeesTableGridProps> = ({
 
   if (!employees || employees.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-gray-500" dir="rtl">
         <p>לא נמצאו עובדים</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" dir="rtl">
       <table className="w-full border-collapse bg-white" dir="rtl">
         <thead>
           <tr className="bg-gray-50 border-b">

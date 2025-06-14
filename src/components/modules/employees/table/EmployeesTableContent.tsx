@@ -26,7 +26,7 @@ export const EmployeesTableContent: React.FC<EmployeesTableContentProps> = ({
   if (filteredEmployees.length === 0) {
     return (
       <CardContent>
-        <div className="text-center text-gray-500 py-8">
+        <div className="text-center text-gray-500 py-8" dir="rtl">
           <User className="h-12 w-12 text-gray-300 mx-auto mb-4" />
           <p>{search || filterType !== 'all' || filterStatus !== 'all' ? 'לא נמצאו עובדים התואמים לחיפוש' : 'אין עובדים רשומים במערכת'}</p>
           {(!search && filterType === 'all' && filterStatus === 'all') && (
@@ -41,7 +41,7 @@ export const EmployeesTableContent: React.FC<EmployeesTableContentProps> = ({
 
   return (
     <CardContent>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" dir="rtl">
         <EmployeesTableGrid employees={filteredEmployees} onTokenSent={onTokenSent} />
       </div>
     </CardContent>

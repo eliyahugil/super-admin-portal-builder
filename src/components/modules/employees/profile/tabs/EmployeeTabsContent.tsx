@@ -15,7 +15,7 @@ import { EmployeeNotesTab } from './EmployeeNotesTab';
 import { EmployeeDocumentsTab } from './EmployeeDocumentsTab';
 import { EmployeeBranchAssignmentsTab } from './EmployeeBranchAssignmentsTab';
 import { EmployeeSalaryTab } from './EmployeeSalaryTab';
-import type { Employee } from '@/types/supabase';
+import type { Employee } from '@/types/employee';
 
 interface EmployeeTabsContentProps {
   employee: Employee;
@@ -31,7 +31,7 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
   businessId
 }) => {
   return (
-    <>
+    <div dir="rtl">
       <TabsContent value="overview" className="mt-6">
         <EmployeeOverviewTab employee={employee} employeeName={employeeName} />
       </TabsContent>
@@ -78,6 +78,6 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
       <TabsContent value="analytics" className="mt-6">
         <EmployeeAnalyticsTab employee={employee} />
       </TabsContent>
-    </>
+    </div>
   );
 };

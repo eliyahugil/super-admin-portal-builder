@@ -3,7 +3,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useEmployeeProfile } from './useEmployeeProfile';
 import { EmployeeProfileHeader } from './EmployeeProfileHeader';
 import { EmployeeProfileSidebar } from './EmployeeProfileSidebar';
@@ -57,7 +57,7 @@ export const EmployeeProfilePage: React.FC = () => {
                 <p className="text-gray-600 mb-6">
                   העובד המבוקש לא נמצא במערכת או שאין לך הרשאה לצפות בו.
                 </p>
-                <div className="bg-gray-100 p-4 rounded-lg mb-6 text-sm text-gray-700">
+                <div className="bg-gray-100 p-4 rounded-lg mb-6 text-sm text-gray-700 text-right">
                   <p><strong>מזהה עובד:</strong> {employeeId || 'לא הוגדר'}</p>
                   <p><strong>נתיב נוכחי:</strong> {window.location.pathname}</p>
                 </div>
@@ -66,7 +66,7 @@ export const EmployeeProfilePage: React.FC = () => {
                   variant="outline"
                   className="flex items-center gap-2"
                 >
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowLeft className="h-4 w-4" />
                   חזרה לרשימת העובדים
                 </Button>
               </div>
@@ -82,7 +82,7 @@ export const EmployeeProfilePage: React.FC = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header with navigation */}
         <div className="flex items-center justify-between">
-          <div>
+          <div className="text-right">
             <h1 className="text-3xl font-bold text-gray-900">
               פרופיל עובד - {employee.first_name} {employee.last_name}
             </h1>
@@ -95,7 +95,7 @@ export const EmployeeProfilePage: React.FC = () => {
             variant="outline"
             className="flex items-center gap-2"
           >
-            <ArrowRight className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
             חזרה לרשימת העובדים
           </Button>
         </div>
@@ -108,7 +108,7 @@ export const EmployeeProfilePage: React.FC = () => {
             onEmployeeUpdated={refetchEmployee}
           />
           <CardContent className="p-6">
-            <div className="md:flex gap-6">
+            <div className="md:flex gap-6" dir="rtl">
               <EmployeeProfileSidebar employee={employee} />
               <EmployeeProfileTabs employee={employee} employeeId={employeeId!} />
             </div>

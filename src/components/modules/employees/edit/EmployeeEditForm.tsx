@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { EmployeeType } from '@/types/supabase';
+import type { EmployeeType } from '@/types/employee';
 
 interface EmployeeFormData {
   first_name: string;
@@ -30,7 +30,7 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
   setFormData,
 }) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir="rtl">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="first_name">שם פרטי</Label>
@@ -39,6 +39,7 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
             value={formData.first_name}
             onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
             required
+            className="text-right"
           />
         </div>
         <div>
@@ -48,6 +49,7 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
             value={formData.last_name}
             onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
             required
+            className="text-right"
           />
         </div>
       </div>
@@ -60,6 +62,7 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            className="text-right"
           />
         </div>
         <div>
@@ -68,6 +71,7 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
             id="phone"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            className="text-right"
           />
         </div>
       </div>
@@ -78,6 +82,7 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
           id="address"
           value={formData.address}
           onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+          className="text-right"
         />
       </div>
 
@@ -88,7 +93,7 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
             value={formData.employee_type}
             onValueChange={(value: EmployeeType) => setFormData({ ...formData, employee_type: value })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="text-right">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -106,6 +111,7 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
             type="date"
             value={formData.hire_date}
             onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
+            className="text-right"
           />
         </div>
       </div>
@@ -117,6 +123,7 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
           type="number"
           value={formData.weekly_hours_required}
           onChange={(e) => setFormData({ ...formData, weekly_hours_required: parseInt(e.target.value) || 0 })}
+          className="text-right"
         />
       </div>
 
@@ -127,10 +134,11 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           rows={3}
+          className="text-right"
         />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 justify-end">
         <Label htmlFor="is_active">עובד פעיל</Label>
         <input
           id="is_active"

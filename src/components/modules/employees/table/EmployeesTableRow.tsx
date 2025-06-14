@@ -21,9 +21,9 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
   onDelete
 }) => {
   return (
-    <tr className="hover:bg-gray-50 border-b">
+    <tr className="hover:bg-gray-50 border-b" dir="rtl">
       {/* Employee Basic Info */}
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 text-right">
         <EmployeeBasicInfo
           firstName={employee.first_name}
           lastName={employee.last_name}
@@ -32,7 +32,7 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
       </td>
 
       {/* Contact Info */}
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 text-right">
         <EmployeeContactInfo
           phone={employee.phone}
           email={employee.email}
@@ -40,7 +40,7 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
       </td>
 
       {/* Status & Type */}
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 text-right">
         <EmployeeStatusBadges
           isActive={employee.is_active ?? true}
           employeeType={employee.employee_type}
@@ -48,7 +48,7 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
       </td>
 
       {/* Branch Info */}
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 text-right">
         <EmployeeBranchInfo
           mainBranch={employee.main_branch}
           branchAssignments={employee.branch_assignments}
@@ -56,7 +56,7 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
       </td>
 
       {/* Work Info */}
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 text-right">
         <EmployeeWorkInfo
           hireDate={employee.hire_date}
           weeklyHoursRequired={employee.weekly_hours_required}
@@ -64,7 +64,7 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
       </td>
 
       {/* Quick Stats */}
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 text-right">
         <EmployeeQuickStats
           weeklyTokens={employee.weekly_tokens}
           employeeNotes={employee.employee_notes}
@@ -72,7 +72,7 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
       </td>
 
       {/* Actions */}
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 text-right">
         <EmployeeRowActions
           employee={employee}
           onTokenSent={onTokenSent}

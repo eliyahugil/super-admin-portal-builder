@@ -28,17 +28,17 @@ export const EmployeeListContent: React.FC<EmployeeListContentProps> = ({
   totalEmployees,
 }) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir="rtl">
       {/* Results Summary */}
       {searchTerm && (
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 text-right">
           נמצאו {employees.length} תוצאות מתוך {totalEmployees} עובדים
         </div>
       )}
 
       {employees.length === 0 ? (
         <Card>
-          <CardContent className="py-8 text-center">
+          <CardContent className="py-8 text-center" dir="rtl">
             <div className="text-gray-500">
               {searchTerm ? 'לא נמצאו עובדים התואמים לחיפוש' : 'אין עובדים רשומים'}
             </div>
