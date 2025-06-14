@@ -20,33 +20,6 @@ interface BaseEntity {
   [key: string]: any;
 }
 
-// Separate function to build the query - no generics here to simplify TypeScript inference
-const buildQuery = (
-  tableName: string,
-  businessId: string,
-  filter: DataFilter,
-  select: string,
-  statusField: string
-) => {
-  const baseQuery = supabase
-    .from(tableName)
-    .select(select)
-    .eq('business_id', businessId);
-
-  switch (filter) {
-    case 'active':
-      return baseQuery.eq('is_archived', false).order('created_at', { ascending: false });
-    case 'archived':
-      return baseQuery.eq('is_archived', true).order('created_at', { ascending: false });
-    case 'deleted':
-      return baseQuery.eq('is_deleted', true).order('created_at', { ascending: false });
-    case 'pending':
-      return baseQuery.eq(statusField, 'pending').order('created_at', { ascending: false });
-    default:
-      throw new Error(`Unsupported filter: ${filter}`);
-  }
-};
-
 export const useBusinessData = <T extends BaseEntity = BaseEntity>({
   tableName,
   queryKey,
@@ -63,14 +36,36 @@ export const useBusinessData = <T extends BaseEntity = BaseEntity>({
       throw new Error('Business ID is missing');
     }
 
-    const query = buildQuery(tableName, businessId, filter, select, statusField);
+    // שמירה על טיפוס נכון מול Supabase Client - assert את שם הטבלה
+    let query = supabase
+      .from(tableName as 'employees' | 'branches' | 'customers')
+      .select(select)
+      .eq('business_id', businessId);
+
+    switch (filter) {
+      case 'active':
+        query = query.eq('is_archived', false).order('created_at', { ascending: false });
+        break;
+      case 'archived':
+        query = query.eq('is_archived', true).order('created_at', { ascending: false });
+        break;
+      case 'deleted':
+        query = query.eq('is_deleted', true).order('created_at', { ascending: false });
+        break;
+      case 'pending':
+        query = query.eq(statusField, 'pending').order('created_at', { ascending: false });
+        break;
+      default:
+        throw new Error(`Unsupported filter: ${filter}`);
+    }
+
     const { data, error } = await query;
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return Array.isArray(data) ? data : [];
+    return Array.isArray(data) ? (data as T[]) : [];
   };
 
   return useQuery<T[], Error>({
