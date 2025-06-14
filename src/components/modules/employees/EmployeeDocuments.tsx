@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -25,15 +24,15 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 }) => {
   const [uploading, setUploading] = useState(false);
   const [assigneeId, setAssigneeId] = useState<string>('');
+  const [assigningId, setAssigningId] = useState<string | null>(null);
   const { toast } = useToast();
   const { profile, user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Fetch employee options only if employeeId === '' (כל העובדים)
+  // Fetch employee options for assignment
   const { data: employees, isLoading: employeesLoading } = useQuery({
     queryKey: ['employees-for-assignee'],
     queryFn: async () => {
-      if (employeeId) return []; // not needed for specific employee
       const { data, error } = await supabase
         .from('employees')
         .select('id, first_name, last_name, employee_id')
@@ -42,7 +41,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       if (error) throw error;
       return data || [];
     },
-    enabled: employeeId === '',
+    enabled: canEdit, // always available to assign to anyone
   });
 
   const {
@@ -65,39 +64,19 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
           assignee:employees!employee_documents_assignee_id_fkey(first_name, last_name, employee_id),
           uploaded_by_profile:profiles!employee_documents_uploaded_by_fkey(full_name)
         `)
-        .eq('employee_id', employeeId)
+        .eq(employeeId ? 'employee_id' : 'employee_id', employeeId || '')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data;
     },
-    enabled: !!employeeId,
+    enabled: !!(employeeId !== undefined),
   });
 
-  // File upload handler (now with support for selecting assignee)
+  // File upload handler – allow upload without assignee/employeeId
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    // Prevent upload for "כל העובדים" (empty employeeId) unless assignee selected
-    if (!employeeId && !assigneeId) {
-      toast({
-        title: 'נא לבחור עובד לחתימה',
-        description: 'עליך לבחור למי מוקצה המסמך לחתימה.',
-        variant: 'destructive'
-      });
-      event.target.value = '';
-      return;
-    }
-    // Prevent upload for "כל העובדים" with no assignee
-    if (!employeeId && !assigneeId) {
-      toast({
-        title: 'לא ניתן להעלות מסמך עבור כל העובדים',
-        description: 'יש לבחור עובד ספציפי להעלאת מסמכים. העלאת מסמך לכלל העובדים אינה נתמכת.',
-        variant: 'destructive'
-      });
-      event.target.value = '';
-      return;
-    }
     if (!profile?.id && !user?.id) {
       toast({
         title: 'שגיאה',
@@ -114,8 +93,8 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       const fileExt = file.name.split('.').pop();
       const timestamp = Date.now();
       const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-      // Use assigneeId for file path if set, else employeeId
-      const fileEmployeeId = employeeId || assigneeId;
+      // השתמש או בemployeeId (פר עובד) או ב"תבניות" (אם צפייה כללית)
+      const fileEmployeeId = employeeId || 'templates';
       const filePath = `employee-documents/${fileEmployeeId}/${fileName}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -133,11 +112,12 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 
       const uploadedBy = profile?.id || user?.id;
 
+      // אל תצמיד employee_id בעת העלאה רוחבית, תן רק במסך עובד להצמיד
       const { error: insertError } = await supabase
         .from('employee_documents')
         .insert({
-          employee_id: employeeId || assigneeId, // save document under the specific employee
-          assignee_id: assigneeId || null, // assign to selected employee
+          employee_id: employeeId || null, // במידה ופר עובד
+          assignee_id: null, // אסור להצמיד כאן
           document_name: file.name,
           document_type: getFileType(file.name),
           file_url: urlData.publicUrl,
@@ -168,6 +148,30 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     }
   };
 
+  // שליחת מסמך לחתימה – עדכון assignee_id למסמך קיים
+  const handleAssignAssignee = async (docId: string, assignId: string) => {
+    if (!assignId) return;
+    setAssigningId(docId);
+    try {
+      const { error } = await supabase
+        .from('employee_documents')
+        .update({ assignee_id: assignId })
+        .eq('id', docId);
+
+      if (error) throw error;
+      toast({ title: 'הצלחה', description: 'המסמך שובץ לחתימה.' });
+      queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
+    } catch (e: any) {
+      toast({
+        title: 'שגיאה',
+        description: e?.message ?? 'הפעולה נכשלה',
+        variant: 'destructive',
+      });
+    } finally {
+      setAssigningId(null);
+    }
+  };
+  
   const handleDownload = (document: any) => {
     if (document.file_url) {
       const link = document.createElement('a');
@@ -189,7 +193,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     deleteDocumentMutation.mutate({ documentId: document.id, filePath });
   };
 
-  if (isLoading || (employeeId === '' && employeesLoading)) {
+  if (isLoading || employeesLoading) {
     return (
       <div className="space-y-4">
         <div className="animate-pulse">
@@ -204,36 +208,41 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     );
   }
 
-  // Disable upload if employeeId is empty AND no assigneeId selected
-  const disableUpload = !employeeId && !assigneeId;
+  // Disable upload only בטעינה
+  const disableUpload = uploading;
 
-  // Assignee select component (for all employees view)
-  const AssigneeSelector = () => {
-    if (employeeId !== '' || !canEdit) return null;
+  // 'הקצה לחתימה' – קומפוננטה קטנה (בטבלת המסמכים)
+  function AssignToEmployeeSelect({ docId }: { docId: string }) {
+    const [tempId, setTempId] = useState('');
     return (
-      <div className="mb-2 flex items-center gap-2">
-        <label className="text-sm font-medium">בחר עובד לחתימה:</label>
+      <div className="flex gap-2 items-center">
         <select
-          className="px-3 py-1 border rounded bg-white text-sm"
-          value={assigneeId}
-          onChange={e => setAssigneeId(e.target.value)}
-          disabled={uploading || employeesLoading}
+          value={tempId}
+          className="px-2 py-1 rounded border text-sm"
+          onChange={e => setTempId(e.target.value)}
+          disabled={assigningId === docId || uploading}
         >
-          <option value="">—</option>
+          <option value="">בחר עובד</option>
           {employees?.map((emp: any) => (
             <option key={emp.id} value={emp.id}>
               {emp.first_name} {emp.last_name} ({emp.employee_id || ''})
             </option>
           ))}
         </select>
+        <button
+          disabled={!tempId || assigningId === docId}
+          className="bg-blue-500 hover:bg-blue-700 text-xs text-white px-3 py-1 rounded disabled:bg-blue-200"
+          onClick={() => handleAssignAssignee(docId, tempId)}
+          type="button"
+        >
+          {assigningId === docId ? 'שולח...' : 'שלח לחתימה'}
+        </button>
       </div>
     );
-  };
+  }
 
   return (
     <div className="space-y-4">
-      {/* Show assignee selector if needed */}
-      <AssigneeSelector />
       <EmployeeDocumentsHeader
         canEdit={canEdit}
         uploading={uploading}
@@ -243,26 +252,29 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       {documents && documents.length > 0 ? (
         <div className="space-y-3">
           {documents.map((document: any) => (
-            <EmployeeDocumentCard
-              key={document.id}
-              document={document}
-              canEdit={canEdit}
-              uploading={uploading}
-              reminderLoading={reminderLoading}
-              reminderLog={reminderLog}
-              handleView={handleView}
-              handleDownload={handleDownload}
-              handleDelete={handleDelete}
-              sendReminder={sendReminder}
-              fetchReminders={fetchReminders}
-            />
+            <div key={document.id} className="space-y-2">
+              <EmployeeDocumentCard
+                document={document}
+                canEdit={canEdit}
+                uploading={uploading}
+                reminderLoading={reminderLoading}
+                reminderLog={reminderLog}
+                handleView={handleView}
+                handleDownload={handleDownload}
+                handleDelete={handleDelete}
+                sendReminder={sendReminder}
+                fetchReminders={fetchReminders}
+              />
+              {/* אם אין assignee_id, הצג כפתור הקצה/שלח לחתימה */}
+              {canEdit && !document.assignee &&
+                <AssignToEmployeeSelect docId={document.id} />
+              }
+            </div>
           ))}
         </div>
       ) : (
         <Card>
           <CardContent>
-            {/* Assignee selector for empty state */}
-            <AssigneeSelector />
             <EmployeeDocumentsEmptyState
               employeeName={employeeName}
               canEdit={canEdit}
