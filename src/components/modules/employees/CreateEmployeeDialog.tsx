@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -25,6 +24,16 @@ interface CreateEmployeeDialogProps {
 type EmployeeType = 'permanent' | 'temporary' | 'youth' | 'contractor';
 type ShiftType = 'morning' | 'afternoon' | 'evening' | 'night' | 'full_day';
 
+async function hashPassword(password: string): Promise<string> {
+  if ('crypto' in window && window.crypto.subtle) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  return password;
+}
+
 export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
   open,
   onOpenChange,
@@ -46,8 +55,13 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
     hire_date: '',
     notes: '',
     is_active: true,
-    selected_business_id: '', // Add this for super admin
+    selected_business_id: '',
+    // שדות משתמש מערכת
+    username: '',
+    password: '',
+    is_system_user: false,
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { logActivity } = useActivityLogger();
@@ -79,7 +93,7 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.first_name.trim() || !formData.last_name.trim()) {
       toast({
         title: 'שגיאה',
@@ -101,6 +115,11 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
     setLoading(true);
 
     try {
+      let password_hash = undefined;
+      if (formData.password.trim()) {
+        password_hash = await hashPassword(formData.password.trim());
+      }
+
       const employeeData = {
         business_id: effectiveBusinessId,
         employee_id: formData.employee_id.trim() || null,
@@ -117,9 +136,20 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
         hire_date: formData.hire_date || null,
         notes: formData.notes.trim() || null,
         is_active: formData.is_active,
+        username: formData.username.trim() || null,
+        password_hash: password_hash || null,
+        is_system_user: !!formData.is_system_user,
       };
 
-      console.log('🚀 Creating employee with data:', employeeData);
+      // אם לא מולא שם משתמש - אל תכניס סיסמה/סטטוס משתמש מערכת
+      if (!formData.username.trim()) {
+        employeeData.username = null;
+        employeeData.password_hash = null;
+        employeeData.is_system_user = false;
+      }
+
+      // For display/debug:
+      console.log('👤 Creating employee with user fields:', employeeData);
 
       const { data: createdEmployee, error } = await supabase
         .from('employees')
@@ -159,6 +189,8 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
           employee_id: formData.employee_id,
           employee_type: formData.employee_type,
           business_id: effectiveBusinessId,
+          is_system_user: !!formData.is_system_user,
+          username: formData.username || undefined,
           success: true 
         }
       });
@@ -184,8 +216,11 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
         notes: '',
         is_active: true,
         selected_business_id: '',
+        username: '',
+        password: '',
+        is_system_user: false,
       });
-      
+
       onSuccess();
       onOpenChange(false);
     } catch (error) {
@@ -217,7 +252,7 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
         <DialogHeader>
           <DialogTitle>הוסף עובד חדש</DialogTitle>
         </DialogHeader>
-        
+
         {isSuperAdmin && !businessId && (
           <Alert>
             <AlertTriangle className="h-4 w-4" />
@@ -417,6 +452,59 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
             />
           </div>
 
+          {/* --- שדות משתמש מערכת --- */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="username">שם משתמש למערכת</Label>
+              <Input
+                id="username"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                placeholder="ליצירת גישת מערכת"
+                className="text-right"
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">סיסמה</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="סיסמה למשתמש"
+                  autoComplete="new-password"
+                  className="text-right"
+                  disabled={!formData.username}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  className="px-2 rounded border text-xs"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label="הצגת סיסמה"
+                >
+                  {showPassword ? "🔒" : "👁"}
+                </button>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                יש להזין שם משתמש וסיסמה כדי ליצור גישת מערכת.
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 justify-end">
+            <Label htmlFor="is_system_user">משתמש מערכת</Label>
+            <input
+              id="is_system_user"
+              type="checkbox"
+              checked={!!formData.is_system_user}
+              onChange={(e) => setFormData({ ...formData, is_system_user: e.target.checked })}
+              disabled={!formData.username}
+            />
+            <span className="text-xs text-gray-500">(סימון זה יאפשר לעובד גישה לאפליקציה)</span>
+          </div>
+
+          {/* טוגל פעיל, כפתורים וכו' */}
           <div className="flex items-center justify-between">
             <Label htmlFor="is_active">עובד פעיל</Label>
             <Switch
