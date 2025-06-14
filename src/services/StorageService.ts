@@ -4,8 +4,52 @@ import { supabase } from '@/integrations/supabase/client';
 export class StorageService {
   private static readonly BUCKET_NAME = 'employee-files';
 
+  static async checkBucketAccess(): Promise<boolean> {
+    try {
+      console.log('🔍 Checking bucket access for:', this.BUCKET_NAME);
+      
+      // First, try to list buckets to see what's available
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      if (bucketsError) {
+        console.error('❌ Error listing buckets:', bucketsError);
+        return false;
+      }
+      
+      console.log('📦 Available buckets:', buckets?.map(b => b.name));
+      
+      // Check if our bucket exists
+      const bucketExists = buckets?.some(bucket => bucket.name === this.BUCKET_NAME);
+      if (!bucketExists) {
+        console.error('❌ Bucket not found in available buckets');
+        return false;
+      }
+
+      // Try to access the bucket by listing files
+      const { data, error } = await supabase.storage.from(this.BUCKET_NAME).list('', {
+        limit: 1
+      });
+
+      if (error) {
+        console.warn('⚠️ Bucket access check failed:', error.message);
+        return false;
+      }
+
+      console.log('✅ Bucket access confirmed');
+      return true;
+    } catch (error) {
+      console.warn('⚠️ Error checking bucket access:', error);
+      return false;
+    }
+  }
+
   static async uploadEmployeeFile(file: File, userId: string): Promise<string> {
     try {
+      // First check if bucket is accessible
+      const hasAccess = await this.checkBucketAccess();
+      if (!hasAccess) {
+        throw new Error('Storage bucket is not accessible. Please contact administrator.');
+      }
+
       const timestamp = new Date().toISOString();
       const fileName = `employee-imports/${userId}/${timestamp}-${file.name}`;
 
@@ -40,6 +84,12 @@ export class StorageService {
 
   static async getFileUrl(filePath: string): Promise<string> {
     try {
+      // First check if bucket is accessible
+      const hasAccess = await this.checkBucketAccess();
+      if (!hasAccess) {
+        throw new Error('Storage bucket is not accessible. Please contact administrator.');
+      }
+
       // Try to get public URL first (since our bucket is public)
       const { data } = supabase.storage
         .from(this.BUCKET_NAME)
@@ -67,6 +117,12 @@ export class StorageService {
 
   static async downloadFile(filePath: string): Promise<Blob> {
     try {
+      // First check if bucket is accessible
+      const hasAccess = await this.checkBucketAccess();
+      if (!hasAccess) {
+        throw new Error('Storage bucket is not accessible. Please contact administrator.');
+      }
+
       const { data, error } = await supabase.storage
         .from(this.BUCKET_NAME)
         .download(filePath);
@@ -80,26 +136,6 @@ export class StorageService {
     } catch (error) {
       console.error('❌ Error downloading file:', error);
       throw error;
-    }
-  }
-
-  static async checkBucketAccess(): Promise<boolean> {
-    try {
-      // Check if we can access the bucket by listing files
-      const { data, error } = await supabase.storage.from(this.BUCKET_NAME).list('', {
-        limit: 1
-      });
-
-      if (error) {
-        console.warn('⚠️ Bucket access check failed:', error.message);
-        return false;
-      }
-
-      console.log('✅ Bucket access confirmed');
-      return true;
-    } catch (error) {
-      console.warn('⚠️ Error checking bucket access:', error);
-      return false;
     }
   }
 }

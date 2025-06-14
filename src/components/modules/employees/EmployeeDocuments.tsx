@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,8 @@ import { useEmployeeDocumentDelete } from './hooks/useEmployeeDocumentDelete';
 import { AssignToEmployeeSelect } from './AssignToEmployeeSelect';
 import { useEmployeeDocumentUpload } from './hooks/useEmployeeDocumentUpload';
 import { useEmployeeDocumentAssignment } from './hooks/useEmployeeDocumentAssignment';
+import { StorageService } from '@/services/StorageService';
+import { useToast } from '@/hooks/use-toast';
 
 interface EmployeeDocumentsProps {
   employeeId: string;
@@ -25,6 +28,32 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   canEdit = true
 }) => {
   const { profile, user } = useAuth();
+  const { toast } = useToast();
+
+  // Check bucket access on component mount
+  useEffect(() => {
+    const checkBucket = async () => {
+      try {
+        console.log('🔍 Checking storage bucket access...');
+        const hasAccess = await StorageService.checkBucketAccess();
+        if (!hasAccess) {
+          console.warn('⚠️ Storage bucket access issue detected');
+          toast({
+            title: 'تحذير',
+            description: 'יש בעיה בגישה למערכת האחסון. ייתכן שלא ניתן יהיה להעלות או לצפות בקבצים.',
+            variant: 'destructive',
+          });
+        } else {
+          console.log('✅ Storage bucket access confirmed');
+        }
+      } catch (error) {
+        console.error('💥 Error checking bucket access:', error);
+      }
+    };
+
+    checkBucket();
+  }, [toast]);
+
   // Fetch employees for assignment
   const { data: employees, isLoading: employeesLoading } = useQuery({
     queryKey: ['employees-for-assignee'],
@@ -90,18 +119,62 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   });
 
   // Download/view/delete logic
-  const handleDownload = (document: any) => {
-    if (document.file_url) {
-      const link = document.createElement('a');
-      link.href = document.file_url;
-      link.download = document.document_name;
-      link.click();
+  const handleDownload = async (document: any) => {
+    try {
+      if (document.file_url) {
+        console.log('📥 Attempting to download document:', document.document_name);
+        
+        // Check bucket access before attempting download
+        const hasAccess = await StorageService.checkBucketAccess();
+        if (!hasAccess) {
+          toast({
+            title: 'שגיאה',
+            description: 'לא ניתן לגשת למערכת האחסון כרגע',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        const link = document.createElement('a');
+        link.href = document.file_url;
+        link.download = document.document_name;
+        link.click();
+      }
+    } catch (error) {
+      console.error('💥 Download error:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'שגיאה בהורדת הקובץ',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleView = (document: any) => {
-    if (document.file_url) {
-      window.open(document.file_url, '_blank');
+  const handleView = async (document: any) => {
+    try {
+      if (document.file_url) {
+        console.log('👁️ Attempting to view document:', document.document_name);
+        
+        // Check bucket access before attempting to view
+        const hasAccess = await StorageService.checkBucketAccess();
+        if (!hasAccess) {
+          toast({
+            title: 'שגיאה',
+            description: 'לא ניתן לגשת למערכת האחסון כרגע',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        window.open(document.file_url, '_blank');
+      }
+    } catch (error) {
+      console.error('💥 View error:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'שגיאה בפתיחת הקובץ',
+        variant: 'destructive',
+      });
     }
   };
 

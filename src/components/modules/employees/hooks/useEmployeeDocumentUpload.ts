@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { getFileType } from '../helpers/documentHelpers';
+import { StorageService } from '@/services/StorageService';
 
 /**
  * This hook will now support template uploads.
@@ -46,6 +47,14 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
     try {
       setUploading(true);
 
+      console.log('🔍 Starting upload process...');
+      
+      // Check bucket access first
+      const hasAccess = await StorageService.checkBucketAccess();
+      if (!hasAccess) {
+        throw new Error('Storage system is not available. Please try again later or contact support.');
+      }
+
       // Verify session before proceeding
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session) {
@@ -58,6 +67,8 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
       const fileEmployeeId = uploadingTemplate ? 'templates' : employeeId;
       const filePath = `employee-documents/${fileEmployeeId}/${fileName}`;
 
+      console.log('📁 Uploading to path:', filePath);
+
       // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('employee-files')
@@ -67,9 +78,11 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
         });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
+        console.error('❌ Storage upload error:', uploadError);
         throw new Error(`שגיאה בהעלאת הקובץ: ${uploadError.message}`);
       }
+
+      console.log('✅ File uploaded successfully:', uploadData.path);
 
       // Get public URL for the uploaded file
       const { data: urlData } = supabase.storage
@@ -81,6 +94,8 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
       }
 
       const uploadedBy = profile?.id || user?.id;
+
+      console.log('💾 Saving document record to database...');
 
       // Save document record to database
       const { error: insertError } = await supabase
@@ -98,11 +113,13 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
         });
 
       if (insertError) {
-        console.error('Database insert error:', insertError);
+        console.error('❌ Database insert error:', insertError);
         // Try to clean up the uploaded file if database insert fails
         await supabase.storage.from('employee-files').remove([uploadData.path]);
         throw new Error(`שגיאה בשמירת המסמך: ${insertError.message}`);
       }
+
+      console.log('✅ Document record saved successfully');
 
       toast({
         title: 'הצלחה',
@@ -113,7 +130,7 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
       queryClient.invalidateQueries({ queryKey: queryKeyForInvalidate });
       
     } catch (error: any) {
-      console.error('File upload error:', error);
+      console.error('💥 File upload error:', error);
       toast({
         title: 'שגיאה',
         description: error?.message ?? 'שגיאה בהעלאת מסמך',
