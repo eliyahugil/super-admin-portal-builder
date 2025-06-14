@@ -10,7 +10,7 @@ interface ArchiveableEntity {
 }
 
 interface UseGenericArchiveOptions {
-  tableName: string;
+  tableName: 'employees' | 'branches' | 'customers';
   entityName: string;
   queryKey: string[];
   getEntityDisplayName: (entity: ArchiveableEntity) => string;
@@ -31,7 +31,7 @@ export const useGenericArchive = <T extends ArchiveableEntity>({
   const archiveEntity = useMutation({
     mutationFn: async (entity: T) => {
       const { error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .update({ is_archived: true })
         .eq('id', getEntityId(entity));
 
@@ -72,7 +72,7 @@ export const useGenericArchive = <T extends ArchiveableEntity>({
   const restoreEntity = useMutation({
     mutationFn: async (entity: T) => {
       const { error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .update({ is_archived: false })
         .eq('id', getEntityId(entity));
 

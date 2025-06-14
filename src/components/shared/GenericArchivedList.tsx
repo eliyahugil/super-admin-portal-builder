@@ -8,7 +8,7 @@ import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { GenericArchiveButton } from './GenericArchiveButton';
 
 interface GenericArchivedListProps<T extends { id: string; [key: string]: any }> {
-  tableName: string;
+  tableName: 'employees' | 'branches' | 'customers';
   entityName: string;
   entityNamePlural: string;
   queryKey: string[];
