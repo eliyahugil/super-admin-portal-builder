@@ -26,5 +26,12 @@ export const fetchAccessRequests = async (): Promise<AccessRequestEnriched[]> =>
   }
 
   console.log('✅ Fetched access requests:', data?.length || 0);
-  return data || [];
+  
+  // המר את הנתונים לטיפוס הנכון
+  const accessRequests: AccessRequestEnriched[] = (data || []).map(request => ({
+    ...request,
+    status: request.status as 'pending' | 'approved' | 'rejected'
+  }));
+  
+  return accessRequests;
 };
