@@ -5,6 +5,7 @@ import { ShiftTokenManagement } from './ShiftTokenManagement';
 import { WeeklyTokenManagement } from './WeeklyTokenManagement';
 import { ShiftSubmissionsDashboard } from './ShiftSubmissionsDashboard';
 import { ShiftApprovalDashboard } from './ShiftApprovalDashboard';
+import { ShiftTemplatesManagement } from './ShiftTemplatesManagement';
 
 export const ShiftManagementTabs: React.FC = () => {
   return (
@@ -14,13 +15,18 @@ export const ShiftManagementTabs: React.FC = () => {
         <p className="text-gray-600">ניהול טוקנים, הגשות ואישורי משמרות</p>
       </div>
 
-      <Tabs defaultValue="submissions" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="templates" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="templates">תבניות משמרות</TabsTrigger>
           <TabsTrigger value="submissions">הגשות משמרות</TabsTrigger>
           <TabsTrigger value="weekly-tokens">טוקנים שבועיים</TabsTrigger>
           <TabsTrigger value="single-tokens">טוקנים יחידים</TabsTrigger>
           <TabsTrigger value="approvals">אישור בקשות</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="templates" className="mt-6">
+          <ShiftTemplatesManagement />
+        </TabsContent>
         
         <TabsContent value="submissions" className="mt-6">
           <ShiftSubmissionsDashboard />
