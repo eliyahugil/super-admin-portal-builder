@@ -1,5 +1,12 @@
 
-export interface AccessRequest {
+export interface AccessRequestMutationParams {
+  requestId: string;
+  action: 'approve' | 'reject';
+  reviewNotes?: string;
+  businessId?: string;
+}
+
+export interface AccessRequestEnriched {
   id: string;
   user_id: string;
   requested_business_id: string | null;
@@ -17,11 +24,4 @@ export interface AccessRequest {
   businesses?: {
     name?: string;
   } | null;
-}
-
-export interface AccessRequestMutationParams {
-  requestId: string;
-  action: 'approve' | 'reject';
-  reviewNotes?: string;
-  businessId?: string;
 }
