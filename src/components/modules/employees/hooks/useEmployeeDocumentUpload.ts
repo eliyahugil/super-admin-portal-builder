@@ -6,6 +6,10 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { getFileType } from '../helpers/documentHelpers';
 
+/**
+ * This hook will now support template uploads.
+ * - If employeeId is falsy (''), it uploads as a template (is_template: true, employee_id: null)
+ */
 export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryKeyForInvalidate: any[]) => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
@@ -15,22 +19,24 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    // חסימת העלאה כאשר employeeId לא קיים (למשל, "כל העובדים")
-    if (!employeeId) {
-      toast({
-        title: 'לא נבחר עובד',
-        description: 'עליך לבחור עובד מסוים כדי להעלות מסמך.',
-        variant: 'destructive',
-      });
-      event.target.value = '';
-      return;
-    }
+    // Allow uploading templates when employeeId is falsy (i.e., '').
+    const uploadingTemplate = !employeeId;
     if (!profile?.id && !user?.id) {
       toast({
         title: 'שגיאה',
         description: 'נדרש להתחבר למערכת כדי להעלות קבצים',
         variant: 'destructive',
       });
+      return;
+    }
+    // Validation: If not uploading templates and no employeeId, show error.
+    if (!uploadingTemplate && !employeeId) {
+      toast({
+        title: 'לא נבחר עובד',
+        description: 'עליך לבחור עובד מסוים כדי להעלות מסמך.',
+        variant: 'destructive',
+      });
+      event.target.value = '';
       return;
     }
     try {
@@ -41,7 +47,7 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
       const fileExt = file.name.split('.').pop();
       const timestamp = Date.now();
       const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-      const fileEmployeeId = employeeId || 'templates';
+      const fileEmployeeId = uploadingTemplate ? 'templates' : employeeId;
       const filePath = `employee-documents/${fileEmployeeId}/${fileName}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -62,12 +68,13 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
       const { error: insertError } = await supabase
         .from('employee_documents')
         .insert({
-          employee_id: employeeId || null,
+          employee_id: uploadingTemplate ? null : employeeId,
           assignee_id: null,
           document_name: file.name,
           document_type: getFileType(file.name),
           file_url: urlData.publicUrl,
           uploaded_by: uploadedBy,
+          is_template: uploadingTemplate,
         });
 
       if (insertError) {
@@ -77,7 +84,7 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
 
       toast({
         title: 'הצלחה',
-        description: 'המסמך הועלה בהצלחה',
+        description: uploadingTemplate ? 'התבנית הועלתה בהצלחה!' : 'המסמך הועלה בהצלחה',
       });
 
       queryClient.invalidateQueries({ queryKey: queryKeyForInvalidate });

@@ -43,7 +43,6 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   // Upload and assignment hooks
   const uploadQueryKey = ['employee-documents', employeeId];
   const { uploading, handleFileUpload, setUploading } = useEmployeeDocumentUpload(employeeId, uploadQueryKey);
-
   const { assigningId, handleAssignAssignee } = useEmployeeDocumentAssignment(employeeId, uploadQueryKey);
 
   const {
@@ -56,19 +55,34 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 
   const deleteDocumentMutation = useEmployeeDocumentDelete(employeeId);
 
+  // --- QUERY for docs ---
+  // 1. Templates: is_template = true, employee_id IS NULL (only when employeeId is falsy/empty)
+  // 2. Regular: employee docs (employee_id matches or assignee), OR is_template = false and employee_id is NOT NULL
   const { data: documents, isLoading } = useQuery({
     queryKey: ['employee-documents', employeeId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch all docs for this employeeId, or all (if no employeeId)
+      let query = supabase
         .from('employee_documents')
         .select(`
           *,
           assignee:employees!employee_documents_assignee_id_fkey(first_name, last_name, employee_id),
           uploaded_by_profile:profiles!employee_documents_uploaded_by_fkey(full_name)
         `)
-        .eq(employeeId ? 'employee_id' : 'employee_id', employeeId || '')
         .order('created_at', { ascending: false });
 
+      // For "כל העובדים" (employeeId falsy) - show everything, templates first
+      // For specific employee: show their docs and assigned docs, exclude templates.
+      if (!employeeId) {
+        // No filtering needed: will filter in code below into templates and records
+      } else {
+        // Only non-templates for the selected employee
+        query = query
+          .eq('is_template', false)
+          .eq('employee_id', employeeId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -112,8 +126,22 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     );
   }
 
-  // Disable upload אם אין employeeId (כל העובדים) או אם מעלה כרגע
-  const disableUpload = uploading || !employeeId;
+  // For "כל העובדים", separate template docs and normal ones
+  let templates: any[] = [];
+  let others: any[] = [];
+  if (!employeeId && documents) {
+    templates = documents.filter((d: any) => d.is_template && !d.employee_id);
+    others = documents.filter((d: any) => !d.is_template);
+  } else {
+    others = documents || [];
+  }
+
+  // Disable upload: uploading OR (if employeeId is undefined, only allow for templates)
+  let disableUpload = uploading;
+  // For "כל העובדים", allow upload; for specific employee, as before.
+  // Always allow uploading template when in "כל העובדים"
+  // (employeeId === '' means templates)
+  // uploading state already disables input.
 
   return (
     <div className="space-y-4">
@@ -123,9 +151,33 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         handleFileUpload={handleFileUpload}
         disableUpload={disableUpload}
       />
-      {documents && documents.length > 0 ? (
+      {/* Show templates block if relevant */}
+      {(!employeeId && templates.length > 0) && (
+        <div>
+          <div className="mb-2 text-right text-purple-700 font-semibold">תבניות מסמכים</div>
+          <div className="space-y-3">
+            {templates.map((document: any) => (
+              <EmployeeDocumentCard
+                key={document.id}
+                document={document}
+                canEdit={false} // No actions on template docs
+                uploading={false}
+                reminderLoading={null}
+                reminderLog={{}}
+                handleView={handleView}
+                handleDownload={handleDownload}
+                handleDelete={() => {}} // can't delete from here
+                sendReminder={() => {}}
+                fetchReminders={async () => {}}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Show regular/assigned docs */}
+      {others && others.length > 0 ? (
         <div className="space-y-3">
-          {documents.map((document: any) => (
+          {others.map((document: any) => (
             <div key={document.id} className="space-y-2">
               <EmployeeDocumentCard
                 document={document}
@@ -139,8 +191,8 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
                 sendReminder={sendReminder}
                 fetchReminders={fetchReminders}
               />
-              {/* Show 'Assign to Employee' if needed */}
-              {canEdit && !document.assignee &&
+              {/* Show 'Assign to Employee' if needed, skip on template docs */}
+              {canEdit && !document.assignee && !document.is_template &&
                 <AssignToEmployeeSelect
                   docId={document.id}
                   employees={employees ?? []}

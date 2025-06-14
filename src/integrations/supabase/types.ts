@@ -999,6 +999,7 @@ export type Database = {
           employee_id: string
           file_url: string
           id: string
+          is_template: boolean
           reminder_count: number
           reminder_sent_at: string | null
           status: string
@@ -1013,6 +1014,7 @@ export type Database = {
           employee_id: string
           file_url: string
           id?: string
+          is_template?: boolean
           reminder_count?: number
           reminder_sent_at?: string | null
           status?: string
@@ -1027,6 +1029,7 @@ export type Database = {
           employee_id?: string
           file_url?: string
           id?: string
+          is_template?: boolean
           reminder_count?: number
           reminder_sent_at?: string | null
           status?: string
