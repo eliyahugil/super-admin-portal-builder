@@ -18,6 +18,7 @@ import { ShiftsList } from './ShiftsList';
 import { EmployeeExcelImporter } from './EmployeeExcelImporter';
 import { AttendanceManagement } from './AttendanceManagement';
 import { ManagementToolsSection } from './ManagementToolsSection';
+import { ArchiveManagement } from '@/components/shared/ArchiveManagement';
 import { Branch } from '@/types/branch';
 
 export const EmployeeManagement: React.FC = () => {
@@ -189,10 +190,19 @@ export const EmployeeManagement: React.FC = () => {
             </TabsList>
 
             <TabsContent value="employees" className="mt-6">
-              <EmployeesList 
-                employees={employees} 
-                onRefetch={refetchEmployees}
-                branches={branches as Branch[]}
+              <ArchiveManagement
+                title="ניהול עובדים"
+                activeContent={
+                  <EmployeesList 
+                    employees={employees} 
+                    onRefetch={refetchEmployees}
+                    branches={branches as Branch[]}
+                  />
+                }
+                archivedContent={<ArchivedEmployeesList />}
+                activeCount={employees.length}
+                archivedCount={archivedEmployees.length}
+                entityNamePlural="עובדים"
               />
             </TabsContent>
 

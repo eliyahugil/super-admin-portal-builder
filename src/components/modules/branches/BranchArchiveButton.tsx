@@ -1,28 +1,28 @@
 
 import React from 'react';
 import { GenericArchiveButton } from '@/components/shared/GenericArchiveButton';
-import type { Employee } from '@/types/employee';
+import type { Branch } from '@/types/branch';
 
-interface EmployeeArchiveButtonProps {
-  employee: Employee;
+interface BranchArchiveButtonProps {
+  branch: Branch;
   isArchived?: boolean;
   variant?: 'default' | 'ghost' | 'outline';
   size?: 'sm' | 'default' | 'lg';
 }
 
-export const EmployeeArchiveButton: React.FC<EmployeeArchiveButtonProps> = ({
-  employee,
+export const BranchArchiveButton: React.FC<BranchArchiveButtonProps> = ({
+  branch,
   isArchived = false,
   variant = 'outline',
   size = 'sm'
 }) => {
   return (
     <GenericArchiveButton
-      entity={employee}
-      tableName="employees"
-      entityName="העובד"
-      queryKey={['employees']}
-      getEntityDisplayName={(emp) => `${emp.first_name} ${emp.last_name}`}
+      entity={branch}
+      tableName="branches"
+      entityName="הסניף"
+      queryKey={['branches']}
+      getEntityDisplayName={(br) => br.name}
       isArchived={isArchived}
       variant={variant}
       size={size}
