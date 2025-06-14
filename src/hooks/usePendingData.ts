@@ -3,21 +3,23 @@ import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
-type AllowedTableNames = 'employees' | 'branches' | 'customers';
+type AllowedTableNames = 'employee_requests' | 'shift_submissions' | 'customer_agreements';
 
-interface UseActiveDataOptions {
+interface UsePendingDataOptions {
   tableName: AllowedTableNames;
   queryKey: string[];
   selectedBusinessId?: string | null;
   select?: string;
+  statusField?: string;
 }
 
-export const useActiveData = <T = any>({
+export const usePendingData = <T = any>({
   tableName,
   queryKey,
   selectedBusinessId,
   select = '*',
-}: UseActiveDataOptions): UseQueryResult<T[]> => {
+  statusField = 'status',
+}: UsePendingDataOptions): UseQueryResult<T[]> => {
   const { businessId: contextBusinessId } = useCurrentBusiness();
   const businessId = selectedBusinessId || contextBusinessId;
 
@@ -28,7 +30,7 @@ export const useActiveData = <T = any>({
       .from(tableName)
       .select(select)
       .eq('business_id', businessId)
-      .eq('is_archived', false)
+      .eq(statusField, 'pending')
       .order('created_at', { ascending: false });
 
     if (error) throw new Error(error.message);
@@ -37,7 +39,7 @@ export const useActiveData = <T = any>({
   };
 
   return useQuery<T[]>({
-    queryKey: [...queryKey, 'active', businessId],
+    queryKey: [...queryKey, 'pending', businessId],
     queryFn: fetchData,
     enabled: !!businessId,
     retry: false,

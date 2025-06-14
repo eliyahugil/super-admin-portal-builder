@@ -33,7 +33,7 @@ export const useArchivedData = <T = any>({
 
     if (error) throw new Error(error.message);
 
-    return Array.isArray(data) ? data : [];
+    return (data as T[]) || [];
   };
 
   return useQuery<T[]>({
