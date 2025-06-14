@@ -21,10 +21,8 @@ interface BaseEntity {
 }
 
 /**
- * TS Deep Instantiation Fix:
- * - Remove all generics from fetchData, always operate on BaseEntity[] internally.
- * - Only provide the T generic at the useQuery level.
- * - Cast the returned array to T[] as the final step.
+ * This hook avoids generic chaining in the fetch phase, and does a safe runtime check and conversion
+ * to solve deep instantiation and unsafe type conversion errors.
  */
 export function useBusinessData<T extends BaseEntity = BaseEntity>(
   options: UseBusinessDataOptions
@@ -41,8 +39,8 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
   const { businessId: contextBusinessId } = useCurrentBusiness();
   const businessId = selectedBusinessId || contextBusinessId;
 
-  // NOT generic fetch - always returns BaseEntity[]
-  const fetchData = async (): Promise<BaseEntity[]> => {
+  // Fetch function always returns unknown[], cast to T[] only after runtime check on useQuery level.
+  const fetchData = async (): Promise<unknown[]> => {
     if (!businessId) {
       throw new Error('Business ID is missing');
     }
@@ -75,15 +73,23 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
       throw new Error(error.message);
     }
 
-    return Array.isArray(data) ? data as BaseEntity[] : [];
+    // Some Supabase errors may return [{ error: true }], guard for that case
+    if (!Array.isArray(data)) return [];
+    if (data.length > 0 && typeof data[0] === "object" && "error" in data[0]) {
+      // Defensive: skip errored array
+      return [];
+    }
+
+    return data;
   };
 
-  // Only generic here (no deep generic chaining)
   return useQuery<T[], Error>({
     queryKey: [...queryKey, filter, businessId],
     queryFn: async () => {
       const res = await fetchData();
-      return res as T[];
+      // Defensive at runtime: only take objects that have id property
+      const filtered = (Array.isArray(res) ? res.filter((d) => typeof d === "object" && d !== null && "id" in d) : []) as unknown[];
+      return filtered as T[];
     },
     enabled: !!businessId,
     retry: false,
