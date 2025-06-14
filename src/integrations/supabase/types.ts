@@ -1926,6 +1926,38 @@ export type Database = {
           },
         ]
       }
+      shift_roles: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_roles_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_submissions: {
         Row: {
           created_at: string | null
@@ -1976,6 +2008,42 @@ export type Database = {
           },
         ]
       }
+      shift_template_branches: {
+        Row: {
+          branch_id: string
+          created_at: string
+          id: string
+          shift_template_id: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          id?: string
+          shift_template_id: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          id?: string
+          shift_template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_template_branches_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_template_branches_shift_template_id_fkey"
+            columns: ["shift_template_id"]
+            isOneToOne: false
+            referencedRelation: "shift_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_templates: {
         Row: {
           branch_id: string
@@ -1984,8 +2052,10 @@ export type Database = {
           end_time: string
           id: string
           is_active: boolean | null
+          is_archived: boolean
           name: string
           required_employees: number | null
+          role_name: string | null
           shift_type: Database["public"]["Enums"]["shift_type"]
           start_time: string
         }
@@ -1996,8 +2066,10 @@ export type Database = {
           end_time: string
           id?: string
           is_active?: boolean | null
+          is_archived?: boolean
           name: string
           required_employees?: number | null
+          role_name?: string | null
           shift_type: Database["public"]["Enums"]["shift_type"]
           start_time: string
         }
@@ -2008,8 +2080,10 @@ export type Database = {
           end_time?: string
           id?: string
           is_active?: boolean | null
+          is_archived?: boolean
           name?: string
           required_employees?: number | null
+          role_name?: string | null
           shift_type?: Database["public"]["Enums"]["shift_type"]
           start_time?: string
         }

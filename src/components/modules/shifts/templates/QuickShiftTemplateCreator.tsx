@@ -4,11 +4,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Clock, MapPin, Users, Trash2 } from 'lucide-react';
+import { Plus, Clock, MapPin, Users, Trash2, UserCog } from 'lucide-react';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useRealData } from '@/hooks/useRealData';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useShiftRoles } from "./useShiftRoles";
+import { AddRoleDialog } from "./AddRoleDialog";
 
 type ShiftType = 'morning' | 'afternoon' | 'evening' | 'night';
 
@@ -19,6 +21,7 @@ interface QuickTemplateData {
   shift_type: ShiftType;
   branch_id: string;
   required_employees: number;
+  role_name?: string;
 }
 
 interface QuickShiftTemplateCreatorProps {
@@ -30,6 +33,14 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
 }) => {
   const { businessId } = useBusiness();
   const { toast } = useToast();
+  const { roles, loading: loadingRoles, addRole } = useShiftRoles(businessId);
+  const { data: branches } = useRealData<any>({
+    queryKey: ['branches-quick-template', businessId],
+    tableName: 'branches',
+    filters: { is_active: true },
+    enabled: !!businessId
+  });
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
@@ -39,15 +50,15 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
     end_time: '17:00',
     shift_type: 'morning',
     branch_id: '',
-    required_employees: 1
+    required_employees: 1,
+    role_name: ''
   });
 
-  const { data: branches } = useRealData<any>({
-    queryKey: ['branches-quick-template', businessId],
-    tableName: 'branches',
-    filters: { is_active: true },
-    enabled: !!businessId
-  });
+  // Support multiple branches
+  const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+
+  // Role dialog
+  const [addRoleDialogOpen, setAddRoleDialogOpen] = useState(false);
 
   const quickTemplates = [
     { name: 'משמרת בוקר', start_time: '07:00', end_time: '15:00', shift_type: 'morning' as ShiftType },
@@ -68,23 +79,31 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
       });
       return;
     }
-
     setSubmitting(true);
     try {
-      const { error } = await supabase
+      // Create shift_templates row (first branch for quick)
+      const { data: templateData, error } = await supabase
         .from('shift_templates')
         .insert({
           name: template.name,
           business_id: businessId,
-          branch_id: branches[0].id,
           start_time: template.start_time,
           end_time: template.end_time,
           shift_type: template.shift_type,
           required_employees: 1,
-          is_active: true
-        });
+          is_active: true,
+          is_archived: false,
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error || !templateData) throw error || new Error("כשל ביצירת תבנית");
+
+      // Insert shift_template_branches - only first branch for quick create
+      await supabase.from('shift_template_branches').insert({
+        shift_template_id: templateData.id,
+        branch_id: branches[0].id
+      });
 
       toast({
         title: "הצלחה",
@@ -105,11 +124,12 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
     }
   };
 
+  // Custom create for multi-branch, role support
   const handleCustomCreate = async () => {
-    if (!businessId || !templateData.name || !templateData.branch_id) {
+    if (!businessId || !templateData.name || selectedBranches.length === 0) {
       toast({
         title: "שגיאה",
-        description: "אנא מלא את כל השדות הנדרשים",
+        description: "אנא מלא את כל השדות הנדרשים (כולל תפקיד, סניפים)",
         variant: "destructive"
       });
       return;
@@ -117,20 +137,31 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
+      const { data: templateRow, error } = await supabase
         .from('shift_templates')
         .insert({
           name: templateData.name,
           business_id: businessId,
-          branch_id: templateData.branch_id,
           start_time: templateData.start_time,
           end_time: templateData.end_time,
           shift_type: templateData.shift_type,
           required_employees: templateData.required_employees,
-          is_active: true
-        });
+          is_active: true,
+          is_archived: false,
+          role_name: templateData.role_name || null,
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error || !templateRow) throw error || new Error("בעיה בשמירת תבנית");
+
+      // Save shift_template_branches for all selected branches
+      await supabase.from('shift_template_branches').insert(
+        selectedBranches.map(branch_id => ({
+          shift_template_id: templateRow.id,
+          branch_id,
+        }))
+      );
 
       toast({
         title: "הצלחה",
@@ -144,8 +175,10 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
         end_time: '17:00',
         shift_type: 'morning',
         branch_id: '',
-        required_employees: 1
+        required_employees: 1,
+        role_name: '',
       });
+      setSelectedBranches([]);
       setIsExpanded(false);
 
       if (onTemplateCreated) {
@@ -159,6 +192,27 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Handler for archiving template (by id)
+  const handleArchiveTemplate = async (templateId: string) => {
+    try {
+      const { error } = await supabase
+        .from('shift_templates')
+        .update({ is_archived: true })
+        .eq('id', templateId);
+
+      if (error) throw error;
+
+      toast({ title: "הצלחה", description: "התבנית הועברה לארכיון." });
+      if (onTemplateCreated) onTemplateCreated();
+    } catch (error: any) {
+      toast({
+        title: "שגיאה",
+        description: error?.message || "שגיאה בארכוב התבנית",
+        variant: "destructive"
+      });
     }
   };
 
@@ -197,12 +251,11 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
                       {template.start_time} - {template.end_time}
                     </span>
                   </Button>
-                  {/* Delete icon (X) to hide quick template */}
                   <button
                     type="button"
                     aria-label="הסתר תבנית"
                     className="absolute top-2 left-2 text-gray-400 hover:text-red-500 transition"
-                    onClick={() => handleDeleteQuickTemplate(index)}
+                    onClick={() => setHiddenQuickTemplates((prev) => [...prev, index])}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -237,22 +290,32 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
                 </div>
 
                 <div>
-                  <Label htmlFor="custom-branch">סניף</Label>
-                  <Select value={templateData.branch_id} onValueChange={(value) => setTemplateData({ ...templateData, branch_id: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="בחר סניף" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {branches?.map((branch) => (
-                        <SelectItem key={branch.id} value={branch.id}>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4" />
-                            {branch.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="custom-branches">סניפים</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {branches?.map((branch) => (
+                      <button
+                        key={branch.id}
+                        type="button"
+                        className={`px-2 py-1 rounded-full border flex items-center gap-1
+                          ${selectedBranches.includes(branch.id)
+                            ? "bg-blue-700 text-white border-blue-800"
+                            : "bg-white text-blue-700 border-blue-300 hover:bg-blue-50"}
+                        `}
+                        onClick={() =>
+                          setSelectedBranches(selectedBranches.includes(branch.id)
+                            ? selectedBranches.filter((id) => id !== branch.id)
+                            : [...selectedBranches, branch.id])
+                        }
+                        disabled={submitting}
+                      >
+                        <MapPin className="h-4 w-4" />
+                        {branch.name}
+                      </button>
+                    ))}
+                    {(!branches || branches.length === 0) && (
+                      <span className="text-xs text-gray-400 px-2 py-1">אין סניפים</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -307,9 +370,40 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
                 </Select>
               </div>
 
+              <div>
+                <Label htmlFor="custom-role">תפקיד</Label>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={templateData.role_name || ""}
+                    onValueChange={v => setTemplateData({ ...templateData, role_name: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="בחר תפקיד..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map(r => (
+                        <SelectItem key={r.name} value={r.name}>
+                          <UserCog className="inline-block w-4 h-4 mr-2 text-blue-600" />
+                          {r.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="icon"
+                    type="button"
+                    className="w-8 h-8 p-0 rounded-full border-blue-300 text-blue-600 hover:bg-blue-50"
+                    title="הוסף תפקיד חדש"
+                    onClick={() => setAddRoleDialogOpen(true)}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
               <Button 
                 onClick={handleCustomCreate}
-                disabled={submitting || !templateData.name || !templateData.branch_id}
+                disabled={submitting || !templateData.name || selectedBranches.length === 0}
                 className="w-full"
               >
                 {submitting ? 'יוצר...' : 'צור תבנית מותאמת'}
@@ -325,6 +419,17 @@ export const QuickShiftTemplateCreator: React.FC<QuickShiftTemplateCreatorProps>
             </p>
           </div>
         )}
+
+        {/* Add Role dialog */}
+        <AddRoleDialog
+          open={addRoleDialogOpen}
+          onOpenChange={setAddRoleDialogOpen}
+          loading={loadingRoles}
+          onRoleCreated={async (name) => {
+            await addRole(name);
+            toast({ title: "נוצר תפקיד חדש!", description: "התפקיד נוסף בהצלחה" });
+          }}
+        />
       </CardContent>
     </Card>
   );
