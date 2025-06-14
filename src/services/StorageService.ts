@@ -24,7 +24,7 @@ export class StorageService {
         return false;
       }
 
-      // Try to access the bucket by listing files
+      // Try to access the bucket by listing files - this will test the policies
       const { data, error } = await supabase.storage.from(this.BUCKET_NAME).list('', {
         limit: 1
       });
@@ -34,7 +34,7 @@ export class StorageService {
         return false;
       }
 
-      console.log('✅ Bucket access confirmed');
+      console.log('✅ Bucket access confirmed - bucket is accessible and policies are working');
       return true;
     } catch (error) {
       console.warn('⚠️ Error checking bucket access:', error);
@@ -47,7 +47,7 @@ export class StorageService {
       // First check if bucket is accessible
       const hasAccess = await this.checkBucketAccess();
       if (!hasAccess) {
-        throw new Error('Storage bucket is not accessible. Please contact administrator.');
+        throw new Error('מערכת האחסון אינה זמינה. אנא נסה שוב מאוחר יותר או פנה לתמיכה.');
       }
 
       const timestamp = new Date().toISOString();
@@ -87,7 +87,7 @@ export class StorageService {
       // First check if bucket is accessible
       const hasAccess = await this.checkBucketAccess();
       if (!hasAccess) {
-        throw new Error('Storage bucket is not accessible. Please contact administrator.');
+        throw new Error('מערכת האחסון אינה זמינה. אנא נסה שוב מאוחר יותר או פנה לתמיכה.');
       }
 
       // Try to get public URL first (since our bucket is public)
@@ -96,6 +96,7 @@ export class StorageService {
         .getPublicUrl(filePath);
 
       if (data?.publicUrl) {
+        console.log('✅ Public URL generated successfully:', data.publicUrl);
         return data.publicUrl;
       }
 
@@ -108,6 +109,7 @@ export class StorageService {
         throw new Error('Failed to create file URL');
       }
 
+      console.log('✅ Signed URL generated successfully');
       return signedData.signedUrl;
     } catch (error) {
       console.error('❌ Error getting file URL:', error);
@@ -120,7 +122,7 @@ export class StorageService {
       // First check if bucket is accessible
       const hasAccess = await this.checkBucketAccess();
       if (!hasAccess) {
-        throw new Error('Storage bucket is not accessible. Please contact administrator.');
+        throw new Error('מערכת האחסון אינה זמינה. אנא נסה שוב מאוחר יותר או פנה לתמיכה.');
       }
 
       const { data, error } = await supabase.storage
@@ -132,6 +134,7 @@ export class StorageService {
         throw error;
       }
 
+      console.log('✅ File downloaded successfully');
       return data;
     } catch (error) {
       console.error('❌ Error downloading file:', error);

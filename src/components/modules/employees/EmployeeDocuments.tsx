@@ -46,7 +46,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
             variant: 'destructive',
           });
         } else {
-          console.log('✅ Storage bucket access confirmed');
+          console.log('✅ Storage bucket access confirmed - system is ready for file operations');
         }
       } catch (error) {
         console.error('💥 Error checking bucket access:', error);
@@ -135,6 +135,11 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
         link.href = document.file_url;
         link.download = document.document_name;
         link.click();
+        
+        toast({
+          title: 'הורדה החלה',
+          description: `מוריד את הקובץ: ${document.document_name}`,
+        });
       }
     } catch (error) {
       console.error('💥 Download error:', error);
