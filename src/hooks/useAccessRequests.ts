@@ -20,33 +20,64 @@ export const useAccessRequests = () => {
     queryFn: async (): Promise<AccessRequest[]> => {
       console.log('🔄 Fetching access requests...');
       
-      const { data, error } = await supabase
+      // First, get the access requests
+      const { data: requestsData, error: requestsError } = await supabase
         .from('user_access_requests')
-        .select(`
-          id,
-          user_id,
-          requested_business_id,
-          requested_role,
-          request_reason,
-          status,
-          reviewed_by,
-          reviewed_at,
-          review_notes,
-          created_at,
-          profiles!user_id(email, full_name),
-          businesses!requested_business_id(name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('❌ Error fetching access requests:', error);
-        throw error;
+      if (requestsError) {
+        console.error('❌ Error fetching access requests:', requestsError);
+        throw requestsError;
       }
+
+      if (!requestsData || requestsData.length === 0) {
+        console.log('📋 No access requests found');
+        return [];
+      }
+
+      console.log('📋 Found access requests:', requestsData.length);
+
+      // Get unique user IDs and business IDs for batch fetching
+      const userIds = [...new Set(requestsData.map(req => req.user_id))];
+      const businessIds = [...new Set(requestsData.map(req => req.requested_business_id).filter(Boolean))];
+
+      // Fetch profiles data
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', userIds);
+
+      // Fetch businesses data
+      const { data: businessesData } = businessIds.length > 0 ? await supabase
+        .from('businesses')
+        .select('id, name')
+        .in('id', businessIds) : { data: [] };
+
+      // Create lookup maps
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+      const businessesMap = new Map(businessesData?.map(b => [b.id, b]) || []);
+
+      // Combine the data
+      const enrichedRequests: AccessRequest[] = requestsData.map(request => ({
+        id: request.id,
+        user_id: request.user_id,
+        requested_business_id: request.requested_business_id,
+        requested_role: request.requested_role as 'super_admin' | 'business_admin' | 'business_user',
+        request_reason: request.request_reason,
+        status: request.status as 'pending' | 'approved' | 'rejected',
+        reviewed_by: request.reviewed_by,
+        reviewed_at: request.reviewed_at,
+        review_notes: request.review_notes,
+        created_at: request.created_at,
+        profiles: profilesMap.get(request.user_id) || null,
+        businesses: request.requested_business_id ? businessesMap.get(request.requested_business_id) || null : null
+      }));
+
+      console.log('✅ Enriched access requests:', enrichedRequests.length);
+      console.log('📊 Sample request:', enrichedRequests[0]);
       
-      console.log('✅ Fetched access requests:', data?.length || 0);
-      console.log('📊 Raw data:', data);
-      
-      return (data || []) as AccessRequest[];
+      return enrichedRequests;
     },
     refetchInterval: 30000, // Refetch every 30 seconds
     staleTime: 10000, // Consider data stale after 10 seconds
