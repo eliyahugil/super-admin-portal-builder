@@ -28,19 +28,20 @@ export const EmployeeListCard: React.FC<EmployeeListCardProps> = ({
 }) => {
   return (
     <div
-      className="
+      className={`
         w-full
-        max-w-full
         bg-white
         border border-gray-200
         rounded-2xl
         shadow-sm
         flex flex-col
         gap-4
-        px-4 py-5
-        overflow-x-hidden
+        px-2 py-3 sm:px-4 sm:py-5
+        overflow-x-visible
         box-border
-        "
+        min-w-0
+        max-w-full
+      `}
       dir="rtl"
       style={{
         fontSize: "18px",

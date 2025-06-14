@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { CreateEmployeeDialog } from './CreateEmployeeDialog';
 import { CreateBranchDialog } from './CreateBranchDialog';
@@ -41,11 +42,18 @@ export const EmployeeManagement: React.FC = () => {
 
   return (
     <div
-      className="container mx-auto px-2 sm:px-4 pt-2 pb-4 sm:py-8 flex flex-col gap-2 sm:gap-6"
+      className={`
+        w-full
+        flex flex-col gap-2 sm:gap-6
+        pt-2 pb-4 sm:py-8
+        px-1 sm:px-0
+        max-w-full
+      `}
       dir="rtl"
+      style={{minWidth: 0}} // קריטי נגד scroll ב־X, במיוחד למובייל!
     >
       {/* Header */}
-      <div className="px-0 sm:px-0">
+      <div className="w-full">
         <EmployeeManagementHeader />
       </div>
 
