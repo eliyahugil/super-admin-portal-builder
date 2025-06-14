@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Send, Loader2, RotateCcw } from 'lucide-react';
+import { Send, Loader2, RotateCcw, Copy } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +28,7 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [signatureUrl, setSignatureUrl] = useState('');
   const { toast } = useToast();
 
   console.log('🔍 SendToSignatureButton rendered for document:', documentName, 'ID:', documentId, 'Already assigned:', isAlreadyAssigned);
@@ -62,17 +63,22 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
     console.log('📤 Sending document to signature:', { documentId, selectedEmployeeId, isResend: isAlreadyAssigned });
     
     try {
+      // יצירת טוקן ייחודי לחתימה דיגיטלית
+      const signatureToken = crypto.randomUUID();
+      
       // עדכון מסמך עם פרטי העובד המיועד לחתימה
       const updateData: any = {
         assignee_id: selectedEmployeeId,
         status: 'pending_signature',
         reminder_count: 0,
         reminder_sent_at: new Date().toISOString(),
+        digital_signature_token: signatureToken,
       };
 
       // אם זה שליחה מחדש, נאפס את תאריך החתימה
       if (isAlreadyAssigned) {
         updateData.signed_at = null;
+        updateData.digital_signature_data = null;
       }
 
       const { error: updateError } = await supabase
@@ -82,9 +88,14 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
 
       if (updateError) throw updateError;
 
-      // כאן ניתן להוסיף שליחת הודעה לעובד (SMS/Email)
+      // יצירת קישור חתימה דיגיטלית
+      const baseUrl = window.location.origin;
+      const signUrl = `${baseUrl}/sign-document/${documentId}?token=${signatureToken}`;
+      setSignatureUrl(signUrl);
+
+      // כאן ניתן להוסיף שליחת הודעה לעובד (SMS/Email) עם הקישור
       // const selectedEmployee = employees?.find(emp => emp.id === selectedEmployeeId);
-      // await sendSignatureNotification(selectedEmployee, documentName);
+      // await sendSignatureNotification(selectedEmployee, documentName, signUrl);
 
       const actionText = isAlreadyAssigned ? 'נשלח מחדש' : 'נשלח';
       toast({
@@ -92,8 +103,6 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
         description: `המסמך "${documentName}" ${actionText} לחתימה בהצלחה`,
       });
 
-      setIsOpen(false);
-      setSelectedEmployeeId('');
       onSent?.();
     } catch (error: any) {
       console.error('Error sending document for signature:', error);
@@ -107,12 +116,26 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
     }
   };
 
+  const copySignatureUrl = () => {
+    navigator.clipboard.writeText(signatureUrl);
+    toast({
+      title: 'הועתק!',
+      description: 'קישור החתימה הועתק ללוח',
+    });
+  };
+
   const buttonText = isAlreadyAssigned ? 'שלח מחדש' : 'שלח לחתימה';
   const buttonIcon = isAlreadyAssigned ? RotateCcw : Send;
   const IconComponent = buttonIcon;
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (!open) {
+        setSignatureUrl('');
+        setSelectedEmployeeId('');
+      }
+    }}>
       <DialogTrigger asChild>
         <Button
           variant={variant}
@@ -133,63 +156,93 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
         </DialogHeader>
         
         <div className="space-y-4">
-          <div>
-            <p className="text-sm text-gray-600 mb-2">
-              מסמך: <span className="font-medium">{documentName}</span>
-            </p>
-            {isAlreadyAssigned && (
-              <p className="text-sm text-amber-600 mb-2">
-                המסמך כבר נשלח לחתימה. שליחה מחדש תאפס את סטטוס החתימה.
-              </p>
-            )}
-          </div>
-          
-          <div>
-            <label className="text-sm font-medium mb-2 block">בחר עובד לחתימה:</label>
-            <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-              <SelectTrigger>
-                <SelectValue placeholder="בחר עובד..." />
-              </SelectTrigger>
-              <SelectContent>
-                {employeesLoading ? (
-                  <SelectItem value="" disabled>טוען עובדים...</SelectItem>
-                ) : (
-                  employees?.map((employee) => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      {employee.first_name} {employee.last_name}
-                      {employee.employee_id && ` (${employee.employee_id})`}
-                    </SelectItem>
-                  ))
+          {!signatureUrl ? (
+            <>
+              <div>
+                <p className="text-sm text-gray-600 mb-2">
+                  מסמך: <span className="font-medium">{documentName}</span>
+                </p>
+                {isAlreadyAssigned && (
+                  <p className="text-sm text-amber-600 mb-2">
+                    המסמך כבר נשלח לחתימה. שליחה מחדש תאפס את סטטוס החתימה.
+                  </p>
                 )}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex gap-2 justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-              disabled={isSending}
-            >
-              ביטול
-            </Button>
-            <Button
-              onClick={handleSendToSignature}
-              disabled={!selectedEmployeeId || isSending}
-            >
-              {isSending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                  שולח...
-                </>
-              ) : (
-                <>
-                  <IconComponent className="h-4 w-4 ml-2" />
-                  {buttonText}
-                </>
-              )}
-            </Button>
-          </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">בחר עובד לחתימה:</label>
+                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר עובד..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employeesLoading ? (
+                      <SelectItem value="" disabled>טוען עובדים...</SelectItem>
+                    ) : (
+                      employees?.map((employee) => (
+                        <SelectItem key={employee.id} value={employee.id}>
+                          {employee.first_name} {employee.last_name}
+                          {employee.employee_id && ` (${employee.employee_id})`}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsOpen(false)}
+                  disabled={isSending}
+                >
+                  ביטול
+                </Button>
+                <Button
+                  onClick={handleSendToSignature}
+                  disabled={!selectedEmployeeId || isSending}
+                >
+                  {isSending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                      שולח...
+                    </>
+                  ) : (
+                    <>
+                      <IconComponent className="h-4 w-4 ml-2" />
+                      {buttonText}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h3 className="font-medium text-green-800 mb-2">קישור חתימה נוצר בהצלחה!</h3>
+                <p className="text-sm text-green-700 mb-3">
+                  שלח את הקישור הבא לעובד לחתימה על המסמך:
+                </p>
+                <div className="flex items-center gap-2 p-2 bg-white border rounded text-sm font-mono break-all">
+                  {signatureUrl}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={copySignatureUrl}
+                    className="flex-shrink-0"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 justify-end">
+                <Button onClick={() => setIsOpen(false)}>
+                  סגור
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

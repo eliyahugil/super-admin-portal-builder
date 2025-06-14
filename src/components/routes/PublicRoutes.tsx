@@ -3,6 +3,7 @@ import React, { Suspense, lazy } from 'react';
 import { Route } from 'react-router-dom';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { SubmitShiftPage } from '@/components/modules/shifts/SubmitShiftPage';
+import { SignDocumentPage } from '@/components/modules/employees/SignDocumentPage';
 
 const WeeklyShiftSubmissionForm = lazy(() => import('@/components/modules/shifts/WeeklyShiftSubmissionForm').then(m => ({ default: m.WeeklyShiftSubmissionForm })));
 const ShiftSubmissionSuccess = lazy(() => import('@/components/modules/shifts/ShiftSubmissionSuccess').then(m => ({ default: m.ShiftSubmissionSuccess })));
@@ -28,6 +29,10 @@ export const PublicRoutes = () => (
           <ShiftSubmissionSuccess />
         </Suspense>
       } 
+    />
+    <Route 
+      path="/sign-document/:documentId" 
+      element={<SignDocumentPage />} 
     />
     <Route path="/auth" element={<AuthForm />} />
   </>
