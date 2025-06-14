@@ -35,7 +35,7 @@ export const usePendingData = <T = any>({
 
     if (error) throw new Error(error.message);
 
-    return (data as T[]) || [];
+    return data || [];
   };
 
   return useQuery<T[]>({
