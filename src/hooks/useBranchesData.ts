@@ -7,11 +7,11 @@ import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 export interface Branch {
   id: string;
   name: string;
-  address?: string;
+  address: string | null;
   business_id: string;
-  latitude?: number;
-  longitude?: number;
-  gps_radius?: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  gps_radius?: number | null;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
