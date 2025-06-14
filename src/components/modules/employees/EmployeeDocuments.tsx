@@ -1,19 +1,15 @@
-
-// Refactored: main orchestrator using new components and helpers
+// Refactored: clean orchestrator with focused logic, helpers and header extracted.
 
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { FileText, Upload } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthContext';
-import {
-  getFileType
-} from './helpers/documentHelpers';
+import { getFileType } from './helpers/documentHelpers';
 import { EmployeeDocumentCard } from './EmployeeDocumentCard';
 import { EmployeeDocumentsEmptyState } from './EmployeeDocumentsEmptyState';
+import { EmployeeDocumentsHeader } from './EmployeeDocumentsHeader';
 
 interface EmployeeDocumentsProps {
   employeeId: string;
@@ -33,6 +29,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   const { profile, user } = useAuth();
   const queryClient = useQueryClient();
 
+  // Query: Get employee documents
   const { data: documents, isLoading } = useQuery({
     queryKey: ['employee-documents', employeeId],
     queryFn: async () => {
@@ -51,6 +48,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     enabled: !!employeeId,
   });
 
+  // Mutation: Delete document
   const deleteDocumentMutation = useMutation({
     mutationFn: async ({ documentId, filePath }: { documentId: string; filePath: string }) => {
       await supabase.storage.from('employee-files').remove([filePath]);
@@ -72,10 +70,10 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     },
   });
 
+  // File upload handler
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     if (!profile?.id && !user?.id) {
       toast({
         title: 'שגיאה',
@@ -84,7 +82,6 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       });
       return;
     }
-
     try {
       setUploading(true);
 
@@ -143,6 +140,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     }
   };
 
+  // Reminder fetch and send functions (logic unchanged, passing as props)
   const fetchReminders = async (docId: string) => {
     const { data, error } = await supabase
       .from('employee_document_reminders')
@@ -190,6 +188,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     }
   };
 
+  // Actions
   const handleDownload = (document: any) => {
     if (document.file_url) {
       const link = document.createElement('a');
@@ -211,6 +210,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     deleteDocumentMutation.mutate({ documentId: document.id, filePath });
   };
 
+  // Loading skeleton
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -228,39 +228,11 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold">מסמכי העובד</h3>
-        </div>
-        {canEdit && (
-          <div className="relative">
-            <input
-              type="file"
-              onChange={handleFileUpload}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              disabled={uploading}
-            />
-            <Button
-              disabled={uploading}
-              className="flex items-center gap-2"
-            >
-              {uploading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  מעלה...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4" />
-                  העלה מסמך
-                </>
-              )}
-            </Button>
-          </div>
-        )}
-      </div>
+      <EmployeeDocumentsHeader
+        canEdit={canEdit}
+        uploading={uploading}
+        handleFileUpload={handleFileUpload}
+      />
       {documents && documents.length > 0 ? (
         <div className="space-y-3">
           {documents.map((document: any) => (
