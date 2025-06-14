@@ -21,8 +21,8 @@ interface BaseEntity {
 }
 
 /**
- * This hook avoids generic chaining in the fetch phase, and does a safe runtime check and conversion
- * to solve deep instantiation and unsafe type conversion errors.
+ * This hook avoids deep type instantiation by keeping all generics out of fetchers,
+ * and applies a single cast with guards at the useQuery level.
  */
 export function useBusinessData<T extends BaseEntity = BaseEntity>(
   options: UseBusinessDataOptions
@@ -39,12 +39,11 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
   const { businessId: contextBusinessId } = useCurrentBusiness();
   const businessId = selectedBusinessId || contextBusinessId;
 
-  // Fetch function always returns unknown[], cast to T[] only after runtime check on useQuery level.
+  // Always fetch unknown[], strictly returning [] on error or non-array
   const fetchData = async (): Promise<unknown[]> => {
     if (!businessId) {
       throw new Error('Business ID is missing');
     }
-
     let query = supabase
       .from(tableName)
       .select(select)
@@ -73,9 +72,11 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
       throw new Error(error.message);
     }
 
-    // Some Supabase errors may return [{ error: true }], guard for that case
-    if (!Array.isArray(data)) return [];
-    if (data.length > 0 && typeof data[0] === "object" && "error" in data[0]) {
+    // Explicitly handle null and non-array data
+    if (!data || !Array.isArray(data)) {
+      return [];
+    }
+    if (data.length > 0 && typeof data[0] === "object" && data[0] && "error" in data[0]) {
       // Defensive: skip errored array
       return [];
     }
@@ -87,9 +88,11 @@ export function useBusinessData<T extends BaseEntity = BaseEntity>(
     queryKey: [...queryKey, filter, businessId],
     queryFn: async () => {
       const res = await fetchData();
-      // Defensive at runtime: only take objects that have id property
-      const filtered = (Array.isArray(res) ? res.filter((d) => typeof d === "object" && d !== null && "id" in d) : []) as unknown[];
-      return filtered as T[];
+      // Defensive at runtime: only take items with an id property
+      const filtered = Array.isArray(res)
+        ? res.filter((d): d is T => typeof d === "object" && d !== null && "id" in d)
+        : [];
+      return filtered;
     },
     enabled: !!businessId,
     retry: false,
