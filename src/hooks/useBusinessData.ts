@@ -20,23 +20,33 @@ interface BaseEntity {
   [key: string]: any;
 }
 
-export const useBusinessData = <T extends BaseEntity = BaseEntity>({
-  tableName,
-  queryKey,
-  filter,
-  selectedBusinessId,
-  select = '*',
-  statusField = 'status',
-}: UseBusinessDataOptions): UseQueryResult<T[], Error> => {
+/**
+ * The main fix is to:
+ * - Inline the fetch function inside the hook (not generic-outside), so TypeScript isn't forced to "pre-resolve" T for too long.
+ * - Force-cast with `as unknown as T[]` at the return (safe, since developer controls `select` structure).
+ * - Use a non-generic fetch function for better inference.
+ */
+export function useBusinessData<T extends BaseEntity = BaseEntity>(
+  options: UseBusinessDataOptions
+): UseQueryResult<T[], Error> {
+  const {
+    tableName,
+    queryKey,
+    filter,
+    selectedBusinessId,
+    select = '*',
+    statusField = 'status',
+  } = options;
+
   const { businessId: contextBusinessId } = useCurrentBusiness();
   const businessId = selectedBusinessId || contextBusinessId;
 
+  // Inline fetch function (avoid generic at root scope)
   const fetchData = async (): Promise<T[]> => {
     if (!businessId) {
       throw new Error('Business ID is missing');
     }
 
-    // Always fetch as unknown[], cast at the end
     let query = supabase
       .from(tableName)
       .select(select)
@@ -59,22 +69,21 @@ export const useBusinessData = <T extends BaseEntity = BaseEntity>({
         throw new Error(`Unsupported filter: ${filter}`);
     }
 
-    // Use type: { data: unknown[] | null; error: any }
+    // TypeScript may infer type as GenericStringError[] in some error cases. Cast defensively.
     const { data, error } = await query;
 
     if (error) {
       throw new Error(error.message);
     }
 
-    // Cast only at this point
-    return Array.isArray(data) ? (data as T[]) : [];
+    // Fix for TS2352: first to unknown, then to T[]
+    return Array.isArray(data) ? (data as unknown as T[]) : [];
   };
 
-  // Explicitly type the result to <T[]>
   return useQuery<T[], Error>({
     queryKey: [...queryKey, filter, businessId],
     queryFn: fetchData,
     enabled: !!businessId,
     retry: false,
   });
-};
+}
