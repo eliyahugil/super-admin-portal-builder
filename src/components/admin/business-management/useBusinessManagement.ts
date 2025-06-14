@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -61,6 +60,44 @@ export const useBusinessManagement = () => {
       toast({
         title: 'שגיאה',
         description: error instanceof Error ? error.message : 'אירעה שגיאה במחיקת העסק',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Archive business mutation
+  const archiveBusiness = useMutation({
+    mutationFn: async (businessId: string) => {
+      console.log('Archiving business:', businessId);
+
+      const { error } = await supabase
+        .from('businesses')
+        .update({ is_active: false })
+        .eq('id', businessId);
+
+      if (error) {
+        console.error('Error archiving business:', error);
+        throw new Error(`שגיאה בהעברת העסק לארכיון: ${error.message}`);
+      }
+
+      return businessId;
+    },
+    onSuccess: (archivedBusinessId) => {
+      console.log('Business archived successfully:', archivedBusinessId);
+      toast({
+        title: 'הצלחה',
+        description: 'העסק הועבר לארכיון (לא פעיל) בהצלחה',
+      });
+
+      // רענון הנתונים
+      queryClient.invalidateQueries({ queryKey: ['businesses'] });
+      queryClient.invalidateQueries({ queryKey: ['enriched-businesses'] });
+    },
+    onError: (error) => {
+      console.error('Business archive failed:', error);
+      toast({
+        title: 'שגיאה',
+        description: error instanceof Error ? error.message : 'אירעה שגיאה בארכוב העסק',
         variant: 'destructive',
       });
     },
@@ -162,7 +199,7 @@ export const useBusinessManagement = () => {
   };
 
   const handleDelete = (businessId: string) => {
-    deleteBusiness.mutate(businessId);
+    archiveBusiness.mutate(businessId);
   };
 
   const handleCreateBusiness = () => {
