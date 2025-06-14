@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthContext';
 import { getFileType } from './helpers/documentHelpers';
 import { EmployeeDocumentCard } from './EmployeeDocumentCard';
@@ -10,6 +10,9 @@ import { EmployeeDocumentsEmptyState } from './EmployeeDocumentsEmptyState';
 import { EmployeeDocumentsHeader } from './EmployeeDocumentsHeader';
 import { useEmployeeDocumentReminders } from './hooks/useEmployeeDocumentReminders';
 import { useEmployeeDocumentDelete } from './hooks/useEmployeeDocumentDelete';
+import { AssignToEmployeeSelect } from './AssignToEmployeeSelect';
+import { useEmployeeDocumentUpload } from './hooks/useEmployeeDocumentUpload';
+import { useEmployeeDocumentAssignment } from './hooks/useEmployeeDocumentAssignment';
 
 interface EmployeeDocumentsProps {
   employeeId: string;
@@ -22,14 +25,8 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   employeeName,
   canEdit = true
 }) => {
-  const [uploading, setUploading] = useState(false);
-  const [assigneeId, setAssigneeId] = useState<string>('');
-  const [assigningId, setAssigningId] = useState<string | null>(null);
-  const { toast } = useToast();
   const { profile, user } = useAuth();
-  const queryClient = useQueryClient();
-
-  // Fetch employee options for assignment
+  // Fetch employees for assignment
   const { data: employees, isLoading: employeesLoading } = useQuery({
     queryKey: ['employees-for-assignee'],
     queryFn: async () => {
@@ -41,8 +38,14 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
       if (error) throw error;
       return data || [];
     },
-    enabled: canEdit, // always available to assign to anyone
+    enabled: canEdit,
   });
+
+  // Upload and assignment hooks
+  const uploadQueryKey = ['employee-documents', employeeId];
+  const { uploading, handleFileUpload, setUploading } = useEmployeeDocumentUpload(employeeId, uploadQueryKey);
+
+  const { assigningId, handleAssignAssignee } = useEmployeeDocumentAssignment(employeeId, uploadQueryKey);
 
   const {
     reminderLog,
@@ -73,105 +76,7 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
     enabled: !!(employeeId !== undefined),
   });
 
-  // File upload handler – allow upload without assignee/employeeId
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!profile?.id && !user?.id) {
-      toast({
-        title: 'שגיאה',
-        description: 'נדרש להתחבר למערכת כדי להעלות קבצים',
-        variant: 'destructive',
-      });
-      return;
-    }
-    try {
-      setUploading(true);
-
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !sessionData.session) throw new Error('No active session!');
-      const fileExt = file.name.split('.').pop();
-      const timestamp = Date.now();
-      const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-      // השתמש או בemployeeId (פר עובד) או ב"תבניות" (אם צפייה כללית)
-      const fileEmployeeId = employeeId || 'templates';
-      const filePath = `employee-documents/${fileEmployeeId}/${fileName}`;
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('employee-files')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
-
-      const { data: urlData } = supabase.storage
-        .from('employee-files')
-        .getPublicUrl(filePath);
-
-      const uploadedBy = profile?.id || user?.id;
-
-      // אל תצמיד employee_id בעת העלאה רוחבית, תן רק במסך עובד להצמיד
-      const { error: insertError } = await supabase
-        .from('employee_documents')
-        .insert({
-          employee_id: employeeId || null, // במידה ופר עובד
-          assignee_id: null, // אסור להצמיד כאן
-          document_name: file.name,
-          document_type: getFileType(file.name),
-          file_url: urlData.publicUrl,
-          uploaded_by: uploadedBy,
-        });
-
-      if (insertError) {
-        await supabase.storage.from('employee-files').remove([uploadData.path]);
-        throw new Error(`Database error: ${insertError.message}`);
-      }
-
-      toast({
-        title: 'הצלחה',
-        description: 'המסמך הועלה בהצלחה',
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
-    } catch (error: any) {
-      toast({
-        title: 'שגיאה',
-        description: error?.message ?? 'שגיאה בהעלאת מסמך',
-        variant: 'destructive',
-      });
-    } finally {
-      setUploading(false);
-      event.target.value = '';
-      setAssigneeId('');
-    }
-  };
-
-  // שליחת מסמך לחתימה – עדכון assignee_id למסמך קיים
-  const handleAssignAssignee = async (docId: string, assignId: string) => {
-    if (!assignId) return;
-    setAssigningId(docId);
-    try {
-      const { error } = await supabase
-        .from('employee_documents')
-        .update({ assignee_id: assignId })
-        .eq('id', docId);
-
-      if (error) throw error;
-      toast({ title: 'הצלחה', description: 'המסמך שובץ לחתימה.' });
-      queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
-    } catch (e: any) {
-      toast({
-        title: 'שגיאה',
-        description: e?.message ?? 'הפעולה נכשלה',
-        variant: 'destructive',
-      });
-    } finally {
-      setAssigningId(null);
-    }
-  };
-  
+  // Download/view/delete logic
   const handleDownload = (document: any) => {
     if (document.file_url) {
       const link = document.createElement('a');
@@ -211,36 +116,6 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
   // Disable upload only בטעינה
   const disableUpload = uploading;
 
-  // 'הקצה לחתימה' – קומפוננטה קטנה (בטבלת המסמכים)
-  function AssignToEmployeeSelect({ docId }: { docId: string }) {
-    const [tempId, setTempId] = useState('');
-    return (
-      <div className="flex gap-2 items-center">
-        <select
-          value={tempId}
-          className="px-2 py-1 rounded border text-sm"
-          onChange={e => setTempId(e.target.value)}
-          disabled={assigningId === docId || uploading}
-        >
-          <option value="">בחר עובד</option>
-          {employees?.map((emp: any) => (
-            <option key={emp.id} value={emp.id}>
-              {emp.first_name} {emp.last_name} ({emp.employee_id || ''})
-            </option>
-          ))}
-        </select>
-        <button
-          disabled={!tempId || assigningId === docId}
-          className="bg-blue-500 hover:bg-blue-700 text-xs text-white px-3 py-1 rounded disabled:bg-blue-200"
-          onClick={() => handleAssignAssignee(docId, tempId)}
-          type="button"
-        >
-          {assigningId === docId ? 'שולח...' : 'שלח לחתימה'}
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <EmployeeDocumentsHeader
@@ -265,9 +140,15 @@ export const EmployeeDocuments: React.FC<EmployeeDocumentsProps> = ({
                 sendReminder={sendReminder}
                 fetchReminders={fetchReminders}
               />
-              {/* אם אין assignee_id, הצג כפתור הקצה/שלח לחתימה */}
+              {/* Show 'Assign to Employee' if needed */}
               {canEdit && !document.assignee &&
-                <AssignToEmployeeSelect docId={document.id} />
+                <AssignToEmployeeSelect
+                  docId={document.id}
+                  employees={employees ?? []}
+                  assigningId={assigningId}
+                  uploading={uploading}
+                  onAssign={handleAssignAssignee}
+                />
               }
             </div>
           ))}
