@@ -1,5 +1,5 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { UseQueryResult, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
@@ -12,16 +12,16 @@ interface UseArchivedDataOptions {
   select?: string;
 }
 
-export const useArchivedData = ({
+export const useArchivedData = <T = any>({
   tableName,
   queryKey,
   selectedBusinessId,
   select = '*'
-}: UseArchivedDataOptions) => {
+}: UseArchivedDataOptions): UseQueryResult<T[]> => {
   const { businessId: contextBusinessId } = useCurrentBusiness();
   const businessId = selectedBusinessId || contextBusinessId;
 
-  return useQuery({
+  return useQuery<T[]>({
     queryKey: [...queryKey, 'archived', businessId],
     queryFn: async () => {
       if (!businessId) return [];
@@ -42,7 +42,7 @@ export const useArchivedData = ({
 
       // Return the data as unknown first, then cast to array
       const safeData = Array.isArray(data) ? data : [];
-      return safeData;
+      return safeData as T[];
     },
     enabled: !!businessId,
   });
