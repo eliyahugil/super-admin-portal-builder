@@ -13,9 +13,13 @@ interface UseActiveDataOptions {
 
 interface BaseEntity {
   id: string;
+  business_id?: string;
   [key: string]: any;
 }
 
+/**
+ * Secure hook for fetching active data with business isolation
+ */
 export const useActiveData = <T extends BaseEntity = BaseEntity>({
   tableName,
   queryKey,
@@ -24,7 +28,7 @@ export const useActiveData = <T extends BaseEntity = BaseEntity>({
 }: UseActiveDataOptions): UseQueryResult<T[], Error> => {
   return useBusinessData<T>({
     tableName,
-    queryKey,
+    queryKey: [...queryKey, 'active'],
     filter: 'active',
     selectedBusinessId,
     select,

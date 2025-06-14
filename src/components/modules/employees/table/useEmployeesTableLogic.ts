@@ -20,28 +20,30 @@ interface UseEmployeesTableLogicReturn {
 }
 
 export const useEmployeesTableLogic = (selectedBusinessId?: string | null): UseEmployeesTableLogicReturn => {
-  const { businessId } = useCurrentBusiness();
+  const { businessId, isSuperAdmin } = useCurrentBusiness();
   const { toast } = useToast();
   
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  console.log('🔄 useEmployeesTableLogic hook called with:', {
+  console.log('🔄 useEmployeesTableLogic - Security parameters:', {
     selectedBusinessId,
-    contextBusinessId: businessId
+    contextBusinessId: businessId,
+    isSuperAdmin,
+    finalBusinessId: selectedBusinessId || businessId
   });
 
-  // Use the new unified hook for active employees
+  // Use the fixed unified hook with proper security
   const { 
     data: employees = [], 
     isLoading: loading, 
     error 
   } = useBusinessData<Employee>({
     tableName: 'employees',
-    queryKey: ['employees'],
+    queryKey: ['employees', 'active'],
     filter: 'active',
-    selectedBusinessId: selectedBusinessId || businessId,
+    selectedBusinessId: isSuperAdmin ? selectedBusinessId : businessId, // Enforce business isolation
     select: `
       *,
       main_branch:main_branch_id(id, name),
@@ -54,10 +56,21 @@ export const useEmployeesTableLogic = (selectedBusinessId?: string | null): UseE
   });
 
   if (error) {
-    console.error('❌ Error loading employees:', error);
+    console.error('❌ Critical error loading employees:', error);
+    toast({
+      title: 'שגיאת אבטחה',
+      description: 'לא ניתן לטעון נתוני עובדים. אנא פנה למנהל המערכת.',
+      variant: 'destructive',
+    });
   }
 
   const filteredEmployees = useMemo(() => {
+    console.log('🔍 Filtering employees:', {
+      totalEmployees: employees.length,
+      businessContext: businessId,
+      selectedBusiness: selectedBusinessId
+    });
+
     let filtered = employees;
 
     // Apply search filter
@@ -85,6 +98,11 @@ export const useEmployeesTableLogic = (selectedBusinessId?: string | null): UseE
         filtered = filtered.filter(employee => !employee.is_active);
       }
     }
+
+    console.log('✅ Filtered employees result:', {
+      original: employees.length,
+      filtered: filtered.length
+    });
 
     return filtered;
   }, [employees, search, filterType, filterStatus]);
@@ -119,4 +137,3 @@ export const useEmployeesTableLogic = (selectedBusinessId?: string | null): UseE
     handleTokenSent,
   };
 };
-

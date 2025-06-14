@@ -13,9 +13,13 @@ interface UseDeletedDataOptions {
 
 interface BaseEntity {
   id: string;
+  business_id?: string;
   [key: string]: any;
 }
 
+/**
+ * Secure hook for fetching deleted data with business isolation
+ */
 export const useDeletedData = <T extends BaseEntity = BaseEntity>({
   tableName,
   queryKey,
@@ -24,7 +28,7 @@ export const useDeletedData = <T extends BaseEntity = BaseEntity>({
 }: UseDeletedDataOptions): UseQueryResult<T[], Error> => {
   return useBusinessData<T>({
     tableName,
-    queryKey,
+    queryKey: [...queryKey, 'deleted'],
     filter: 'deleted',
     selectedBusinessId,
     select,

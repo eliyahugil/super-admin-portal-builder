@@ -1,6 +1,4 @@
 
-// תיקון טיפוסים ושיפור יציבות לטייפסקריפט
-
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
@@ -18,11 +16,17 @@ interface UseBusinessDataOptions {
   statusField?: string;
 }
 
+interface BaseEntity {
+  id: string;
+  business_id?: string;
+  [key: string]: any;
+}
+
 /**
  * Hook אוניברסלי לשליפת נתוני מודול עסקי בצורה בטוחה ושטוחה.
- * Returns data: T[] רק עבור רשומות שיש להן id, אחרת [].
+ * מבטיח הפרדת נתונים בין עסקים
  */
-export function useBusinessData<T = any>(
+export function useBusinessData<T extends BaseEntity = BaseEntity>(
   options: UseBusinessDataOptions
 ): UseQueryResult<T[], Error> {
   const {
@@ -34,16 +38,32 @@ export function useBusinessData<T = any>(
     statusField = 'status',
   } = options;
 
-  const { businessId: contextBusinessId } = useCurrentBusiness();
+  const { businessId: contextBusinessId, isSuperAdmin } = useCurrentBusiness();
   const businessId = selectedBusinessId || contextBusinessId;
 
   const fetchData = async (): Promise<T[]> => {
-    if (!businessId) throw new Error('Business ID is missing');
-    let query = supabase
-      .from(tableName)
-      .select(select)
-      .eq('business_id', businessId);
+    console.log(`🔒 useBusinessData - Security check for ${tableName}:`, {
+      businessId,
+      filter,
+      isSuperAdmin,
+      selectedBusinessId
+    });
 
+    // CRITICAL: Business ID is required for non-super admins
+    if (!businessId && !isSuperAdmin) {
+      console.error('❌ SECURITY: No business ID available for regular user');
+      throw new Error('Business ID is required for data access');
+    }
+
+    let query = supabase.from(tableName).select(select);
+
+    // MANDATORY: Apply business filter for data isolation
+    if (businessId) {
+      console.log(`🔒 SECURITY: Adding business filter: ${businessId}`);
+      query = query.eq('business_id', businessId);
+    }
+
+    // Apply status filters
     switch (filter) {
       case 'active':
         query = query.eq('is_archived', false).order('created_at', { ascending: false });
@@ -63,24 +83,37 @@ export function useBusinessData<T = any>(
 
     const { data, error } = await query;
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error(`❌ Database error for ${tableName}:`, error);
+      throw new Error(error.message);
+    }
 
-    // החזר רק רשומות עם id תקין
-    const arr: unknown[] = Array.isArray(data) ? data : [];
-    // נזהה עצמים שהם אובייקט ויש להם id
-    const filtered: T[] = arr.filter(e =>
-      typeof e === 'object' &&
-      e !== null &&
-      'id' in e &&
-      typeof (e as any).id === 'string'
-    ) as T[];
-    return filtered;
+    console.log(`✅ Security check passed - fetched ${data?.length || 0} records for business ${businessId}`);
+
+    // Return only valid records with proper business_id
+    const validRecords = (data || []).filter((record: any) => {
+      if (!record || typeof record !== 'object' || !record.id) {
+        return false;
+      }
+      // Double-check business isolation
+      if (businessId && record.business_id !== businessId) {
+        console.error('⚠️ SECURITY BREACH: Record with wrong business_id detected!', {
+          recordBusinessId: record.business_id,
+          expectedBusinessId: businessId,
+          recordId: record.id
+        });
+        return false;
+      }
+      return true;
+    }) as T[];
+
+    return validRecords;
   };
 
   return useQuery<T[], Error>({
     queryKey: [...queryKey, filter, businessId],
     queryFn: fetchData,
-    enabled: !!businessId,
+    enabled: !!businessId || isSuperAdmin,
     retry: false,
   });
 }

@@ -13,9 +13,13 @@ interface UseArchivedDataOptions {
 
 interface BaseEntity {
   id: string;
+  business_id?: string;
   [key: string]: any;
 }
 
+/**
+ * Secure hook for fetching archived data with business isolation
+ */
 export const useArchivedData = <T extends BaseEntity = BaseEntity>({
   tableName,
   queryKey,
@@ -24,7 +28,7 @@ export const useArchivedData = <T extends BaseEntity = BaseEntity>({
 }: UseArchivedDataOptions): UseQueryResult<T[], Error> => {
   return useBusinessData<T>({
     tableName,
-    queryKey,
+    queryKey: [...queryKey, 'archived'],
     filter: 'archived',
     selectedBusinessId,
     select,
