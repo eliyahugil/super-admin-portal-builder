@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import type { Employee } from '@/types/employee';
 
 export const useEmployeeManagement = () => {
   const { businessId, isSuperAdmin } = useCurrentBusiness();
@@ -13,7 +14,7 @@ export const useEmployeeManagement = () => {
 
   const { data: employees, isLoading, error, refetch } = useQuery({
     queryKey: ['employees', businessId, searchTerm, selectedBranch, selectedEmployeeType, isArchived],
-    queryFn: async () => {
+    queryFn: async (): Promise<Employee[]> => {
       if (!businessId && !isSuperAdmin) {
         console.log('No business ID and not super admin, returning empty array');
         return [];
@@ -78,7 +79,7 @@ export const useEmployeeManagement = () => {
   });
 
   return {
-    employees,
+    employees: employees || [],
     isLoading,
     error,
     refetch,

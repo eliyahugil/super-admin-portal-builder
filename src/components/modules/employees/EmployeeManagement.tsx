@@ -1,8 +1,7 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Building } from 'lucide-react';
 import { EmployeeManagementHeader } from './EmployeeManagementHeader';
@@ -103,7 +102,7 @@ export const EmployeeManagement: React.FC = () => {
         hideFilters={!!branchId} // Hide branch filter when filtering by specific branch
       />
 
-      <EmployeeStatsCards employees={employees || []} />
+      <EmployeeStatsCards employees={employees} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2">
@@ -119,7 +118,7 @@ export const EmployeeManagement: React.FC = () => {
         </div>
         
         <div>
-          <ManagementToolsSection onRefetch={refetch} />
+          <ManagementToolsSection />
         </div>
       </div>
     </div>

@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Users, RefreshCw, Search, Plus } from 'lucide-react';
 import { useBranchesData } from '@/hooks/useBranchesData';
 import { CreateEmployeeDialog } from './CreateEmployeeDialog';
-import { ImportManager } from './ImportManager';
 import { useState } from 'react';
 
 interface EmployeeManagementHeaderProps {
@@ -38,7 +37,7 @@ export const EmployeeManagementHeader: React.FC<EmployeeManagementHeaderProps> =
   hideFilters = false,
 }) => {
   const [createEmployeeOpen, setCreateEmployeeOpen] = useState(false);
-  const { data: branches } = useBranchesData();
+  const { data: branches = [] } = useBranchesData();
 
   return (
     <>
@@ -109,7 +108,7 @@ export const EmployeeManagementHeader: React.FC<EmployeeManagementHeaderProps> =
                       <SelectItem value="permanent">קבוע</SelectItem>
                       <SelectItem value="temporary">זמני</SelectItem>
                       <SelectItem value="contractor">קבלן</SelectItem>
-                      <SelectItem value="intern">מתמחה</SelectItem>
+                      <SelectItem value="youth">נוער</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -133,6 +132,7 @@ export const EmployeeManagementHeader: React.FC<EmployeeManagementHeaderProps> =
         open={createEmployeeOpen}
         onOpenChange={setCreateEmployeeOpen}
         onSuccess={onRefetch}
+        branches={branches}
       />
     </>
   );

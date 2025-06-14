@@ -4,11 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Download, Upload, Settings } from 'lucide-react';
 
-interface ManagementToolsSectionProps {
-  onRefetch: () => void;
-}
-
-export const ManagementToolsSection: React.FC<ManagementToolsSectionProps> = ({ onRefetch }) => {
+export const ManagementToolsSection: React.FC = () => {
   return (
     <Card>
       <CardHeader>
