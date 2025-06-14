@@ -2,10 +2,14 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import type { Database } from '@/integrations/supabase/types';
 
-interface UseSecureBusinessDataOptions {
+// Extract table names from the Database type
+type TableName = keyof Database['public']['Tables'];
+
+interface UseSecureBusinessDataOptions<T extends TableName> {
   queryKey: string[];
-  tableName: string;
+  tableName: T;
   filter?: Record<string, any>;
   orderBy?: { column: string; ascending: boolean };
   select?: string;
@@ -16,9 +20,12 @@ interface UseSecureBusinessDataOptions {
  * Hook מאובטח לשליפת נתוני עסק עם RLS policies
  * תומך בפילטרים ומיון מתקדמים
  */
-export function useSecureBusinessData<T = any>(
-  options: UseSecureBusinessDataOptions
-): UseQueryResult<T[], Error> {
+export function useSecureBusinessData<
+  T extends TableName,
+  TData = Database['public']['Tables'][T]['Row'][]
+>(
+  options: UseSecureBusinessDataOptions<T>
+): UseQueryResult<TData, Error> {
   const {
     queryKey,
     tableName,
@@ -30,7 +37,7 @@ export function useSecureBusinessData<T = any>(
 
   const { businessId, isSuperAdmin } = useCurrentBusiness();
 
-  const fetchData = async (): Promise<T[]> => {
+  const fetchData = async (): Promise<TData> => {
     console.log(`🔒 useSecureBusinessData - Fetching ${tableName}:`, {
       businessId,
       filter,
@@ -38,8 +45,8 @@ export function useSecureBusinessData<T = any>(
       isSuperAdmin
     });
 
-    // Start with base query
-    let query = supabase.from(tableName).select(select);
+    // Start with base query - use any to work around strict typing
+    let query = (supabase.from as any)(tableName).select(select);
 
     // Apply filters
     Object.entries(filter).forEach(([key, value]) => {
@@ -64,15 +71,15 @@ export function useSecureBusinessData<T = any>(
     }
 
     console.log(`✅ Fetched ${data?.length || 0} records from ${tableName}`);
-    return (data || []) as T[];
+    return (data || []) as TData;
   };
 
-  return useQuery<T[], Error>({
+  return useQuery<TData, Error>({
     queryKey: [...queryKey, businessId, filter, orderBy],
     queryFn: fetchData,
     enabled: enabled && (!!businessId || isSuperAdmin),
     retry: 1,
     staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes,
   });
 }

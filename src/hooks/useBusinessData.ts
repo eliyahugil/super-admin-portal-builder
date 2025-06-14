@@ -2,8 +2,9 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import type { Database } from '@/integrations/supabase/types';
 
-// רשימת טבלאות מורשות בלבד - עדכן רק אם מוסיפים מודול חדש
+// Define allowed table names more strictly
 type AllowedTableNames = 'employees' | 'branches' | 'customers';
 type DataFilter = 'active' | 'archived' | 'deleted' | 'pending';
 
@@ -49,8 +50,8 @@ export function useBusinessData<T = any>(
       throw new Error('Business ID is required for data access');
     }
 
-    // Start with base query - using any to avoid complex type inference
-    let query: any = supabase.from(tableName).select(select);
+    // Start with base query - use type assertion to work around strict typing
+    let query = (supabase.from as any)(tableName).select(select);
 
     // Add business filter - CRITICAL for security
     if (businessId) {
