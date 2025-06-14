@@ -5,14 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Clock } from 'lucide-react';
-import { useBusiness } from '@/hooks/useBusiness';
 import { useRealData } from '@/hooks/useRealData';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AddSelectOptionDialog } from '@/components/ui/AddSelectOptionDialog';
 
-export const CreateShiftForm: React.FC = () => {
-  const { businessId, isLoading } = useBusiness();
+interface CreateShiftFormProps {
+  businessId?: string;
+}
+
+export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({ businessId }) => {
   const { toast } = useToast();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
@@ -23,22 +25,29 @@ export const CreateShiftForm: React.FC = () => {
   const { data: employees } = useRealData<any>({
     queryKey: ['employees-for-shift', businessId],
     tableName: 'employees',
-    filters: { is_active: true },
-    enabled: !!businessId && !isLoading
+    filters: businessId ? { is_active: true, business_id: businessId } : { is_active: true },
+    enabled: !!businessId
   });
 
   const { data: shiftTemplates, refetch: refetchTemplates } = useRealData<any>({
     queryKey: ['shift-templates', businessId],
     tableName: 'shift_templates',
-    filters: { is_active: true },
-    enabled: !!businessId && !isLoading
+    filters: businessId ? { is_active: true, business_id: businessId } : { is_active: true },
+    enabled: !!businessId
   });
 
   const { data: branches } = useRealData<any>({
     queryKey: ['branches-for-shift-form', businessId],
     tableName: 'branches',
-    filters: { is_active: true },
-    enabled: !!businessId && !isLoading
+    filters: businessId ? { is_active: true, business_id: businessId } : { is_active: true },
+    enabled: !!businessId
+  });
+
+  console.log('🔧 CreateShiftForm - Current state:', {
+    businessId,
+    employeesCount: employees?.length,
+    templatesCount: shiftTemplates?.length,
+    branchesCount: branches?.length
   });
 
   const handleAddShiftTemplate = async (templateName: string): Promise<boolean> => {
@@ -73,8 +82,14 @@ export const CreateShiftForm: React.FC = () => {
       setSelectedTemplateId(data.id);
       refetchTemplates();
 
+      toast({
+        title: "הצלחה",
+        description: "תבנית המשמרת נוצרה בהצלחה"
+      });
+
       return true;
     } catch (error: any) {
+      console.error('Error creating shift template:', error);
       toast({
         title: "שגיאה",
         description: `שגיאה ביצירת תבנית המשמרת: ${error.message}`,
@@ -91,6 +106,15 @@ export const CreateShiftForm: React.FC = () => {
       toast({
         title: "שגיאה",
         description: "אנא מלא את כל השדות הנדרשים",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!businessId) {
+      toast({
+        title: "שגיאה",
+        description: "לא נמצא מזהה עסק",
         variant: "destructive"
       });
       return;
@@ -127,6 +151,7 @@ export const CreateShiftForm: React.FC = () => {
       setShiftDate('');
       setNotes('');
     } catch (error: any) {
+      console.error('Error creating shift:', error);
       toast({
         title: "שגיאה",
         description: error.message,
@@ -137,8 +162,15 @@ export const CreateShiftForm: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return <div dir="rtl" className="flex items-center justify-center p-6">טוען...</div>;
+  if (!businessId) {
+    return (
+      <div className="bg-white rounded-2xl shadow-md p-6" dir="rtl">
+        <div className="text-center py-8">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">לא נבחר עסק</h3>
+          <p className="text-gray-600">יש לבחור עסק כדי ליצור משמרות</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -156,7 +188,7 @@ export const CreateShiftForm: React.FC = () => {
               <SelectTrigger className="border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 flex-1">
                 <SelectValue placeholder="בחר תבנית משמרת" />
               </SelectTrigger>
-              <SelectContent className="bg-white rounded-xl shadow-lg border">
+              <SelectContent className="bg-white rounded-xl shadow-lg border z-50">
                 {shiftTemplates?.map((template) => (
                   <SelectItem key={template.id} value={template.id} className="p-3 hover:bg-gray-50">
                     <div className="flex items-center gap-2">
@@ -195,7 +227,7 @@ export const CreateShiftForm: React.FC = () => {
             <SelectTrigger className="border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400">
               <SelectValue placeholder="בחר עובד (ניתן להשאיר ריק)" />
             </SelectTrigger>
-            <SelectContent className="bg-white rounded-xl shadow-lg border">
+            <SelectContent className="bg-white rounded-xl shadow-lg border z-50">
               {employees?.map((employee) => (
                 <SelectItem key={employee.id} value={employee.id} className="p-3 hover:bg-gray-50">
                   {employee.first_name} {employee.last_name}
