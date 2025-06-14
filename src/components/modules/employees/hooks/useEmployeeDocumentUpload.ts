@@ -19,8 +19,10 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    
     // Allow uploading templates when employeeId is falsy (i.e., '').
     const uploadingTemplate = !employeeId;
+    
     if (!profile?.id && !user?.id) {
       toast({
         title: 'שגיאה',
@@ -29,6 +31,7 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
       });
       return;
     }
+    
     // Validation: If not uploading templates and no employeeId, show error.
     if (!uploadingTemplate && !employeeId) {
       toast({
@@ -39,17 +42,23 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
       event.target.value = '';
       return;
     }
+    
     try {
       setUploading(true);
 
+      // Verify session before proceeding
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !sessionData.session) throw new Error('No active session!');
+      if (sessionError || !sessionData.session) {
+        throw new Error('לא קיימת חיבור פעיל למערכת');
+      }
+
       const fileExt = file.name.split('.').pop();
       const timestamp = Date.now();
       const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
       const fileEmployeeId = uploadingTemplate ? 'templates' : employeeId;
       const filePath = `employee-documents/${fileEmployeeId}/${fileName}`;
 
+      // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('employee-files')
         .upload(filePath, file, {
@@ -57,14 +66,23 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
           upsert: false
         });
 
-      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error(`שגיאה בהעלאת הקובץ: ${uploadError.message}`);
+      }
 
+      // Get public URL for the uploaded file
       const { data: urlData } = supabase.storage
         .from('employee-files')
         .getPublicUrl(filePath);
 
+      if (!urlData.publicUrl) {
+        throw new Error('לא ניתן ליצור קישור לקובץ');
+      }
+
       const uploadedBy = profile?.id || user?.id;
 
+      // Save document record to database
       const { error: insertError } = await supabase
         .from('employee_documents')
         .insert({
@@ -75,11 +93,15 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
           file_url: urlData.publicUrl,
           uploaded_by: uploadedBy,
           is_template: uploadingTemplate,
+          status: 'pending',
+          reminder_count: 0
         });
 
       if (insertError) {
+        console.error('Database insert error:', insertError);
+        // Try to clean up the uploaded file if database insert fails
         await supabase.storage.from('employee-files').remove([uploadData.path]);
-        throw new Error(`Database error: ${insertError.message}`);
+        throw new Error(`שגיאה בשמירת המסמך: ${insertError.message}`);
       }
 
       toast({
@@ -87,8 +109,11 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
         description: uploadingTemplate ? 'התבנית הועלתה בהצלחה!' : 'המסמך הועלה בהצלחה',
       });
 
+      // Refresh the documents list
       queryClient.invalidateQueries({ queryKey: queryKeyForInvalidate });
+      
     } catch (error: any) {
+      console.error('File upload error:', error);
       toast({
         title: 'שגיאה',
         description: error?.message ?? 'שגיאה בהעלאת מסמך',
