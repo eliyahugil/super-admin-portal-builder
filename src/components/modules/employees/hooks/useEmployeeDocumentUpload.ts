@@ -8,10 +8,13 @@ import { getFileType } from '../helpers/documentHelpers';
 import { StorageService } from '@/services/StorageService';
 
 /**
- * This hook will now support template uploads.
- * - If employeeId is falsy (''), it uploads as a template (is_template: true, employee_id: null)
+ * Hook להעלאת מסמכים לעובד ספציפי או תבניות
  */
-export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryKeyForInvalidate: any[]) => {
+export const useEmployeeDocumentUpload = (
+  employeeId: string | undefined,
+  queryKeyForInvalidate: any[],
+  onUploadSuccess?: () => void // קולבק נוסף לרענון
+) => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const { profile, user } = useAuth();
@@ -20,9 +23,6 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
-    // Allow uploading templates when employeeId is falsy (i.e., '').
-    const uploadingTemplate = !employeeId;
     
     if (!profile?.id && !user?.id) {
       toast({
@@ -33,29 +33,17 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
       return;
     }
     
-    // Validation: If not uploading templates and no employeeId, show error.
-    if (!uploadingTemplate && !employeeId) {
-      toast({
-        title: 'לא נבחר עובד',
-        description: 'עליך לבחור עובד מסוים כדי להעלות מסמך.',
-        variant: 'destructive',
-      });
-      event.target.value = '';
-      return;
-    }
-    
     try {
       setUploading(true);
-
-      console.log('🔍 Starting upload process...');
+      console.log('🔍 Starting document upload process...', { employeeId, isTemplate: !employeeId });
       
-      // Check bucket access first
+      // בדיקת גישה לדלי
       const hasAccess = await StorageService.checkBucketAccess();
       if (!hasAccess) {
-        throw new Error('Storage system is not available. Please try again later or contact support.');
+        throw new Error('מערכת האחסון אינה זמינה. אנא נסה שוב מאוחר יותר או פנה לתמיכה.');
       }
 
-      // Verify session before proceeding
+      // אימות סשן
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session) {
         throw new Error('לא קיימת חיבור פעיל למערכת');
@@ -64,12 +52,15 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
       const fileExt = file.name.split('.').pop();
       const timestamp = Date.now();
       const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-      const fileEmployeeId = uploadingTemplate ? 'templates' : employeeId;
-      const filePath = `employee-documents/${fileEmployeeId}/${fileName}`;
+      
+      // אם זה עובד ספציפי, שמור בתיקיה שלו, אחרת בתיקיית תבניות
+      const filePath = employeeId 
+        ? `employee-documents/${employeeId}/${fileName}`
+        : `employee-documents/templates/${fileName}`;
 
       console.log('📁 Uploading to path:', filePath);
 
-      // Upload file to Supabase Storage
+      // העלאת קובץ ל-Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('employee-files')
         .upload(filePath, file, {
@@ -84,7 +75,7 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
 
       console.log('✅ File uploaded successfully:', uploadData.path);
 
-      // Get public URL for the uploaded file
+      // קבלת URL ציבורי לקובץ
       const { data: urlData } = supabase.storage
         .from('employee-files')
         .getPublicUrl(filePath);
@@ -94,27 +85,26 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
       }
 
       const uploadedBy = profile?.id || user?.id;
-
       console.log('💾 Saving document record to database...');
 
-      // Save document record to database
+      // שמירת רשומת המסמך למסד הנתונים
       const { error: insertError } = await supabase
         .from('employee_documents')
         .insert({
-          employee_id: uploadingTemplate ? null : employeeId,
+          employee_id: employeeId || null, // null עבור תבניות
           assignee_id: null,
           document_name: file.name,
           document_type: getFileType(file.name),
           file_url: urlData.publicUrl,
           uploaded_by: uploadedBy,
-          is_template: uploadingTemplate,
-          status: 'pending',
+          is_template: !employeeId, // תבנית אם אין employeeId
+          status: employeeId ? 'pending' : 'template',
           reminder_count: 0
         });
 
       if (insertError) {
         console.error('❌ Database insert error:', insertError);
-        // Try to clean up the uploaded file if database insert fails
+        // ניסיון לנקות את הקובץ שהועלה אם השמירה למסד הנתונים נכשלה
         await supabase.storage.from('employee-files').remove([uploadData.path]);
         throw new Error(`שגיאה בשמירת המסמך: ${insertError.message}`);
       }
@@ -123,17 +113,22 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
 
       toast({
         title: 'הצלחה',
-        description: uploadingTemplate ? 'התבנית הועלתה בהצלחה!' : 'המסמך הועלה בהצלחה',
+        description: employeeId ? 'המסמך הועלה בהצלחה!' : 'התבנית הועלתה בהצלחה!',
       });
 
-      // Refresh the documents list
+      // רענון רשימת המסמכים
       queryClient.invalidateQueries({ queryKey: queryKeyForInvalidate });
       
+      // קריאה לקולבק נוסף אם הועבר
+      if (onUploadSuccess) {
+        onUploadSuccess();
+      }
+      
     } catch (error: any) {
-      console.error('💥 File upload error:', error);
+      console.error('💥 Upload error:', error);
       toast({
         title: 'שגיאה',
-        description: error?.message ?? 'שגיאה בהעלאת מסמך',
+        description: error?.message ?? 'שגיאה בהעלאת המסמך',
         variant: 'destructive',
       });
     } finally {
@@ -142,5 +137,5 @@ export const useEmployeeDocumentUpload = (employeeId: string | undefined, queryK
     }
   };
 
-  return { uploading, handleFileUpload, setUploading };
+  return { uploading, handleFileUpload };
 };

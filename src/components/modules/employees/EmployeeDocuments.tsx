@@ -33,12 +33,6 @@ export const EmployeeDocuments: React.FC<Props> = ({
     ? ['employee-documents-templates', businessId] 
     : ['employee-documents', employeeId, businessId];
 
-  // Use the upload hook
-  const { uploading, handleFileUpload } = useEmployeeDocumentUpload(
-    isTemplateMode ? undefined : employeeId,
-    queryKey
-  );
-
   // שליפת מסמכים - אם אין employeeId נציג את כל המסמכים של העסק
   const { data: documents = [], isLoading, refetch } = useQuery({
     queryKey,
@@ -61,7 +55,7 @@ export const EmployeeDocuments: React.FC<Props> = ({
       if (employeeId) {
         query = query.eq('employee_id', employeeId);
       } else if (businessId) {
-        // אחרת נסנן לפי עסק באמצעות join עם employees
+        // עבור תבניות או כל המסמכים של העסק
         const { data: employeeData, error: employeeError } = await supabase
           .from('employees')
           .select('id')
@@ -70,11 +64,16 @@ export const EmployeeDocuments: React.FC<Props> = ({
         if (employeeError) throw employeeError;
         
         const employeeIds = employeeData?.map(emp => emp.id) || [];
+        
+        // כולל גם תבניות (employee_id = null) וגם מסמכים של עובדים מהעסק
         if (employeeIds.length > 0) {
-          query = query.in('employee_id', employeeIds);
+          query = query.or(`employee_id.is.null,employee_id.in.(${employeeIds.join(',')})`);
         } else {
-          return [];
+          // אם אין עובדים בעסק, רק תבניות
+          query = query.is('employee_id', null);
         }
+      } else {
+        return [];
       }
 
       const { data, error } = await query;
@@ -83,6 +82,13 @@ export const EmployeeDocuments: React.FC<Props> = ({
     },
     enabled: !!(employeeId || businessId),
   });
+
+  // Use the upload hook with proper refetch
+  const { uploading, handleFileUpload } = useEmployeeDocumentUpload(
+    isTemplateMode ? undefined : employeeId,
+    queryKey,
+    refetch // העבר את הרענון לוק
+  );
 
   const deleteDocumentMutation = useEmployeeDocumentDelete(employeeId || '');
   const { 
@@ -145,7 +151,7 @@ export const EmployeeDocuments: React.FC<Props> = ({
     return (
       <EmployeeDocumentsEmptyState 
         canEdit={canEdit}
-        employeeName={employeeName || 'העובד'}
+        employeeName={employeeName || (isTemplateMode ? 'תבניות מסמכים' : 'העובד')}
         uploading={uploading}
         handleFileUpload={handleFileUpload}
         disableUpload={false}
