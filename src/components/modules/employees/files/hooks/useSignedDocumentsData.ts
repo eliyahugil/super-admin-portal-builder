@@ -12,27 +12,26 @@ export const useSignedDocumentsData = () => {
     queryFn: async () => {
       if (!businessId) return [];
 
-      // שלוף מסמכים חתומים מטבלת employee_document_signatures
+      console.log('🔍 Fetching signed documents for business:', businessId);
+
+      // שליפת מסמכים חתומים מטבלת employee_documents עם סטטוס signed
       const { data, error } = await supabase
-        .from('employee_document_signatures')
+        .from('employee_documents')
         .select(`
           id,
           employee_id,
+          document_name,
+          document_type,
+          file_url,
           signed_at,
           created_at,
           digital_signature_data,
-          employee:employees!employee_document_signatures_employee_id_fkey(
+          employee:employees!employee_documents_employee_id_fkey(
             id,
             first_name,
             last_name,
             employee_id,
             business_id
-          ),
-          document:employee_documents!employee_document_signatures_document_id_fkey(
-            id,
-            document_name,
-            document_type,
-            file_url
           )
         `)
         .eq('status', 'signed')
@@ -41,18 +40,20 @@ export const useSignedDocumentsData = () => {
         .order('signed_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching signed documents:', error);
+        console.error('❌ Error fetching signed documents:', error);
         return [];
       }
 
+      console.log('✅ Fetched signed documents:', data?.length || 0);
+
       // המר את הנתונים לפורמט הנכון
-      return data?.filter(item => item.employee && item.document).map(item => ({
+      return data?.filter(item => item.employee && item.signed_at).map(item => ({
         id: item.id,
         employee_id: item.employee_id,
-        document_name: item.document.document_name,
-        document_type: item.document.document_type,
-        file_url: item.document.file_url,
-        signed_at: item.signed_at,
+        document_name: item.document_name,
+        document_type: item.document_type,
+        file_url: item.file_url,
+        signed_at: item.signed_at!,
         created_at: item.created_at,
         digital_signature_data: item.digital_signature_data,
         employee: item.employee

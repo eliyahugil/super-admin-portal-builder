@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -9,12 +9,15 @@ export const useSignDocument = (documentId: string) => {
   const [isSigning, setIsSigning] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // שליפת פרטי המסמך
-  const { data: document, isLoading, error } = useQuery({
+  const { data: document, isLoading, error, refetch } = useQuery({
     queryKey: ['document-for-signature', documentId],
     queryFn: async () => {
       if (!documentId) return null;
+      
+      console.log('📄 Fetching document for signature:', documentId);
       
       const { data, error } = await supabase
         .from('employee_documents')
@@ -28,10 +31,11 @@ export const useSignDocument = (documentId: string) => {
         .single();
       
       if (error) {
-        console.error('Error fetching document:', error);
+        console.error('❌ Error fetching document:', error);
         throw error;
       }
       
+      console.log('✅ Document fetched:', data);
       return data;
     },
     enabled: !!documentId,
@@ -54,9 +58,11 @@ export const useSignDocument = (documentId: string) => {
       // עדכון המסמך עם החתימה
       const signatureData = {
         signature_image: signatureImageData,
-        signed_by: 'עובד', // ניתן לשפר בהמשך עם פרטי המשתמש
+        signed_by: document?.employee ? `${document.employee.first_name} ${document.employee.last_name}` : 'עובד',
         timestamp: new Date().toISOString(),
       };
+
+      console.log('💾 Updating document with signature data');
 
       const { error: updateError } = await supabase
         .from('employee_documents')
@@ -68,20 +74,24 @@ export const useSignDocument = (documentId: string) => {
         .eq('id', documentId);
 
       if (updateError) {
+        console.error('❌ Error updating document:', updateError);
         throw updateError;
       }
 
       console.log('✅ Document signed successfully');
       
+      // Invalidate and refetch queries
+      await queryClient.invalidateQueries({ queryKey: ['document-for-signature', documentId] });
+      await queryClient.invalidateQueries({ queryKey: ['signed-documents-for-files'] });
+      await queryClient.invalidateQueries({ queryKey: ['employee-documents'] });
+      
+      // Refetch current document
+      await refetch();
+      
       toast({
         title: 'הצלחה',
         description: 'המסמך נחתם בהצלחה!',
       });
-
-      // רענון הנתונים
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
       
     } catch (error: any) {
       console.error('❌ Error signing document:', error);

@@ -9,6 +9,11 @@ export const useFilesGrouping = (
   filters: FiltersState
 ) => {
   return useMemo(() => {
+    console.log('🔄 Grouping files and signed documents:', {
+      filesCount: employeeFiles?.length || 0,
+      signedDocsCount: signedDocuments?.length || 0
+    });
+
     if (!employeeFiles && !signedDocuments) return [];
 
     const employees = new Map<string, GroupedFiles>();
@@ -44,6 +49,14 @@ export const useFilesGrouping = (
     });
 
     const grouped = Array.from(employees.values());
+
+    console.log('📊 Grouped results before filtering:', 
+      grouped.map(g => ({
+        employee: g.employee.first_name + ' ' + g.employee.last_name,
+        filesCount: g.files.length,
+        signedDocsCount: g.signedDocuments.length
+      }))
+    );
 
     // Apply filters
     return grouped.filter(group => {

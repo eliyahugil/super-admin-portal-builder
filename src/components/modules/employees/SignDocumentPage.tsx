@@ -49,6 +49,35 @@ export const SignDocumentPage: React.FC = () => {
           isAlreadySigned={isAlreadySigned}
         />
 
+        {/* Document Preview */}
+        <div className="bg-white rounded-lg border p-6">
+          <h3 className="text-lg font-semibold mb-4">תצוגת המסמך</h3>
+          <div className="border rounded-lg overflow-hidden mb-4">
+            <iframe
+              src={document.file_url}
+              className="w-full h-96"
+              title={document.document_name}
+            />
+          </div>
+          
+          {/* Show signature within document if already signed */}
+          {isAlreadySigned && signatureData && (
+            <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+              <h4 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+                ✅ המסמך נחתם - החתימה מוצגת למטה:
+              </h4>
+              <div className="bg-white p-3 rounded border inline-block">
+                <img 
+                  src={signatureData.signature_image} 
+                  alt="חתימה דיגיטלית"
+                  className="max-w-full h-auto"
+                  style={{ maxHeight: '100px', maxWidth: '200px' }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
         {!isAlreadySigned && (
           <DigitalSignatureForm 
             onSign={handleSign}
