@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useAuth } from '@/components/auth/AuthContext';
 import { EmployeeDocumentCard } from './EmployeeDocumentCard';
 import { EmployeeDocumentsHeader } from './EmployeeDocumentsHeader';
 import { EmployeeDocumentsEmptyState } from './EmployeeDocumentsEmptyState';
@@ -25,18 +25,22 @@ export const EmployeeDocuments: React.FC<Props> = ({
 }) => {
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const { toast } = useToast();
-  const { businessId } = useBusiness();
+  const { profile } = useAuth();
 
-  // Determine if we're uploading templates (when employeeId is empty or falsy)
+  // Determine if we're in template mode (when employeeId is empty or falsy)
   const isTemplateMode = !employeeId;
   const queryKey = isTemplateMode 
-    ? ['employee-documents-templates', businessId] 
-    : ['employee-documents', employeeId, businessId];
+    ? ['employee-documents-templates'] 
+    : ['employee-documents', employeeId];
 
-  // שליפת מסמכים - אם אין employeeId נציג את כל המסמכים של העסק
+  console.log('🔍 EmployeeDocuments - Mode:', { isTemplateMode, employeeId, profileId: profile?.id });
+
+  // שליפת מסמכים - לוגיקה פשוטה יותר
   const { data: documents = [], isLoading, refetch } = useQuery({
     queryKey,
     queryFn: async () => {
+      console.log('📥 Starting documents query for mode:', isTemplateMode ? 'templates' : 'employee');
+      
       let query = supabase
         .from('employee_documents')
         .select(`
@@ -51,43 +55,39 @@ export const EmployeeDocuments: React.FC<Props> = ({
         `)
         .order('created_at', { ascending: false });
 
-      // אם יש employeeId ספציפי, נסנן לפיו
-      if (employeeId) {
-        query = query.eq('employee_id', employeeId);
-      } else if (businessId) {
-        // עבור תבניות או כל המסמכים של העסק
-        const { data: employeeData, error: employeeError } = await supabase
-          .from('employees')
-          .select('id')
-          .eq('business_id', businessId);
-
-        if (employeeError) throw employeeError;
-        
-        const employeeIds = employeeData?.map(emp => emp.id) || [];
-        
-        // כולל גם תבניות (employee_id = null) וגם מסמכים של עובדים מהעסק
-        if (employeeIds.length > 0) {
-          query = query.or(`employee_id.is.null,employee_id.in.(${employeeIds.join(',')})`);
-        } else {
-          // אם אין עובדים בעסק, רק תבניות
-          query = query.is('employee_id', null);
-        }
+      if (isTemplateMode) {
+        // עבור תבניות - רק מסמכים עם is_template = true
+        console.log('🎯 Querying templates only');
+        query = query.eq('is_template', true);
       } else {
-        return [];
+        // עבור עובד ספציפי - רק מסמכים של העובד הזה
+        console.log('🎯 Querying documents for employee:', employeeId);
+        query = query.eq('employee_id', employeeId);
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      
+      if (error) {
+        console.error('❌ Query error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Documents fetched:', data?.length || 0, 'documents');
+      console.log('📋 Documents details:', data);
+      
       return data || [];
     },
-    enabled: !!(employeeId || businessId),
+    enabled: true, // תמיד מאופשר
   });
 
   // Use the upload hook with proper refetch
   const { uploading, handleFileUpload } = useEmployeeDocumentUpload(
     isTemplateMode ? undefined : employeeId,
     queryKey,
-    refetch // העבר את הרענון לוק
+    () => {
+      console.log('🔄 Upload success callback - refreshing documents');
+      refetch();
+    }
   );
 
   const deleteDocumentMutation = useEmployeeDocumentDelete(employeeId || '');
@@ -143,9 +143,12 @@ export const EmployeeDocuments: React.FC<Props> = ({
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2">טוען מסמכים...</span>
       </div>
     );
   }
+
+  console.log('📊 Rendering with documents count:', documents.length);
 
   if (documents.length === 0) {
     return (

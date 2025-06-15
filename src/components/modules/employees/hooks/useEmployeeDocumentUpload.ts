@@ -13,7 +13,7 @@ import { StorageService } from '@/services/StorageService';
 export const useEmployeeDocumentUpload = (
   employeeId: string | undefined,
   queryKeyForInvalidate: any[],
-  onUploadSuccess?: () => void // קולבק נוסף לרענון
+  onUploadSuccess?: () => void
 ) => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
@@ -35,7 +35,14 @@ export const useEmployeeDocumentUpload = (
     
     try {
       setUploading(true);
-      console.log('🔍 Starting document upload process...', { employeeId, isTemplate: !employeeId });
+      const isTemplate = !employeeId;
+      
+      console.log('🔍 Starting document upload process...', { 
+        employeeId, 
+        isTemplate,
+        fileName: file.name,
+        fileSize: file.size 
+      });
       
       // בדיקת גישה לדלי
       const hasAccess = await StorageService.checkBucketAccess();
@@ -85,22 +92,29 @@ export const useEmployeeDocumentUpload = (
       }
 
       const uploadedBy = profile?.id || user?.id;
-      console.log('💾 Saving document record to database...');
+      console.log('💾 Saving document record to database...', {
+        employee_id: employeeId || null,
+        is_template: isTemplate,
+        document_name: file.name,
+        uploaded_by: uploadedBy
+      });
 
       // שמירת רשומת המסמך למסד הנתונים
-      const { error: insertError } = await supabase
+      const { data: insertedDoc, error: insertError } = await supabase
         .from('employee_documents')
         .insert({
-          employee_id: employeeId || null, // null עבור תבניות
+          employee_id: employeeId || null,
           assignee_id: null,
           document_name: file.name,
           document_type: getFileType(file.name),
           file_url: urlData.publicUrl,
           uploaded_by: uploadedBy,
-          is_template: !employeeId, // תבנית אם אין employeeId
+          is_template: isTemplate,
           status: employeeId ? 'pending' : 'template',
           reminder_count: 0
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) {
         console.error('❌ Database insert error:', insertError);
@@ -109,20 +123,38 @@ export const useEmployeeDocumentUpload = (
         throw new Error(`שגיאה בשמירת המסמך: ${insertError.message}`);
       }
 
-      console.log('✅ Document record saved successfully');
+      console.log('✅ Document record saved successfully:', insertedDoc);
 
       toast({
         title: 'הצלחה',
         description: employeeId ? 'המסמך הועלה בהצלחה!' : 'התבנית הועלתה בהצלחה!',
       });
 
-      // רענון רשימת המסמכים
-      queryClient.invalidateQueries({ queryKey: queryKeyForInvalidate });
+      // רענון רשימת המסמכים - כמה שיטות כדי לוודא שזה עובד
+      console.log('🔄 Invalidating queries with key:', queryKeyForInvalidate);
+      
+      // רענון ישיר של הקיוורי הספציפי
+      await queryClient.invalidateQueries({ queryKey: queryKeyForInvalidate });
+      
+      // רענון כל הקיוורי של מסמכי עובדים
+      await queryClient.invalidateQueries({ 
+        queryKey: ['employee-documents-templates'] 
+      });
       
       // קריאה לקולבק נוסף אם הועבר
       if (onUploadSuccess) {
+        console.log('📞 Calling upload success callback');
         onUploadSuccess();
       }
+      
+      // חכה קצת ואז רענן שוב לוודא
+      setTimeout(() => {
+        console.log('🔄 Secondary refresh after upload');
+        queryClient.invalidateQueries({ queryKey: queryKeyForInvalidate });
+        if (onUploadSuccess) {
+          onUploadSuccess();
+        }
+      }, 1000);
       
     } catch (error: any) {
       console.error('💥 Upload error:', error);
