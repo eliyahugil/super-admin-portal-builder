@@ -8,6 +8,7 @@ import { useEmployeeDocuments } from './hooks/useEmployeeDocuments';
 import { useEmployeeDocumentDelete } from './hooks/useEmployeeDocumentDelete';
 import { useEmployeeDocumentReminders } from './hooks/useEmployeeDocumentReminders';
 import { useEmployeeDocumentUpload } from './hooks/useEmployeeDocumentUpload';
+import { useTemplateDocumentUpload } from './hooks/useTemplateDocumentUpload';
 
 interface Props {
   employeeId: string;
@@ -31,15 +32,18 @@ export const EmployeeDocumentsContainer: React.FC<Props> = ({
     queryKey
   } = useEmployeeDocuments(employeeId);
 
-  // Use the upload hook with proper refetch
-  const { uploading, handleFileUpload } = useEmployeeDocumentUpload(
+  // Hook להעלאת מסמכים רגילים (לא תבניות)
+  const { uploading: regularUploading, handleFileUpload } = useEmployeeDocumentUpload(
     isTemplateMode ? undefined : employeeId,
     queryKey,
     () => {
-      console.log('🔄 Upload success callback - refreshing documents');
+      console.log('🔄 Regular document upload success - refreshing documents');
       refetch();
     }
   );
+
+  // Hook נפרד להעלאת תבניות
+  const { uploading: templateUploading, handleTemplateUpload } = useTemplateDocumentUpload(queryKey);
 
   const deleteDocumentMutation = useEmployeeDocumentDelete(employeeId || '');
   const { 
@@ -48,6 +52,8 @@ export const EmployeeDocumentsContainer: React.FC<Props> = ({
     reminderLog, 
     fetchReminders 
   } = useEmployeeDocumentReminders(employeeId || '');
+
+  const uploading = regularUploading || templateUploading;
 
   const handleView = (document: any) => {
     setSelectedDocument(document);
@@ -86,13 +92,11 @@ export const EmployeeDocumentsContainer: React.FC<Props> = ({
     }
   };
 
-  // פונקציה נפרדת להעלאת תבניות
-  const handleTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && canEdit) {
-      // העלאה כתבנית (is_template = true)
-      handleFileUpload(e, true);
-    }
+  // פונקציה להעלאת מסמך רגיל לחתימה (לא תבנית)
+  const handleRegularDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('📋 Uploading regular document for signature, employeeId:', employeeId);
+    // כאן נעלה מסמך רגיל עם is_template = false
+    handleFileUpload(e, false);
   };
 
   const onDocumentUpdated = () => {
@@ -141,6 +145,7 @@ export const EmployeeDocumentsContainer: React.FC<Props> = ({
         onSendReminder={sendReminder}
         onFetchReminders={fetchReminders}
         onDocumentUpdated={onDocumentUpdated}
+        onRegularDocumentUpload={handleRegularDocumentUpload}
       />
 
       {selectedDocument && (

@@ -31,7 +31,7 @@ export const useEmployeeDocumentUpload = (
       return;
     }
 
-    // עבור תבניות, לא צריך employeeId
+    // עבור מסמכים רגילים (לא תבניות), חובה employeeId
     if (!isTemplate && !employeeId) {
       toast({
         title: 'שגיאה',
@@ -49,7 +49,7 @@ export const useEmployeeDocumentUpload = (
       const folderPath = isTemplate ? 'templates' : `employee-documents/${employeeId}`;
       const filePath = `${folderPath}/${fileName}`;
 
-      console.log('📁 Uploading to bucket: employee-files, path:', filePath);
+      console.log('📁 Uploading to bucket: employee-files, path:', filePath, 'isTemplate:', isTemplate);
 
       // Upload file to Supabase Storage - השתמש בדלי employee-files הקיים
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -68,16 +68,18 @@ export const useEmployeeDocumentUpload = (
         .from('employee-files')
         .getPublicUrl(filePath);
 
-      // Create document record
+      // Create document record - הלוגיקה החדשה
       const documentData = {
-        employee_id: isTemplate ? null : employeeId, // עבור תבניות, employee_id = null
+        employee_id: isTemplate ? null : employeeId, // עבור תבניות null, עבור מסמכים רגילים employeeId
         document_name: file.name,
         document_type: getDocumentType(file.name),
         file_url: publicUrl,
-        status: isTemplate ? 'template' : 'pending',
-        is_template: isTemplate,
+        status: isTemplate ? 'template' : 'pending', // סטטוס שונה
+        is_template: isTemplate, // זה הקובע את הסוג!
         uploaded_by: (await supabase.auth.getUser()).data.user?.id,
       };
+
+      console.log('💾 Saving document with data:', documentData);
 
       const { error: dbError } = await supabase
         .from('employee_documents')
