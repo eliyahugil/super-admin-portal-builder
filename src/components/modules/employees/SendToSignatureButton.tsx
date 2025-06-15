@@ -23,10 +23,27 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  console.log('🔍 SendToSignatureButton rendered for document:', documentName, 'ID:', documentId, 'Already assigned:', isAlreadyAssigned);
+  console.log('🔍 SendToSignatureButton rendered:', {
+    documentId,
+    documentName,
+    isAlreadyAssigned,
+    variant,
+    size
+  });
 
   const buttonText = isAlreadyAssigned ? 'שלח מחדש' : 'שלח לחתימה';
   const ButtonIcon = isAlreadyAssigned ? RotateCcw : Send;
+
+  const handleClick = () => {
+    console.log('📌 SendToSignature button clicked for:', documentName);
+    setIsOpen(true);
+  };
+
+  const handleSent = () => {
+    console.log('✅ Document sent callback for:', documentName);
+    setIsOpen(false);
+    onSent?.();
+  };
 
   return (
     <>
@@ -34,10 +51,7 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
         variant={variant}
         size={size}
         className="flex items-center gap-2"
-        onClick={() => {
-          console.log('📌 SendToSignature button clicked for:', documentName);
-          setIsOpen(true);
-        }}
+        onClick={handleClick}
       >
         <ButtonIcon className="h-4 w-4" />
         {buttonText}
@@ -49,7 +63,7 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
         documentId={documentId}
         documentName={documentName}
         isAlreadyAssigned={isAlreadyAssigned}
-        onSent={onSent}
+        onSent={handleSent}
       />
     </>
   );

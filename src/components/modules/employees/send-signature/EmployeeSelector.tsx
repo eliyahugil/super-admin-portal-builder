@@ -22,6 +22,13 @@ export const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
   selectedEmployeeId,
   onSelectionChange
 }) => {
+  console.log('👥 EmployeeSelector rendered:', {
+    employeesCount: employees.length,
+    employeesLoading,
+    selectedEmployeeId,
+    firstEmployee: employees[0]
+  });
+
   return (
     <div>
       <label className="text-sm font-medium mb-2 block">בחר עובד לחתימה:</label>

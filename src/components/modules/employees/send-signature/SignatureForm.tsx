@@ -37,6 +37,14 @@ export const SignatureForm: React.FC<SignatureFormProps> = ({
   const buttonText = isAlreadyAssigned ? 'שלח מחדש' : 'שלח לחתימה';
   const ButtonIcon = isAlreadyAssigned ? RotateCcw : Send;
 
+  console.log('📋 SignatureForm rendered:', {
+    documentName,
+    isAlreadyAssigned,
+    employeesCount: employees.length,
+    selectedEmployeeId,
+    isSending
+  });
+
   return (
     <div className="space-y-4">
       <div>

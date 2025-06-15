@@ -44,6 +44,16 @@ export const SendToSignatureDialog: React.FC<SendToSignatureDialogProps> = ({
     handleSendToSignature(isAlreadyAssigned);
   };
 
+  console.log('🔍 SendToSignatureDialog rendered:', {
+    isOpen,
+    documentId,
+    documentName,
+    isAlreadyAssigned,
+    employeesCount: employees?.length || 0,
+    selectedEmployeeId,
+    signatureUrl
+  });
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md" dir="rtl">

@@ -20,7 +20,10 @@ export const useSendToSignature = (documentId: string, documentName: string, onS
         .eq('is_active', true)
         .order('first_name', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching employees:', error);
+        throw error;
+      }
       return data || [];
     },
   });
@@ -62,7 +65,10 @@ export const useSendToSignature = (documentId: string, documentName: string, onS
         .update(updateData)
         .eq('id', documentId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating document:', updateError);
+        throw updateError;
+      }
 
       // יצירת קישור חתימה דיגיטלית
       const baseUrl = window.location.origin;
@@ -75,6 +81,7 @@ export const useSendToSignature = (documentId: string, documentName: string, onS
         description: `המסמך "${documentName}" ${actionText} לחתימה בהצלחה`,
       });
 
+      console.log('✅ Document sent successfully, signature URL:', signUrl);
       onSent?.();
     } catch (error: any) {
       console.error('Error sending document for signature:', error);
