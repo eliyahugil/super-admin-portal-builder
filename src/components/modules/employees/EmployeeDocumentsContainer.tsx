@@ -1,10 +1,9 @@
 
 import React from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { EmployeeDocumentsHeader } from './EmployeeDocumentsHeader';
-import { EmployeeDocumentsEmptyState } from './EmployeeDocumentsEmptyState';
 import { EmployeeDocumentsViewer } from './EmployeeDocumentsViewer';
-import { EmployeeDocumentsList } from './EmployeeDocumentsList';
+import { TemplateDocumentsList } from './TemplateDocumentsList';
+import { SignatureDocumentsList } from './SignatureDocumentsList';
 import { useEmployeeDocuments } from './hooks/useEmployeeDocuments';
 import { useEmployeeDocumentDelete } from './hooks/useEmployeeDocumentDelete';
 import { useEmployeeDocumentReminders } from './hooks/useEmployeeDocumentReminders';
@@ -87,6 +86,15 @@ export const EmployeeDocumentsContainer: React.FC<Props> = ({
     }
   };
 
+  // פונקציה נפרדת להעלאת תבניות
+  const handleTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && canEdit) {
+      // העלאה כתבנית (is_template = true)
+      handleFileUpload(e, true);
+    }
+  };
+
   const onDocumentUpdated = () => {
     refetch();
   };
@@ -102,28 +110,26 @@ export const EmployeeDocumentsContainer: React.FC<Props> = ({
 
   console.log('📊 Rendering with documents count:', documents.length);
 
-  if (documents.length === 0) {
-    return (
-      <EmployeeDocumentsEmptyState 
-        canEdit={canEdit}
-        employeeName={employeeName || (isTemplateMode ? 'תבניות מסמכים' : 'העובד')}
-        uploading={uploading}
-        handleFileUpload={handleFileUpload}
-        disableUpload={false}
-      />
-    );
-  }
-
   return (
     <div className="space-y-6" dir="rtl">
-      <EmployeeDocumentsHeader 
+      {/* רק אם יש הרשאות עריכה או שיש תבניות להציג */}
+      <TemplateDocumentsList
+        documents={documents}
         canEdit={canEdit}
         uploading={uploading}
-        handleFileUpload={handleFileUpload}
-        disableUpload={false}
+        reminderLoading={reminderLoading}
+        reminderLog={reminderLog}
+        onView={handleView}
+        onDownload={handleDownload}
+        onDelete={handleDelete}
+        onSendReminder={sendReminder}
+        onFetchReminders={fetchReminders}
+        onDocumentUpdated={onDocumentUpdated}
+        onTemplateUpload={handleTemplateUpload}
       />
       
-      <EmployeeDocumentsList
+      {/* מסמכים לחתימה - תמיד מוצגים */}
+      <SignatureDocumentsList
         documents={documents}
         canEdit={canEdit}
         uploading={uploading}

@@ -1,173 +1,131 @@
 
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/components/auth/AuthContext';
-import { useQueryClient } from '@tanstack/react-query';
-import { getFileType } from '../helpers/documentHelpers';
-import { StorageService } from '@/services/StorageService';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
-/**
- * Hook להעלאת מסמכים לעובד ספציפי או תבניות
- */
 export const useEmployeeDocumentUpload = (
   employeeId: string | undefined,
-  queryKeyForInvalidate: any[],
-  onUploadSuccess?: () => void
+  queryKey: any[],
+  onSuccess?: () => void
 ) => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
-  const { profile, user } = useAuth();
   const queryClient = useQueryClient();
+  const { businessId } = useCurrentBusiness();
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    isTemplate: boolean = false
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
-    if (!profile?.id && !user?.id) {
+
+    if (!businessId) {
       toast({
         title: 'שגיאה',
-        description: 'נדרש להתחבר למערכת כדי להעלות קבצים',
+        description: 'לא נמצא מזהה עסק',
         variant: 'destructive',
       });
       return;
     }
-    
-    try {
-      setUploading(true);
-      const isTemplate = !employeeId;
-      
-      console.log('🔍 Starting document upload process...', { 
-        employeeId, 
-        isTemplate,
-        fileName: file.name,
-        fileSize: file.size 
+
+    // עבור תבניות, לא צריך employeeId
+    if (!isTemplate && !employeeId) {
+      toast({
+        title: 'שגיאה',
+        description: 'לא נמצא מזהה עובד',
+        variant: 'destructive',
       });
-      
-      // בדיקת גישה לדלי
-      const hasAccess = await StorageService.checkBucketAccess();
-      if (!hasAccess) {
-        throw new Error('מערכת האחסון אינה זמינה. אנא נסה שוב מאוחר יותר או פנה לתמיכה.');
-      }
+      return;
+    }
 
-      // אימות סשן
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !sessionData.session) {
-        throw new Error('לא קיימת חיבור פעיל למערכת');
-      }
+    setUploading(true);
 
+    try {
       const fileExt = file.name.split('.').pop();
-      const timestamp = Date.now();
-      const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-      
-      // אם זה עובד ספציפי, שמור בתיקיה שלו, אחרת בתיקיית תבניות
-      const filePath = employeeId 
-        ? `employee-documents/${employeeId}/${fileName}`
-        : `employee-documents/templates/${fileName}`;
+      const fileName = `${Date.now()}.${fileExt}`;
+      const folderPath = isTemplate ? 'templates' : `employee-documents/${employeeId}`;
+      const filePath = `${folderPath}/${fileName}`;
 
-      console.log('📁 Uploading to path:', filePath);
-
-      // העלאת קובץ ל-Supabase Storage
+      // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('employee-files')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+        .from('employee-documents')
+        .upload(filePath, file);
 
       if (uploadError) {
-        console.error('❌ Storage upload error:', uploadError);
-        throw new Error(`שגיאה בהעלאת הקובץ: ${uploadError.message}`);
+        console.error('Upload error:', uploadError);
+        throw uploadError;
       }
 
-      console.log('✅ File uploaded successfully:', uploadData.path);
-
-      // קבלת URL ציבורי לקובץ
-      const { data: urlData } = supabase.storage
-        .from('employee-files')
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('employee-documents')
         .getPublicUrl(filePath);
 
-      if (!urlData.publicUrl) {
-        throw new Error('לא ניתן ליצור קישור לקובץ');
-      }
-
-      const uploadedBy = profile?.id || user?.id;
-      console.log('💾 Saving document record to database...', {
-        employee_id: employeeId || null,
-        is_template: isTemplate,
+      // Create document record
+      const documentData = {
+        employee_id: isTemplate ? null : employeeId, // עבור תבניות, employee_id = null
         document_name: file.name,
-        uploaded_by: uploadedBy
-      });
+        document_type: getDocumentType(file.name),
+        file_url: publicUrl,
+        status: isTemplate ? 'template' : 'pending',
+        is_template: isTemplate,
+        uploaded_by: (await supabase.auth.getUser()).data.user?.id,
+      };
 
-      // שמירת רשומת המסמך למסד הנתונים
-      const { data: insertedDoc, error: insertError } = await supabase
+      const { error: dbError } = await supabase
         .from('employee_documents')
-        .insert({
-          employee_id: employeeId || null,
-          assignee_id: null,
-          document_name: file.name,
-          document_type: getFileType(file.name),
-          file_url: urlData.publicUrl,
-          uploaded_by: uploadedBy,
-          is_template: isTemplate,
-          status: employeeId ? 'pending' : 'template',
-          reminder_count: 0
-        })
-        .select()
-        .single();
+        .insert(documentData);
 
-      if (insertError) {
-        console.error('❌ Database insert error:', insertError);
-        // ניסיון לנקות את הקובץ שהועלה אם השמירה למסד הנתונים נכשלה
-        await supabase.storage.from('employee-files').remove([uploadData.path]);
-        throw new Error(`שגיאה בשמירת המסמך: ${insertError.message}`);
+      if (dbError) {
+        console.error('Database error:', dbError);
+        // Clean up uploaded file if database insert fails
+        await supabase.storage
+          .from('employee-documents')
+          .remove([filePath]);
+        throw dbError;
       }
-
-      console.log('✅ Document record saved successfully:', insertedDoc);
 
       toast({
         title: 'הצלחה',
-        description: employeeId ? 'המסמך הועלה בהצלחה!' : 'התבנית הועלתה בהצלחה!',
+        description: isTemplate 
+          ? 'התבנית הועלתה בהצלחה!'
+          : 'המסמך הועלה בהצלחה!',
       });
 
-      // רענון רשימת המסמכים - כמה שיטות כדי לוודא שזה עובד
-      console.log('🔄 Invalidating queries with key:', queryKeyForInvalidate);
-      
-      // רענון ישיר של הקיוורי הספציפי
-      await queryClient.invalidateQueries({ queryKey: queryKeyForInvalidate });
-      
-      // רענון כל הקיוורי של מסמכי עובדים
-      await queryClient.invalidateQueries({ 
-        queryKey: ['employee-documents-templates'] 
-      });
-      
-      // קריאה לקולבק נוסף אם הועבר
-      if (onUploadSuccess) {
-        console.log('📞 Calling upload success callback');
-        onUploadSuccess();
-      }
-      
-      // חכה קצת ואז רענן שוב לוודא
-      setTimeout(() => {
-        console.log('🔄 Secondary refresh after upload');
-        queryClient.invalidateQueries({ queryKey: queryKeyForInvalidate });
-        if (onUploadSuccess) {
-          onUploadSuccess();
-        }
-      }, 1000);
-      
+      // Invalidate and refetch queries
+      await queryClient.invalidateQueries({ queryKey });
+      onSuccess?.();
+
     } catch (error: any) {
-      console.error('💥 Upload error:', error);
+      console.error('Error uploading document:', error);
       toast({
         title: 'שגיאה',
-        description: error?.message ?? 'שגיאה בהעלאת המסמך',
+        description: error.message || 'שגיאה בהעלאת המסמך',
         variant: 'destructive',
       });
     } finally {
       setUploading(false);
+      // Clear the input
       event.target.value = '';
     }
   };
 
-  return { uploading, handleFileUpload };
+  return {
+    uploading,
+    handleFileUpload,
+  };
+};
+
+// Helper function to determine document type
+const getDocumentType = (fileName: string): string => {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  
+  if (['pdf'].includes(extension || '')) return 'contract';
+  if (['doc', 'docx'].includes(extension || '')) return 'form';
+  if (['jpg', 'jpeg', 'png'].includes(extension || '')) return 'id';
+  
+  return 'other';
 };
