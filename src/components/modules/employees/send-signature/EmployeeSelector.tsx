@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { EmployeeListItem } from './EmployeeListItem';
-import { SelectedEmployeesList } from './SelectedEmployeesList';
+import { AvailableEmployeesList } from './AvailableEmployeesList';
+import { SelectedEmployeesDisplay } from './SelectedEmployeesDisplay';
 import type { Employee, ExistingSignature } from './types';
 
 interface EmployeeSelectorProps {
@@ -24,17 +24,6 @@ export const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
   onEmployeeToggle,
   onEmployeeRemove
 }) => {
-  const getEmployeeSignatureStatus = (employeeId: string) => {
-    const signature = existingSignatures.find(sig => sig.employee_id === employeeId);
-    if (!signature) return null;
-    
-    return {
-      status: signature.status,
-      signed_at: signature.signed_at,
-      sent_at: signature.sent_at
-    };
-  };
-
   console.log('👥 EmployeeSelector rendered:', {
     employeesCount: employees.length,
     selectedCount: selectedEmployeeIds.length,
@@ -75,27 +64,16 @@ export const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
         <h3 className="font-medium mb-4">בחר עובדים לשליחה:</h3>
         
         {/* רשימת עובדים זמינים */}
-        <div className="space-y-2 mb-4">
-          {employees.map((employee) => {
-            const isSelected = selectedEmployeeIds.includes(employee.id);
-            const signatureStatus = getEmployeeSignatureStatus(employee.id);
-            const signatureUrl = signatureUrls[employee.id];
-
-            return (
-              <EmployeeListItem
-                key={employee.id}
-                employee={employee}
-                isSelected={isSelected}
-                signatureUrl={signatureUrl}
-                signatureStatus={signatureStatus}
-                onToggle={onEmployeeToggle}
-              />
-            );
-          })}
-        </div>
+        <AvailableEmployeesList
+          employees={employees}
+          selectedEmployeeIds={selectedEmployeeIds}
+          existingSignatures={existingSignatures}
+          signatureUrls={signatureUrls}
+          onEmployeeToggle={onEmployeeToggle}
+        />
 
         {/* רשימת עובדים שנבחרו */}
-        <SelectedEmployeesList
+        <SelectedEmployeesDisplay
           selectedEmployeeIds={selectedEmployeeIds}
           employees={employees}
           signatureUrls={signatureUrls}
