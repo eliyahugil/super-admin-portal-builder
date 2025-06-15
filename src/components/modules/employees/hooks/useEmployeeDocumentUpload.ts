@@ -31,14 +31,9 @@ export const useEmployeeDocumentUpload = (
       return;
     }
 
-    // עבור מסמכים רגילים (לא תבניות), חובה employeeId
+    // עבור מסמכים רגילים (לא תבניות), חובה employeeId או שזה לא תבנית
     if (!isTemplate && !employeeId) {
-      toast({
-        title: 'שגיאה',
-        description: 'לא נמצא מזהה עובד',
-        variant: 'destructive',
-      });
-      return;
+      console.log('⚠️ Uploading regular document without specific employee - this will be a general document');
     }
 
     setUploading(true);
@@ -46,12 +41,12 @@ export const useEmployeeDocumentUpload = (
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
-      const folderPath = isTemplate ? 'templates' : `employee-documents/${employeeId}`;
+      const folderPath = isTemplate ? 'templates' : 'signature-documents';
       const filePath = `${folderPath}/${fileName}`;
 
       console.log('📁 Uploading to bucket: employee-files, path:', filePath, 'isTemplate:', isTemplate);
 
-      // Upload file to Supabase Storage - השתמש בדלי employee-files הקיים
+      // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('employee-files')
         .upload(filePath, file);
@@ -68,9 +63,9 @@ export const useEmployeeDocumentUpload = (
         .from('employee-files')
         .getPublicUrl(filePath);
 
-      // Create document record - הלוגיקה החדשה
+      // Create document record - הלוגיקה המתוקנת
       const documentData = {
-        employee_id: isTemplate ? null : employeeId, // עבור תבניות null, עבור מסמכים רגילים employeeId
+        employee_id: isTemplate ? null : (employeeId || null), // עבור תבניות null, עבור מסמכים רגילים employeeId או null
         document_name: file.name,
         document_type: getDocumentType(file.name),
         file_url: publicUrl,
@@ -80,6 +75,7 @@ export const useEmployeeDocumentUpload = (
       };
 
       console.log('💾 Saving document with data:', documentData);
+      console.log('🔍 is_template value being saved:', isTemplate);
 
       const { error: dbError } = await supabase
         .from('employee_documents')
@@ -98,7 +94,7 @@ export const useEmployeeDocumentUpload = (
         title: 'הצלחה',
         description: isTemplate 
           ? 'התבנית הועלתה בהצלחה!'
-          : 'המסמך הועלה בהצלחה!',
+          : 'המסמך לחתימה הועלה בהצלחה!',
       });
 
       // Invalidate and refetch queries

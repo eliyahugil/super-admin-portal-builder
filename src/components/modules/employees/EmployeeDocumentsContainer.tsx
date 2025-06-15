@@ -95,8 +95,9 @@ export const EmployeeDocumentsContainer: React.FC<Props> = ({
   // פונקציה להעלאת מסמך רגיל לחתימה (לא תבנית)
   const handleRegularDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log('📋 Uploading regular document for signature, employeeId:', employeeId);
+    console.log('📋 Explicitly setting is_template to FALSE for signature document');
     // כאן נעלה מסמך רגיל עם is_template = false
-    handleFileUpload(e, false);
+    handleFileUpload(e, false); // מעביר במפורש false
   };
 
   const onDocumentUpdated = () => {
