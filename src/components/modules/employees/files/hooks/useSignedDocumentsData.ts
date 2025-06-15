@@ -14,7 +14,8 @@ export const useSignedDocumentsData = () => {
 
       console.log('🔍 Fetching signed documents for business:', businessId);
 
-      // שליפת מסמכים חתומים מטבלת employee_documents עם סטטוס signed
+      // שליפת מסמכים חתומים מטבלת employee_documents
+      // נוודא שנשלף רק מסמכים שאכן נחתמו (יש להם digital_signature_data ו-signed_at)
       const { data, error } = await supabase
         .from('employee_documents')
         .select(`
@@ -36,6 +37,7 @@ export const useSignedDocumentsData = () => {
         `)
         .eq('status', 'signed')
         .not('signed_at', 'is', null)
+        .not('digital_signature_data', 'is', null)
         .eq('employee.business_id', businessId)
         .order('signed_at', { ascending: false });
 
@@ -46,8 +48,13 @@ export const useSignedDocumentsData = () => {
 
       console.log('✅ Fetched signed documents:', data?.length || 0);
 
-      // המר את הנתונים לפורמט הנכון
-      return data?.filter(item => item.employee && item.signed_at).map(item => ({
+      // המר את הנתונים לפורמט הנכון - רק מסמכים שאכן נחתמו
+      return data?.filter(item => 
+        item.employee && 
+        item.signed_at && 
+        item.digital_signature_data &&
+        item.employee.business_id === businessId
+      ).map(item => ({
         id: item.id,
         employee_id: item.employee_id,
         document_name: item.document_name,

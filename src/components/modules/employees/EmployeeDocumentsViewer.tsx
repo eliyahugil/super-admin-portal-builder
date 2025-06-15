@@ -20,7 +20,7 @@ export const EmployeeDocumentsViewer: React.FC<EmployeeDocumentsViewerProps> = (
   document,
   onClose,
 }) => {
-  const isSignedDocument = document.status === 'signed' || !!document.signed_at;
+  const isSignedDocument = document.status === 'signed' && !!document.signed_at && !!document.digital_signature_data;
   const signatureData = isValidSignatureData(document.digital_signature_data) 
     ? document.digital_signature_data 
     : null;
@@ -30,7 +30,8 @@ export const EmployeeDocumentsViewer: React.FC<EmployeeDocumentsViewerProps> = (
     name: document.document_name,
     isSigned: isSignedDocument,
     hasSignature: !!signatureData,
-    signedAt: document.signed_at
+    signedAt: document.signed_at,
+    employeeId: document.employee?.id
   });
 
   return (
@@ -96,13 +97,13 @@ export const EmployeeDocumentsViewer: React.FC<EmployeeDocumentsViewerProps> = (
             </CardContent>
           </Card>
 
-          {/* Signature Display */}
+          {/* Signature Display - רק אם המסמך באמת נחתם על ידי העובד הספציפי */}
           {isSignedDocument && signatureData && (
             <Card className="border-green-200 bg-green-50">
               <CardHeader>
                 <CardTitle className="text-lg text-green-800 flex items-center gap-2">
                   <CheckCircle className="h-5 w-5" />
-                  חתימה דיגיטלית
+                  חתימה דיגיטלית של {document.employee?.first_name} {document.employee?.last_name}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -120,9 +121,9 @@ export const EmployeeDocumentsViewer: React.FC<EmployeeDocumentsViewerProps> = (
                     {signatureData.signed_by && (
                       <div>נחתם על ידי: {signatureData.signed_by}</div>
                     )}
-                    {signatureData.timestamp && (
+                    {(signatureData.timestamp || document.signed_at) && (
                       <div>
-                        זמן חתימה: {format(new Date(signatureData.timestamp), 'dd/MM/yyyy HH:mm:ss', { locale: he })}
+                        זמן חתימה: {format(new Date(signatureData.timestamp || document.signed_at), 'dd/MM/yyyy HH:mm:ss', { locale: he })}
                       </div>
                     )}
                   </div>

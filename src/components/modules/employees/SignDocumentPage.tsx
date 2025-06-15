@@ -31,8 +31,11 @@ export const SignDocumentPage: React.FC = () => {
     );
   }
 
-  const isAlreadySigned = document.status === 'signed' || !!document.signed_at;
-  const signatureData = isValidSignatureData(document.digital_signature_data) 
+  // בדיקה אם המסמך כבר נחתם על ידי העובד הנוכחי (לא כל עובד)
+  const isAlreadySigned = document.status === 'signed' && !!document.signed_at;
+  
+  // רק אם המסמך נחתם על ידי העובד הנוכחי, נציג את החתימה
+  const signatureData = isAlreadySigned && isValidSignatureData(document.digital_signature_data) 
     ? document.digital_signature_data 
     : null;
 
@@ -60,11 +63,11 @@ export const SignDocumentPage: React.FC = () => {
             />
           </div>
           
-          {/* Show signature within document if already signed */}
+          {/* Show signature within document only if THIS specific document instance is signed */}
           {isAlreadySigned && signatureData && (
             <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
               <h4 className="font-medium text-green-800 mb-2 flex items-center gap-2">
-                ✅ המסמך נחתם - החתימה מוצגת למטה:
+                ✅ המסמך נחתם - החתימה שלך מוצגת למטה:
               </h4>
               <div className="bg-white p-3 rounded border inline-block">
                 <img 
@@ -73,6 +76,9 @@ export const SignDocumentPage: React.FC = () => {
                   className="max-w-full h-auto"
                   style={{ maxHeight: '100px', maxWidth: '200px' }}
                 />
+              </div>
+              <div className="mt-2 text-sm text-gray-600">
+                נחתם על ידי: {signatureData.signed_by || document.employee?.first_name + ' ' + document.employee?.last_name}
               </div>
             </div>
           )}
