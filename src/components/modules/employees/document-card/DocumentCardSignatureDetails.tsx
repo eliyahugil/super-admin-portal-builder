@@ -28,9 +28,9 @@ export const DocumentCardSignatureDetails: React.FC<DocumentCardSignatureDetails
     return null;
   }
 
-  const copySignatureUrl = (signatureId: string, employeeName: string) => {
-    // יצירת קישור חתימה
-    const signatureUrl = `${window.location.origin}/sign-document/${signatureId}`;
+  const copySignatureUrl = (employeeName: string) => {
+    // יצירת קישור חתימה באמצעות token של המסמך
+    const signatureUrl = `${window.location.origin}/sign-document/${document.id}`;
     navigator.clipboard.writeText(signatureUrl);
     toast({
       title: 'הועתק ללוח',
@@ -38,8 +38,8 @@ export const DocumentCardSignatureDetails: React.FC<DocumentCardSignatureDetails
     });
   };
 
-  const openSignatureUrl = (signatureId: string) => {
-    const signatureUrl = `${window.location.origin}/sign-document/${signatureId}`;
+  const openSignatureUrl = () => {
+    const signatureUrl = `${window.location.origin}/sign-document/${document.id}`;
     window.open(signatureUrl, '_blank');
   };
 
@@ -98,7 +98,7 @@ export const DocumentCardSignatureDetails: React.FC<DocumentCardSignatureDetails
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => copySignatureUrl(sig.id, getEmployeeName(sig))}
+                      onClick={() => copySignatureUrl(getEmployeeName(sig))}
                       className="h-6 w-6 p-0 text-orange-600 hover:text-orange-800 hover:bg-orange-100"
                       title="העתק קישור חתימה"
                     >
@@ -108,7 +108,7 @@ export const DocumentCardSignatureDetails: React.FC<DocumentCardSignatureDetails
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => openSignatureUrl(sig.id)}
+                      onClick={() => openSignatureUrl()}
                       className="h-6 w-6 p-0 text-orange-600 hover:text-orange-800 hover:bg-orange-100"
                       title="פתח קישור חתימה"
                     >
