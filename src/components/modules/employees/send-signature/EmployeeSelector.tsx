@@ -1,28 +1,19 @@
 
 import React from 'react';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
-
-interface Employee {
-  id: string;
-  first_name: string;
-  last_name: string;
-  employee_id: string;
-}
-
-interface ExistingSignature {
-  employee_id: string;
-  status: string;
-  employee?: Employee;
-}
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { X, Copy, ExternalLink } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import type { Employee, ExistingSignature } from './types';
 
 interface EmployeeSelectorProps {
   employees: Employee[];
   employeesLoading: boolean;
   selectedEmployeeIds: string[];
   existingSignatures: ExistingSignature[];
+  signatureUrls?: { [employeeId: string]: string };
   onEmployeeToggle: (employeeId: string) => void;
   onEmployeeRemove: (employeeId: string) => void;
 }
@@ -32,99 +23,209 @@ export const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
   employeesLoading,
   selectedEmployeeIds,
   existingSignatures,
+  signatureUrls = {},
   onEmployeeToggle,
   onEmployeeRemove
 }) => {
+  const { toast } = useToast();
+
+  const copySignatureUrl = (url: string, employeeName: string) => {
+    navigator.clipboard.writeText(url);
+    toast({
+      title: 'הועתק ללוח',
+      description: `קישור החתימה של ${employeeName} הועתק ללוח`,
+    });
+  };
+
+  const openSignatureUrl = (url: string) => {
+    window.open(url, '_blank');
+  };
+
+  const getEmployeeSignatureStatus = (employeeId: string) => {
+    const signature = existingSignatures.find(sig => sig.employee_id === employeeId);
+    if (!signature) return null;
+    
+    return {
+      status: signature.status,
+      signed_at: signature.signed_at,
+      sent_at: signature.sent_at
+    };
+  };
+
+  const getEmployeeName = (employee: Employee) => {
+    return `${employee.first_name} ${employee.last_name}${employee.employee_id ? ` (${employee.employee_id})` : ''}`;
+  };
+
   console.log('👥 EmployeeSelector rendered:', {
     employeesCount: employees.length,
-    employeesLoading,
-    selectedEmployeeIds,
+    selectedCount: selectedEmployeeIds.length,
+    signatureUrlsCount: Object.keys(signatureUrls).length,
     existingSignaturesCount: existingSignatures.length
   });
 
-  const getEmployeeSignatureStatus = (employeeId: string) => {
-    return existingSignatures.find(sig => sig.employee_id === employeeId);
-  };
+  if (employeesLoading) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center py-4">
+            <span>טוען עובדים...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const selectedEmployees = employees.filter(emp => selectedEmployeeIds.includes(emp.id));
+  if (employees.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center py-4 text-gray-500">
+            לא נמצאו עובדים פעילים
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="text-sm font-medium mb-2 block">בחר עובדים לחתימה:</label>
+    <Card>
+      <CardContent className="p-4">
+        <h3 className="font-medium mb-4">בחר עובדים לשליחה:</h3>
         
-        {/* רשימת העובדים הנבחרים */}
-        {selectedEmployees.length > 0 && (
-          <div className="mb-3 p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-700 font-medium mb-2">עובדים נבחרים ({selectedEmployees.length}):</p>
-            <div className="flex flex-wrap gap-1">
-              {selectedEmployees.map((employee) => (
-                <Badge key={employee.id} variant="secondary" className="flex items-center gap-1">
-                  {employee.first_name} {employee.last_name}
-                  {employee.employee_id && ` (${employee.employee_id})`}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-auto p-0 ml-1"
-                    onClick={() => onEmployeeRemove(employee.id)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* רשימת עובדים זמינים */}
+        <div className="space-y-2 mb-4">
+          {employees.map((employee) => {
+            const isSelected = selectedEmployeeIds.includes(employee.id);
+            const signatureStatus = getEmployeeSignatureStatus(employee.id);
+            const hasSignatureUrl = signatureUrls[employee.id];
+            const employeeName = getEmployeeName(employee);
 
-        {/* רשימת כל העובדים */}
-        <div className="border rounded-lg max-h-60 overflow-y-auto">
-          {employeesLoading ? (
-            <div className="p-4 text-center text-gray-500">טוען עובדים...</div>
-          ) : employees.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">לא נמצאו עובדים פעילים</div>
-          ) : (
-            <div className="space-y-1 p-2">
-              {employees.map((employee) => {
-                const isSelected = selectedEmployeeIds.includes(employee.id);
-                const existingSignature = getEmployeeSignatureStatus(employee.id);
+            return (
+              <div key={employee.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                <div className="flex items-center gap-3 flex-1">
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => onEmployeeToggle(employee.id)}
+                  />
+                  
+                  <div className="flex-1">
+                    <span className="font-medium">{employeeName}</span>
+                    
+                    {/* סטטוס חתימה קיימת */}
+                    {signatureStatus && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge
+                          variant={signatureStatus.status === 'signed' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {signatureStatus.status === 'signed' ? 'נחתם' : 'נשלח'}
+                        </Badge>
+                        {signatureStatus.status === 'signed' && signatureStatus.signed_at && (
+                          <span className="text-xs text-gray-500">
+                            נחתם: {new Date(signatureStatus.signed_at).toLocaleDateString('he-IL')}
+                          </span>
+                        )}
+                        {signatureStatus.status === 'pending' && signatureStatus.sent_at && (
+                          <span className="text-xs text-gray-500">
+                            נשלח: {new Date(signatureStatus.sent_at).toLocaleDateString('he-IL')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* קישור חתימה אם קיים */}
+                {hasSignatureUrl && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copySignatureUrl(signatureUrls[employee.id], employeeName)}
+                      className="flex items-center gap-1 text-blue-700 border-blue-300 hover:bg-blue-100"
+                      title="העתק קישור חתימה"
+                    >
+                      <Copy className="h-4 w-4" />
+                      העתק
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openSignatureUrl(signatureUrls[employee.id])}
+                      className="flex items-center gap-1 text-blue-700 border-blue-300 hover:bg-blue-100"
+                      title="פתח קישור חתימה"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      פתח
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* רשימת עובדים שנבחרו */}
+        {selectedEmployeeIds.length > 0 && (
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-2">עובדים נבחרים ({selectedEmployeeIds.length}):</h4>
+            <div className="flex flex-wrap gap-2">
+              {selectedEmployeeIds.map((employeeId) => {
+                const employee = employees.find(emp => emp.id === employeeId);
+                if (!employee) return null;
                 
+                const employeeName = getEmployeeName(employee);
+                const hasSignatureUrl = signatureUrls[employeeId];
+
                 return (
-                  <div
-                    key={employee.id}
-                    className={`flex items-center space-x-2 p-2 rounded hover:bg-gray-50 cursor-pointer ${
-                      isSelected ? 'bg-blue-50' : ''
-                    }`}
-                    onClick={() => onEmployeeToggle(employee.id)}
-                  >
-                    <Checkbox
-                      checked={isSelected}
-                      onChange={() => onEmployeeToggle(employee.id)}
-                      className="ml-2"
-                    />
-                    <div className="flex-1">
-                      <span className="text-sm">
-                        {employee.first_name} {employee.last_name}
-                        {employee.employee_id && ` (${employee.employee_id})`}
-                      </span>
-                      {existingSignature && (
-                        <div className="mt-1">
-                          <Badge 
-                            variant={existingSignature.status === 'signed' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {existingSignature.status === 'signed' ? 'נחתם' : 'ממתין לחתימה'}
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
+                  <div key={employeeId} className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
+                    <span className="text-sm text-blue-800">{employeeName}</span>
+                    
+                    {/* קישורי חתימה בתגיות */}
+                    {hasSignatureUrl && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copySignatureUrl(signatureUrls[employeeId], employeeName)}
+                          className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
+                          title="העתק קישור"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openSignatureUrl(signatureUrls[employeeId])}
+                          className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
+                          title="פתח קישור"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEmployeeRemove(employeeId)}
+                      className="h-6 w-6 p-0 text-blue-600 hover:text-red-600"
+                      title="הסר עובד"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
                   </div>
                 );
               })}
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };

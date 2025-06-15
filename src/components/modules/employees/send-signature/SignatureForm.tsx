@@ -15,6 +15,7 @@ interface SignatureFormProps {
   selectedEmployeeIds: string[];
   existingSignatures: ExistingSignature[];
   isSending: boolean;
+  signatureUrls?: { [employeeId: string]: string };
   onEmployeeToggle: (employeeId: string) => void;
   onEmployeeRemove: (employeeId: string) => void;
   onSend: (isResending: boolean) => void;
@@ -29,6 +30,7 @@ export const SignatureForm: React.FC<SignatureFormProps> = ({
   selectedEmployeeIds,
   existingSignatures,
   isSending,
+  signatureUrls = {},
   onEmployeeToggle,
   onEmployeeRemove,
   onSend,
@@ -61,6 +63,7 @@ export const SignatureForm: React.FC<SignatureFormProps> = ({
     selectedCount: selectedEmployeeIds.length,
     employeesCount: employees.length,
     existingSignaturesCount: existingSignatures.length,
+    signatureUrlsCount: Object.keys(signatureUrls).length,
     canSend,
     isResending
   });
@@ -118,6 +121,7 @@ export const SignatureForm: React.FC<SignatureFormProps> = ({
         employeesLoading={employeesLoading}
         selectedEmployeeIds={selectedEmployeeIds}
         existingSignatures={existingSignatures}
+        signatureUrls={signatureUrls}
         onEmployeeToggle={onEmployeeToggle}
         onEmployeeRemove={onEmployeeRemove}
       />

@@ -43,7 +43,11 @@ export const useSendToSignature = (documentId: string, documentName: string, onS
         isResending
       );
 
-      setSignatureUrls(result.signatureUrls);
+      // עדכון קישורי החתימה
+      setSignatureUrls(prev => ({
+        ...prev,
+        ...result.signatureUrls
+      }));
 
       if (result.successCount > 0) {
         const actionText = isResending ? 'נשלח מחדש' : 'נשלח';
