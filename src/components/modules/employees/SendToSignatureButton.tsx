@@ -66,11 +66,10 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
       </Button>
       
       <SendToSignatureDialog
-        isOpen={isOpen}
+        open={isOpen}
         onOpenChange={setIsOpen}
         documentId={documentId}
         documentName={documentName}
-        isAlreadyAssigned={isAlreadyAssigned}
         onSent={handleSent}
       />
     </>
