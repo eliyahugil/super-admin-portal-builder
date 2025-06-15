@@ -60,7 +60,10 @@ export const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
     employeesCount: employees.length,
     selectedCount: selectedEmployeeIds.length,
     signatureUrlsCount: Object.keys(signatureUrls).length,
-    existingSignaturesCount: existingSignatures.length
+    existingSignaturesCount: existingSignatures.length,
+    signatureUrlsData: signatureUrls,
+    firstEmployee: employees[0]?.id,
+    hasSignatureForFirst: employees[0] ? !!signatureUrls[employees[0].id] : false
   });
 
   if (employeesLoading) {
@@ -99,6 +102,14 @@ export const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
             const signatureStatus = getEmployeeSignatureStatus(employee.id);
             const hasSignatureUrl = signatureUrls[employee.id];
             const employeeName = getEmployeeName(employee);
+
+            console.log(`👤 Employee ${employee.first_name}:`, {
+              id: employee.id,
+              isSelected,
+              hasSignatureUrl: !!hasSignatureUrl,
+              signatureUrl: hasSignatureUrl,
+              signatureStatus
+            });
 
             return (
               <div key={employee.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">

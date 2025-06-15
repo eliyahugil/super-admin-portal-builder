@@ -65,7 +65,8 @@ export const SignatureForm: React.FC<SignatureFormProps> = ({
     existingSignaturesCount: existingSignatures.length,
     signatureUrlsCount: Object.keys(signatureUrls).length,
     canSend,
-    isResending
+    isResending,
+    signatureUrls
   });
 
   if (employeesLoading) {
