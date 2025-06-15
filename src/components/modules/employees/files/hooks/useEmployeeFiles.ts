@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-import { EmployeeFile, GroupedFiles, FiltersState } from '../types';
+import { EmployeeFile, SignedDocument, GroupedFiles, FiltersState } from '../types';
 import { format } from 'date-fns';
 
 export const useEmployeeFiles = () => {
@@ -15,7 +15,7 @@ export const useEmployeeFiles = () => {
   const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(new Set());
   const { businessId } = useCurrentBusiness();
 
-  const { data: employeeFiles, isLoading } = useQuery({
+  const { data: employeeFiles, isLoading: filesLoading } = useQuery({
     queryKey: ['employee-files-management', businessId, filters.searchTerm, filters.dateFilter, filters.fileTypeFilter],
     queryFn: async () => {
       if (!businessId) return [];
@@ -41,26 +41,82 @@ export const useEmployeeFiles = () => {
     enabled: !!businessId,
   });
 
-  const groupedFiles: GroupedFiles[] = useMemo(() => {
-    if (!employeeFiles) return [];
+  const { data: signedDocuments, isLoading: docsLoading } = useQuery({
+    queryKey: ['signed-documents', businessId],
+    queryFn: async () => {
+      if (!businessId) return [];
 
-    const grouped = employeeFiles.reduce((acc, file) => {
-      if (!file.employee) return acc;
+      const { data, error } = await supabase
+        .from('employee_documents')
+        .select(`
+          *,
+          employee:employees!employee_documents_employee_id_fkey(
+            id,
+            first_name,
+            last_name,
+            employee_id,
+            business_id
+          )
+        `)
+        .eq('status', 'signed')
+        .not('signed_at', 'is', null)
+        .eq('employee.business_id', businessId)
+        .order('signed_at', { ascending: false });
+
+      if (error) throw error;
+      return data?.filter(doc => doc.employee) || [];
+    },
+    enabled: !!businessId,
+  });
+
+  const isLoading = filesLoading || docsLoading;
+
+  const groupedFiles: GroupedFiles[] = useMemo(() => {
+    if (!employeeFiles && !signedDocuments) return [];
+
+    const employees = new Map<string, GroupedFiles>();
+
+    // Add regular files
+    employeeFiles?.forEach(file => {
+      if (!file.employee) return;
 
       const employeeId = file.employee.id;
-      const existing = acc.find(group => group.employee.id === employeeId);
-
-      if (existing) {
-        existing.files.push(file);
-      } else {
-        acc.push({
+      if (!employees.has(employeeId)) {
+        employees.set(employeeId, {
           employee: file.employee,
-          files: [file]
+          files: [],
+          signedDocuments: []
         });
       }
+      employees.get(employeeId)!.files.push(file);
+    });
 
-      return acc;
-    }, [] as GroupedFiles[]);
+    // Add signed documents
+    signedDocuments?.forEach(doc => {
+      if (!doc.employee) return;
+
+      const employeeId = doc.employee.id;
+      if (!employees.has(employeeId)) {
+        employees.set(employeeId, {
+          employee: doc.employee,
+          files: [],
+          signedDocuments: []
+        });
+      }
+      employees.get(employeeId)!.signedDocuments.push({
+        id: doc.id,
+        employee_id: doc.employee_id,
+        document_name: doc.document_name,
+        document_type: doc.document_type,
+        file_url: doc.file_url,
+        signed_at: doc.signed_at,
+        created_at: doc.created_at,
+        digital_signature_data: doc.digital_signature_data,
+        employee: doc.employee
+      });
+    });
+
+    const grouped = Array.from(employees.values());
 
     // Apply filters
     return grouped.filter(group => {
@@ -70,20 +126,26 @@ export const useEmployeeFiles = () => {
       const matchesSearch = !filters.searchTerm || 
         employeeName.includes(filters.searchTerm.toLowerCase()) ||
         employeeId.includes(filters.searchTerm.toLowerCase()) ||
-        group.files.some(file => file.file_name.toLowerCase().includes(filters.searchTerm.toLowerCase()));
+        group.files.some(file => file.file_name.toLowerCase().includes(filters.searchTerm.toLowerCase())) ||
+        group.signedDocuments.some(doc => doc.document_name.toLowerCase().includes(filters.searchTerm.toLowerCase()));
 
       const matchesDate = !filters.dateFilter || 
         group.files.some(file => {
           const fileDate = format(new Date(file.uploaded_at), 'yyyy-MM-dd');
           return fileDate === filters.dateFilter;
+        }) ||
+        group.signedDocuments.some(doc => {
+          const docDate = format(new Date(doc.signed_at), 'yyyy-MM-dd');
+          return docDate === filters.dateFilter;
         });
 
       const matchesFileType = !filters.fileTypeFilter ||
-        group.files.some(file => file.file_type.includes(filters.fileTypeFilter));
+        group.files.some(file => file.file_type.includes(filters.fileTypeFilter)) ||
+        (filters.fileTypeFilter === 'signed_document' && group.signedDocuments.length > 0);
 
       return matchesSearch && matchesDate && matchesFileType;
     }).sort((a, b) => a.employee.first_name.localeCompare(b.employee.first_name));
-  }, [employeeFiles, filters]);
+  }, [employeeFiles, signedDocuments, filters]);
 
   const toggleEmployeeExpansion = (employeeId: string) => {
     const newExpanded = new Set(expandedEmployees);
@@ -116,6 +178,15 @@ export const useEmployeeFiles = () => {
     }
   };
 
+  const handleDownloadSignedDocument = async (doc: SignedDocument) => {
+    try {
+      // For signed documents, we open the file URL directly
+      window.open(doc.file_url, '_blank');
+    } catch (error) {
+      console.error('Download signed document error:', error);
+    }
+  };
+
   const clearFilters = () => {
     setFilters({
       searchTerm: '',
@@ -132,6 +203,7 @@ export const useEmployeeFiles = () => {
     expandedEmployees,
     toggleEmployeeExpansion,
     handleDownload,
+    handleDownloadSignedDocument,
     clearFilters,
   };
 };

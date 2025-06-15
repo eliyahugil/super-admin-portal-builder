@@ -16,6 +16,7 @@ export const EmployeeFilesManagement: React.FC = () => {
     expandedEmployees,
     toggleEmployeeExpansion,
     handleDownload,
+    handleDownloadSignedDocument,
     clearFilters,
   } = useEmployeeFiles();
 
@@ -49,6 +50,7 @@ export const EmployeeFilesManagement: React.FC = () => {
             isExpanded={expandedEmployees.has(group.employee.id)}
             onToggleExpansion={toggleEmployeeExpansion}
             onDownload={handleDownload}
+            onDownloadSignedDocument={handleDownloadSignedDocument}
           />
         ))}
       </div>
