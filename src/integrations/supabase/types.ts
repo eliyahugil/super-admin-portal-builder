@@ -994,6 +994,7 @@ export type Database = {
           assignee_id: string | null
           created_at: string | null
           digital_signature_data: Json | null
+          digital_signature_token: string | null
           document_name: string
           document_type: string
           employee_id: string | null
@@ -1010,6 +1011,7 @@ export type Database = {
           assignee_id?: string | null
           created_at?: string | null
           digital_signature_data?: Json | null
+          digital_signature_token?: string | null
           document_name: string
           document_type: string
           employee_id?: string | null
@@ -1026,6 +1028,7 @@ export type Database = {
           assignee_id?: string | null
           created_at?: string | null
           digital_signature_data?: Json | null
+          digital_signature_token?: string | null
           document_name?: string
           document_type?: string
           employee_id?: string | null
