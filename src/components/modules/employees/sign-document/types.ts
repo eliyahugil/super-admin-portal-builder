@@ -1,9 +1,10 @@
 
 // Types for digital signature functionality
 export interface DigitalSignatureData {
-  signature_text: string;
+  signature_image: string;
   signed_by: string;
-  signed_at: string;
+  signed_at?: string;
+  timestamp?: string;
   ip_address?: string;
   user_agent?: string;
 }
@@ -13,8 +14,7 @@ export const isValidSignatureData = (data: any): data is DigitalSignatureData =>
   return (
     data &&
     typeof data === 'object' &&
-    typeof data.signature_text === 'string' &&
-    typeof data.signed_by === 'string' &&
-    typeof data.signed_at === 'string'
+    typeof data.signature_image === 'string' &&
+    typeof data.signed_by === 'string'
   );
 };
