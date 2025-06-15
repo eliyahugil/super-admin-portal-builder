@@ -75,10 +75,17 @@ export const useEmployeeDocuments = (employeeId: string) => {
 
         const businessEmployeeIds = businessEmployees?.map(emp => emp.id) || [];
         
-        // עכשיו נשלוף תבניות וגם מסמכים שנוצרו מתבניות לעובדים של העסק
-        query = query.and(
-          `or(and(is_template.eq.true,uploaded_by.eq.${profile?.id}),and(is_template.eq.false,employee_id.in.(${businessEmployeeIds.join(',')})))`
-        );
+        if (businessEmployeeIds.length > 0) {
+          // עכשיו נשלוף תבניות וגם מסמכים שנוצרו מתבניות לעובדים של העסק
+          query = query.or(
+            `and(is_template.eq.true,uploaded_by.eq.${profile?.id}),and(is_template.eq.false,employee_id.in.(${businessEmployeeIds.join(',')}))`
+          );
+        } else {
+          // אם אין עובדים, נראה רק תבניות
+          query = query
+            .eq('is_template', true)
+            .eq('uploaded_by', profile?.id);
+        }
       } else {
         // עבור עובד ספציפי - כל המסמכים שקשורים אליו (כולל שנשלחו אליו לחתימה)
         // אבל לא תבניות
