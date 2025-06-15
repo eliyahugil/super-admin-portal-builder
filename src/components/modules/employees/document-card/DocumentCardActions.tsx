@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Eye, Download, Upload, Trash2, UserPlus } from 'lucide-react';
+import { Eye, Download, Trash2, Bell, CheckCircle2 } from 'lucide-react';
 import { SendToSignatureButton } from '../SendToSignatureButton';
 
-interface DocumentCardActionsProps {
+interface Props {
   document: any;
   canEdit: boolean;
   uploading: boolean;
@@ -21,7 +21,7 @@ interface DocumentCardActionsProps {
   onDocumentUpdated?: () => void;
 }
 
-export const DocumentCardActions: React.FC<DocumentCardActionsProps> = ({
+export const DocumentCardActions: React.FC<Props> = ({
   document,
   canEdit,
   uploading,
@@ -37,70 +37,93 @@ export const DocumentCardActions: React.FC<DocumentCardActionsProps> = ({
   onDelete,
   onDocumentUpdated
 }) => {
+  const isReminderLoading = reminderLoading === document.id;
+  
+  // עבור תבניות, תמיד נראה כפתור שליחה לחתימה
+  // עבור מסמכים רגילים, נראה שליחה מחדש אם יש חתימות ממתינות
+  const showSendToSignature = isTemplate || (canEdit && (!hasSignatures || hasPartialSignatures));
+  const isAlreadyAssigned = !isTemplate && hasSignatures;
+
+  console.log('🔍 DocumentCardActions - Render info:', {
+    documentId: document.id,
+    isTemplate,
+    hasSignatures,
+    hasPartialSignatures,
+    showSendToSignature,
+    isAlreadyAssigned,
+    canEdit
+  });
+
   return (
-    <div className="flex flex-col md:flex-row items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap">
+      {/* כפתור צפייה */}
       <Button
         variant="outline"
         size="sm"
         onClick={() => onView(document)}
+        className="flex items-center gap-1"
       >
         <Eye className="h-4 w-4" />
+        צפה
       </Button>
-      
+
+      {/* כפתור הורדה */}
       <Button
         variant="outline"
         size="sm"
         onClick={() => onDownload(document)}
+        className="flex items-center gap-1"
       >
         <Download className="h-4 w-4" />
+        הורד
       </Button>
-      
-      {/* כפתור שליחה לחתימה */}
-      {shouldShowSendButton && (
+
+      {/* כפתור שליחה לחתימה - מוצג לתבניות או למסמכים עם חתימות חלקיות */}
+      {showSendToSignature && (
         <SendToSignatureButton
           documentId={document.id}
           documentName={document.document_name}
+          isAlreadyAssigned={isAlreadyAssigned}
           onSent={onDocumentUpdated}
-          variant={hasSignatures ? "outline" : "default"}
+          variant="default"
           size="sm"
-          isAlreadyAssigned={hasSignatures}
-          customButtonText={
-            hasSignatures 
-              ? hasPartialSignatures 
-                ? "הוסף נמענים"
-                : "שלח מחדש"
-              : "שלח לחתימה"
-          }
-          customIcon={hasSignatures && hasPartialSignatures ? UserPlus : undefined}
         />
       )}
-      
-      {canEdit && !isSigned && !isTemplate && (
+
+      {/* כפתור תזכורת - רק למסמכים שנשלחו לחתימה */}
+      {!isTemplate && hasSignatures && !isSigned && canEdit && (
         <Button
           variant="outline"
           size="sm"
-          disabled={reminderLoading === document.id}
           onClick={() => onSendReminder(document)}
-          className="text-purple-600 hover:text-purple-700"
-          title="שלח תזכורת לעובד"
+          disabled={isReminderLoading}
+          className="flex items-center gap-1 text-orange-600 border-orange-200 hover:bg-orange-50"
         >
-          {reminderLoading === document.id
-            ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
-            : <Upload className="h-4 w-4" />}
-          שלח תזכורת
+          <Bell className="h-4 w-4" />
+          {isReminderLoading ? 'שולח...' : 'תזכורת'}
         </Button>
       )}
-      
+
+      {/* כפתור מחיקה - רק אם יש הרשאות עריכה */}
       {canEdit && (
         <Button
           variant="outline"
           size="sm"
           onClick={() => onDelete(document)}
           disabled={uploading}
-          className="text-red-600 hover:text-red-700"
+          className="flex items-center gap-1 text-red-600 border-red-200 hover:bg-red-50"
         >
           <Trash2 className="h-4 w-4" />
+          מחק
         </Button>
+      )}
+
+      {/* אינדיקטור למסמך חתום */}
+      {isSigned && !isTemplate && (
+        <div className="flex items-center gap-1 text-green-600 text-sm">
+          <CheckCircle2 className="h-4 w-4" />
+          <span>נחתם</span>
+        </div>
       )}
     </div>
   );

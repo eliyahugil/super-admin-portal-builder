@@ -54,9 +54,9 @@ export const useEmployeeDocuments = (employeeId: string) => {
         console.log('🎯 Querying templates only');
         query = query.eq('is_template', true);
       } else {
-        // עבור עובד ספציפי - רק מסמכים של העובד הזה
+        // עבור עובד ספציפי - כל המסמכים שקשורים אליו (כולל שנשלחו אליו לחתימה)
         console.log('🎯 Querying documents for employee:', employeeId);
-        query = query.eq('employee_id', employeeId);
+        query = query.or(`employee_id.eq.${employeeId},assignee_id.eq.${employeeId}`);
       }
 
       const { data, error } = await query;
@@ -67,7 +67,14 @@ export const useEmployeeDocuments = (employeeId: string) => {
       }
       
       console.log('✅ Documents fetched:', data?.length || 0, 'documents');
-      console.log('📋 Documents details:', data);
+      console.log('📋 Documents details:', data?.map(d => ({
+        id: d.id,
+        name: d.document_name,
+        isTemplate: d.is_template,
+        employeeId: d.employee_id,
+        assigneeId: d.assignee_id,
+        signaturesCount: d.signatures?.length || 0
+      })));
       
       return data || [];
     },

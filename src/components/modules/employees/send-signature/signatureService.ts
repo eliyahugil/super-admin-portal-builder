@@ -68,6 +68,27 @@ export class SignatureService {
             });
 
           if (insertError) throw insertError;
+          
+          // עדכון המסמך המקורי להקצאה לעובד הראשון שנשלח אליו
+          // רק אם זה לא תבנית ולא הוקצה כבר לעובד אחר
+          if (successCount === 0) {
+            console.log(`🎯 Assigning document ${documentId} to employee ${employeeId}`);
+            const { error: updateDocError } = await supabase
+              .from('employee_documents')
+              .update({
+                employee_id: employeeId,
+                assignee_id: employeeId,
+                is_template: false, // וודא שזה לא תבנית
+                status: 'pending'
+              })
+              .eq('id', documentId);
+
+            if (updateDocError) {
+              console.error('❌ Error updating document assignment:', updateDocError);
+            } else {
+              console.log(`✅ Document ${documentId} assigned to employee ${employeeId}`);
+            }
+          }
         }
 
         // יצירת קישור חתימה דיגיטלית
