@@ -46,7 +46,7 @@ export const EmployeeListItem: React.FC<EmployeeListItemProps> = ({
 
   const employeeName = getEmployeeName(employee);
 
-  console.log(`👤 Employee ${employee.first_name}:`, {
+  console.log(`👤 EmployeeListItem ${employee.first_name}:`, {
     id: employee.id,
     isSelected,
     hasSignatureUrl: !!signatureUrl,
@@ -89,14 +89,17 @@ export const EmployeeListItem: React.FC<EmployeeListItemProps> = ({
         </div>
       </div>
 
-      {/* קישור חתימה אם קיים */}
+      {/* קישור חתימה אם קיים - תמיד מוצג אם יש URL */}
       {signatureUrl && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-4">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => copySignatureUrl(signatureUrl, employeeName)}
+            onClick={(e) => {
+              e.stopPropagation();
+              copySignatureUrl(signatureUrl, employeeName);
+            }}
             className="flex items-center gap-1 text-blue-700 border-blue-300 hover:bg-blue-100"
             title="העתק קישור חתימה"
           >
@@ -107,7 +110,10 @@ export const EmployeeListItem: React.FC<EmployeeListItemProps> = ({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => openSignatureUrl(signatureUrl)}
+            onClick={(e) => {
+              e.stopPropagation();
+              openSignatureUrl(signatureUrl);
+            }}
             className="flex items-center gap-1 text-blue-700 border-blue-300 hover:bg-blue-100"
             title="פתח קישור חתימה"
           >

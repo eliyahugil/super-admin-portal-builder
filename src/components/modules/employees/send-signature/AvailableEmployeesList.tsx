@@ -29,12 +29,17 @@ export const AvailableEmployeesList: React.FC<AvailableEmployeesListProps> = ({
     };
   };
 
+  console.log('📋 AvailableEmployeesList - Rendering with signatureUrls:', signatureUrls);
+  console.log('📋 AvailableEmployeesList - Employees count:', employees.length);
+
   return (
     <div className="space-y-2 mb-4">
       {employees.map((employee) => {
         const isSelected = selectedEmployeeIds.includes(employee.id);
         const signatureStatus = getEmployeeSignatureStatus(employee.id);
         const signatureUrl = signatureUrls[employee.id];
+
+        console.log(`👤 Employee ${employee.first_name} - signatureUrl:`, signatureUrl);
 
         return (
           <EmployeeListItem
