@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { getFileType } from '../helpers/documentHelpers';
-import { StorageService } from '@/services/StorageService';
 
 /**
  * Hook להעלאת תבניות מסמכים (לא מוקצה לעובד ספציפי)
@@ -32,12 +31,6 @@ export const useTemplateDocumentUpload = (queryKeyForInvalidate: any[]) => {
     try {
       setUploading(true);
       console.log('🔍 Starting template upload process...');
-      
-      // בדיקת גישה לדלי
-      const hasAccess = await StorageService.checkBucketAccess();
-      if (!hasAccess) {
-        throw new Error('מערכת האחסון אינה זמינה. אנא נסה שוב מאוחר יותר או פנה לתמיכה.');
-      }
 
       // אימות סשן
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -48,11 +41,11 @@ export const useTemplateDocumentUpload = (queryKeyForInvalidate: any[]) => {
       const fileExt = file.name.split('.').pop();
       const timestamp = Date.now();
       const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-      const filePath = `employee-documents/templates/${fileName}`;
+      const filePath = `templates/${fileName}`;
 
-      console.log('📁 Uploading template to path:', filePath);
+      console.log('📁 Uploading template to bucket: employee-files, path:', filePath);
 
-      // העלאת קובץ ל-Supabase Storage
+      // העלאת קובץ ל-Supabase Storage - השתמש בדלי employee-files הקיים
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('employee-files')
         .upload(filePath, file, {

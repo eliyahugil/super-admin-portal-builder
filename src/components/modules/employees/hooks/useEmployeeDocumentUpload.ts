@@ -49,9 +49,11 @@ export const useEmployeeDocumentUpload = (
       const folderPath = isTemplate ? 'templates' : `employee-documents/${employeeId}`;
       const filePath = `${folderPath}/${fileName}`;
 
-      // Upload file to Supabase Storage
+      console.log('📁 Uploading to bucket: employee-files, path:', filePath);
+
+      // Upload file to Supabase Storage - השתמש בדלי employee-files הקיים
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('employee-documents')
+        .from('employee-files')
         .upload(filePath, file);
 
       if (uploadError) {
@@ -59,9 +61,11 @@ export const useEmployeeDocumentUpload = (
         throw uploadError;
       }
 
+      console.log('✅ File uploaded successfully:', uploadData.path);
+
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('employee-documents')
+        .from('employee-files')
         .getPublicUrl(filePath);
 
       // Create document record
@@ -83,7 +87,7 @@ export const useEmployeeDocumentUpload = (
         console.error('Database error:', dbError);
         // Clean up uploaded file if database insert fails
         await supabase.storage
-          .from('employee-documents')
+          .from('employee-files')
           .remove([filePath]);
         throw dbError;
       }
