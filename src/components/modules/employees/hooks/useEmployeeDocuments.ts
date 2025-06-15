@@ -27,6 +27,12 @@ export const useEmployeeDocuments = (employeeId: string) => {
         .select(`
           *,
           uploaded_by_profile:profiles!employee_documents_uploaded_by_fkey(full_name),
+          employee:employees!employee_documents_employee_id_fkey(
+            id,
+            first_name,
+            last_name,
+            employee_id
+          ),
           assignee:employees!employee_documents_assignee_id_fkey(
             id,
             first_name,
@@ -55,8 +61,11 @@ export const useEmployeeDocuments = (employeeId: string) => {
         query = query.eq('is_template', true);
       } else {
         // עבור עובד ספציפי - כל המסמכים שקשורים אליו (כולל שנשלחו אליו לחתימה)
+        // אבל לא תבניות
         console.log('🎯 Querying documents for employee:', employeeId);
-        query = query.or(`employee_id.eq.${employeeId},assignee_id.eq.${employeeId}`);
+        query = query
+          .eq('is_template', false)
+          .or(`employee_id.eq.${employeeId},assignee_id.eq.${employeeId}`);
       }
 
       const { data, error } = await query;

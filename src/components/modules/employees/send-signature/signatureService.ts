@@ -20,29 +20,85 @@ export class SignatureService {
     let successCount = 0;
     let errorCount = 0;
 
+    // קודם נבדק אם זו תבנית
+    const { data: templateDoc, error: templateError } = await supabase
+      .from('employee_documents')
+      .select('*')
+      .eq('id', documentId)
+      .single();
+
+    if (templateError) {
+      console.error('❌ Error fetching template document:', templateError);
+      throw templateError;
+    }
+
+    const isTemplate = templateDoc.is_template;
+    console.log('🎯 Document is template:', isTemplate);
+
     // שליחה לכל עובד שנבחר
     for (const employeeId of selectedEmployeeIds) {
       try {
-        // בדיקה אם כבר קיימת חתימה לעובד הזה
-        const existingSignature = existingSignatures.find(sig => sig.employee_id === employeeId);
-        
-        if (existingSignature && !isResending) {
-          // אם יש חתימה קיימת ולא מדובר בשליחה מחדש, נדלג
-          console.log(`🔄 Signature already exists for employee ${employeeId}, skipping`);
-          continue;
-        }
+        let targetDocumentId = documentId;
 
-        let signatureToken: string;
-        
-        if (existingSignature) {
-          // עדכון חתימה קיימת - אבל רק אם היא לא נחתמה כבר
-          if (existingSignature.status === 'signed') {
+        // אם זו תבנית, ניצור מסמך חדש לכל עובד
+        if (isTemplate) {
+          console.log(`📋 Creating new document from template for employee ${employeeId}`);
+          
+          const { data: newDocument, error: createError } = await supabase
+            .from('employee_documents')
+            .insert({
+              document_name: templateDoc.document_name,
+              document_type: templateDoc.document_type,
+              file_url: templateDoc.file_url,
+              status: 'pending',
+              is_template: false, // זה מסמך רגיל, לא תבנית
+              employee_id: employeeId,
+              assignee_id: employeeId,
+              uploaded_by: templateDoc.uploaded_by,
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('❌ Error creating document from template:', createError);
+            throw createError;
+          }
+
+          targetDocumentId = newDocument.id;
+          console.log(`✅ Created new document ${targetDocumentId} from template for employee ${employeeId}`);
+        } else {
+          // עבור מסמכים רגילים (לא תבניות), נבדק אם כבר קיימת חתימה
+          const existingSignature = existingSignatures.find(sig => sig.employee_id === employeeId);
+          
+          if (existingSignature && !isResending) {
+            console.log(`🔄 Signature already exists for employee ${employeeId}, skipping`);
+            continue;
+          }
+
+          if (existingSignature && existingSignature.status === 'signed') {
             console.log(`✅ Employee ${employeeId} already signed, skipping update`);
             continue;
           }
-          
-          // עדכון חתימה ממתינה בלבד
-          signatureToken = crypto.randomUUID();
+        }
+
+        // יצירת טוקן חתימה חדש
+        const signatureToken = crypto.randomUUID();
+
+        // בדיקה אם יש חתימה קיימת למסמך החדש/קיים
+        const { data: existingSignatureForDoc } = await supabase
+          .from('employee_document_signatures')
+          .select('*')
+          .eq('document_id', targetDocumentId)
+          .eq('employee_id', employeeId)
+          .single();
+
+        if (existingSignatureForDoc && !isResending) {
+          console.log(`🔄 Signature already exists for document ${targetDocumentId} and employee ${employeeId}`);
+          continue;
+        }
+
+        if (existingSignatureForDoc && isResending) {
+          // עדכון חתימה קיימת
           const { error: updateError } = await supabase
             .from('employee_document_signatures')
             .update({
@@ -50,17 +106,15 @@ export class SignatureService {
               sent_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
-            .eq('id', existingSignature.id)
-            .eq('status', 'pending');
+            .eq('id', existingSignatureForDoc.id);
 
           if (updateError) throw updateError;
         } else {
           // יצירת חתימה חדשה
-          signatureToken = crypto.randomUUID();
           const { error: insertError } = await supabase
             .from('employee_document_signatures')
             .insert({
-              document_id: documentId,
+              document_id: targetDocumentId,
               employee_id: employeeId,
               digital_signature_token: signatureToken,
               status: 'pending',
@@ -68,31 +122,10 @@ export class SignatureService {
             });
 
           if (insertError) throw insertError;
-          
-          // עדכון המסמך המקורי להקצאה לעובד הראשון שנשלח אליו
-          // רק אם זה לא תבנית ולא הוקצה כבר לעובד אחר
-          if (successCount === 0) {
-            console.log(`🎯 Assigning document ${documentId} to employee ${employeeId}`);
-            const { error: updateDocError } = await supabase
-              .from('employee_documents')
-              .update({
-                employee_id: employeeId,
-                assignee_id: employeeId,
-                is_template: false, // וודא שזה לא תבנית
-                status: 'pending'
-              })
-              .eq('id', documentId);
-
-            if (updateDocError) {
-              console.error('❌ Error updating document assignment:', updateDocError);
-            } else {
-              console.log(`✅ Document ${documentId} assigned to employee ${employeeId}`);
-            }
-          }
         }
 
         // יצירת קישור חתימה דיגיטלית
-        const signUrl = `${baseUrl}/sign-document/${documentId}?token=${signatureToken}`;
+        const signUrl = `${baseUrl}/sign-document/${targetDocumentId}?token=${signatureToken}`;
         signatureUrls[employeeId] = signUrl;
         successCount++;
         
