@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Send, RotateCcw } from 'lucide-react';
+import { Send, RotateCcw, UserPlus } from 'lucide-react';
 import { SendToSignatureDialog } from './send-signature/SendToSignatureDialog';
 
 interface SendToSignatureButtonProps {
@@ -11,6 +11,8 @@ interface SendToSignatureButtonProps {
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'sm' | 'default' | 'lg';
   isAlreadyAssigned?: boolean;
+  customButtonText?: string;
+  customIcon?: React.ComponentType<{ className?: string }>;
 }
 
 export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
@@ -19,7 +21,9 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
   onSent,
   variant = 'default',
   size = 'sm',
-  isAlreadyAssigned = false
+  isAlreadyAssigned = false,
+  customButtonText,
+  customIcon
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -28,11 +32,14 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
     documentName,
     isAlreadyAssigned,
     variant,
-    size
+    size,
+    customButtonText,
+    hasCustomIcon: !!customIcon
   });
 
-  const buttonText = isAlreadyAssigned ? 'שלח מחדש' : 'שלח לחתימה';
-  const ButtonIcon = isAlreadyAssigned ? RotateCcw : Send;
+  // קביעת הטקסט והאייקון
+  const buttonText = customButtonText || (isAlreadyAssigned ? 'שלח מחדש' : 'שלח לחתימה');
+  const ButtonIcon = customIcon || (isAlreadyAssigned ? RotateCcw : Send);
 
   const handleClick = () => {
     console.log('📌 SendToSignature button clicked for:', documentName);
@@ -52,6 +59,7 @@ export const SendToSignatureButton: React.FC<SendToSignatureButtonProps> = ({
         size={size}
         className="flex items-center gap-2"
         onClick={handleClick}
+        title={buttonText}
       >
         <ButtonIcon className="h-4 w-4" />
         {buttonText}
