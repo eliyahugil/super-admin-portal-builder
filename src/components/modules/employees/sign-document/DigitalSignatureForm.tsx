@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Signature } from 'lucide-react';
+import { SignatureCanvas } from './SignatureCanvas';
 
 interface DigitalSignatureFormProps {
   onSign: (signature: string) => Promise<void>;
@@ -14,11 +14,15 @@ export const DigitalSignatureForm: React.FC<DigitalSignatureFormProps> = ({
   onSign,
   isSigning
 }) => {
-  const [digitalSignature, setDigitalSignature] = useState('');
+  const [signatureData, setSignatureData] = useState<string | null>(null);
 
   const handleSubmit = async () => {
-    if (!digitalSignature.trim()) return;
-    await onSign(digitalSignature);
+    if (!signatureData) return;
+    await onSign(signatureData);
+  };
+
+  const handleSignatureChange = (signature: string | null) => {
+    setSignatureData(signature);
   };
 
   return (
@@ -32,23 +36,23 @@ export const DigitalSignatureForm: React.FC<DigitalSignatureFormProps> = ({
       <CardContent className="space-y-4">
         <div>
           <label className="text-sm font-medium text-gray-700 mb-2 block">
-            הזן את שמך המלא כחתימה דיגיטלית:
+            צייר את החתימה שלך:
           </label>
-          <Textarea
-            value={digitalSignature}
-            onChange={(e) => setDigitalSignature(e.target.value)}
-            placeholder="לדוגמה: יוחנן ישראלי"
-            className="text-lg font-cursive"
-            rows={3}
+          
+          <SignatureCanvas 
+            onSignatureChange={handleSignatureChange}
+            width={400}
+            height={150}
           />
-          <p className="text-xs text-gray-500 mt-1">
+          
+          <p className="text-xs text-gray-500 mt-2">
             החתימה הדיגיטלית מהווה הסכמה משפטית לתוכן המסמך
           </p>
         </div>
         
         <Button
           onClick={handleSubmit}
-          disabled={isSigning || !digitalSignature.trim()}
+          disabled={isSigning || !signatureData}
           className="w-full"
           size="lg"
         >
