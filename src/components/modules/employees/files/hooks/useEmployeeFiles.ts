@@ -42,20 +42,31 @@ export const useEmployeeFiles = () => {
   });
 
   const { data: signedDocuments, isLoading: docsLoading } = useQuery({
-    queryKey: ['signed-documents', businessId],
+    queryKey: ['signed-documents-for-files', businessId],
     queryFn: async () => {
       if (!businessId) return [];
 
+      // שלוף מסמכים חתומים מטבלת employee_document_signatures
       const { data, error } = await supabase
-        .from('employee_documents')
+        .from('employee_document_signatures')
         .select(`
-          *,
-          employee:employees!employee_documents_employee_id_fkey(
+          id,
+          employee_id,
+          signed_at,
+          created_at,
+          digital_signature_data,
+          employee:employees!employee_document_signatures_employee_id_fkey(
             id,
             first_name,
             last_name,
             employee_id,
             business_id
+          ),
+          document:employee_documents!employee_document_signatures_document_id_fkey(
+            id,
+            document_name,
+            document_type,
+            file_url
           )
         `)
         .eq('status', 'signed')
@@ -63,8 +74,23 @@ export const useEmployeeFiles = () => {
         .eq('employee.business_id', businessId)
         .order('signed_at', { ascending: false });
 
-      if (error) throw error;
-      return data?.filter(doc => doc.employee) || [];
+      if (error) {
+        console.error('Error fetching signed documents:', error);
+        return [];
+      }
+
+      // המר את הנתונים לפורמט הנכון
+      return data?.filter(item => item.employee && item.document).map(item => ({
+        id: item.id,
+        employee_id: item.employee_id,
+        document_name: item.document.document_name,
+        document_type: item.document.document_type,
+        file_url: item.document.file_url,
+        signed_at: item.signed_at,
+        created_at: item.created_at,
+        digital_signature_data: item.digital_signature_data,
+        employee: item.employee
+      })) || [];
     },
     enabled: !!businessId,
   });
@@ -103,17 +129,7 @@ export const useEmployeeFiles = () => {
           signedDocuments: []
         });
       }
-      employees.get(employeeId)!.signedDocuments.push({
-        id: doc.id,
-        employee_id: doc.employee_id,
-        document_name: doc.document_name,
-        document_type: doc.document_type,
-        file_url: doc.file_url,
-        signed_at: doc.signed_at,
-        created_at: doc.created_at,
-        digital_signature_data: doc.digital_signature_data,
-        employee: doc.employee
-      });
+      employees.get(employeeId)!.signedDocuments.push(doc);
     });
 
     const grouped = Array.from(employees.values());
