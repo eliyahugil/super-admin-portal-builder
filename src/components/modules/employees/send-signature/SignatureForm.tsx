@@ -115,6 +115,7 @@ export const SignatureForm: React.FC<SignatureFormProps> = ({
       {/* בחירת עובדים */}
       <EmployeeSelector
         employees={employees}
+        employeesLoading={employeesLoading}
         selectedEmployeeIds={selectedEmployeeIds}
         existingSignatures={existingSignatures}
         onEmployeeToggle={onEmployeeToggle}
