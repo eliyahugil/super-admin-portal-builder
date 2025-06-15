@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Download, Eye, Upload, Trash2, CheckCircle } from 'lucide-react';
+import { FileText, Download, Eye, Upload, Trash2, CheckCircle, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import {
@@ -43,8 +43,10 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
   onDocumentUpdated
 }) => {
   const isSigned = document.status === 'signed' || document.signed_at;
-  const hasAssignee = !!document.assignee;
+  const hasSignatures = document.signatures && document.signatures.length > 0;
   const isTemplate = document.is_template;
+  const recipientsCount = document.recipients_count || 0;
+  const signedCount = document.signed_count || 0;
   
   // עבור תבניות, נראה את הכפתור תמיד. עבור מסמכים רגילים, נראה אותו רק אם יש הרשאה
   const shouldShowSendButton = canEdit && (isTemplate || !isTemplate);
@@ -53,7 +55,9 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
     id: document.id,
     name: document.document_name,
     isTemplate,
-    hasAssignee,
+    hasSignatures,
+    recipientsCount,
+    signedCount,
     canEdit,
     shouldShowSendButton
   });
@@ -84,6 +88,15 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
                     נחתם
                   </Badge>
                 )}
+                
+                {/* הצגת מידע על נמענים וחתימות */}
+                {recipientsCount > 0 && !isTemplate && (
+                  <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                    <Users className="h-3 w-3 mr-1" />
+                    {signedCount}/{recipientsCount} חתמו
+                  </Badge>
+                )}
+                
                 <span className="text-sm text-gray-500">
                   {format(new Date(document.created_at), 'dd/MM/yyyy', { locale: he })}
                 </span>
@@ -92,12 +105,34 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
                     • הועלה על ידי {document.uploaded_by_profile.full_name}
                   </span>
                 )}
-                {/* Show assignee if available */}
-                {document.assignee && !isTemplate && (
-                  <span className="text-sm text-blue-700 bg-blue-50 px-2 py-0.5 rounded ml-1">
-                    מיועד לחתימה: {document.assignee.first_name} {document.assignee.last_name} ({document.assignee.employee_id || ''})
-                  </span>
+                
+                {/* הצגת רשימת חתימות */}
+                {hasSignatures && !isTemplate && (
+                  <div className="w-full mt-2">
+                    <details className="text-sm">
+                      <summary className="cursor-pointer text-blue-700 hover:text-blue-800">
+                        רשימת חתימות ({document.signatures.length})
+                      </summary>
+                      <div className="mt-2 space-y-1 bg-gray-50 rounded p-2">
+                        {document.signatures.map((sig: any) => (
+                          <div key={sig.id} className="flex items-center justify-between text-xs">
+                            <span>
+                              {sig.employee?.first_name} {sig.employee?.last_name}
+                              {sig.employee?.employee_id && ` (${sig.employee.employee_id})`}
+                            </span>
+                            <Badge 
+                              variant={sig.status === 'signed' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {sig.status === 'signed' ? 'נחתם' : 'ממתין'}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  </div>
                 )}
+                
                 {document.signed_at && !isTemplate && (
                   <span className="text-sm text-green-700 bg-green-50 px-2 py-0.5 rounded ml-1">
                     נחתם ב: {format(new Date(document.signed_at), 'dd/MM/yyyy HH:mm', { locale: he })}
@@ -138,9 +173,9 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
                 documentId={document.id}
                 documentName={document.document_name}
                 onSent={onDocumentUpdated}
-                variant={hasAssignee ? "ghost" : "default"}
+                variant={hasSignatures ? "ghost" : "default"}
                 size="sm"
-                isAlreadyAssigned={hasAssignee}
+                isAlreadyAssigned={hasSignatures}
               />
             )}
             

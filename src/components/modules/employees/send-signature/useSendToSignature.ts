@@ -5,9 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export const useSendToSignature = (documentId: string, documentName: string, onSent?: () => void) => {
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
   const [isSending, setIsSending] = useState(false);
-  const [signatureUrl, setSignatureUrl] = useState('');
+  const [signatureUrls, setSignatureUrls] = useState<{ [employeeId: string]: string }>({});
   const { toast } = useToast();
 
   // שליפת רשימת עובדים פעילים
@@ -28,61 +28,127 @@ export const useSendToSignature = (documentId: string, documentName: string, onS
     },
   });
 
-  const handleSendToSignature = async (isAlreadyAssigned: boolean) => {
-    if (!selectedEmployeeId) {
+  // שליפת חתימות קיימות למסמך
+  const { data: existingSignatures } = useQuery({
+    queryKey: ['document-signatures', documentId],
+    queryFn: async () => {
+      if (!documentId) return [];
+      
+      const { data, error } = await supabase
+        .from('employee_document_signatures')
+        .select(`
+          *,
+          employee:employees!employee_document_signatures_employee_id_fkey(
+            id, first_name, last_name, employee_id
+          )
+        `)
+        .eq('document_id', documentId);
+      
+      if (error) {
+        console.error('Error fetching existing signatures:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!documentId,
+  });
+
+  const handleSendToSignature = async (isResending: boolean = false) => {
+    if (selectedEmployeeIds.length === 0) {
       toast({
         title: 'שגיאה',
-        description: 'יש לבחור עובד לשליחה',
+        description: 'יש לבחור לפחות עובד אחד לשליחה',
         variant: 'destructive',
       });
       return;
     }
 
     setIsSending(true);
-    console.log('📤 Sending document to signature:', { documentId, selectedEmployeeId, isResend: isAlreadyAssigned });
+    console.log('📤 Sending document to signature:', { 
+      documentId, 
+      selectedEmployeeIds, 
+      isResending 
+    });
     
     try {
-      // יצירת טוקן ייחודי לחתימה דיגיטלית
-      const signatureToken = crypto.randomUUID();
-      
-      // עדכון מסמך עם פרטי העובד המיועד לחתימה
-      const updateData: any = {
-        assignee_id: selectedEmployeeId,
-        status: 'pending_signature',
-        reminder_count: 0,
-        reminder_sent_at: new Date().toISOString(),
-        digital_signature_token: signatureToken,
-      };
-
-      // אם זה שליחה מחדש, נאפס את תאריך החתימה
-      if (isAlreadyAssigned) {
-        updateData.signed_at = null;
-        updateData.digital_signature_data = null;
-      }
-
-      const { error: updateError } = await supabase
-        .from('employee_documents')
-        .update(updateData)
-        .eq('id', documentId);
-
-      if (updateError) {
-        console.error('Error updating document:', updateError);
-        throw updateError;
-      }
-
-      // יצירת קישור חתימה דיגיטלית
       const baseUrl = window.location.origin;
-      const signUrl = `${baseUrl}/sign-document/${documentId}?token=${signatureToken}`;
-      setSignatureUrl(signUrl);
+      const newSignatureUrls: { [employeeId: string]: string } = {};
+      let successCount = 0;
+      let errorCount = 0;
 
-      const actionText = isAlreadyAssigned ? 'נשלח מחדש' : 'נשלח';
-      toast({
-        title: 'הצלחה',
-        description: `המסמך "${documentName}" ${actionText} לחתימה בהצלחה`,
-      });
+      // שליחה לכל עובד שנבחר
+      for (const employeeId of selectedEmployeeIds) {
+        try {
+          // בדיקה אם כבר קיימת חתימה לעובד הזה
+          const existingSignature = existingSignatures?.find(sig => sig.employee_id === employeeId);
+          
+          if (existingSignature && !isResending) {
+            console.log(`🔄 Signature already exists for employee ${employeeId}, skipping`);
+            continue;
+          }
 
-      console.log('✅ Document sent successfully, signature URL:', signUrl);
-      onSent?.();
+          let signatureToken: string;
+          
+          if (existingSignature) {
+            // עדכון חתימה קיימת (שליחה מחדש)
+            signatureToken = crypto.randomUUID();
+            const { error: updateError } = await supabase
+              .from('employee_document_signatures')
+              .update({
+                digital_signature_token: signatureToken,
+                status: 'pending',
+                signed_at: null,
+                digital_signature_data: null,
+                sent_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', existingSignature.id);
+
+            if (updateError) throw updateError;
+          } else {
+            // יצירת חתימה חדשה
+            signatureToken = crypto.randomUUID();
+            const { error: insertError } = await supabase
+              .from('employee_document_signatures')
+              .insert({
+                document_id: documentId,
+                employee_id: employeeId,
+                digital_signature_token: signatureToken,
+                status: 'pending',
+                sent_at: new Date().toISOString(),
+              });
+
+            if (insertError) throw insertError;
+          }
+
+          // יצירת קישור חתימה דיגיטלית
+          const signUrl = `${baseUrl}/sign-document/${documentId}?token=${signatureToken}`;
+          newSignatureUrls[employeeId] = signUrl;
+          successCount++;
+          
+          console.log(`✅ Document sent successfully to employee ${employeeId}, signature URL:`, signUrl);
+        } catch (employeeError) {
+          console.error(`❌ Error sending to employee ${employeeId}:`, employeeError);
+          errorCount++;
+        }
+      }
+
+      setSignatureUrls(newSignatureUrls);
+
+      if (successCount > 0) {
+        const actionText = isResending ? 'נשלח מחדש' : 'נשלח';
+        toast({
+          title: 'הצלחה',
+          description: `המסמך "${documentName}" ${actionText} לחתימה ל-${successCount} עובדים${errorCount > 0 ? ` (${errorCount} שגיאות)` : ''}`,
+        });
+        onSent?.();
+      } else {
+        toast({
+          title: 'שגיאה',
+          description: 'לא ניתן לשלוח את המסמך לאף עובד',
+          variant: 'destructive',
+        });
+      }
     } catch (error: any) {
       console.error('Error sending document for signature:', error);
       toast({
@@ -96,19 +162,41 @@ export const useSendToSignature = (documentId: string, documentName: string, onS
   };
 
   const resetState = () => {
-    setSignatureUrl('');
-    setSelectedEmployeeId('');
+    setSignatureUrls({});
+    setSelectedEmployeeIds([]);
     setIsSending(false);
+  };
+
+  const addEmployeeToSelection = (employeeId: string) => {
+    setSelectedEmployeeIds(prev => 
+      prev.includes(employeeId) ? prev : [...prev, employeeId]
+    );
+  };
+
+  const removeEmployeeFromSelection = (employeeId: string) => {
+    setSelectedEmployeeIds(prev => prev.filter(id => id !== employeeId));
+  };
+
+  const toggleEmployeeSelection = (employeeId: string) => {
+    setSelectedEmployeeIds(prev => 
+      prev.includes(employeeId) 
+        ? prev.filter(id => id !== employeeId)
+        : [...prev, employeeId]
+    );
   };
 
   return {
     employees,
     employeesLoading,
-    selectedEmployeeId,
-    setSelectedEmployeeId,
+    selectedEmployeeIds,
+    setSelectedEmployeeIds,
     isSending,
-    signatureUrl,
+    signatureUrls,
+    existingSignatures: existingSignatures || [],
     handleSendToSignature,
     resetState,
+    addEmployeeToSelection,
+    removeEmployeeFromSelection,
+    toggleEmployeeSelection,
   };
 };

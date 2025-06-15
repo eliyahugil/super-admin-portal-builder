@@ -35,7 +35,7 @@ export const EmployeeDocuments: React.FC<Props> = ({
 
   console.log('🔍 EmployeeDocuments - Mode:', { isTemplateMode, employeeId, profileId: profile?.id });
 
-  // שליפת מסמכים - לוגיקה פשוטה יותר
+  // שליפת מסמכים עם מידע על חתימות
   const { data: documents = [], isLoading, refetch } = useQuery({
     queryKey,
     queryFn: async () => {
@@ -51,6 +51,19 @@ export const EmployeeDocuments: React.FC<Props> = ({
             first_name,
             last_name,
             employee_id
+          ),
+          signatures:employee_document_signatures(
+            id,
+            employee_id,
+            status,
+            signed_at,
+            sent_at,
+            employee:employees!employee_document_signatures_employee_id_fkey(
+              id,
+              first_name,
+              last_name,
+              employee_id
+            )
           )
         `)
         .order('created_at', { ascending: false });

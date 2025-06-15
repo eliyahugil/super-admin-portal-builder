@@ -25,12 +25,14 @@ export const SendToSignatureDialog: React.FC<SendToSignatureDialogProps> = ({
   const {
     employees,
     employeesLoading,
-    selectedEmployeeId,
-    setSelectedEmployeeId,
+    selectedEmployeeIds,
     isSending,
-    signatureUrl,
+    signatureUrls,
+    existingSignatures,
     handleSendToSignature,
     resetState,
+    toggleEmployeeSelection,
+    removeEmployeeFromSelection,
   } = useSendToSignature(documentId, documentName, onSent);
 
   const handleClose = (open: boolean) => {
@@ -40,9 +42,8 @@ export const SendToSignatureDialog: React.FC<SendToSignatureDialogProps> = ({
     onOpenChange(open);
   };
 
-  const handleSend = () => {
-    handleSendToSignature(isAlreadyAssigned);
-  };
+  const hasSignatureUrls = Object.keys(signatureUrls).length > 0;
+  const hasExistingSignatures = existingSignatures.length > 0;
 
   console.log('🔍 SendToSignatureDialog rendered:', {
     isOpen,
@@ -50,34 +51,38 @@ export const SendToSignatureDialog: React.FC<SendToSignatureDialogProps> = ({
     documentName,
     isAlreadyAssigned,
     employeesCount: employees?.length || 0,
-    selectedEmployeeId,
-    signatureUrl
+    selectedEmployeeIds,
+    hasSignatureUrls,
+    hasExistingSignatures
   });
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md" dir="rtl">
+      <DialogContent className="sm:max-w-2xl" dir="rtl">
         <DialogHeader>
           <DialogTitle>
-            {isAlreadyAssigned ? 'שלח מסמך מחדש לחתימה' : 'שלח מסמך לחתימה'}
+            {hasExistingSignatures ? 'שלח מסמך מחדש לחתימה' : 'שלח מסמך לחתימה'}
           </DialogTitle>
         </DialogHeader>
         
-        {!signatureUrl ? (
+        {!hasSignatureUrls ? (
           <SignatureForm
             documentName={documentName}
-            isAlreadyAssigned={isAlreadyAssigned}
+            hasExistingSignatures={hasExistingSignatures}
             employees={employees || []}
             employeesLoading={employeesLoading}
-            selectedEmployeeId={selectedEmployeeId}
+            selectedEmployeeIds={selectedEmployeeIds}
+            existingSignatures={existingSignatures}
             isSending={isSending}
-            onEmployeeSelect={setSelectedEmployeeId}
-            onSend={handleSend}
+            onEmployeeToggle={toggleEmployeeSelection}
+            onEmployeeRemove={removeEmployeeFromSelection}
+            onSend={handleSendToSignature}
             onCancel={() => handleClose(false)}
           />
         ) : (
           <SignatureUrlDisplay
-            signatureUrl={signatureUrl}
+            signatureUrls={signatureUrls}
+            employees={employees || []}
             onClose={() => handleClose(false)}
           />
         )}

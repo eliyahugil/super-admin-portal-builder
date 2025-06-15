@@ -1,3 +1,4 @@
+
 import type { Employee } from '@/types/employee';
 
 // ===========================
@@ -66,6 +67,24 @@ export interface EmployeeDocument {
   reminder_count?: number;
   assignee?: any;
   uploaded_by_profile?: any;
+  digital_signature_token?: string | null;
+  recipients_count?: number;
+  signed_count?: number;
+  signatures?: EmployeeDocumentSignature[];
+}
+
+export interface EmployeeDocumentSignature {
+  id: string;
+  document_id: string;
+  employee_id: string;
+  digital_signature_token: string;
+  status: string;
+  signed_at?: string | null;
+  digital_signature_data?: any;
+  sent_at: string;
+  created_at: string;
+  updated_at: string;
+  employee?: Employee;
 }
 
 export interface EmployeeBranchPriority {

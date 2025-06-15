@@ -989,6 +989,60 @@ export type Database = {
           },
         ]
       }
+      employee_document_signatures: {
+        Row: {
+          created_at: string
+          digital_signature_data: Json | null
+          digital_signature_token: string
+          document_id: string
+          employee_id: string
+          id: string
+          sent_at: string
+          signed_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          digital_signature_data?: Json | null
+          digital_signature_token?: string
+          document_id: string
+          employee_id: string
+          id?: string
+          sent_at?: string
+          signed_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          digital_signature_data?: Json | null
+          digital_signature_token?: string
+          document_id?: string
+          employee_id?: string
+          id?: string
+          sent_at?: string
+          signed_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_document_signatures_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "employee_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_document_signatures_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_documents: {
         Row: {
           assignee_id: string | null
@@ -1001,9 +1055,11 @@ export type Database = {
           file_url: string
           id: string
           is_template: boolean
+          recipients_count: number | null
           reminder_count: number
           reminder_sent_at: string | null
           signed_at: string | null
+          signed_count: number | null
           status: string
           uploaded_by: string
         }
@@ -1018,9 +1074,11 @@ export type Database = {
           file_url: string
           id?: string
           is_template?: boolean
+          recipients_count?: number | null
           reminder_count?: number
           reminder_sent_at?: string | null
           signed_at?: string | null
+          signed_count?: number | null
           status?: string
           uploaded_by: string
         }
@@ -1035,9 +1093,11 @@ export type Database = {
           file_url?: string
           id?: string
           is_template?: boolean
+          recipients_count?: number | null
           reminder_count?: number
           reminder_sent_at?: string | null
           signed_at?: string | null
+          signed_count?: number | null
           status?: string
           uploaded_by?: string
         }
