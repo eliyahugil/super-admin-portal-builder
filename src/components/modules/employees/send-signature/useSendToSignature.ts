@@ -83,6 +83,7 @@ export const useSendToSignature = (documentId: string, documentName: string, onS
           const existingSignature = existingSignatures?.find(sig => sig.employee_id === employeeId);
           
           if (existingSignature && !isResending) {
+            // אם יש חתימה קיימת ולא מדובר בשליחה מחדש, נדלג
             console.log(`🔄 Signature already exists for employee ${employeeId}, skipping`);
             continue;
           }
@@ -90,19 +91,24 @@ export const useSendToSignature = (documentId: string, documentName: string, onS
           let signatureToken: string;
           
           if (existingSignature) {
-            // עדכון חתימה קיימת (שליחה מחדש)
+            // עדכון חתימה קיימת - אבל רק אם היא לא נחתמה כבר
+            if (existingSignature.status === 'signed') {
+              console.log(`✅ Employee ${employeeId} already signed, skipping update`);
+              continue;
+            }
+            
+            // עדכון חתימה ממתינה בלבד
             signatureToken = crypto.randomUUID();
             const { error: updateError } = await supabase
               .from('employee_document_signatures')
               .update({
                 digital_signature_token: signatureToken,
-                status: 'pending',
-                signed_at: null,
-                digital_signature_data: null,
                 sent_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
+                // לא משנים את status או signed_at - נשאיר אותם כפי שהם
               })
-              .eq('id', existingSignature.id);
+              .eq('id', existingSignature.id)
+              .eq('status', 'pending'); // עדכון רק אם הסטטוס הוא pending
 
             if (updateError) throw updateError;
           } else {
