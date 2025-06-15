@@ -20,10 +20,13 @@ export class SignatureService {
     let successCount = 0;
     let errorCount = 0;
 
-    // קודם נבדק אם זו תבנית
+    // קודם נבדק אם זו תבנית ונשלוף גם את העסק
     const { data: templateDoc, error: templateError } = await supabase
       .from('employee_documents')
-      .select('*')
+      .select(`
+        *,
+        uploaded_by_profile:profiles!employee_documents_uploaded_by_fkey(business_id)
+      `)
       .eq('id', documentId)
       .single();
 
@@ -34,6 +37,24 @@ export class SignatureService {
 
     const isTemplate = templateDoc.is_template;
     console.log('🎯 Document is template:', isTemplate);
+
+    // נמצא את ה-business_id
+    let businessId = null;
+    if (isTemplate) {
+      businessId = templateDoc.uploaded_by_profile?.business_id;
+    } else {
+      // עבור מסמכים רגילים, נמצא את ה-business_id דרך העובד
+      if (templateDoc.employee_id) {
+        const { data: employee } = await supabase
+          .from('employees')
+          .select('business_id')
+          .eq('id', templateDoc.employee_id)
+          .single();
+        businessId = employee?.business_id;
+      }
+    }
+
+    console.log('🏢 Business ID:', businessId);
 
     // שליחה לכל עובד שנבחר
     for (const employeeId of selectedEmployeeIds) {

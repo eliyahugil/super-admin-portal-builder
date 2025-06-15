@@ -101,6 +101,7 @@ export const EmployeeDocumentsContainer: React.FC<Props> = ({
   };
 
   const onDocumentUpdated = () => {
+    console.log('🔄 Document updated - refreshing all documents');
     refetch();
   };
 
@@ -114,12 +115,19 @@ export const EmployeeDocumentsContainer: React.FC<Props> = ({
   }
 
   console.log('📊 Rendering with documents count:', documents.length);
+  
+  // הפרדה של המסמכים לפי סוג
+  const templateDocuments = documents.filter(doc => doc.is_template === true);
+  const signatureDocuments = documents.filter(doc => doc.is_template === false);
+  
+  console.log('📋 Templates count:', templateDocuments.length);
+  console.log('✍️ Signature documents count:', signatureDocuments.length);
 
   return (
     <div className="space-y-6" dir="rtl">
       {/* רק אם יש הרשאות עריכה או שיש תבניות להציג */}
       <TemplateDocumentsList
-        documents={documents}
+        documents={templateDocuments}
         canEdit={canEdit}
         uploading={uploading}
         reminderLoading={reminderLoading}
@@ -135,7 +143,7 @@ export const EmployeeDocumentsContainer: React.FC<Props> = ({
       
       {/* מסמכים לחתימה - תמיד מוצגים */}
       <SignatureDocumentsList
-        documents={documents}
+        documents={signatureDocuments}
         canEdit={canEdit}
         uploading={uploading}
         reminderLoading={reminderLoading}
