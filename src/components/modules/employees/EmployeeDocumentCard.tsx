@@ -44,14 +44,18 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
 }) => {
   const isSigned = document.status === 'signed' || document.signed_at;
   const hasAssignee = !!document.assignee;
+  const isTemplate = document.is_template;
+  
+  // עבור תבניות, נראה את הכפתור תמיד. עבור מסמכים רגילים, נראה אותו רק אם יש הרשאה
+  const shouldShowSendButton = canEdit && (isTemplate || !isTemplate);
 
   console.log('📋 EmployeeDocumentCard - Document info:', {
     id: document.id,
     name: document.document_name,
-    isTemplate: document.is_template,
+    isTemplate,
     hasAssignee,
     canEdit,
-    shouldShowButton: canEdit && !document.is_template
+    shouldShowSendButton
   });
 
   return (
@@ -66,7 +70,12 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
                 <Badge className={getDocumentTypeColor(document.document_type)}>
                   {getDocumentTypeLabel(document.document_type)}
                 </Badge>
-                {document.status && (
+                {isTemplate && (
+                  <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                    תבנית
+                  </Badge>
+                )}
+                {document.status && !isTemplate && (
                   <Badge className={getStatusColor(document.status)}>{getStatusLabel(document.status)}</Badge>
                 )}
                 {isSigned && (
@@ -84,22 +93,22 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
                   </span>
                 )}
                 {/* Show assignee if available */}
-                {document.assignee && (
+                {document.assignee && !isTemplate && (
                   <span className="text-sm text-blue-700 bg-blue-50 px-2 py-0.5 rounded ml-1">
                     מיועד לחתימה: {document.assignee.first_name} {document.assignee.last_name} ({document.assignee.employee_id || ''})
                   </span>
                 )}
-                {document.signed_at && (
+                {document.signed_at && !isTemplate && (
                   <span className="text-sm text-green-700 bg-green-50 px-2 py-0.5 rounded ml-1">
                     נחתם ב: {format(new Date(document.signed_at), 'dd/MM/yyyy HH:mm', { locale: he })}
                   </span>
                 )}
-                {typeof document.reminder_count === 'number' && (
+                {typeof document.reminder_count === 'number' && !isTemplate && (
                   <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded ml-1">
                     תזכורות: {document.reminder_count}
                   </span>
                 )}
-                {document.reminder_sent_at && (
+                {document.reminder_sent_at && !isTemplate && (
                   <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded ml-1">
                     עודכן לאחרונה: {format(new Date(document.reminder_sent_at), 'dd/MM/yyyy HH:mm', { locale: he })}
                   </span>
@@ -123,8 +132,8 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
               <Download className="h-4 w-4" />
             </Button>
             
-            {/* כפתור שליחה לחתימה - מציג תמיד עבור מסמכים שאינם תבניות אם יש הרשאת עריכה */}
-            {canEdit && !document.is_template && (
+            {/* כפתור שליחה לחתימה - יופיע תמיד אם יש הרשאת עריכה */}
+            {shouldShowSendButton && (
               <SendToSignatureButton
                 documentId={document.id}
                 documentName={document.document_name}
@@ -135,7 +144,7 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
               />
             )}
             
-            {canEdit && !isSigned && (
+            {canEdit && !isSigned && !isTemplate && (
               <Button
                 variant="outline"
                 size="sm"
@@ -163,11 +172,13 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
             )}
           </div>
         </div>
-        <EmployeeDocumentReminders
-          docId={document.id}
-          reminderLog={reminderLog}
-          fetchReminders={fetchReminders}
-        />
+        {!isTemplate && (
+          <EmployeeDocumentReminders
+            docId={document.id}
+            reminderLog={reminderLog}
+            fetchReminders={fetchReminders}
+          />
+        )}
       </CardContent>
     </Card>
   );
