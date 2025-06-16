@@ -36,7 +36,7 @@ export const ChatMessagesArea: React.FC<ChatMessagesAreaProps> = ({
     setShowUserProfile(true);
   };
 
-  const selectedEmployee = employees.find(emp => emp.id === selectedEmployeeId);
+  const profileEmployee = employees.find(emp => emp.id === selectedEmployeeId);
 
   if (isLoading) {
     return (
@@ -89,7 +89,7 @@ export const ChatMessagesArea: React.FC<ChatMessagesAreaProps> = ({
       <UserProfileDialog
         open={showUserProfile}
         onOpenChange={setShowUserProfile}
-        employee={selectedEmployee || null}
+        employee={profileEmployee || null}
       />
     </>
   );
