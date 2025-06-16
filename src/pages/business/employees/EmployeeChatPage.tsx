@@ -65,6 +65,8 @@ const EmployeeChatPage: React.FC = () => {
 
   const selectedEmployee = employees.find(emp => emp.id === selectedEmployeeId);
 
+  console.log('💬 EmployeeChatPage - Rendering with employees:', employees.length, 'loading:', isLoadingEmployees);
+
   if (isLoadingEmployees) {
     return (
       <div className="h-[calc(100vh-120px)] max-w-7xl mx-auto p-4 flex items-center justify-center" dir="rtl">
@@ -77,6 +79,7 @@ const EmployeeChatPage: React.FC = () => {
   }
 
   if (employeesError) {
+    console.error('💬 EmployeeChatPage - Employees error:', employeesError);
     return (
       <div className="h-[calc(100vh-120px)] max-w-7xl mx-auto p-4 flex items-center justify-center" dir="rtl">
         <Card className="p-6">
@@ -85,6 +88,7 @@ const EmployeeChatPage: React.FC = () => {
             <span className="font-medium">שגיאה בטעינת העובדים</span>
           </div>
           <p className="text-gray-600">לא ניתן לטעון את רשימת העובדים. אנא נסה שוב מאוחר יותר.</p>
+          <p className="text-sm text-gray-500 mt-2">שגיאה: {employeesError.message}</p>
         </Card>
       </div>
     );
@@ -127,6 +131,7 @@ const EmployeeChatPage: React.FC = () => {
                     <div className="text-red-500 text-center">
                       <AlertCircle className="h-6 w-6 mx-auto mb-2" />
                       שגיאה בטעינת ההודעות
+                      <p className="text-sm mt-1">{messagesError.message}</p>
                     </div>
                   </div>
                 ) : messages.length === 0 ? (

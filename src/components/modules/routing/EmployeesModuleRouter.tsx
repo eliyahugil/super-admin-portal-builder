@@ -7,6 +7,7 @@ import { AttendanceManagement } from '../employees/AttendanceManagement';
 import { EmployeeFilesManagement } from '../employees/EmployeeFilesManagement';
 import { EmployeeRequestsList } from '../employees/EmployeeRequestsList';
 import { EmployeeDocuments } from '../employees/EmployeeDocuments';
+import EmployeeChatPage from '@/pages/business/employees/EmployeeChatPage';
 
 interface Props {
   route: string;
@@ -20,6 +21,7 @@ export const EmployeesModuleRouter: React.FC<Props> = ({ route, employeeId, busi
   if (route === 'profile' || (!route && employeeId)) {
     return <EmployeeProfilePage />;
   }
+  
   switch (route) {
     case '':
       return <EmployeeManagement />;
@@ -45,6 +47,8 @@ export const EmployeesModuleRouter: React.FC<Props> = ({ route, employeeId, busi
       );
     case 'shifts':
       return <ShiftManagement />;
+    case 'chat':
+      return <EmployeeChatPage />;
     case 'import':
       return <EmployeeManagement />;
     default:
