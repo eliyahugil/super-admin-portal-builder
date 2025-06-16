@@ -30,6 +30,12 @@ export const DocumentCardBadges: React.FC<DocumentCardBadgesProps> = ({
   hasPartialSignatures,
   hasSignatures
 }) => {
+  // קביעת הסטטוס הנכון על בסיס כל המידע הזמין
+  const actualStatus = isSigned || 
+                      document.signed_at || 
+                      document.digital_signature_data ||
+                      document.signed_document_url ? 'signed' : document.status;
+
   return (
     <>
       <Badge className={getDocumentTypeColor(document.document_type)}>
@@ -42,9 +48,9 @@ export const DocumentCardBadges: React.FC<DocumentCardBadgesProps> = ({
         </Badge>
       )}
       
-      {document.status && !isTemplate && (
-        <Badge className={getStatusColor(document.status)}>
-          {getStatusLabel(document.status)}
+      {actualStatus && !isTemplate && (
+        <Badge className={getStatusColor(actualStatus)}>
+          {getStatusLabel(actualStatus)}
         </Badge>
       )}
       

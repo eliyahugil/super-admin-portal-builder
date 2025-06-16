@@ -34,7 +34,12 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
   fetchReminders,
   onDocumentUpdated
 }) => {
-  const isSigned = document.status === 'signed' || document.signed_at;
+  // בדיקה מקיפה יותר לסטטוס החתימה
+  const isSigned = document.status === 'signed' || 
+                   document.signed_at || 
+                   document.digital_signature_data ||
+                   document.signed_document_url;
+                   
   const hasSignatures = document.signatures && document.signatures.length > 0;
   const isTemplate = document.is_template;
   const recipientsCount = document.recipients_count || 0;
@@ -51,6 +56,11 @@ export const EmployeeDocumentCard: React.FC<Props> = ({
   console.log('📋 EmployeeDocumentCard - Document info:', {
     id: document.id,
     name: document.document_name,
+    status: document.status,
+    isSigned,
+    signed_at: document.signed_at,
+    has_signature_data: !!document.digital_signature_data,
+    has_signed_url: !!document.signed_document_url,
     isTemplate,
     hasSignatures,
     recipientsCount,

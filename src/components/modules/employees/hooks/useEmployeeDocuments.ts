@@ -103,16 +103,39 @@ export const useEmployeeDocuments = (employeeId: string) => {
       }
       
       console.log('✅ Documents fetched:', data?.length || 0, 'documents');
-      console.log('📋 Documents details:', data?.map(d => ({
-        id: d.id,
-        name: d.document_name,
-        isTemplate: d.is_template,
-        employeeId: d.employee_id,
-        assigneeId: d.assignee_id,
-        signaturesCount: d.signatures?.length || 0
-      })));
       
-      return data || [];
+      // עדכון הסטטוס על בסיס הנתונים הנכונים
+      const processedDocuments = data?.map(doc => {
+        // בדיקה אם המסמך נחתם על בסיס המידע הזמין
+        const isDocumentSigned = doc.status === 'signed' || 
+                                doc.signed_at || 
+                                doc.digital_signature_data ||
+                                doc.signed_document_url;
+        
+        // עדכון הסטטוס אם צריך
+        const actualStatus = isDocumentSigned ? 'signed' : doc.status;
+        
+        console.log('📋 Document processing:', {
+          id: doc.id,
+          name: doc.document_name,
+          originalStatus: doc.status,
+          actualStatus,
+          signed_at: doc.signed_at,
+          has_signature_data: !!doc.digital_signature_data,
+          has_signed_url: !!doc.signed_document_url,
+          isTemplate: doc.is_template,
+          employeeId: doc.employee_id,
+          assigneeId: doc.assignee_id,
+          signaturesCount: doc.signatures?.length || 0
+        });
+        
+        return {
+          ...doc,
+          status: actualStatus
+        };
+      }) || [];
+      
+      return processedDocuments;
     },
     enabled: !!businessId, // צריך business ID
   });
