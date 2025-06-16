@@ -103,7 +103,7 @@ export const useSignDocument = (documentId: string) => {
       
       toast({
         title: 'הצלחה',
-        description: 'המסמך נחתם בהצלחה!',
+        description: 'המסמך נחתם בהצלחה! מייצר מסמך עם חתימה...',
       });
       
     } catch (error: any) {

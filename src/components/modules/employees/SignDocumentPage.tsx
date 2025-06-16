@@ -9,7 +9,9 @@ import { DigitalSignatureForm } from './sign-document/DigitalSignatureForm';
 import { SignedDocumentDisplay } from './sign-document/SignedDocumentDisplay';
 import { ErrorDisplay } from './sign-document/ErrorDisplay';
 import { LoadingDisplay } from './sign-document/LoadingDisplay';
+import { DocumentSignatureOverlay } from './sign-document/DocumentSignatureOverlay';
 import { useSignDocument } from './sign-document/useSignDocument';
+import { useSignedDocumentGenerator } from './sign-document/useSignedDocumentGenerator';
 import { isValidSignatureData } from './sign-document/types';
 
 // עמוד חתימה דיגיטלית לעובדים - מותאם למובייל
@@ -19,6 +21,7 @@ export const SignDocumentPage: React.FC = () => {
   const token = searchParams.get('token');
   
   const { document, isLoading, error, isSigning, handleSign } = useSignDocument(documentId || '');
+  const { generateAndSaveSignedDocument, isGenerating } = useSignedDocumentGenerator();
 
   if (isLoading) {
     return <LoadingDisplay />;
@@ -51,6 +54,23 @@ export const SignDocumentPage: React.FC = () => {
     `${document.employee.first_name} ${document.employee.last_name}${document.employee.employee_id ? ` (${document.employee.employee_id})` : ''}` 
     : 'עובד לא זמין';
 
+  const handleDocumentGenerated = async (signedDocumentBlob: Blob) => {
+    if (!documentId) return;
+    
+    try {
+      await generateAndSaveSignedDocument(
+        documentId,
+        signedDocumentBlob,
+        document.document_name
+      );
+    } catch (error) {
+      console.error('Error saving signed document:', error);
+    }
+  };
+
+  // URL להצגת המסמך החתום או המקורי
+  const displayUrl = document.signed_document_url || document.file_url;
+
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       {/* Container מותאם למובייל */}
@@ -70,11 +90,23 @@ export const SignDocumentPage: React.FC = () => {
 
           {/* Document Preview עם תמיכה טובה יותר במובייל */}
           <div className="bg-white rounded-lg border p-4 md:p-6">
-            <h3 className="text-lg font-semibold mb-4">תצוגת המסמך</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              {isAlreadySigned ? 'המסמך החתום' : 'תצוגת המסמך'}
+            </h3>
+            
+            {isGenerating && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-blue-700">מייצר מסמך עם חתימה...</span>
+                </div>
+              </div>
+            )}
+            
             <div className="border rounded-lg overflow-hidden mb-4">
               <div className="w-full overflow-auto" style={{ maxHeight: '70vh' }}>
                 <iframe
-                  src={document.file_url}
+                  src={displayUrl}
                   className="w-full min-h-96 border-0"
                   title={document.document_name}
                   style={{ 
@@ -85,23 +117,14 @@ export const SignDocumentPage: React.FC = () => {
               </div>
             </div>
             
-            {/* Show signature within document only if THIS specific document instance is signed */}
-            {isAlreadySigned && signatureData && (
+            {isAlreadySigned && document.signed_document_url && (
               <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
                 <h4 className="font-medium text-green-800 mb-3 flex items-center gap-2">
-                  ✅ המסמך נחתם - החתימה שלך מוצגת למטה:
+                  ✅ מסמך חתום - החתימה שלך מוטמעת במסמך
                 </h4>
-                <div className="bg-white p-3 rounded border inline-block mb-3">
-                  <img 
-                    src={signatureData.signature_image} 
-                    alt="חתימה דיגיטלית"
-                    className="max-w-full h-auto"
-                    style={{ maxHeight: '100px', maxWidth: '200px' }}
-                  />
-                </div>
                 <div className="space-y-2 text-sm">
                   <div className="text-gray-700">
-                    <span className="font-medium">נחתם על ידי:</span> {signatureData.signed_by || sentTo}
+                    <span className="font-medium">נחתם על ידי:</span> {signatureData?.signed_by || sentTo}
                   </div>
                   <div className="text-gray-700">
                     <span className="font-medium">זמן חתימה:</span> 
@@ -109,10 +132,24 @@ export const SignDocumentPage: React.FC = () => {
                       {document.signed_at && format(new Date(document.signed_at), 'dd/MM/yyyy בשעה HH:mm', { locale: he })}
                     </span>
                   </div>
+                  <div className="text-green-600 text-sm mt-2">
+                    החתימה, שם החותם וזמן החתימה מוטמעים במסמך עצמו
+                  </div>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Hidden component for generating signed document */}
+          {isAlreadySigned && signatureData && !document.signed_document_url && (
+            <DocumentSignatureOverlay
+              documentUrl={document.file_url}
+              signatureData={signatureData}
+              signedAt={document.signed_at}
+              signedBy={signatureData.signed_by || sentTo}
+              onDocumentGenerated={handleDocumentGenerated}
+            />
+          )}
 
           {!isAlreadySigned && (
             <DigitalSignatureForm 
