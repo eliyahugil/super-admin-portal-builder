@@ -2,18 +2,22 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, CheckCircle, Clock } from 'lucide-react';
+import { FileText, CheckCircle, Clock, User, Calendar, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
 interface DocumentDetailsCardProps {
   document: any;
   isAlreadySigned: boolean;
+  sentAt?: string;
+  sentTo?: string;
 }
 
 export const DocumentDetailsCard: React.FC<DocumentDetailsCardProps> = ({
   document,
-  isAlreadySigned
+  isAlreadySigned,
+  sentAt,
+  sentTo
 }) => {
   return (
     <Card>
@@ -52,23 +56,52 @@ export const DocumentDetailsCard: React.FC<DocumentDetailsCardProps> = ({
           {isAlreadySigned && document.signed_at && (
             <div>
               <label className="text-sm font-medium text-gray-700">תאריך חתימה:</label>
-              <p>{format(new Date(document.signed_at), 'dd/MM/yyyy HH:mm', { locale: he })}</p>
+              <p className="text-green-700 font-medium">{format(new Date(document.signed_at), 'dd/MM/yyyy HH:mm', { locale: he })}</p>
             </div>
           )}
         </div>
 
-        {/* תצוגת המסמך */}
+        {/* מידע על שליחה */}
+        {sentAt && sentTo && (
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+              <Send className="h-4 w-4" />
+              פרטי שליחה
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-blue-600" />
+                <span className="font-medium">נשלח אל:</span>
+                <span>{sentTo}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-blue-600" />
+                <span className="font-medium">תאריך שליחה:</span>
+                <span>{format(new Date(sentAt), 'dd/MM/yyyy HH:mm', { locale: he })}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* תצוגת המסמך משופרת */}
         <div className="border rounded-lg p-4 bg-gray-50">
           <h3 className="font-medium mb-2">תוכן המסמך:</h3>
-          <div className="bg-white border rounded p-4 max-h-96 overflow-y-auto">
+          <div className="bg-white border rounded p-2">
             {document.file_url ? (
-              <iframe
-                src={document.file_url}
-                className="w-full h-80"
-                title={document.document_name}
-              />
+              <div className="w-full" style={{ height: '500px' }}>
+                <iframe
+                  src={document.file_url}
+                  className="w-full h-full border-0"
+                  title={document.document_name}
+                  style={{ 
+                    minHeight: '500px',
+                    transform: 'scale(1)',
+                    transformOrigin: 'top left'
+                  }}
+                />
+              </div>
             ) : (
-              <p className="text-gray-500">לא ניתן להציג את תוכן המסמך</p>
+              <p className="text-gray-500 text-center py-8">לא ניתן להציג את תוכן המסמך</p>
             )}
           </div>
         </div>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Clock, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -23,6 +23,24 @@ export const SignedDocumentDisplay: React.FC<SignedDocumentDisplayProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* מידע על החתימה */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          {signatureData?.signed_by && (
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-green-600" />
+              <span className="font-medium">נחתם על ידי:</span>
+              <span>{signatureData.signed_by}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-green-600" />
+            <span className="font-medium">זמן חתימה:</span>
+            <span className="font-medium text-green-700">
+              {format(new Date(signedAt), 'dd/MM/yyyy HH:mm:ss', { locale: he })}
+            </span>
+          </div>
+        </div>
+
         <div className="bg-white p-4 rounded-lg border">
           <h4 className="font-medium text-gray-700 mb-2">החתימה שלך:</h4>
           {signatureData?.signature_image ? (
@@ -31,7 +49,7 @@ export const SignedDocumentDisplay: React.FC<SignedDocumentDisplayProps> = ({
                 src={signatureData.signature_image} 
                 alt="חתימה דיגיטלית"
                 className="max-w-full h-auto"
-                style={{ maxHeight: '100px' }}
+                style={{ maxHeight: '150px', maxWidth: '300px' }}
               />
             </div>
           ) : (
@@ -41,16 +59,9 @@ export const SignedDocumentDisplay: React.FC<SignedDocumentDisplayProps> = ({
           )}
         </div>
         
-        <div className="text-sm text-gray-600">
-          <div className="flex items-center justify-between">
-            <span className="font-medium">תאריך חתימה:</span>
-            <span>{format(new Date(signedAt), 'dd/MM/yyyy HH:mm', { locale: he })}</span>
-          </div>
-        </div>
-        
         <div className="bg-green-100 p-3 rounded-lg">
           <p className="text-green-800 text-sm">
-            ✅ המסמך נחתם בהצלחה. החתימה שלך נשמרה במערכת.
+            ✅ המסמך נחתם בהצלחה. החתימה שלך נשמרה במערכת ונוספה לקבצי העובד.
           </p>
         </div>
       </CardContent>
