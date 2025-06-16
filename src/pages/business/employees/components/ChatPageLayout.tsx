@@ -70,6 +70,7 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
           isSending={isSending}
           currentUserId={currentUserId}
           messagesEndRef={messagesEndRef}
+          onEmployeeSelect={onEmployeeSelect}
         />
       </div>
     </div>
