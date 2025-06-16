@@ -4,13 +4,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage } from './ChatMessage';
 import { UserProfileDialog } from './UserProfileDialog';
 import { useEmployeesData } from '@/hooks/useEmployeesData';
-import type { EmployeeChatMessage } from '@/types/employee-chat';
+import type { EmployeeChatMessage, EmployeeChatGroup } from '@/types/employee-chat';
+import type { Employee } from '@/types/employee';
 
 interface ChatMessagesAreaProps {
   messages: EmployeeChatMessage[];
   currentUserId?: string;
   isLoading: boolean;
   error?: any;
+  selectedEmployee?: Employee;
+  selectedGroup?: EmployeeChatGroup;
   messagesEndRef: React.RefObject<HTMLDivElement>;
 }
 
@@ -19,6 +22,8 @@ export const ChatMessagesArea: React.FC<ChatMessagesAreaProps> = ({
   currentUserId,
   isLoading,
   error,
+  selectedEmployee,
+  selectedGroup,
   messagesEndRef,
 }) => {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
