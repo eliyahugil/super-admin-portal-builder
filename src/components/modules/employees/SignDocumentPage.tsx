@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
 import { DocumentHeader } from './sign-document/DocumentHeader';
 import { DocumentDetailsCard } from './sign-document/DocumentDetailsCard';
 import { DigitalSignatureForm } from './sign-document/DigitalSignatureForm';

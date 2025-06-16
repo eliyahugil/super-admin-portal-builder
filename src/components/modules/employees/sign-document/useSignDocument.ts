@@ -25,6 +25,19 @@ export const useSignDocument = (documentId: string) => {
           *,
           employee:employees!employee_documents_employee_id_fkey(
             id, first_name, last_name, employee_id
+          ),
+          signatures:employee_document_signatures(
+            id,
+            employee_id,
+            status,
+            signed_at,
+            sent_at,
+            employee:employees!employee_document_signatures_employee_id_fkey(
+              id,
+              first_name,
+              last_name,
+              employee_id
+            )
           )
         `)
         .eq('id', documentId)
