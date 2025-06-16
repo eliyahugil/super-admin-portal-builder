@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Send, MessageCircle } from 'lucide-react';
+import { Send, MessageCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useEmployeesData } from '@/hooks/useEmployeesData';
 import { useEmployeeChatMessages } from '@/hooks/useEmployeeChatMessages';
@@ -16,14 +16,19 @@ import type { EmployeeChatMessage } from '@/types/employee-chat';
 
 const EmployeeChatPage: React.FC = () => {
   const { profile } = useAuth();
-  const { data: employees = [] } = useEmployeesData();
+  const { data: employees = [], isLoading: isLoadingEmployees, error: employeesError } = useEmployeesData();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  console.log('💬 EmployeeChatPage - Profile:', profile?.id, profile?.role);
+  console.log('💬 EmployeeChatPage - Employees loaded:', employees.length);
+  console.log('💬 EmployeeChatPage - Selected employee:', selectedEmployeeId);
+
   const {
     messages,
     isLoading: isLoadingMessages,
+    error: messagesError,
     sendMessage,
     isSending,
   } = useEmployeeChatMessages(selectedEmployeeId);
@@ -38,6 +43,7 @@ const EmployeeChatPage: React.FC = () => {
 
   const handleSendMessage = () => {
     if (newMessage.trim() && selectedEmployeeId) {
+      console.log('📤 Sending message:', newMessage);
       sendMessage({
         employeeId: selectedEmployeeId,
         content: newMessage,
@@ -58,6 +64,31 @@ const EmployeeChatPage: React.FC = () => {
   };
 
   const selectedEmployee = employees.find(emp => emp.id === selectedEmployeeId);
+
+  if (isLoadingEmployees) {
+    return (
+      <div className="h-[calc(100vh-120px)] max-w-7xl mx-auto p-4 flex items-center justify-center" dir="rtl">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">טוען עובדים...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (employeesError) {
+    return (
+      <div className="h-[calc(100vh-120px)] max-w-7xl mx-auto p-4 flex items-center justify-center" dir="rtl">
+        <Card className="p-6">
+          <div className="flex items-center gap-2 text-red-600 mb-2">
+            <AlertCircle className="h-5 w-5" />
+            <span className="font-medium">שגיאה בטעינת העובדים</span>
+          </div>
+          <p className="text-gray-600">לא ניתן לטעון את רשימת העובדים. אנא נסה שוב מאוחר יותר.</p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[calc(100vh-120px)] max-w-7xl mx-auto p-4 flex gap-4" dir="rtl">
@@ -90,6 +121,22 @@ const EmployeeChatPage: React.FC = () => {
                 {isLoadingMessages ? (
                   <div className="flex items-center justify-center h-32">
                     <div className="text-gray-500">טוען הודעות...</div>
+                  </div>
+                ) : messagesError ? (
+                  <div className="flex items-center justify-center h-32">
+                    <div className="text-red-500 text-center">
+                      <AlertCircle className="h-6 w-6 mx-auto mb-2" />
+                      שגיאה בטעינת ההודעות
+                    </div>
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-32">
+                    <div className="text-gray-500 text-center">
+                      <MessageCircle className="h-6 w-6 mx-auto mb-2" />
+                      עדיין אין הודעות עם העובד הזה
+                      <br />
+                      שלח הודעה ראשונה כדי להתחיל את השיחה
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -168,6 +215,11 @@ const EmployeeChatPage: React.FC = () => {
               <p className="text-gray-600">
                 בחר עובד מהרשימה כדי לשלוח לו הודעות אישיות
               </p>
+              {employees.length === 0 && (
+                <p className="text-orange-600 mt-2">
+                  לא נמצאו עובדים פעילים בעסק זה
+                </p>
+              )}
             </CardContent>
           </Card>
         )}

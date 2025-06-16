@@ -26,6 +26,9 @@ export const useEmployeeChatMessages = (employeeId: string | null) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  console.log('🔍 useEmployeeChatMessages - Employee ID:', employeeId);
+  console.log('🔍 useEmployeeChatMessages - Current profile:', profile?.id, profile?.role);
+
   // Fetch messages for specific employee
   const {
     data: messages = [],
@@ -34,7 +37,12 @@ export const useEmployeeChatMessages = (employeeId: string | null) => {
   } = useQuery({
     queryKey: ['employee-chat-messages', employeeId],
     queryFn: async (): Promise<EmployeeChatMessage[]> => {
-      if (!employeeId) return [];
+      if (!employeeId) {
+        console.log('❌ No employee ID provided');
+        return [];
+      }
+      
+      console.log('🔄 Fetching messages for employee:', employeeId);
       
       const { data, error } = await supabase
         .from('employee_chat_messages')
@@ -47,10 +55,11 @@ export const useEmployeeChatMessages = (employeeId: string | null) => {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching employee chat messages:', error);
+        console.error('❌ Error fetching employee chat messages:', error);
         throw error;
       }
 
+      console.log('✅ Successfully fetched messages:', data?.length || 0);
       return data || [];
     },
     enabled: !!employeeId,
@@ -63,6 +72,8 @@ export const useEmployeeChatMessages = (employeeId: string | null) => {
         throw new Error('User not authenticated');
       }
 
+      console.log('📤 Sending message to employee:', employeeId, 'Content:', content);
+
       const { data, error } = await supabase
         .from('employee_chat_messages')
         .insert({
@@ -74,17 +85,19 @@ export const useEmployeeChatMessages = (employeeId: string | null) => {
         .single();
 
       if (error) {
-        console.error('Error sending message:', error);
+        console.error('❌ Error sending message:', error);
         throw error;
       }
 
+      console.log('✅ Message sent successfully:', data);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee-chat-messages', employeeId] });
+      queryClient.invalidateQueries({ queryKey: ['employee-chat-unread-counts'] });
     },
     onError: (error) => {
-      console.error('Error sending message:', error);
+      console.error('❌ Error sending message:', error);
       toast({
         title: 'שגיאה',
         description: 'שגיאה בשליחת ההודעה',
@@ -96,18 +109,23 @@ export const useEmployeeChatMessages = (employeeId: string | null) => {
   // Mark messages as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: async (messageIds: string[]) => {
+      console.log('📖 Marking messages as read:', messageIds);
+      
       const { error } = await supabase
         .from('employee_chat_messages')
         .update({ is_read: true })
         .in('id', messageIds);
 
       if (error) {
-        console.error('Error marking messages as read:', error);
+        console.error('❌ Error marking messages as read:', error);
         throw error;
       }
+
+      console.log('✅ Messages marked as read successfully');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee-chat-messages', employeeId] });
+      queryClient.invalidateQueries({ queryKey: ['employee-chat-unread-counts'] });
     },
   });
 

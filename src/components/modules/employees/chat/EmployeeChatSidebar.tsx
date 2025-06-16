@@ -20,17 +20,22 @@ export const EmployeeChatSidebar: React.FC<EmployeeChatSidebarProps> = ({
   selectedEmployeeId,
   onEmployeeSelect,
 }) => {
+  console.log('👥 EmployeeChatSidebar - Employees count:', employees.length);
+  console.log('👥 EmployeeChatSidebar - Selected employee:', selectedEmployeeId);
+
   // Get unread message counts for each employee
   const { data: unreadCounts = {} } = useQuery({
     queryKey: ['employee-chat-unread-counts'],
     queryFn: async () => {
+      console.log('🔄 Fetching unread message counts...');
+      
       const { data, error } = await supabase
         .from('employee_chat_messages')
         .select('employee_id, is_read')
         .eq('is_read', false);
 
       if (error) {
-        console.error('Error fetching unread counts:', error);
+        console.error('❌ Error fetching unread counts:', error);
         return {};
       }
 
@@ -40,6 +45,7 @@ export const EmployeeChatSidebar: React.FC<EmployeeChatSidebarProps> = ({
         counts[message.employee_id] = (counts[message.employee_id] || 0) + 1;
       });
 
+      console.log('✅ Unread counts:', counts);
       return counts;
     },
     refetchInterval: 30000, // Refetch every 30 seconds
@@ -58,6 +64,24 @@ export const EmployeeChatSidebar: React.FC<EmployeeChatSidebarProps> = ({
     };
     return types[type] || type;
   };
+
+  if (employees.length === 0) {
+    return (
+      <Card className="w-80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            עובדים (0)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <div className="text-center text-gray-500">
+            לא נמצאו עובדים פעילים
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-80">
@@ -80,7 +104,10 @@ export const EmployeeChatSidebar: React.FC<EmployeeChatSidebarProps> = ({
                       ? 'bg-blue-50 border border-blue-200'
                       : 'hover:bg-gray-50'
                   }`}
-                  onClick={() => onEmployeeSelect(employee.id)}
+                  onClick={() => {
+                    console.log('👤 Selecting employee:', employee.id, employee.first_name, employee.last_name);
+                    onEmployeeSelect(employee.id);
+                  }}
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative">
