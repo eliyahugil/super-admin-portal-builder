@@ -58,7 +58,11 @@ export const useEmployeeChatMessages = (employeeId: string | null = null, groupI
       console.log('✅ Successfully fetched messages:', data?.length || 0);
       return (data || []).map(item => ({
         ...item,
-        message_type: item.message_type as 'direct' | 'group'
+        message_type: item.message_type as 'direct' | 'group',
+        group: item.group ? {
+          ...item.group,
+          group_type: item.group.group_type as 'general' | 'custom' | 'department'
+        } : undefined
       }));
     },
     enabled: !!(employeeId || groupId),
