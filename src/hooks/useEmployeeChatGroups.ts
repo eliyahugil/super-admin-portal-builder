@@ -63,10 +63,11 @@ export const useEmployeeChatGroups = () => {
       }
 
       console.log('✅ Successfully fetched groups:', data?.length || 0);
-      return data?.map(group => ({
+      return (data || []).map(group => ({
         ...group,
+        group_type: group.group_type as 'general' | 'custom' | 'department',
         member_count: group.members?.length || 0
-      })) || [];
+      }));
     },
     enabled: !!profile,
   });
