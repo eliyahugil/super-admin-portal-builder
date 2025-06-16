@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useEmployeeChatGroups } from '@/hooks/useEmployeeChatGroups';
 import { CreateGroupDialog } from './CreateGroupDialog';
@@ -29,6 +29,7 @@ export const EmployeeChatSidebar: React.FC<EmployeeChatSidebarProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'employees' | 'groups'>('groups');
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
 
   console.log('👥 EmployeeChatSidebar - Employees count:', employees.length);
   console.log('👥 EmployeeChatSidebar - Selected employee:', selectedEmployeeId);
@@ -37,9 +38,35 @@ export const EmployeeChatSidebar: React.FC<EmployeeChatSidebarProps> = ({
   const { groups, isLoading: isLoadingGroups } = useEmployeeChatGroups();
   const { data: unreadCounts = {} } = useUnreadCounts();
 
+  // Filter employees based on search
+  const filteredEmployees = useMemo(() => {
+    if (!searchValue.trim()) return employees;
+    
+    const searchTerm = searchValue.toLowerCase().trim();
+    return employees.filter(employee => 
+      `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(searchTerm) ||
+      employee.email?.toLowerCase().includes(searchTerm) ||
+      employee.phone?.includes(searchTerm)
+    );
+  }, [employees, searchValue]);
+
+  // Filter groups based on search
+  const filteredGroups = useMemo(() => {
+    if (!searchValue.trim()) return groups;
+    
+    const searchTerm = searchValue.toLowerCase().trim();
+    return groups.filter(group => 
+      group.name.toLowerCase().includes(searchTerm) ||
+      group.description?.toLowerCase().includes(searchTerm)
+    );
+  }, [groups, searchValue]);
+
   return (
     <Card className="w-80">
-      <SidebarHeader />
+      <SidebarHeader 
+        searchValue={searchValue}
+        onSearchChange={setSearchValue}
+      />
       
       <CardContent className="p-0">
         {/* Tab Navigation */}
@@ -47,21 +74,26 @@ export const EmployeeChatSidebar: React.FC<EmployeeChatSidebarProps> = ({
           <SidebarTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            groupsCount={groups.length}
-            employeesCount={employees.length}
+            groupsCount={filteredGroups.length}
+            employeesCount={filteredEmployees.length}
           />
         </div>
 
         {activeTab === 'groups' ? (
           <>
-            {/* Auto Groups Section */}
-            <div className="p-4 border-b">
-              <AutoGroupsSection />
-            </div>
+            {/* Auto Groups Section - only show when no search */}
+            {!searchValue && (
+              <div className="p-4 border-b">
+                <AutoGroupsSection />
+              </div>
+            )}
             
-            <CreateGroupSection onCreateGroup={() => setShowCreateGroup(true)} />
+            {!searchValue && (
+              <CreateGroupSection onCreateGroup={() => setShowCreateGroup(true)} />
+            )}
+            
             <GroupsList
-              groups={groups}
+              groups={filteredGroups}
               selectedGroupId={selectedGroupId}
               unreadCounts={unreadCounts}
               onGroupSelect={onGroupSelect}
@@ -70,11 +102,23 @@ export const EmployeeChatSidebar: React.FC<EmployeeChatSidebarProps> = ({
           </>
         ) : (
           <EmployeesList
-            employees={employees}
+            employees={filteredEmployees}
             selectedEmployeeId={selectedEmployeeId}
             unreadCounts={unreadCounts}
             onEmployeeSelect={onEmployeeSelect}
           />
+        )}
+
+        {/* Search results indicator */}
+        {searchValue && (
+          <div className="p-4 border-t bg-gray-50">
+            <p className="text-sm text-gray-600 text-center">
+              {activeTab === 'groups' 
+                ? `נמצאו ${filteredGroups.length} קבוצות`
+                : `נמצאו ${filteredEmployees.length} עובדים`
+              }
+            </p>
+          </div>
         )}
       </CardContent>
 

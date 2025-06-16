@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { SearchInput } from './sidebar/SearchInput';
 import { useEmployeeChatGroups } from '@/hooks/useEmployeeChatGroups';
 import type { Employee } from '@/types/employee';
 
@@ -31,8 +32,21 @@ export const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
+  const [employeeSearchValue, setEmployeeSearchValue] = useState('');
 
   const { createGroup, isCreatingGroup } = useEmployeeChatGroups();
+
+  // Filter employees based on search
+  const filteredEmployees = useMemo(() => {
+    if (!employeeSearchValue.trim()) return employees;
+    
+    const searchTerm = employeeSearchValue.toLowerCase().trim();
+    return employees.filter(employee => 
+      `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(searchTerm) ||
+      employee.email?.toLowerCase().includes(searchTerm) ||
+      employee.phone?.includes(searchTerm)
+    );
+  }, [employees, employeeSearchValue]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +65,7 @@ export const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({
     setGroupName('');
     setGroupDescription('');
     setSelectedEmployees([]);
+    setEmployeeSearchValue('');
     onOpenChange(false);
   };
 
@@ -111,9 +126,17 @@ export const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({
           {/* Employee Selection */}
           <div className="space-y-2">
             <Label>בחר עובדים להוספה לקבוצה ({selectedEmployees.length} נבחרו)</Label>
+            
+            {/* Search input for employees */}
+            <SearchInput
+              value={employeeSearchValue}
+              onChange={setEmployeeSearchValue}
+              placeholder="חפש עובדים..."
+            />
+            
             <ScrollArea className="h-48 border rounded-md p-2">
               <div className="space-y-2">
-                {employees.map((employee) => (
+                {filteredEmployees.map((employee) => (
                   <div key={employee.id} className="flex items-center space-x-3 space-x-reverse p-2 hover:bg-gray-50 rounded">
                     <Checkbox
                       id={`employee-${employee.id}`}
@@ -144,6 +167,12 @@ export const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({
                     </div>
                   </div>
                 ))}
+                
+                {filteredEmployees.length === 0 && employeeSearchValue && (
+                  <div className="text-center py-4 text-gray-500">
+                    <p>לא נמצאו עובדים התואמים לחיפוש</p>
+                  </div>
+                )}
               </div>
             </ScrollArea>
           </div>
