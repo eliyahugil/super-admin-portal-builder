@@ -5,25 +5,29 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Send, MessageCircle, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Send, MessageCircle, AlertCircle, Users } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useEmployeesData } from '@/hooks/useEmployeesData';
 import { useEmployeeChatMessages } from '@/hooks/useEmployeeChatMessages';
+import { useEmployeeChatGroups } from '@/hooks/useEmployeeChatGroups';
 import { EmployeeChatSidebar } from '@/components/modules/employees/chat/EmployeeChatSidebar';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
-import type { EmployeeChatMessage } from '@/types/employee-chat';
+import type { EmployeeChatMessage, EmployeeChatGroup } from '@/types/employee-chat';
 
 const EmployeeChatPage: React.FC = () => {
   const { profile } = useAuth();
   const { data: employees = [], isLoading: isLoadingEmployees, error: employeesError } = useEmployeesData();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   console.log('💬 EmployeeChatPage - Profile:', profile?.id, profile?.role);
   console.log('💬 EmployeeChatPage - Employees loaded:', employees.length);
   console.log('💬 EmployeeChatPage - Selected employee:', selectedEmployeeId);
+  console.log('💬 EmployeeChatPage - Selected group:', selectedGroupId);
 
   const {
     messages,
@@ -31,7 +35,9 @@ const EmployeeChatPage: React.FC = () => {
     error: messagesError,
     sendMessage,
     isSending,
-  } = useEmployeeChatMessages(selectedEmployeeId);
+  } = useEmployeeChatMessages(selectedEmployeeId, selectedGroupId);
+
+  const { groups } = useEmployeeChatGroups();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -42,10 +48,11 @@ const EmployeeChatPage: React.FC = () => {
   }, [messages]);
 
   const handleSendMessage = () => {
-    if (newMessage.trim() && selectedEmployeeId) {
+    if (newMessage.trim() && (selectedEmployeeId || selectedGroupId)) {
       console.log('📤 Sending message:', newMessage);
       sendMessage({
-        employeeId: selectedEmployeeId,
+        employeeId: selectedEmployeeId || undefined,
+        groupId: selectedGroupId || undefined,
         content: newMessage,
       });
       setNewMessage('');
@@ -59,11 +66,22 @@ const EmployeeChatPage: React.FC = () => {
     }
   };
 
+  const handleEmployeeSelect = (employeeId: string) => {
+    setSelectedEmployeeId(employeeId);
+    setSelectedGroupId(null); // Clear group selection
+  };
+
+  const handleGroupSelect = (groupId: string) => {
+    setSelectedGroupId(groupId);
+    setSelectedEmployeeId(null); // Clear employee selection
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
   const selectedEmployee = employees.find(emp => emp.id === selectedEmployeeId);
+  const selectedGroup = groups.find(group => group.id === selectedGroupId);
 
   console.log('💬 EmployeeChatPage - Rendering with employees:', employees.length, 'loading:', isLoadingEmployees);
 
@@ -96,25 +114,39 @@ const EmployeeChatPage: React.FC = () => {
 
   return (
     <div className="h-[calc(100vh-120px)] max-w-7xl mx-auto p-4 flex gap-4" dir="rtl">
-      {/* Employees List Sidebar */}
+      {/* Chat Sidebar */}
       <EmployeeChatSidebar
         employees={employees}
         selectedEmployeeId={selectedEmployeeId}
-        onEmployeeSelect={setSelectedEmployeeId}
+        selectedGroupId={selectedGroupId}
+        onEmployeeSelect={handleEmployeeSelect}
+        onGroupSelect={handleGroupSelect}
       />
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col">
-        {selectedEmployee ? (
+        {selectedEmployee || selectedGroup ? (
           <Card className="flex-1 flex flex-col">
             <CardHeader className="border-b">
               <CardTitle className="flex items-center gap-2">
-                <MessageCircle className="h-5 w-5" />
-                צ'אט עם {selectedEmployee.first_name} {selectedEmployee.last_name}
-                {selectedEmployee.phone && (
-                  <span className="text-sm font-normal text-gray-500">
-                    ({selectedEmployee.phone})
-                  </span>
+                {selectedGroup ? (
+                  <>
+                    <Users className="h-5 w-5" />
+                    {selectedGroup.name}
+                    <Badge variant="outline" className="text-xs">
+                      {selectedGroup.member_count} חברים
+                    </Badge>
+                  </>
+                ) : (
+                  <>
+                    <MessageCircle className="h-5 w-5" />
+                    צ'אט עם {selectedEmployee!.first_name} {selectedEmployee!.last_name}
+                    {selectedEmployee!.phone && (
+                      <span className="text-sm font-normal text-gray-500">
+                        ({selectedEmployee!.phone})
+                      </span>
+                    )}
+                  </>
                 )}
               </CardTitle>
             </CardHeader>
@@ -138,9 +170,19 @@ const EmployeeChatPage: React.FC = () => {
                   <div className="flex items-center justify-center h-32">
                     <div className="text-gray-500 text-center">
                       <MessageCircle className="h-6 w-6 mx-auto mb-2" />
-                      עדיין אין הודעות עם העובד הזה
-                      <br />
-                      שלח הודעה ראשונה כדי להתחיל את השיחה
+                      {selectedGroup ? (
+                        <>
+                          עדיין אין הודעות בקבוצה זו
+                          <br />
+                          שלח הודעה ראשונה להתחיל את השיחה
+                        </>
+                      ) : (
+                        <>
+                          עדיין אין הודעות עם העובד הזה
+                          <br />
+                          שלח הודעה ראשונה כדי להתחיל את השיחה
+                        </>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -163,13 +205,22 @@ const EmployeeChatPage: React.FC = () => {
                               {!isFromCurrentUser && (
                                 <Avatar className="h-6 w-6">
                                   <AvatarFallback className="text-xs">
-                                    {getInitials(
-                                      `${selectedEmployee.first_name} ${selectedEmployee.last_name}`
-                                    )}
+                                    {selectedGroup && message.employee ? 
+                                      getInitials(`${message.employee.first_name} ${message.employee.last_name}`) :
+                                      selectedEmployee ? 
+                                        getInitials(`${selectedEmployee.first_name} ${selectedEmployee.last_name}`) :
+                                        '?'
+                                    }
                                   </AvatarFallback>
                                 </Avatar>
                               )}
                               <div className="flex-1">
+                                {/* Show sender name in group chats */}
+                                {selectedGroup && !isFromCurrentUser && message.employee && (
+                                  <p className="text-xs font-medium mb-1 opacity-75">
+                                    {message.employee.first_name} {message.employee.last_name}
+                                  </p>
+                                )}
                                 <p className="text-sm whitespace-pre-wrap break-words">
                                   {message.message_content}
                                 </p>
@@ -196,7 +247,13 @@ const EmployeeChatPage: React.FC = () => {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder={`כתוב הודעה ל${selectedEmployee.first_name}...`}
+                    placeholder={
+                      selectedGroup 
+                        ? `כתוב הודעה לקבוצת ${selectedGroup.name}...`
+                        : selectedEmployee
+                        ? `כתוב הודעה ל${selectedEmployee.first_name}...`
+                        : 'כתוב הודעה...'
+                    }
                     className="flex-1"
                     disabled={isSending}
                   />
@@ -215,10 +272,10 @@ const EmployeeChatPage: React.FC = () => {
             <CardContent className="text-center">
               <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                בחר עובד כדי להתחיל צ'אט
+                בחר קבוצה או עובד כדי להתחיל צ'אט
               </h3>
               <p className="text-gray-600">
-                בחר עובד מהרשימה כדי לשלוח לו הודעות אישיות
+                בחר קבוצה מהרשימה לשיחת קבוצה או עובד לשיחה אישית
               </p>
               {employees.length === 0 && (
                 <p className="text-orange-600 mt-2">

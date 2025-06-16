@@ -848,31 +848,137 @@ export type Database = {
           },
         ]
       }
+      employee_chat_group_members: {
+        Row: {
+          added_at: string
+          added_by: string
+          employee_id: string
+          group_id: string
+          id: string
+          is_admin: boolean
+        }
+        Insert: {
+          added_at?: string
+          added_by: string
+          employee_id: string
+          group_id: string
+          id?: string
+          is_admin?: boolean
+        }
+        Update: {
+          added_at?: string
+          added_by?: string
+          employee_id?: string
+          group_id?: string
+          id?: string
+          is_admin?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_chat_group_members_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_chat_group_members_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_chat_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "employee_chat_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_chat_groups: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          group_type: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          group_type?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          group_type?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_chat_groups_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_chat_groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_chat_messages: {
         Row: {
           created_at: string
           employee_id: string
+          group_id: string | null
           id: string
           is_read: boolean
           message_content: string
+          message_type: string
           sender_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           employee_id: string
+          group_id?: string | null
           id?: string
           is_read?: boolean
           message_content: string
+          message_type?: string
           sender_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           employee_id?: string
+          group_id?: string | null
           id?: string
           is_read?: boolean
           message_content?: string
+          message_type?: string
           sender_id?: string
           updated_at?: string
         }
@@ -882,6 +988,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_chat_messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "employee_chat_groups"
             referencedColumns: ["id"]
           },
           {
