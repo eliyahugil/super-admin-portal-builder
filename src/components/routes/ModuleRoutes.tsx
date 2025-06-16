@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Route } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -17,17 +18,64 @@ import { BusinessMultiManagement } from '@/components/modules/settings/BusinessM
 
 export const ModuleRoutes = () => (
   <>
-    {/* דפי עובדים */}
-    <Route path="/modules/employees" element={<EmployeeManagementPage />} />
-    <Route path="/modules/employees/branches" element={<BranchManagementPage />} />
-    <Route path="/modules/employees/attendance" element={<AttendanceReportPage />} />
-    <Route path="/modules/employees/documents" element={<EmployeeDocumentsPage />} />
-    <Route path="/modules/employees/profile" element={<EmployeeProfilePage />} />
-    <Route path="/modules/employees/requests" element={<EmployeeRequestsPage />} />
-    <Route path="/modules/employees/chat" element={<EmployeeChatPage />} />
-    <Route path="/modules/employees/tasks" element={<EmployeeTasksPage />} />
+    {/* דפי עובדים עם AppLayout */}
+    <Route path="/modules/employees" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <EmployeeManagementPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/modules/employees/branches" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <BranchManagementPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/modules/employees/attendance" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <AttendanceReportPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/modules/employees/documents" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <EmployeeDocumentsPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/modules/employees/profile" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <EmployeeProfilePage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/modules/employees/requests" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <EmployeeRequestsPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/modules/employees/chat" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <EmployeeChatPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/modules/employees/tasks" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <EmployeeTasksPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
 
-    {/* קיימים */}
     {/* Base module routes */}
     <Route path="/modules/:moduleRoute" element={
       <ProtectedRoute>
