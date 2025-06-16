@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -33,6 +32,7 @@ export const useEmployeeChatGroups = () => {
           *,
           members:employee_chat_group_members(
             id,
+            group_id,
             employee_id,
             added_by,
             added_at,

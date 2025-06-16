@@ -75,6 +75,8 @@ export const useChatPage = () => {
     messages,
     selectedEmployee,
     selectedGroup,
+    selectedEmployeeId,
+    selectedGroupId,
     profile,
     messagesEndRef,
     
