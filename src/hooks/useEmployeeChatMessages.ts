@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -33,7 +34,7 @@ export const useEmployeeChatMessages = (employeeId: string | null = null, groupI
           *,
           employee:employees(id, first_name, last_name),
           sender:profiles(id, full_name, email),
-          group:employee_chat_groups(name, group_type)
+          group:employee_chat_groups(id, name, group_type, business_id, created_by, created_at, updated_at, is_active, description)
         `)
         .order('created_at', { ascending: true });
 
