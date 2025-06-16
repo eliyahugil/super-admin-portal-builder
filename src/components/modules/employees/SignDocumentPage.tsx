@@ -88,10 +88,10 @@ export const SignDocumentPage: React.FC = () => {
             {/* Show signature within document only if THIS specific document instance is signed */}
             {isAlreadySigned && signatureData && (
               <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                <h4 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+                <h4 className="font-medium text-green-800 mb-3 flex items-center gap-2">
                   ✅ המסמך נחתם - החתימה שלך מוצגת למטה:
                 </h4>
-                <div className="bg-white p-3 rounded border inline-block">
+                <div className="bg-white p-3 rounded border inline-block mb-3">
                   <img 
                     src={signatureData.signature_image} 
                     alt="חתימה דיגיטלית"
@@ -99,11 +99,16 @@ export const SignDocumentPage: React.FC = () => {
                     style={{ maxHeight: '100px', maxWidth: '200px' }}
                   />
                 </div>
-                <div className="mt-2 text-sm text-gray-600">
-                  נחתם על ידי: {signatureData.signed_by || sentTo}
-                </div>
-                <div className="text-sm text-gray-600">
-                  זמן חתימה: {document.signed_at && format(new Date(document.signed_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                <div className="space-y-2 text-sm">
+                  <div className="text-gray-700">
+                    <span className="font-medium">נחתם על ידי:</span> {signatureData.signed_by || sentTo}
+                  </div>
+                  <div className="text-gray-700">
+                    <span className="font-medium">זמן חתימה:</span> 
+                    <span className="font-semibold text-green-700 mr-2">
+                      {document.signed_at && format(new Date(document.signed_at), 'dd/MM/yyyy בשעה HH:mm', { locale: he })}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
