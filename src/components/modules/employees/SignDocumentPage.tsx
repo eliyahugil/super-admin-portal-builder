@@ -69,7 +69,7 @@ export const SignDocumentPage: React.FC = () => {
   };
 
   // URL להצגת המסמך החתום או המקורי
-  const displayUrl = document.signed_document_url || document.file_url;
+  const displayUrl = (document as any).signed_document_url || document.file_url;
 
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
@@ -117,7 +117,7 @@ export const SignDocumentPage: React.FC = () => {
               </div>
             </div>
             
-            {isAlreadySigned && document.signed_document_url && (
+            {isAlreadySigned && (document as any).signed_document_url && (
               <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
                 <h4 className="font-medium text-green-800 mb-3 flex items-center gap-2">
                   ✅ מסמך חתום - החתימה שלך מוטמעת במסמך
@@ -141,7 +141,7 @@ export const SignDocumentPage: React.FC = () => {
           </div>
 
           {/* Hidden component for generating signed document */}
-          {isAlreadySigned && signatureData && !document.signed_document_url && (
+          {isAlreadySigned && signatureData && !(document as any).signed_document_url && (
             <DocumentSignatureOverlay
               documentUrl={document.file_url}
               signatureData={signatureData}

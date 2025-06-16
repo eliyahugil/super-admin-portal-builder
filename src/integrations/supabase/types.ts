@@ -1060,6 +1060,7 @@ export type Database = {
           reminder_sent_at: string | null
           signed_at: string | null
           signed_count: number | null
+          signed_document_url: string | null
           status: string
           uploaded_by: string
         }
@@ -1079,6 +1080,7 @@ export type Database = {
           reminder_sent_at?: string | null
           signed_at?: string | null
           signed_count?: number | null
+          signed_document_url?: string | null
           status?: string
           uploaded_by: string
         }
@@ -1098,6 +1100,7 @@ export type Database = {
           reminder_sent_at?: string | null
           signed_at?: string | null
           signed_count?: number | null
+          signed_document_url?: string | null
           status?: string
           uploaded_by?: string
         }
