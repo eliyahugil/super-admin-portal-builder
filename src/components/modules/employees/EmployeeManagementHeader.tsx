@@ -7,9 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Users, RefreshCw, Search, Plus } from 'lucide-react';
-import { useBranchesData } from '@/hooks/useBranchesData';
 import { CreateEmployeeDialog } from './CreateEmployeeDialog';
 import { useState } from 'react';
+import type { Branch } from '@/types/branch';
 
 interface EmployeeManagementHeaderProps {
   onRefetch: () => void;
@@ -21,6 +21,8 @@ interface EmployeeManagementHeaderProps {
   onEmployeeTypeChange: (value: string) => void;
   isArchived: boolean;
   onArchivedChange: (value: boolean) => void;
+  branches: Branch[];
+  selectedBusinessId?: string | null;
   hideFilters?: boolean;
 }
 
@@ -34,10 +36,11 @@ export const EmployeeManagementHeader: React.FC<EmployeeManagementHeaderProps> =
   onEmployeeTypeChange,
   isArchived,
   onArchivedChange,
+  branches,
+  selectedBusinessId,
   hideFilters = false,
 }) => {
   const [createEmployeeOpen, setCreateEmployeeOpen] = useState(false);
-  const { data: branches = [] } = useBranchesData();
 
   return (
     <>

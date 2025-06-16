@@ -1,33 +1,24 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { FileText, Download, Upload, Settings } from 'lucide-react';
+import { ShiftsAdminTable } from '@/components/modules/employees/ShiftsAdminTable';
+import { CreateShiftFormContainer } from '@/components/modules/employees/CreateShiftForm/CreateShiftFormContainer';
 
-export const ManagementToolsSection: React.FC = () => {
+interface ManagementToolsSectionProps {
+  onRefetch: () => void;
+  selectedBusinessId?: string | null;
+}
+
+export const ManagementToolsSection: React.FC<ManagementToolsSectionProps> = ({ 
+  onRefetch, 
+  selectedBusinessId 
+}) => {
+  // Use selectedBusinessId if provided, otherwise the components will use their own business logic
+  const businessIdToUse = selectedBusinessId;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">כלי ניהול</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <Button variant="outline" className="w-full justify-start" size="sm">
-          <FileText className="h-4 w-4 mr-2" />
-          ייצא לאקסל
-        </Button>
-        <Button variant="outline" className="w-full justify-start" size="sm">
-          <Download className="h-4 w-4 mr-2" />
-          הורד דוח עובדים
-        </Button>
-        <Button variant="outline" className="w-full justify-start" size="sm">
-          <Upload className="h-4 w-4 mr-2" />
-          ייבא עובדים
-        </Button>
-        <Button variant="outline" className="w-full justify-start" size="sm">
-          <Settings className="h-4 w-4 mr-2" />
-          הגדרות עובדים
-        </Button>
-      </CardContent>
-    </Card>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <ShiftsAdminTable businessId={businessIdToUse} />
+      <CreateShiftFormContainer businessId={businessIdToUse} />
+    </div>
   );
 };

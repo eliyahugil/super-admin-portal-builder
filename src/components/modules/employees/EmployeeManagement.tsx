@@ -87,7 +87,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ selected
             <p className="text-gray-600">לא נמצאו עובדים מאורכבים במערכת</p>
           </div>
         ) : (
-          <EmployeeManagementEmptyState />
+          <EmployeeManagementEmptyState onRefetch={refetch} />
         )
       ) : isArchived ? (
         <ArchivedEmployeesList 

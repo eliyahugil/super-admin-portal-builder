@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Users, Plus } from 'lucide-react';
 
 interface EmployeeManagementEmptyStateProps {
-  onRefetch: () => void;
+  onRefetch?: () => void;
 }
 
 export const EmployeeManagementEmptyState: React.FC<EmployeeManagementEmptyStateProps> = ({ onRefetch }) => {
@@ -17,10 +17,12 @@ export const EmployeeManagementEmptyState: React.FC<EmployeeManagementEmptyState
         <p className="text-gray-600 text-center mb-4">
           התחל בהוספת העובד הראשון שלך כדי לנהל את הצוות
         </p>
-        <Button onClick={onRefetch} variant="outline" className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          רענן רשימה
-        </Button>
+        {onRefetch && (
+          <Button onClick={onRefetch} variant="outline" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            רענן רשימה
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

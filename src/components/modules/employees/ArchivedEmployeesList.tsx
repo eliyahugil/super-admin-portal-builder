@@ -4,8 +4,19 @@ import { Badge } from '@/components/ui/badge';
 import { Phone, Building } from 'lucide-react';
 import { GenericArchivedList } from '@/components/shared/GenericArchivedList';
 import type { Employee, EmployeeType } from '@/types/employee';
+import type { Branch } from '@/types/branch';
 
-export const ArchivedEmployeesList: React.FC = () => {
+interface ArchivedEmployeesListProps {
+  employees: Employee[];
+  onRefetch: () => void;
+  branches: Branch[];
+}
+
+export const ArchivedEmployeesList: React.FC<ArchivedEmployeesListProps> = ({ 
+  employees, 
+  onRefetch, 
+  branches 
+}) => {
   const getEmployeeTypeLabel = (type: EmployeeType) => {
     const types: Record<EmployeeType, string> = {
       permanent: 'קבוע',
