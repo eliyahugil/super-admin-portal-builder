@@ -6,15 +6,20 @@ import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import type { Employee, EmployeeType } from '@/types/employee';
 import { normalizeEmployee } from '@/types/employee';
 
-export const useEmployeeManagement = () => {
-  const { businessId, isSuperAdmin } = useCurrentBusiness();
+export const useEmployeeManagement = (selectedBusinessId?: string | null) => {
+  const { businessId: contextBusinessId, isSuperAdmin } = useCurrentBusiness();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBranch, setSelectedBranch] = useState('');
   const [selectedEmployeeType, setSelectedEmployeeType] = useState('');
   const [isArchived, setIsArchived] = useState(false);
 
+  // Use selectedBusinessId if provided (for super admin), otherwise use context business ID
+  const businessId = selectedBusinessId || contextBusinessId;
+
   console.log('🔍 useEmployeeManagement hook initialized with:', {
-    businessId,
+    selectedBusinessId,
+    contextBusinessId,
+    finalBusinessId: businessId,
     isSuperAdmin,
     searchTerm,
     selectedBranch,
@@ -28,8 +33,14 @@ export const useEmployeeManagement = () => {
   };
 
   const { data: employees, isLoading, error, refetch } = useQuery({
-    queryKey: ['employees', businessId, searchTerm, selectedBranch, selectedEmployeeType, isArchived],
+    queryKey: ['employees', businessId, searchTerm, selectedBranch, selectedEmployeeType, isArchived, selectedBusinessId],
     queryFn: async (): Promise<Employee[]> => {
+      // For super admin without selected business, return empty array
+      if (isSuperAdmin && !businessId) {
+        console.log('🔒 Super admin without selected business - returning empty array');
+        return [];
+      }
+
       if (!businessId && !isSuperAdmin) {
         console.log('❌ No business ID and not super admin, returning empty array');
         return [];
@@ -54,8 +65,8 @@ export const useEmployeeManagement = () => {
           )
         `);
 
-      // Apply business filter for non-super-admin users
-      if (!isSuperAdmin && businessId) {
+      // Apply business filter - CRITICAL for security
+      if (businessId) {
         query = query.eq('business_id', businessId);
       }
 
@@ -95,7 +106,7 @@ export const useEmployeeManagement = () => {
       
       return normalizedEmployees;
     },
-    enabled: !!businessId || isSuperAdmin,
+    enabled: !!businessId || (isSuperAdmin && selectedBusinessId === null),
   });
 
   return {
@@ -113,4 +124,3 @@ export const useEmployeeManagement = () => {
     setIsArchived,
   };
 };
-

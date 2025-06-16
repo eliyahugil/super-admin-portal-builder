@@ -1,48 +1,45 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/components/auth/AuthContext';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-import { Branch, normalizeBranch } from '@/types/branch';
+import type { Branch } from '@/types/branch';
 
 export const useBranchesData = (selectedBusinessId?: string | null) => {
-  const { profile } = useAuth();
-  const { businessId, isSuperAdmin } = useCurrentBusiness();
-
-  const targetBusinessId = selectedBusinessId || businessId;
+  const { businessId: contextBusinessId, isSuperAdmin } = useCurrentBusiness();
+  
+  // Use selectedBusinessId if provided (for super admin), otherwise use context business ID
+  const businessId = selectedBusinessId || contextBusinessId;
 
   console.log('🏢 useBranchesData - Query parameters:', {
-    userRole: profile?.role,
-    businessId,
     selectedBusinessId,
-    targetBusinessId,
+    contextBusinessId,
+    finalBusinessId: businessId,
     isSuperAdmin
   });
 
   return useQuery({
-    queryKey: ['branches', targetBusinessId, profile?.role],
+    queryKey: ['branches', businessId, selectedBusinessId],
     queryFn: async (): Promise<Branch[]> => {
-      console.log('🏢 useBranchesData - Starting query...');
+      console.log('📊 useBranchesData - Starting query...');
       
-      if (!profile) {
-        console.log('❌ No profile available');
-        throw new Error('User profile not available');
+      // For super admin without selected business, return empty array
+      if (isSuperAdmin && !businessId) {
+        console.log('🔒 Super admin without selected business - returning empty branches');
+        return [];
       }
 
-      if (!targetBusinessId && !isSuperAdmin) {
-        console.log('❌ No business ID available for non-super admin');
+      if (!businessId) {
+        console.log('❌ No business ID available');
         throw new Error('Business ID required');
       }
 
       let query = supabase
         .from('branches')
-        .select('*');
+        .select('*')
+        .eq('is_active', true);
 
-      // Apply business filter for non-super admins or when specific business is selected
-      if (targetBusinessId) {
-        console.log('🔒 Adding business filter for branches:', targetBusinessId);
-        query = query.eq('business_id', targetBusinessId);
-      }
+      // Apply business filter
+      query = query.eq('business_id', businessId);
 
       // Order by name
       query = query.order('name', { ascending: true });
@@ -54,19 +51,12 @@ export const useBranchesData = (selectedBusinessId?: string | null) => {
         throw error;
       }
 
-      console.log('✅ Branches data fetched:', {
-        count: data?.length || 0,
-        targetBusinessId
-      });
+      console.log('✅ Branches data fetched:', data?.length || 0);
 
-      // נרמל את הנתונים לפני החזרה
-      return (data || []).map(normalizeBranch);
+      return (data || []) as Branch[];
     },
-    enabled: !!profile && (!!targetBusinessId || isSuperAdmin),
+    enabled: !!businessId || (isSuperAdmin && selectedBusinessId === null),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };
-
-// ייצוא מחדש של הטיפוס למען תאימות
-export type { Branch };
