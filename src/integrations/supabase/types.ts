@@ -848,6 +848,51 @@ export type Database = {
           },
         ]
       }
+      employee_chat_messages: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          is_read: boolean
+          message_content: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          is_read?: boolean
+          message_content: string
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          is_read?: boolean
+          message_content?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_chat_messages_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_constraints: {
         Row: {
           approved_by: string | null
