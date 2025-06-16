@@ -55,16 +55,20 @@ export const SignDocumentPage: React.FC = () => {
     : 'עובד לא זמין';
 
   const handleDocumentGenerated = async (signedDocumentBlob: Blob) => {
-    if (!documentId) return;
+    if (!documentId) {
+      console.error('❌ Missing document ID');
+      return;
+    }
     
     try {
+      console.log('📁 Received signed document blob:', signedDocumentBlob.size, 'bytes');
       await generateAndSaveSignedDocument(
         documentId,
         signedDocumentBlob,
         document.document_name
       );
     } catch (error) {
-      console.error('Error saving signed document:', error);
+      console.error('❌ Error saving signed document:', error);
     }
   };
 
@@ -140,7 +144,7 @@ export const SignDocumentPage: React.FC = () => {
             )}
           </div>
 
-          {/* Hidden component for generating signed document */}
+          {/* Hidden component for generating signed document - only if signed but no URL yet */}
           {isAlreadySigned && signatureData && !(document as any).signed_document_url && (
             <DocumentSignatureOverlay
               documentUrl={document.file_url}
