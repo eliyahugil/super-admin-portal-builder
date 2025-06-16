@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useEmployeeChatGroups } from '@/hooks/useEmployeeChatGroups';
 import { CreateGroupDialog } from './CreateGroupDialog';
+import { AutoGroupsSection } from './AutoGroupsSection';
 import { SidebarHeader } from './sidebar/SidebarHeader';
 import { SidebarTabs } from './sidebar/SidebarTabs';
 import { CreateGroupSection } from './sidebar/CreateGroupSection';
@@ -53,6 +54,11 @@ export const EmployeeChatSidebar: React.FC<EmployeeChatSidebarProps> = ({
 
         {activeTab === 'groups' ? (
           <>
+            {/* Auto Groups Section */}
+            <div className="p-4 border-b">
+              <AutoGroupsSection />
+            </div>
+            
             <CreateGroupSection onCreateGroup={() => setShowCreateGroup(true)} />
             <GroupsList
               groups={groups}

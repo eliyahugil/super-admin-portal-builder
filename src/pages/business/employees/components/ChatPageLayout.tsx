@@ -2,14 +2,13 @@
 import React from 'react';
 import { EmployeeChatSidebar } from '@/components/modules/employees/chat/EmployeeChatSidebar';
 import { ChatAreaContainer } from '@/components/modules/employees/chat/ChatAreaContainer';
-import { EmptyChatState } from '@/components/modules/employees/chat/EmptyChatState';
 import type { Employee } from '@/types/employee';
-import type { EmployeeChatMessage, EmployeeChatGroup } from '@/types/employee-chat';
+import type { EmployeeChatMessage } from '@/types/employee-chat';
 
 interface ChatPageLayoutProps {
   employees: Employee[];
-  selectedEmployee?: Employee;
-  selectedGroup?: EmployeeChatGroup;
+  selectedEmployee: Employee | undefined;
+  selectedGroup: any;
   selectedEmployeeId: string | null;
   selectedGroupId: string | null;
   onEmployeeSelect: (employeeId: string) => void;
@@ -46,8 +45,8 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
   messagesEndRef,
 }) => {
   return (
-    <div className="h-[calc(100vh-120px)] max-w-7xl mx-auto p-4 flex gap-4" dir="rtl">
-      {/* Chat Sidebar */}
+    <div className="h-[calc(100vh-200px)] flex bg-white rounded-lg shadow-sm border" dir="rtl">
+      {/* Sidebar */}
       <EmployeeChatSidebar
         employees={employees}
         selectedEmployeeId={selectedEmployeeId}
@@ -58,24 +57,20 @@ export const ChatPageLayout: React.FC<ChatPageLayoutProps> = ({
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col">
-        {selectedEmployee || selectedGroup ? (
-          <ChatAreaContainer
-            selectedEmployee={selectedEmployee}
-            selectedGroup={selectedGroup}
-            messages={messages}
-            isLoadingMessages={isLoadingMessages}
-            messagesError={messagesError}
-            newMessage={newMessage}
-            setNewMessage={setNewMessage}
-            onSendMessage={onSendMessage}
-            onKeyPress={onKeyPress}
-            isSending={isSending}
-            currentUserId={currentUserId}
-            messagesEndRef={messagesEndRef}
-          />
-        ) : (
-          <EmptyChatState employees={employees} />
-        )}
+        <ChatAreaContainer
+          selectedEmployee={selectedEmployee}
+          selectedGroup={selectedGroup}
+          messages={messages}
+          isLoadingMessages={isLoadingMessages}
+          messagesError={messagesError}
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          onSendMessage={onSendMessage}
+          onKeyPress={onKeyPress}
+          isSending={isSending}
+          currentUserId={currentUserId}
+          messagesEndRef={messagesEndRef}
+        />
       </div>
     </div>
   );
