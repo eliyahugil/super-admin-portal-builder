@@ -32,7 +32,7 @@ export const useEmployeeChatMessages = (employeeId: string | null = null, groupI
         .select(`
           *,
           employee:employees(id, first_name, last_name),
-          sender:profiles(full_name),
+          sender:profiles(id, full_name, email),
           group:employee_chat_groups(name, group_type)
         `)
         .order('created_at', { ascending: true });
