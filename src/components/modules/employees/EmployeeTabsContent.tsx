@@ -63,7 +63,13 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
                   branches={branches}
                 />
               }
-              archivedContent={<ArchivedEmployeesList />}
+              archivedContent={
+                <ArchivedEmployeesList 
+                  employees={archivedEmployees}
+                  onRefetch={onRefetchEmployees}
+                  branches={branches}
+                />
+              }
               activeCount={employees.length}
               archivedCount={archivedEmployees.length}
               entityNamePlural="עובדים"
@@ -71,7 +77,11 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
           </TabsContent>
 
           <TabsContent value="archived" className="mt-4 sm:mt-6">
-            <ArchivedEmployeesList />
+            <ArchivedEmployeesList 
+              employees={archivedEmployees}
+              onRefetch={onRefetchEmployees}
+              branches={branches}
+            />
           </TabsContent>
 
           <TabsContent value="branches" className="mt-4 sm:mt-6">
@@ -117,4 +127,3 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
     </Card>
   );
 };
-
