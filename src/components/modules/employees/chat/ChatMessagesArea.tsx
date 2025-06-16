@@ -10,6 +10,7 @@ interface ChatMessagesAreaProps {
   messages: EmployeeChatMessage[];
   currentUserId?: string;
   isLoading: boolean;
+  error?: any;
   messagesEndRef: React.RefObject<HTMLDivElement>;
 }
 
@@ -17,6 +18,7 @@ export const ChatMessagesArea: React.FC<ChatMessagesAreaProps> = ({
   messages,
   currentUserId,
   isLoading,
+  error,
   messagesEndRef,
 }) => {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
@@ -37,6 +39,17 @@ export const ChatMessagesArea: React.FC<ChatMessagesAreaProps> = ({
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-500">טוען הודעות...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center text-red-500">
+          <p className="text-lg mb-2">שגיאה בטעינת ההודעות</p>
+          <p className="text-sm">אנא נסה שוב מאוחר יותר</p>
         </div>
       </div>
     );
