@@ -40,7 +40,7 @@ export const QuickGroupDialog: React.FC<QuickGroupDialogProps> = ({
     // Group by branch with proper Hebrew names
     const branchGroups = new Map<string, { name: string; employees: Employee[] }>();
     employees.forEach(emp => {
-      if (emp.main_branch?.name) {
+      if (emp.main_branch?.name && emp.main_branch?.id) {
         const branchId = emp.main_branch.id;
         const branchName = emp.main_branch.name;
         

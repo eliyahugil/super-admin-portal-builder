@@ -44,7 +44,7 @@ export const useBranchCreation = () => {
         throw new Error('לא נמצא מזהה עסק. אנא בחר עסק ספציפי ונסה שוב.');
       }
 
-      // Prepare the data with mandatory business_id for RLS
+      // Prepare the data with correct schema matching the database
       const branchData = {
         business_id: businessId,
         name: data.name.trim(),
@@ -55,17 +55,17 @@ export const useBranchCreation = () => {
         is_active: data.is_active,
       };
 
-      console.log('Inserting branch data with RLS security:', branchData);
+      console.log('Inserting branch data with correct schema:', branchData);
 
       // Validate required fields
       if (!branchData.name) {
         throw new Error('שם הסניף הוא שדה חובה');
       }
 
-      // The new RLS policies will automatically handle authorization
+      // Insert the single branch object (not an array)
       const { data: result, error } = await supabase
         .from('branches')
-        .insert([branchData])
+        .insert(branchData)
         .select()
         .single();
 
@@ -74,7 +74,7 @@ export const useBranchCreation = () => {
         throw new Error(`שגיאה ביצירת הסניף: ${error.message}`);
       }
       
-      console.log('Branch created successfully with RLS authorization:', result);
+      console.log('Branch created successfully:', result);
       return result;
     },
     onSuccess: (result) => {
