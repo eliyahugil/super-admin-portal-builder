@@ -3,19 +3,22 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthContext';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { normalizeEmployee, type Employee } from '@/types/employee';
 
 export const useEmployeeProfile = (employeeId: string | undefined) => {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuth();
+  const { businessId, isSuperAdmin } = useCurrentBusiness();
   const { toast } = useToast();
 
   const fetchEmployee = async () => {
     console.log('🔍 useEmployeeProfile - Starting fetch:', {
       employeeId,
       userRole: profile?.role,
-      businessId: profile?.business_id,
+      businessId,
+      isSuperAdmin,
       userEmail: profile?.email
     });
 
@@ -31,10 +34,30 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
       return;
     }
 
+    // CRITICAL SECURITY FIX: For super admin without selected business, block access
+    if (isSuperAdmin && !businessId) {
+      console.log('🔒 Super admin without selected business - blocking access to employee profile');
+      setEmployee(null);
+      setLoading(false);
+      toast({
+        title: 'בחר עסק',
+        description: 'יש לבחור עסק ספציפי לפני צפייה בפרופיל עובד',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!businessId) {
+      console.log('❌ useEmployeeProfile - No business ID available');
+      setEmployee(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     
     try {
-      console.log('🔍 Fetching employee with full data:', { employeeId });
+      console.log('🔍 Fetching employee with full data:', { employeeId, businessId });
 
       let query = supabase
         .from('employees')
@@ -87,11 +110,9 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
         `)
         .eq('id', employeeId);
 
-      // Apply business filter for non-super admins
-      if (profile?.role !== 'super_admin' && profile?.business_id) {
-        console.log('🔒 Adding business filter for user:', profile.business_id);
-        query = query.eq('business_id', profile.business_id);
-      }
+      // CRITICAL SECURITY: Always apply business filter
+      console.log('🔒 Adding mandatory business filter:', businessId);
+      query = query.eq('business_id', businessId);
 
       const { data, error } = await query.single();
 
@@ -160,13 +181,15 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
     console.log('🔄 useEmployeeProfile - useEffect triggered:', {
       employeeId,
       hasProfile: !!profile,
-      profileRole: profile?.role
+      profileRole: profile?.role,
+      businessId,
+      isSuperAdmin
     });
     
     if (profile) {
       fetchEmployee();
     }
-  }, [employeeId, profile?.id, profile?.business_id, profile?.role]);
+  }, [employeeId, profile?.id, businessId, profile?.role]);
 
   return {
     employee,
