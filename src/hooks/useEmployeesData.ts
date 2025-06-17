@@ -29,8 +29,14 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
         throw new Error('User profile not available');
       }
 
-      if (!targetBusinessId && !isSuperAdmin) {
-        console.log('❌ No business ID available for non-super admin');
+      // CRITICAL FIX: For super admin without specific business selected, return empty array
+      if (isSuperAdmin && !targetBusinessId) {
+        console.log('🔒 Super admin without selected business - returning empty array');
+        return [];
+      }
+
+      if (!targetBusinessId) {
+        console.log('❌ No business ID available');
         throw new Error('Business ID required');
       }
 
@@ -76,11 +82,9 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
         `)
         .eq('is_archived', false); // Exclude archived employees
 
-      // Apply business filter for non-super admins or when specific business is selected
-      if (targetBusinessId) {
-        console.log('🔒 Adding business filter:', targetBusinessId);
-        query = query.eq('business_id', targetBusinessId);
-      }
+      // Apply business filter - MANDATORY for all queries
+      console.log('🔒 Adding business filter:', targetBusinessId);
+      query = query.eq('business_id', targetBusinessId);
 
       // Order by creation date (newest first)
       query = query.order('created_at', { ascending: false });
@@ -109,7 +113,8 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
 
       return normalizedEmployees;
     },
-    enabled: !!profile && (!!targetBusinessId || isSuperAdmin),
+    // CRITICAL FIX: Only enable query when we have a target business ID
+    enabled: !!profile && !!targetBusinessId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });

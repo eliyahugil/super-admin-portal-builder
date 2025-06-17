@@ -1,6 +1,6 @@
 
 import { useState, useMemo } from 'react';
-import { useBusinessData } from '@/hooks/useBusinessData';
+import { useEmployeesData } from '@/hooks/useEmployeesData';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useToast } from '@/hooks/use-toast';
 import type { Employee } from '@/types/employee';
@@ -34,26 +34,12 @@ export const useEmployeesTableLogic = (selectedBusinessId?: string | null): UseE
     finalBusinessId: selectedBusinessId || businessId
   });
 
-  // Use the fixed unified hook with proper security
+  // Use the employees data hook with proper business isolation
   const { 
     data: employees = [], 
     isLoading: loading, 
     error 
-  } = useBusinessData<Employee>({
-    tableName: 'employees',
-    queryKey: ['employees', 'active'],
-    filter: 'active',
-    selectedBusinessId: isSuperAdmin ? selectedBusinessId : businessId, // Enforce business isolation
-    select: `
-      *,
-      main_branch:main_branch_id(id, name),
-      employee_branch_assignments!inner(
-        branch:branch_id(id, name),
-        role_name,
-        is_active
-      )
-    `
-  });
+  } = useEmployeesData(selectedBusinessId);
 
   if (error) {
     console.error('❌ Critical error loading employees:', error);

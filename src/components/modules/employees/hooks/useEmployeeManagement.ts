@@ -35,14 +35,14 @@ export const useEmployeeManagement = (selectedBusinessId?: string | null) => {
   const { data: employees, isLoading, error, refetch } = useQuery({
     queryKey: ['employees', businessId, searchTerm, selectedBranch, selectedEmployeeType, isArchived, selectedBusinessId],
     queryFn: async (): Promise<Employee[]> => {
-      // For super admin without selected business, return empty array
+      // CRITICAL FIX: For super admin without selected business, return empty array
       if (isSuperAdmin && !businessId) {
         console.log('🔒 Super admin without selected business - returning empty array');
         return [];
       }
 
-      if (!businessId && !isSuperAdmin) {
-        console.log('❌ No business ID and not super admin, returning empty array');
+      if (!businessId) {
+        console.log('❌ No business ID available, returning empty array');
         return [];
       }
 
@@ -66,9 +66,7 @@ export const useEmployeeManagement = (selectedBusinessId?: string | null) => {
         `);
 
       // Apply business filter - CRITICAL for security
-      if (businessId) {
-        query = query.eq('business_id', businessId);
-      }
+      query = query.eq('business_id', businessId);
 
       // Apply archive filter
       query = query.eq('is_archived', isArchived);
@@ -106,7 +104,8 @@ export const useEmployeeManagement = (selectedBusinessId?: string | null) => {
       
       return normalizedEmployees;
     },
-    enabled: !!businessId || (isSuperAdmin && selectedBusinessId === null),
+    // CRITICAL FIX: Only enable when we have a business ID
+    enabled: !!businessId,
   });
 
   return {
