@@ -59,8 +59,8 @@ export interface Employee {
   password_hash?: string | null;
   is_system_user?: boolean;
 
-  // Extended properties from joins
-  main_branch?: { name: string } | null;
+  // Extended properties from joins - Updated to include id
+  main_branch?: { id: string; name: string; address?: string } | null;
   employee_notes?: EmployeeNote[];
   employee_documents?: Array<{
     id: string;
@@ -108,7 +108,7 @@ export const normalizeEmployee = (data: any): Employee => {
     password_hash: data.password_hash || null,
     is_system_user: data.is_system_user ?? false,
 
-    // Extended properties
+    // Extended properties - Updated to include id
     main_branch: data.main_branch || null,
     employee_notes: data.employee_notes || [],
     employee_documents: data.employee_documents || [],
@@ -116,4 +116,3 @@ export const normalizeEmployee = (data: any): Employee => {
     weekly_tokens: data.weekly_tokens || []
   };
 };
-
