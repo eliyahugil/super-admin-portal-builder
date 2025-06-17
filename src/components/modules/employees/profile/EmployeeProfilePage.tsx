@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,7 +34,10 @@ const placeholderEmployee: Employee = {
   username: null,
   password_hash: null,
   is_system_user: false,
-  main_branch: { name: 'סניף מרכזי' },
+  main_branch: { 
+    id: '00000000-0000-0000-0000-000000000000',
+    name: 'סניף מרכזי' 
+  },
   employee_notes: [],
   employee_documents: [],
   branch_assignments: [],
