@@ -6,21 +6,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useBusinessesData } from '@/hooks/useRealData';
 import { useToast } from '@/hooks/use-toast';
 
-interface EnrichedBusiness {
-  id: string;
-  name: string;
-  contact_email?: string;
-  admin_email?: string;
-  contact_phone?: string;
-  description?: string;
-  logo_url?: string;
-  is_active: boolean;
-  created_at: string;
-  employee_count?: number;
-  branches_count?: number;
-  last_activity?: string;
-}
-
 export const useBusinessManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -109,7 +94,7 @@ export const useBusinessManagement = () => {
   // Enrich businesses with employee and branch counts
   const { data: enrichedBusinesses = [] } = useQuery({
     queryKey: ['enriched-businesses', businesses],
-    queryFn: async (): Promise<EnrichedBusiness[]> => {
+    queryFn: async () => {
       if (!businesses.length) {
         console.log('No businesses to enrich');
         return [];
@@ -118,7 +103,7 @@ export const useBusinessManagement = () => {
       console.log('Enriching businesses with counts:', businesses.length);
 
       const enriched = await Promise.all(
-        businesses.map(async (business): Promise<EnrichedBusiness> => {
+        businesses.map(async (business) => {
           try {
             // Get employee count
             const { count: employeeCount } = await supabase
@@ -144,9 +129,6 @@ export const useBusinessManagement = () => {
 
             return {
               ...business,
-              contact_email: business.contact_email,
-              admin_email: business.admin_email,
-              contact_phone: business.contact_phone,
               employee_count: employeeCount || 0,
               branches_count: branchesCount || 0,
               last_activity: lastActivity?.[0]?.updated_at || business.created_at,
@@ -155,9 +137,6 @@ export const useBusinessManagement = () => {
             console.error(`Failed to fetch counts for business ${business.id}:`, err);
             return {
               ...business,
-              contact_email: business.contact_email,
-              admin_email: business.admin_email,
-              contact_phone: business.contact_phone,
               employee_count: 0,
               branches_count: 0,
               last_activity: business.created_at,

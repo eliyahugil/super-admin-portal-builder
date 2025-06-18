@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -39,7 +40,7 @@ interface IntegrationType {
   requires_global_key: boolean;
   requires_business_credentials: boolean;
   is_active: boolean;
-  credential_fields: any[];
+  credential_fields: any;
   created_at: string;
   documentation_url?: string;
 }
@@ -312,7 +313,7 @@ export const SuperAdminIntegrationsDashboard: React.FC = () => {
                 error={integrationsError}
                 emptyMessage="אין אינטגרציות רשומות במערכת"
                 emptyIcon={<Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />}
-                renderItem={(integration: IntegrationType) => (
+                renderItem={(integration: any) => (
                   <div 
                     key={integration.id} 
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"

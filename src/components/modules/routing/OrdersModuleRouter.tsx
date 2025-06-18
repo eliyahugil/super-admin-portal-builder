@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { OrdersManagement } from '../orders/OrdersManagement ';
+import { OrdersManagement } from '../orders/OrdersManagement';
 import { DeliveryManagement } from '../orders/DeliveryManagement';
 import { PickupManagement } from '../orders/PickupManagement';
 
