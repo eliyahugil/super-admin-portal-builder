@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,9 +9,11 @@ import { useToast } from '@/hooks/use-toast';
 interface EnrichedBusiness {
   id: string;
   name: string;
-  contact_email: string;
-  admin_email: string;
-  contact_phone: string;
+  contact_email?: string;
+  admin_email?: string;
+  contact_phone?: string;
+  description?: string;
+  logo_url?: string;
   is_active: boolean;
   created_at: string;
   employee_count?: number;
@@ -141,6 +144,9 @@ export const useBusinessManagement = () => {
 
             return {
               ...business,
+              contact_email: business.contact_email,
+              admin_email: business.admin_email,
+              contact_phone: business.contact_phone,
               employee_count: employeeCount || 0,
               branches_count: branchesCount || 0,
               last_activity: lastActivity?.[0]?.updated_at || business.created_at,
@@ -149,6 +155,9 @@ export const useBusinessManagement = () => {
             console.error(`Failed to fetch counts for business ${business.id}:`, err);
             return {
               ...business,
+              contact_email: business.contact_email,
+              admin_email: business.admin_email,
+              contact_phone: business.contact_phone,
               employee_count: 0,
               branches_count: 0,
               last_activity: business.created_at,

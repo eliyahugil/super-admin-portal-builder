@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,12 +23,20 @@ interface AttendanceRecord {
   } | null;
 }
 
+interface Employee {
+  id: string;
+  first_name: string;
+  last_name: string;
+  employee_id: string;
+  business_id: string;
+}
+
 export const AttendanceList: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const { businessId, isLoading } = useBusiness();
 
-  const { data: employees } = useRealData<any>({
+  const { data: employees } = useRealData<Employee>({
     queryKey: ['employees', businessId],
     tableName: 'employees',
     filters: businessId !== 'super_admin' ? { business_id: businessId } : {},
@@ -44,7 +53,16 @@ export const AttendanceList: React.FC = () => {
     tableName: 'attendance_records',
     filters: attendanceFilters,
     orderBy: { column: 'recorded_at', ascending: false },
-    enabled: !!businessId && !isLoading
+    enabled: !!businessId && !isLoading,
+    select: `
+      id,
+      recorded_at,
+      action,
+      is_valid_location,
+      notes,
+      employee:employees!inner(first_name, last_name, employee_id),
+      branch:branches(name)
+    `
   });
 
   // Filter by date on the frontend since Supabase timestamp filtering is complex
@@ -123,7 +141,7 @@ export const AttendanceList: React.FC = () => {
         error={error}
         emptyMessage="אין רישומי נוכחות לתאריך שנבחר"
         emptyIcon={<Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />}
-        renderItem={(record) => (
+        renderItem={(record: AttendanceRecord) => (
           <div key={record.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">

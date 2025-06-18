@@ -10,7 +10,69 @@ interface Business {
   logo_url?: string;
   is_active: boolean;
   created_at: string;
+  contact_email?: string;
+  admin_email?: string;
+  contact_phone?: string;
 }
+
+// Generic useRealData hook for fetching data from any table
+export const useRealData = <T = any>({
+  queryKey,
+  tableName,
+  filters = {},
+  orderBy,
+  enabled = true,
+  enforceBusinessFilter = false,
+  select = '*',
+}: {
+  queryKey: string[];
+  tableName: string;
+  filters?: Record<string, any>;
+  orderBy?: { column: string; ascending: boolean };
+  enabled?: boolean;
+  enforceBusinessFilter?: boolean;
+  select?: string;
+}) => {
+  const { profile } = useAuth();
+
+  return useQuery({
+    queryKey,
+    queryFn: async (): Promise<T[]> => {
+      console.log(`🔍 useRealData - Querying ${tableName}...`);
+      
+      if (!enabled) {
+        return [];
+      }
+
+      let query = supabase.from(tableName).select(select);
+
+      // Apply filters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          query = query.eq(key, value);
+        }
+      });
+
+      // Apply ordering
+      if (orderBy) {
+        query = query.order(orderBy.column, { ascending: orderBy.ascending });
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error(`❌ Error querying ${tableName}:`, error);
+        throw error;
+      }
+
+      console.log(`✅ ${tableName} data fetched:`, data?.length || 0);
+      return (data as T[]) || [];
+    },
+    enabled: enabled && !!profile,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false,
+  });
+};
 
 // Hook לשליפת נתוני העסקים
 export const useBusinessesData = () => {
@@ -32,7 +94,7 @@ export const useBusinessesData = () => {
         
         const { data, error } = await supabase
           .from('businesses')
-          .select('id, name, description, logo_url, is_active, created_at')
+          .select('id, name, description, logo_url, is_active, created_at, contact_email, admin_email, contact_phone')
           .eq('is_active', true)
           .order('name', { ascending: true });
 
@@ -57,7 +119,10 @@ export const useBusinessesData = () => {
             description,
             logo_url,
             is_active,
-            created_at
+            created_at,
+            contact_email,
+            admin_email,
+            contact_phone
           )
         `)
         .eq('user_id', profile.id)
@@ -76,5 +141,58 @@ export const useBusinessesData = () => {
     enabled: !!profile,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     refetchOnWindowFocus: false,
+  });
+};
+
+// Hook for integrations data
+export const useIntegrationsData = () => {
+  return useQuery({
+    queryKey: ['supported-integrations'],
+    queryFn: async () => {
+      console.log('🔗 Fetching supported integrations...');
+      
+      const { data, error } = await supabase
+        .from('supported_integrations')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_name', { ascending: true });
+
+      if (error) {
+        console.error('❌ Error fetching integrations:', error);
+        throw error;
+      }
+
+      console.log('✅ Integrations fetched:', data?.length || 0);
+      return data || [];
+    },
+    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+  });
+};
+
+// Hook for business integrations data
+export const useBusinessIntegrationsData = (businessId?: string) => {
+  return useQuery({
+    queryKey: ['business-integrations', businessId],
+    queryFn: async () => {
+      if (!businessId) return [];
+      
+      console.log('🏢 Fetching business integrations for:', businessId);
+      
+      const { data, error } = await supabase
+        .from('business_integrations')
+        .select('*')
+        .eq('business_id', businessId)
+        .order('display_name', { ascending: true });
+
+      if (error) {
+        console.error('❌ Error fetching business integrations:', error);
+        throw error;
+      }
+
+      console.log('✅ Business integrations fetched:', data?.length || 0);
+      return data || [];
+    },
+    enabled: !!businessId,
+    staleTime: 5 * 60 * 1000,
   });
 };
