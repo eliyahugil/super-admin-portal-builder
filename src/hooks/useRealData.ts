@@ -44,21 +44,15 @@ export const useRealData = <T = any>({
         return [];
       }
 
-      let query = supabase.from(tableName).select(select);
-
-      // Apply filters
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          query = query.eq(key, value);
-        }
+      // Use the RPC function for dynamic table queries
+      const { data, error } = await supabase.rpc('select_from_table', {
+        table_name: tableName,
+        select_clause: select,
+        where_clause: Object.entries(filters)
+          .filter(([key, value]) => value !== undefined && value !== null && value !== '')
+          .map(([key, value]) => `${key} = '${value}'`)
+          .join(' AND ') || null
       });
-
-      // Apply ordering
-      if (orderBy) {
-        query = query.order(orderBy.column, { ascending: orderBy.ascending });
-      }
-
-      const { data, error } = await query;
 
       if (error) {
         console.error(`❌ Error querying ${tableName}:`, error);

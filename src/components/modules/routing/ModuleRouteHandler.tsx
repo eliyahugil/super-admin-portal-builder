@@ -9,6 +9,7 @@ import { ShiftsModuleRouter } from './ShiftsModuleRouter';
 import { CustomersModuleRouter } from './CustomersModuleRouter';
 import { IntegrationsModuleRouter } from './IntegrationsModuleRouter';
 import { BusinessModuleRouter } from './BusinessModuleRouter';
+import { OrdersModuleRouter } from './OrdersModuleRouter';
 import { DefaultModuleRouter } from './DefaultModuleRouter';
 
 interface ModuleRouteHandlerProps {
@@ -26,6 +27,8 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
   const [main, ...restArr] = fullRoute.split('/');
   const route = restArr.join('/');
 
+  console.log('🔀 ModuleRouteHandler - Processing:', { main, route, fullRoute });
+
   switch (main) {
     case 'employees':
       return <EmployeesModuleRouter route={route} employeeId={employeeId} businessId={businessId} />;
@@ -39,9 +42,10 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
       return <CustomersModuleRouter route={route} />;
     case 'integrations':
       return <IntegrationsModuleRouter route={route} />;
+    case 'orders':
+      return <OrdersModuleRouter route={route} />;
     case 'finance':
     case 'inventory':
-    case 'orders':
     case 'projects':
       return <BusinessModuleRouter route={main} />;
     default:

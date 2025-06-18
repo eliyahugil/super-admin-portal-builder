@@ -10,12 +10,13 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { useBusinessSelection } from '@/hooks/useBusinessSelection';
 import { BusinessSelector } from '@/components/shared/BusinessSelector';
 import { useOrdersData } from './hooks/useOrdersData';
+import { CreateOrderDialog } from './CreateOrderDialog';
 
 export const OrdersManagement: React.FC = () => {
   const { isSuperAdmin } = useCurrentBusiness();
   const { profile } = useAuth();
   const { selectedBusinessId, setSelectedBusinessId } = useBusinessSelection();
-  const { data: ordersData = [], isLoading } = useOrdersData(selectedBusinessId);
+  const { data: ordersData = [], isLoading, refetch } = useOrdersData(selectedBusinessId);
 
   console.log('🛒 OrdersManagement - Current state:', {
     selectedBusinessId,
@@ -62,8 +63,16 @@ export const OrdersManagement: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto p-6" dir="rtl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">ניהול הזמנות</h1>
-        <p className="text-gray-600 mt-2">עקוב ונהל את כל ההזמנות</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">ניהול הזמנות</h1>
+            <p className="text-gray-600 mt-2">עקוב ונהל את כל ההזמנות</p>
+          </div>
+          
+          {(selectedBusinessId || !isSuperAdmin) && (
+            <CreateOrderDialog onOrderCreated={refetch} />
+          )}
+        </div>
         
         {isSuperAdmin && (
           <div className="mt-4">
