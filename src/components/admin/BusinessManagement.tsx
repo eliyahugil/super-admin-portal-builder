@@ -7,6 +7,22 @@ import { BusinessFilters } from './business-management/BusinessFilters';
 import { BusinessList } from './business-management/BusinessList';
 import { useBusinessManagement } from './business-management/useBusinessManagement';
 
+// Updated interface to match the actual data structure from the database
+interface EnrichedBusiness {
+  id: string;
+  name: string;
+  contact_email?: string;  // Optional to match database schema
+  admin_email?: string;    // Optional to match database schema
+  contact_phone?: string;  // Optional to match database schema
+  description?: string;
+  logo_url?: string;
+  is_active: boolean;
+  created_at: string;
+  employee_count?: number;
+  branches_count?: number;
+  last_activity?: string;
+}
+
 export const BusinessManagement: React.FC = () => {
   const { profile } = useAuth();
   const {

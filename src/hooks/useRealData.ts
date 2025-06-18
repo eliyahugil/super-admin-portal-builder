@@ -59,8 +59,12 @@ export const useRealData = <T = any>({
         throw error;
       }
 
-      console.log(`✅ ${tableName} data fetched:`, data?.length || 0);
-      return (data as T[]) || [];
+      // Safely handle the Json type - check if it's an array before accessing length
+      const resultLength = Array.isArray(data) ? data.length : (data ? 1 : 0);
+      console.log(`✅ ${tableName} data fetched:`, resultLength);
+      
+      // Return empty array if data is null/undefined, otherwise ensure it's an array
+      return Array.isArray(data) ? (data as T[]) : (data ? [data as T] : []);
     },
     enabled: enabled && !!profile,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
