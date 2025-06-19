@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/auth/AuthContext';
 
 export interface GoogleCalendarIntegration {
   id: string;
@@ -48,6 +49,7 @@ export interface GoogleCalendarEvent {
 export function useGoogleCalendar(businessId?: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: integrations, isLoading: integrationsLoading } = useQuery({
     queryKey: ['google-calendar-integrations', businessId],
@@ -110,13 +112,25 @@ export function useGoogleCalendar(businessId?: string) {
   });
 
   const saveIntegration = useMutation({
-    mutationFn: async (integration: Partial<GoogleCalendarIntegration>) => {
+    mutationFn: async (integration: Partial<GoogleCalendarIntegration> & { 
+      google_calendar_id: string; 
+      calendar_name: string; 
+    }) => {
       if (!businessId) throw new Error('Business ID is required');
 
       if (integration.id) {
         const { data, error } = await supabase
           .from('google_calendar_integrations')
-          .update(integration)
+          .update({
+            google_calendar_id: integration.google_calendar_id,
+            calendar_name: integration.calendar_name,
+            calendar_description: integration.calendar_description,
+            sync_enabled: integration.sync_enabled,
+            sync_direction: integration.sync_direction,
+            sync_status: integration.sync_status,
+            sync_error_message: integration.sync_error_message,
+            updated_at: new Date().toISOString(),
+          })
           .eq('id', integration.id)
           .select();
 
@@ -126,8 +140,14 @@ export function useGoogleCalendar(businessId?: string) {
         const { data, error } = await supabase
           .from('google_calendar_integrations')
           .insert({
-            ...integration,
             business_id: businessId,
+            google_calendar_id: integration.google_calendar_id,
+            calendar_name: integration.calendar_name,
+            calendar_description: integration.calendar_description,
+            sync_enabled: integration.sync_enabled ?? true,
+            sync_direction: integration.sync_direction ?? 'bidirectional',
+            sync_status: integration.sync_status ?? 'active',
+            created_by: user?.id,
           })
           .select();
 
@@ -153,14 +173,22 @@ export function useGoogleCalendar(businessId?: string) {
   });
 
   const saveOAuthToken = useMutation({
-    mutationFn: async (token: Partial<GoogleOAuthToken>) => {
+    mutationFn: async (token: Partial<GoogleOAuthToken> & { 
+      access_token: string; 
+    }) => {
       if (!businessId) throw new Error('Business ID is required');
+      if (!user?.id) throw new Error('User ID is required');
 
       const { data, error } = await supabase
         .from('google_oauth_tokens')
         .upsert({
-          ...token,
           business_id: businessId,
+          user_id: user.id,
+          access_token: token.access_token,
+          refresh_token: token.refresh_token,
+          token_expires_at: token.token_expires_at,
+          scope: token.scope ?? 'https://www.googleapis.com/auth/calendar',
+          updated_at: new Date().toISOString(),
         }, { 
           onConflict: 'business_id,user_id'
         })
