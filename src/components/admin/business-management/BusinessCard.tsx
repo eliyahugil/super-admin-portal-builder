@@ -7,9 +7,11 @@ import { Eye, Settings, Edit, CheckCircle, XCircle, Trash2 } from 'lucide-react'
 interface EnrichedBusiness {
   id: string;
   name: string;
-  contact_email: string;
-  admin_email: string;
-  contact_phone: string;
+  contact_email?: string;  // Optional to match database schema
+  admin_email?: string;    // Optional to match database schema
+  contact_phone?: string;  // Optional to match database schema
+  description?: string;
+  logo_url?: string;
   is_active: boolean;
   created_at: string;
   employee_count?: number;
@@ -70,7 +72,7 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
               <div>
-                <p><strong>אימייל יצירת קשר:</strong> {business.contact_email || business.admin_email}</p>
+                <p><strong>אימייל יצירת קשר:</strong> {business.contact_email || business.admin_email || 'לא צוין'}</p>
                 <p><strong>טלפון:</strong> {business.contact_phone || 'לא צוין'}</p>
               </div>
               <div>

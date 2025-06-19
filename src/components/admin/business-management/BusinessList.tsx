@@ -7,9 +7,11 @@ import { BusinessCard } from './BusinessCard';
 interface EnrichedBusiness {
   id: string;
   name: string;
-  contact_email: string;
-  admin_email: string;
-  contact_phone: string;
+  contact_email?: string;  // Optional to match database schema
+  admin_email?: string;    // Optional to match database schema
+  contact_phone?: string;  // Optional to match database schema
+  description?: string;
+  logo_url?: string;
   is_active: boolean;
   created_at: string;
   employee_count?: number;
