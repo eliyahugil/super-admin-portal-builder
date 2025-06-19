@@ -8,15 +8,19 @@ import { MainSidebar } from '@/components/layout/MainSidebar';
 import { SupportedIntegrationsList } from './SupportedIntegrationsList';
 import { BusinessIntegrationsList } from './BusinessIntegrationsList';
 import { GlobalIntegrationsAdmin } from './GlobalIntegrationsAdmin';
+import { GoogleServicesIntegration } from './GoogleServicesIntegration';
+import { GoogleDataDashboard } from './GoogleDataDashboard';
 import { ModuleConfigDashboard } from '../config/ModuleConfigDashboard';
 import { useBusiness } from '@/hooks/useBusiness';
-import { Settings, Crown } from 'lucide-react';
+import { Settings, Crown, Google } from 'lucide-react';
 
 export const IntegrationManagement: React.FC = () => {
   const { isSuperAdmin, businessId } = useBusiness();
-  const [activeTab, setActiveTab] = useState('available');
+  const [activeTab, setActiveTab] = useState('google');
 
   const tabs = [
+    { value: 'google', label: 'Google Services', show: !!businessId },
+    { value: 'dashboard', label: 'דשבורד נתונים', show: !!businessId },
     { value: 'available', label: 'אינטגרציות זמינות', show: true },
     { value: 'business', label: 'האינטגרציות שלי', show: !!businessId },
     { value: 'modules', label: 'מודולים', show: true },
@@ -58,11 +62,47 @@ export const IntegrationManagement: React.FC = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className={`grid w-full grid-cols-${tabs.length}`}>
                 {tabs.map(tab => (
-                  <TabsTrigger key={tab.value} value={tab.value}>
+                  <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-2">
+                    {tab.value === 'google' && <Google className="h-4 w-4" />}
                     {tab.label}
                   </TabsTrigger>
                 ))}
               </TabsList>
+
+              {businessId && (
+                <>
+                  <TabsContent value="google">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Google className="h-5 w-5" />
+                          שירותי Google
+                        </CardTitle>
+                        <CardDescription>
+                          אינטגרציה מקיפה עם כל שירותי Google
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <GoogleServicesIntegration businessId={businessId} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="dashboard">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>דשבורד נתונים מGoogle</CardTitle>
+                        <CardDescription>
+                          צפייה ומעקב אחר כל הנתונים המסונכרנים
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <GoogleDataDashboard businessId={businessId} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </>
+              )}
 
               <TabsContent value="available">
                 <Card>
