@@ -1921,6 +1921,263 @@ export type Database = {
         }
         Relationships: []
       }
+      google_calendar_events: {
+        Row: {
+          attendees: Json | null
+          branch_id: string | null
+          business_id: string
+          created_at: string
+          description: string | null
+          employee_id: string | null
+          end_time: string
+          google_calendar_id: string
+          google_event_id: string
+          google_updated_at: string | null
+          id: string
+          is_all_day: boolean
+          last_synced_at: string
+          location: string | null
+          start_time: string
+          status: string
+          sync_direction: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          attendees?: Json | null
+          branch_id?: string | null
+          business_id: string
+          created_at?: string
+          description?: string | null
+          employee_id?: string | null
+          end_time: string
+          google_calendar_id: string
+          google_event_id: string
+          google_updated_at?: string | null
+          id?: string
+          is_all_day?: boolean
+          last_synced_at?: string
+          location?: string | null
+          start_time: string
+          status?: string
+          sync_direction?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          attendees?: Json | null
+          branch_id?: string | null
+          business_id?: string
+          created_at?: string
+          description?: string | null
+          employee_id?: string | null
+          end_time?: string
+          google_calendar_id?: string
+          google_event_id?: string
+          google_updated_at?: string | null
+          id?: string
+          is_all_day?: boolean
+          last_synced_at?: string
+          location?: string | null
+          start_time?: string
+          status?: string
+          sync_direction?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_calendar_events_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_calendar_events_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_calendar_events_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_calendar_integrations: {
+        Row: {
+          business_id: string
+          calendar_description: string | null
+          calendar_name: string
+          created_at: string
+          created_by: string | null
+          google_calendar_id: string
+          id: string
+          last_sync_at: string | null
+          sync_direction: string
+          sync_enabled: boolean
+          sync_error_message: string | null
+          sync_status: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          calendar_description?: string | null
+          calendar_name: string
+          created_at?: string
+          created_by?: string | null
+          google_calendar_id: string
+          id?: string
+          last_sync_at?: string | null
+          sync_direction?: string
+          sync_enabled?: boolean
+          sync_error_message?: string | null
+          sync_status?: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          calendar_description?: string | null
+          calendar_name?: string
+          created_at?: string
+          created_by?: string | null
+          google_calendar_id?: string
+          id?: string
+          last_sync_at?: string | null
+          sync_direction?: string
+          sync_enabled?: boolean
+          sync_error_message?: string | null
+          sync_status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_calendar_integrations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_calendar_sync_logs: {
+        Row: {
+          business_id: string
+          completed_at: string | null
+          created_by: string | null
+          error_message: string | null
+          events_created: number | null
+          events_deleted: number | null
+          events_processed: number | null
+          events_updated: number | null
+          id: string
+          integration_id: string | null
+          started_at: string
+          status: string
+          sync_direction: string
+          sync_duration_ms: number | null
+          sync_type: string
+        }
+        Insert: {
+          business_id: string
+          completed_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          events_created?: number | null
+          events_deleted?: number | null
+          events_processed?: number | null
+          events_updated?: number | null
+          id?: string
+          integration_id?: string | null
+          started_at?: string
+          status: string
+          sync_direction: string
+          sync_duration_ms?: number | null
+          sync_type: string
+        }
+        Update: {
+          business_id?: string
+          completed_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          events_created?: number | null
+          events_deleted?: number | null
+          events_processed?: number | null
+          events_updated?: number | null
+          id?: string
+          integration_id?: string | null
+          started_at?: string
+          status?: string
+          sync_direction?: string
+          sync_duration_ms?: number | null
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_calendar_sync_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_calendar_sync_logs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "google_calendar_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_oauth_tokens: {
+        Row: {
+          access_token: string
+          business_id: string
+          created_at: string
+          id: string
+          refresh_token: string | null
+          scope: string
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          business_id: string
+          created_at?: string
+          id?: string
+          refresh_token?: string | null
+          scope?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          business_id?: string
+          created_at?: string
+          id?: string
+          refresh_token?: string | null
+          scope?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_oauth_tokens_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_audit_log: {
         Row: {
           action: string

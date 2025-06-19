@@ -1,4 +1,3 @@
-
 export { DynamicIntegrationForm } from './DynamicIntegrationForm';
 export { IntegrationFailureNotifications } from './IntegrationFailureNotifications';
 export { IntegrationViewModeToggle } from './IntegrationViewModeToggle';
@@ -14,3 +13,6 @@ export { IntegrationControls } from './IntegrationControls';
 export { IntegrationActions } from './IntegrationActions';
 export { IntegrationTestButton } from './IntegrationTestButton';
 export { IntegrationPermissionControl } from './IntegrationPermissionControl';
+export { GoogleCalendarIntegration } from './GoogleCalendarIntegration';
+export { GoogleOAuthSetup } from './GoogleOAuthSetup';
+export { GoogleCalendarEventsList } from './GoogleCalendarEventsList';
