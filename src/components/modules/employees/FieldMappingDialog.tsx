@@ -43,6 +43,8 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
     handleConfirm,
     reapplyAutoMapping,
     clearAllMappings,
+    removeUnmappedFields,
+    toggleFieldMapping,
   } = useFieldMappingLogic({ 
     systemFields,
     fileColumns
@@ -52,6 +54,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   const autoMappedCount = mappings.filter(m => m.mappedColumns.length > 0).length;
   const totalRequiredFields = mappings.filter(m => isSystemFieldRequired(m.systemField)).length;
   const mappedRequiredFields = mappings.filter(m => isSystemFieldRequired(m.systemField) && m.mappedColumns.length > 0).length;
+  const customFieldsCount = mappings.filter(m => m.isCustomField).length;
 
   const handleFloatingMenuFix = (systemField: string, newColumn: string) => {
     handleMappingChange(systemField, newColumn);
@@ -78,6 +81,9 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
             <div className="text-sm text-gray-600 space-y-1">
               <p>זוהו אוטומטית {autoMappedCount} שדות מתוך {mappings.length}</p>
               <p>שדות חובה ממופים: {mappedRequiredFields}/{totalRequiredFields}</p>
+              {customFieldsCount > 0 && (
+                <p className="text-blue-600">✨ נוספו {customFieldsCount} שדות מותאמים מהקובץ</p>
+              )}
               {autoMappedCount > 0 && (
                 <p className="text-green-600">✅ המיפוי האוטומטי זיהה בהצלחה חלק מהשדות</p>
               )}
@@ -87,7 +93,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
                 onClick={handleOpenFloatingMenu}
                 className="mt-2"
               >
-                פתח תפריט מיפוי מהיר
+                פתח תפריט ניהול מיפוי
               </Button>
             </div>
           </DialogHeader>
@@ -142,6 +148,8 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
         mappings={mappings}
         onReapplyAutoMapping={reapplyAutoMapping}
         onClearAllMappings={clearAllMappings}
+        onRemoveUnmappedFields={removeUnmappedFields}
+        onToggleFieldMapping={toggleFieldMapping}
         onFixMapping={handleFloatingMenuFix}
         fileColumns={fileColumns}
         isOpen={isFloatingMenuOpen}

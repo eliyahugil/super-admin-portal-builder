@@ -25,22 +25,26 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
   // Auto-detect mappings when file columns are available
   useEffect(() => {
     if (fileColumns.length > 0) {
-      applyAutoMappings();
+      applyAutoMappingsAndAddUnmapped();
     }
   }, [fileColumns, autoDetectMappings]);
 
-  const applyAutoMappings = () => {
-    console.log('🚀 Auto-detecting field mappings for file columns:', fileColumns);
+  const applyAutoMappingsAndAddUnmapped = () => {
+    console.log('🚀 Auto-detecting field mappings and adding unmapped columns:', fileColumns);
     
     const autoMappings = autoDetectMappings(fileColumns);
     console.log('🎯 Auto-detection found mappings:', autoMappings);
+    
+    // Track which columns were mapped
+    const mappedColumns = new Set<string>();
     
     if (autoMappings.length > 0) {
       setMappings(prev => {
         const updatedMappings = prev.map(mapping => {
           const autoMapping = autoMappings.find(auto => auto.systemField === mapping.systemField);
-          if (autoMapping) {
+          if (autoMapping && autoMapping.mappedColumns.length > 0) {
             console.log(`✅ Applied auto-mapping: ${mapping.systemField} ← ${autoMapping.mappedColumns[0]}`);
+            mappedColumns.add(autoMapping.mappedColumns[0]);
             return {
               ...mapping,
               mappedColumns: autoMapping.mappedColumns,
@@ -49,18 +53,33 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
           return mapping;
         });
         
-        console.log('📋 Final mappings after auto-detection:', updatedMappings.map(m => 
-          `${m.systemField}: ${m.mappedColumns.length > 0 ? m.mappedColumns[0] : 'not mapped'}`
-        ));
+        // Add unmapped columns as custom fields
+        const unmappedColumns = fileColumns.filter(column => !mappedColumns.has(column));
+        const customFieldMappings: FieldMapping[] = unmappedColumns.map((column, index) => ({
+          id: `custom-${column}-${Date.now()}-${index}`,
+          systemField: `custom_${column.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase()}`,
+          mappedColumns: [column],
+          isRequired: false,
+          label: `שדה מותאם: ${column}`,
+          isCustomField: true,
+        }));
+
+        console.log(`📋 Added ${customFieldMappings.length} unmapped columns as custom fields:`, 
+          customFieldMappings.map(m => m.label));
         
-        return updatedMappings;
+        const finalMappings = [...updatedMappings, ...customFieldMappings];
+        
+        console.log('📋 Final mappings after auto-detection and custom field addition:', 
+          finalMappings.map(m => `${m.systemField}: ${m.mappedColumns.length > 0 ? m.mappedColumns[0] : 'not mapped'}`));
+        
+        return finalMappings;
       });
     }
   };
 
   const reapplyAutoMapping = () => {
-    console.log('🔄 Reapplying auto-mapping...');
-    applyAutoMappings();
+    console.log('🔄 Reapplying auto-mapping and adding unmapped fields...');
+    applyAutoMappingsAndAddUnmapped();
   };
 
   const clearAllMappings = () => {
@@ -69,6 +88,26 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
       ...mapping,
       mappedColumns: [],
     })));
+  };
+
+  const removeUnmappedFields = () => {
+    console.log('🗑️ Removing unmapped fields...');
+    setMappings(prev => prev.filter(mapping => 
+      mapping.mappedColumns.length > 0 || mapping.isRequired
+    ));
+  };
+
+  const toggleFieldMapping = (mappingId: string) => {
+    console.log('🔄 Toggling field mapping:', mappingId);
+    setMappings(prev => prev.map(mapping => {
+      if (mapping.id === mappingId) {
+        return {
+          ...mapping,
+          mappedColumns: mapping.mappedColumns.length > 0 ? [] : [mapping.systemField]
+        };
+      }
+      return mapping;
+    }));
   };
 
   const handleMappingChange = (systemField: string, selectedColumn: string) => {
@@ -134,5 +173,7 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
     handleConfirm,
     reapplyAutoMapping,
     clearAllMappings,
+    removeUnmappedFields,
+    toggleFieldMapping,
   };
 };
