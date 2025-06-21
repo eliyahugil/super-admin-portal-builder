@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CustomFieldCreationSectionProps {
   onAddCustomField: (mapping: FieldMapping) => void;
@@ -20,6 +22,7 @@ interface CustomFieldCreationSectionProps {
 export const CustomFieldCreationSection: React.FC<CustomFieldCreationSectionProps> = ({
   onAddCustomField,
 }) => {
+  const isMobile = useIsMobile();
   const [customFieldName, setCustomFieldName] = useState('');
   const [customFieldType, setCustomFieldType] = useState('text');
 
@@ -44,23 +47,30 @@ export const CustomFieldCreationSection: React.FC<CustomFieldCreationSectionProp
   return (
     <Card className="border-blue-200 bg-blue-50">
       <CardHeader>
-        <CardTitle className="text-blue-900">יצירת שדה מותאם אישית</CardTitle>
+        <CardTitle className={`text-blue-900 ${isMobile ? 'text-base' : 'text-lg'}`}>
+          יצירת שדה מותאם אישית
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="custom-field-name">שם השדה</Label>
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'} gap-4`}>
+          <div className={`${isMobile ? 'col-span-1' : 'col-span-1'}`}>
+            <Label htmlFor="custom-field-name" className={`${isMobile ? 'text-sm' : ''}`}>
+              שם השדה
+            </Label>
             <Input
               id="custom-field-name"
               value={customFieldName}
               onChange={(e) => setCustomFieldName(e.target.value)}
               placeholder="לדוגמה: מחלקה"
+              className={`${isMobile ? 'text-sm' : ''}`}
             />
           </div>
-          <div>
-            <Label htmlFor="custom-field-type">סוג השדה</Label>
+          <div className={`${isMobile ? 'col-span-1' : 'col-span-1'}`}>
+            <Label htmlFor="custom-field-type" className={`${isMobile ? 'text-sm' : ''}`}>
+              סוג השדה
+            </Label>
             <Select value={customFieldType} onValueChange={setCustomFieldType}>
-              <SelectTrigger>
+              <SelectTrigger className={`${isMobile ? 'text-sm' : ''}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -71,19 +81,19 @@ export const CustomFieldCreationSection: React.FC<CustomFieldCreationSectionProp
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end">
+          <div className={`${isMobile ? 'col-span-1 mt-2' : 'flex items-end'}`}>
             <Button
               type="button"
               onClick={handleAddCustomField}
               disabled={!customFieldName.trim()}
-              className="w-full"
+              className={`w-full ${isMobile ? 'text-sm' : ''}`}
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} mr-2`} />
               הוסף שדה
             </Button>
           </div>
         </div>
-        <p className="text-sm text-blue-700">
+        <p className={`text-blue-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>
           שדות מותאמים אישית יישמרו במסד הנתונים ויהיו זמינים לעריכה בפרופיל העובד
         </p>
       </CardContent>

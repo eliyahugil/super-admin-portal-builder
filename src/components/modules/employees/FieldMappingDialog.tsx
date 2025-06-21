@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, GripVertical, X, ArrowUp, ArrowDown } from 'lucide-react';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 import { CustomFieldCreationSection } from './CustomFieldCreationSection';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FieldMappingDialogProps {
   open: boolean;
@@ -44,6 +45,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   onConfirm,
   systemFields = defaultSystemFields,
 }) => {
+  const isMobile = useIsMobile();
   const [mappings, setMappings] = useState<FieldMapping[]>(() => {
     return systemFields.map((field, index) => ({
       id: `mapping-${field.value}-${Date.now()}-${index}`,
@@ -107,100 +109,179 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={`max-w-6xl ${isMobile ? 'max-h-[95vh] w-[95vw] m-2' : 'max-h-[90vh]'} overflow-y-auto`}>
         <DialogHeader>
-          <DialogTitle>מיפוי שדות - התאמת עמודות האקסל לשדות המערכת</DialogTitle>
+          <DialogTitle className={`${isMobile ? 'text-base' : 'text-lg'}`}>
+            מיפוי שדות - התאמת עמודות האקסל לשדות המערכת
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {/* Custom Field Creation Section */}
           <CustomFieldCreationSection onAddCustomField={handleAddCustomField} />
 
           {/* Field Mapping Section */}
           <Card>
             <CardHeader>
-              <CardTitle>התאמת שדות</CardTitle>
-              <p className="text-sm text-gray-600">
+              <CardTitle className={`${isMobile ? 'text-base' : 'text-lg'}`}>התאמת שדות</CardTitle>
+              <p className={`text-gray-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                 ניתן לגרור כדי לשנות סדר, להוסיף שדות מותאמים, ולהסיר שדות לא נחוצים
               </p>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {mappings.map((mapping, index) => (
-                  <div key={mapping.id} className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50">
-                    {/* Drag Handle */}
-                    <div className="flex flex-col gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleMoveMapping(mapping.id, 'up')}
-                        disabled={index === 0}
-                        className="h-6 w-6 p-0"
-                      >
-                        <ArrowUp className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleMoveMapping(mapping.id, 'down')}
-                        disabled={index === mappings.length - 1}
-                        className="h-6 w-6 p-0"
-                      >
-                        <ArrowDown className="h-3 w-3" />
-                      </Button>
-                    </div>
+                  <div key={mapping.id} className={`${isMobile ? 'flex-col' : 'flex items-center'} gap-3 p-3 border rounded-lg bg-gray-50`}>
+                    {/* Mobile: Stack vertically, Desktop: Horizontal layout */}
+                    {isMobile ? (
+                      <>
+                        {/* System Field - Mobile */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium">
+                              {mapping.isCustomField ? mapping.label : getSystemFieldLabel(mapping.systemField)}
+                            </label>
+                            {mapping.isCustomField && (
+                              <Badge variant="secondary" className="text-xs">מותאם אישית</Badge>
+                            )}
+                            {!mapping.isCustomField && isSystemFieldRequired(mapping.systemField) && (
+                              <Badge variant="destructive" className="text-xs">חובה</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleMoveMapping(mapping.id, 'up')}
+                              disabled={index === 0}
+                              className="h-8 w-8 p-0"
+                            >
+                              <ArrowUp className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleMoveMapping(mapping.id, 'down')}
+                              disabled={index === mappings.length - 1}
+                              className="h-8 w-8 p-0"
+                            >
+                              <ArrowDown className="h-3 w-3" />
+                            </Button>
+                            {mapping.isCustomField && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveMapping(mapping.id)}
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
 
-                    {/* System Field */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <label className="text-sm font-medium">
-                          {mapping.isCustomField ? mapping.label : getSystemFieldLabel(mapping.systemField)}
-                        </label>
+                        {/* File Column Selection - Mobile */}
+                        <div className="w-full">
+                          <div className="text-xs text-gray-500 mb-2">עמודה מהקובץ ←</div>
+                          <Select
+                            value={mapping.mappedColumns[0] || 'none'}
+                            onValueChange={(value) => handleMappingChange(mapping.systemField, value)}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="בחר עמודה מהקובץ" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">ללא מיפוי</SelectItem>
+                              {fileColumns.map((column) => (
+                                <SelectItem key={column} value={column}>
+                                  {column}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Desktop Layout */}
+                        {/* Drag Handle */}
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleMoveMapping(mapping.id, 'up')}
+                            disabled={index === 0}
+                            className="h-6 w-6 p-0"
+                          >
+                            <ArrowUp className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleMoveMapping(mapping.id, 'down')}
+                            disabled={index === mappings.length - 1}
+                            className="h-6 w-6 p-0"
+                          >
+                            <ArrowDown className="h-3 w-3" />
+                          </Button>
+                        </div>
+
+                        {/* System Field */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <label className="text-sm font-medium truncate">
+                              {mapping.isCustomField ? mapping.label : getSystemFieldLabel(mapping.systemField)}
+                            </label>
+                            {mapping.isCustomField && (
+                              <Badge variant="secondary" className="text-xs flex-shrink-0">מותאם אישית</Badge>
+                            )}
+                            {!mapping.isCustomField && isSystemFieldRequired(mapping.systemField) && (
+                              <Badge variant="destructive" className="text-xs flex-shrink-0">חובה</Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="text-gray-400 mx-2 flex-shrink-0">←</div>
+
+                        {/* File Column Selection */}
+                        <div className="flex-1 min-w-0">
+                          <Select
+                            value={mapping.mappedColumns[0] || 'none'}
+                            onValueChange={(value) => handleMappingChange(mapping.systemField, value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="בחר עמודה מהקובץ" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">ללא מיפוי</SelectItem>
+                              {fileColumns.map((column) => (
+                                <SelectItem key={column} value={column}>
+                                  {column}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Remove Button - only for custom fields */}
                         {mapping.isCustomField && (
-                          <Badge variant="secondary" className="text-xs">מותאם אישית</Badge>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveMapping(mapping.id)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         )}
-                        {!mapping.isCustomField && isSystemFieldRequired(mapping.systemField) && (
-                          <Badge variant="destructive" className="text-xs">חובה</Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Arrow */}
-                    <div className="text-gray-400 mx-2">←</div>
-
-                    {/* File Column Selection */}
-                    <div className="flex-1">
-                      <Select
-                        value={mapping.mappedColumns[0] || 'none'}
-                        onValueChange={(value) => handleMappingChange(mapping.systemField, value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="בחר עמודה מהקובץ" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">ללא מיפוי</SelectItem>
-                          {fileColumns.map((column) => (
-                            <SelectItem key={column} value={column}>
-                              {column}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Remove Button - only for custom fields */}
-                    {mapping.isCustomField && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveMapping(mapping.id)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      </>
                     )}
                   </div>
                 ))}
@@ -212,28 +293,34 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
           {sampleData.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>תצוגה מקדימה של הנתונים</CardTitle>
+                <CardTitle className={`${isMobile ? 'text-base' : 'text-lg'}`}>תצוגה מקדימה של הנתונים</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        {fileColumns.map((column) => (
-                          <TableHead key={column} className="min-w-[120px]">
+                        {fileColumns.slice(0, isMobile ? 3 : fileColumns.length).map((column) => (
+                          <TableHead key={column} className={`${isMobile ? 'min-w-[80px] text-xs' : 'min-w-[120px]'}`}>
                             {column}
                           </TableHead>
                         ))}
+                        {isMobile && fileColumns.length > 3 && (
+                          <TableHead className="min-w-[60px] text-xs">...</TableHead>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {sampleData.slice(0, 3).map((row, index) => (
+                      {sampleData.slice(0, isMobile ? 2 : 3).map((row, index) => (
                         <TableRow key={index}>
-                          {fileColumns.map((column) => (
-                            <TableCell key={column} className="max-w-[200px] truncate">
+                          {fileColumns.slice(0, isMobile ? 3 : fileColumns.length).map((column) => (
+                            <TableCell key={column} className={`${isMobile ? 'max-w-[80px] text-xs' : 'max-w-[200px]'} truncate`}>
                               {row[column] || '-'}
                             </TableCell>
                           ))}
+                          {isMobile && fileColumns.length > 3 && (
+                            <TableCell className="text-xs">...</TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -244,13 +331,14 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className={`${isMobile ? 'flex-col gap-2' : 'flex-row'}`}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className={`${isMobile ? 'w-full' : ''}`}>
             ביטול
           </Button>
           <Button 
             onClick={handleConfirm} 
             disabled={!hasRequiredMappings}
+            className={`${isMobile ? 'w-full' : ''}`}
           >
             המשך לתצוגה מקדימה
           </Button>
