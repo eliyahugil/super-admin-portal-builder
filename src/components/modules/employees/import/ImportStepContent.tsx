@@ -29,7 +29,8 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
     previewData,
     executeImport,
     importResult,
-    resetForm
+    resetForm,
+    setStep
   } = importHook;
 
   console.log('📊 ImportStepContent state:', {
@@ -50,6 +51,12 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
     } catch (error) {
       console.error('❌ ImportStepContent - executeImport failed:', error);
     }
+  };
+
+  const handleBackToMapping = () => {
+    console.log('🔙 Going back to mapping step');
+    setShowMappingDialog(true);
+    setStep('mapping');
   };
 
   switch (step) {
@@ -81,6 +88,7 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
           previewData={previewData}
           onConfirm={handleExecuteImport}
           onCancel={resetForm}
+          onBack={handleBackToMapping}
         />
       );
 

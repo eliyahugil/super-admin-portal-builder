@@ -1,178 +1,205 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, XCircle, AlertTriangle, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import type { PreviewEmployee } from '@/hooks/useEmployeeImport/types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ImportPreviewProps {
   previewData: PreviewEmployee[];
   onConfirm: () => void;
   onCancel: () => void;
+  onBack?: () => void;
 }
 
 export const ImportPreview: React.FC<ImportPreviewProps> = ({
   previewData,
   onConfirm,
-  onCancel
+  onCancel,
+  onBack,
 }) => {
-  console.log('👁️ ImportPreview rendered with data:', {
-    total: previewData.length,
-    sample: previewData.slice(0, 2),
-    onConfirmType: typeof onConfirm,
-    onCancelType: typeof onCancel
-  });
+  const isMobile = useIsMobile();
 
-  const validEmployees = previewData.filter(emp => emp.isValid);
+  const validEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate);
   const invalidEmployees = previewData.filter(emp => !emp.isValid);
   const duplicateEmployees = previewData.filter(emp => emp.isDuplicate);
 
-  console.log('📊 ImportPreview statistics:', {
-    valid: validEmployees.length,
-    invalid: invalidEmployees.length,
-    duplicates: duplicateEmployees.length
-  });
-
-  const getEmployeeTypeLabel = (type: string) => {
-    const types: Record<string, string> = {
-      permanent: 'קבוע',
-      temporary: 'זמני',
-      youth: 'נוער',
-      contractor: 'קבלן',
-    };
-    return types[type] || type;
-  };
-
-  const handleConfirm = async () => {
-    console.log('✅ ImportPreview - Confirm button clicked, calling onConfirm');
-    console.log('🔍 onConfirm function details:', {
-      type: typeof onConfirm,
-      isFunction: typeof onConfirm === 'function',
-      functionString: onConfirm.toString()
-    });
-    
-    if (typeof onConfirm === 'function') {
-      try {
-        await onConfirm();
-        console.log('✅ ImportPreview - onConfirm executed successfully');
-      } catch (error) {
-        console.error('❌ ImportPreview - onConfirm failed:', error);
-      }
-    } else {
-      console.error('❌ ImportPreview - onConfirm is not a function!');
+  const getStatusIcon = (employee: PreviewEmployee) => {
+    if (!employee.isValid) {
+      return <XCircle className="h-4 w-4 text-red-500" />;
     }
+    if (employee.isDuplicate) {
+      return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+    }
+    return <CheckCircle className="h-4 w-4 text-green-500" />;
   };
 
-  const handleCancel = () => {
-    console.log('❌ ImportPreview - Cancel button clicked');
-    onCancel();
+  const getStatusBadge = (employee: PreviewEmployee) => {
+    if (!employee.isValid) {
+      return <Badge variant="destructive">שגיאה</Badge>;
+    }
+    if (employee.isDuplicate) {
+      return <Badge variant="secondary">כפול</Badge>;
+    }
+    return <Badge variant="default" className="bg-green-500">תקין</Badge>;
   };
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-green-600">{validEmployees.length}</div>
-            <div className="text-sm text-gray-600">עובדים תקינים</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 text-center">
-            <XCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-red-600">{invalidEmployees.length}</div>
-            <div className="text-sm text-gray-600">עובדים עם שגיאות</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 text-center">
-            <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-yellow-600">{duplicateEmployees.length}</div>
-            <div className="text-sm text-gray-600">עובדים כפולים</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {invalidEmployees.length > 0 && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            נמצאו {invalidEmployees.length} שגיאות בולידציה. אנא תקן את השגיאות לפני ההמשך.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {duplicateEmployees.length > 0 && (
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            נמצאו {duplicateEmployees.length} עובדים כפולים. הם לא ייובאו.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">תצוגה מקדימה של העובדים</h3>
-        
-        <div className="max-h-96 overflow-y-auto space-y-2">
-          {previewData.map((employee, index) => (
-            <Card key={index} className={employee.isValid ? 'border-green-200' : 'border-red-200'}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <User className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <div className="font-medium">
-                        {employee.first_name} {employee.last_name}
-                      </div>
-                      <div className="text-sm text-gray-600 space-x-2">
-                        {employee.email && <span>{employee.email}</span>}
-                        {employee.phone && <span>• {employee.phone}</span>}
-                        {employee.employee_id && <span>• מספר עובד: {employee.employee_id}</span>}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Badge variant={employee.isValid ? "default" : "destructive"}>
-                      {getEmployeeTypeLabel(employee.employee_type)}
-                    </Badge>
-                    {employee.isValid ? (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-red-500" />
-                    )}
-                  </div>
-                </div>
-                
-                {!employee.isValid && employee.validationErrors && (
-                  <div className="mt-2 text-sm text-red-600">
-                    {employee.validationErrors.join(', ')}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+      {/* Header with Back Button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              חזור למיפוי
+            </Button>
+          )}
+          <h2 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>
+            תצוגה מקדימה - {previewData.length} עובדים
+          </h2>
         </div>
       </div>
 
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={handleCancel}>
+      {/* Statistics Cards */}
+      <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-4`}>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="text-sm text-gray-600">עובדים תקינים</p>
+                <p className="text-2xl font-bold text-green-600">{validEmployees.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-500" />
+              <div>
+                <p className="text-sm text-gray-600">עובדים כפולים</p>
+                <p className="text-2xl font-bold text-yellow-600">{duplicateEmployees.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-red-500" />
+              <div>
+                <p className="text-sm text-gray-600">עובדים עם שגיאות</p>
+                <p className="text-2xl font-bold text-red-600">{invalidEmployees.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Preview Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className={`${isMobile ? 'text-base' : 'text-lg'}`}>
+            תצוגה מקדימה של העובדים
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-16">סטטוס</TableHead>
+                  <TableHead>שם מלא</TableHead>
+                  <TableHead>אימייל</TableHead>
+                  <TableHead>טלפון</TableHead>
+                  <TableHead>סוג עובד</TableHead>
+                  <TableHead>בעיות</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {previewData.slice(0, 10).map((employee, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(employee)}
+                        {getStatusBadge(employee)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {employee.first_name} {employee.last_name}
+                    </TableCell>
+                    <TableCell>{employee.email || '-'}</TableCell>
+                    <TableCell>{employee.phone || '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {employee.employee_type === 'permanent' ? 'קבוע' : 
+                         employee.employee_type === 'temporary' ? 'זמני' : 
+                         employee.employee_type === 'contractor' ? 'קבלן' : 
+                         employee.employee_type === 'youth' ? 'נוער' : 'לא ידוע'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {employee.validationErrors && employee.validationErrors.length > 0 && (
+                        <div className="text-sm text-red-600">
+                          {employee.validationErrors.slice(0, 2).map((error, idx) => (
+                            <div key={idx}>• {error}</div>
+                          ))}
+                          {employee.validationErrors.length > 2 && (
+                            <div>ועוד {employee.validationErrors.length - 2} בעיות...</div>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          
+          {previewData.length > 10 && (
+            <div className="text-sm text-gray-500 mt-4 text-center">
+              מציג 10 עובדים ראשונים מתוך {previewData.length}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Action Buttons */}
+      <div className={`flex ${isMobile ? 'flex-col gap-2' : 'flex-row gap-4 justify-end'}`}>
+        <Button 
+          variant="outline" 
+          onClick={onCancel}
+          className={`${isMobile ? 'w-full' : ''}`}
+        >
           ביטול
         </Button>
         <Button 
-          onClick={handleConfirm}
+          onClick={onConfirm}
           disabled={validEmployees.length === 0}
-          className="bg-blue-600 hover:bg-blue-700"
+          className={`${isMobile ? 'w-full' : ''}`}
         >
-          ייבא {validEmployees.length} עובדים
+          יבא {validEmployees.length} עובדים תקינים
         </Button>
       </div>
+
+      {validEmployees.length === 0 && (
+        <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+          <AlertCircle className="h-6 w-6 text-yellow-600 mx-auto mb-2" />
+          <p className="text-yellow-800">אין עובדים תקינים לייבוא. אנא תקן את השגיאות ונסה שוב.</p>
+        </div>
+      )}
     </div>
   );
 };
