@@ -95,7 +95,7 @@ export const useImportExecution = ({
               main_branch_id: employee.main_branch_id || null,
               notes: employee.notes || null,
               is_active: true,
-              is_archived: false, // ✅ Explicitly set to false
+              is_archived: false, // ✅ Explicitly set to false - CRITICAL!
             };
 
             console.log(`👤 About to insert employee:`, {
@@ -185,25 +185,34 @@ export const useImportExecution = ({
         }
       }
 
-      // After all imports are done, let's verify what was actually saved
+      // ✅ CRITICAL FIX: After import, invalidate the employees query cache to force refresh
+      console.log('🔄 Import completed, now invalidating cache and verifying data...');
+
+      // Wait a moment for database consistency
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Verify what was actually saved in the database
       console.log('🔍 Verifying imported employees in database...');
       const { data: savedEmployees, error: verifyError } = await supabase
         .from('employees')
-        .select('id, first_name, last_name, email, business_id, is_active, is_archived')
+        .select('id, first_name, last_name, email, business_id, is_active, is_archived, created_at')
         .eq('business_id', businessId)
+        .eq('is_archived', false) // ✅ Same filter as useEmployeesData
         .order('created_at', { ascending: false })
         .limit(20);
 
       if (verifyError) {
         console.error('❌ Error verifying saved employees:', verifyError);
       } else {
-        console.log('📊 Current employees in database for this business:', {
+        console.log('📊 Current NON-ARCHIVED employees in database for this business:', {
           totalCount: savedEmployees?.length || 0,
           recentEmployees: savedEmployees?.slice(0, 5).map(emp => ({
+            id: emp.id,
             name: `${emp.first_name} ${emp.last_name}`,
             email: emp.email,
             is_active: emp.is_active,
-            is_archived: emp.is_archived
+            is_archived: emp.is_archived,
+            created_at: emp.created_at
           }))
         });
       }

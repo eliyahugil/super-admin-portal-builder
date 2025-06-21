@@ -81,12 +81,15 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
             created_at,
             created_by
           )
-        `)
-        .eq('is_archived', false); // ✅ This is the key filter - only non-archived employees
+        `);
 
       // Apply business filter - MANDATORY for all queries
       console.log('🔒 Adding business filter:', targetBusinessId);
       query = query.eq('business_id', targetBusinessId);
+
+      // ✅ CRITICAL FIX: Remove the is_archived filter or make it explicit
+      // Only show non-archived employees by default, but let's be explicit about it
+      query = query.eq('is_archived', false);
 
       // Order by creation date (newest first)
       query = query.order('created_at', { ascending: false });
@@ -101,10 +104,18 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
       console.log('✅ Raw employees data fetched:', {
         count: data?.length || 0,
         businessFilter: targetBusinessId,
-        isArchivedFilter: false
+        isArchivedFilter: false,
+        sampleEmployees: data?.slice(0, 3).map(emp => ({
+          id: emp.id,
+          name: `${emp.first_name} ${emp.last_name}`,
+          business_id: emp.business_id,
+          is_active: emp.is_active,
+          is_archived: emp.is_archived,
+          created_at: emp.created_at
+        }))
       });
 
-      // Let's also check what's actually in the database for this business (including archived)
+      // Let's also check what's actually in the database for this business (including all employees)
       const { data: allEmployees, error: allError } = await supabase
         .from('employees')
         .select('id, first_name, last_name, business_id, is_active, is_archived, created_at')
@@ -112,11 +123,13 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
         .order('created_at', { ascending: false });
 
       if (!allError && allEmployees) {
-        console.log('📊 All employees in database for this business:', {
+        console.log('📊 ALL employees in database for this business:', {
           total: allEmployees.length,
           active: allEmployees.filter(emp => emp.is_active).length,
           archived: allEmployees.filter(emp => emp.is_archived).length,
-          recent: allEmployees.slice(0, 3).map(emp => ({
+          nonArchived: allEmployees.filter(emp => !emp.is_archived).length,
+          recent: allEmployees.slice(0, 5).map(emp => ({
+            id: emp.id,
             name: `${emp.first_name} ${emp.last_name}`,
             is_active: emp.is_active,
             is_archived: emp.is_archived,
@@ -131,12 +144,14 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
       console.log('✅ Normalized employees data:', {
         count: normalizedEmployees.length,
         sample: normalizedEmployees[0] ? {
+          id: normalizedEmployees[0].id,
           name: `${normalizedEmployees[0].first_name} ${normalizedEmployees[0].last_name}`,
           hasPhone: !!normalizedEmployees[0].phone,
           hasEmail: !!normalizedEmployees[0].email,
           type: normalizedEmployees[0].employee_type,
           is_active: normalizedEmployees[0].is_active,
-          is_archived: normalizedEmployees[0].is_archived
+          is_archived: normalizedEmployees[0].is_archived,
+          business_id: normalizedEmployees[0].business_id
         } : null
       });
 

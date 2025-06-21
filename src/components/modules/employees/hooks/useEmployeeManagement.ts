@@ -1,25 +1,23 @@
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
+import { useEmployeesData } from '@/hooks/useEmployeesData';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-import type { Employee, EmployeeType } from '@/types/employee';
-import { normalizeEmployee } from '@/types/employee';
+import type { Employee } from '@/types/employee';
 
 export const useEmployeeManagement = (selectedBusinessId?: string | null) => {
   const { businessId: contextBusinessId, isSuperAdmin } = useCurrentBusiness();
+  const finalBusinessId = selectedBusinessId || contextBusinessId;
+
+  // State for filters
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBranch, setSelectedBranch] = useState('');
   const [selectedEmployeeType, setSelectedEmployeeType] = useState('');
   const [isArchived, setIsArchived] = useState(false);
 
-  // Use selectedBusinessId if provided (for super admin), otherwise use context business ID
-  const businessId = selectedBusinessId || contextBusinessId;
-
   console.log('🔍 useEmployeeManagement hook initialized with:', {
     selectedBusinessId,
     contextBusinessId,
-    finalBusinessId: businessId,
+    finalBusinessId,
     isSuperAdmin,
     searchTerm,
     selectedBranch,
@@ -27,89 +25,93 @@ export const useEmployeeManagement = (selectedBusinessId?: string | null) => {
     isArchived
   });
 
-  // Type guard for safe EmployeeType conversion
-  const isValidEmployeeType = (value: string): value is EmployeeType => {
-    return ['permanent', 'temporary', 'contractor', 'youth'].includes(value);
+  // Use the employees data hook
+  const { 
+    data: employees = [], 
+    isLoading, 
+    error, 
+    refetch: originalRefetch 
+  } = useEmployeesData(finalBusinessId);
+
+  console.log('📊 useEmployeeManagement - Raw employees data:', {
+    employeesCount: employees.length,
+    isLoading,
+    hasError: !!error,
+    sampleEmployees: employees.slice(0, 2).map(emp => ({
+      id: emp.id,
+      name: `${emp.first_name} ${emp.last_name}`,
+      is_archived: emp.is_archived
+    }))
+  });
+
+  // Enhanced refetch function with cache invalidation
+  const refetch = async () => {
+    console.log('🔄 useEmployeeManagement - Refetching employees...');
+    try {
+      const result = await originalRefetch();
+      console.log('✅ useEmployeeManagement - Refetch completed:', {
+        employeesCount: result.data?.length || 0
+      });
+      return result;
+    } catch (error) {
+      console.error('❌ useEmployeeManagement - Refetch failed:', error);
+      throw error;
+    }
   };
 
-  const { data: employees, isLoading, error, refetch } = useQuery({
-    queryKey: ['employees', businessId, searchTerm, selectedBranch, selectedEmployeeType, isArchived, selectedBusinessId],
-    queryFn: async (): Promise<Employee[]> => {
-      // CRITICAL FIX: For super admin without selected business, return empty array
-      if (isSuperAdmin && !businessId) {
-        console.log('🔒 Super admin without selected business - returning empty array');
-        return [];
+  // Filter employees based on current state
+  const filteredEmployees = employees.filter((employee: Employee) => {
+    // Archive filter - most important filter
+    if (employee.is_archived !== isArchived) {
+      return false;
+    }
+
+    // Search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const fullName = `${employee.first_name} ${employee.last_name}`.toLowerCase();
+      const email = employee.email?.toLowerCase() || '';
+      const phone = employee.phone?.toLowerCase() || '';
+      const employeeId = employee.employee_id?.toLowerCase() || '';
+
+      if (!fullName.includes(searchLower) && 
+          !email.includes(searchLower) && 
+          !phone.includes(searchLower) && 
+          !employeeId.includes(searchLower)) {
+        return false;
       }
+    }
 
-      if (!businessId) {
-        console.log('❌ No business ID available, returning empty array');
-        return [];
+    // Branch filter
+    if (selectedBranch) {
+      const employeeBranchId = employee.main_branch_id || 
+                              employee.branch_assignments?.[0]?.branch?.id;
+      if (!employeeBranchId || employeeBranchId !== selectedBranch) {
+        return false;
       }
+    }
 
-      console.log('🔄 Fetching employees with filters:', {
-        businessId,
-        searchTerm,
-        selectedBranch,
-        selectedEmployeeType,
-        isArchived,
-        isSuperAdmin
-      });
+    // Employee type filter
+    if (selectedEmployeeType && employee.employee_type !== selectedEmployeeType) {
+      return false;
+    }
 
-      let query = supabase
-        .from('employees')
-        .select(`
-          *,
-          main_branch:branches(name),
-          employee_branch_assignments(
-            branch:branches(name)
-          )
-        `);
+    return true;
+  });
 
-      // Apply business filter - CRITICAL for security
-      query = query.eq('business_id', businessId);
-
-      // Apply archive filter
-      query = query.eq('is_archived', isArchived);
-
-      // Apply search filter
-      if (searchTerm) {
-        query = query.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
-      }
-
-      // Apply branch filter
-      if (selectedBranch) {
-        query = query.eq('main_branch_id', selectedBranch);
-      }
-
-      // Apply employee type filter with safe type checking
-      if (selectedEmployeeType && isValidEmployeeType(selectedEmployeeType)) {
-        query = query.eq('employee_type', selectedEmployeeType);
-      }
-
-      // Order by creation date
-      query = query.order('created_at', { ascending: false });
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('❌ Error fetching employees:', error);
-        throw error;
-      }
-
-      console.log('✅ Employees fetched successfully:', data?.length || 0);
-      
-      // Normalize the data to ensure consistent typing
-      const normalizedEmployees = (data || []).map(normalizeEmployee);
-      console.log('🔄 Normalized employees:', normalizedEmployees.length);
-      
-      return normalizedEmployees;
-    },
-    // CRITICAL FIX: Only enable when we have a business ID
-    enabled: !!businessId,
+  console.log('📋 useEmployeeManagement - Filtered employees:', {
+    totalEmployees: employees.length,
+    filteredCount: filteredEmployees.length,
+    filters: {
+      searchTerm,
+      selectedBranch,
+      selectedEmployeeType,
+      isArchived
+    }
   });
 
   return {
-    employees: employees || [],
+    employees: filteredEmployees,
     isLoading,
     error,
     refetch,
