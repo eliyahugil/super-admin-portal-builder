@@ -1,17 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, ArrowLeft, CheckCircle, Info } from 'lucide-react';
-import { FieldMappingList } from './field-mapping/FieldMappingList';
-import { DataPreviewTable } from './field-mapping/DataPreviewTable';
-import { FieldMappingPreview } from './FieldMappingPreview';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { FieldMappingDialogHeader } from './field-mapping/FieldMappingDialogHeader';
+import { FieldMappingDialogTabs } from './field-mapping/FieldMappingDialogTabs';
+import { FieldMappingDialogFooter } from './field-mapping/FieldMappingDialogFooter';
 import { useFieldMappingLogic } from './field-mapping/useFieldMappingLogic';
 import { useFieldMappingAutoDetection } from './hooks/useFieldMappingAutoDetection';
-import { FloatingAutoMappingMenu } from './field-mapping/FloatingAutoMappingMenu';
 import { SYSTEM_FIELDS } from '@/constants/systemFields';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
@@ -108,147 +102,40 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
     }
   };
 
-  // Convert mappings to simple format for DataPreviewTable
-  const simpleMappings = mappings.map(mapping => ({
-    systemField: mapping.systemField,
-    mappedColumns: mapping.mappedColumns
-  }));
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-0">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl">מיפוי שדות לייבוא</DialogTitle>
-            <div className="flex items-center gap-2">
-              {hasAutoDetections && (
-                <FloatingAutoMappingMenu
-                  onApplyAutoMapping={reapplyAutoMapping}
-                  onClearMappings={clearAllMappings}
-                  onRemoveUnmapped={removeUnmappedFields}
-                  hasAutoDetections={hasAutoDetections}
-                  mappedCount={mappings.filter(m => m.mappedColumns.length > 0).length}
-                  totalColumns={fileColumns.length}
-                />
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBack}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                חזור
-              </Button>
-            </div>
-          </div>
-        </DialogHeader>
+        <FieldMappingDialogHeader
+          hasAutoDetections={hasAutoDetections}
+          mappedCount={mappings.filter(m => m.mappedColumns.length > 0).length}
+          totalColumns={fileColumns.length}
+          onApplyAutoMapping={reapplyAutoMapping}
+          onClearMappings={clearAllMappings}
+          onRemoveUnmapped={removeUnmappedFields}
+          onBack={handleBack}
+        />
 
-        <div className="flex-1 overflow-hidden">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="mx-6 mb-4">
-              <TabsTrigger value="mapping" className="flex items-center gap-2">
-                <span>מיפוי שדות</span>
-                {mappings.length > 0 && (
-                  <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                    {mappings.length}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="preview" className="flex items-center gap-2">
-                <span>תצוגה מקדימה</span>
-              </TabsTrigger>
-              <TabsTrigger value="data" className="flex items-center gap-2">
-                <span>נתוני הקובץ</span>
-              </TabsTrigger>
-            </TabsList>
+        <FieldMappingDialogTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          mappings={mappings}
+          fileColumns={fileColumns}
+          sampleData={sampleData}
+          systemFields={[...systemFields]}
+          validationErrors={validationErrors}
+          unmappedColumns={unmappedColumns}
+          onUpdateMapping={updateMapping}
+          onRemoveMapping={removeMapping}
+          onAddSystemField={handleAddSystemField}
+        />
 
-            <div className="flex-1 overflow-hidden px-6">
-              <TabsContent value="mapping" className="h-full mt-0">
-                <ScrollArea className="h-full">
-                  <div className="space-y-4 pb-6">
-                    {validationErrors.length > 0 && (
-                      <Alert className="bg-red-50 border-red-200">
-                        <AlertTriangle className="h-4 w-4 text-red-600" />
-                        <AlertDescription className="text-red-800">
-                          <ul className="list-disc list-inside space-y-1">
-                            {validationErrors.map((error, index) => (
-                              <li key={index}>{error}</li>
-                            ))}
-                          </ul>
-                        </AlertDescription>
-                      </Alert>
-                    )}
-
-                    {unmappedColumns.length > 0 && (
-                      <Alert className="bg-yellow-50 border-yellow-200">
-                        <Info className="h-4 w-4 text-yellow-600" />
-                        <AlertDescription className="text-yellow-800">
-                          יש {unmappedColumns.length} עמודות שלא מופו: {unmappedColumns.join(', ')}
-                        </AlertDescription>
-                      </Alert>
-                    )}
-
-                    <FieldMappingList
-                      mappings={mappings}
-                      fileColumns={fileColumns}
-                      systemFields={[...systemFields]}
-                      onUpdateMapping={updateMapping}
-                      onRemoveMapping={removeMapping}
-                      onAddSystemField={handleAddSystemField}
-                    />
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="preview" className="h-full mt-0">
-                <ScrollArea className="h-full">
-                  <div className="pb-6">
-                    <FieldMappingPreview
-                      mappings={mappings}
-                      sampleData={sampleData}
-                      systemFields={[...systemFields]}
-                    />
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="data" className="h-full mt-0">
-                <ScrollArea className="h-full">
-                  <div className="pb-6">
-                    <DataPreviewTable
-                      fileColumns={fileColumns}
-                      sampleData={sampleData}
-                      mappings={simpleMappings}
-                    />
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-            </div>
-          </Tabs>
-        </div>
-
-        <div className="border-t p-6 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
-            {mappings.filter(m => m.mappedColumns.length > 0).length} שדות ממופים מתוך {fileColumns.length} עמודות
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-            >
-              ביטול
-            </Button>
-            <Button
-              onClick={handleConfirm}
-              disabled={!canProceed}
-              className="flex items-center gap-2"
-            >
-              <CheckCircle className="h-4 w-4" />
-              המשך לתצוגה מקדימה
-            </Button>
-          </div>
-        </div>
+        <FieldMappingDialogFooter
+          mappings={mappings}
+          fileColumns={fileColumns}
+          canProceed={canProceed}
+          onBack={handleBack}
+          onConfirm={handleConfirm}
+        />
       </DialogContent>
     </Dialog>
   );
