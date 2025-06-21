@@ -10,7 +10,7 @@ import type { ImportResult } from '@/hooks/useEmployeeImport/types';
 interface ImportResultsProps {
   result: ImportResult | null;
   onClose: () => void;
-  onBackToMapping?: () => void; // הוספת פרופ חדש
+  onBackToMapping?: () => void;
 }
 
 export const ImportResults: React.FC<ImportResultsProps> = ({
@@ -167,13 +167,13 @@ export const ImportResults: React.FC<ImportResultsProps> = ({
           <Button
             variant="outline"
             onClick={onBackToMapping}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100"
           >
             <RefreshCw className="h-4 w-4" />
             נסה שוב עם מיפוי מתוקן
           </Button>
         )}
-        <Button onClick={onClose}>
+        <Button onClick={onClose} className="bg-blue-600 hover:bg-blue-700">
           סגור
         </Button>
       </div>

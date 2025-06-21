@@ -41,9 +41,25 @@ export const useFieldMapping = ({
     }
 
     try {
+      // Get the headers from the first row if it exists
+      let headers: string[] = [];
+      if (rawData.length > 0) {
+        const firstRow = rawData[0];
+        if (Array.isArray(firstRow)) {
+          // If it's an array, we need to find the headers
+          // Usually headers are passed separately, but let's try to handle this case
+          headers = firstRow.map((_, index) => `Column ${index + 1}`);
+        } else if (typeof firstRow === 'object') {
+          headers = Object.keys(firstRow);
+        }
+      }
+
+      console.log('📋 Headers detected:', headers);
+
       // Process the raw data with the field mappings
       const previewData: PreviewEmployee[] = rawData.map((row, index) => {
         console.log(`📋 Processing row ${index + 1}:`, {
+          rowType: Array.isArray(row) ? 'array' : typeof row,
           rowData: Array.isArray(row) ? `Array with ${row.length} items` : Object.keys(row),
           firstFewValues: Array.isArray(row) ? row.slice(0, 5) : row
         });
@@ -62,13 +78,20 @@ export const useFieldMapping = ({
             
             let fieldValue;
             if (Array.isArray(row)) {
-              // For array-based data, find the column index
-              const headers = Object.keys(rawData[0] || {});
+              // For array-based data, find the column index by name
               const columnIndex = headers.findIndex(h => h === columnName);
-              if (columnIndex >= 0) {
+              if (columnIndex >= 0 && columnIndex < row.length) {
                 fieldValue = row[columnIndex];
+              } else {
+                // Try to find by exact match in the first few rows
+                const possibleIndex = rawData[0] && Array.isArray(rawData[0]) 
+                  ? rawData[0].findIndex((val, idx) => String(val).trim() === columnName)
+                  : -1;
+                if (possibleIndex >= 0) {
+                  fieldValue = row[possibleIndex];
+                }
               }
-            } else {
+            } else if (typeof row === 'object' && row !== null) {
               // For object-based data
               fieldValue = row[columnName];
             }

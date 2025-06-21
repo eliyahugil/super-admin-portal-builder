@@ -58,8 +58,13 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   };
 
   const handleDirectImport = () => {
-    // Skip preview and go directly to import
+    console.log('🚀 Direct import initiated with mappings:', mappings.filter(m => m.mappedColumns.length > 0));
     handleConfirm(onConfirm);
+  };
+
+  const handleOpenFloatingMenu = () => {
+    console.log('🎯 Opening floating menu, current state:', isFloatingMenuOpen);
+    setIsFloatingMenuOpen(true);
   };
 
   return (
@@ -79,7 +84,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setIsFloatingMenuOpen(true)}
+                onClick={handleOpenFloatingMenu}
                 className="mt-2"
               >
                 פתח תפריט מיפוי מהיר
@@ -133,17 +138,15 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
       </Dialog>
 
       {/* Floating Auto-Mapping Menu */}
-      {open && (
-        <FloatingAutoMappingMenu
-          mappings={mappings}
-          onReapplyAutoMapping={reapplyAutoMapping}
-          onClearAllMappings={clearAllMappings}
-          onFixMapping={handleFloatingMenuFix}
-          fileColumns={fileColumns}
-          isOpen={isFloatingMenuOpen}
-          onToggle={() => setIsFloatingMenuOpen(!isFloatingMenuOpen)}
-        />
-      )}
+      <FloatingAutoMappingMenu
+        mappings={mappings}
+        onReapplyAutoMapping={reapplyAutoMapping}
+        onClearAllMappings={clearAllMappings}
+        onFixMapping={handleFloatingMenuFix}
+        fileColumns={fileColumns}
+        isOpen={isFloatingMenuOpen}
+        onToggle={() => setIsFloatingMenuOpen(!isFloatingMenuOpen)}
+      />
     </>
   );
 };
