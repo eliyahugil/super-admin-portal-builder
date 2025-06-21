@@ -21,19 +21,29 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
     searchTerm,
     setSearchTerm,
     selectedEmployees,
-    filteredEmployees,
+    paginatedEmployees,
     loading,
     handleSelectEmployee,
     handleSelectAll,
     handleDeleteEmployee,
     handleBulkDelete,
+    // Pagination props
+    currentPage,
+    totalPages,
+    totalEmployees,
+    pageSize,
+    handlePageSizeChange,
+    handlePageChange,
   } = useEmployeeListLogic(employees, onRefetch);
 
   console.log('📋 EmployeesList rendering with:', {
     employeesCount: employees.length,
     searchTerm,
     selectedCount: selectedEmployees.size,
-    branchesCount: branches.length
+    branchesCount: branches.length,
+    currentPage,
+    pageSize,
+    totalEmployees
   });
 
   return (
@@ -47,7 +57,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
       />
 
       <EmployeeListContent
-        employees={filteredEmployees}
+        employees={paginatedEmployees}
         searchTerm={searchTerm}
         selectedEmployees={selectedEmployees}
         onSelectEmployee={handleSelectEmployee}
@@ -55,7 +65,12 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
         onDeleteEmployee={handleDeleteEmployee}
         onRefetch={onRefetch}
         loading={loading}
-        totalEmployees={employees.length}
+        totalEmployees={totalEmployees}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
       />
     </div>
   );

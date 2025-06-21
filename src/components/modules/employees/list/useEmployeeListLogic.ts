@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 import type { Employee } from '@/types/employee';
+import { useEmployeeListPagination } from './useEmployeeListPagination';
 
 export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => void) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -12,20 +13,18 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
   const { toast } = useToast();
   const { logActivity } = useActivityLogger();
 
-  // Filter employees based on search term
-  const filteredEmployees = employees.filter((employee) => {
-    const searchLower = searchTerm.toLowerCase();
-    const fullName = `${employee.first_name} ${employee.last_name}`.toLowerCase();
-    const employeeId = employee.employee_id?.toLowerCase() || '';
-    const phone = employee.phone?.toLowerCase() || '';
-    const email = employee.email?.toLowerCase() || '';
-
-    return (
-      fullName.includes(searchLower) ||
-      employeeId.includes(searchLower) ||
-      phone.includes(searchLower) ||
-      email.includes(searchLower)
-    );
+  // Use pagination hook
+  const {
+    paginatedEmployees,
+    currentPage,
+    totalPages,
+    totalEmployees,
+    pageSize,
+    handlePageSizeChange,
+    handlePageChange,
+  } = useEmployeeListPagination({
+    employees,
+    searchTerm,
   });
 
   const handleSelectEmployee = (employeeId: string, checked: boolean) => {
@@ -41,9 +40,9 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allIds = new Set(filteredEmployees.map(emp => emp.id));
+      const allIds = new Set(paginatedEmployees.map(emp => emp.id));
       setSelectedEmployees(allIds);
-      console.log('✅ Selected all employees:', allIds.size);
+      console.log('✅ Selected all employees on current page:', allIds.size);
     } else {
       setSelectedEmployees(new Set());
       console.log('❌ Deselected all employees');
@@ -146,11 +145,18 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     searchTerm,
     setSearchTerm,
     selectedEmployees,
-    filteredEmployees,
+    paginatedEmployees,
     loading,
     handleSelectEmployee,
     handleSelectAll,
     handleDeleteEmployee,
     handleBulkDelete,
+    // Pagination props
+    currentPage,
+    totalPages,
+    totalEmployees,
+    pageSize,
+    handlePageSizeChange,
+    handlePageChange,
   };
 };

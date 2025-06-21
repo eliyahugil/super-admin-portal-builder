@@ -46,7 +46,8 @@ export const useFieldMapping = ({
         console.log(`📋 Processing row ${index + 1}:`, {
           rowType: Array.isArray(row) ? 'array' : typeof row,
           rowLength: Array.isArray(row) ? row.length : Object.keys(row || {}).length,
-          sampleData: Array.isArray(row) ? row.slice(0, 3) : Object.entries(row || {}).slice(0, 3)
+          sampleData: Array.isArray(row) ? row.slice(0, 3) : Object.entries(row || {}).slice(0, 3),
+          fullRow: row
         });
         
         const employee: any = {
@@ -63,20 +64,23 @@ export const useFieldMapping = ({
             
             let fieldValue;
             if (Array.isArray(row)) {
-              // For array-based data, find the column by index
-              const columnIndex = parseInt(columnName.replace('Column ', '')) - 1;
-              if (columnIndex >= 0 && columnIndex < row.length) {
+              // For array-based data, map by column index
+              const columnIndex = parseInt(columnName.replace(/[^\d]/g, ''));
+              if (!isNaN(columnIndex) && columnIndex >= 0 && columnIndex < row.length) {
                 fieldValue = row[columnIndex];
               } else {
-                // Try to find by exact column name match
-                fieldValue = row[columnName];
+                // Try to find by exact column name match in array
+                const headerIndex = rawData[0]?.indexOf(columnName);
+                if (headerIndex >= 0 && headerIndex < row.length) {
+                  fieldValue = row[headerIndex];
+                }
               }
             } else if (typeof row === 'object' && row !== null) {
               // For object-based data
               fieldValue = row[columnName];
             }
             
-            console.log(`🗺️ Mapping ${mapping.systemField} <- column "${columnName}" = "${fieldValue}"`);
+            console.log(`🗺️ Mapping ${mapping.systemField} <- column "${columnName}" (index/key) = "${fieldValue}"`);
             
             if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
               const cleanValue = String(fieldValue).trim();
@@ -104,7 +108,7 @@ export const useFieldMapping = ({
           employee.employee_type = 'permanent';
         }
 
-        // Basic validation - הוריד את הדרישה לשם פרטי ושם משפחה כחובה
+        // Basic validation - more flexible approach
         const validationErrors = [];
         
         // רק אם יש שם פרטי אבל הוא ריק
@@ -158,12 +162,13 @@ export const useFieldMapping = ({
           delete employee.main_branch_name;
         }
 
-        // הוריד את הדרישה לשדות חובה - כל עובד עם לפחות שדה אחד יהיה תקין
+        // Check if we have at least some basic employee data
         const hasAnyData = Object.keys(employee).some(key => 
           key !== 'business_id' && 
           key !== 'isValid' && 
           key !== 'isDuplicate' && 
           key !== 'validationErrors' &&
+          key !== 'employee_type' &&
           employee[key] !== undefined && 
           employee[key] !== null && 
           String(employee[key]).trim() !== ''
@@ -185,9 +190,12 @@ export const useFieldMapping = ({
           isDuplicate: employee.isDuplicate,
           errorsCount: employee.validationErrors?.length || 0,
           errors: employee.validationErrors,
-          sampleFields: Object.keys(employee).filter(k => 
-            !['business_id', 'isValid', 'isDuplicate', 'validationErrors'].includes(k)
-          ).slice(0, 5)
+          employeeData: {
+            first_name: employee.first_name,
+            last_name: employee.last_name,
+            email: employee.email,
+            phone: employee.phone
+          }
         });
 
         return employee as PreviewEmployee;
