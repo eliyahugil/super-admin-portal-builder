@@ -5,8 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Upload, Download } from 'lucide-react';
 import { ImportManager } from '../ImportManager';
 
-export const ImportToolsCard: React.FC = () => {
-  console.log('🔧 ImportToolsCard rendering');
+interface ImportToolsCardProps {
+  selectedBusinessId?: string | null;
+}
+
+export const ImportToolsCard: React.FC<ImportToolsCardProps> = ({ selectedBusinessId }) => {
+  console.log('🔧 ImportToolsCard rendering with selectedBusinessId:', selectedBusinessId);
   
   return (
     <Card>
@@ -21,7 +25,7 @@ export const ImportToolsCard: React.FC = () => {
           
           <div className="p-4 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800 mb-2">מנהל הייבוא:</p>
-            <ImportManager />
+            <ImportManager selectedBusinessId={selectedBusinessId} />
           </div>
           
           <div className="text-xs text-gray-500">

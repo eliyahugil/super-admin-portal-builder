@@ -25,7 +25,7 @@ export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({ busine
       {/* Import Tools Card - Make it more prominent */}
       <div className="col-span-full lg:col-span-1">
         <div className="border-2 border-blue-200 rounded-lg">
-          <ImportToolsCard />
+          <ImportToolsCard selectedBusinessId={businessId} />
         </div>
       </div>
       
