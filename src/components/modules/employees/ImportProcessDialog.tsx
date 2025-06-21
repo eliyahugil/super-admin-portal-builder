@@ -22,7 +22,6 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
     executeImport,
     resetForm,
     downloadTemplate,
-    setStep
   } = importHook;
 
   // Dialog should be open when step is not 'upload' with no file, or when step is explicitly 'upload'
@@ -65,7 +64,6 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
   const handleClose = () => {
     console.log('🔄 Closing import dialog');
     resetForm();
-    setStep('upload');
   };
 
   const renderContent = () => {
@@ -106,7 +104,11 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        handleClose();
+      }
+    }}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-right">
