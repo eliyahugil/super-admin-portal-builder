@@ -82,11 +82,19 @@ export const useEmployeeManagement = (selectedBusinessId?: string | null) => {
       }
     }
 
-    // Branch filter - Fix the TypeScript error by properly accessing branch ID
+    // Branch filter - Fix the TypeScript error by properly accessing branch data
     if (selectedBranch) {
-      const employeeBranchId = employee.main_branch_id || 
-                              employee.branch_assignments?.[0]?.branch?.id;
-      if (!employeeBranchId || employeeBranchId !== selectedBranch) {
+      // Check main branch first
+      if (employee.main_branch_id === selectedBranch) {
+        return true;
+      }
+      
+      // Then check branch assignments - since branch only has name, we need to match by name
+      const hasBranchAssignment = employee.branch_assignments?.some(assignment => 
+        assignment.branch?.name === selectedBranch
+      );
+      
+      if (!hasBranchAssignment) {
         return false;
       }
     }
