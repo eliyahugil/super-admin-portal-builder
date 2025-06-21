@@ -9,6 +9,35 @@ interface UseImportExecutionProps {
   setImportResult: (result: ImportResult) => void;
 }
 
+// Valid employee types according to Supabase enum
+const VALID_EMPLOYEE_TYPES = ['permanent', 'temporary', 'youth', 'contractor'] as const;
+type ValidEmployeeType = typeof VALID_EMPLOYEE_TYPES[number];
+
+const normalizeEmployeeType = (type?: string): ValidEmployeeType => {
+  if (!type) return 'permanent';
+  
+  const lowerType = type.toLowerCase().trim();
+  
+  // Map common variations to valid enum values
+  const typeMapping: Record<string, ValidEmployeeType> = {
+    'permanent': 'permanent',
+    'קבוע': 'permanent',
+    'full-time': 'permanent',
+    'temporary': 'temporary',
+    'זמני': 'temporary',
+    'temp': 'temporary',
+    'part-time': 'temporary',
+    'youth': 'youth',
+    'נוער': 'youth',
+    'student': 'youth',
+    'contractor': 'contractor',
+    'קבלן': 'contractor',
+    'freelancer': 'contractor',
+  };
+  
+  return typeMapping[lowerType] || 'permanent';
+};
+
 export const useImportExecution = ({
   businessId,
   previewData,
@@ -47,30 +76,29 @@ export const useImportExecution = ({
 
         for (const employee of batch) {
           try {
-            // Prepare employee data for insertion
+            // Prepare employee data for insertion with proper type validation
             const employeeData = {
               business_id: businessId,
-              first_name: employee.first_name || null,
-              last_name: employee.last_name || null,
+              first_name: employee.first_name || '',
+              last_name: employee.last_name || '',
               email: employee.email || null,
               phone: employee.phone || null,
               id_number: employee.id_number || null,
               employee_id: employee.employee_id || null,
               address: employee.address || null,
               hire_date: employee.hire_date || null,
-              employee_type: employee.employee_type || 'permanent',
+              employee_type: normalizeEmployeeType(employee.employee_type),
               weekly_hours_required: employee.weekly_hours_required ? Number(employee.weekly_hours_required) : null,
               main_branch_id: employee.main_branch_id || null,
               notes: employee.notes || null,
               is_active: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
             };
 
             console.log(`👤 Inserting employee:`, {
               name: `${employee.first_name || ''} ${employee.last_name || ''}`.trim(),
               email: employee.email,
-              employee_id: employee.employee_id
+              employee_id: employee.employee_id,
+              employee_type: employeeData.employee_type
             });
 
             const { data, error } = await supabase
