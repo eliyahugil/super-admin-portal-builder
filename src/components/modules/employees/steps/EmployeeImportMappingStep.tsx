@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { FieldMappingDialog } from '../FieldMappingDialog';
-import { FieldMapping } from '../types/FieldMappingTypes';
+import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
 interface EmployeeImportMappingStepProps {
   open: boolean;

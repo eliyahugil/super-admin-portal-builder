@@ -6,13 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-export interface FieldMapping {
-  systemField: string;
-  mappedColumns: string[];
-  isRequired: boolean;
-  isCustomField?: boolean;
-}
+import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
 interface FieldMappingDialogProps {
   open: boolean;
@@ -48,9 +42,9 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
 }) => {
   const [mappings, setMappings] = useState<FieldMapping[]>(() => {
     return systemFields.map(field => ({
+      id: `mapping-${field.value}-${Date.now()}`,
       systemField: field.value,
       mappedColumns: [],
-      isRequired: field.required || false,
       isCustomField: false,
     }));
   });
@@ -78,7 +72,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   };
 
   const hasRequiredMappings = mappings
-    .filter(m => m.isRequired)
+    .filter(m => isSystemFieldRequired(m.systemField))
     .every(m => m.mappedColumns.length > 0);
 
   return (
@@ -97,7 +91,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {mappings.map((mapping) => (
-                  <div key={mapping.systemField} className="space-y-2">
+                  <div key={mapping.id} className="space-y-2">
                     <div className="flex items-center gap-2">
                       <label className="text-sm font-medium">
                         {getSystemFieldLabel(mapping.systemField)}
