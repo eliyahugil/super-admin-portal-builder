@@ -109,7 +109,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`max-w-6xl ${isMobile ? 'max-h-[95vh] w-[95vw] m-2' : 'max-h-[90vh]'} overflow-y-auto`}>
+      <DialogContent className={`max-w-4xl ${isMobile ? 'max-h-[95vh] w-[95vw] m-2' : 'max-h-[90vh]'} overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle className={`${isMobile ? 'text-base' : 'text-lg'}`}>
             מיפוי שדות - התאמת עמודות האקסל לשדות המערכת
@@ -137,18 +137,18 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
                       <>
                         {/* System Field - Mobile */}
                         <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <label className="text-sm font-medium">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <label className="text-sm font-medium truncate max-w-[150px]">
                               {mapping.isCustomField ? mapping.label : getSystemFieldLabel(mapping.systemField)}
                             </label>
                             {mapping.isCustomField && (
-                              <Badge variant="secondary" className="text-xs">מותאם אישית</Badge>
+                              <Badge variant="secondary" className="text-xs flex-shrink-0">מותאם אישית</Badge>
                             )}
                             {!mapping.isCustomField && isSystemFieldRequired(mapping.systemField) && (
-                              <Badge variant="destructive" className="text-xs">חובה</Badge>
+                              <Badge variant="destructive" className="text-xs flex-shrink-0">חובה</Badge>
                             )}
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 flex-shrink-0">
                             <Button
                               type="button"
                               variant="ghost"
@@ -207,8 +207,8 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
                     ) : (
                       <>
                         {/* Desktop Layout */}
-                        {/* Drag Handle */}
-                        <div className="flex flex-col gap-1">
+                        {/* Move buttons */}
+                        <div className="flex flex-col gap-1 flex-shrink-0">
                           <Button
                             type="button"
                             variant="ghost"
@@ -231,8 +231,8 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
                           </Button>
                         </div>
 
-                        {/* System Field */}
-                        <div className="flex-1 min-w-0">
+                        {/* System Field - limited width */}
+                        <div className="w-48 flex-shrink-0">
                           <div className="flex items-center gap-2 mb-2">
                             <label className="text-sm font-medium truncate">
                               {mapping.isCustomField ? mapping.label : getSystemFieldLabel(mapping.systemField)}
@@ -249,8 +249,8 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
                         {/* Arrow */}
                         <div className="text-gray-400 mx-2 flex-shrink-0">←</div>
 
-                        {/* File Column Selection */}
-                        <div className="flex-1 min-w-0">
+                        {/* File Column Selection - limited width */}
+                        <div className="w-48 flex-shrink-0">
                           <Select
                             value={mapping.mappedColumns[0] || 'none'}
                             onValueChange={(value) => handleMappingChange(mapping.systemField, value)}
