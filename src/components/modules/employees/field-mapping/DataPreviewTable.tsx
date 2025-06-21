@@ -19,14 +19,33 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
     return null;
   }
 
+  // Handle both array and object data structures
+  const getRowValue = (row: any, columnIndex: number, columnName: string) => {
+    if (Array.isArray(row)) {
+      return row[columnIndex] || '-';
+    } else {
+      return row[columnName] || '-';
+    }
+  };
+
+  // Get effective column headers - either from fileColumns or generate indices
+  const effectiveColumns = fileColumns.length > 0 
+    ? fileColumns 
+    : sampleData[0] && Array.isArray(sampleData[0]) 
+      ? sampleData[0].map((_: any, index: number) => `עמודה ${index + 1}`)
+      : Object.keys(sampleData[0] || {});
+
   // Filter out empty or irrelevant columns for better display
-  const relevantColumns = fileColumns.filter(column => {
+  const relevantColumns = effectiveColumns.filter((column, index) => {
     // Check if column has meaningful data in sample rows
-    const hasData = sampleData.some(row => 
-      row[column] && 
-      row[column].toString().trim() !== '' && 
-      row[column].toString().trim() !== '-'
-    );
+    const hasData = sampleData.some(row => {
+      const value = getRowValue(row, index, column);
+      return value && 
+        value.toString().trim() !== '' && 
+        value.toString().trim() !== '-' &&
+        value !== null &&
+        value !== undefined;
+    });
     return hasData;
   });
 
@@ -43,7 +62,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
     <Card>
       <CardHeader>
         <CardTitle className={`${isMobile ? 'text-base' : 'text-lg'}`}>
-          תצוגה מקדימה של הנתונים
+          תצוגה מקדימה של הנתונים ({sampleData.length} שורות)
         </CardTitle>
         {hasMoreColumns && (
           <p className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>
@@ -57,9 +76,10 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
             <Table className="w-full">
               <TableHeader>
                 <TableRow>
-                  {displayColumns.map((column) => (
+                  <TableHead className="w-12 text-center">#</TableHead>
+                  {displayColumns.map((column, index) => (
                     <TableHead 
-                      key={column} 
+                      key={`${column}-${index}`}
                       className={`${
                         isMobile 
                           ? 'min-w-[100px] max-w-[120px] text-xs p-2' 
@@ -69,6 +89,9 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
                     >
                       <div className="truncate">
                         {column}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        עמודה {fileColumns.indexOf(column) >= 0 ? fileColumns.indexOf(column) + 1 : index + 1}
                       </div>
                     </TableHead>
                   ))}
@@ -80,23 +103,30 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {displayRows.map((row, index) => (
-                  <TableRow key={index}>
-                    {displayColumns.map((column) => (
-                      <TableCell 
-                        key={column} 
-                        className={`${
-                          isMobile 
-                            ? 'max-w-[120px] text-xs p-2' 
-                            : 'max-w-[180px] text-sm p-3'
-                        } truncate`}
-                        title={row[column] || '-'}
-                      >
-                        <div className="truncate">
-                          {row[column] || '-'}
-                        </div>
-                      </TableCell>
-                    ))}
+                {displayRows.map((row, rowIndex) => (
+                  <TableRow key={rowIndex}>
+                    <TableCell className="text-center font-mono text-xs">
+                      {rowIndex + 1}
+                    </TableCell>
+                    {displayColumns.map((column, columnIndex) => {
+                      const originalColumnIndex = fileColumns.indexOf(column);
+                      const value = getRowValue(row, originalColumnIndex >= 0 ? originalColumnIndex : columnIndex, column);
+                      return (
+                        <TableCell 
+                          key={`${column}-${columnIndex}`}
+                          className={`${
+                            isMobile 
+                              ? 'max-w-[120px] text-xs p-2' 
+                              : 'max-w-[180px] text-sm p-3'
+                          } truncate`}
+                          title={value?.toString() || '-'}
+                        >
+                          <div className="truncate">
+                            {value?.toString() || '-'}
+                          </div>
+                        </TableCell>
+                      );
+                    })}
                     {hasMoreColumns && (
                       <TableCell className={`${isMobile ? 'text-xs p-2' : 'text-sm p-3'} text-center text-gray-400`}>
                         ...
@@ -117,11 +147,11 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
           </div>
           <div className="flex justify-between">
             <span>עמודות מוצגות:</span>
-            <span>{displayColumns.length} מתוך {fileColumns.length}</span>
+            <span>{displayColumns.length} מתוך {effectiveColumns.length}</span>
           </div>
-          {relevantColumns.length < fileColumns.length && (
+          {relevantColumns.length < effectiveColumns.length && (
             <p className="text-yellow-600 text-xs">
-              הוסתרו {fileColumns.length - relevantColumns.length} עמודות ריקות
+              הוסתרו {effectiveColumns.length - relevantColumns.length} עמודות ריקות
             </p>
           )}
         </div>

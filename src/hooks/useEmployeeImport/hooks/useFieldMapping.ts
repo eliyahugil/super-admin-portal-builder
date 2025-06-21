@@ -27,7 +27,12 @@ export const useFieldMapping = ({
     console.log('🔄 useFieldMapping - confirmMapping called:', {
       mappingsCount: mappings.length,
       businessId,
-      rawDataCount: rawData.length
+      rawDataCount: rawData.length,
+      mappings: mappings.map(m => ({ 
+        systemField: m.systemField, 
+        mappedColumns: m.mappedColumns,
+        isCustomField: m.isCustomField
+      }))
     });
 
     if (!businessId) {
@@ -38,7 +43,10 @@ export const useFieldMapping = ({
     try {
       // Process the raw data with the field mappings
       const previewData: PreviewEmployee[] = rawData.map((row, index) => {
-        console.log(`📋 Processing row ${index + 1}:`, row);
+        console.log(`📋 Processing row ${index + 1}:`, {
+          rowData: Array.isArray(row) ? `Array with ${row.length} items` : Object.keys(row),
+          firstFewValues: Array.isArray(row) ? row.slice(0, 5) : row
+        });
         
         const employee: any = {
           business_id: businessId,
@@ -47,24 +55,41 @@ export const useFieldMapping = ({
           validationErrors: [],
         };
 
-        // Apply field mappings - תיקון הלוגיקה כאן
+        // Apply field mappings
         mappings.forEach(mapping => {
-          if (mapping.mappedColumns.length > 0) {
+          if (mapping.mappedColumns && mapping.mappedColumns.length > 0) {
             const columnName = mapping.mappedColumns[0]; // שם העמודה מהקובץ
-            const fieldValue = row[columnName]; // הערך מהשורה
             
-            console.log(`🗺️ Mapping ${mapping.systemField} <- ${columnName} = ${fieldValue}`);
+            // בדיקה אם זה אינדקס מספרי או שם עמודה
+            let fieldValue;
+            if (Array.isArray(row)) {
+              // אם הנתונים הם מערך, נשתמש באינדקס
+              const columnIndex = parseInt(columnName);
+              if (!isNaN(columnIndex)) {
+                fieldValue = row[columnIndex];
+              } else {
+                // אם זה לא מספר, ננסה למצוא את העמודה לפי שם
+                fieldValue = row[columnName];
+              }
+            } else {
+              // אם הנתונים הם אובייקט, נשתמש בשם העמודה
+              fieldValue = row[columnName];
+            }
+            
+            console.log(`🗺️ Mapping ${mapping.systemField} <- column "${columnName}" = "${fieldValue}"`);
             
             if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
+              const cleanValue = String(fieldValue).toString().trim();
+              
               if (mapping.isCustomField) {
                 // שדות מותאמים אישית
                 if (!employee.customFields) {
                   employee.customFields = {};
                 }
-                employee.customFields[mapping.systemField] = fieldValue;
+                employee.customFields[mapping.systemField] = cleanValue;
               } else {
                 // שדות מערכת רגילים
-                employee[mapping.systemField] = fieldValue;
+                employee[mapping.systemField] = cleanValue;
               }
             }
           }
@@ -125,11 +150,11 @@ export const useFieldMapping = ({
         }
 
         console.log(`✅ Processed employee:`, {
-          name: `${employee.first_name} ${employee.last_name}`,
+          name: `${employee.first_name || 'לא הוגדר'} ${employee.last_name || 'לא הוגדר'}`,
           isValid: employee.isValid,
           isDuplicate: employee.isDuplicate,
           errorsCount: employee.validationErrors?.length || 0,
-          employee
+          fields: Object.keys(employee).filter(k => !['business_id', 'isValid', 'isDuplicate', 'validationErrors'].includes(k))
         });
 
         return employee as PreviewEmployee;
