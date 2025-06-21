@@ -70,7 +70,7 @@ export const FieldMappingDialogTabs: React.FC<FieldMappingDialogTabsProps> = ({
   return (
     <div className="flex-1 overflow-hidden">
       <Tabs value={activeTab} onValueChange={onTabChange} className="h-full flex flex-col">
-        <TabsList className="mx-6 mb-4">
+        <TabsList className="mx-6 mb-4 flex-shrink-0">
           <TabsTrigger value="mapping" className="flex items-center gap-2">
             <span>מיפוי שדות</span>
             {mappings.length > 0 && (
@@ -92,10 +92,11 @@ export const FieldMappingDialogTabs: React.FC<FieldMappingDialogTabsProps> = ({
           </TabsTrigger>
         </TabsList>
 
-        <div className="flex-1 overflow-hidden px-6">
-          <TabsContent value="mapping" className="h-full mt-0">
-            <ScrollArea className="h-full">
-              <div className="space-y-4 pb-6">
+        <div className="flex-1 overflow-hidden">
+          <TabsContent value="mapping" className="h-full mt-0 px-6">
+            <div className="h-full flex flex-col">
+              {/* Alerts - Fixed height section */}
+              <div className="flex-shrink-0 space-y-4 mb-4">
                 {validationErrors.length > 0 && (
                   <Alert className="bg-red-50 border-red-200">
                     <AlertTriangle className="h-4 w-4 text-red-600" />
@@ -117,43 +118,46 @@ export const FieldMappingDialogTabs: React.FC<FieldMappingDialogTabsProps> = ({
                     </AlertDescription>
                   </Alert>
                 )}
-
-                <FieldMappingList
-                  mappings={mappings}
-                  fileColumns={fileColumns}
-                  systemFields={[...systemFields]}
-                  onUpdateMapping={onUpdateMapping}
-                  onRemoveMapping={onRemoveMapping}
-                  onAddSystemField={onAddSystemField}
-                />
               </div>
-            </ScrollArea>
+
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="pb-6">
+                    <FieldMappingList
+                      mappings={mappings}
+                      fileColumns={fileColumns}
+                      systemFields={[...systemFields]}
+                      onUpdateMapping={onUpdateMapping}
+                      onRemoveMapping={onRemoveMapping}
+                      onAddSystemField={onAddSystemField}
+                    />
+                  </div>
+                </ScrollArea>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="preview" className="h-full mt-0">
-            <ScrollArea className="h-full">
-              <div className="pb-6">
-                {activeMappings.length > 0 ? (
-                  <FieldMappingPreview
-                    mappings={activeMappings}
-                    sampleData={sampleData}
-                    systemFields={[...systemFields]}
-                    businessId={businessId}
-                  />
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="text-gray-500 mb-4">
-                      <Info className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                      <h3 className="text-lg font-medium mb-2">אין מיפויים פעילים</h3>
-                      <p>כדי לראות תצוגה מקדימה של הנתונים, עליך למפות לפחות שדה אחד בלשונית "מיפוי שדות"</p>
-                    </div>
-                  </div>
-                )}
+            {activeMappings.length > 0 ? (
+              <FieldMappingPreview
+                mappings={activeMappings}
+                sampleData={sampleData}
+                systemFields={[...systemFields]}
+                businessId={businessId}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center text-gray-500">
+                  <Info className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium mb-2">אין מיפויים פעילים</h3>
+                  <p>כדי לראות תצוגה מקדימה של הנתונים, עליך למפות לפחות שדה אחד בלשונית "מיפוי שדות"</p>
+                </div>
               </div>
-            </ScrollArea>
+            )}
           </TabsContent>
 
-          <TabsContent value="data" className="h-full mt-0">
+          <TabsContent value="data" className="h-full mt-0 px-6">
             <ScrollArea className="h-full">
               <div className="pb-6">
                 <DataPreviewTable

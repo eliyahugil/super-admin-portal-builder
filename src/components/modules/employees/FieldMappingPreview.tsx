@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { FieldMapping } from '@/hooks/useEmployeeImport/types';
 import { generatePreviewData } from './field-mapping/PreviewDataGenerator';
 import { PreviewLegend } from './field-mapping/PreviewLegend';
@@ -63,7 +64,6 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
   };
 
   const handleEditSave = (cellKey: string) => {
-    // Save the changes here
     setEditingCell(null);
   };
 
@@ -82,8 +82,8 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
 
   if (mappings.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-12">
+      <Card className="h-full">
+        <CardContent className="flex items-center justify-center h-full py-12">
           <div className="text-center text-gray-500">
             <p className="mb-2">אין מיפויים זמינים</p>
             <p className="text-sm">עליך להוסיף מיפויי שדות כדי לראות תצוגה מקדימה</p>
@@ -94,42 +94,44 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <Card className="flex-1 flex flex-col">
-        <CardHeader className="flex-shrink-0">
-          <CardTitle className="flex items-center gap-2">
-            תצוגה מקדימה של הנתונים הממופים
-            <Badge variant="outline">
-              {previewData.length} שורות לדוגמה
-            </Badge>
-          </CardTitle>
-          <PreviewLegend />
-        </CardHeader>
-        <CardContent className="flex-1 overflow-hidden p-0">
-          <div className="h-full overflow-auto p-6">
-            <Table>
-              <PreviewTableHeader 
-                mappings={mappings} 
-                systemFields={systemFields} 
-              />
-              <TableBody>
-                {previewData.map((row, rowIndex) => (
-                  <PreviewTableRow
-                    key={row.originalRowIndex}
-                    row={row}
-                    rowIndex={rowIndex}
-                    mappings={mappings}
-                    businessId={businessId}
-                    editingCell={editingCell}
-                    editValues={editValues}
-                    onEditStart={handleEditStart}
-                    onEditSave={handleEditSave}
-                    onEditCancel={handleEditCancel}
-                    onEditValueChange={handleEditValueChange}
-                  />
-                ))}
-              </TableBody>
-            </Table>
+    <Card className="h-full flex flex-col">
+      <CardHeader className="flex-shrink-0 pb-4">
+        <CardTitle className="flex items-center gap-2">
+          תצוגה מקדימה של הנתונים הממופים
+          <Badge variant="outline">
+            {previewData.length} שורות לדוגמה
+          </Badge>
+        </CardTitle>
+        <PreviewLegend />
+      </CardHeader>
+      <CardContent className="flex-1 p-0 overflow-hidden">
+        <ScrollArea className="h-full w-full">
+          <div className="p-6">
+            <div className="min-w-full overflow-x-auto">
+              <Table>
+                <PreviewTableHeader 
+                  mappings={mappings} 
+                  systemFields={systemFields} 
+                />
+                <TableBody>
+                  {previewData.map((row, rowIndex) => (
+                    <PreviewTableRow
+                      key={row.originalRowIndex}
+                      row={row}
+                      rowIndex={rowIndex}
+                      mappings={mappings}
+                      businessId={businessId}
+                      editingCell={editingCell}
+                      editValues={editValues}
+                      onEditStart={handleEditStart}
+                      onEditSave={handleEditSave}
+                      onEditCancel={handleEditCancel}
+                      onEditValueChange={handleEditValueChange}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
             
             {sampleData.length > 5 && (
               <div className="text-sm text-gray-500 mt-4 text-center">
@@ -137,8 +139,8 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 };
