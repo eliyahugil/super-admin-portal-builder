@@ -226,80 +226,82 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          תצוגה מקדימה של הנתונים הממופים
-          <Badge variant="outline">
-            {previewData.length} שורות לדוגמה
-          </Badge>
-        </CardTitle>
-        <div className="flex flex-wrap gap-2 text-xs">
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-yellow-100 border border-yellow-200 rounded"></div>
-            <span>ממופה, ערכים ריקים</span>
+    <div className="h-full flex flex-col">
+      <Card className="flex-1 flex flex-col">
+        <CardHeader className="flex-shrink-0">
+          <CardTitle className="flex items-center gap-2">
+            תצוגה מקדימה של הנתונים הממופים
+            <Badge variant="outline">
+              {previewData.length} שורות לדוגמה
+            </Badge>
+          </CardTitle>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-yellow-100 border border-yellow-200 rounded"></div>
+              <span>ממופה, ערכים ריקים</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-red-100 border border-red-200 rounded"></div>
+              <span>לא ממופה, יש ערכים</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-green-50 border border-green-200 rounded"></div>
+              <span>ממופה תקין</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-red-100 border border-red-200 rounded"></div>
-            <span>לא ממופה, יש ערכים</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-green-50 border border-green-200 rounded"></div>
-            <span>ממופה תקין</span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">#</TableHead>
-                {mappings.map((mapping) => (
-                  <TableHead key={mapping.id} className="min-w-[150px]">
-                    <div className="space-y-1">
-                      <div className="font-medium">
-                        {getSystemFieldLabel(mapping)}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {mapping.mappedColumns?.join(' + ') || 'לא ממופה'}
-                      </div>
-                      {mapping.isCustomField && (
-                        <Badge variant="secondary" className="text-xs">
-                          שדה מותאם
-                        </Badge>
-                      )}
-                    </div>
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {previewData.map((row, rowIndex) => (
-                <TableRow key={row.originalRowIndex}>
-                  <TableCell className="font-mono text-sm">
-                    {row.originalRowIndex}
-                  </TableCell>
+        </CardHeader>
+        <CardContent className="flex-1 overflow-hidden p-0">
+          <div className="h-full overflow-auto p-6">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-16">#</TableHead>
                   {mappings.map((mapping) => (
-                    <TableCell 
-                      key={mapping.id} 
-                      className={cn('max-w-48 p-2', getCellClassName(row[mapping.systemField]))}
-                    >
-                      {renderEditableCell(mapping, rowIndex, row[mapping.systemField])}
-                    </TableCell>
+                    <TableHead key={mapping.id} className="min-w-[150px]">
+                      <div className="space-y-1">
+                        <div className="font-medium">
+                          {getSystemFieldLabel(mapping)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {mapping.mappedColumns?.join(' + ') || 'לא ממופה'}
+                        </div>
+                        {mapping.isCustomField && (
+                          <Badge variant="secondary" className="text-xs">
+                            שדה מותאם
+                          </Badge>
+                        )}
+                      </div>
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        
-        {sampleData.length > 5 && (
-          <div className="text-sm text-gray-500 mt-4 text-center">
-            מציג 5 שורות מתוך {sampleData.length} שורות במקובץ
+              </TableHeader>
+              <TableBody>
+                {previewData.map((row, rowIndex) => (
+                  <TableRow key={row.originalRowIndex}>
+                    <TableCell className="font-mono text-sm">
+                      {row.originalRowIndex}
+                    </TableCell>
+                    {mappings.map((mapping) => (
+                      <TableCell 
+                        key={mapping.id} 
+                        className={cn('max-w-48 p-2', getCellClassName(row[mapping.systemField]))}
+                      >
+                        {renderEditableCell(mapping, rowIndex, row[mapping.systemField])}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            
+            {sampleData.length > 5 && (
+              <div className="text-sm text-gray-500 mt-4 text-center">
+                מציג 5 שורות מתוך {sampleData.length} שורות במקובץ
+              </div>
+            )}
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
