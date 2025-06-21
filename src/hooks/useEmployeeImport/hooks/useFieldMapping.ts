@@ -62,13 +62,14 @@ export const useFieldMapping = ({
             
             let fieldValue;
             if (Array.isArray(row)) {
-              const columnIndex = parseInt(columnName);
-              if (!isNaN(columnIndex)) {
+              // For array-based data, find the column index
+              const headers = Object.keys(rawData[0] || {});
+              const columnIndex = headers.findIndex(h => h === columnName);
+              if (columnIndex >= 0) {
                 fieldValue = row[columnIndex];
-              } else {
-                fieldValue = row[columnName];
               }
             } else {
+              // For object-based data
               fieldValue = row[columnName];
             }
             
@@ -83,7 +84,13 @@ export const useFieldMapping = ({
                 }
                 employee.customFields[mapping.systemField] = cleanValue;
               } else {
-                employee[mapping.systemField] = cleanValue;
+                // Handle special field mappings
+                if (mapping.systemField === 'main_branch_id') {
+                  // Store branch name temporarily for lookup
+                  employee.main_branch_name = cleanValue;
+                } else {
+                  employee[mapping.systemField] = cleanValue;
+                }
               }
             }
           }
@@ -109,21 +116,24 @@ export const useFieldMapping = ({
         if (employee.email) {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(employee.email)) {
+            employee.isValid = false;
             employee.validationErrors.push('כתובת מייל לא תקינה');
+          }
+          
+          // Check for duplicate email
+          if (existingEmployees.some(emp => emp.email === employee.email)) {
+            employee.isDuplicate = true;
+            employee.validationErrors.push('עובד עם אימייל זה כבר קיים');
           }
         }
 
-        // Check for duplicates
-        if (employee.email && existingEmployees.some(emp => emp.email === employee.email)) {
-          employee.isDuplicate = true;
-          employee.validationErrors.push('עובד עם אימייל זה כבר קיים');
-        }
-
+        // Check for duplicate ID number
         if (employee.id_number && existingEmployees.some(emp => emp.id_number === employee.id_number)) {
           employee.isDuplicate = true;
           employee.validationErrors.push('עובד עם ת.ז זה כבר קיים');
         }
 
+        // Check for duplicate employee ID
         if (employee.employee_id && existingEmployees.some(emp => emp.employee_id === employee.employee_id)) {
           employee.isDuplicate = true;
           employee.validationErrors.push('עובד עם מספר עובד זה כבר קיים');
@@ -137,9 +147,15 @@ export const useFieldMapping = ({
           if (branch) {
             employee.main_branch_id = branch.id;
           } else {
+            employee.isValid = false;
             employee.validationErrors.push(`סניף "${employee.main_branch_name}" לא נמצא במערכת`);
           }
           delete employee.main_branch_name;
+        }
+
+        // Mark as invalid if has validation errors and not duplicate
+        if (employee.validationErrors.length > 0 && !employee.isDuplicate) {
+          employee.isValid = false;
         }
 
         console.log(`✅ Processed employee:`, {
@@ -147,6 +163,7 @@ export const useFieldMapping = ({
           isValid: employee.isValid,
           isDuplicate: employee.isDuplicate,
           errorsCount: employee.validationErrors?.length || 0,
+          errors: employee.validationErrors,
           fields: Object.keys(employee).filter(k => !['business_id', 'isValid', 'isDuplicate', 'validationErrors'].includes(k))
         });
 

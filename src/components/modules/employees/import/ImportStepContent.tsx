@@ -55,6 +55,13 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
     }
   };
 
+  // פונקציה לחזרה למיפוי מתוצאות השגיאות
+  const handleBackToMapping = () => {
+    console.log('🔄 Going back to mapping from results');
+    setStep('mapping');
+    setShowMappingDialog(true);
+  };
+
   switch (step) {
     case 'upload':
       console.log('📤 Rendering upload step');
@@ -92,7 +99,8 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
       return (
         <ImportResults 
           result={importResult} 
-          onClose={resetForm} 
+          onClose={resetForm}
+          onBackToMapping={handleBackToMapping}
         />
       );
 

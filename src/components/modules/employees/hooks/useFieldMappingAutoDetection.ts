@@ -8,76 +8,112 @@ export const useFieldMappingAutoDetection = () => {
     
     const mappings: FieldMapping[] = [];
 
-    // Enhanced auto-detection rules with more patterns
+    // Enhanced auto-detection rules with more patterns and fuzzy matching
     const detectionRules = [
       { 
-        pattern: /^(שם פרטי|שם ראשי|שם|first.?name|firstname|name|fname|given.?name)$/i, 
+        patterns: [
+          /^(שם פרטי|שם ראשי|שם|first.?name|firstname|name|fname|given.?name|פרטי)$/i,
+          /^(first|name1|column.*1|עמודה.*1)$/i
+        ], 
         field: 'first_name', 
         label: 'שם פרטי', 
         required: true 
       },
       { 
-        pattern: /^(שם משפחה|משפחה|last.?name|lastname|surname|family.?name|lname)$/i, 
+        patterns: [
+          /^(שם משפחה|משפחה|last.?name|lastname|surname|family.?name|lname|אחרון)$/i,
+          /^(last|name2|column.*2|עמודה.*2)$/i
+        ], 
         field: 'last_name', 
         label: 'שם משפחה', 
         required: true 
       },
       { 
-        pattern: /^(אימייל|מייל|email|mail|e.?mail)$/i, 
+        patterns: [
+          /^(אימייל|מייל|email|mail|e.?mail|אי.?מייל)$/i,
+          /^(column.*3|עמודה.*3)$/i
+        ], 
         field: 'email', 
         label: 'אימייל', 
         required: false 
       },
       { 
-        pattern: /^(טלפון|פלאפון|נייד|mobile|phone|cell|cellular|tel)$/i, 
+        patterns: [
+          /^(טלפון|פלאפון|נייד|mobile|phone|cell|cellular|tel|טל|נייד)$/i,
+          /^(column.*4|עמודה.*4)$/i
+        ], 
         field: 'phone', 
         label: 'טלפון', 
         required: false 
       },
       { 
-        pattern: /^(תעודת זהות|ת\.ז|תז|id.?number|identity|national.?id|citizen.?id)$/i, 
+        patterns: [
+          /^(תעודת זהות|ת\.ז|תז|id.?number|identity|national.?id|citizen.?id|תעודה)$/i,
+          /^(column.*5|עמודה.*5)$/i
+        ], 
         field: 'id_number', 
         label: 'תעודת זהות', 
         required: false 
       },
       { 
-        pattern: /^(מספר עובד|מס עובד|עובד|employee.?id|emp.?id|worker.?id|staff.?id)$/i, 
+        patterns: [
+          /^(מספר עובד|מס עובד|עובד|employee.?id|emp.?id|worker.?id|staff.?id|מס)$/i,
+          /^(column.*6|עמודה.*6)$/i
+        ], 
         field: 'employee_id', 
         label: 'מספר עובד', 
         required: false 
       },
       { 
-        pattern: /^(כתובת|מען|address|addr|location)$/i, 
+        patterns: [
+          /^(כתובת|מען|address|addr|location|מיקום)$/i,
+          /^(column.*7|עמודה.*7)$/i
+        ], 
         field: 'address', 
         label: 'כתובת', 
         required: false 
       },
       { 
-        pattern: /^(תאריך התחלה|תחילת עבודה|התחלה|hire.?date|start.?date|employment.?date|join.?date)$/i, 
+        patterns: [
+          /^(תאריך התחלה|תחילת עבודה|התחלה|hire.?date|start.?date|employment.?date|join.?date|תחילה)$/i,
+          /^(column.*8|עמודה.*8)$/i
+        ], 
         field: 'hire_date', 
         label: 'תאריך התחלה', 
         required: false 
       },
       { 
-        pattern: /^(סוג עובד|טיפוס עובד|קטגוריה|employee.?type|worker.?type|type|category|classification)$/i, 
+        patterns: [
+          /^(סוג עובד|טיפוס עובד|קטגוריה|employee.?type|worker.?type|type|category|classification|סוג)$/i,
+          /^(column.*9|עמודה.*9)$/i
+        ], 
         field: 'employee_type', 
         label: 'סוג עובד', 
         required: false 
       },
       { 
-        pattern: /^(שעות שבועיות|שעות|hours|weekly.?hours|work.?hours)$/i, 
+        patterns: [
+          /^(שעות שבועיות|שעות|hours|weekly.?hours|work.?hours|שבועי)$/i,
+          /^(column.*10|עמודה.*10)$/i
+        ], 
         field: 'weekly_hours_required', 
         label: 'שעות שבועיות', 
         required: false 
       },
       { 
-        pattern: /^(סניף|מחלקה|branch|department|dept|division|unit)$/i, 
+        patterns: [
+          /^(סניף|מחלקה|branch|department|dept|division|unit|מחלקת)$/i,
+          /^(column.*11|עמודה.*11)$/i
+        ], 
         field: 'main_branch_id', 
         label: 'סניף ראשי', 
         required: false 
       },
       { 
-        pattern: /^(הערות|הערה|notes|remarks|comment|comments|description)$/i, 
+        patterns: [
+          /^(הערות|הערה|notes|remarks|comment|comments|description|תיאור)$/i,
+          /^(column.*12|עמודה.*12)$/i
+        ], 
         field: 'notes', 
         label: 'הערות', 
         required: false 
@@ -86,23 +122,44 @@ export const useFieldMappingAutoDetection = () => {
 
     // Track used fields to avoid duplicates
     const usedFields = new Set<string>();
+    const usedColumns = new Set<string>();
 
     fileColumns.forEach((column, columnIndex) => {
       console.log(`🔍 Checking column "${column}" (index: ${columnIndex})`);
       
       // Clean the column name for better matching
-      const cleanColumn = column.trim();
+      const cleanColumn = column.toString().trim();
+      
+      // Skip if column is already used
+      if (usedColumns.has(cleanColumn)) {
+        console.log(`⚠️ Column "${cleanColumn}" already used, skipping`);
+        return;
+      }
       
       const matchedRule = detectionRules.find(rule => {
-        const isMatch = rule.pattern.test(cleanColumn);
+        // Check if field is already used
+        if (usedFields.has(rule.field)) {
+          return false;
+        }
+        
+        // Check against all patterns for this rule
+        const isMatch = rule.patterns.some(pattern => {
+          const match = pattern.test(cleanColumn);
+          if (match) {
+            console.log(`  - Pattern match: "${cleanColumn}" matches pattern for ${rule.field}`);
+          }
+          return match;
+        });
+        
         console.log(`  - Testing against ${rule.field}: ${isMatch ? '✅ MATCH' : '❌ no match'}`);
         return isMatch;
       });
       
-      if (matchedRule && !usedFields.has(matchedRule.field)) {
+      if (matchedRule) {
         console.log(`✅ Auto-mapped: "${column}" → ${matchedRule.field}`);
         
         usedFields.add(matchedRule.field);
+        usedColumns.add(cleanColumn);
         
         mappings.push({
           id: `auto-${matchedRule.field}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -112,8 +169,6 @@ export const useFieldMappingAutoDetection = () => {
           label: matchedRule.label,
           isCustomField: false,
         });
-      } else if (matchedRule) {
-        console.log(`⚠️ Field ${matchedRule.field} already mapped, skipping "${column}"`);
       } else {
         console.log(`❌ No match found for column "${column}"`);
       }
