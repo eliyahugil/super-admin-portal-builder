@@ -20,3 +20,4 @@ export { GoogleCalendarEventsList } from './GoogleCalendarEventsList';
 export { GoogleOAuthManager } from './GoogleOAuthManager';
 export { GoogleServicesIntegration } from './GoogleServicesIntegration';
 export { GoogleDataDashboard } from './GoogleDataDashboard';
+export * from './google-services';
