@@ -28,7 +28,6 @@ export const useFieldMapping = ({
       mappingsCount: mappings.length,
       businessId,
       rawDataCount: rawData.length,
-      sampleRawData: rawData.slice(0, 2),
       mappings: mappings.map(m => ({ 
         systemField: m.systemField, 
         mappedColumns: m.mappedColumns,
@@ -42,33 +41,41 @@ export const useFieldMapping = ({
     }
 
     try {
-      // Create a column index map from the first row (headers)
-      const headerRow = rawData.length > 0 ? rawData[0] : [];
-      const columnIndexMap: { [key: string]: number } = {};
+      // Skip the first row if it looks like headers
+      let dataRows = rawData;
+      let hasHeaders = false;
       
-      if (Array.isArray(headerRow)) {
-        headerRow.forEach((header, index) => {
-          if (header && typeof header === 'string') {
-            columnIndexMap[header.trim()] = index;
+      if (rawData.length > 1) {
+        const firstRow = rawData[0];
+        const secondRow = rawData[1];
+        
+        // Check if first row contains header-like strings
+        if (Array.isArray(firstRow) && Array.isArray(secondRow)) {
+          const firstRowIsHeaders = firstRow.some(cell => 
+            typeof cell === 'string' && 
+            (cell.includes('שם') || cell.includes('name') || cell.includes('אימייל') || cell.includes('email'))
+          );
+          
+          if (firstRowIsHeaders) {
+            console.log('📋 Detected header row, skipping first row');
+            dataRows = rawData.slice(1);
+            hasHeaders = true;
           }
-          // Also map generic column names
-          columnIndexMap[`Column ${index + 1}`] = index;
-          columnIndexMap[`Col ${index + 1}`] = index;
-          columnIndexMap[`C${index + 1}`] = index;
-        });
+        }
       }
 
-      console.log('📋 Column index map created:', columnIndexMap);
-
-      // Process data starting from row 1 (skip header row)
-      const dataRows = rawData.slice(1);
-      console.log('📊 Processing data rows:', dataRows.length);
+      console.log('📊 Processing data rows:', {
+        totalRows: dataRows.length,
+        hasHeaders,
+        sampleRow: dataRows[0] ? {
+          isArray: Array.isArray(dataRows[0]),
+          sample: Array.isArray(dataRows[0]) ? dataRows[0].slice(0, 3) : Object.entries(dataRows[0] || {}).slice(0, 3)
+        } : 'No data'
+      });
 
       const previewData: PreviewEmployee[] = dataRows.map((row, index) => {
         console.log(`📋 Processing row ${index + 1}:`, {
-          rowType: Array.isArray(row) ? 'array' : typeof row,
-          rowLength: Array.isArray(row) ? row.length : Object.keys(row || {}).length,
-          sampleData: Array.isArray(row) ? row.slice(0, 5) : Object.entries(row || {}).slice(0, 5),
+          rowData: Array.isArray(row) ? row.slice(0, 3) : Object.entries(row || {}).slice(0, 3)
         });
         
         const employee: any = {
@@ -81,20 +88,32 @@ export const useFieldMapping = ({
         // Apply field mappings
         mappings.forEach(mapping => {
           if (mapping.mappedColumns && mapping.mappedColumns.length > 0) {
-            // Handle multiple columns for the same field
             const fieldValues: string[] = [];
             
             mapping.mappedColumns.forEach(columnName => {
               let fieldValue;
+              
               if (Array.isArray(row)) {
-                // Use the column index map to find the correct index
-                const columnIndex = columnIndexMap[columnName];
-                if (columnIndex !== undefined && columnIndex < row.length) {
+                // Convert column name to array index
+                // Handle patterns like "Column 1", "Col 1", "C1", or just "1"
+                let columnIndex = -1;
+                
+                // Try to extract number from column name
+                const numberMatch = columnName.match(/(\d+)/);
+                if (numberMatch) {
+                  columnIndex = parseInt(numberMatch[1]) - 1; // Convert to 0-based index
+                }
+                
+                if (columnIndex >= 0 && columnIndex < row.length) {
                   fieldValue = row[columnIndex];
+                  console.log(`  Array mapping: "${columnName}" -> index ${columnIndex} -> "${fieldValue}"`);
+                } else {
+                  console.log(`  Array mapping failed: "${columnName}" -> index ${columnIndex} (invalid)`);
                 }
               } else if (typeof row === 'object' && row !== null) {
-                // For object-based data
+                // For object data, try direct property access
                 fieldValue = row[columnName];
+                console.log(`  Object mapping: "${columnName}" -> "${fieldValue}"`);
               }
               
               if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
@@ -105,10 +124,9 @@ export const useFieldMapping = ({
               }
             });
             
-            console.log(`🗺️ Mapping ${mapping.systemField} <- columns "${mapping.mappedColumns.join(', ')}" = "${fieldValues.join(' + ')}"`);
+            console.log(`🗺️ Mapping result: ${mapping.systemField} <- [${mapping.mappedColumns.join(', ')}] = "${fieldValues.join(' + ')}"`);
             
             if (fieldValues.length > 0) {
-              // Combine multiple values with space or use first value for single column
               const combinedValue = fieldValues.length === 1 ? fieldValues[0] : fieldValues.join(' ');
               
               if (mapping.isCustomField) {
@@ -119,7 +137,6 @@ export const useFieldMapping = ({
               } else {
                 // Handle special field mappings
                 if (mapping.systemField === 'main_branch_id') {
-                  // Store branch name temporarily for lookup
                   employee.main_branch_name = combinedValue;
                 } else {
                   employee[mapping.systemField] = combinedValue;
@@ -134,10 +151,9 @@ export const useFieldMapping = ({
           employee.employee_type = 'permanent';
         }
 
-        // Basic validation - more lenient approach
+        // Basic validation
         const validationErrors = [];
         
-        // Check if we have at least some meaningful data
         const hasName = employee.first_name || employee.last_name;
         const hasContact = employee.email || employee.phone;
         const hasIdentifier = employee.id_number || employee.employee_id;
@@ -146,32 +162,24 @@ export const useFieldMapping = ({
           validationErrors.push('חובה לציין לפחות שם, פרט קשר או מזהה');
         }
 
-        // Email validation - only if email exists and is not empty
+        // Email validation
         if (employee.email && employee.email.trim() !== '') {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(employee.email)) {
             validationErrors.push('כתובת מייל לא תקינה');
           }
           
-          // Check for duplicate email
           if (existingEmployees.some(emp => emp.email === employee.email)) {
             employee.isDuplicate = true;
             validationErrors.push('עובד עם אימייל זה כבר קיים');
           }
         }
 
-        // Check for duplicate ID number - only if ID exists
+        // Check for duplicate ID number
         if (employee.id_number && employee.id_number.trim() !== '' && 
             existingEmployees.some(emp => emp.id_number === employee.id_number)) {
           employee.isDuplicate = true;
           validationErrors.push('עובד עם ת.ז זה כבר קיים');
-        }
-
-        // Check for duplicate employee ID - only if employee ID exists
-        if (employee.employee_id && employee.employee_id.trim() !== '' && 
-            existingEmployees.some(emp => emp.employee_id === employee.employee_id)) {
-          employee.isDuplicate = true;
-          validationErrors.push('עובד עם מספר עובד זה כבר קיים');
         }
 
         // Branch mapping
@@ -192,19 +200,9 @@ export const useFieldMapping = ({
         employee.isValid = validationErrors.length === 0 && (hasName || hasContact || hasIdentifier);
 
         console.log(`✅ Processed employee ${index + 1}:`, {
-          hasName,
-          hasContact,
-          hasIdentifier,
           isValid: employee.isValid,
-          isDuplicate: employee.isDuplicate,
-          errorsCount: employee.validationErrors?.length || 0,
-          errors: employee.validationErrors,
-          basicData: {
-            first_name: employee.first_name,
-            last_name: employee.last_name,
-            email: employee.email,
-            phone: employee.phone
-          }
+          hasData: !!(employee.first_name || employee.last_name || employee.email),
+          errorsCount: employee.validationErrors?.length || 0
         });
 
         return employee as PreviewEmployee;
@@ -213,11 +211,9 @@ export const useFieldMapping = ({
       console.log('✅ Field mapping completed:', {
         totalEmployees: previewData.length,
         validEmployees: previewData.filter(emp => emp.isValid).length,
-        duplicateEmployees: previewData.filter(emp => emp.isDuplicate).length,
-        invalidEmployees: previewData.filter(emp => !emp.isValid).length,
+        withData: previewData.filter(emp => emp.first_name || emp.last_name || emp.email).length
       });
 
-      // Store the mappings and preview data
       setFieldMappings(mappings);
       setPreviewData(previewData);
       setShowMappingDialog(false);

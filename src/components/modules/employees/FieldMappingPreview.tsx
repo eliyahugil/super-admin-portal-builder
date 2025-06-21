@@ -33,7 +33,10 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
       mappedColumns: m.mappedColumns,
       label: m.label
     })),
-    sampleDataRow: sampleData[0]
+    sampleDataStructure: sampleData[0] ? {
+      type: Array.isArray(sampleData[0]) ? 'array' : 'object',
+      keys: Array.isArray(sampleData[0]) ? 'Array items' : Object.keys(sampleData[0]).slice(0, 5)
+    } : 'No data'
   });
 
   const getSystemFieldLabel = (mapping: FieldMapping) => {
@@ -46,13 +49,23 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
   };
 
   const generatePreviewData = () => {
-    // Take first 5 rows for preview, skip header if it exists
+    // Take first 5 rows for preview
     const dataToProcess = sampleData.slice(0, 5);
     
+    console.log('📊 generatePreviewData - Processing data:', {
+      totalRows: dataToProcess.length,
+      mappingsCount: mappings.length,
+      firstRowSample: dataToProcess[0] ? {
+        isArray: Array.isArray(dataToProcess[0]),
+        keys: Array.isArray(dataToProcess[0]) ? 
+          `Array length: ${dataToProcess[0].length}` : 
+          Object.keys(dataToProcess[0]).slice(0, 5)
+      } : 'No data'
+    });
+    
     return dataToProcess.map((row, rowIndex) => {
-      console.log(`📊 Processing row ${rowIndex + 1}:`, {
-        rowType: Array.isArray(row) ? 'array' : typeof row,
-        rowKeys: Array.isArray(row) ? `Array length: ${row.length}` : Object.keys(row || {}).slice(0, 5)
+      console.log(`📋 Processing row ${rowIndex + 1}:`, {
+        rowData: Array.isArray(row) ? row.slice(0, 3) : Object.entries(row || {}).slice(0, 3)
       });
 
       const mappedRow: Record<string, any> = {};
@@ -65,34 +78,18 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
             let fieldValue;
             
             if (Array.isArray(row)) {
-              // For array data, try to find the column by its position
-              // Parse column index from column name if it's like "Column 1", "Col 2", etc.
-              let columnIndex = -1;
-              
-              // Try different patterns to extract index
-              const indexMatch = columnName.match(/(?:column|col|c)\s*(\d+)/i);
-              if (indexMatch) {
-                columnIndex = parseInt(indexMatch[1]) - 1; // Convert to 0-based index
-              } else {
-                // If no pattern matches, try to find the exact column name in the first row
-                // This assumes the first row might be headers
-                if (sampleData.length > 0 && Array.isArray(sampleData[0])) {
-                  columnIndex = sampleData[0].indexOf(columnName);
-                }
-              }
-              
-              console.log(`🔍 Looking for column "${columnName}" at index ${columnIndex} in array of length ${row.length}`);
-              
-              if (columnIndex >= 0 && columnIndex < row.length) {
+              // For array data, convert column name to index
+              const columnIndex = parseInt(columnName.replace(/\D/g, ''), 10) - 1;
+              if (!isNaN(columnIndex) && columnIndex >= 0 && columnIndex < row.length) {
                 fieldValue = row[columnIndex];
-                console.log(`✅ Found value at index ${columnIndex}:`, fieldValue);
+                console.log(`  Array access: Column "${columnName}" -> Index ${columnIndex} -> Value: "${fieldValue}"`);
               } else {
-                console.log(`❌ Column index ${columnIndex} not found or out of bounds`);
+                console.log(`  Array access failed: Column "${columnName}" -> Index ${columnIndex} (out of bounds)`);
               }
             } else if (typeof row === 'object' && row !== null) {
-              // For object data, try direct access
+              // For object data, direct property access
               fieldValue = row[columnName];
-              console.log(`🔍 Object lookup for "${columnName}":`, fieldValue);
+              console.log(`  Object access: "${columnName}" -> "${fieldValue}"`);
             }
             
             if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
@@ -103,8 +100,8 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
             }
           });
           
-          const combinedValue = values.join(' ').trim();
-          console.log(`🗺️ Mapping ${mapping.systemField} <- ${mapping.mappedColumns.join(' + ')} = "${combinedValue}"`);
+          const combinedValue = values.length > 1 ? values.join(' ') : (values[0] || '');
+          console.log(`🗺️ Final mapping: ${mapping.systemField} <- [${mapping.mappedColumns.join(', ')}] = "${combinedValue}"`);
           
           mappedRow[mapping.systemField] = {
             value: combinedValue || '-',
@@ -116,6 +113,11 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
         }
       });
 
+      console.log(`✅ Row ${rowIndex + 1} mapped result:`, {
+        fieldsCount: Object.keys(mappedRow).length,
+        fields: Object.keys(mappedRow).map(key => `${key}: "${mappedRow[key]?.value}"`).slice(0, 3)
+      });
+
       return {
         originalRowIndex: rowIndex + 1,
         ...mappedRow,
@@ -125,13 +127,16 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
 
   const previewData = generatePreviewData();
 
-  console.log('📋 Generated preview data:', {
+  console.log('📋 Final preview data generated:', {
     previewRowsCount: previewData.length,
     samplePreviewRow: previewData[0] ? {
+      totalFields: Object.keys(previewData[0]).length,
       mappedFields: Object.keys(previewData[0]).filter(key => key !== 'originalRowIndex'),
-      firstRow: previewData[0]
-    } : 'No preview data',
-    mappingsUsed: mappings.map(m => m.systemField)
+      sampleValues: Object.entries(previewData[0])
+        .filter(([key]) => key !== 'originalRowIndex')
+        .slice(0, 3)
+        .map(([key, value]) => `${key}: ${typeof value === 'object' ? value.value : value}`)
+    } : 'No preview data'
   });
 
   const getCellClassName = (cellData: any) => {
