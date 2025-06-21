@@ -3,8 +3,9 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, CheckCircle, XCircle, AlertTriangle, Users } from 'lucide-react';
+import { ArrowRight, CheckCircle, XCircle, AlertTriangle, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { PreviewEmployee } from '@/hooks/useEmployeeImport/types';
 
 interface EmployeeImportPreviewStepProps {
@@ -20,6 +21,9 @@ export const EmployeeImportPreviewStep: React.FC<EmployeeImportPreviewStepProps>
   onBackToMapping,
   isImporting,
 }) => {
+  const [showAllValid, setShowAllValid] = React.useState(false);
+  const [showAllInvalid, setShowAllInvalid] = React.useState(false);
+
   const validEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate);
   const duplicateEmployees = previewData.filter(emp => emp.isDuplicate);
   const invalidEmployees = previewData.filter(emp => !emp.isValid);
@@ -35,7 +39,7 @@ export const EmployeeImportPreviewStep: React.FC<EmployeeImportPreviewStepProps>
     } else if (lastName) {
       return lastName;
     } else {
-      return 'לא הוגדר שם';
+      return employee.email || employee.phone || 'לא הוגדר שם';
     }
   };
 
@@ -52,7 +56,7 @@ export const EmployeeImportPreviewStep: React.FC<EmployeeImportPreviewStepProps>
           <ArrowRight className="h-4 w-4" />
           חזור למיפוי
         </Button>
-        <h2 className="text-xl font-semibold">תצוגה מקדימה לייבוא</h2>
+        <h2 className="text-xl font-semibold">תצוגה מקדימה - {previewData.length} עובדים</h2>
       </div>
 
       {/* Summary Stats */}
@@ -76,12 +80,19 @@ export const EmployeeImportPreviewStep: React.FC<EmployeeImportPreviewStepProps>
       </div>
 
       {/* Status Alert */}
-      {validEmployees.length > 0 && (
+      {validEmployees.length > 0 ? (
         <Alert className="bg-green-50 border-green-200">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
             {validEmployees.length} עובדים מוכנים לייבוא.
             {duplicateEmployees.length > 0 && ` ${duplicateEmployees.length} עובדים יידלגו בגלל כפילויות.`}
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert className="bg-red-50 border-red-200">
+          <XCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            אין עובדים תקינים לייבוא. אנא בדוק את מיפוי השדות ותקן את השגיאות.
           </AlertDescription>
         </Alert>
       )}
@@ -96,26 +107,44 @@ export const EmployeeImportPreviewStep: React.FC<EmployeeImportPreviewStepProps>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="max-h-60 overflow-y-auto space-y-2">
-              {validEmployees.slice(0, 10).map((employee, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-green-50 rounded">
-                  <div>
-                    <span className="font-medium">{getDisplayName(employee)}</span>
-                    {employee.email && (
-                      <span className="text-gray-600 text-sm mr-2">• {employee.email}</span>
-                    )}
-                    {employee.phone && (
-                      <span className="text-gray-600 text-sm mr-2">• {employee.phone}</span>
-                    )}
+            <div className="space-y-2">
+              {validEmployees.slice(0, showAllValid ? validEmployees.length : 10).map((employee, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded border border-green-200">
+                  <div className="flex-1">
+                    <div className="font-medium text-green-800">{getDisplayName(employee)}</div>
+                    <div className="text-sm text-green-600 mt-1">
+                      {employee.email && <span>📧 {employee.email}</span>}
+                      {employee.email && employee.phone && <span className="mx-2">•</span>}
+                      {employee.phone && <span>📱 {employee.phone}</span>}
+                      {(employee.email || employee.phone) && employee.employee_id && <span className="mx-2">•</span>}
+                      {employee.employee_id && <span>🆔 {employee.employee_id}</span>}
+                    </div>
                   </div>
-                  <Badge className="bg-green-100 text-green-800">
+                  <Badge className="bg-green-100 text-green-800 border-green-200">
                     מוכן לייבוא
                   </Badge>
                 </div>
               ))}
+              
               {validEmployees.length > 10 && (
-                <div className="text-center text-gray-500 text-sm">
-                  ועוד {validEmployees.length - 10} עובדים...
+                <div className="text-center">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowAllValid(!showAllValid)}
+                    className="flex items-center gap-2 text-green-600"
+                  >
+                    {showAllValid ? (
+                      <>
+                        <ChevronUp className="h-4 w-4" />
+                        הצג פחות
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4" />
+                        הצג את כל {validEmployees.length} העובדים
+                      </>
+                    )}
+                  </Button>
                 </div>
               )}
             </div>
@@ -133,12 +162,12 @@ export const EmployeeImportPreviewStep: React.FC<EmployeeImportPreviewStepProps>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="max-h-60 overflow-y-auto space-y-2">
-              {invalidEmployees.slice(0, 5).map((employee, index) => (
+            <div className="space-y-2">
+              {invalidEmployees.slice(0, showAllInvalid ? invalidEmployees.length : 5).map((employee, index) => (
                 <div key={index} className="p-3 bg-red-50 border border-red-200 rounded">
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-red-800">
-                      {getDisplayName(employee) || `שורה ${index + 1}`}
+                      {getDisplayName(employee) || `שורה ${index + 2}`}
                     </span>
                     <Badge variant="destructive" className="text-xs">
                       שגיאה
@@ -149,9 +178,26 @@ export const EmployeeImportPreviewStep: React.FC<EmployeeImportPreviewStepProps>
                   </div>
                 </div>
               ))}
+              
               {invalidEmployees.length > 5 && (
-                <div className="text-center text-gray-500 text-sm">
-                  ועוד {invalidEmployees.length - 5} שגיאות...
+                <div className="text-center">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowAllInvalid(!showAllInvalid)}
+                    className="flex items-center gap-2 text-red-600"
+                  >
+                    {showAllInvalid ? (
+                      <>
+                        <ChevronUp className="h-4 w-4" />
+                        הצג פחות
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4" />
+                        הצג את כל {invalidEmployees.length} השגיאות
+                      </>
+                    )}
+                  </Button>
                 </div>
               )}
             </div>

@@ -42,8 +42,29 @@ export const useFieldMapping = ({
     }
 
     try {
-      // Process the raw data with the field mappings
-      const previewData: PreviewEmployee[] = rawData.map((row, index) => {
+      // Create a column index map from the first row (headers)
+      const headerRow = rawData.length > 0 ? rawData[0] : [];
+      const columnIndexMap: { [key: string]: number } = {};
+      
+      if (Array.isArray(headerRow)) {
+        headerRow.forEach((header, index) => {
+          if (header && typeof header === 'string') {
+            columnIndexMap[header.trim()] = index;
+          }
+          // Also map generic column names
+          columnIndexMap[`Column ${index + 1}`] = index;
+          columnIndexMap[`Col ${index + 1}`] = index;
+          columnIndexMap[`C${index + 1}`] = index;
+        });
+      }
+
+      console.log('📋 Column index map created:', columnIndexMap);
+
+      // Process data starting from row 1 (skip header row)
+      const dataRows = rawData.slice(1);
+      console.log('📊 Processing data rows:', dataRows.length);
+
+      const previewData: PreviewEmployee[] = dataRows.map((row, index) => {
         console.log(`📋 Processing row ${index + 1}:`, {
           rowType: Array.isArray(row) ? 'array' : typeof row,
           rowLength: Array.isArray(row) ? row.length : Object.keys(row || {}).length,
@@ -64,31 +85,17 @@ export const useFieldMapping = ({
             
             let fieldValue;
             if (Array.isArray(row)) {
-              // For array-based data, extract column index from column name
-              const columnMatch = columnName.match(/^(?:Column\s*|Col\s*|C)?(\d+)$/i);
-              if (columnMatch) {
-                const columnIndex = parseInt(columnMatch[1]) - 1; // Convert to 0-based index
-                if (columnIndex >= 0 && columnIndex < row.length) {
-                  fieldValue = row[columnIndex];
-                }
-              } else {
-                // Try to find by exact column name match
-                const headerRow = rawData[0];
-                if (Array.isArray(headerRow)) {
-                  const headerIndex = headerRow.findIndex(header => 
-                    header && header.toString().trim().toLowerCase() === columnName.toLowerCase()
-                  );
-                  if (headerIndex >= 0 && headerIndex < row.length) {
-                    fieldValue = row[headerIndex];
-                  }
-                }
+              // Use the column index map to find the correct index
+              const columnIndex = columnIndexMap[columnName];
+              if (columnIndex !== undefined && columnIndex < row.length) {
+                fieldValue = row[columnIndex];
               }
             } else if (typeof row === 'object' && row !== null) {
               // For object-based data
               fieldValue = row[columnName];
             }
             
-            console.log(`🗺️ Mapping ${mapping.systemField} <- column "${columnName}" = "${fieldValue}"`);
+            console.log(`🗺️ Mapping ${mapping.systemField} <- column "${columnName}" (index: ${columnIndexMap[columnName]}) = "${fieldValue}"`);
             
             if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
               const cleanValue = String(fieldValue).trim();
@@ -116,15 +123,19 @@ export const useFieldMapping = ({
           employee.employee_type = 'permanent';
         }
 
-        // Basic validation
+        // Basic validation - more lenient approach
         const validationErrors = [];
         
-        // Check if we have at least basic name data
-        if (!employee.first_name && !employee.last_name) {
-          validationErrors.push('חובה לציין לפחות שם פרטי או שם משפחה');
+        // Check if we have at least some meaningful data
+        const hasName = employee.first_name || employee.last_name;
+        const hasContact = employee.email || employee.phone;
+        const hasIdentifier = employee.id_number || employee.employee_id;
+        
+        if (!hasName && !hasContact && !hasIdentifier) {
+          validationErrors.push('חובה לציין לפחות שם, פרט קשר או מזהה');
         }
 
-        // Email validation - רק אם יש אימייל
+        // Email validation - only if email exists and is not empty
         if (employee.email && employee.email.trim() !== '') {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(employee.email)) {
@@ -138,14 +149,14 @@ export const useFieldMapping = ({
           }
         }
 
-        // Check for duplicate ID number - רק אם יש ת.ז
+        // Check for duplicate ID number - only if ID exists
         if (employee.id_number && employee.id_number.trim() !== '' && 
             existingEmployees.some(emp => emp.id_number === employee.id_number)) {
           employee.isDuplicate = true;
           validationErrors.push('עובד עם ת.ז זה כבר קיים');
         }
 
-        // Check for duplicate employee ID - רק אם יש מספר עובד
+        // Check for duplicate employee ID - only if employee ID exists
         if (employee.employee_id && employee.employee_id.trim() !== '' && 
             existingEmployees.some(emp => emp.employee_id === employee.employee_id)) {
           employee.isDuplicate = true;
@@ -165,24 +176,14 @@ export const useFieldMapping = ({
           delete employee.main_branch_name;
         }
 
-        // Check if we have any meaningful data
-        const hasAnyData = Object.keys(employee).some(key => 
-          key !== 'business_id' && 
-          key !== 'isValid' && 
-          key !== 'isDuplicate' && 
-          key !== 'validationErrors' &&
-          key !== 'employee_type' &&
-          employee[key] !== undefined && 
-          employee[key] !== null && 
-          String(employee[key]).trim() !== ''
-        );
-
         // Set validation results
         employee.validationErrors = validationErrors;
-        employee.isValid = hasAnyData && validationErrors.length === 0;
+        employee.isValid = validationErrors.length === 0 && (hasName || hasContact || hasIdentifier);
 
         console.log(`✅ Processed employee ${index + 1}:`, {
-          hasAnyData,
+          hasName,
+          hasContact,
+          hasIdentifier,
           isValid: employee.isValid,
           isDuplicate: employee.isDuplicate,
           errorsCount: employee.validationErrors?.length || 0,
