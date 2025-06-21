@@ -10,6 +10,7 @@ interface UseFieldMappingProps {
   setPreviewData: (data: PreviewEmployee[]) => void;
   setStep: (step: ImportStep) => void;
   setShowMappingDialog: (show: boolean) => void;
+  headers: string[]; // Add headers to know the column structure
 }
 
 export const useFieldMapping = ({
@@ -21,6 +22,7 @@ export const useFieldMapping = ({
   setPreviewData,
   setStep,
   setShowMappingDialog,
+  headers,
 }: UseFieldMappingProps) => {
   
   const confirmMapping = async (mappings: FieldMapping[]) => {
@@ -29,6 +31,8 @@ export const useFieldMapping = ({
       businessId,
       rawDataCount: rawData.length,
       activeMappings: mappings.filter(m => m.mappedColumns.length > 0).length,
+      headersCount: headers.length,
+      sampleHeaders: headers.slice(0, 5),
       sampleRawData: rawData.slice(0, 2)
     });
 
@@ -43,6 +47,26 @@ export const useFieldMapping = ({
     }
 
     try {
+      // Create a mapping from column name to index
+      const columnIndexMap: Record<string, number> = {};
+      headers.forEach((header, index) => {
+        columnIndexMap[header] = index;
+      });
+
+      console.log('📋 Column index mapping:', columnIndexMap);
+
+      // Update mappings with correct column indices
+      const updatedMappings = mappings.map(mapping => ({
+        ...mapping,
+        columnIndex: mapping.mappedColumns[0] ? columnIndexMap[mapping.mappedColumns[0]] : undefined
+      }));
+
+      console.log('🗺️ Updated mappings with indices:', updatedMappings.map(m => ({
+        systemField: m.systemField,
+        columnName: m.mappedColumns[0],
+        columnIndex: m.columnIndex
+      })));
+
       // Process the raw data based on mappings
       console.log('📊 Processing raw data with mappings');
       
@@ -62,64 +86,32 @@ export const useFieldMapping = ({
           customFields: {}
         };
 
-        // Apply field mappings
-        mappings.forEach(mapping => {
-          if (!mapping.mappedColumns || mapping.mappedColumns.length === 0) {
+        // Apply field mappings using the correct column indices
+        updatedMappings.forEach(mapping => {
+          if (!mapping.mappedColumns || mapping.mappedColumns.length === 0 || mapping.columnIndex === undefined) {
             return;
           }
 
-          const fieldValues: string[] = [];
+          let fieldValue = '';
           
-          mapping.mappedColumns.forEach(columnName => {
-            let fieldValue = '';
-            
-            try {
-              if (Array.isArray(row)) {
-                // Extract column index from name
-                let columnIndex = -1;
-                
-                // Handle "Column X" format
-                const columnMatch = columnName.match(/Column (\d+)/);
-                if (columnMatch) {
-                  columnIndex = parseInt(columnMatch[1]) - 1; // Convert to 0-based
-                } else {
-                  // If it's not "Column X" format, try to find by exact header match
-                  // This would need header mapping, for now use fallback
-                  console.log(`  ⚠️ Non-standard column format: ${columnName}, using fallback`);
-                  columnIndex = 0; // Fallback
-                }
-                
-                if (columnIndex >= 0 && columnIndex < row.length) {
-                  const rawValue = row[columnIndex];
-                  fieldValue = rawValue !== null && rawValue !== undefined ? String(rawValue).trim() : '';
-                  console.log(`  ✅ Array[${columnIndex}] "${columnName}" = "${fieldValue}"`);
-                } else {
-                  console.log(`  ❌ Column index ${columnIndex} out of bounds for "${columnName}" (array length: ${row.length})`);
-                }
-              } else if (row && typeof row === 'object') {
-                // Direct property access for objects
-                fieldValue = String(row[columnName] || '').trim();
-                console.log(`  ✅ Object["${columnName}"] = "${fieldValue}"`);
-              }
-              
-              if (fieldValue && fieldValue !== '') {
-                fieldValues.push(fieldValue);
-              }
-            } catch (error) {
-              console.error(`  💥 Error accessing ${columnName}:`, error);
-            }
-          });
-          
-          if (fieldValues.length > 0) {
-            const combinedValue = fieldValues.length > 1 ? fieldValues.join(' ').trim() : fieldValues[0];
-            
-            if (mapping.isCustomField) {
-              employee.customFields[mapping.systemField] = combinedValue;
+          try {
+            if (Array.isArray(row) && mapping.columnIndex >= 0 && mapping.columnIndex < row.length) {
+              const rawValue = row[mapping.columnIndex];
+              fieldValue = rawValue !== null && rawValue !== undefined ? String(rawValue).trim() : '';
+              console.log(`✅ Mapped ${mapping.systemField} from column ${mapping.columnIndex} (${mapping.mappedColumns[0]}): "${fieldValue}"`);
             } else {
-              employee[mapping.systemField] = combinedValue;
+              console.log(`❌ Cannot access column ${mapping.columnIndex} for ${mapping.systemField}`);
             }
             
-            console.log(`✅ Final mapping: ${mapping.systemField} = "${combinedValue}" (from ${fieldValues.length} columns)`);
+            if (fieldValue && fieldValue !== '') {
+              if (mapping.isCustomField) {
+                employee.customFields[mapping.systemField] = fieldValue;
+              } else {
+                employee[mapping.systemField] = fieldValue;
+              }
+            }
+          } catch (error) {
+            console.error(`💥 Error mapping ${mapping.systemField}:`, error);
           }
         });
 
@@ -192,7 +184,7 @@ export const useFieldMapping = ({
         } : 'none'
       });
 
-      setFieldMappings(mappings);
+      setFieldMappings(updatedMappings);
       setPreviewData(previewData);
       setShowMappingDialog(false);
       setStep('preview');

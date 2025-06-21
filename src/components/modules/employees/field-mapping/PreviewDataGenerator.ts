@@ -29,7 +29,7 @@ export const generatePreviewData = (
       type: typeof sampleData[0],
       isArray: Array.isArray(sampleData[0]),
       length: Array.isArray(sampleData[0]) ? sampleData[0].length : 'not array',
-      sample: Array.isArray(sampleData[0]) ? sampleData[0].slice(0, 3) : 'not array'
+      sample: Array.isArray(sampleData[0]) ? sampleData[0].slice(0, 5) : 'not array'
     } : 'No data'
   });
 
@@ -66,42 +66,54 @@ export const generatePreviewData = (
         
         try {
           if (Array.isArray(row)) {
-            // For array data - extract column index from name
-            // Column names are either "Column 1", "Column 2" or the actual header values
+            // For array data - we need to find the correct column index
+            // The column name should match exactly with the header from the file
+            console.log(`🔍 Looking for column: "${columnName}" in row with ${row.length} items`);
+            
+            // Since we're dealing with Excel data as arrays, we need to get the column index
+            // The columnName should be the actual header text, not "Column X"
+            // We need to find which index this header corresponds to
+            
+            // For now, let's try a direct approach - if the mapping was created correctly,
+            // the columnName should correspond to a specific index
+            
+            // Get all available headers (this should come from the file processing)
+            // For now, let's log what we have and try to match
+            
             let columnIndex = -1;
             
-            // Try to match by exact column name first (if it's a header from the file)
-            const headerIndex = columnName.indexOf('Column ');
-            if (headerIndex !== -1) {
-              // Extract number from "Column X" format
-              const indexMatch = columnName.match(/Column (\d+)/);
-              if (indexMatch) {
-                columnIndex = parseInt(indexMatch[1]) - 1; // Convert to 0-based
-              }
+            // If columnName is something like "First Name", we need to find its index
+            // This should be provided by the mapping logic
+            if (mapping.columnIndex !== undefined) {
+              columnIndex = mapping.columnIndex;
             } else {
-              // If it's not a "Column X" format, treat it as a direct header
-              // We need to find which column index this header corresponds to
-              // For now, let's assume the mapping system will handle this correctly
-              console.log(`  ⚠️ Non-standard column name format: ${columnName}`);
-              columnIndex = 0; // Fallback to first column
+              // Fallback - try to parse if it's in "Column X" format
+              const columnMatch = columnName.match(/^Column (\d+)$/);
+              if (columnMatch) {
+                columnIndex = parseInt(columnMatch[1]) - 1; // Convert to 0-based
+              } else {
+                // If we don't have the index, we can't map properly
+                console.error(`❌ Cannot determine column index for: ${columnName}`);
+                return;
+              }
             }
             
             if (columnIndex >= 0 && columnIndex < row.length) {
               const rawValue = row[columnIndex];
               fieldValue = rawValue !== null && rawValue !== undefined ? String(rawValue).trim() : '';
-              console.log(`  ✅ Array[${columnIndex}] = "${fieldValue}"`);
+              console.log(`✅ Found value at index ${columnIndex}: "${fieldValue}"`);
             } else {
-              console.log(`  ❌ Array index ${columnIndex} out of bounds (length: ${row.length})`);
+              console.log(`❌ Column index ${columnIndex} out of bounds (row length: ${row.length})`);
             }
           } else {
-            console.log(`  ❌ Row is not array: ${typeof row}`);
+            console.log(`❌ Row is not array: ${typeof row}`);
           }
           
           if (fieldValue && fieldValue !== '') {
             values.push(fieldValue);
           }
         } catch (error) {
-          console.error(`  💥 Error accessing ${columnName}:`, error);
+          console.error(`💥 Error accessing ${columnName}:`, error);
         }
       });
       

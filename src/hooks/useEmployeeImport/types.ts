@@ -1,11 +1,4 @@
 
-// Import step types
-export type ImportStep = 'closed' | 'upload' | 'mapping' | 'preview' | 'importing' | 'results' | 'summary';
-
-// Excel data types
-export type ExcelRow = any[];
-
-// Field mapping types
 export interface FieldMapping {
   id: string;
   systemField: string;
@@ -14,9 +7,9 @@ export interface FieldMapping {
   label: string;
   isCustomField?: boolean;
   customFieldName?: string;
+  columnIndex?: number; // Add this to store the actual column index
 }
 
-// Preview employee type - updated to include all necessary properties
 export interface PreviewEmployee {
   business_id: string;
   first_name?: string;
@@ -28,18 +21,15 @@ export interface PreviewEmployee {
   address?: string;
   hire_date?: string;
   employee_type?: string;
-  weekly_hours?: number;
   weekly_hours_required?: number;
   main_branch_id?: string;
-  main_branch_name?: string;
   notes?: string;
   isValid: boolean;
   isDuplicate: boolean;
   validationErrors: string[];
-  customFields?: Record<string, string>;
+  customFields: Record<string, any>;
 }
 
-// Import result types
 export interface ImportResult {
   success: boolean;
   importedCount: number;
@@ -57,29 +47,23 @@ export interface ImportResult {
   }>;
 }
 
-// Hook return type
+export type ImportStep = 'closed' | 'upload' | 'mapping' | 'preview' | 'importing' | 'results';
+
 export interface EmployeeImportHook {
   step: ImportStep;
   setStep: (step: ImportStep) => void;
   file: File | null;
-  rawData: ExcelRow[];
-  setRawData: (data: ExcelRow[]) => void;
   headers: string[];
-  setHeaders: (headers: string[]) => void;
+  rawData: any[];
   fieldMappings: FieldMapping[];
-  setFieldMappings: (mappings: FieldMapping[]) => void;
   previewData: PreviewEmployee[];
-  setPreviewData: (data: PreviewEmployee[]) => void;
-  importResult: ImportResult;
-  setImportResult: (result: ImportResult) => void;
+  importResult: ImportResult | null;
   showMappingDialog: boolean;
   setShowMappingDialog: (show: boolean) => void;
+  businessId: string | null;
   processFile: (file: File) => Promise<void>;
-  executeImport: () => Promise<void>;
   confirmMapping: (mappings: FieldMapping[]) => Promise<void>;
+  executeImport: () => Promise<void>;
   resetForm: () => void;
   downloadTemplate: () => void;
-  branches: Array<{ id: string; name: string }>;
-  existingEmployees: Array<{ email?: string; id_number?: string; employee_id?: string }>;
-  businessId: string | null | undefined;
 }

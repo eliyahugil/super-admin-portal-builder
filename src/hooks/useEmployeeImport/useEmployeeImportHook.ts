@@ -1,16 +1,35 @@
 
+import { useState, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-import { useSecureBusinessData } from '@/hooks/useSecureBusinessData';
-import { useImportState } from './hooks/useImportState';
 import { useFileProcessing } from './hooks/useFileProcessing';
 import { useFieldMapping } from './hooks/useFieldMapping';
 import { useImportExecution } from './hooks/useImportExecution';
-import type { ImportStep } from './types';
+import { useBranches } from '@/hooks/useBranches';
+import { useExistingEmployees } from '@/hooks/useExistingEmployees';
+import type { 
+  FieldMapping, 
+  PreviewEmployee, 
+  ImportResult, 
+  ImportStep,
+  EmployeeImportHook 
+} from './types';
 
-export const useEmployeeImport = (selectedBusinessId?: string | null) => {
+export const useEmployeeImportHook = (selectedBusinessId?: string | null): EmployeeImportHook => {
+  // State management
+  const [step, setStep] = useState<ImportStep>('closed');
+  const [file, setFile] = useState<File | null>(null);
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [rawData, setRawData] = useState<any[]>([]);
+  const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
+  const [previewData, setPreviewData] = useState<PreviewEmployee[]>([]);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [showMappingDialog, setShowMappingDialog] = useState(false);
+  
+  const { toast } = useToast();
   const { businessId: contextBusinessId } = useCurrentBusiness();
   
-  // Use selectedBusinessId if provided, otherwise fall back to context business ID
+  // Determine effective business ID
   const effectiveBusinessId = selectedBusinessId || contextBusinessId;
 
   console.log('🔄 useEmployeeImport - businessId logic:', {
@@ -19,42 +38,12 @@ export const useEmployeeImport = (selectedBusinessId?: string | null) => {
     effectiveBusinessId
   });
 
-  // State management
-  const {
-    step,
-    setStep,
-    file,
-    setFile,
-    rawData,
-    setRawData,
-    headers,
-    setHeaders,
-    fieldMappings,
-    setFieldMappings,
-    previewData,
-    setPreviewData,
-    importResult,
-    setImportResult,
-    showMappingDialog,
-    setShowMappingDialog,
-    resetForm,
-  } = useImportState();
+  // Data hooks
+  const { data: branches = [] } = useBranches(effectiveBusinessId);
+  const { data: existingEmployees = [] } = useExistingEmployees(effectiveBusinessId);
 
-  // Data dependencies
-  const { data: branches = [] } = useSecureBusinessData({
-    queryKey: ['branches', effectiveBusinessId],
-    tableName: 'branches',
-    enabled: !!effectiveBusinessId
-  });
-
-  const { data: existingEmployees = [] } = useSecureBusinessData({
-    queryKey: ['employees', effectiveBusinessId],
-    tableName: 'employees',
-    enabled: !!effectiveBusinessId
-  });
-
-  // File processing
-  const { processFile, downloadTemplate } = useFileProcessing({
+  // Custom hooks for different phases
+  const { processFile, downloadTemplate, isProcessing } = useFileProcessing({
     businessId: effectiveBusinessId,
     setFile,
     setRawData,
@@ -63,7 +52,6 @@ export const useEmployeeImport = (selectedBusinessId?: string | null) => {
     setShowMappingDialog,
   });
 
-  // Field mapping
   const { confirmMapping } = useFieldMapping({
     businessId: effectiveBusinessId,
     rawData,
@@ -73,9 +61,9 @@ export const useEmployeeImport = (selectedBusinessId?: string | null) => {
     setPreviewData,
     setStep,
     setShowMappingDialog,
+    headers, // Pass headers to the field mapping hook
   });
 
-  // Import execution
   const { executeImport } = useImportExecution({
     businessId: effectiveBusinessId,
     previewData,
@@ -83,36 +71,34 @@ export const useEmployeeImport = (selectedBusinessId?: string | null) => {
     setImportResult,
   });
 
+  const resetForm = useCallback(() => {
+    console.log('🔄 Resetting import form');
+    setStep('closed');
+    setFile(null);
+    setHeaders([]);
+    setRawData([]);
+    setFieldMappings([]);
+    setPreviewData([]);
+    setImportResult(null);
+    setShowMappingDialog(false);
+  }, []);
+
   return {
-    // State
     step,
-    setStep: (step: ImportStep) => setStep(step),
+    setStep,
     file,
-    rawData,
-    setRawData,
     headers,
-    setHeaders,
+    rawData,
     fieldMappings,
-    setFieldMappings,
     previewData,
-    setPreviewData,
     importResult,
-    setImportResult,
     showMappingDialog,
     setShowMappingDialog,
-
-    // Handlers
+    businessId: effectiveBusinessId,
     processFile,
-    executeImport,
     confirmMapping,
-
-    // Utilities
+    executeImport,
     resetForm,
     downloadTemplate,
-
-    // Dependencies
-    branches,
-    existingEmployees,
-    businessId: effectiveBusinessId,
   };
 };
