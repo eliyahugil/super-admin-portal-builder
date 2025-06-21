@@ -1,11 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { FieldMappingDialogHeader } from './field-mapping/FieldMappingDialogHeader';
 import { FieldMappingDialogTabs } from './field-mapping/FieldMappingDialogTabs';
 import { FieldMappingDialogFooter } from './field-mapping/FieldMappingDialogFooter';
 import { useFieldMappingLogic } from './field-mapping/useFieldMappingLogic';
-import { useFieldMappingAutoDetection } from './hooks/useFieldMappingAutoDetection';
 import { SYSTEM_FIELDS } from '@/constants/systemFields';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
@@ -32,7 +31,9 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
     open,
     fileColumnsCount: fileColumns.length,
     sampleDataCount: sampleData.length,
-    systemFieldsCount: systemFields?.length || 0
+    systemFieldsCount: systemFields?.length || 0,
+    sampleColumns: fileColumns.slice(0, 3),
+    sampleData: sampleData.slice(0, 1)
   });
 
   const {
@@ -50,23 +51,24 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
     removeUnmappedFields,
   } = useFieldMappingLogic(fileColumns, systemFields);
 
-  const {
-    hasAutoDetections,
-  } = useFieldMappingAutoDetection(fileColumns, systemFields);
-
   const [activeTab, setActiveTab] = useState('mapping');
 
-  useEffect(() => {
-    console.log('🔄 FieldMappingDialog - mappings updated:', {
-      mappingsCount: mappings.length,
-      canProceed,
-      validationErrors: validationErrors.length
-    });
-  }, [mappings, canProceed, validationErrors]);
-
   const handleConfirm = () => {
-    console.log('✅ FieldMappingDialog - confirming mappings:', mappings);
-    const validMappings = mappings.filter(mapping => mapping.mappedColumns.length > 0);
+    console.log('✅ FieldMappingDialog - confirming mappings:', {
+      totalMappings: mappings.length,
+      activeMappings: mappings.filter(m => m.mappedColumns.length > 0).length,
+      mappings: mappings.map(m => ({
+        systemField: m.systemField,
+        mappedColumns: m.mappedColumns,
+        label: m.label
+      }))
+    });
+    
+    const validMappings = mappings.filter(mapping => 
+      mapping.mappedColumns && mapping.mappedColumns.length > 0
+    );
+    
+    console.log('📤 Sending valid mappings:', validMappings.length);
     onConfirm(validMappings);
   };
 
@@ -82,7 +84,6 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   const handleAddSystemField = async (newField: { value: string; label: string }): Promise<boolean> => {
     try {
       console.log('➕ Adding new system field:', newField);
-      // For now, just add it as a custom field - could be enhanced to save to database
       const customMapping: FieldMapping = {
         id: `custom-${newField.value}-${Date.now()}`,
         systemField: newField.value,
@@ -93,7 +94,6 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
         customFieldName: newField.label,
       };
       
-      // Use direct value instead of callback
       setMappings([...mappings, customMapping]);
       return true;
     } catch (error) {
@@ -106,7 +106,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] p-0">
         <FieldMappingDialogHeader
-          hasAutoDetections={hasAutoDetections}
+          hasAutoDetections={mappings.some(m => m.mappedColumns.length > 0)}
           mappedCount={mappings.filter(m => m.mappedColumns.length > 0).length}
           totalColumns={fileColumns.length}
           onApplyAutoMapping={reapplyAutoMapping}
