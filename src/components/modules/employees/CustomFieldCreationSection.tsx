@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
-import type { FieldMapping } from './types/FieldMappingTypes';
+import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
 interface CustomFieldCreationSectionProps {
   onAddCustomField: (mapping: FieldMapping) => void;
@@ -33,7 +33,6 @@ export const CustomFieldCreationSection: React.FC<CustomFieldCreationSectionProp
       mappedColumns: [],
       isCustomField: true,
       customFieldName: customFieldName.trim(),
-      customFieldType,
     };
 
     onAddCustomField(customMapping);

@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import type { FieldMapping } from '../types/FieldMappingTypes';
+import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
 export const useFieldMappingAutoDetection = () => {
   const autoDetectMappings = useCallback((fileColumns: string[]): FieldMapping[] => {

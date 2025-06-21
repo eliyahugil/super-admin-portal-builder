@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import type { FieldMapping } from '../types/FieldMappingTypes';
+import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
 export const useFieldMappingValidation = () => {
   const { toast } = useToast();

@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { FieldMapping } from './types/FieldMappingTypes';
+import { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
 interface FieldMappingPreviewProps {
   mappings: FieldMapping[];
