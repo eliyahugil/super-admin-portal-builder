@@ -82,7 +82,7 @@ export const useEmployeeManagement = (selectedBusinessId?: string | null) => {
       }
     }
 
-    // Branch filter
+    // Branch filter - Fix the TypeScript error by properly accessing branch ID
     if (selectedBranch) {
       const employeeBranchId = employee.main_branch_id || 
                               employee.branch_assignments?.[0]?.branch?.id;
