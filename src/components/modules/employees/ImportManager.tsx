@@ -28,6 +28,21 @@ export const ImportManager: React.FC<ImportManagerProps> = ({ selectedBusinessId
 
   const isButtonDisabled = !effectiveBusinessId;
 
+  const handleImportClick = () => {
+    console.log('🚀 Import button clicked with businessId:', effectiveBusinessId);
+    
+    if (!effectiveBusinessId) {
+      console.warn('⚠️ No business ID available for import');
+      return;
+    }
+
+    // Reset the form and start the import process
+    importHook.resetForm();
+    
+    // Force the dialog to open by setting step to upload
+    importHook.setStep('upload');
+  };
+
   return (
     <ImportErrorBoundary>
       <div className="space-y-4">
@@ -37,10 +52,7 @@ export const ImportManager: React.FC<ImportManagerProps> = ({ selectedBusinessId
             <p className="text-amber-600 text-xs mb-2">יש לבחור עסק כדי להפעיל את הייבוא</p>
           )}
           <ImportButton 
-            onClick={() => {
-              console.log('🚀 Import button clicked, calling resetForm');
-              importHook.resetForm();
-            }}
+            onClick={handleImportClick}
             disabled={isButtonDisabled}
           />
         </div>

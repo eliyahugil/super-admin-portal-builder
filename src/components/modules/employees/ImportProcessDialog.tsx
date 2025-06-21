@@ -18,13 +18,21 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
     file,
     previewData,
     importResult,
-    handleFileSelect,
-    handleConfirmImport,
+    processFile,
+    executeImport,
     resetForm,
-    downloadTemplate
+    downloadTemplate,
+    setStep
   } = importHook;
 
-  const isOpen = step !== 'upload' || !!file;
+  // Dialog should be open when step is not 'upload' with no file, or when step is explicitly 'upload'
+  const isOpen = step === 'upload' || (step !== 'upload' && !!file);
+
+  console.log('📋 ImportProcessDialog - Dialog state:', {
+    step,
+    hasFile: !!file,
+    isOpen
+  });
 
   const getStepIcon = (currentStep: string) => {
     switch (currentStep) {
@@ -54,12 +62,18 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
     }
   };
 
+  const handleClose = () => {
+    console.log('🔄 Closing import dialog');
+    resetForm();
+    setStep('upload');
+  };
+
   const renderContent = () => {
     switch (step) {
       case 'upload':
         return (
           <ImportFileUpload
-            onFileSelect={handleFileSelect}
+            onFileSelect={processFile}
             onDownloadTemplate={downloadTemplate}
           />
         );
@@ -67,8 +81,8 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
         return (
           <ImportPreview
             previewData={previewData}
-            onConfirm={handleConfirmImport}
-            onCancel={resetForm}
+            onConfirm={executeImport}
+            onCancel={handleClose}
           />
         );
       case 'importing':
@@ -83,7 +97,7 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
         return (
           <ImportResults
             result={importResult}
-            onClose={resetForm}
+            onClose={handleClose}
           />
         );
       default:
@@ -92,7 +106,7 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && resetForm()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-right">
