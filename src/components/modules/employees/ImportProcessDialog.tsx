@@ -24,8 +24,8 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
     downloadTemplate,
   } = importHook;
 
-  // Dialog should be open when step is not 'upload' with no file, or when step is explicitly 'upload'
-  const isOpen = step === 'upload' || (step !== 'upload' && !!file);
+  // Dialog should be open when step is not 'closed'
+  const isOpen = step !== 'closed';
 
   console.log('📋 ImportProcessDialog - Dialog state:', {
     step,
@@ -102,6 +102,10 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
         return null;
     }
   };
+
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {

@@ -9,7 +9,7 @@ import type {
 } from '../types';
 
 export const useImportState = () => {
-  const [step, setStep] = useState<ImportStep>('upload');
+  const [step, setStep] = useState<ImportStep>('closed');
   const [file, setFile] = useState<File | null>(null);
   const [rawData, setRawData] = useState<ExcelRow[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
@@ -27,7 +27,7 @@ export const useImportState = () => {
 
   const resetForm = () => {
     console.log('🔄 Resetting import form');
-    setStep('upload');
+    setStep('closed');
     setFile(null);
     setRawData([]);
     setHeaders([]);
