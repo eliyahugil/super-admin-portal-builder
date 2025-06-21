@@ -43,8 +43,8 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
         const updatedMappings = prev.map(mapping => {
           const autoMapping = autoMappings.find(auto => auto.systemField === mapping.systemField);
           if (autoMapping && autoMapping.mappedColumns.length > 0) {
-            console.log(`✅ Applied auto-mapping: ${mapping.systemField} ← ${autoMapping.mappedColumns[0]}`);
-            mappedColumns.add(autoMapping.mappedColumns[0]);
+            console.log(`✅ Applied auto-mapping: ${mapping.systemField} ← ${autoMapping.mappedColumns.join(', ')}`);
+            autoMapping.mappedColumns.forEach(col => mappedColumns.add(col));
             return {
               ...mapping,
               mappedColumns: autoMapping.mappedColumns,
@@ -70,7 +70,7 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
         const finalMappings = [...updatedMappings, ...customFieldMappings];
         
         console.log('📋 Final mappings after auto-detection and custom field addition:', 
-          finalMappings.map(m => `${m.systemField}: ${m.mappedColumns.length > 0 ? m.mappedColumns[0] : 'not mapped'}`));
+          finalMappings.map(m => `${m.systemField}: ${m.mappedColumns.length > 0 ? m.mappedColumns.join(', ') : 'not mapped'}`));
         
         return finalMappings;
       });
@@ -110,10 +110,12 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
     }));
   };
 
-  const handleMappingChange = (systemField: string, selectedColumn: string) => {
+  // Updated to handle multiple columns
+  const handleMappingChange = (systemField: string, selectedColumns: string[]) => {
+    console.log(`🗺️ Updating mapping for ${systemField} with columns:`, selectedColumns);
     setMappings(prev => prev.map(mapping => 
       mapping.systemField === systemField 
-        ? { ...mapping, mappedColumns: selectedColumn && selectedColumn !== 'none' ? [selectedColumn] : [] }
+        ? { ...mapping, mappedColumns: selectedColumns }
         : mapping
     ));
   };
@@ -157,7 +159,7 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
   const handleConfirm = (onConfirm: (mappings: FieldMapping[]) => void) => {
     // Filter out mappings that have no columns mapped
     const validMappings = mappings.filter(mapping => mapping.mappedColumns.length > 0);
-    console.log('🎯 Confirming mappings:', validMappings.map(m => `${m.systemField} ← ${m.mappedColumns[0]}`));
+    console.log('🎯 Confirming mappings:', validMappings.map(m => `${m.systemField} ← ${m.mappedColumns.join(', ')}`));
     onConfirm(validMappings);
   };
 

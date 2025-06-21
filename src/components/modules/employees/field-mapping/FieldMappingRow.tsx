@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowUp, ArrowDown, X } from 'lucide-react';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { MultiColumnSelector } from './MultiColumnSelector';
 
 interface FieldMappingRowProps {
   mapping: FieldMapping;
@@ -13,7 +13,7 @@ interface FieldMappingRowProps {
   mappingsLength: number;
   fileColumns: string[];
   systemFields: Array<{ value: string; label: string; required?: boolean }>;
-  onMappingChange: (systemField: string, selectedColumn: string) => void;
+  onMappingChange: (systemField: string, selectedColumns: string[]) => void;
   onMoveMapping: (mappingId: string, direction: 'up' | 'down') => void;
   onRemoveMapping: (mappingId: string) => void;
   getSystemFieldLabel: (systemField: string) => string;
@@ -33,6 +33,16 @@ export const FieldMappingRow: React.FC<FieldMappingRowProps> = ({
 }) => {
   const isMobile = useIsMobile();
 
+  const handleAddColumn = (column: string) => {
+    const newColumns = [...mapping.mappedColumns, column];
+    onMappingChange(mapping.systemField, newColumns);
+  };
+
+  const handleRemoveColumn = (column: string) => {
+    const newColumns = mapping.mappedColumns.filter(col => col !== column);
+    onMappingChange(mapping.systemField, newColumns);
+  };
+
   return (
     <div className="p-3 border rounded-lg bg-gray-50">
       <div className="flex flex-col gap-3">
@@ -47,6 +57,11 @@ export const FieldMappingRow: React.FC<FieldMappingRowProps> = ({
             )}
             {!mapping.isCustomField && isSystemFieldRequired(mapping.systemField) && (
               <Badge variant="destructive" className="text-xs flex-shrink-0">חובה</Badge>
+            )}
+            {mapping.mappedColumns.length > 1 && (
+              <Badge variant="outline" className="text-xs flex-shrink-0">
+                {mapping.mappedColumns.length} עמודות
+              </Badge>
             )}
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
@@ -84,25 +99,18 @@ export const FieldMappingRow: React.FC<FieldMappingRowProps> = ({
           </div>
         </div>
 
-        {/* File Column Selection Row */}
+        {/* Multi-Column Selection Row */}
         <div className="w-full">
-          <div className="text-xs text-gray-500 mb-2">עמודה מהקובץ ←</div>
-          <Select
-            value={mapping.mappedColumns[0] || 'none'}
-            onValueChange={(value) => onMappingChange(mapping.systemField, value)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="בחר עמודה מהקובץ" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">ללא מיפוי</SelectItem>
-              {fileColumns.map((column) => (
-                <SelectItem key={column} value={column}>
-                  {column}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="text-xs text-gray-500 mb-2">
+            עמודות מהקובץ ← (ניתן לבחור מספר עמודות)
+          </div>
+          <MultiColumnSelector
+            selectedColumns={mapping.mappedColumns}
+            availableColumns={fileColumns}
+            onAddColumn={handleAddColumn}
+            onRemoveColumn={handleRemoveColumn}
+            placeholder="הוסף עמודה נוספת..."
+          />
         </div>
       </div>
     </div>

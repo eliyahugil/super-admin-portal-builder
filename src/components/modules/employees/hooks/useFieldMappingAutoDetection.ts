@@ -8,7 +8,7 @@ export const useFieldMappingAutoDetection = () => {
     
     const mappings: FieldMapping[] = [];
 
-    // Enhanced auto-detection rules with more patterns and fuzzy matching
+    // Enhanced auto-detection rules with support for multiple columns per field
     const detectionRules = [
       { 
         patterns: [
@@ -120,9 +120,8 @@ export const useFieldMappingAutoDetection = () => {
       },
     ];
 
-    // Track used fields to avoid duplicates
-    const usedFields = new Set<string>();
-    const usedColumns = new Set<string>();
+    // Track used columns for each field (now supporting multiple columns per field)
+    const fieldMappings = new Map<string, string[]>();
 
     fileColumns.forEach((column, columnIndex) => {
       console.log(`🔍 Checking column "${column}" (index: ${columnIndex})`);
@@ -130,18 +129,7 @@ export const useFieldMappingAutoDetection = () => {
       // Clean the column name for better matching
       const cleanColumn = column.toString().trim();
       
-      // Skip if column is already used
-      if (usedColumns.has(cleanColumn)) {
-        console.log(`⚠️ Column "${cleanColumn}" already used, skipping`);
-        return;
-      }
-      
       const matchedRule = detectionRules.find(rule => {
-        // Check if field is already used
-        if (usedFields.has(rule.field)) {
-          return false;
-        }
-        
         // Check against all patterns for this rule
         const isMatch = rule.patterns.some(pattern => {
           const match = pattern.test(cleanColumn);
@@ -158,26 +146,35 @@ export const useFieldMappingAutoDetection = () => {
       if (matchedRule) {
         console.log(`✅ Auto-mapped: "${column}" → ${matchedRule.field}`);
         
-        usedFields.add(matchedRule.field);
-        usedColumns.add(cleanColumn);
-        
-        mappings.push({
-          id: `auto-${matchedRule.field}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          systemField: matchedRule.field,
-          mappedColumns: [column], // Use original column name, not cleaned
-          isRequired: matchedRule.required,
-          label: matchedRule.label,
-          isCustomField: false,
-        });
+        // Add column to the field's mapping list
+        if (!fieldMappings.has(matchedRule.field)) {
+          fieldMappings.set(matchedRule.field, []);
+        }
+        fieldMappings.get(matchedRule.field)!.push(column);
       } else {
         console.log(`❌ No match found for column "${column}"`);
+      }
+    });
+
+    // Create mappings from the collected field mappings
+    fieldMappings.forEach((columns, field) => {
+      const rule = detectionRules.find(r => r.field === field);
+      if (rule) {
+        mappings.push({
+          id: `auto-${field}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          systemField: field,
+          mappedColumns: columns, // Now supports multiple columns
+          isRequired: rule.required,
+          label: rule.label,
+          isCustomField: false,
+        });
       }
     });
 
     console.log('🎯 Auto-detection results:', {
       totalColumns: fileColumns.length,
       mappedFields: mappings.length,
-      mappings: mappings.map(m => `${m.systemField} ← ${m.mappedColumns[0]}`)
+      mappings: mappings.map(m => `${m.systemField} ← ${m.mappedColumns.join(', ')}`)
     });
 
     return mappings;
