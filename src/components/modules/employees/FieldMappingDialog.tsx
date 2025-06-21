@@ -39,7 +39,15 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
     isSystemFieldRequired,
     hasRequiredMappings,
     handleConfirm,
-  } = useFieldMappingLogic({ systemFields });
+  } = useFieldMappingLogic({ 
+    systemFields,
+    fileColumns // Pass file columns for auto-detection
+  });
+
+  // Show auto-detection status
+  const autoMappedCount = mappings.filter(m => m.mappedColumns.length > 0).length;
+  const totalRequiredFields = mappings.filter(m => isSystemFieldRequired(m.systemField)).length;
+  const mappedRequiredFields = mappings.filter(m => isSystemFieldRequired(m.systemField) && m.mappedColumns.length > 0).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -48,6 +56,13 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
           <DialogTitle className={`${isMobile ? 'text-base' : 'text-lg'}`}>
             מיפוי שדות - התאמת עמודות האקסל לשדות המערכת
           </DialogTitle>
+          <div className="text-sm text-gray-600 space-y-1">
+            <p>זוהו אוטומטית {autoMappedCount} שדות מתוך {mappings.length}</p>
+            <p>שדות חובה ממופים: {mappedRequiredFields}/{totalRequiredFields}</p>
+            {autoMappedCount > 0 && (
+              <p className="text-green-600">✅ המיפוי האוטומטי זיהה בהצלחה חלק מהשדות</p>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="space-y-4 md:space-y-6">
@@ -82,7 +97,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
             disabled={!hasRequiredMappings}
             className={`${isMobile ? 'w-full' : ''}`}
           >
-            המשך לתצוגה מקדימה
+            המשך לתצוגה מקדימה ({autoMappedCount} שדות ממופים)
           </Button>
         </DialogFooter>
       </DialogContent>

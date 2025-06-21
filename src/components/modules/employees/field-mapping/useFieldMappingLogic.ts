@@ -1,12 +1,16 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
+import { useFieldMappingAutoDetection } from '../hooks/useFieldMappingAutoDetection';
 
 interface UseFieldMappingLogicProps {
   systemFields: Array<{ value: string; label: string; required?: boolean }>;
+  fileColumns?: string[];
 }
 
-export const useFieldMappingLogic = ({ systemFields }: UseFieldMappingLogicProps) => {
+export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFieldMappingLogicProps) => {
+  const { autoDetectMappings } = useFieldMappingAutoDetection();
+  
   const [mappings, setMappings] = useState<FieldMapping[]>(() => {
     return systemFields.map((field, index) => ({
       id: `mapping-${field.value}-${Date.now()}-${index}`,
@@ -17,6 +21,38 @@ export const useFieldMappingLogic = ({ systemFields }: UseFieldMappingLogicProps
       isCustomField: false,
     }));
   });
+
+  // Auto-detect mappings when file columns are available
+  useEffect(() => {
+    if (fileColumns.length > 0) {
+      console.log('🚀 Auto-detecting field mappings for file columns:', fileColumns);
+      
+      const autoMappings = autoDetectMappings(fileColumns);
+      console.log('🎯 Auto-detection found mappings:', autoMappings);
+      
+      if (autoMappings.length > 0) {
+        setMappings(prev => {
+          const updatedMappings = prev.map(mapping => {
+            const autoMapping = autoMappings.find(auto => auto.systemField === mapping.systemField);
+            if (autoMapping) {
+              console.log(`✅ Applied auto-mapping: ${mapping.systemField} ← ${autoMapping.mappedColumns[0]}`);
+              return {
+                ...mapping,
+                mappedColumns: autoMapping.mappedColumns,
+              };
+            }
+            return mapping;
+          });
+          
+          console.log('📋 Final mappings after auto-detection:', updatedMappings.map(m => 
+            `${m.systemField}: ${m.mappedColumns.length > 0 ? m.mappedColumns[0] : 'not mapped'}`
+          ));
+          
+          return updatedMappings;
+        });
+      }
+    }
+  }, [fileColumns, autoDetectMappings]);
 
   const handleMappingChange = (systemField: string, selectedColumn: string) => {
     setMappings(prev => prev.map(mapping => 
@@ -65,6 +101,7 @@ export const useFieldMappingLogic = ({ systemFields }: UseFieldMappingLogicProps
   const handleConfirm = (onConfirm: (mappings: FieldMapping[]) => void) => {
     // Filter out mappings that have no columns mapped
     const validMappings = mappings.filter(mapping => mapping.mappedColumns.length > 0);
+    console.log('🎯 Confirming mappings:', validMappings.map(m => `${m.systemField} ← ${m.mappedColumns[0]}`));
     onConfirm(validMappings);
   };
 
