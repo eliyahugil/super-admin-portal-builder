@@ -30,9 +30,29 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
   const [editFieldLabel, setEditFieldLabel] = useState('');
 
   const customFields = mappings.filter(m => m.isCustomField);
+  
+  // Get all mapped columns from all mappings
+  const allMappedColumns = new Set<string>();
+  mappings.forEach(mapping => {
+    mapping.mappedColumns.forEach(column => {
+      allMappedColumns.add(column);
+    });
+  });
+
+  // Filter out columns that are already mapped to any field
   const unmappedColumns = fileColumns.filter(column => 
-    !mappings.some(mapping => mapping.mappedColumns.includes(column))
+    !allMappedColumns.has(column)
   );
+
+  console.log('🔍 CustomFieldManager - Column mapping status:', {
+    totalColumns: fileColumns.length,
+    mappedColumns: Array.from(allMappedColumns),
+    unmappedColumns,
+    mappingsWithColumns: mappings.map(m => ({ 
+      field: m.systemField, 
+      columns: m.mappedColumns 
+    }))
+  });
 
   const handleCreateField = () => {
     if (!newFieldName.trim()) return;
@@ -104,7 +124,7 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
         {unmappedColumns.length > 0 && (
           <div className="space-y-2">
             <Label className="text-sm font-medium text-blue-600">
-              הוסף שדות מהעמודות הלא ממופות:
+              הוסף שדות מהעמודות הלא ממופות ({unmappedColumns.length}):
             </Label>
             <div className="flex flex-wrap gap-2">
               {unmappedColumns.map((column) => (
@@ -119,6 +139,16 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
                   {column}
                 </Button>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Show message when all columns are mapped */}
+        {unmappedColumns.length === 0 && fileColumns.length > 0 && (
+          <div className="text-center py-4 bg-green-50 rounded-lg border border-green-200">
+            <div className="text-green-600 font-medium">✅ כל העמודות ממופות</div>
+            <div className="text-sm text-green-500 mt-1">
+              כל {fileColumns.length} העמודות מהקובץ כבר ממופות לשדות במערכת
             </div>
           </div>
         )}
@@ -275,7 +305,7 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
 
         {/* Info */}
         <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-          💡 טיפ: ניתן להוסיף שדות מותאמים מהעמודות הקיימות בקובץ או ליצור שדות חדשים לחלוטין.
+          💡 טיפ: כאשר עמודה ממופה לשדה כלשהו, היא תעלם מרשימת העמודות הזמינות.
           השדות המותאמים יישמרו כמטאדאטה נוספת לכל עובד.
         </div>
       </CardContent>
