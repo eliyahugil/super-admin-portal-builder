@@ -130,12 +130,14 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
     console.log('✏️ Updating custom field:', mappingId, newName, newLabel);
     setMappings(prev => prev.map(mapping => {
       if (mapping.id === mappingId && mapping.isCustomField) {
-        return {
+        const updatedMapping = {
           ...mapping,
           customFieldName: newName,
           label: newLabel || `שדה מותאם: ${newName}`,
           systemField: `custom_${newName.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase()}`,
         };
+        console.log('🔄 Updated custom field mapping:', updatedMapping);
+        return updatedMapping;
       }
       return mapping;
     }));

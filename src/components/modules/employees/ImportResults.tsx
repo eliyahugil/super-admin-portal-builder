@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { BackButton } from '@/components/ui/BackButton';
 
 interface ImportError {
   row: number;
@@ -41,13 +40,13 @@ export const ImportResults: React.FC<ImportResultsProps> = ({ result, onClose, o
 
   return (
     <div className="space-y-6" dir="rtl">
-      {/* Back Button */}
+      {/* כפתור חזור למיפוי - בראש הדף */}
       {onBackToMapping && (
         <div className="flex justify-start">
           <Button
             variant="outline"
             onClick={onBackToMapping}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200"
           >
             <ArrowRight className="h-4 w-4" />
             חזור למיפוי שדות
@@ -176,7 +175,7 @@ export const ImportResults: React.FC<ImportResultsProps> = ({ result, onClose, o
           <Button
             variant="outline"
             onClick={onBackToMapping}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200"
           >
             <ArrowRight className="h-4 w-4" />
             תקן מיפוי ונסה שוב

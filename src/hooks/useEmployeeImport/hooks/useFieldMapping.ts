@@ -45,8 +45,8 @@ export const useFieldMapping = ({
       const previewData: PreviewEmployee[] = rawData.map((row, index) => {
         console.log(`📋 Processing row ${index + 1}:`, {
           rowType: Array.isArray(row) ? 'array' : typeof row,
-          rowLength: Array.isArray(row) ? row.length : Object.keys(row).length,
-          sampleData: Array.isArray(row) ? row.slice(0, 3) : Object.entries(row).slice(0, 3)
+          rowLength: Array.isArray(row) ? row.length : Object.keys(row || {}).length,
+          sampleData: Array.isArray(row) ? row.slice(0, 3) : Object.entries(row || {}).slice(0, 3)
         });
         
         const employee: any = {
@@ -76,7 +76,7 @@ export const useFieldMapping = ({
               fieldValue = row[columnName];
             }
             
-            console.log(`🗺️ Mapping ${mapping.systemField} <- column "${columnName}" (index: ${Array.isArray(row) ? parseInt(columnName.replace('Column ', '')) - 1 : 'N/A'}) = "${fieldValue}"`);
+            console.log(`🗺️ Mapping ${mapping.systemField} <- column "${columnName}" = "${fieldValue}"`);
             
             if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
               const cleanValue = String(fieldValue).trim();
@@ -104,18 +104,21 @@ export const useFieldMapping = ({
           employee.employee_type = 'permanent';
         }
 
-        // Basic validation
+        // Basic validation - הוריד את הדרישה לשם פרטי ושם משפחה כחובה
         const validationErrors = [];
-        if (!employee.first_name || employee.first_name.trim() === '') {
-          validationErrors.push('שם פרטי חובה');
+        
+        // רק אם יש שם פרטי אבל הוא ריק
+        if (employee.first_name !== undefined && (!employee.first_name || employee.first_name.trim() === '')) {
+          validationErrors.push('שם פרטי לא יכול להיות ריק');
         }
 
-        if (!employee.last_name || employee.last_name.trim() === '') {
-          validationErrors.push('שם משפחה חובה');
+        // רק אם יש שם משפחה אבל הוא ריק
+        if (employee.last_name !== undefined && (!employee.last_name || employee.last_name.trim() === '')) {
+          validationErrors.push('שם משפחה לא יכול להיות ריק');
         }
 
-        // Email validation
-        if (employee.email) {
+        // Email validation - רק אם יש אימייל
+        if (employee.email && employee.email.trim() !== '') {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(employee.email)) {
             validationErrors.push('כתובת מייל לא תקינה');
@@ -128,14 +131,16 @@ export const useFieldMapping = ({
           }
         }
 
-        // Check for duplicate ID number
-        if (employee.id_number && existingEmployees.some(emp => emp.id_number === employee.id_number)) {
+        // Check for duplicate ID number - רק אם יש ת.ז
+        if (employee.id_number && employee.id_number.trim() !== '' && 
+            existingEmployees.some(emp => emp.id_number === employee.id_number)) {
           employee.isDuplicate = true;
           validationErrors.push('עובד עם ת.ז זה כבר קיים');
         }
 
-        // Check for duplicate employee ID
-        if (employee.employee_id && existingEmployees.some(emp => emp.employee_id === employee.employee_id)) {
+        // Check for duplicate employee ID - רק אם יש מספר עובד
+        if (employee.employee_id && employee.employee_id.trim() !== '' && 
+            existingEmployees.some(emp => emp.employee_id === employee.employee_id)) {
           employee.isDuplicate = true;
           validationErrors.push('עובד עם מספר עובד זה כבר קיים');
         }
@@ -153,22 +158,36 @@ export const useFieldMapping = ({
           delete employee.main_branch_name;
         }
 
+        // הוריד את הדרישה לשדות חובה - כל עובד עם לפחות שדה אחד יהיה תקין
+        const hasAnyData = Object.keys(employee).some(key => 
+          key !== 'business_id' && 
+          key !== 'isValid' && 
+          key !== 'isDuplicate' && 
+          key !== 'validationErrors' &&
+          employee[key] !== undefined && 
+          employee[key] !== null && 
+          String(employee[key]).trim() !== ''
+        );
+
         // Set validation results
         employee.validationErrors = validationErrors;
-        employee.isValid = validationErrors.length === 0;
+        employee.isValid = hasAnyData && validationErrors.length === 0;
         
-        // Mark as invalid if has validation errors and not duplicate
-        if (validationErrors.length > 0 && !employee.isDuplicate) {
+        // Mark as invalid if has validation errors
+        if (validationErrors.length > 0) {
           employee.isValid = false;
         }
 
         console.log(`✅ Processed employee:`, {
-          name: `${employee.first_name || 'לא הוגדר'} ${employee.last_name || 'לא הוגדר'}`,
+          rowIndex: index + 1,
+          hasAnyData,
           isValid: employee.isValid,
           isDuplicate: employee.isDuplicate,
           errorsCount: employee.validationErrors?.length || 0,
           errors: employee.validationErrors,
-          hasRequiredFields: !!(employee.first_name && employee.last_name)
+          sampleFields: Object.keys(employee).filter(k => 
+            !['business_id', 'isValid', 'isDuplicate', 'validationErrors'].includes(k)
+          ).slice(0, 5)
         });
 
         return employee as PreviewEmployee;
