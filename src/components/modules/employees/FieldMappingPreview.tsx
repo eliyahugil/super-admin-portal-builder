@@ -135,7 +135,7 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
       sampleValues: Object.entries(previewData[0])
         .filter(([key]) => key !== 'originalRowIndex')
         .slice(0, 3)
-        .map(([key, value]) => `${key}: ${typeof value === 'object' ? value.value : value}`)
+        .map(([key, value]) => `${key}: ${typeof value === 'object' && value ? value.value : value}`)
     } : 'No preview data'
   });
 
@@ -164,7 +164,7 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
         <div className="flex items-center gap-2 min-w-[180px]">
           <CategorySelectWithAdd
             typeCategory={categoryType as any}
-            value={editValues[cellKey] || cellData?.value || ''}
+            value={editValues[cellKey] || (cellData?.value || '')}
             onChange={(val) => setEditValues(prev => ({ ...prev, [cellKey]: val }))}
             businessId={businessId}
           />
