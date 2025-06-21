@@ -41,8 +41,8 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   systemFields = defaultSystemFields,
 }) => {
   const [mappings, setMappings] = useState<FieldMapping[]>(() => {
-    return systemFields.map(field => ({
-      id: `mapping-${field.value}-${Date.now()}`,
+    return systemFields.map((field, index) => ({
+      id: `mapping-${field.value}-${Date.now()}-${index}`,
       systemField: field.value,
       mappedColumns: [],
       isCustomField: false,

@@ -27,7 +27,7 @@ export const useFieldMapping = ({
 }: UseFieldMappingProps) => {
   const { toast } = useToast();
 
-  const confirmMapping = useCallback(async (fieldMappings: FieldMapping[]) => {
+  const confirmMapping = useCallback((fieldMappings: FieldMapping[]): void => {
     console.log('🗺️ useFieldMapping - confirmMapping called:', {
       fieldMappings,
       rawDataCount: rawData.length,
@@ -44,50 +44,53 @@ export const useFieldMapping = ({
       return;
     }
 
-    try {
-      // Convert FieldMapping[] to Record<string, string> for the service
-      const mappingRecord: Record<string, string> = {};
-      fieldMappings.forEach(mapping => {
-        if (mapping.systemField && mapping.mappedColumns.length > 0) {
-          mappingRecord[mapping.systemField] = mapping.mappedColumns[0];
-        }
-      });
+    // Run the async operation without blocking the UI
+    void (async () => {
+      try {
+        // Convert FieldMapping[] to Record<string, string> for the service
+        const mappingRecord: Record<string, string> = {};
+        fieldMappings.forEach(mapping => {
+          if (mapping.systemField && mapping.mappedColumns.length > 0) {
+            mappingRecord[mapping.systemField] = mapping.mappedColumns[0];
+          }
+        });
 
-      // Generate preview data using the service
-      const previewData = await ExcelImportService.generatePreview({
-        rawData,
-        fieldMappings: mappingRecord,
-        businessId,
-        branches,
-        existingEmployees
-      });
+        // Generate preview data using the service
+        const previewData = await ExcelImportService.generatePreview({
+          rawData,
+          fieldMappings: mappingRecord,
+          businessId,
+          branches,
+          existingEmployees
+        });
 
-      console.log('📊 Preview data generated:', {
-        previewCount: previewData.length,
-        validCount: previewData.filter(emp => emp.isValid).length,
-        duplicateCount: previewData.filter(emp => emp.isDuplicate).length
-      });
+        console.log('📊 Preview data generated:', {
+          previewCount: previewData.length,
+          validCount: previewData.filter(emp => emp.isValid).length,
+          duplicateCount: previewData.filter(emp => emp.isDuplicate).length
+        });
 
-      // Update state
-      setFieldMappings(fieldMappings);
-      setPreviewData(previewData);
-      setShowMappingDialog(false);
-      setStep('preview');
+        // Update state
+        setFieldMappings(fieldMappings);
+        setPreviewData(previewData);
+        setShowMappingDialog(false);
+        setStep('preview');
 
-      toast({
-        title: 'מיפוי שדות הושלם',
-        description: `נוצרה תצוגה מקדימה של ${previewData.length} עובדים`,
-      });
+        toast({
+          title: 'מיפוי שדות הושלם',
+          description: `נוצרה תצוגה מקדימה של ${previewData.length} עובדים`,
+        });
 
-    } catch (error) {
-      console.error('💥 Error in confirmMapping:', error);
-      
-      toast({
-        title: 'שגיאה במיפוי שדות',
-        description: error instanceof Error ? error.message : 'שגיאה לא צפויה במיפוי השדות',
-        variant: 'destructive',
-      });
-    }
+      } catch (error) {
+        console.error('💥 Error in confirmMapping:', error);
+        
+        toast({
+          title: 'שגיאה במיפוי שדות',
+          description: error instanceof Error ? error.message : 'שגיאה לא צפויה במיפוי השדות',
+          variant: 'destructive',
+        });
+      }
+    })();
   }, [businessId, rawData, branches, existingEmployees, setFieldMappings, setPreviewData, setStep, setShowMappingDialog, toast]);
 
   return {
