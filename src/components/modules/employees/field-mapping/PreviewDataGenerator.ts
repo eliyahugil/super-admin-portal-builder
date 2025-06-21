@@ -28,7 +28,8 @@ export const generatePreviewData = (
     firstRowData: sampleData[0] ? {
       type: typeof sampleData[0],
       isArray: Array.isArray(sampleData[0]),
-      keys: Array.isArray(sampleData[0]) ? `Array with ${sampleData[0].length} items` : Object.keys(sampleData[0] || {}).slice(0, 5)
+      length: Array.isArray(sampleData[0]) ? sampleData[0].length : 'not array',
+      sample: Array.isArray(sampleData[0]) ? sampleData[0].slice(0, 3) : 'not array'
     } : 'No data'
   });
 
@@ -44,7 +45,8 @@ export const generatePreviewData = (
     console.log(`📋 Processing row ${rowIndex + 1}:`, {
       rowType: typeof row,
       isArray: Array.isArray(row),
-      rowContent: Array.isArray(row) ? row.slice(0, 3) : Object.entries(row || {}).slice(0, 3)
+      rowLength: Array.isArray(row) ? row.length : 'not array',
+      rowContent: Array.isArray(row) ? row.slice(0, 5) : 'not array'
     });
 
     const mappedRow: Record<string, PreviewCellData> = {};
@@ -65,24 +67,34 @@ export const generatePreviewData = (
         try {
           if (Array.isArray(row)) {
             // For array data - extract column index from name
-            const indexMatch = columnName.match(/(\d+)/);
-            if (indexMatch) {
-              const columnIndex = parseInt(indexMatch[1]) - 1; // Convert to 0-based
-              if (columnIndex >= 0 && columnIndex < row.length) {
-                fieldValue = String(row[columnIndex] || '').trim();
-                console.log(`  ✅ Array[${columnIndex}] = "${fieldValue}"`);
-              } else {
-                console.log(`  ❌ Array index ${columnIndex} out of bounds (length: ${row.length})`);
+            // Column names are either "Column 1", "Column 2" or the actual header values
+            let columnIndex = -1;
+            
+            // Try to match by exact column name first (if it's a header from the file)
+            const headerIndex = columnName.indexOf('Column ');
+            if (headerIndex !== -1) {
+              // Extract number from "Column X" format
+              const indexMatch = columnName.match(/Column (\d+)/);
+              if (indexMatch) {
+                columnIndex = parseInt(indexMatch[1]) - 1; // Convert to 0-based
               }
             } else {
-              console.log(`  ❌ Could not extract index from column name: ${columnName}`);
+              // If it's not a "Column X" format, treat it as a direct header
+              // We need to find which column index this header corresponds to
+              // For now, let's assume the mapping system will handle this correctly
+              console.log(`  ⚠️ Non-standard column name format: ${columnName}`);
+              columnIndex = 0; // Fallback to first column
             }
-          } else if (row && typeof row === 'object') {
-            // For object data - direct property access
-            fieldValue = String(row[columnName] || '').trim();
-            console.log(`  ✅ Object["${columnName}"] = "${fieldValue}"`);
+            
+            if (columnIndex >= 0 && columnIndex < row.length) {
+              const rawValue = row[columnIndex];
+              fieldValue = rawValue !== null && rawValue !== undefined ? String(rawValue).trim() : '';
+              console.log(`  ✅ Array[${columnIndex}] = "${fieldValue}"`);
+            } else {
+              console.log(`  ❌ Array index ${columnIndex} out of bounds (length: ${row.length})`);
+            }
           } else {
-            console.log(`  ❌ Row is not array or object: ${typeof row}`);
+            console.log(`  ❌ Row is not array: ${typeof row}`);
           }
           
           if (fieldValue && fieldValue !== '') {

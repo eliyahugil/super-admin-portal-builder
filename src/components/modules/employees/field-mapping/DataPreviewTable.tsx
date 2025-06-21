@@ -2,211 +2,129 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface DataPreviewTableProps {
   fileColumns: string[];
   sampleData: any[];
-  mappings?: Array<{ systemField: string; mappedColumns: string[] }>;
+  mappings: Array<{ systemField: string; mappedColumns: string[] }>;
 }
 
 export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
   fileColumns,
   sampleData,
-  mappings = [],
+  mappings = []
 }) => {
-  const isMobile = useIsMobile();
+  console.log('📋 DataPreviewTable - Received data:', {
+    fileColumnsCount: fileColumns.length,
+    sampleDataCount: sampleData.length,
+    sampleColumns: fileColumns.slice(0, 5),
+    firstRowType: sampleData[0] ? (Array.isArray(sampleData[0]) ? 'array' : 'object') : 'no data',
+    firstRowSample: sampleData[0] ? (Array.isArray(sampleData[0]) ? sampleData[0].slice(0, 3) : 'not array') : 'no data'
+  });
 
-  if (sampleData.length === 0) {
-    return null;
-  }
-
-  // Handle both array and object data structures
-  const getRowValue = (row: any, columnIndex: number, columnName: string) => {
-    if (Array.isArray(row)) {
-      return row[columnIndex] || '-';
-    } else {
-      return row[columnName] || '-';
-    }
-  };
-
-  // Check if a column is mapped
+  // Check if column is mapped to any system field
   const isColumnMapped = (columnName: string) => {
     return mappings.some(mapping => 
       mapping.mappedColumns && mapping.mappedColumns.includes(columnName)
     );
   };
 
-  // Check if a value is empty
-  const isEmpty = (value: any) => {
-    return !value || value.toString().trim() === '' || value === '-';
-  };
-
-  // Get cell styling based on mapping status and data
-  const getCellClassName = (columnName: string, value: any) => {
-    const isMapped = isColumnMapped(columnName);
-    const hasData = !isEmpty(value);
-    
-    return cn(
-      isMobile ? 'max-w-[120px] text-xs p-2' : 'max-w-[180px] text-sm p-3',
-      'truncate',
-      // Mapping status styling
-      isMapped && isEmpty(value) && 'bg-yellow-100 border-yellow-200', // Mapped but empty
-      !isMapped && hasData && 'bg-red-100 border-red-200', // Not mapped but has data
-      isMapped && hasData && 'bg-green-50' // Mapped and has data (optional light green)
+  // Get system field name for mapped column
+  const getSystemFieldForColumn = (columnName: string) => {
+    const mapping = mappings.find(m => 
+      m.mappedColumns && m.mappedColumns.includes(columnName)
     );
+    return mapping?.systemField;
   };
 
-  // Get effective column headers - either from fileColumns or generate indices
-  const effectiveColumns = fileColumns.length > 0 
-    ? fileColumns 
-    : sampleData[0] && Array.isArray(sampleData[0]) 
-      ? sampleData[0].map((_: any, index: number) => `עמודה ${index + 1}`)
-      : Object.keys(sampleData[0] || {});
-
-  // Filter out empty or irrelevant columns for better display
-  const relevantColumns = effectiveColumns.filter((column, index) => {
-    // Check if column has meaningful data in sample rows
-    const hasData = sampleData.some(row => {
-      const value = getRowValue(row, index, column);
-      return value && 
-        value.toString().trim() !== '' && 
-        value.toString().trim() !== '-' &&
-        value !== null &&
-        value !== undefined;
-    });
-    return hasData;
-  });
-
-  // Limit the number of columns displayed based on screen size
-  const maxColumns = isMobile ? 4 : 8;
-  const displayColumns = relevantColumns.slice(0, maxColumns);
-  const hasMoreColumns = relevantColumns.length > maxColumns;
-
-  // Limit rows for preview
-  const maxRows = isMobile ? 3 : 5;
-  const displayRows = sampleData.slice(0, maxRows);
+  const previewData = sampleData.slice(0, 10); // Show first 10 rows
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className={`${isMobile ? 'text-base' : 'text-lg'}`}>
-          תצוגה מקדימה של הנתונים ({sampleData.length} שורות)
+        <CardTitle className="flex items-center gap-2">
+          נתוני הקובץ הגולמיים
+          <Badge variant="outline">
+            {fileColumns.length} עמודות, {sampleData.length} שורות
+          </Badge>
         </CardTitle>
-        {hasMoreColumns && (
-          <p className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-            מציג {displayColumns.length} מתוך {relevantColumns.length} עמודות עם נתונים
-          </p>
-        )}
-        {mappings.length > 0 && (
-          <div className="flex flex-wrap gap-2 text-xs mt-2">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-yellow-100 border border-yellow-200 rounded"></div>
-              <span>ממופה, ערכים ריקים</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-red-100 border border-red-200 rounded"></div>
-              <span>לא ממופה, יש ערכים</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-green-50 border border-green-200 rounded"></div>
-              <span>ממופה תקין</span>
-            </div>
-          </div>
-        )}
+        <p className="text-sm text-gray-600">
+          זוהי תצוגה של הנתונים כפי שהם נקראו מהקובץ
+        </p>
       </CardHeader>
       <CardContent>
-        <div className="overflow-hidden">
-          <div className="max-w-full overflow-x-auto">
-            <Table className="w-full">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12 text-center">#</TableHead>
-                  {displayColumns.map((column, index) => (
-                    <TableHead 
-                      key={`${column}-${index}`}
-                      className={cn(
-                        isMobile 
-                          ? 'min-w-[100px] max-w-[120px] text-xs p-2' 
-                          : 'min-w-[120px] max-w-[180px] text-sm p-3',
-                        'truncate',
-                        // Header styling based on mapping status
-                        isColumnMapped(column) && 'bg-blue-50 font-semibold'
-                      )}
-                      title={column}
-                    >
-                      <div className="truncate">
-                        {column}
-                        {isColumnMapped(column) && (
-                          <span className="text-blue-600 ml-1">✓</span>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">#</TableHead>
+                {fileColumns.map((column, index) => {
+                  const isMapped = isColumnMapped(column);
+                  const systemField = getSystemFieldForColumn(column);
+                  
+                  return (
+                    <TableHead key={index} className="min-w-[120px]">
+                      <div className="space-y-1">
+                        <div className={`font-medium ${isMapped ? 'text-green-700' : 'text-gray-700'}`}>
+                          {column}
+                        </div>
+                        {isMapped && systemField && (
+                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                            → {systemField}
+                          </Badge>
+                        )}
+                        {!isMapped && (
+                          <Badge variant="outline" className="text-xs text-gray-500">
+                            לא ממופה
+                          </Badge>
                         )}
                       </div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        עמודה {fileColumns.indexOf(column) >= 0 ? fileColumns.indexOf(column) + 1 : index + 1}
-                      </div>
                     </TableHead>
-                  ))}
-                  {hasMoreColumns && (
-                    <TableHead className={`${isMobile ? 'text-xs p-2' : 'text-sm p-3'} text-center`}>
-                      ...
-                    </TableHead>
-                  )}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {displayRows.map((row, rowIndex) => (
-                  <TableRow key={rowIndex}>
-                    <TableCell className="text-center font-mono text-xs">
-                      {rowIndex + 1}
-                    </TableCell>
-                    {displayColumns.map((column, columnIndex) => {
-                      const originalColumnIndex = fileColumns.indexOf(column);
-                      const value = getRowValue(row, originalColumnIndex >= 0 ? originalColumnIndex : columnIndex, column);
-                      return (
-                        <TableCell 
-                          key={`${column}-${columnIndex}`}
-                          className={getCellClassName(column, value)}
-                          title={value?.toString() || '-'}
-                        >
-                          <div className="truncate">
-                            {value?.toString() || '-'}
-                          </div>
-                        </TableCell>
-                      );
-                    })}
-                    {hasMoreColumns && (
-                      <TableCell className={`${isMobile ? 'text-xs p-2' : 'text-sm p-3'} text-center text-gray-400`}>
-                        ...
+                  );
+                })}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {previewData.map((row, rowIndex) => (
+                <TableRow key={rowIndex}>
+                  <TableCell className="font-mono text-sm text-gray-500">
+                    {rowIndex + 1}
+                  </TableCell>
+                  {fileColumns.map((_, colIndex) => {
+                    let cellValue = '';
+                    
+                    if (Array.isArray(row)) {
+                      cellValue = row[colIndex] !== null && row[colIndex] !== undefined 
+                        ? String(row[colIndex]) 
+                        : '';
+                    }
+                    
+                    const isEmpty = !cellValue || cellValue.trim() === '';
+                    const isMapped = isColumnMapped(fileColumns[colIndex]);
+                    
+                    return (
+                      <TableCell 
+                        key={colIndex} 
+                        className={`max-w-[200px] truncate ${
+                          isEmpty ? 'bg-gray-50 text-gray-400' : 
+                          isMapped ? 'bg-green-50 border-l-2 border-green-200' : ''
+                        }`}
+                        title={cellValue || 'ריק'}
+                      >
+                        {cellValue || '-'}
                       </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-        
-        {/* Summary information */}
-        <div className={`mt-4 space-y-2 ${isMobile ? 'text-xs' : 'text-sm'} text-gray-600`}>
-          <div className="flex justify-between">
-            <span>שורות לדוגמה:</span>
-            <span>{displayRows.length} מתוך {sampleData.length}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>עמודות מוצגות:</span>
-            <span>{displayColumns.length} מתוך {effectiveColumns.length}</span>
-          </div>
-          {mappings.length > 0 && (
-            <div className="flex justify-between">
-              <span>עמודות ממופות:</span>
-              <span>{displayColumns.filter(col => isColumnMapped(col)).length} מתוך {displayColumns.length}</span>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          
+          {sampleData.length > 10 && (
+            <div className="text-sm text-gray-500 mt-4 text-center">
+              מציג 10 שורות מתוך {sampleData.length} שורות במקובץ
             </div>
-          )}
-          {relevantColumns.length < effectiveColumns.length && (
-            <p className="text-yellow-600 text-xs">
-              הוסתרו {effectiveColumns.length - relevantColumns.length} עמודות ריקות
-            </p>
           )}
         </div>
       </CardContent>
