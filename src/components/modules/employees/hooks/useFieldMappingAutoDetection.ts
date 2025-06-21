@@ -2,9 +2,20 @@
 import { useCallback } from 'react';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
-export const useFieldMappingAutoDetection = () => {
-  const autoDetectMappings = useCallback((fileColumns: string[]): FieldMapping[] => {
-    console.log('🔍 Auto-detecting mappings for columns:', fileColumns);
+interface UseFieldMappingAutoDetectionReturn {
+  autoDetectMappings: (fileColumns: string[]) => FieldMapping[];
+  autoDetectedMappings: FieldMapping[];
+  applyAutoDetection: (mappings: FieldMapping[]) => void;
+  hasAutoDetections: boolean;
+}
+
+export const useFieldMappingAutoDetection = (
+  fileColumns?: string[], 
+  systemFields?: Array<{ value: string; label: string }>
+): UseFieldMappingAutoDetectionReturn => {
+  
+  const autoDetectMappings = useCallback((columns: string[]): FieldMapping[] => {
+    console.log('🔍 Auto-detecting mappings for columns:', columns);
     
     const mappings: FieldMapping[] = [];
 
@@ -135,7 +146,7 @@ export const useFieldMappingAutoDetection = () => {
     // Track used columns for each field
     const fieldMappings = new Map<string, string[]>();
 
-    fileColumns.forEach((column, columnIndex) => {
+    columns.forEach((column, columnIndex) => {
       // Skip null or undefined columns
       if (!column || column === null || column === undefined) {
         console.log(`⏭️ Skipping null/undefined column at index ${columnIndex}`);
@@ -175,13 +186,13 @@ export const useFieldMappingAutoDetection = () => {
     });
 
     // Create mappings from the collected field mappings
-    fieldMappings.forEach((columns, field) => {
+    fieldMappings.forEach((cols, field) => {
       const rule = detectionRules.find(r => r.field === field);
       if (rule) {
         mappings.push({
           id: `auto-${field}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           systemField: field,
-          mappedColumns: columns,
+          mappedColumns: cols,
           isRequired: rule.required,
           label: rule.label,
           isCustomField: false,
@@ -190,8 +201,8 @@ export const useFieldMappingAutoDetection = () => {
     });
 
     console.log('🎯 Auto-detection results:', {
-      totalColumns: fileColumns.length,
-      validColumns: fileColumns.filter(col => col !== null && col !== undefined).length,
+      totalColumns: columns.length,
+      validColumns: columns.filter(col => col !== null && col !== undefined).length,
       mappedFields: mappings.length,
       mappings: mappings.map(m => `${m.systemField} ← ${m.mappedColumns.join(', ')}`)
     });
@@ -199,5 +210,18 @@ export const useFieldMappingAutoDetection = () => {
     return mappings;
   }, []);
 
-  return { autoDetectMappings };
+  const autoDetectedMappings = fileColumns ? autoDetectMappings(fileColumns) : [];
+  const hasAutoDetections = autoDetectedMappings.length > 0;
+
+  const applyAutoDetection = (mappings: FieldMapping[]) => {
+    console.log('🔄 Applying auto-detection to existing mappings');
+    // This would be handled by the parent component
+  };
+
+  return {
+    autoDetectMappings,
+    autoDetectedMappings,
+    applyAutoDetection,
+    hasAutoDetections,
+  };
 };

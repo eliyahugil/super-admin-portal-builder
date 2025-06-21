@@ -88,7 +88,7 @@ export const EnhancedFieldMappingRow: React.FC<EnhancedFieldMappingRowProps> = (
         </Label>
         <div className="flex items-center gap-2">
           <MultiColumnSelector
-            columns={fileColumns}
+            availableColumns={fileColumns}
             selectedColumns={mapping.mappedColumns}
             onSelectionChange={handleColumnChange}
             placeholder="בחר עמודות..."

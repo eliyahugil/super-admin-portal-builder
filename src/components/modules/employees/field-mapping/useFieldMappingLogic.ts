@@ -3,88 +3,113 @@ import { useState, useEffect } from 'react';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 import { useFieldMappingAutoDetection } from '../hooks/useFieldMappingAutoDetection';
 
-interface UseFieldMappingLogicProps {
-  systemFields: Array<{ value: string; label: string; required?: boolean }>;
-  fileColumns?: string[];
+interface UseFieldMappingLogicReturn {
+  mappings: FieldMapping[];
+  setMappings: (mappings: FieldMapping[]) => void;
+  unmappedColumns: string[];
+  mappedSystemFields: string[];
+  addMapping: () => void;
+  updateMapping: (mappingId: string, updates: Partial<FieldMapping>) => void;
+  removeMapping: (mappingId: string) => void;
+  canProceed: boolean;
+  validationErrors: string[];
+  reapplyAutoMapping: () => void;
+  clearAllMappings: () => void;
+  removeUnmappedFields: () => void;
+  toggleFieldMapping: (mappingId: string) => void;
 }
 
-export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFieldMappingLogicProps) => {
+export const useFieldMappingLogic = (
+  fileColumns: string[], 
+  systemFields?: Array<{ value: string; label: string; required?: boolean }>
+): UseFieldMappingLogicReturn => {
   const { autoDetectMappings } = useFieldMappingAutoDetection();
   
-  const [mappings, setMappings] = useState<FieldMapping[]>(() => {
-    return systemFields.map((field, index) => ({
-      id: `mapping-${field.value}-${Date.now()}-${index}`,
-      systemField: field.value,
-      mappedColumns: [],
-      isRequired: field.required || false,
-      label: field.label,
-      isCustomField: false,
-    }));
-  });
+  const [mappings, setMappings] = useState<FieldMapping[]>([]);
 
-  // Auto-detect mappings when file columns are available
+  // Initialize with system fields or auto-detected mappings
   useEffect(() => {
-    if (fileColumns.length > 0) {
-      applyAutoMappingsAndAddUnmapped();
-    }
-  }, [fileColumns, autoDetectMappings]);
-
-  const applyAutoMappingsAndAddUnmapped = () => {
-    console.log('🚀 Auto-detecting field mappings and adding unmapped columns:', fileColumns);
-    
-    const autoMappings = autoDetectMappings(fileColumns);
-    console.log('🎯 Auto-detection found mappings:', autoMappings);
-    
-    // Track which columns were mapped
-    const mappedColumns = new Set<string>();
-    
-    if (autoMappings.length > 0) {
-      setMappings(prev => {
-        const updatedMappings = prev.map(mapping => {
-          const autoMapping = autoMappings.find(auto => auto.systemField === mapping.systemField);
-          if (autoMapping && autoMapping.mappedColumns.length > 0) {
-            console.log(`✅ Applied auto-mapping: ${mapping.systemField} ← ${autoMapping.mappedColumns.join(', ')}`);
-            autoMapping.mappedColumns.forEach(col => mappedColumns.add(col));
-            return {
-              ...mapping,
-              mappedColumns: autoMapping.mappedColumns,
-            };
-          }
-          return mapping;
-        });
-        
-        // Add unmapped columns as custom fields
-        const unmappedColumns = fileColumns.filter(column => !mappedColumns.has(column));
-        const customFieldMappings: FieldMapping[] = unmappedColumns.map((column, index) => ({
-          id: `custom-${column}-${Date.now()}-${index}`,
-          systemField: `custom_${column.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase()}`,
-          mappedColumns: [column],
-          isRequired: false,
-          label: `שדה מותאם: ${column}`,
-          isCustomField: true,
-          customFieldName: column,
-        }));
-
-        console.log(`📋 Added ${customFieldMappings.length} unmapped columns as custom fields:`, 
-          customFieldMappings.map(m => m.label));
-        
-        const finalMappings = [...updatedMappings, ...customFieldMappings];
-        
-        console.log('📋 Final mappings after auto-detection and custom field addition:', 
-          finalMappings.map(m => `${m.systemField}: ${m.mappedColumns.length > 0 ? m.mappedColumns.join(', ') : 'not mapped'}`));
-        
-        return finalMappings;
+    if (fileColumns.length > 0 && systemFields) {
+      const autoMappings = autoDetectMappings(fileColumns);
+      
+      // Create mappings from system fields, filling with auto-detected ones where available
+      const initialMappings = systemFields.map((field, index) => {
+        const autoMapping = autoMappings.find(auto => auto.systemField === field.value);
+        return {
+          id: `mapping-${field.value}-${Date.now()}-${index}`,
+          systemField: field.value,
+          mappedColumns: autoMapping?.mappedColumns || [],
+          isRequired: field.required || false,
+          label: field.label,
+          isCustomField: false,
+        };
       });
+
+      // Add unmapped columns as custom fields
+      const mappedColumns = new Set<string>();
+      autoMappings.forEach(mapping => {
+        mapping.mappedColumns.forEach(col => mappedColumns.add(col));
+      });
+      
+      const unmappedColumns = fileColumns.filter(column => !mappedColumns.has(column));
+      const customFieldMappings: FieldMapping[] = unmappedColumns.map((column, index) => ({
+        id: `custom-${column}-${Date.now()}-${index}`,
+        systemField: `custom_${column.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase()}`,
+        mappedColumns: [column],
+        isRequired: false,
+        label: `שדה מותאם: ${column}`,
+        isCustomField: true,
+        customFieldName: column,
+      }));
+
+      setMappings([...initialMappings, ...customFieldMappings]);
     }
+  }, [fileColumns, systemFields, autoDetectMappings]);
+
+  const unmappedColumns = fileColumns.filter(column => 
+    !mappings.some(mapping => mapping.mappedColumns.includes(column))
+  );
+
+  const mappedSystemFields = mappings
+    .filter(mapping => mapping.mappedColumns.length > 0)
+    .map(mapping => mapping.systemField);
+
+  const addMapping = () => {
+    const newMapping: FieldMapping = {
+      id: `mapping-new-${Date.now()}`,
+      systemField: '',
+      mappedColumns: [],
+      isRequired: false,
+      label: 'שדה חדש',
+      isCustomField: false,
+    };
+    setMappings(prev => [...prev, newMapping]);
+  };
+
+  const updateMapping = (mappingId: string, updates: Partial<FieldMapping>) => {
+    setMappings(prev => prev.map(mapping => 
+      mapping.id === mappingId ? { ...mapping, ...updates } : mapping
+    ));
+  };
+
+  const removeMapping = (mappingId: string) => {
+    setMappings(prev => prev.filter(mapping => mapping.id !== mappingId));
   };
 
   const reapplyAutoMapping = () => {
-    console.log('🔄 Reapplying auto-mapping and adding unmapped fields...');
-    applyAutoMappingsAndAddUnmapped();
+    if (fileColumns.length > 0) {
+      const autoMappings = autoDetectMappings(fileColumns);
+      setMappings(prev => prev.map(mapping => {
+        const autoMapping = autoMappings.find(auto => auto.systemField === mapping.systemField);
+        if (autoMapping) {
+          return { ...mapping, mappedColumns: autoMapping.mappedColumns };
+        }
+        return mapping;
+      }));
+    }
   };
 
   const clearAllMappings = () => {
-    console.log('🧹 Clearing all mappings...');
     setMappings(prev => prev.map(mapping => ({
       ...mapping,
       mappedColumns: [],
@@ -92,14 +117,12 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
   };
 
   const removeUnmappedFields = () => {
-    console.log('🗑️ Removing unmapped fields...');
     setMappings(prev => prev.filter(mapping => 
       mapping.mappedColumns.length > 0 || mapping.isRequired
     ));
   };
 
   const toggleFieldMapping = (mappingId: string) => {
-    console.log('🔄 Toggling field mapping:', mappingId);
     setMappings(prev => prev.map(mapping => {
       if (mapping.id === mappingId) {
         return {
@@ -111,95 +134,23 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
     }));
   };
 
-  // Updated to handle multiple columns
-  const handleMappingChange = (systemField: string, selectedColumns: string[]) => {
-    console.log(`🗺️ Updating mapping for ${systemField} with columns:`, selectedColumns);
-    setMappings(prev => prev.map(mapping => 
-      mapping.systemField === systemField 
-        ? { ...mapping, mappedColumns: selectedColumns }
-        : mapping
-    ));
-  };
+  const validationErrors = mappings
+    .filter(mapping => mapping.isRequired && mapping.mappedColumns.length === 0)
+    .map(mapping => `השדה "${mapping.label}" הוא חובה וחייב להיות ממופה`);
 
-  const handleAddCustomField = (customMapping: FieldMapping) => {
-    console.log('➕ Adding custom field:', customMapping);
-    setMappings(prev => [...prev, customMapping]);
-  };
-
-  const handleUpdateCustomField = (mappingId: string, newName: string, newLabel: string) => {
-    console.log('✏️ Updating custom field:', mappingId, newName, newLabel);
-    setMappings(prev => prev.map(mapping => {
-      if (mapping.id === mappingId && mapping.isCustomField) {
-        const updatedMapping = {
-          ...mapping,
-          customFieldName: newName,
-          label: newLabel || `שדה מותאם: ${newName}`,
-          systemField: `custom_${newName.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase()}`,
-        };
-        console.log('🔄 Updated custom field mapping:', updatedMapping);
-        return updatedMapping;
-      }
-      return mapping;
-    }));
-  };
-
-  const handleRemoveCustomField = (mappingId: string) => {
-    console.log('🗑️ Removing custom field:', mappingId);
-    setMappings(prev => prev.filter(mapping => mapping.id !== mappingId));
-  };
-
-  const handleRemoveMapping = (mappingId: string) => {
-    console.log('🗑️ Removing mapping:', mappingId);
-    setMappings(prev => prev.filter(mapping => mapping.id !== mappingId));
-  };
-
-  const handleMoveMapping = (mappingId: string, direction: 'up' | 'down') => {
-    setMappings(prev => {
-      const currentIndex = prev.findIndex(mapping => mapping.id === mappingId);
-      if (currentIndex === -1) return prev;
-      
-      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-      if (newIndex < 0 || newIndex >= prev.length) return prev;
-      
-      const newMappings = [...prev];
-      [newMappings[currentIndex], newMappings[newIndex]] = [newMappings[newIndex], newMappings[currentIndex]];
-      return newMappings;
-    });
-  };
-
-  const getSystemFieldLabel = (systemField: string) => {
-    const field = systemFields.find(f => f.value === systemField);
-    return field?.label || systemField;
-  };
-
-  const isSystemFieldRequired = (systemField: string) => {
-    const field = systemFields.find(f => f.value === systemField);
-    return field?.required || false;
-  };
-
-  const hasRequiredMappings = mappings
-    .filter(m => isSystemFieldRequired(m.systemField))
-    .every(m => m.mappedColumns.length > 0);
-
-  const handleConfirm = (onConfirm: (mappings: FieldMapping[]) => void) => {
-    // Filter out mappings that have no columns mapped
-    const validMappings = mappings.filter(mapping => mapping.mappedColumns.length > 0);
-    console.log('🎯 Confirming mappings:', validMappings.map(m => `${m.systemField} ← ${m.mappedColumns.join(', ')}`));
-    onConfirm(validMappings);
-  };
+  const canProceed = validationErrors.length === 0 && 
+    mappings.some(mapping => mapping.mappedColumns.length > 0);
 
   return {
     mappings,
-    handleMappingChange,
-    handleAddCustomField,
-    handleUpdateCustomField,
-    handleRemoveCustomField,
-    handleRemoveMapping,
-    handleMoveMapping,
-    getSystemFieldLabel,
-    isSystemFieldRequired,
-    hasRequiredMappings,
-    handleConfirm,
+    setMappings,
+    unmappedColumns,
+    mappedSystemFields,
+    addMapping,
+    updateMapping,
+    removeMapping,
+    canProceed,
+    validationErrors,
     reapplyAutoMapping,
     clearAllMappings,
     removeUnmappedFields,

@@ -12,6 +12,7 @@ import { FieldMappingPreview } from './FieldMappingPreview';
 import { useFieldMappingLogic } from './field-mapping/useFieldMappingLogic';
 import { useFieldMappingAutoDetection } from './hooks/useFieldMappingAutoDetection';
 import { FloatingAutoMappingMenu } from './field-mapping/FloatingAutoMappingMenu';
+import { SYSTEM_FIELDS } from '@/constants/systemFields';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
 interface FieldMappingDialogProps {
@@ -31,7 +32,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   sampleData,
   onConfirm,
   onBack,
-  systemFields,
+  systemFields = SYSTEM_FIELDS,
 }) => {
   console.log('🗺️ FieldMappingDialog rendered with:', {
     open,
@@ -49,13 +50,14 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
     updateMapping,
     removeMapping,
     canProceed,
-    validationErrors
+    validationErrors,
+    reapplyAutoMapping,
+    clearAllMappings,
+    removeUnmappedFields,
   } = useFieldMappingLogic(fileColumns, systemFields);
 
   const {
-    autoDetectedMappings,
-    applyAutoDetection,
-    hasAutoDetections
+    hasAutoDetections,
   } = useFieldMappingAutoDetection(fileColumns, systemFields);
 
   const [activeTab, setActiveTab] = useState('mapping');
@@ -70,7 +72,8 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
 
   const handleConfirm = () => {
     console.log('✅ FieldMappingDialog - confirming mappings:', mappings);
-    onConfirm(mappings);
+    const validMappings = mappings.filter(mapping => mapping.mappedColumns.length > 0);
+    onConfirm(validMappings);
   };
 
   const handleBack = () => {
@@ -79,6 +82,28 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
       onBack();
     } else {
       onOpenChange(false);
+    }
+  };
+
+  const handleAddSystemField = async (newField: { value: string; label: string }): Promise<boolean> => {
+    try {
+      console.log('➕ Adding new system field:', newField);
+      // For now, just add it as a custom field - could be enhanced to save to database
+      const customMapping: FieldMapping = {
+        id: `custom-${newField.value}-${Date.now()}`,
+        systemField: newField.value,
+        mappedColumns: [],
+        isRequired: false,
+        label: newField.label,
+        isCustomField: true,
+        customFieldName: newField.label,
+      };
+      
+      setMappings(prev => [...prev, customMapping]);
+      return true;
+    } catch (error) {
+      console.error('Error adding system field:', error);
+      return false;
     }
   };
 
@@ -97,8 +122,12 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
             <div className="flex items-center gap-2">
               {hasAutoDetections && (
                 <FloatingAutoMappingMenu
-                  autoDetectedMappings={autoDetectedMappings}
-                  onApplyAutoDetection={applyAutoDetection}
+                  onApplyAutoMapping={reapplyAutoMapping}
+                  onClearMappings={clearAllMappings}
+                  onRemoveUnmapped={removeUnmappedFields}
+                  hasAutoDetections={hasAutoDetections}
+                  mappedCount={mappings.filter(m => m.mappedColumns.length > 0).length}
+                  totalColumns={fileColumns.length}
                 />
               )}
               <Button
@@ -163,9 +192,9 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
                       mappings={mappings}
                       fileColumns={fileColumns}
                       systemFields={systemFields}
-                      onAddMapping={addMapping}
                       onUpdateMapping={updateMapping}
                       onRemoveMapping={removeMapping}
+                      onAddSystemField={handleAddSystemField}
                     />
                   </div>
                 </ScrollArea>
@@ -200,7 +229,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
 
         <div className="border-t p-6 flex justify-between items-center">
           <div className="text-sm text-gray-600">
-            {mappings.length} שדות ממופים מתוך {fileColumns.length} עמודות
+            {mappings.filter(m => m.mappedColumns.length > 0).length} שדות ממופים מתוך {fileColumns.length} עמודות
           </div>
           <div className="flex gap-2">
             <Button

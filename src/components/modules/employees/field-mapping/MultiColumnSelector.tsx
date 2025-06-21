@@ -1,83 +1,91 @@
 
-import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ChevronDown } from 'lucide-react';
 
 interface MultiColumnSelectorProps {
-  selectedColumns: string[];
   availableColumns: string[];
-  onAddColumn: (column: string) => void;
-  onRemoveColumn: (column: string) => void;
+  selectedColumns: string[];
+  onSelectionChange: (columns: string[]) => void;
   placeholder?: string;
 }
 
 export const MultiColumnSelector: React.FC<MultiColumnSelectorProps> = ({
-  selectedColumns,
   availableColumns,
-  onAddColumn,
-  onRemoveColumn,
-  placeholder = "בחר עמודה"
+  selectedColumns,
+  onSelectionChange,
+  placeholder = "בחר עמודות..."
 }) => {
-  // Filter out already selected columns
-  const unselectedColumns = availableColumns.filter(
-    column => !selectedColumns.includes(column)
-  );
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleColumnToggle = (column: string) => {
+    const newSelection = selectedColumns.includes(column)
+      ? selectedColumns.filter(col => col !== column)
+      : [...selectedColumns, column];
+    
+    onSelectionChange(newSelection);
+  };
+
+  const displayText = selectedColumns.length > 0 
+    ? `נבחרו ${selectedColumns.length} עמודות`
+    : placeholder;
 
   return (
-    <div className="space-y-2">
-      {/* Show selected columns */}
-      {selectedColumns.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {selectedColumns.map((column) => (
-            <Badge key={column} variant="secondary" className="flex items-center gap-1">
-              {column}
+    <div className="w-full">
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className="w-full justify-between"
+            size="sm"
+          >
+            <span className="truncate">{displayText}</span>
+            <ChevronDown className="h-4 w-4 shrink-0" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-2" align="start">
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {availableColumns.map((column) => (
+              <div key={column} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`column-${column}`}
+                  checked={selectedColumns.includes(column)}
+                  onCheckedChange={() => handleColumnToggle(column)}
+                />
+                <label
+                  htmlFor={`column-${column}`}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                >
+                  {column}
+                </label>
+              </div>
+            ))}
+          </div>
+          {selectedColumns.length > 0 && (
+            <div className="mt-3 pt-2 border-t">
               <Button
-                type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => onRemoveColumn(column)}
-                className="h-4 w-4 p-0 text-gray-500 hover:text-red-500"
+                onClick={() => onSelectionChange([])}
+                className="w-full"
               >
-                <X className="h-3 w-3" />
+                נקה בחירה
               </Button>
+            </div>
+          )}
+        </PopoverContent>
+      </Popover>
+      
+      {selectedColumns.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {selectedColumns.map((column) => (
+            <Badge key={column} variant="secondary" className="text-xs">
+              {column}
             </Badge>
           ))}
-        </div>
-      )}
-
-      {/* Add new column selector */}
-      {unselectedColumns.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Select
-            value=""
-            onValueChange={(value) => {
-              if (value && value !== 'none') {
-                onAddColumn(value);
-              }
-            }}
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">ללא בחירה</SelectItem>
-              {unselectedColumns.map((column) => (
-                <SelectItem key={column} value={column}>
-                  {column}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Plus className="h-4 w-4 text-gray-400" />
-        </div>
-      )}
-
-      {/* Show message when no columns available */}
-      {selectedColumns.length === 0 && unselectedColumns.length === 0 && (
-        <div className="text-sm text-gray-500 p-2 border border-dashed rounded">
-          כל העמודות כבר נבחרו
         </div>
       )}
     </div>

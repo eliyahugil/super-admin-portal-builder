@@ -1,60 +1,64 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FieldMappingRow } from './FieldMappingRow';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { EnhancedFieldMappingRow } from './EnhancedFieldMappingRow';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FieldMappingListProps {
   mappings: FieldMapping[];
   fileColumns: string[];
-  systemFields: Array<{ value: string; label: string; required?: boolean }>;
-  onMappingChange: (systemField: string, selectedColumns: string[]) => void;
-  onMoveMapping: (mappingId: string, direction: 'up' | 'down') => void;
+  systemFields?: Array<{ value: string; label: string }>;
+  onUpdateMapping: (mappingId: string, updates: Partial<FieldMapping>) => void;
   onRemoveMapping: (mappingId: string) => void;
-  getSystemFieldLabel: (systemField: string) => string;
-  isSystemFieldRequired: (systemField: string) => boolean;
+  onAddSystemField?: (newField: { value: string; label: string }) => Promise<boolean>;
 }
 
 export const FieldMappingList: React.FC<FieldMappingListProps> = ({
   mappings,
   fileColumns,
-  systemFields,
-  onMappingChange,
-  onMoveMapping,
+  systemFields = [],
+  onUpdateMapping,
   onRemoveMapping,
-  getSystemFieldLabel,
-  isSystemFieldRequired,
+  onAddSystemField,
 }) => {
-  const isMobile = useIsMobile();
+  console.log('📋 FieldMappingList rendered with:', {
+    mappingsCount: mappings.length,
+    fileColumnsCount: fileColumns.length,
+    systemFieldsCount: systemFields.length
+  });
+
+  if (mappings.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p className="mb-4">לא נמצאו מיפויי שדות</p>
+        <p className="text-sm">העלה קובץ כדי להתחיל במיפוי שדות</p>
+      </div>
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className={`${isMobile ? 'text-base' : 'text-lg'}`}>התאמת שדות</CardTitle>
-        <p className={`text-gray-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-          ניתן לגרור כדי לשנות סדר, לבחור מספר עמודות לכל שדה, להוסיף שדות מותאמים, ולהסיר שדות לא נחוצים
-        </p>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {mappings.map((mapping, index) => (
-            <FieldMappingRow
-              key={mapping.id}
-              mapping={mapping}
-              index={index}
-              mappingsLength={mappings.length}
-              fileColumns={fileColumns}
-              systemFields={systemFields}
-              onMappingChange={onMappingChange}
-              onMoveMapping={onMoveMapping}
-              onRemoveMapping={onRemoveMapping}
-              getSystemFieldLabel={getSystemFieldLabel}
-              isSystemFieldRequired={isSystemFieldRequired}
-            />
-          ))}
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">מיפוי שדות</h3>
+        <div className="text-sm text-gray-600">
+          {mappings.filter(m => m.mappedColumns.length > 0).length} מתוך {mappings.length} שדות ממופים
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      <div className="space-y-3">
+        {mappings.map((mapping) => (
+          <EnhancedFieldMappingRow
+            key={mapping.id}
+            mapping={mapping}
+            fileColumns={fileColumns}
+            systemFields={systemFields}
+            onUpdate={onUpdateMapping}
+            onRemove={onRemoveMapping}
+            onAddSystemField={onAddSystemField}
+          />
+        ))}
+      </div>
+    </div>
   );
 };
