@@ -1,105 +1,68 @@
 
 import React from 'react';
-import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { BackButton } from '@/components/ui/BackButton';
-import { BusinessSwitcher } from './BusinessSwitcher';
-import { useBusiness } from '@/hooks/useBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
-import { useLocation } from 'react-router-dom';
-import { LogOut, Menu } from 'lucide-react';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { BusinessSwitcher } from './BusinessSwitcher';
+import { Button } from '@/components/ui/button';
+import { LogOut, User } from 'lucide-react';
 
-interface HeaderProps {
-  showMobileMenu?: boolean;
-  onMobileMenuToggle?: () => void;
-}
+export const Header: React.FC = () => {
+  const { user, signOut, loading } = useAuth();
+  const { businessName, isSuperAdmin } = useCurrentBusiness();
 
-export const Header: React.FC<HeaderProps> = ({ 
-  showMobileMenu = false, 
-  onMobileMenuToggle 
-}) => {
-  const { business, isSuperAdmin } = useBusiness();
-  const { user, session, loading, signOut } = useAuth();
-  const location = useLocation();
-
-  console.log('🎯 Header render - Auth state:', {
-    hasUser: !!user,
-    hasSession: !!session,
-    loading,
-    isSuperAdmin
-  });
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error during logout:', error);
-    }
-  };
-
-  // Only show user info if we have both user and session (truly logged in)
-  const isAuthenticated = user && session;
-
-  // Show back button for deep navigation paths
-  const showBackButton = location.pathname.split('/').length > 3;
+  if (loading) {
+    return (
+      <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="animate-pulse bg-gray-200 h-6 w-32 rounded"></div>
+          <div className="animate-pulse bg-gray-200 h-8 w-24 rounded"></div>
+        </div>
+      </header>
+    );
+  }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-white px-4 sm:px-6">
-      <div className="flex items-center gap-3">
-        {/* Single Menu Button - Only show one based on mobile/desktop state */}
-        {showMobileMenu ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onMobileMenuToggle}
-            className="h-9 w-9 md:hidden"
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">פתח תפריט</span>
-          </Button>
-        ) : (
-          /* Desktop Sidebar Trigger - Only on desktop */
-          <SidebarTrigger className="hidden md:flex" />
-        )}
-        
-        {showBackButton && <BackButton />}
-        
-        {/* Business/App Title */}
-        <div className="flex flex-col">
-          <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
-            {business?.name || 'מערכת ניהול'}
-          </h1>
-          {showMobileMenu && business && (
-            <span className="text-xs text-gray-500 md:hidden">
-              {isSuperAdmin ? 'מנהל על' : 'משתמש עסקי'}
-            </span>
-          )}
-        </div>
-      </div>
-      
-      {/* User Info & Actions */}
-      <div className="flex items-center gap-2 sm:gap-4">
-        {loading ? (
-          <span className="text-sm text-gray-400">טוען...</span>
-        ) : isAuthenticated ? (
-          <div className="flex items-center gap-2 sm:gap-4">
-            {/* Business Switcher */}
-            <BusinessSwitcher />
-            
-            {/* Logout Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-red-600 p-2 sm:px-3"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">התנתק</span>
-            </Button>
+    <header className="bg-white border-b border-gray-200 px-6 py-4" dir="rtl">
+      <div className="flex items-center justify-between">
+        {/* Logo and Business Info */}
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <h1 className="text-xl font-bold text-gray-900">
+              מערכת ניהול AllForYou
+            </h1>
+            {businessName && (
+              <p className="text-sm text-gray-600">
+                {isSuperAdmin ? `נבחר: ${businessName}` : businessName}
+              </p>
+            )}
           </div>
-        ) : (
-          <span className="text-sm text-red-600">לא מחובר</span>
-        )}
+        </div>
+
+        {/* Business Switcher - Center */}
+        <div className="flex-1 flex justify-center">
+          <BusinessSwitcher />
+        </div>
+
+        {/* User Actions */}
+        <div className="flex items-center gap-3">
+          {user && (
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">
+                {user.email}
+              </span>
+            </div>
+          )}
+          <Button
+            onClick={signOut}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">יציאה</span>
+          </Button>
+        </div>
       </div>
     </header>
   );

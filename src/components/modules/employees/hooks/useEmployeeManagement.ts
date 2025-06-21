@@ -6,7 +6,8 @@ import type { Employee } from '@/types/employee';
 
 export const useEmployeeManagement = (selectedBusinessId?: string | null) => {
   const { businessId: contextBusinessId, isSuperAdmin } = useCurrentBusiness();
-  const finalBusinessId = selectedBusinessId || contextBusinessId;
+  // השתמש בעסק הנבחר מהקונטקסט הגלובלי אם לא צוין אחרת
+  const finalBusinessId = selectedBusinessId !== undefined ? selectedBusinessId : contextBusinessId;
 
   // State for filters
   const [searchTerm, setSearchTerm] = useState('');
