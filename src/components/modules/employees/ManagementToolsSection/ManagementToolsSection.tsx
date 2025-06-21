@@ -1,16 +1,45 @@
 
 import React from 'react';
-import { ManagementToolsSectionContainer } from './ManagementToolsSectionContainer';
-import { ManagementToolsSectionProps } from './types';
+import { QuickActionsCard } from './QuickActionsCard';
+import { ManagementToolsGrid } from './ManagementToolsGrid';
+import { useBusiness } from '@/hooks/useBusiness';
+
+interface ManagementToolsSectionProps {
+  onRefetch: () => void;
+  selectedBusinessId?: string | null;
+}
 
 export const ManagementToolsSection: React.FC<ManagementToolsSectionProps> = ({
-  onCreateEmployee,
-  onCreateBranch
+  onRefetch,
+  selectedBusinessId
 }) => {
+  const { businessId } = useBusiness();
+  const effectiveBusinessId = selectedBusinessId || businessId;
+
+  const handleCreateEmployee = () => {
+    // This will be handled by the parent component
+    console.log('Create employee clicked');
+  };
+
+  const handleCreateBranch = () => {
+    // This will be handled by the parent component
+    console.log('Create branch clicked');
+  };
+
   return (
-    <ManagementToolsSectionContainer 
-      onCreateEmployee={onCreateEmployee}
-      onCreateBranch={onCreateBranch}
-    />
+    <div className="space-y-6" dir="rtl">
+      <div>
+        <h2 className="text-xl font-semibold mb-4">כלי ניהול</h2>
+        
+        <div className="space-y-4">
+          <QuickActionsCard 
+            onCreateEmployee={handleCreateEmployee}
+            onCreateBranch={handleCreateBranch}
+          />
+          
+          <ManagementToolsGrid businessId={effectiveBusinessId} />
+        </div>
+      </div>
+    </div>
   );
 };

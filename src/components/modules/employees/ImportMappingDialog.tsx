@@ -16,12 +16,16 @@ export const ImportMappingDialog: React.FC<ImportMappingDialogProps> = ({ import
     confirmMapping,
   } = importHook;
 
+  if (!showMappingDialog || !headers.length) {
+    return null;
+  }
+
   return (
     <FieldMappingDialog
       open={showMappingDialog}
       onOpenChange={setShowMappingDialog}
       fileColumns={headers}
-      sampleData={rawData.slice(0, 3)}
+      sampleData={rawData.slice(0, 5)}
       onConfirm={confirmMapping}
     />
   );
