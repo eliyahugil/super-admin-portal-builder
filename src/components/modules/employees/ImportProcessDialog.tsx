@@ -15,6 +15,7 @@ interface ImportProcessDialogProps {
 export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ importHook }) => {
   const {
     step,
+    setStep,
     file,
     previewData,
     importResult,
@@ -63,6 +64,7 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
 
   const handleClose = () => {
     console.log('🔄 Closing import dialog');
+    setStep('closed');
     resetForm();
   };
 
@@ -109,6 +111,7 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
+      console.log('📋 ImportProcessDialog - onOpenChange called with:', open);
       if (!open) {
         handleClose();
       }
