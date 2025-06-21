@@ -1,4 +1,5 @@
 
+import { supabase } from '@/lib/supabase';
 import type { PreviewEmployee, ImportResult, ImportStep } from '../types';
 
 interface UseImportExecutionProps {
@@ -16,63 +17,156 @@ export const useImportExecution = ({
 }: UseImportExecutionProps) => {
   
   const executeImport = async () => {
-    console.log('🔄 useImportExecution - executeImport called:', {
-      employeesCount: previewData.length,
-      businessId
+    console.log('🚀 Starting import execution:', {
+      businessId,
+      totalEmployees: previewData.length,
+      validEmployees: previewData.filter(emp => emp.isValid && !emp.isDuplicate).length
     });
 
     if (!businessId) {
-      console.error('❌ No business ID available for import execution');
-      throw new Error('לא נבחר עסק לביצוע הייבוא');
+      console.error('❌ No business ID available for import');
+      throw new Error('לא נבחר עסק לייבוא');
     }
 
-    setStep('importing');
-
     try {
-      // Filter valid employees only
-      const validEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate);
+      setStep('importing');
       
-      console.log('📊 Import execution stats:', {
-        total: previewData.length,
-        valid: validEmployees.length,
-        invalid: previewData.filter(emp => !emp.isValid).length,
-        duplicates: previewData.filter(emp => emp.isDuplicate).length
-      });
+      // Filter valid employees
+      const validEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate);
+      console.log(`📋 Importing ${validEmployees.length} valid employees`);
 
-      // Simulate import process for now
-      // In a real implementation, this would call the Supabase service
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const importedEmployees: Array<{ name: string; email?: string; branch?: string }> = [];
+      const errors: Array<{ row: number; employee: string; error: string }> = [];
+      let successCount = 0;
+
+      // Process employees in batches to avoid overwhelming the database
+      const batchSize = 10;
+      for (let i = 0; i < validEmployees.length; i += batchSize) {
+        const batch = validEmployees.slice(i, i + batchSize);
+        console.log(`📦 Processing batch ${Math.floor(i / batchSize) + 1} of ${Math.ceil(validEmployees.length / batchSize)}`);
+
+        for (const employee of batch) {
+          try {
+            // Prepare employee data for insertion
+            const employeeData = {
+              business_id: businessId,
+              first_name: employee.first_name || null,
+              last_name: employee.last_name || null,
+              email: employee.email || null,
+              phone: employee.phone || null,
+              id_number: employee.id_number || null,
+              employee_id: employee.employee_id || null,
+              address: employee.address || null,
+              hire_date: employee.hire_date || null,
+              employee_type: employee.employee_type || 'permanent',
+              weekly_hours_required: employee.weekly_hours_required ? Number(employee.weekly_hours_required) : null,
+              main_branch_id: employee.main_branch_id || null,
+              notes: employee.notes || null,
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+
+            console.log(`👤 Inserting employee:`, {
+              name: `${employee.first_name || ''} ${employee.last_name || ''}`.trim(),
+              email: employee.email,
+              employee_id: employee.employee_id
+            });
+
+            const { data, error } = await supabase
+              .from('employees')
+              .insert([employeeData])
+              .select('id, first_name, last_name, email')
+              .single();
+
+            if (error) {
+              console.error(`❌ Error inserting employee:`, error);
+              errors.push({
+                row: previewData.indexOf(employee) + 2,
+                employee: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע',
+                error: error.message
+              });
+              continue;
+            }
+
+            // Store custom fields in the notes field if they exist (simplified approach)
+            if (employee.customFields && Object.keys(employee.customFields).length > 0) {
+              console.log(`🔧 Custom fields found for employee ${data.id}:`, employee.customFields);
+              
+              const customFieldsText = Object.entries(employee.customFields)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join('; ');
+              
+              // Update notes with custom fields
+              const currentNotes = employeeData.notes || '';
+              const updatedNotes = currentNotes 
+                ? `${currentNotes}\n\nשדות מותאמים: ${customFieldsText}`
+                : `שדות מותאמים: ${customFieldsText}`;
+
+              const { error: updateError } = await supabase
+                .from('employees')
+                .update({ notes: updatedNotes })
+                .eq('id', data.id);
+
+              if (updateError) {
+                console.warn(`⚠️ Error updating notes with custom fields for employee ${data.id}:`, updateError);
+              }
+            }
+
+            successCount++;
+            importedEmployees.push({
+              name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'לא ידוע',
+              email: data.email || undefined,
+              branch: employee.main_branch_id ? 'כן' : undefined
+            });
+
+            console.log(`✅ Successfully imported employee: ${data.first_name} ${data.last_name}`);
+
+          } catch (error) {
+            console.error(`❌ Unexpected error importing employee:`, error);
+            errors.push({
+              row: previewData.indexOf(employee) + 2,
+              employee: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע',
+              error: error instanceof Error ? error.message : 'שגיאה לא ידועה'
+            });
+          }
+        }
+
+        // Small delay between batches to avoid rate limiting
+        if (i + batchSize < validEmployees.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
 
       const result: ImportResult = {
-        success: true,
-        importedCount: validEmployees.length,
-        errorCount: previewData.length - validEmployees.length,
-        message: `יובאו בהצלחה ${validEmployees.length} עובדים`,
-        errors: [],
-        importedEmployees: validEmployees.map(emp => ({
-          name: `${emp.first_name} ${emp.last_name}`,
-          email: emp.email,
-          branch: emp.main_branch_name
-        }))
+        success: successCount > 0,
+        importedCount: successCount,
+        errorCount: errors.length,
+        message: successCount > 0 
+          ? `יובאו בהצלחה ${successCount} עובדים${errors.length > 0 ? ` (${errors.length} שגיאות)` : ''}`
+          : 'הייבוא נכשל - לא יובא אף עובד',
+        errors,
+        importedEmployees
       };
 
-      console.log('✅ Import execution completed:', result);
-
+      console.log('📊 Import completed:', result);
       setImportResult(result);
       setStep('results');
-    } catch (error) {
-      console.error('❌ Error in import execution:', error);
       
-      const errorResult: ImportResult = {
+    } catch (error) {
+      console.error('❌ Import execution failed:', error);
+      setImportResult({
         success: false,
         importedCount: 0,
         errorCount: previewData.length,
-        message: 'הייבוא נכשל',
-        errors: [{ row: 0, employee: 'כללי', error: error instanceof Error ? error.message : 'שגיאה לא ידועה' }],
+        message: error instanceof Error ? error.message : 'שגיאה לא ידועה בביצוע הייבוא',
+        errors: [{
+          row: 0,
+          employee: 'כללי',
+          error: error instanceof Error ? error.message : 'שגיאה לא ידועה'
+        }],
         importedEmployees: []
-      };
-
-      setImportResult(errorResult);
+      });
       setStep('results');
     }
   };

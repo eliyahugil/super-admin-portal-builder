@@ -205,6 +205,37 @@ export const EmployeeImportPreviewStep: React.FC<EmployeeImportPreviewStepProps>
         </Card>
       )}
 
+      {/* Duplicate Employees */}
+      {duplicateEmployees.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-yellow-600">
+              <AlertTriangle className="h-5 w-5" />
+              עובדים כפולים ({duplicateEmployees.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {duplicateEmployees.slice(0, 5).map((employee, index) => (
+                <div key={index} className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-yellow-800">
+                      {getDisplayName(employee)}
+                    </span>
+                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                      כפול
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-yellow-600">
+                    {employee.validationErrors?.join(', ') || 'עובד קיים במערכת'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Action Buttons */}
       <div className="flex justify-between">
         <Button

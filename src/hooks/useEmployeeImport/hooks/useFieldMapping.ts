@@ -81,37 +81,48 @@ export const useFieldMapping = ({
         // Apply field mappings
         mappings.forEach(mapping => {
           if (mapping.mappedColumns && mapping.mappedColumns.length > 0) {
-            const columnName = mapping.mappedColumns[0];
+            // Handle multiple columns for the same field
+            const fieldValues: string[] = [];
             
-            let fieldValue;
-            if (Array.isArray(row)) {
-              // Use the column index map to find the correct index
-              const columnIndex = columnIndexMap[columnName];
-              if (columnIndex !== undefined && columnIndex < row.length) {
-                fieldValue = row[columnIndex];
+            mapping.mappedColumns.forEach(columnName => {
+              let fieldValue;
+              if (Array.isArray(row)) {
+                // Use the column index map to find the correct index
+                const columnIndex = columnIndexMap[columnName];
+                if (columnIndex !== undefined && columnIndex < row.length) {
+                  fieldValue = row[columnIndex];
+                }
+              } else if (typeof row === 'object' && row !== null) {
+                // For object-based data
+                fieldValue = row[columnName];
               }
-            } else if (typeof row === 'object' && row !== null) {
-              // For object-based data
-              fieldValue = row[columnName];
-            }
+              
+              if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
+                const cleanValue = String(fieldValue).trim();
+                if (cleanValue) {
+                  fieldValues.push(cleanValue);
+                }
+              }
+            });
             
-            console.log(`🗺️ Mapping ${mapping.systemField} <- column "${columnName}" (index: ${columnIndexMap[columnName]}) = "${fieldValue}"`);
+            console.log(`🗺️ Mapping ${mapping.systemField} <- columns "${mapping.mappedColumns.join(', ')}" = "${fieldValues.join(' + ')}"`);
             
-            if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
-              const cleanValue = String(fieldValue).trim();
+            if (fieldValues.length > 0) {
+              // Combine multiple values with space or use first value for single column
+              const combinedValue = fieldValues.length === 1 ? fieldValues[0] : fieldValues.join(' ');
               
               if (mapping.isCustomField) {
                 if (!employee.customFields) {
                   employee.customFields = {};
                 }
-                employee.customFields[mapping.systemField] = cleanValue;
+                employee.customFields[mapping.systemField] = combinedValue;
               } else {
                 // Handle special field mappings
                 if (mapping.systemField === 'main_branch_id') {
                   // Store branch name temporarily for lookup
-                  employee.main_branch_name = cleanValue;
+                  employee.main_branch_name = combinedValue;
                 } else {
-                  employee[mapping.systemField] = cleanValue;
+                  employee[mapping.systemField] = combinedValue;
                 }
               }
             }
