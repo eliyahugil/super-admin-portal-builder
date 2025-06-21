@@ -6,7 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Plus, GripVertical, X, ArrowUp, ArrowDown } from 'lucide-react';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
+import { CustomFieldCreationSection } from './CustomFieldCreationSection';
 
 interface FieldMappingDialogProps {
   open: boolean;
@@ -59,8 +63,32 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
     ));
   };
 
+  const handleAddCustomField = (customMapping: FieldMapping) => {
+    setMappings(prev => [...prev, customMapping]);
+  };
+
+  const handleRemoveMapping = (mappingId: string) => {
+    setMappings(prev => prev.filter(mapping => mapping.id !== mappingId));
+  };
+
+  const handleMoveMapping = (mappingId: string, direction: 'up' | 'down') => {
+    setMappings(prev => {
+      const currentIndex = prev.findIndex(mapping => mapping.id === mappingId);
+      if (currentIndex === -1) return prev;
+      
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      if (newIndex < 0 || newIndex >= prev.length) return prev;
+      
+      const newMappings = [...prev];
+      [newMappings[currentIndex], newMappings[newIndex]] = [newMappings[newIndex], newMappings[currentIndex]];
+      return newMappings;
+    });
+  };
+
   const handleConfirm = () => {
-    onConfirm(mappings);
+    // Filter out mappings that have no columns mapped
+    const validMappings = mappings.filter(mapping => mapping.mappedColumns.length > 0);
+    onConfirm(validMappings);
   };
 
   const getSystemFieldLabel = (systemField: string) => {
@@ -79,45 +107,101 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>מיפוי שדות - התאמת עמודות האקסל לשדות המערכת</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Custom Field Creation Section */}
+          <CustomFieldCreationSection onAddCustomField={handleAddCustomField} />
+
           {/* Field Mapping Section */}
           <Card>
             <CardHeader>
               <CardTitle>התאמת שדות</CardTitle>
+              <p className="text-sm text-gray-600">
+                ניתן לגרור כדי לשנות סדר, להוסיף שדות מותאמים, ולהסיר שדות לא נחוצים
+              </p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {mappings.map((mapping) => (
-                  <div key={mapping.id} className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <label className="text-sm font-medium">
-                        {getSystemFieldLabel(mapping.systemField)}
-                      </label>
-                      {isSystemFieldRequired(mapping.systemField) && (
-                        <Badge variant="destructive" className="text-xs">חובה</Badge>
-                      )}
+              <div className="space-y-3">
+                {mappings.map((mapping, index) => (
+                  <div key={mapping.id} className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50">
+                    {/* Drag Handle */}
+                    <div className="flex flex-col gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleMoveMapping(mapping.id, 'up')}
+                        disabled={index === 0}
+                        className="h-6 w-6 p-0"
+                      >
+                        <ArrowUp className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleMoveMapping(mapping.id, 'down')}
+                        disabled={index === mappings.length - 1}
+                        className="h-6 w-6 p-0"
+                      >
+                        <ArrowDown className="h-3 w-3" />
+                      </Button>
                     </div>
-                    <Select
-                      value={mapping.mappedColumns[0] || 'none'}
-                      onValueChange={(value) => handleMappingChange(mapping.systemField, value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="בחר עמודה מהקובץ" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">ללא מיפוי</SelectItem>
-                        {fileColumns.map((column) => (
-                          <SelectItem key={column} value={column}>
-                            {column}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+
+                    {/* System Field */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <label className="text-sm font-medium">
+                          {mapping.isCustomField ? mapping.label : getSystemFieldLabel(mapping.systemField)}
+                        </label>
+                        {mapping.isCustomField && (
+                          <Badge variant="secondary" className="text-xs">מותאם אישית</Badge>
+                        )}
+                        {!mapping.isCustomField && isSystemFieldRequired(mapping.systemField) && (
+                          <Badge variant="destructive" className="text-xs">חובה</Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="text-gray-400 mx-2">←</div>
+
+                    {/* File Column Selection */}
+                    <div className="flex-1">
+                      <Select
+                        value={mapping.mappedColumns[0] || 'none'}
+                        onValueChange={(value) => handleMappingChange(mapping.systemField, value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="בחר עמודה מהקובץ" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">ללא מיפוי</SelectItem>
+                          {fileColumns.map((column) => (
+                            <SelectItem key={column} value={column}>
+                              {column}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Remove Button - only for custom fields */}
+                    {mapping.isCustomField && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveMapping(mapping.id)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
