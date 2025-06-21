@@ -40,6 +40,8 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
         throw new Error('Business ID required');
       }
 
+      console.log('🔍 About to query employees for business:', targetBusinessId);
+
       let query = supabase
         .from('employees')
         .select(`
@@ -80,7 +82,7 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
             created_by
           )
         `)
-        .eq('is_archived', false); // Exclude archived employees
+        .eq('is_archived', false); // ✅ This is the key filter - only non-archived employees
 
       // Apply business filter - MANDATORY for all queries
       console.log('🔒 Adding business filter:', targetBusinessId);
@@ -96,7 +98,32 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
         throw error;
       }
 
-      console.log('✅ Raw employees data fetched:', data?.length || 0);
+      console.log('✅ Raw employees data fetched:', {
+        count: data?.length || 0,
+        businessFilter: targetBusinessId,
+        isArchivedFilter: false
+      });
+
+      // Let's also check what's actually in the database for this business (including archived)
+      const { data: allEmployees, error: allError } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, business_id, is_active, is_archived, created_at')
+        .eq('business_id', targetBusinessId)
+        .order('created_at', { ascending: false });
+
+      if (!allError && allEmployees) {
+        console.log('📊 All employees in database for this business:', {
+          total: allEmployees.length,
+          active: allEmployees.filter(emp => emp.is_active).length,
+          archived: allEmployees.filter(emp => emp.is_archived).length,
+          recent: allEmployees.slice(0, 3).map(emp => ({
+            name: `${emp.first_name} ${emp.last_name}`,
+            is_active: emp.is_active,
+            is_archived: emp.is_archived,
+            created_at: emp.created_at
+          }))
+        });
+      }
 
       // Normalize the data to our Employee type
       const normalizedEmployees = (data || []).map(normalizeEmployee);
@@ -107,7 +134,9 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
           name: `${normalizedEmployees[0].first_name} ${normalizedEmployees[0].last_name}`,
           hasPhone: !!normalizedEmployees[0].phone,
           hasEmail: !!normalizedEmployees[0].email,
-          type: normalizedEmployees[0].employee_type
+          type: normalizedEmployees[0].employee_type,
+          is_active: normalizedEmployees[0].is_active,
+          is_archived: normalizedEmployees[0].is_archived
         } : null
       });
 

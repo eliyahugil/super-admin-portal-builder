@@ -68,6 +68,9 @@ export const useImportExecution = ({
       const errors: Array<{ row: number; employee: string; error: string }> = [];
       let successCount = 0;
 
+      // Log current business ID
+      console.log('🏢 Current business ID for import:', businessId);
+
       // Process employees in batches to avoid overwhelming the database
       const batchSize = 10;
       for (let i = 0; i < validEmployees.length; i += batchSize) {
@@ -92,23 +95,33 @@ export const useImportExecution = ({
               main_branch_id: employee.main_branch_id || null,
               notes: employee.notes || null,
               is_active: true,
+              is_archived: false, // ✅ Explicitly set to false
             };
 
-            console.log(`👤 Inserting employee:`, {
+            console.log(`👤 About to insert employee:`, {
               name: `${employee.first_name || ''} ${employee.last_name || ''}`.trim(),
               email: employee.email,
               employee_id: employee.employee_id,
-              employee_type: employeeData.employee_type
+              employee_type: employeeData.employee_type,
+              business_id: employeeData.business_id,
+              is_active: employeeData.is_active,
+              is_archived: employeeData.is_archived
             });
 
             const { data, error } = await supabase
               .from('employees')
               .insert([employeeData])
-              .select('id, first_name, last_name, email')
+              .select('id, first_name, last_name, email, business_id, is_active, is_archived')
               .single();
 
             if (error) {
-              console.error(`❌ Error inserting employee:`, error);
+              console.error(`❌ Error inserting employee:`, {
+                error: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint,
+                employeeData
+              });
               errors.push({
                 row: previewData.indexOf(employee) + 2,
                 employee: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע',
@@ -116,6 +129,14 @@ export const useImportExecution = ({
               });
               continue;
             }
+
+            console.log(`✅ Successfully inserted employee:`, {
+              id: data.id,
+              name: `${data.first_name} ${data.last_name}`,
+              business_id: data.business_id,
+              is_active: data.is_active,
+              is_archived: data.is_archived
+            });
 
             // Store custom fields in the notes field if they exist (simplified approach)
             if (employee.customFields && Object.keys(employee.customFields).length > 0) {
@@ -148,8 +169,6 @@ export const useImportExecution = ({
               branch: employee.main_branch_id ? 'כן' : undefined
             });
 
-            console.log(`✅ Successfully imported employee: ${data.first_name} ${data.last_name}`);
-
           } catch (error) {
             console.error(`❌ Unexpected error importing employee:`, error);
             errors.push({
@@ -164,6 +183,29 @@ export const useImportExecution = ({
         if (i + batchSize < validEmployees.length) {
           await new Promise(resolve => setTimeout(resolve, 100));
         }
+      }
+
+      // After all imports are done, let's verify what was actually saved
+      console.log('🔍 Verifying imported employees in database...');
+      const { data: savedEmployees, error: verifyError } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, email, business_id, is_active, is_archived')
+        .eq('business_id', businessId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (verifyError) {
+        console.error('❌ Error verifying saved employees:', verifyError);
+      } else {
+        console.log('📊 Current employees in database for this business:', {
+          totalCount: savedEmployees?.length || 0,
+          recentEmployees: savedEmployees?.slice(0, 5).map(emp => ({
+            name: `${emp.first_name} ${emp.last_name}`,
+            email: emp.email,
+            is_active: emp.is_active,
+            is_archived: emp.is_archived
+          }))
+        });
       }
 
       const result: ImportResult = {
