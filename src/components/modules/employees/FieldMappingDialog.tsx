@@ -57,7 +57,8 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   const customFieldsCount = mappings.filter(m => m.isCustomField).length;
 
   const handleFloatingMenuFix = (systemField: string, newColumn: string) => {
-    handleMappingChange(systemField, [newColumn]); // Fix: wrap newColumn in an array
+    console.log('🔧 Fixing mapping:', systemField, '<-', newColumn);
+    handleMappingChange(systemField, [newColumn]);
   };
 
   const handleDirectImport = () => {
@@ -65,9 +66,9 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
     handleConfirm(onConfirm);
   };
 
-  const handleOpenFloatingMenu = () => {
-    console.log('🎯 Opening floating menu, current state:', isFloatingMenuOpen);
-    setIsFloatingMenuOpen(true);
+  const handleToggleFloatingMenu = () => {
+    console.log('🎯 Toggling floating menu, current state:', isFloatingMenuOpen);
+    setIsFloatingMenuOpen(!isFloatingMenuOpen);
   };
 
   return (
@@ -90,7 +91,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleOpenFloatingMenu}
+                onClick={handleToggleFloatingMenu}
                 className="mt-2"
               >
                 פתח תפריט ניהול מיפוי
@@ -153,7 +154,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
         onFixMapping={handleFloatingMenuFix}
         fileColumns={fileColumns}
         isOpen={isFloatingMenuOpen}
-        onToggle={() => setIsFloatingMenuOpen(!isFloatingMenuOpen)}
+        onToggle={handleToggleFloatingMenu}
       />
     </>
   );
