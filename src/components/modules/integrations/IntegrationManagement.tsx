@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +11,7 @@ import { GoogleServicesIntegration } from './GoogleServicesIntegration';
 import { GoogleDataDashboard } from './GoogleDataDashboard';
 import { ModuleConfigDashboard } from '../config/ModuleConfigDashboard';
 import { useBusiness } from '@/hooks/useBusiness';
-import { Settings, Crown, Google } from 'lucide-react';
+import { Settings, Crown, Globe } from 'lucide-react';
 
 export const IntegrationManagement: React.FC = () => {
   const { isSuperAdmin, businessId } = useBusiness();
@@ -63,7 +62,7 @@ export const IntegrationManagement: React.FC = () => {
               <TabsList className={`grid w-full grid-cols-${tabs.length}`}>
                 {tabs.map(tab => (
                   <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-2">
-                    {tab.value === 'google' && <Google className="h-4 w-4" />}
+                    {tab.value === 'google' && <Globe className="h-4 w-4" />}
                     {tab.label}
                   </TabsTrigger>
                 ))}
@@ -75,7 +74,7 @@ export const IntegrationManagement: React.FC = () => {
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                          <Google className="h-5 w-5" />
+                          <Globe className="h-5 w-5" />
                           שירותי Google
                         </CardTitle>
                         <CardDescription>

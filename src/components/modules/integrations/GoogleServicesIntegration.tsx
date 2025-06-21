@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,7 @@ import {
   Video,
   CheckCircle,
   AlertTriangle,
-  Sync,
+  RefreshCw,
   Settings
 } from 'lucide-react';
 
@@ -116,7 +115,7 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
       case 'connected':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'pending':
-        return <Sync className="h-5 w-5 text-yellow-500 animate-spin" />;
+        return <RefreshCw className="h-5 w-5 text-yellow-500 animate-spin" />;
       case 'error':
         return <AlertTriangle className="h-5 w-5 text-red-500" />;
       default:
@@ -178,9 +177,9 @@ export const GoogleServicesIntegration: React.FC<GoogleServicesIntegrationProps>
               variant="outline"
             >
               {isSyncing ? (
-                <Sync className="h-4 w-4 mr-2 animate-spin" />
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
               ) : (
-                <Sync className="h-4 w-4 mr-2" />
+                <RefreshCw className="h-4 w-4 mr-2" />
               )}
               סנכרן הכל
             </Button>
