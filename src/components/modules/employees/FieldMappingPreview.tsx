@@ -49,7 +49,12 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
       sampleValues: Object.entries(previewData[0])
         .filter(([key]) => key !== 'originalRowIndex')
         .slice(0, 3)
-        .map(([key, value]) => `${key}: ${typeof value === 'object' && value && 'value' in value ? value.value : value}`)
+        .map(([key, value]) => {
+          if (typeof value === 'object' && value && 'value' in value) {
+            return `${key}: ${value.value}`;
+          }
+          return `${key}: ${value}`;
+        })
     } : 'No preview data'
   });
 
