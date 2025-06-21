@@ -2,7 +2,6 @@
 import React from 'react';
 import { ImportFileUpload } from '../ImportFileUpload';
 import { FieldMappingDialog } from '../FieldMappingDialog';
-import { ImportPreview } from '../ImportPreview';
 import { ImportResults } from '../ImportResults';
 import { EmployeeImportSummary } from '../steps/EmployeeImportSummary';
 import type { ImportStep, EmployeeImportHook } from '@/hooks/useEmployeeImport/types';
@@ -26,7 +25,6 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
     headers,
     rawData,
     confirmMapping,
-    previewData,
     executeImport,
     importResult,
     resetForm,
@@ -38,25 +36,23 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
     showMappingDialog,
     headersCount: headers.length,
     rawDataCount: rawData.length,
-    previewDataCount: previewData.length,
     hasImportResult: !!importResult,
     executeImportFunction: typeof executeImport
   });
 
-  const handleExecuteImport = async () => {
-    console.log('🚀 ImportStepContent - handleExecuteImport called');
+  // Modified confirmMapping to go directly to importing
+  const handleConfirmMappingAndImport = async (mappings: any) => {
+    console.log('🚀 Direct import after mapping confirmation');
     try {
+      // Apply the mapping
+      await confirmMapping(mappings);
+      // Skip preview step and go directly to importing
+      setStep('importing');
+      // Execute import immediately
       await executeImport();
-      console.log('✅ ImportStepContent - executeImport completed successfully');
     } catch (error) {
-      console.error('❌ ImportStepContent - executeImport failed:', error);
+      console.error('❌ Direct import failed:', error);
     }
-  };
-
-  const handleBackToMapping = () => {
-    console.log('🔙 Going back to mapping step');
-    setShowMappingDialog(true);
-    setStep('mapping');
   };
 
   switch (step) {
@@ -77,18 +73,7 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
           onOpenChange={setShowMappingDialog}
           fileColumns={headers}
           sampleData={rawData.slice(0, 3)}
-          onConfirm={confirmMapping}
-        />
-      );
-
-    case 'preview':
-      console.log('👁️ Rendering preview step with data count:', previewData.length);
-      return (
-        <ImportPreview
-          previewData={previewData}
-          onConfirm={handleExecuteImport}
-          onCancel={resetForm}
-          onBack={handleBackToMapping}
+          onConfirm={handleConfirmMappingAndImport}
         />
       );
 
@@ -98,6 +83,7 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-2 text-gray-600">מייבא עובדים...</p>
+          <p className="mt-1 text-sm text-gray-500">זה עלול לקחת כמה רגעים</p>
         </div>
       );
 

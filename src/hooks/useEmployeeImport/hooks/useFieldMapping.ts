@@ -24,7 +24,7 @@ export const useFieldMapping = ({
 }: UseFieldMappingProps) => {
   
   const confirmMapping = async (mappings: FieldMapping[]) => {
-    console.log('🔄 useFieldMapping - confirmMapping called:', {
+    console.log('🔄 useFieldMapping - confirmMapping called (direct import flow):', {
       mappingsCount: mappings.length,
       businessId,
       rawDataCount: rawData.length,
@@ -58,21 +58,17 @@ export const useFieldMapping = ({
         // Apply field mappings
         mappings.forEach(mapping => {
           if (mapping.mappedColumns && mapping.mappedColumns.length > 0) {
-            const columnName = mapping.mappedColumns[0]; // שם העמודה מהקובץ
+            const columnName = mapping.mappedColumns[0];
             
-            // בדיקה אם זה אינדקס מספרי או שם עמודה
             let fieldValue;
             if (Array.isArray(row)) {
-              // אם הנתונים הם מערך, נשתמש באינדקס
               const columnIndex = parseInt(columnName);
               if (!isNaN(columnIndex)) {
                 fieldValue = row[columnIndex];
               } else {
-                // אם זה לא מספר, ננסה למצוא את העמודה לפי שם
                 fieldValue = row[columnName];
               }
             } else {
-              // אם הנתונים הם אובייקט, נשתמש בשם העמודה
               fieldValue = row[columnName];
             }
             
@@ -82,13 +78,11 @@ export const useFieldMapping = ({
               const cleanValue = String(fieldValue).toString().trim();
               
               if (mapping.isCustomField) {
-                // שדות מותאמים אישית
                 if (!employee.customFields) {
                   employee.customFields = {};
                 }
                 employee.customFields[mapping.systemField] = cleanValue;
               } else {
-                // שדות מערכת רגילים
                 employee[mapping.systemField] = cleanValue;
               }
             }
@@ -145,7 +139,6 @@ export const useFieldMapping = ({
           } else {
             employee.validationErrors.push(`סניף "${employee.main_branch_name}" לא נמצא במערכת`);
           }
-          // מוחקים את השדה הזמני
           delete employee.main_branch_name;
         }
 
@@ -160,17 +153,21 @@ export const useFieldMapping = ({
         return employee as PreviewEmployee;
       });
 
-      console.log('✅ Field mapping completed:', {
+      console.log('✅ Field mapping completed (direct import):', {
         totalEmployees: previewData.length,
         validEmployees: previewData.filter(emp => emp.isValid).length,
         duplicateEmployees: previewData.filter(emp => emp.isDuplicate).length,
         invalidEmployees: previewData.filter(emp => !emp.isValid).length
       });
 
+      // Store the mappings and preview data but skip the preview step
       setFieldMappings(mappings);
       setPreviewData(previewData);
       setShowMappingDialog(false);
-      setStep('preview');
+      
+      // Skip preview step - data is ready for import
+      console.log('🚀 Skipping preview step, data ready for import');
+      
     } catch (error) {
       console.error('❌ Error in field mapping:', error);
       throw error;
