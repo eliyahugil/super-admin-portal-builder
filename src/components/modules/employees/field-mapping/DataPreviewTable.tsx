@@ -3,15 +3,18 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface DataPreviewTableProps {
   fileColumns: string[];
   sampleData: any[];
+  mappings?: Array<{ systemField: string; mappedColumns: string[] }>;
 }
 
 export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
   fileColumns,
   sampleData,
+  mappings = [],
 }) => {
   const isMobile = useIsMobile();
 
@@ -26,6 +29,33 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
     } else {
       return row[columnName] || '-';
     }
+  };
+
+  // Check if a column is mapped
+  const isColumnMapped = (columnName: string) => {
+    return mappings.some(mapping => 
+      mapping.mappedColumns && mapping.mappedColumns.includes(columnName)
+    );
+  };
+
+  // Check if a value is empty
+  const isEmpty = (value: any) => {
+    return !value || value.toString().trim() === '' || value === '-';
+  };
+
+  // Get cell styling based on mapping status and data
+  const getCellClassName = (columnName: string, value: any) => {
+    const isMapped = isColumnMapped(columnName);
+    const hasData = !isEmpty(value);
+    
+    return cn(
+      isMobile ? 'max-w-[120px] text-xs p-2' : 'max-w-[180px] text-sm p-3',
+      'truncate',
+      // Mapping status styling
+      isMapped && isEmpty(value) && 'bg-yellow-100 border-yellow-200', // Mapped but empty
+      !isMapped && hasData && 'bg-red-100 border-red-200', // Not mapped but has data
+      isMapped && hasData && 'bg-green-50' // Mapped and has data (optional light green)
+    );
   };
 
   // Get effective column headers - either from fileColumns or generate indices
@@ -69,6 +99,22 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
             מציג {displayColumns.length} מתוך {relevantColumns.length} עמודות עם נתונים
           </p>
         )}
+        {mappings.length > 0 && (
+          <div className="flex flex-wrap gap-2 text-xs mt-2">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-yellow-100 border border-yellow-200 rounded"></div>
+              <span>ממופה, ערכים ריקים</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-red-100 border border-red-200 rounded"></div>
+              <span>לא ממופה, יש ערכים</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-green-50 border border-green-200 rounded"></div>
+              <span>ממופה תקין</span>
+            </div>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <div className="overflow-hidden">
@@ -80,15 +126,21 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
                   {displayColumns.map((column, index) => (
                     <TableHead 
                       key={`${column}-${index}`}
-                      className={`${
+                      className={cn(
                         isMobile 
                           ? 'min-w-[100px] max-w-[120px] text-xs p-2' 
-                          : 'min-w-[120px] max-w-[180px] text-sm p-3'
-                      } truncate`}
+                          : 'min-w-[120px] max-w-[180px] text-sm p-3',
+                        'truncate',
+                        // Header styling based on mapping status
+                        isColumnMapped(column) && 'bg-blue-50 font-semibold'
+                      )}
                       title={column}
                     >
                       <div className="truncate">
                         {column}
+                        {isColumnMapped(column) && (
+                          <span className="text-blue-600 ml-1">✓</span>
+                        )}
                       </div>
                       <div className="text-xs text-gray-400 mt-1">
                         עמודה {fileColumns.indexOf(column) >= 0 ? fileColumns.indexOf(column) + 1 : index + 1}
@@ -114,11 +166,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
                       return (
                         <TableCell 
                           key={`${column}-${columnIndex}`}
-                          className={`${
-                            isMobile 
-                              ? 'max-w-[120px] text-xs p-2' 
-                              : 'max-w-[180px] text-sm p-3'
-                          } truncate`}
+                          className={getCellClassName(column, value)}
                           title={value?.toString() || '-'}
                         >
                           <div className="truncate">
@@ -149,6 +197,12 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
             <span>עמודות מוצגות:</span>
             <span>{displayColumns.length} מתוך {effectiveColumns.length}</span>
           </div>
+          {mappings.length > 0 && (
+            <div className="flex justify-between">
+              <span>עמודות ממופות:</span>
+              <span>{displayColumns.filter(col => isColumnMapped(col)).length} מתוך {displayColumns.length}</span>
+            </div>
+          )}
           {relevantColumns.length < effectiveColumns.length && (
             <p className="text-yellow-600 text-xs">
               הוסתרו {effectiveColumns.length - relevantColumns.length} עמודות ריקות
