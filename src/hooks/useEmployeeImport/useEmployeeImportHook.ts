@@ -1,13 +1,22 @@
 
-import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useSecureBusinessData } from '@/hooks/useSecureBusinessData';
 import { useImportState } from './hooks/useImportState';
 import { useFileProcessing } from './hooks/useFileProcessing';
 import { useFieldMapping } from './hooks/useFieldMapping';
 import { useImportExecution } from './hooks/useImportExecution';
 
-export const useEmployeeImport = () => {
-  const { businessId } = useBusiness();
+export const useEmployeeImport = (selectedBusinessId?: string | null) => {
+  const { businessId: contextBusinessId } = useCurrentBusiness();
+  
+  // Use selectedBusinessId if provided, otherwise fall back to context business ID
+  const effectiveBusinessId = selectedBusinessId || contextBusinessId;
+
+  console.log('🔄 useEmployeeImport - businessId logic:', {
+    selectedBusinessId,
+    contextBusinessId,
+    effectiveBusinessId
+  });
 
   // State management
   const {
@@ -32,20 +41,20 @@ export const useEmployeeImport = () => {
 
   // Data dependencies
   const { data: branches = [] } = useSecureBusinessData({
-    queryKey: ['branches'],
+    queryKey: ['branches', effectiveBusinessId],
     tableName: 'branches',
-    enabled: !!businessId
+    enabled: !!effectiveBusinessId
   });
 
   const { data: existingEmployees = [] } = useSecureBusinessData({
-    queryKey: ['employees'],
+    queryKey: ['employees', effectiveBusinessId],
     tableName: 'employees',
-    enabled: !!businessId
+    enabled: !!effectiveBusinessId
   });
 
   // File processing
   const { processFile, downloadTemplate } = useFileProcessing({
-    businessId,
+    businessId: effectiveBusinessId,
     setFile,
     setRawData,
     setHeaders,
@@ -55,7 +64,7 @@ export const useEmployeeImport = () => {
 
   // Field mapping
   const { confirmMapping } = useFieldMapping({
-    businessId,
+    businessId: effectiveBusinessId,
     rawData,
     branches,
     existingEmployees,
@@ -67,7 +76,7 @@ export const useEmployeeImport = () => {
 
   // Import execution
   const { executeImport } = useImportExecution({
-    businessId,
+    businessId: effectiveBusinessId,
     previewData,
     setStep,
     setImportResult,
@@ -103,6 +112,6 @@ export const useEmployeeImport = () => {
     // Dependencies
     branches,
     existingEmployees,
-    businessId,
+    businessId: effectiveBusinessId,
   };
 };

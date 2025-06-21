@@ -13,7 +13,8 @@ interface ImportManagerProps {
 export const ImportManager: React.FC<ImportManagerProps> = ({ selectedBusinessId }) => {
   console.log('📥 ImportManager rendering with selectedBusinessId:', selectedBusinessId);
   
-  const importHook = useEmployeeImport();
+  // Pass selectedBusinessId to the hook
+  const importHook = useEmployeeImport(selectedBusinessId);
   
   console.log('📥 ImportManager hook state:', {
     step: importHook.step,
@@ -22,8 +23,7 @@ export const ImportManager: React.FC<ImportManagerProps> = ({ selectedBusinessId
     selectedBusinessId
   });
 
-  // Use selectedBusinessId if provided, otherwise fall back to the hook's businessId
-  const effectiveBusinessId = selectedBusinessId || importHook.businessId;
+  const effectiveBusinessId = importHook.businessId;
   console.log('📥 ImportManager effectiveBusinessId:', effectiveBusinessId);
 
   const isButtonDisabled = !effectiveBusinessId;
@@ -57,9 +57,9 @@ export const ImportManager: React.FC<ImportManagerProps> = ({ selectedBusinessId
           />
         </div>
         
-        <ImportProcessDialog importHook={{ ...importHook, businessId: effectiveBusinessId }} />
+        <ImportProcessDialog importHook={importHook} />
         
-        <ImportMappingDialog importHook={{ ...importHook, businessId: effectiveBusinessId }} />
+        <ImportMappingDialog importHook={importHook} />
       </div>
     </ImportErrorBoundary>
   );

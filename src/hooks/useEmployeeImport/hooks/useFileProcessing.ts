@@ -1,38 +1,15 @@
 
-import { useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { ExcelImportService } from '@/services/ExcelImportService';
-import type { ImportStep } from '../types';
+import { useState } from 'react';
+import * as XLSX from 'xlsx';
 
 interface UseFileProcessingProps {
-  businessId: string | null;
+  businessId: string | null | undefined;
   setFile: (file: File | null) => void;
   setRawData: (data: any[]) => void;
   setHeaders: (headers: string[]) => void;
-  setStep: (step: ImportStep) => void;
+  setStep: (step: string) => void;
   setShowMappingDialog: (show: boolean) => void;
 }
-
-// File validation functions
-const validateFileType = (file: File): boolean => {
-  const allowedTypes = [
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-excel',
-    'text/csv'
-  ];
-  
-  const validExtensions = ['.xlsx', '.xls', '.csv'];
-  const fileName = file.name.toLowerCase();
-  const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
-  const hasValidType = allowedTypes.includes(file.type);
-  
-  return hasValidExtension || hasValidType;
-};
-
-const validateFileSize = (file: File, maxSizeMB: number): boolean => {
-  const maxSizeBytes = maxSizeMB * 1024 * 1024;
-  return file.size <= maxSizeBytes;
-};
 
 export const useFileProcessing = ({
   businessId,
@@ -42,111 +19,72 @@ export const useFileProcessing = ({
   setStep,
   setShowMappingDialog,
 }: UseFileProcessingProps) => {
-  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const processFile = useCallback(async (file: File) => {
+  const processFile = async (file: File) => {
     console.log('🔄 useFileProcessing - processFile called:', {
       fileName: file.name,
       fileSize: file.size,
       businessId
     });
 
-    // Check if business is selected (critical for import)
     if (!businessId) {
       console.error('❌ No business ID available for import');
-      toast({
-        title: 'יש לבחור עסק',
-        description: 'אנא בחר עסק ספציפי מהרשימה כדי לייבא עובדים אליו. כמנהל ראשי, עליך לבחור לאיזה עסק להוסיף את העובדים.',
-        variant: 'destructive',
-      });
-      return;
+      throw new Error('לא נבחר עסק לייבוא');
     }
 
-    // Validate file type
-    if (!validateFileType(file)) {
-      toast({
-        title: 'שגיאה',
-        description: 'סוג קובץ לא נתמך. אנא בחר קובץ Excel או CSV תקין (.xlsx, .xls, .csv)',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Validate file size (10MB limit)
-    if (!validateFileSize(file, 10)) {
-      toast({
-        title: 'שגיאה',
-        description: 'הקובץ גדול מדי. הגודל המקסימלי הוא 10MB',
-        variant: 'destructive',
-      });
-      return;
-    }
+    setIsProcessing(true);
+    setFile(file);
 
     try {
-      console.log('📄 Publishing Excel file...');
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
       
-      setFile(file);
-      
-      toast({
-        title: 'מעבד קובץ...',
-        description: 'קורא ומנתח את נתוני האקסל',
-      });
-      
-      // Use the correct parseFile method that returns ParsedExcelData
-      const parsedData = await ExcelImportService.parseFile(file);
-      
-      console.log('📊 File parsed successfully:', {
-        headersCount: parsedData.headers.length,
-        rowsCount: parsedData.data.length,
-        sampleHeaders: parsedData.headers.slice(0, 5)
-      });
-
-      if (parsedData.headers.length === 0) {
-        toast({
-          title: 'שגיאה',
-          description: 'הקובץ ריק או לא מכיל כותרות',
-          variant: 'destructive',
-        });
-        return;
+      if (jsonData.length === 0) {
+        throw new Error('הקובץ ריק');
       }
 
-      if (parsedData.data.length === 0) {
-        toast({
-          title: 'שגיאה',
-          description: 'הקובץ לא מכיל נתוני עובדים',
-          variant: 'destructive',
-        });
-        return;
-      }
+      const headers = jsonData[0] as string[];
+      const dataRows = jsonData.slice(1);
+      
+      console.log('✅ File processed successfully:', {
+        headersCount: headers.length,
+        dataRowsCount: dataRows.length
+      });
 
-      // Set the parsed data
-      setRawData(parsedData.data);
-      setHeaders(parsedData.headers);
-      setStep('mapping');
+      setHeaders(headers);
+      setRawData(dataRows);
+      setStep('preview');
       setShowMappingDialog(true);
-
-      toast({
-        title: 'קובץ נטען בהצלחה! 📄',
-        description: `נמצאו ${parsedData.data.length} שורות נתונים`,
-      });
-
     } catch (error) {
-      console.error('💥 File upload error:', error);
-      toast({
-        title: 'שגיאה בטעינת הקובץ',
-        description: error instanceof Error ? error.message : 'שגיאה לא צפויה',
-        variant: 'destructive'
-      });
+      console.error('❌ Error processing file:', error);
+      throw error;
+    } finally {
+      setIsProcessing(false);
     }
-  }, [businessId, setFile, setRawData, setHeaders, setStep, setShowMappingDialog, toast]);
+  };
 
-  const downloadTemplate = useCallback(() => {
-    console.log('📝 Downloading template...');
-    ExcelImportService.generateTemplate();
-  }, []);
+  const downloadTemplate = () => {
+    console.log('📥 Downloading employee template');
+    
+    const templateData = [
+      ['שם פרטי', 'שם משפחה', 'מספר זהות', 'טלפון', 'אימייל', 'כתובת', 'סוג עובד', 'שעות שבועיות'],
+      ['יוסי', 'כהן', '123456789', '050-1234567', 'yossi@example.com', 'תל אביב', 'קבוע', '40'],
+      ['דנה', 'לוי', '987654321', '050-9876543', 'dana@example.com', 'חיפה', 'זמני', '20']
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'עובדים');
+    XLSX.writeFile(workbook, 'תבנית_עובדים.xlsx');
+  };
 
   return {
     processFile,
     downloadTemplate,
+    isProcessing,
   };
 };
