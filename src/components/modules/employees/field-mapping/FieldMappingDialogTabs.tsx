@@ -42,8 +42,25 @@ export const FieldMappingDialogTabs: React.FC<FieldMappingDialogTabsProps> = ({
   // Convert mappings to simple format for DataPreviewTable
   const simpleMappings = mappings.map(mapping => ({
     systemField: mapping.systemField,
-    mappedColumns: mapping.mappedColumns
+    mappedColumns: mapping.mappedColumns || []
   }));
+
+  // Filter out mappings with no mapped columns for preview
+  const activeMappings = mappings.filter(mapping => 
+    mapping.mappedColumns && mapping.mappedColumns.length > 0
+  );
+
+  console.log('🗺️ FieldMappingDialogTabs - mappings data:', {
+    totalMappings: mappings.length,
+    activeMappings: activeMappings.length,
+    sampleMappings: activeMappings.slice(0, 2).map(m => ({
+      systemField: m.systemField,
+      mappedColumns: m.mappedColumns,
+      label: m.label
+    })),
+    sampleDataRows: sampleData.length,
+    fileColumns: fileColumns.length
+  });
 
   return (
     <div className="flex-1 overflow-hidden">
@@ -53,12 +70,17 @@ export const FieldMappingDialogTabs: React.FC<FieldMappingDialogTabsProps> = ({
             <span>מיפוי שדות</span>
             {mappings.length > 0 && (
               <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                {mappings.length}
+                {activeMappings.length}
               </span>
             )}
           </TabsTrigger>
           <TabsTrigger value="preview" className="flex items-center gap-2">
             <span>תצוגה מקדימה</span>
+            {activeMappings.length > 0 && (
+              <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                {activeMappings.length}
+              </span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="data" className="flex items-center gap-2">
             <span>נתוני הקובץ</span>
@@ -106,12 +128,22 @@ export const FieldMappingDialogTabs: React.FC<FieldMappingDialogTabsProps> = ({
           <TabsContent value="preview" className="h-full mt-0">
             <ScrollArea className="h-full">
               <div className="pb-6">
-                <FieldMappingPreview
-                  mappings={mappings}
-                  sampleData={sampleData}
-                  systemFields={[...systemFields]}
-                  businessId={businessId}
-                />
+                {activeMappings.length > 0 ? (
+                  <FieldMappingPreview
+                    mappings={activeMappings}
+                    sampleData={sampleData}
+                    systemFields={[...systemFields]}
+                    businessId={businessId}
+                  />
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="text-gray-500 mb-4">
+                      <Info className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                      <h3 className="text-lg font-medium mb-2">אין מיפויים פעילים</h3>
+                      <p>כדי לראות תצוגה מקדימה של הנתונים, עליך למפות לפחות שדה אחד בלשונית "מיפוי שדות"</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </ScrollArea>
           </TabsContent>

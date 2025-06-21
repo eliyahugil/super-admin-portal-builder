@@ -25,6 +25,17 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
 
+  console.log('🔍 FieldMappingPreview - data received:', {
+    mappingsCount: mappings.length,
+    sampleDataCount: sampleData.length,
+    sampleMappings: mappings.slice(0, 2).map(m => ({
+      systemField: m.systemField,
+      mappedColumns: m.mappedColumns,
+      label: m.label
+    })),
+    sampleDataRow: sampleData[0]
+  });
+
   const getSystemFieldLabel = (mapping: FieldMapping) => {
     if (mapping.isCustomField && mapping.customFieldName) {
       return mapping.customFieldName;
@@ -35,32 +46,73 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
   };
 
   const generatePreviewData = () => {
-    return sampleData.slice(0, 5).map((row, index) => {
+    // Take first 5 rows for preview, skip header if it exists
+    const dataToProcess = sampleData.slice(0, 5);
+    
+    return dataToProcess.map((row, rowIndex) => {
+      console.log(`📊 Processing row ${rowIndex + 1}:`, {
+        rowType: Array.isArray(row) ? 'array' : typeof row,
+        rowData: Array.isArray(row) ? row.slice(0, 3) : Object.entries(row || {}).slice(0, 3)
+      });
+
       const mappedRow: Record<string, any> = {};
       
       mappings.forEach((mapping) => {
-        if (mapping.systemField && mapping.mappedColumns.length > 0) {
-          const values = mapping.mappedColumns
-            .map(col => row[col] || '')
-            .filter(val => val !== '');
+        if (mapping.systemField && mapping.mappedColumns && mapping.mappedColumns.length > 0) {
+          const values: string[] = [];
+          
+          mapping.mappedColumns.forEach(columnName => {
+            let fieldValue;
+            
+            if (Array.isArray(row)) {
+              // For array data, find column index
+              const columnIndex = sampleData.length > 0 && Array.isArray(sampleData[0]) 
+                ? sampleData[0].indexOf(columnName) 
+                : parseInt(columnName.replace(/\D/g, '')) - 1;
+              
+              if (columnIndex >= 0 && columnIndex < row.length) {
+                fieldValue = row[columnIndex];
+              }
+            } else if (typeof row === 'object' && row !== null) {
+              // For object data
+              fieldValue = row[columnName];
+            }
+            
+            if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
+              const cleanValue = String(fieldValue).trim();
+              if (cleanValue) {
+                values.push(cleanValue);
+              }
+            }
+          });
+          
+          const combinedValue = values.join(' ').trim();
+          console.log(`🗺️ Mapping ${mapping.systemField} <- ${mapping.mappedColumns.join(' + ')} = "${combinedValue}"`);
           
           mappedRow[mapping.systemField] = {
-            value: values.join(' ').trim() || '-',
-            originalValue: values.join(' ').trim() || '-',
+            value: combinedValue || '-',
+            originalValue: combinedValue || '-',
             isMapped: true,
-            isEmpty: !values.join(' ').trim()
+            isEmpty: !combinedValue,
+            mappedColumns: mapping.mappedColumns
           };
         }
       });
 
       return {
-        originalRowIndex: index + 1,
+        originalRowIndex: rowIndex + 1,
         ...mappedRow,
       };
     });
   };
 
   const previewData = generatePreviewData();
+
+  console.log('📋 Generated preview data:', {
+    previewRowsCount: previewData.length,
+    samplePreviewRow: previewData[0],
+    mappingsUsed: mappings.map(m => m.systemField)
+  });
 
   const getCellClassName = (cellData: any) => {
     if (!cellData || typeof cellData !== 'object') return '';
@@ -141,7 +193,16 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
   };
 
   if (mappings.length === 0) {
-    return null;
+    return (
+      <Card>
+        <CardContent className="py-12">
+          <div className="text-center text-gray-500">
+            <p className="mb-2">אין מיפויים זמינים</p>
+            <p className="text-sm">עליך להוסיף מיפויי שדות כדי לראות תצוגה מקדימה</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -181,7 +242,7 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
                         {getSystemFieldLabel(mapping)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {mapping.mappedColumns.join(' + ')}
+                        {mapping.mappedColumns?.join(' + ') || 'לא ממופה'}
                       </div>
                       {mapping.isCustomField && (
                         <Badge variant="secondary" className="text-xs">
