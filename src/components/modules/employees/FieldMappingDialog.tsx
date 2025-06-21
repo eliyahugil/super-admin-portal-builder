@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
-import { CustomFieldCreationSection } from './CustomFieldCreationSection';
 import { FieldMappingList } from './field-mapping/FieldMappingList';
 import { DataPreviewTable } from './field-mapping/DataPreviewTable';
 import { FloatingAutoMappingMenu } from './field-mapping/FloatingAutoMappingMenu';
+import { CustomFieldManager } from './field-mapping/CustomFieldManager';
 import { useFieldMappingLogic } from './field-mapping/useFieldMappingLogic';
 import { defaultSystemFields } from './field-mapping/constants';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -35,6 +35,8 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
     mappings,
     handleMappingChange,
     handleAddCustomField,
+    handleUpdateCustomField,
+    handleRemoveCustomField,
     handleRemoveMapping,
     handleMoveMapping,
     getSystemFieldLabel,
@@ -74,10 +76,10 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className={`max-w-4xl ${isMobile ? 'max-h-[95vh] w-[95vw] m-2' : 'max-h-[90vh]'} overflow-y-auto`}>
+        <DialogContent className={`max-w-5xl ${isMobile ? 'max-h-[95vh] w-[95vw] m-2' : 'max-h-[90vh]'} overflow-y-auto`}>
           <DialogHeader>
             <DialogTitle className={`${isMobile ? 'text-base' : 'text-lg'}`}>
-              מיפוי שדות - התאמת עמודות האקסל לשדות המערכת
+              מיפוי שדות - ניהול גמיש של שדות העובדים
             </DialogTitle>
             <div className="text-sm text-gray-600 space-y-1">
               <p>זוהו אוטומטית {autoMappedCount} שדות מתוך {mappings.length}</p>
@@ -100,8 +102,14 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
           </DialogHeader>
 
           <div className="space-y-4 md:space-y-6">
-            {/* Custom Field Creation Section */}
-            <CustomFieldCreationSection onAddCustomField={handleAddCustomField} />
+            {/* Custom Field Management Section */}
+            <CustomFieldManager
+              mappings={mappings}
+              fileColumns={fileColumns}
+              onAddCustomField={handleAddCustomField}
+              onUpdateCustomField={handleUpdateCustomField}
+              onRemoveCustomField={handleRemoveCustomField}
+            />
 
             {/* Field Mapping Section */}
             <FieldMappingList

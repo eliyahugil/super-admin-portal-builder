@@ -62,6 +62,7 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
           isRequired: false,
           label: `שדה מותאם: ${column}`,
           isCustomField: true,
+          customFieldName: column,
         }));
 
         console.log(`📋 Added ${customFieldMappings.length} unmapped columns as custom fields:`, 
@@ -121,10 +122,32 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
   };
 
   const handleAddCustomField = (customMapping: FieldMapping) => {
+    console.log('➕ Adding custom field:', customMapping);
     setMappings(prev => [...prev, customMapping]);
   };
 
+  const handleUpdateCustomField = (mappingId: string, newName: string, newLabel: string) => {
+    console.log('✏️ Updating custom field:', mappingId, newName, newLabel);
+    setMappings(prev => prev.map(mapping => {
+      if (mapping.id === mappingId && mapping.isCustomField) {
+        return {
+          ...mapping,
+          customFieldName: newName,
+          label: newLabel || `שדה מותאם: ${newName}`,
+          systemField: `custom_${newName.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase()}`,
+        };
+      }
+      return mapping;
+    }));
+  };
+
+  const handleRemoveCustomField = (mappingId: string) => {
+    console.log('🗑️ Removing custom field:', mappingId);
+    setMappings(prev => prev.filter(mapping => mapping.id !== mappingId));
+  };
+
   const handleRemoveMapping = (mappingId: string) => {
+    console.log('🗑️ Removing mapping:', mappingId);
     setMappings(prev => prev.filter(mapping => mapping.id !== mappingId));
   };
 
@@ -167,6 +190,8 @@ export const useFieldMappingLogic = ({ systemFields, fileColumns = [] }: UseFiel
     mappings,
     handleMappingChange,
     handleAddCustomField,
+    handleUpdateCustomField,
+    handleRemoveCustomField,
     handleRemoveMapping,
     handleMoveMapping,
     getSystemFieldLabel,
