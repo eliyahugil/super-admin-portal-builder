@@ -1,13 +1,14 @@
 
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
+import type { ImportStep } from '../types';
 
 interface UseFileProcessingProps {
   businessId: string | null | undefined;
   setFile: (file: File | null) => void;
   setRawData: (data: any[]) => void;
   setHeaders: (headers: string[]) => void;
-  setStep: (step: string) => void;
+  setStep: (step: ImportStep) => void;
   setShowMappingDialog: (show: boolean) => void;
 }
 

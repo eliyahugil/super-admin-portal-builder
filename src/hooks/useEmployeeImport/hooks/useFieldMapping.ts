@@ -1,11 +1,8 @@
 
-import { useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { ExcelImportService } from '@/services/ExcelImportService';
-import type { ImportStep, FieldMapping, PreviewEmployee } from '../types';
+import type { FieldMapping, PreviewEmployee, ImportStep } from '../types';
 
 interface UseFieldMappingProps {
-  businessId: string | null;
+  businessId: string | null | undefined;
   rawData: any[];
   branches: Array<{ id: string; name: string }>;
   existingEmployees: Array<{ email?: string; id_number?: string; employee_id?: string }>;
@@ -25,70 +22,77 @@ export const useFieldMapping = ({
   setStep,
   setShowMappingDialog,
 }: UseFieldMappingProps) => {
-  const { toast } = useToast();
-
-  const confirmMapping = useCallback(async (fieldMappings: FieldMapping[]): Promise<void> => {
-    console.log('🗺️ useFieldMapping - confirmMapping called:', {
-      fieldMappings,
-      rawDataCount: rawData.length,
+  
+  const confirmMapping = async (mappings: FieldMapping[]) => {
+    console.log('🔄 useFieldMapping - confirmMapping called:', {
+      mappingsCount: mappings.length,
       businessId
     });
 
     if (!businessId) {
       console.error('❌ No business ID available for mapping');
-      toast({
-        title: 'שגיאה',
-        description: 'יש לבחור עסק לפני המשך הייבוא',
-        variant: 'destructive',
-      });
-      return;
+      throw new Error('לא נבחר עסק למיפוי');
     }
 
     try {
-      // Convert FieldMapping[] to Record<string, string> for the service
-      const mappingRecord: Record<string, string> = {};
-      fieldMappings.forEach(mapping => {
-        if (mapping.systemField && mapping.mappedColumns.length > 0) {
-          mappingRecord[mapping.systemField] = mapping.mappedColumns[0];
+      // Process the raw data with the field mappings
+      const previewData: PreviewEmployee[] = rawData.map((row, index) => {
+        const employee: any = {
+          business_id: businessId,
+          isValid: true,
+          isDuplicate: false,
+          validationErrors: [],
+        };
+
+        // Apply field mappings
+        mappings.forEach(mapping => {
+          if (mapping.mappedColumns.length > 0) {
+            const columnIndex = rawData[0]?.indexOf(mapping.mappedColumns[0]);
+            if (columnIndex !== -1) {
+              employee[mapping.systemField] = row[columnIndex];
+            }
+          }
+        });
+
+        // Set default employee type if not provided
+        if (!employee.employee_type) {
+          employee.employee_type = 'permanent';
         }
+
+        // Basic validation
+        if (!employee.first_name) {
+          employee.isValid = false;
+          employee.validationErrors.push('שם פרטי חובה');
+        }
+
+        if (!employee.last_name) {
+          employee.isValid = false;
+          employee.validationErrors.push('שם משפחה חובה');
+        }
+
+        // Check for duplicates
+        if (employee.email && existingEmployees.some(emp => emp.email === employee.email)) {
+          employee.isDuplicate = true;
+          employee.validationErrors.push('עובד עם אימייל זה כבר קיים');
+        }
+
+        return employee as PreviewEmployee;
       });
 
-      // Generate preview data using the service
-      const previewData = await ExcelImportService.generatePreview({
-        rawData,
-        fieldMappings: mappingRecord,
-        businessId,
-        branches,
-        existingEmployees
+      console.log('✅ Field mapping completed:', {
+        totalEmployees: previewData.length,
+        validEmployees: previewData.filter(emp => emp.isValid).length
       });
 
-      console.log('📊 Preview data generated:', {
-        previewCount: previewData.length,
-        validCount: previewData.filter(emp => emp.isValid).length,
-        duplicateCount: previewData.filter(emp => emp.isDuplicate).length
-      });
-
-      // Update state
-      setFieldMappings(fieldMappings);
+      setFieldMappings(mappings);
       setPreviewData(previewData);
       setShowMappingDialog(false);
       setStep('preview');
-
-      toast({
-        title: 'מיפוי שדות הושלם',
-        description: `נוצרה תצוגה מקדימה של ${previewData.length} עובדים`,
-      });
-
     } catch (error) {
-      console.error('💥 Error in confirmMapping:', error);
-      
-      toast({
-        title: 'שגיאה במיפוי שדות',
-        description: error instanceof Error ? error.message : 'שגיאה לא צפויה במיפוי השדות',
-        variant: 'destructive',
-      });
+      console.error('❌ Error in field mapping:', error);
+      throw error;
     }
-  }, [businessId, rawData, branches, existingEmployees, setFieldMappings, setPreviewData, setStep, setShowMappingDialog, toast]);
+  };
 
   return {
     confirmMapping,

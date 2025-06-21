@@ -5,6 +5,7 @@ import { useImportState } from './hooks/useImportState';
 import { useFileProcessing } from './hooks/useFileProcessing';
 import { useFieldMapping } from './hooks/useFieldMapping';
 import { useImportExecution } from './hooks/useImportExecution';
+import type { ImportStep } from './types';
 
 export const useEmployeeImport = (selectedBusinessId?: string | null) => {
   const { businessId: contextBusinessId } = useCurrentBusiness();
@@ -85,7 +86,7 @@ export const useEmployeeImport = (selectedBusinessId?: string | null) => {
   return {
     // State
     step,
-    setStep,
+    setStep: (step: ImportStep) => setStep(step),
     file,
     rawData,
     setRawData,
