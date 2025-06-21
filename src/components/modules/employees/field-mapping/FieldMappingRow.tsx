@@ -33,14 +33,8 @@ export const FieldMappingRow: React.FC<FieldMappingRowProps> = ({
 }) => {
   const isMobile = useIsMobile();
 
-  const handleAddColumn = (column: string) => {
-    const newColumns = [...mapping.mappedColumns, column];
-    onMappingChange(mapping.systemField, newColumns);
-  };
-
-  const handleRemoveColumn = (column: string) => {
-    const newColumns = mapping.mappedColumns.filter(col => col !== column);
-    onMappingChange(mapping.systemField, newColumns);
+  const handleSelectionChange = (columns: string[]) => {
+    onMappingChange(mapping.systemField, columns);
   };
 
   return (
@@ -107,8 +101,7 @@ export const FieldMappingRow: React.FC<FieldMappingRowProps> = ({
           <MultiColumnSelector
             selectedColumns={mapping.mappedColumns}
             availableColumns={fileColumns}
-            onAddColumn={handleAddColumn}
-            onRemoveColumn={handleRemoveColumn}
+            onSelectionChange={handleSelectionChange}
             placeholder="הוסף עמודה נוספת..."
           />
         </div>

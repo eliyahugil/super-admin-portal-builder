@@ -99,7 +99,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
         customFieldName: newField.label,
       };
       
-      setMappings(prev => [...prev, customMapping]);
+      setMappings((prev: FieldMapping[]) => [...prev, customMapping]);
       return true;
     } catch (error) {
       console.error('Error adding system field:', error);
@@ -191,7 +191,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
                     <FieldMappingList
                       mappings={mappings}
                       fileColumns={fileColumns}
-                      systemFields={systemFields}
+                      systemFields={[...systemFields]}
                       onUpdateMapping={updateMapping}
                       onRemoveMapping={removeMapping}
                       onAddSystemField={handleAddSystemField}
@@ -206,7 +206,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
                     <FieldMappingPreview
                       mappings={mappings}
                       sampleData={sampleData}
-                      systemFields={systemFields || []}
+                      systemFields={[...systemFields]}
                     />
                   </div>
                 </ScrollArea>

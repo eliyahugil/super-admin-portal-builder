@@ -10,6 +10,8 @@ interface MultiColumnSelectorProps {
   availableColumns: string[];
   selectedColumns: string[];
   onSelectionChange: (columns: string[]) => void;
+  onAddColumn?: (column: string) => void;
+  onRemoveColumn?: (column: string) => void;
   placeholder?: string;
 }
 
@@ -17,6 +19,8 @@ export const MultiColumnSelector: React.FC<MultiColumnSelectorProps> = ({
   availableColumns,
   selectedColumns,
   onSelectionChange,
+  onAddColumn,
+  onRemoveColumn,
   placeholder = "בחר עמודות..."
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,6 +31,13 @@ export const MultiColumnSelector: React.FC<MultiColumnSelectorProps> = ({
       : [...selectedColumns, column];
     
     onSelectionChange(newSelection);
+    
+    // Support for legacy props
+    if (selectedColumns.includes(column) && onRemoveColumn) {
+      onRemoveColumn(column);
+    } else if (!selectedColumns.includes(column) && onAddColumn) {
+      onAddColumn(column);
+    }
   };
 
   const displayText = selectedColumns.length > 0 
