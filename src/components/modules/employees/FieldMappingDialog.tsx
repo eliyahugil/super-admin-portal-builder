@@ -99,7 +99,8 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
         customFieldName: newField.label,
       };
       
-      setMappings((prev: FieldMapping[]) => [...prev, customMapping]);
+      // Use direct value instead of callback
+      setMappings([...mappings, customMapping]);
       return true;
     } catch (error) {
       console.error('Error adding system field:', error);
