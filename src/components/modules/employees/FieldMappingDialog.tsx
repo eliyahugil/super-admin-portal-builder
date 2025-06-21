@@ -54,7 +54,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   const handleMappingChange = (systemField: string, selectedColumn: string) => {
     setMappings(prev => prev.map(mapping => 
       mapping.systemField === systemField 
-        ? { ...mapping, mappedColumns: selectedColumn ? [selectedColumn] : [] }
+        ? { ...mapping, mappedColumns: selectedColumn && selectedColumn !== 'none' ? [selectedColumn] : [] }
         : mapping
     ));
   };
@@ -103,14 +103,14 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
                       )}
                     </div>
                     <Select
-                      value={mapping.mappedColumns[0] || ''}
+                      value={mapping.mappedColumns[0] || 'none'}
                       onValueChange={(value) => handleMappingChange(mapping.systemField, value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="בחר עמודה מהקובץ" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">ללא מיפוי</SelectItem>
+                        <SelectItem value="none">ללא מיפוי</SelectItem>
                         {fileColumns.map((column) => (
                           <SelectItem key={column} value={column}>
                             {column}
@@ -175,4 +175,3 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
     </Dialog>
   );
 };
-
