@@ -24,10 +24,11 @@ export const useFieldMapping = ({
 }: UseFieldMappingProps) => {
   
   const confirmMapping = async (mappings: FieldMapping[]) => {
-    console.log('🔄 useFieldMapping - confirmMapping called (direct import flow):', {
+    console.log('🔄 useFieldMapping - confirmMapping called:', {
       mappingsCount: mappings.length,
       businessId,
       rawDataCount: rawData.length,
+      sampleRawData: rawData.slice(0, 2),
       mappings: mappings.map(m => ({ 
         systemField: m.systemField, 
         mappedColumns: m.mappedColumns,
@@ -46,8 +47,7 @@ export const useFieldMapping = ({
         console.log(`📋 Processing row ${index + 1}:`, {
           rowType: Array.isArray(row) ? 'array' : typeof row,
           rowLength: Array.isArray(row) ? row.length : Object.keys(row || {}).length,
-          sampleData: Array.isArray(row) ? row.slice(0, 3) : Object.entries(row || {}).slice(0, 3),
-          fullRow: row
+          sampleData: Array.isArray(row) ? row.slice(0, 5) : Object.entries(row || {}).slice(0, 5),
         });
         
         const employee: any = {
@@ -64,15 +64,23 @@ export const useFieldMapping = ({
             
             let fieldValue;
             if (Array.isArray(row)) {
-              // For array-based data, map by column index
-              const columnIndex = parseInt(columnName.replace(/[^\d]/g, ''));
-              if (!isNaN(columnIndex) && columnIndex >= 0 && columnIndex < row.length) {
-                fieldValue = row[columnIndex];
+              // For array-based data, extract column index from column name
+              const columnMatch = columnName.match(/^(?:Column\s*|Col\s*|C)?(\d+)$/i);
+              if (columnMatch) {
+                const columnIndex = parseInt(columnMatch[1]) - 1; // Convert to 0-based index
+                if (columnIndex >= 0 && columnIndex < row.length) {
+                  fieldValue = row[columnIndex];
+                }
               } else {
-                // Try to find by exact column name match in array
-                const headerIndex = rawData[0]?.indexOf(columnName);
-                if (headerIndex >= 0 && headerIndex < row.length) {
-                  fieldValue = row[headerIndex];
+                // Try to find by exact column name match
+                const headerRow = rawData[0];
+                if (Array.isArray(headerRow)) {
+                  const headerIndex = headerRow.findIndex(header => 
+                    header && header.toString().trim().toLowerCase() === columnName.toLowerCase()
+                  );
+                  if (headerIndex >= 0 && headerIndex < row.length) {
+                    fieldValue = row[headerIndex];
+                  }
                 }
               }
             } else if (typeof row === 'object' && row !== null) {
@@ -80,7 +88,7 @@ export const useFieldMapping = ({
               fieldValue = row[columnName];
             }
             
-            console.log(`🗺️ Mapping ${mapping.systemField} <- column "${columnName}" (index/key) = "${fieldValue}"`);
+            console.log(`🗺️ Mapping ${mapping.systemField} <- column "${columnName}" = "${fieldValue}"`);
             
             if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
               const cleanValue = String(fieldValue).trim();
@@ -108,17 +116,12 @@ export const useFieldMapping = ({
           employee.employee_type = 'permanent';
         }
 
-        // Basic validation - more flexible approach
+        // Basic validation
         const validationErrors = [];
         
-        // רק אם יש שם פרטי אבל הוא ריק
-        if (employee.first_name !== undefined && (!employee.first_name || employee.first_name.trim() === '')) {
-          validationErrors.push('שם פרטי לא יכול להיות ריק');
-        }
-
-        // רק אם יש שם משפחה אבל הוא ריק
-        if (employee.last_name !== undefined && (!employee.last_name || employee.last_name.trim() === '')) {
-          validationErrors.push('שם משפחה לא יכול להיות ריק');
+        // Check if we have at least basic name data
+        if (!employee.first_name && !employee.last_name) {
+          validationErrors.push('חובה לציין לפחות שם פרטי או שם משפחה');
         }
 
         // Email validation - רק אם יש אימייל
@@ -162,7 +165,7 @@ export const useFieldMapping = ({
           delete employee.main_branch_name;
         }
 
-        // Check if we have at least some basic employee data
+        // Check if we have any meaningful data
         const hasAnyData = Object.keys(employee).some(key => 
           key !== 'business_id' && 
           key !== 'isValid' && 
@@ -177,20 +180,14 @@ export const useFieldMapping = ({
         // Set validation results
         employee.validationErrors = validationErrors;
         employee.isValid = hasAnyData && validationErrors.length === 0;
-        
-        // Mark as invalid if has validation errors
-        if (validationErrors.length > 0) {
-          employee.isValid = false;
-        }
 
-        console.log(`✅ Processed employee:`, {
-          rowIndex: index + 1,
+        console.log(`✅ Processed employee ${index + 1}:`, {
           hasAnyData,
           isValid: employee.isValid,
           isDuplicate: employee.isDuplicate,
           errorsCount: employee.validationErrors?.length || 0,
           errors: employee.validationErrors,
-          employeeData: {
+          basicData: {
             first_name: employee.first_name,
             last_name: employee.last_name,
             email: employee.email,
@@ -201,21 +198,18 @@ export const useFieldMapping = ({
         return employee as PreviewEmployee;
       });
 
-      console.log('✅ Field mapping completed (direct import):', {
+      console.log('✅ Field mapping completed:', {
         totalEmployees: previewData.length,
         validEmployees: previewData.filter(emp => emp.isValid).length,
         duplicateEmployees: previewData.filter(emp => emp.isDuplicate).length,
         invalidEmployees: previewData.filter(emp => !emp.isValid).length,
-        sampleValidEmployee: previewData.find(emp => emp.isValid)
       });
 
-      // Store the mappings and preview data but skip the preview step
+      // Store the mappings and preview data
       setFieldMappings(mappings);
       setPreviewData(previewData);
       setShowMappingDialog(false);
-      
-      // Skip preview step - data is ready for import
-      console.log('🚀 Skipping preview step, data ready for import');
+      setStep('preview');
       
     } catch (error) {
       console.error('❌ Error in field mapping:', error);

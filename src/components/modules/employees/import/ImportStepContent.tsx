@@ -4,6 +4,7 @@ import { ImportFileUpload } from '../ImportFileUpload';
 import { FieldMappingDialog } from '../FieldMappingDialog';
 import { ImportResults } from '../ImportResults';
 import { EmployeeImportSummary } from '../steps/EmployeeImportSummary';
+import { EmployeeImportPreviewStep } from '../steps/EmployeeImportPreviewStep';
 import type { ImportStep, EmployeeImportHook } from '@/hooks/useEmployeeImport/types';
 
 interface ImportStepContentProps {
@@ -28,35 +29,26 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
     executeImport,
     importResult,
     resetForm,
-    setStep
+    setStep,
+    previewData
   } = importHook;
 
-  console.log('📊 ImportStepContent state:', {
-    step,
-    showMappingDialog,
-    headersCount: headers.length,
-    rawDataCount: rawData.length,
-    hasImportResult: !!importResult,
-    executeImportFunction: typeof executeImport
-  });
-
-  // Modified confirmMapping to go directly to importing
-  const handleConfirmMappingAndImport = async (mappings: any) => {
-    console.log('🚀 Direct import after mapping confirmation');
-    try {
-      // Apply the mapping
-      await confirmMapping(mappings);
-      // Skip preview step and go directly to importing
-      setStep('importing');
-      // Execute import immediately
-      await executeImport();
-    } catch (error) {
-      console.error('❌ Direct import failed:', error);
-    }
+  // Handle back to mapping from preview
+  const handleBackToMapping = () => {
+    console.log('🔄 Going back to mapping from preview');
+    setStep('mapping');
+    setShowMappingDialog(true);
   };
 
-  // פונקציה לחזרה למיפוי מתוצאות השגיאות
-  const handleBackToMapping = () => {
+  // Handle back to upload from mapping
+  const handleBackToUpload = () => {
+    console.log('🔄 Going back to upload from mapping');
+    setStep('upload');
+    setShowMappingDialog(false);
+  };
+
+  // Handle back to mapping from results
+  const handleBackToMappingFromResults = () => {
     console.log('🔄 Going back to mapping from results');
     setStep('mapping');
     setShowMappingDialog(true);
@@ -80,7 +72,19 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
           onOpenChange={setShowMappingDialog}
           fileColumns={headers}
           sampleData={rawData.slice(0, 3)}
-          onConfirm={handleConfirmMappingAndImport}
+          onConfirm={confirmMapping}
+          onBack={handleBackToUpload}
+        />
+      );
+
+    case 'preview':
+      console.log('👀 Rendering preview step');
+      return (
+        <EmployeeImportPreviewStep
+          previewData={previewData}
+          onConfirm={executeImport}
+          onBackToMapping={handleBackToMapping}
+          isImporting={false}
         />
       );
 
@@ -100,7 +104,7 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
         <ImportResults 
           result={importResult} 
           onClose={resetForm}
-          onBackToMapping={handleBackToMapping}
+          onBackToMapping={handleBackToMappingFromResults}
         />
       );
 
