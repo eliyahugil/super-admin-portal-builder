@@ -6,6 +6,8 @@ import { Upload, Download } from 'lucide-react';
 import { ImportManager } from '../ImportManager';
 
 export const ImportToolsCard: React.FC = () => {
+  console.log('🔧 ImportToolsCard rendering');
+  
   return (
     <Card>
       <CardHeader>
@@ -17,7 +19,10 @@ export const ImportToolsCard: React.FC = () => {
             ייבא עובדים מקובץ Excel או CSV
           </p>
           
-          <ImportManager />
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800 mb-2">מנהל הייבוא:</p>
+            <ImportManager />
+          </div>
           
           <div className="text-xs text-gray-500">
             תומך בפורמטים: .xlsx, .xls, .csv

@@ -5,7 +5,7 @@ import { EmployeeManagementHeader } from './EmployeeManagementHeader';
 import { EmployeeManagementLoading } from './EmployeeManagementLoading';
 import { EmployeeManagementEmptyState } from './EmployeeManagementEmptyState';
 import { EmployeeStatsCards } from './EmployeeStatsCards';
-import { ManagementToolsSection } from './ManagementToolsSection';
+import { ManagementToolsSection } from './ManagementToolsSection/ManagementToolsSection';
 import { ArchivedEmployeesList } from './ArchivedEmployeesList';
 import { useEmployeeManagement } from './hooks/useEmployeeManagement';
 import { useBranchesData } from '@/hooks/useBranchesData';
@@ -15,6 +15,8 @@ interface EmployeeManagementProps {
 }
 
 export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ selectedBusinessId }) => {
+  console.log('👥 EmployeeManagement rendering with selectedBusinessId:', selectedBusinessId);
+  
   const {
     employees,
     isLoading,
@@ -73,10 +75,15 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ selected
       {!isArchived && (
         <>
           <EmployeeStatsCards employees={employees} />
-          <ManagementToolsSection 
-            onRefetch={refetch} 
-            selectedBusinessId={selectedBusinessId}
-          />
+          
+          {/* Management Tools Section - Make it prominent */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg">
+            <h2 className="text-xl font-semibold mb-4 text-blue-900">כלי ניהול מתקדמים</h2>
+            <ManagementToolsSection 
+              onRefetch={refetch} 
+              selectedBusinessId={selectedBusinessId}
+            />
+          </div>
         </>
       )}
 

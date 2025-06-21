@@ -10,6 +10,8 @@ interface ManagementToolsGridProps {
 }
 
 export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({ businessId }) => {
+  console.log('🔧 ManagementToolsGrid rendering with businessId:', businessId);
+  
   if (!businessId) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -20,8 +22,12 @@ export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({ busine
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" dir="rtl">
-      {/* Import Tools Card */}
-      <ImportToolsCard />
+      {/* Import Tools Card - Make it more prominent */}
+      <div className="col-span-full lg:col-span-1">
+        <div className="border-2 border-blue-200 rounded-lg">
+          <ImportToolsCard />
+        </div>
+      </div>
       
       {/* Employee Reports Card */}
       <Card>
