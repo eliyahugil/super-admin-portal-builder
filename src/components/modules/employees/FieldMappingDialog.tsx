@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { X, Plus, Eye } from 'lucide-react';
-import { defaultSystemFields } from './constants/FieldMappingConstants';
-import { useFieldMappingAutoDetection } from './hooks/useFieldMappingAutoDetection';
-import { useFieldMappingValidation } from './hooks/useFieldMappingValidation';
-import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+export interface FieldMapping {
+  systemField: string;
+  mappedColumns: string[];
+  isRequired: boolean;
+  isCustomField?: boolean;
+}
 
 interface FieldMappingDialogProps {
   open: boolean;
@@ -17,8 +20,23 @@ interface FieldMappingDialogProps {
   fileColumns: string[];
   sampleData: any[];
   onConfirm: (mappings: FieldMapping[]) => void;
-  systemFields?: Array<{ value: string; label: string }>;
+  systemFields?: Array<{ value: string; label: string; required?: boolean }>;
 }
+
+const defaultSystemFields = [
+  { value: 'first_name', label: 'שם פרטי', required: true },
+  { value: 'last_name', label: 'שם משפחה', required: true },
+  { value: 'email', label: 'אימייל', required: false },
+  { value: 'phone', label: 'טלפון', required: false },
+  { value: 'id_number', label: 'תעודת זהות', required: false },
+  { value: 'employee_id', label: 'מספר עובד', required: false },
+  { value: 'address', label: 'כתובת', required: false },
+  { value: 'hire_date', label: 'תאריך התחלה', required: false },
+  { value: 'employee_type', label: 'סוג עובד', required: false },
+  { value: 'weekly_hours_required', label: 'שעות שבועיות', required: false },
+  { value: 'main_branch_id', label: 'סניף ראשי', required: false },
+  { value: 'notes', label: 'הערות', required: false },
+];
 
 export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   open,
@@ -26,189 +44,134 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   fileColumns,
   sampleData,
   onConfirm,
-  systemFields = defaultSystemFields
+  systemFields = defaultSystemFields,
 }) => {
-  const [mappings, setMappings] = useState<FieldMapping[]>([]);
-  const [activeTab, setActiveTab] = useState('mapping');
-  
-  const { autoDetectMappings } = useFieldMappingAutoDetection();
-  const { validateMappings } = useFieldMappingValidation();
-
-  useEffect(() => {
-    if (open && fileColumns.length > 0) {
-      console.log('🗺️ Auto-detecting field mappings for columns:', fileColumns);
-      const detectedMappings = autoDetectMappings(fileColumns);
-      console.log('✅ Detected mappings:', detectedMappings);
-      setMappings(detectedMappings);
-    }
-  }, [open, fileColumns, autoDetectMappings]);
-
-  const handleAddMapping = () => {
-    const newMapping: FieldMapping = {
-      id: `manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      systemField: '',
+  const [mappings, setMappings] = useState<FieldMapping[]>(() => {
+    return systemFields.map(field => ({
+      systemField: field.value,
       mappedColumns: [],
-      isCustomField: false
-    };
-    setMappings([...mappings, newMapping]);
-  };
+      isRequired: field.required || false,
+      isCustomField: false,
+    }));
+  });
 
-  const handleRemoveMapping = (id: string) => {
-    setMappings(mappings.filter(m => m.id !== id));
-  };
-
-  const handleMappingChange = (id: string, updates: Partial<FieldMapping>) => {
-    setMappings(mappings.map(m => 
-      m.id === id ? { ...m, ...updates } : m
+  const handleMappingChange = (systemField: string, selectedColumn: string) => {
+    setMappings(prev => prev.map(mapping => 
+      mapping.systemField === systemField 
+        ? { ...mapping, mappedColumns: selectedColumn ? [selectedColumn] : [] }
+        : mapping
     ));
   };
 
-  const handleColumnToggle = (mappingId: string, column: string) => {
-    setMappings(mappings.map(m => {
-      if (m.id === mappingId) {
-        const isSelected = m.mappedColumns.includes(column);
-        return {
-          ...m,
-          mappedColumns: isSelected 
-            ? m.mappedColumns.filter(c => c !== column)
-            : [...m.mappedColumns, column]
-        };
-      }
-      return m;
-    }));
+  const handleConfirm = () => {
+    onConfirm(mappings);
   };
 
-  const handleConfirm = async () => {
-    console.log('✅ Confirming field mappings:', mappings);
-    
-    if (validateMappings(mappings)) {
-      onConfirm(mappings);
-    }
+  const getSystemFieldLabel = (systemField: string) => {
+    const field = systemFields.find(f => f.value === systemField);
+    return field?.label || systemField;
   };
+
+  const isSystemFieldRequired = (systemField: string) => {
+    const field = systemFields.find(f => f.value === systemField);
+    return field?.required || false;
+  };
+
+  const hasRequiredMappings = mappings
+    .filter(m => m.isRequired)
+    .every(m => m.mappedColumns.length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-right">מיפוי שדות</DialogTitle>
+          <DialogTitle>מיפוי שדות - התאמת עמודות האקסל לשדות המערכת</DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="mapping">מיפוי שדות</TabsTrigger>
-            <TabsTrigger value="preview">תצוגה מקדימה</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="mapping" className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">מיפוי עמודות לשדות מערכת</h3>
-                <Button onClick={handleAddMapping} variant="outline" size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  הוסף מיפוי
-                </Button>
-              </div>
-
-              {mappings.map((mapping) => (
-                <Card key={mapping.id}>
-                  <CardContent className="p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="text-sm font-medium">שדה מערכת</label>
-                        <Select
-                          value={mapping.systemField}
-                          onValueChange={(value) => 
-                            handleMappingChange(mapping.id, { systemField: value })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="בחר שדה מערכת" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {systemFields.map((field) => (
-                              <SelectItem key={field.value} value={field.value}>
-                                {field.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label className="text-sm font-medium">עמודות מקובץ</label>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {fileColumns.map((header) => (
-                            <Badge
-                              key={header}
-                              variant={mapping.mappedColumns.includes(header) ? "default" : "outline"}
-                              className="cursor-pointer"
-                              onClick={() => handleColumnToggle(mapping.id, header)}
-                            >
-                              {header}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex items-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRemoveMapping(mapping.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
+        <div className="space-y-6">
+          {/* Field Mapping Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>התאמת שדות</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {mappings.map((mapping) => (
+                  <div key={mapping.systemField} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-medium">
+                        {getSystemFieldLabel(mapping.systemField)}
+                      </label>
+                      {isSystemFieldRequired(mapping.systemField) && (
+                        <Badge variant="destructive" className="text-xs">חובה</Badge>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
+                    <Select
+                      value={mapping.mappedColumns[0] || ''}
+                      onValueChange={(value) => handleMappingChange(mapping.systemField, value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר עמודה מהקובץ" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">ללא מיפוי</SelectItem>
+                        {fileColumns.map((column) => (
+                          <SelectItem key={column} value={column}>
+                            {column}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="preview">
+          {/* Preview Section */}
+          {sampleData.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Eye className="h-5 w-5" />
-                  תצוגה מקדימה של הנתונים
-                </CardTitle>
+                <CardTitle>תצוגה מקדימה של הנתונים</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse border border-gray-200">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        {fileColumns.map((header) => (
-                          <th key={header} className="border border-gray-200 px-4 py-2 text-right">
-                            {header}
-                          </th>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {fileColumns.map((column) => (
+                          <TableHead key={column} className="min-w-[120px]">
+                            {column}
+                          </TableHead>
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {sampleData.slice(0, 3).map((row, index) => (
-                        <tr key={index}>
-                          {fileColumns.map((header) => (
-                            <td key={header} className="border border-gray-200 px-4 py-2 text-right">
-                              {row[header] || ''}
-                            </td>
+                        <TableRow key={index}>
+                          {fileColumns.map((column) => (
+                            <TableCell key={column} className="max-w-[200px] truncate">
+                              {row[column] || '-'}
+                            </TableCell>
                           ))}
-                        </tr>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             ביטול
           </Button>
-          <Button onClick={handleConfirm}>
+          <Button 
+            onClick={handleConfirm} 
+            disabled={!hasRequiredMappings}
+          >
             המשך לתצוגה מקדימה
           </Button>
         </DialogFooter>

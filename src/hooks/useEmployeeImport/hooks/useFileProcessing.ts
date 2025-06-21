@@ -2,7 +2,6 @@
 import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { ExcelImportService } from '@/services/ExcelImportService';
-import { validateFileSize, validateFileType } from '@/utils/employeeValidation';
 import type { ImportStep } from '../types';
 
 interface UseFileProcessingProps {
@@ -13,6 +12,27 @@ interface UseFileProcessingProps {
   setStep: (step: ImportStep) => void;
   setShowMappingDialog: (show: boolean) => void;
 }
+
+// File validation functions
+const validateFileType = (file: File): boolean => {
+  const allowedTypes = [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+    'text/csv'
+  ];
+  
+  const validExtensions = ['.xlsx', '.xls', '.csv'];
+  const fileName = file.name.toLowerCase();
+  const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+  const hasValidType = allowedTypes.includes(file.type);
+  
+  return hasValidExtension || hasValidType;
+};
+
+const validateFileSize = (file: File, maxSizeMB: number): boolean => {
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  return file.size <= maxSizeBytes;
+};
 
 export const useFileProcessing = ({
   businessId,
@@ -46,7 +66,7 @@ export const useFileProcessing = ({
     if (!validateFileType(file)) {
       toast({
         title: 'שגיאה',
-        description: 'סוג קובץ לא נתמך. אנא בחר קובץ Excel (.xlsx או .xls)',
+        description: 'סוג קובץ לא נתמך. אנא בחר קובץ Excel או CSV תקין (.xlsx, .xls, .csv)',
         variant: 'destructive',
       });
       return;
@@ -63,7 +83,14 @@ export const useFileProcessing = ({
     }
 
     try {
-      console.log('📄 Parsing Excel file...');
+      console.log('📄 Publishing Excel file...');
+      
+      setFile(file);
+      
+      toast({
+        title: 'מעבד קובץ...',
+        description: 'קורא ומנתח את נתוני האקסל',
+      });
       
       // Use the correct parseFile method that returns ParsedExcelData
       const parsedData = await ExcelImportService.parseFile(file);
@@ -92,48 +119,31 @@ export const useFileProcessing = ({
         return;
       }
 
-      // Update state with parsed data
-      setFile(file);
+      // Set the parsed data
       setRawData(parsedData.data);
       setHeaders(parsedData.headers);
-      
-      // Show mapping dialog
       setStep('mapping');
       setShowMappingDialog(true);
 
-      console.log('✅ File processing completed, showing mapping dialog');
+      toast({
+        title: 'קובץ נטען בהצלחה! 📄',
+        description: `נמצאו ${parsedData.data.length} שורות נתונים`,
+      });
 
     } catch (error) {
-      console.error('💥 Error processing file:', error);
-      
+      console.error('💥 File upload error:', error);
       toast({
-        title: 'שגיאה בעיבוד הקובץ',
-        description: error instanceof Error ? error.message : 'שגיאה לא צפויה בעיבוד הקובץ',
-        variant: 'destructive',
+        title: 'שגיאה בטעינת הקובץ',
+        description: error instanceof Error ? error.message : 'שגיאה לא צפויה',
+        variant: 'destructive'
       });
     }
   }, [businessId, setFile, setRawData, setHeaders, setStep, setShowMappingDialog, toast]);
 
   const downloadTemplate = useCallback(() => {
-    console.log('📥 Downloading employee import template');
-    
-    try {
-      ExcelImportService.generateTemplate();
-      
-      toast({
-        title: 'הצלחה',
-        description: 'תבנית הייבוא הורדה בהצלחה',
-      });
-    } catch (error) {
-      console.error('Error downloading template:', error);
-      
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן להוריד את תבנית הייבוא',
-        variant: 'destructive',
-      });
-    }
-  }, [toast]);
+    console.log('📝 Downloading template...');
+    ExcelImportService.generateTemplate();
+  }, []);
 
   return {
     processFile,

@@ -1,10 +1,8 @@
 
-import React, { useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
+import React, { useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, FileSpreadsheet, Download, AlertTriangle } from 'lucide-react';
-import { useBusiness } from '@/hooks/useBusiness';
+import { Upload, Download, FileSpreadsheet } from 'lucide-react';
 
 interface ImportFileUploadProps {
   onFileSelect: (file: File) => void;
@@ -13,110 +11,68 @@ interface ImportFileUploadProps {
 
 export const ImportFileUpload: React.FC<ImportFileUploadProps> = ({
   onFileSelect,
-  onDownloadTemplate
+  onDownloadTemplate,
 }) => {
-  const { businessId, isSuperAdmin } = useBusiness();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      onFileSelect(acceptedFiles[0]);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      onFileSelect(file);
     }
-  }, [onFileSelect]);
+  };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls']
-    },
-    multiple: false
-  });
-
-  // Show business selection warning for Super Admin without selected business
-  if (isSuperAdmin && !businessId) {
-    return (
-      <div className="space-y-6">
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            כמנהל ראשי, עליך לבחור עסק ספציפי לפני ייבוא עובדים. 
-            אנא בחר עסק מהרשימה בחלק העליון של המסך.
-          </AlertDescription>
-        </Alert>
-        
-        <div className="text-center opacity-50 pointer-events-none">
-          <h3 className="text-lg font-medium mb-2">העלאת קובץ אקסל</h3>
-          <p className="text-gray-600 mb-4">
-            בחר קובץ אקסל המכיל רשימת עובדים או גרור אותו לכאן
-          </p>
-          
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-2">
-              גרור קובץ אקסל לכאן או לחץ לבחירה
-            </p>
-            <p className="text-sm text-gray-500">
-              נתמכים: .xlsx, .xls
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-lg font-medium mb-2">העלאת קובץ אקסל</h3>
-        <p className="text-gray-600 mb-4">
-          בחר קובץ אקסל המכיל רשימת עובדים או גרור אותו לכאן
-        </p>
-      </div>
-
-      <div
-        {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-          isDragActive 
-            ? 'border-blue-500 bg-blue-50' 
-            : 'border-gray-300 hover:border-gray-400'
-        }`}
-      >
-        <input {...getInputProps()} />
-        <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        {isDragActive ? (
-          <p className="text-blue-600">שחרר את הקובץ כאן...</p>
-        ) : (
-          <div>
-            <p className="text-gray-600 mb-2">
-              גרור קובץ אקסל לכאן או לחץ לבחירה
-            </p>
-            <p className="text-sm text-gray-500">
-              נתמכים: .xlsx, .xls
-            </p>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            העלאת קובץ עובדים
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+            <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <div className="space-y-2">
+              <p className="text-lg font-medium">בחר קובץ Excel לייבוא</p>
+              <p className="text-sm text-gray-500">
+                נתמכים: .xlsx, .xls, .csv (עד 10MB)
+              </p>
+            </div>
+            <Button onClick={handleUploadClick} className="mt-4">
+              <Upload className="h-4 w-4 mr-2" />
+              בחר קובץ
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={handleFileChange}
+              className="hidden"
+            />
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="flex justify-center">
-        <Button
-          variant="outline"
-          onClick={onDownloadTemplate}
-          className="flex items-center gap-2"
-        >
-          <Download className="h-4 w-4" />
-          הורד תבנית אקסל
-        </Button>
-      </div>
-
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <h4 className="font-medium text-blue-900 mb-2">טיפים לייבוא מוצלח:</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• השתמש בתבנית האקסל המוכנה לתוצאות מיטביות</li>
-          <li>• וודא שהשורה הראשונה מכילה כותרות עמודות</li>
-          <li>• מלא לפחות שם פרטי ושם משפחה לכל עובד</li>
-          <li>• השתמש בפורמט תאריך עקבי (יום/חודש/שנה)</li>
-        </ul>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>תבנית ייבוא</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-600 mb-4">
+            הורד תבנית Excel כדי לוודא שהקובץ שלך מכיל את כל השדות הנדרשים
+          </p>
+          <Button variant="outline" onClick={onDownloadTemplate}>
+            <Download className="h-4 w-4 mr-2" />
+            הורד תבנית
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };
