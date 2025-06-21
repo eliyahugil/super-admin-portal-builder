@@ -1,5 +1,4 @@
 
-
 // Import step types
 export type ImportStep = 'closed' | 'upload' | 'mapping' | 'preview' | 'importing' | 'results' | 'summary';
 
@@ -17,7 +16,7 @@ export interface FieldMapping {
   customFieldName?: string;
 }
 
-// Preview employee type
+// Preview employee type - updated to include all necessary properties
 export interface PreviewEmployee {
   business_id: string;
   first_name?: string;
@@ -27,12 +26,17 @@ export interface PreviewEmployee {
   id_number?: string;
   employee_id?: string;
   address?: string;
+  hire_date?: string;
   employee_type?: string;
   weekly_hours?: number;
+  weekly_hours_required?: number;
+  main_branch_id?: string;
   main_branch_name?: string;
+  notes?: string;
   isValid: boolean;
   isDuplicate: boolean;
   validationErrors: string[];
+  customFields?: Record<string, string>;
 }
 
 // Import result types
@@ -79,4 +83,3 @@ export interface EmployeeImportHook {
   existingEmployees: Array<{ email?: string; id_number?: string; employee_id?: string }>;
   businessId: string | null | undefined;
 }
-
