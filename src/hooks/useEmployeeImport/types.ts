@@ -47,6 +47,10 @@ export interface ImportResult {
   }>;
 }
 
+export interface ExcelRow {
+  [key: string]: any;
+}
+
 export type ImportStep = 'closed' | 'upload' | 'mapping' | 'preview' | 'importing' | 'results';
 
 export interface EmployeeImportHook {

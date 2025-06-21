@@ -14,8 +14,8 @@ export const ImportDialogHeader: React.FC<ImportDialogHeaderProps> = ({ step }) 
         return 'ייבוא עובדים מקובץ Excel';
       case 'preview':
         return 'תצוגה מקדימה ובדיקת תקינות';
-      case 'summary':
-        return 'סיכום הייבוא';
+      case 'results':
+        return 'תוצאות הייבוא';
       default:
         return 'ייבוא עובדים מקובץ Excel';
     }
@@ -27,7 +27,7 @@ export const ImportDialogHeader: React.FC<ImportDialogHeaderProps> = ({ step }) 
         return 'העלה קובץ Excel עם נתוני העובדים שברצונך לייבא';
       case 'preview':
         return 'בדוק את הנתונים לפני הייבוא סופי';
-      case 'summary':
+      case 'results':
         return 'תוצאות הייבוא העובדים';
       default:
         return 'בחר קובץ Excel להעלאה';

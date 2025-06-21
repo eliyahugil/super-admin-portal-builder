@@ -3,7 +3,6 @@ import React from 'react';
 import { ImportFileUpload } from '../ImportFileUpload';
 import { FieldMappingDialog } from '../FieldMappingDialog';
 import { ImportResults } from '../ImportResults';
-import { EmployeeImportSummary } from '../steps/EmployeeImportSummary';
 import { EmployeeImportPreviewStep } from '../steps/EmployeeImportPreviewStep';
 import type { ImportStep, EmployeeImportHook } from '@/hooks/useEmployeeImport/types';
 
@@ -105,16 +104,6 @@ export const ImportStepContent: React.FC<ImportStepContentProps> = ({
           result={importResult} 
           onClose={resetForm}
           onBackToMapping={handleBackToMappingFromResults}
-        />
-      );
-
-    case 'summary':
-      console.log('📊 Rendering summary step');
-      return (
-        <EmployeeImportSummary 
-          result={importResult}
-          onStartOver={resetForm}
-          onClose={resetForm}
         />
       );
 
