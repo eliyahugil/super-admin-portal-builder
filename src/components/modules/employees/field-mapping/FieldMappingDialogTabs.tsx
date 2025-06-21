@@ -59,7 +59,12 @@ export const FieldMappingDialogTabs: React.FC<FieldMappingDialogTabsProps> = ({
       label: m.label
     })),
     sampleDataRows: sampleData.length,
-    fileColumns: fileColumns.length
+    fileColumns: fileColumns.length,
+    sampleDataStructure: sampleData[0] ? {
+      type: Array.isArray(sampleData[0]) ? 'array' : 'object',
+      length: Array.isArray(sampleData[0]) ? sampleData[0].length : Object.keys(sampleData[0]).length,
+      sample: Array.isArray(sampleData[0]) ? sampleData[0].slice(0, 3) : Object.keys(sampleData[0]).slice(0, 3)
+    } : 'no data'
   });
 
   return (

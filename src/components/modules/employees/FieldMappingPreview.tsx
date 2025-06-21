@@ -52,7 +52,7 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
     return dataToProcess.map((row, rowIndex) => {
       console.log(`📊 Processing row ${rowIndex + 1}:`, {
         rowType: Array.isArray(row) ? 'array' : typeof row,
-        rowData: Array.isArray(row) ? row.slice(0, 3) : Object.entries(row || {}).slice(0, 3)
+        rowKeys: Array.isArray(row) ? `Array length: ${row.length}` : Object.keys(row || {}).slice(0, 5)
       });
 
       const mappedRow: Record<string, any> = {};
@@ -65,17 +65,34 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
             let fieldValue;
             
             if (Array.isArray(row)) {
-              // For array data, find column index
-              const columnIndex = sampleData.length > 0 && Array.isArray(sampleData[0]) 
-                ? sampleData[0].indexOf(columnName) 
-                : parseInt(columnName.replace(/\D/g, '')) - 1;
+              // For array data, try to find the column by its position
+              // Parse column index from column name if it's like "Column 1", "Col 2", etc.
+              let columnIndex = -1;
+              
+              // Try different patterns to extract index
+              const indexMatch = columnName.match(/(?:column|col|c)\s*(\d+)/i);
+              if (indexMatch) {
+                columnIndex = parseInt(indexMatch[1]) - 1; // Convert to 0-based index
+              } else {
+                // If no pattern matches, try to find the exact column name in the first row
+                // This assumes the first row might be headers
+                if (sampleData.length > 0 && Array.isArray(sampleData[0])) {
+                  columnIndex = sampleData[0].indexOf(columnName);
+                }
+              }
+              
+              console.log(`🔍 Looking for column "${columnName}" at index ${columnIndex} in array of length ${row.length}`);
               
               if (columnIndex >= 0 && columnIndex < row.length) {
                 fieldValue = row[columnIndex];
+                console.log(`✅ Found value at index ${columnIndex}:`, fieldValue);
+              } else {
+                console.log(`❌ Column index ${columnIndex} not found or out of bounds`);
               }
             } else if (typeof row === 'object' && row !== null) {
-              // For object data
+              // For object data, try direct access
               fieldValue = row[columnName];
+              console.log(`🔍 Object lookup for "${columnName}":`, fieldValue);
             }
             
             if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
@@ -110,7 +127,10 @@ export const FieldMappingPreview: React.FC<FieldMappingPreviewProps> = ({
 
   console.log('📋 Generated preview data:', {
     previewRowsCount: previewData.length,
-    samplePreviewRow: previewData[0],
+    samplePreviewRow: previewData[0] ? {
+      mappedFields: Object.keys(previewData[0]).filter(key => key !== 'originalRowIndex'),
+      firstRow: previewData[0]
+    } : 'No preview data',
     mappingsUsed: mappings.map(m => m.systemField)
   });
 
