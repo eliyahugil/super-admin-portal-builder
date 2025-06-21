@@ -6,6 +6,7 @@ import { FieldMappingDialogTabs } from './field-mapping/FieldMappingDialogTabs';
 import { FieldMappingDialogFooter } from './field-mapping/FieldMappingDialogFooter';
 import { useFieldMappingLogic } from './field-mapping/useFieldMappingLogic';
 import { SYSTEM_FIELDS } from '@/constants/systemFields';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
 interface FieldMappingDialogProps {
@@ -27,8 +28,11 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   onBack,
   systemFields = SYSTEM_FIELDS,
 }) => {
+  const isMobile = useIsMobile();
+  
   console.log('🗺️ FieldMappingDialog rendered with:', {
     open,
+    isMobile,
     fileColumnsCount: fileColumns.length,
     sampleDataCount: sampleData.length,
     systemFieldsCount: systemFields?.length || 0,
@@ -104,7 +108,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] p-0">
+      <DialogContent className={`${isMobile ? 'max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] p-0' : 'max-w-6xl max-h-[90vh] p-0'}`}>
         <FieldMappingDialogHeader
           hasAutoDetections={mappings.some(m => m.mappedColumns.length > 0)}
           mappedCount={mappings.filter(m => m.mappedColumns.length > 0).length}
