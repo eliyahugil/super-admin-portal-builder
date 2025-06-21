@@ -68,6 +68,7 @@ export class ExcelFileManager {
           isValid: validation.isValid,
           isDuplicate,
           validationErrors: validation.errors,
+          customFields: {}, // ✅ Added missing customFields property
         };
 
         previewData.push(previewEmployee);
@@ -91,6 +92,7 @@ export class ExcelFileManager {
           isValid: false,
           isDuplicate: false,
           validationErrors: [`שגיאה בעיבוד השורה: ${error instanceof Error ? error.message : 'שגיאה לא צפויה'}`],
+          customFields: {}, // ✅ Added missing customFields property
         };
 
         previewData.push(errorEmployee);
