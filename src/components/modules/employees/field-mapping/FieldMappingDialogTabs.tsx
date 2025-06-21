@@ -7,6 +7,7 @@ import { AlertTriangle, Info } from 'lucide-react';
 import { FieldMappingList } from './FieldMappingList';
 import { DataPreviewTable } from './DataPreviewTable';
 import { FieldMappingPreview } from '../FieldMappingPreview';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
 interface FieldMappingDialogTabsProps {
@@ -36,6 +37,8 @@ export const FieldMappingDialogTabs: React.FC<FieldMappingDialogTabsProps> = ({
   onRemoveMapping,
   onAddSystemField,
 }) => {
+  const { businessId } = useCurrentBusiness();
+  
   // Convert mappings to simple format for DataPreviewTable
   const simpleMappings = mappings.map(mapping => ({
     systemField: mapping.systemField,
@@ -107,6 +110,7 @@ export const FieldMappingDialogTabs: React.FC<FieldMappingDialogTabsProps> = ({
                   mappings={mappings}
                   sampleData={sampleData}
                   systemFields={[...systemFields]}
+                  businessId={businessId}
                 />
               </div>
             </ScrollArea>
