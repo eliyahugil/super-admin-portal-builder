@@ -57,7 +57,7 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   const customFieldsCount = mappings.filter(m => m.isCustomField).length;
 
   const handleFloatingMenuFix = (systemField: string, newColumn: string) => {
-    handleMappingChange(systemField, newColumn);
+    handleMappingChange(systemField, [newColumn]); // Fix: wrap newColumn in an array
   };
 
   const handleDirectImport = () => {
