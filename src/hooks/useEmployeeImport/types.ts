@@ -1,16 +1,20 @@
 
+
 // Import step types
-export type ImportStep = 'closed' | 'upload' | 'preview' | 'importing' | 'results';
+export type ImportStep = 'closed' | 'upload' | 'mapping' | 'preview' | 'importing' | 'results' | 'summary';
 
 // Excel data types
 export type ExcelRow = any[];
 
 // Field mapping types
 export interface FieldMapping {
+  id: string;
   systemField: string;
   mappedColumns: string[];
   isRequired: boolean;
   label: string;
+  isCustomField?: boolean;
+  customFieldName?: string;
 }
 
 // Preview employee type
@@ -21,6 +25,7 @@ export interface PreviewEmployee {
   email?: string;
   phone?: string;
   id_number?: string;
+  employee_id?: string;
   address?: string;
   employee_type?: string;
   weekly_hours?: number;
@@ -74,3 +79,4 @@ export interface EmployeeImportHook {
   existingEmployees: Array<{ email?: string; id_number?: string; employee_id?: string }>;
   businessId: string | null | undefined;
 }
+

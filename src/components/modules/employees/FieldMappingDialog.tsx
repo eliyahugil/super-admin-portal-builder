@@ -45,6 +45,8 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
       id: `mapping-${field.value}-${Date.now()}-${index}`,
       systemField: field.value,
       mappedColumns: [],
+      isRequired: field.required || false,
+      label: field.label,
       isCustomField: false,
     }));
   });
@@ -173,3 +175,4 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
     </Dialog>
   );
 };
+

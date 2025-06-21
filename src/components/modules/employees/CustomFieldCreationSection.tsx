@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,6 +30,8 @@ export const CustomFieldCreationSection: React.FC<CustomFieldCreationSectionProp
       id: `custom-${Date.now()}`,
       systemField: `custom:${customFieldName}`,
       mappedColumns: [],
+      isRequired: false,
+      label: customFieldName.trim(),
       isCustomField: true,
       customFieldName: customFieldName.trim(),
     };
