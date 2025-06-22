@@ -12,7 +12,7 @@ import { ModuleManagement } from './ModuleManagement';
 export const ModuleWrapper: React.FC = () => {
   const { businessId, moduleRoute, subModule, employeeId } = useParams();
   const { profile, isSuperAdmin, loading } = useAuth();
-  const { business, ownedBusinesses, isBusinessOwner } = useBusiness();
+  const { business, totalOwnedBusinesses, isBusinessOwner } = useBusiness();
 
   console.log('ModuleWrapper - Current params:', {
     businessId,
@@ -43,7 +43,7 @@ export const ModuleWrapper: React.FC = () => {
     );
   }
 
-  if (!isSuperAdmin && !isBusinessOwner && !business && ownedBusinesses.length === 0) {
+  if (!isSuperAdmin && !isBusinessOwner && !business && totalOwnedBusinesses === 0) {
     return (
       <div className="max-w-7xl mx-auto p-6 text-center">
         <h2 className="text-xl font-semibold mb-4">אין לך גישה לעסק</h2>

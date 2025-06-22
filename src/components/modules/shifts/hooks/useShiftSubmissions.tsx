@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +9,7 @@ import { ShiftSubmission, ShiftEntry } from '../types';
 export const useShiftSubmissions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
-  const { businessId, isLoading } = useBusiness();
+  const { businessId, loading } = useBusiness();
 
   // Get shift submissions
   const { data: submissions, isLoading: submissionsLoading, refetch } = useQuery({
@@ -28,7 +27,7 @@ export const useShiftSubmissions = () => {
         } : undefined,
       })) as ShiftSubmission[];
     },
-    enabled: !!businessId && !isLoading,
+    enabled: !!businessId && !loading,
   });
 
   // Get all employees to show missing submissions
@@ -46,7 +45,7 @@ export const useShiftSubmissions = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!businessId && !isLoading,
+    enabled: !!businessId && !loading,
   });
 
   // WhatsApp functions
@@ -178,7 +177,7 @@ export const useShiftSubmissions = () => {
     submissions,
     allEmployees,
     dashboardData: filteredData,
-    isLoading: isLoading || submissionsLoading,
+    isLoading: loading || submissionsLoading,
     parseShifts,
     sendWhatsApp,
     sendReminder,

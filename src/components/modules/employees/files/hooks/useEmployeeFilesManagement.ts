@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,7 +30,7 @@ export const useEmployeeFilesManagement = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { toast } = useToast();
-  const { businessId, isLoading } = useBusiness();
+  const { businessId, loading } = useBusiness();
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -90,7 +89,7 @@ export const useEmployeeFilesManagement = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!businessId && !isLoading,
+    enabled: !!businessId && !loading,
   });
 
   const { data: employeeFiles } = useQuery({
@@ -118,7 +117,7 @@ export const useEmployeeFilesManagement = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!businessId && !isLoading,
+    enabled: !!businessId && !loading,
   });
 
   const uploadFileMutation = useMutation({
@@ -297,7 +296,7 @@ export const useEmployeeFilesManagement = () => {
     // Data
     employees,
     filteredFiles,
-    isLoading,
+    isLoading: loading,
     
     // Mutations
     uploadFileMutation,
