@@ -8,7 +8,9 @@ import { LogOut, User } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const { user, signOut, loading } = useAuth();
-  const { businessName, isSuperAdmin } = useCurrentBusiness();
+  const { businessName, isSuperAdmin, businessId } = useCurrentBusiness();
+
+  console.log('🔍 Header - Business state:', { businessName, isSuperAdmin, businessId });
 
   if (loading) {
     return (
@@ -33,6 +35,11 @@ export const Header: React.FC = () => {
             {businessName && (
               <p className="text-sm text-gray-600">
                 {isSuperAdmin ? `נבחר: ${businessName}` : businessName}
+              </p>
+            )}
+            {isSuperAdmin && !businessId && (
+              <p className="text-sm text-orange-600">
+                יש לבחור עסק מהתפריט למעלה
               </p>
             )}
           </div>

@@ -2,7 +2,7 @@
 import React from 'react';
 import { QuickActionsCard } from './QuickActionsCard';
 import { ManagementToolsGrid } from './ManagementToolsGrid';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 interface ManagementToolsSectionProps {
   onRefetch: () => void;
@@ -13,7 +13,7 @@ export const ManagementToolsSection: React.FC<ManagementToolsSectionProps> = ({
   onRefetch,
   selectedBusinessId
 }) => {
-  const { businessId } = useBusiness();
+  const { businessId } = useCurrentBusiness();
   const effectiveBusinessId = selectedBusinessId || businessId;
 
   const handleCreateEmployee = () => {

@@ -1,76 +1,80 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileSpreadsheet, Users, Calendar, Settings } from 'lucide-react';
-import { ImportToolsCard } from './ImportToolsCard';
+import { Users, Calendar, FileText, Settings, Upload, Download } from 'lucide-react';
 
 interface ManagementToolsGridProps {
-  businessId: string | null;
+  businessId?: string | null;
 }
 
 export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({ businessId }) => {
   console.log('🔧 ManagementToolsGrid rendering with businessId:', businessId);
-  
-  if (!businessId) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        <p>יש לבחור עסק כדי לראות כלי ניהול</p>
-      </div>
-    );
-  }
+
+  const tools = [
+    {
+      title: 'ייבוא עובדים',
+      description: 'ייבוא רשימת עובדים מקובץ Excel',
+      icon: Upload,
+      action: () => console.log('Import employees'),
+      disabled: !businessId
+    },
+    {
+      title: 'ייצוא נתונים',
+      description: 'ייצוא נתוני עובדים לקובץ Excel',
+      icon: Download,
+      action: () => console.log('Export data'),
+      disabled: !businessId
+    },
+    {
+      title: 'ניהול תבניות משמרות',
+      description: 'יצירה ועריכה של תבניות משמרות',
+      icon: Calendar,
+      action: () => console.log('Manage shift templates'),
+      disabled: !businessId
+    },
+    {
+      title: 'ניהול מסמכים',
+      description: 'העלאה וניהול מסמכים לחתימה',
+      icon: FileText,
+      action: () => console.log('Manage documents'),
+      disabled: !businessId
+    },
+    {
+      title: 'הגדרות מתקדמות',
+      description: 'הגדרות מערכת ותצורה מתקדמת',
+      icon: Settings,
+      action: () => console.log('Advanced settings'),
+      disabled: !businessId
+    },
+  ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" dir="rtl">
-      {/* Import Tools Card - Make it more prominent */}
-      <div className="col-span-full lg:col-span-1">
-        <div className="border-2 border-blue-200 rounded-lg">
-          <ImportToolsCard selectedBusinessId={businessId} />
-        </div>
-      </div>
-      
-      {/* Employee Reports Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            דוחות עובדים
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Button variant="outline" size="sm" className="w-full justify-start">
-              דוח נוכחות חודשי
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {tools.map((tool, index) => (
+        <Card key={index} className={`hover:shadow-md transition-shadow ${tool.disabled ? 'opacity-50' : 'cursor-pointer'}`}>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3">
+              <tool.icon className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-base">{tool.title}</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <CardDescription className="mb-3 text-sm">
+              {tool.description}
+            </CardDescription>
+            <Button 
+              onClick={tool.action}
+              disabled={tool.disabled}
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+            >
+              {tool.disabled ? 'דורש בחירת עסק' : 'פתח'}
             </Button>
-            <Button variant="outline" size="sm" className="w-full justify-start">
-              דוח שעות עבודה
-            </Button>
-            <Button variant="outline" size="sm" className="w-full justify-start">
-              רשימת עובדים פעילים
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Schedule Management Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            ניהול משמרות
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Button variant="outline" size="sm" className="w-full justify-start">
-              תבניות משמרות
-            </Button>
-            <Button variant="outline" size="sm" className="w-full justify-start">
-              יצירת לוח זמנים
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };
