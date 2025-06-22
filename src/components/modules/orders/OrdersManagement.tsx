@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -184,7 +183,7 @@ export const OrdersManagement: React.FC = () => {
       {/* Show business selection prompt for super admin */}
       {isSuperAdmin && !businessId && (
         <div className="text-center py-12">
-          <Shopping className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <ShoppingCart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">בחר עסק לניהול הזמנות</h2>
           <p className="text-gray-600">יש לבחור עסק ספציפי כדי לצפות בנתוני ההזמנות</p>
         </div>
