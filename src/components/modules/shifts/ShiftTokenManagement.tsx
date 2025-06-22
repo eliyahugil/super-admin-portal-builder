@@ -15,7 +15,7 @@ export const ShiftTokenManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const { toast } = useToast();
-  const { businessId, isLoading } = useBusiness();
+  const { businessId, loading } = useBusiness();
   const queryClient = useQueryClient();
 
   // Get employees for the business
@@ -38,7 +38,7 @@ export const ShiftTokenManagement: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!businessId && !isLoading,
+    enabled: !!businessId && !loading,
   });
 
   // Get shift tokens
@@ -48,7 +48,7 @@ export const ShiftTokenManagement: React.FC = () => {
       if (!businessId) return [];
       return await ShiftTokenService.getTokensForBusiness(businessId);
     },
-    enabled: !!businessId && !isLoading,
+    enabled: !!businessId && !loading,
   });
 
   // Generate token mutation
@@ -107,7 +107,7 @@ export const ShiftTokenManagement: React.FC = () => {
     token.employee?.employee_id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (isLoading) {
+  if (loading) {
     return <div className="container mx-auto px-4 py-8" dir="rtl">טוען...</div>;
   }
 

@@ -17,7 +17,7 @@ export const WeeklyTokenManagement: React.FC = () => {
   const [weekStartDate, setWeekStartDate] = useState('');
   const [weekEndDate, setWeekEndDate] = useState('');
   const { toast } = useToast();
-  const { businessId, isLoading } = useBusiness();
+  const { businessId, loading } = useBusiness();
   const queryClient = useQueryClient();
 
   // Get employees for the business
@@ -40,7 +40,7 @@ export const WeeklyTokenManagement: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!businessId && !isLoading,
+    enabled: !!businessId && !loading,
   });
 
   // Get weekly tokens
@@ -50,7 +50,7 @@ export const WeeklyTokenManagement: React.FC = () => {
       if (!businessId) return [];
       return await WeeklyShiftService.getWeeklyTokensForBusiness(businessId);
     },
-    enabled: !!businessId && !isLoading,
+    enabled: !!businessId && !loading,
   });
 
   // Generate weekly token mutation
@@ -131,7 +131,7 @@ export const WeeklyTokenManagement: React.FC = () => {
     token.employee?.employee_id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (isLoading) {
+  if (loading) {
     return <div className="container mx-auto px-4 py-8" dir="rtl">טוען...</div>;
   }
 

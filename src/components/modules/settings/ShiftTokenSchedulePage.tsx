@@ -19,7 +19,7 @@ interface ScheduleSettings {
 }
 
 export const ShiftTokenSchedulePage: React.FC = () => {
-  const { businessId, isLoading } = useBusiness();
+  const { businessId, loading } = useBusiness();
   const { toast } = useToast();
   const [schedule, setSchedule] = useState<ScheduleSettings>({
     send_day: 'Thursday',
@@ -27,7 +27,7 @@ export const ShiftTokenSchedulePage: React.FC = () => {
     channel_type: 'whatsapp',
     is_active: false,
   });
-  const [loading, setLoading] = useState(false);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
 
   const daysInHebrew = {
     'Sunday': 'ראשון',
@@ -41,7 +41,7 @@ export const ShiftTokenSchedulePage: React.FC = () => {
 
   useEffect(() => {
     const fetchSchedule = async () => {
-      if (!businessId || isLoading) return;
+      if (!businessId || loading) return;
 
       const { data, error } = await supabase
         .from('shift_token_schedules')
@@ -60,12 +60,12 @@ export const ShiftTokenSchedulePage: React.FC = () => {
     };
 
     fetchSchedule();
-  }, [businessId, isLoading]);
+  }, [businessId, loading]);
 
   const updateSchedule = async (updates: Partial<ScheduleSettings>) => {
     if (!businessId) return;
 
-    setLoading(true);
+    setScheduleLoading(true);
     const newData = { ...schedule, ...updates };
     setSchedule(newData);
 
@@ -94,11 +94,11 @@ export const ShiftTokenSchedulePage: React.FC = () => {
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setScheduleLoading(false);
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
@@ -131,7 +131,7 @@ export const ShiftTokenSchedulePage: React.FC = () => {
             <Select
               value={schedule.send_day}
               onValueChange={(value) => updateSchedule({ send_day: value })}
-              disabled={loading}
+              disabled={scheduleLoading}
             >
               <SelectTrigger className="w-[200px]">
                 <SelectValue />
@@ -154,7 +154,7 @@ export const ShiftTokenSchedulePage: React.FC = () => {
               type="time"
               value={schedule.send_time}
               onChange={(e) => updateSchedule({ send_time: e.target.value })}
-              disabled={loading}
+              disabled={scheduleLoading}
               className="w-[200px]"
             />
           </div>
@@ -166,7 +166,7 @@ export const ShiftTokenSchedulePage: React.FC = () => {
             <Select
               value={schedule.channel_type}
               onValueChange={(value) => updateSchedule({ channel_type: value })}
-              disabled={loading}
+              disabled={scheduleLoading}
             >
               <SelectTrigger className="w-[200px]">
                 <SelectValue />
@@ -184,7 +184,7 @@ export const ShiftTokenSchedulePage: React.FC = () => {
             <Switch
               checked={schedule.is_active}
               onCheckedChange={(checked) => updateSchedule({ is_active: checked })}
-              disabled={loading}
+              disabled={scheduleLoading}
             />
             <div className="flex-1">
               <p className="font-medium">שליחה אוטומטית פעילה</p>
@@ -204,7 +204,7 @@ export const ShiftTokenSchedulePage: React.FC = () => {
               value={schedule.message_template || ''}
               onChange={(e) => updateSchedule({ message_template: e.target.value })}
               placeholder="השאר ריק לתבנית ברירת מחדל"
-              disabled={loading}
+              disabled={scheduleLoading}
               className="w-full min-h-[100px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-xs text-gray-500">
@@ -223,7 +223,7 @@ export const ShiftTokenSchedulePage: React.FC = () => {
           <div className="space-y-3 text-sm">
             <div className="flex items-start gap-2">
               <span className="text-blue-600">•</span>
-              <p>השליחה האוטומטית תתבצע רק לעובדים פעילים עם מספר טלפון</p>
+              <p>השליחה האוטומטית תתב צע רק לעובדים פעילים עם מספר טלפון</p>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-blue-600">•</span>

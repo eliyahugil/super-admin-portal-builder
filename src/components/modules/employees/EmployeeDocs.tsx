@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import type { EmployeeDocument } from '@/types/supabase';
 
 export const EmployeeDocs: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const { businessId, isLoading } = useBusiness();
+  const { businessId, loading } = useBusiness();
 
   const { data: signedDocuments } = useQuery({
     queryKey: ['employee-docs', businessId],
@@ -37,7 +38,7 @@ export const EmployeeDocs: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!businessId && !isLoading,
+    enabled: !!businessId && !loading,
   });
 
   const filteredDocs = signedDocuments?.filter(doc =>
@@ -53,7 +54,7 @@ export const EmployeeDocs: React.FC = () => {
     return '';
   };
 
-  if (isLoading) {
+  if (loading) {
     return <div className="container mx-auto px-4 py-8" dir="rtl">טוען...</div>;
   }
 

@@ -15,7 +15,7 @@ interface EmployeeRequestFormProps {
 }
 
 export const EmployeeRequestForm: React.FC<EmployeeRequestFormProps> = ({ employeeId }) => {
-  const { businessId, isLoading } = useBusiness();
+  const { businessId, loading } = useBusiness();
   const { toast } = useToast();
   const [requestType, setRequestType] = useState('');
   const [subject, setSubject] = useState('');
@@ -82,7 +82,7 @@ export const EmployeeRequestForm: React.FC<EmployeeRequestFormProps> = ({ employ
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return <div dir="rtl" className="flex items-center justify-center p-6">טוען...</div>;
   }
 
