@@ -6,18 +6,16 @@ import { Badge } from '@/components/ui/badge';
 import { DollarSign, TrendingUp, TrendingDown, Plus, Eye } from 'lucide-react';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
-import { useBusinessSelection } from '@/hooks/useBusinessSelection';
 import { BusinessSelector } from '@/components/shared/BusinessSelector';
 import { useFinanceData } from './hooks/useFinanceData';
 
 export const FinanceManagement: React.FC = () => {
-  const { isSuperAdmin } = useCurrentBusiness();
+  const { isSuperAdmin, businessId } = useCurrentBusiness();
   const { profile } = useAuth();
-  const { selectedBusinessId, setSelectedBusinessId } = useBusinessSelection();
-  const { data: financeData = [], isLoading } = useFinanceData(selectedBusinessId);
+  const { data: financeData = [], isLoading } = useFinanceData(businessId);
 
   console.log('💰 FinanceManagement - Current state:', {
-    selectedBusinessId,
+    businessId,
     isSuperAdmin,
     userRole: profile?.role,
     dataCount: financeData.length
@@ -47,15 +45,14 @@ export const FinanceManagement: React.FC = () => {
                 בחר עסק לצפייה
               </label>
               <BusinessSelector
-                selectedBusinessId={selectedBusinessId}
-                onBusinessChange={setSelectedBusinessId}
                 placeholder="בחר עסק לניהול כספים"
                 className="max-w-md"
+                showAllOption={false}
               />
             </div>
-            {selectedBusinessId && (
+            {businessId && (
               <Badge variant="outline" className="text-xs">
-                מציג נתונים עבור עסק: {selectedBusinessId}
+                מציג נתונים עבור עסק: {businessId}
               </Badge>
             )}
           </div>
@@ -63,7 +60,7 @@ export const FinanceManagement: React.FC = () => {
       </div>
 
       {/* Show content only if business is selected (for super admin) or user has business context */}
-      {(selectedBusinessId || !isSuperAdmin) && (
+      {(businessId || !isSuperAdmin) && (
         <>
           {/* Financial Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -226,7 +223,7 @@ export const FinanceManagement: React.FC = () => {
       )}
 
       {/* Show business selection prompt for super admin */}
-      {isSuperAdmin && !selectedBusinessId && (
+      {isSuperAdmin && !businessId && (
         <div className="text-center py-12">
           <DollarSign className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">בחר עסק לניהול כספים</h2>

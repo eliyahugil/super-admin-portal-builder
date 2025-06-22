@@ -21,11 +21,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         {!isMobile && <DynamicSidebar />}
         
         <SidebarInset className="flex-1">
-          {/* Header with conditional menu button */}
-          <Header 
-            showMobileMenu={isMobile} 
-            onMobileMenuToggle={() => setMobileMenuOpen(true)}
-          />
+          {/* Header */}
+          <Header />
           
           {/* Mobile Sidebar - Only render when mobile */}
           {isMobile && (

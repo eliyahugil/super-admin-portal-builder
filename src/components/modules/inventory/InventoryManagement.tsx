@@ -7,18 +7,16 @@ import { Package, Plus, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-r
 import { Link } from 'react-router-dom';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
-import { useBusinessSelection } from '@/hooks/useBusinessSelection';
 import { BusinessSelector } from '@/components/shared/BusinessSelector';
 import { useInventoryData } from './hooks/useInventoryData';
 
 export const InventoryManagement: React.FC = () => {
-  const { isSuperAdmin } = useCurrentBusiness();
+  const { isSuperAdmin, businessId } = useCurrentBusiness();
   const { profile } = useAuth();
-  const { selectedBusinessId, setSelectedBusinessId } = useBusinessSelection();
-  const { data: inventoryData = [], isLoading } = useInventoryData(selectedBusinessId);
+  const { data: inventoryData = [], isLoading } = useInventoryData(businessId);
 
   console.log('📦 InventoryManagement - Current state:', {
-    selectedBusinessId,
+    businessId,
     isSuperAdmin,
     userRole: profile?.role,
     dataCount: inventoryData.length
@@ -54,15 +52,14 @@ export const InventoryManagement: React.FC = () => {
                 בחר עסק לצפייה
               </label>
               <BusinessSelector
-                selectedBusinessId={selectedBusinessId}
-                onBusinessChange={setSelectedBusinessId}
                 placeholder="בחר עסק לניהול מלאי"
                 className="max-w-md"
+                showAllOption={false}
               />
             </div>
-            {selectedBusinessId && (
+            {businessId && (
               <Badge variant="outline" className="text-xs">
-                מציג נתונים עבור עסק: {selectedBusinessId}
+                מציג נתונים עבור עסק: {businessId}
               </Badge>
             )}
           </div>
@@ -70,7 +67,7 @@ export const InventoryManagement: React.FC = () => {
       </div>
 
       {/* Show content only if business is selected (for super admin) or user has business context */}
-      {(selectedBusinessId || !isSuperAdmin) && (
+      {(businessId || !isSuperAdmin) && (
         <>
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -157,7 +154,7 @@ export const InventoryManagement: React.FC = () => {
       )}
 
       {/* Show business selection prompt for super admin */}
-      {isSuperAdmin && !selectedBusinessId && (
+      {isSuperAdmin && !businessId && (
         <div className="text-center py-12">
           <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">בחר עסק לניהול מלאי</h2>

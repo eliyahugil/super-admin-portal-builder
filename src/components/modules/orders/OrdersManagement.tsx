@@ -7,19 +7,17 @@ import { ShoppingCart, Truck, MapPin, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
-import { useBusinessSelection } from '@/hooks/useBusinessSelection';
 import { BusinessSelector } from '@/components/shared/BusinessSelector';
 import { useOrdersData } from './hooks/useOrdersData';
 import { CreateOrderDialog } from './CreateOrderDialog';
 
 export const OrdersManagement: React.FC = () => {
-  const { isSuperAdmin } = useCurrentBusiness();
+  const { isSuperAdmin, businessId } = useCurrentBusiness();
   const { profile } = useAuth();
-  const { selectedBusinessId, setSelectedBusinessId } = useBusinessSelection();
-  const { data: ordersData = [], isLoading, refetch } = useOrdersData(selectedBusinessId);
+  const { data: ordersData = [], isLoading, refetch } = useOrdersData(businessId);
 
   console.log('🛒 OrdersManagement - Current state:', {
-    selectedBusinessId,
+    businessId,
     isSuperAdmin,
     userRole: profile?.role,
     dataCount: ordersData.length
@@ -69,7 +67,7 @@ export const OrdersManagement: React.FC = () => {
             <p className="text-gray-600 mt-2">עקוב ונהל את כל ההזמנות</p>
           </div>
           
-          {(selectedBusinessId || !isSuperAdmin) && (
+          {(businessId || !isSuperAdmin) && (
             <CreateOrderDialog onOrderCreated={refetch} />
           )}
         </div>
@@ -81,15 +79,14 @@ export const OrdersManagement: React.FC = () => {
                 בחר עסק לצפייה
               </label>
               <BusinessSelector
-                selectedBusinessId={selectedBusinessId}
-                onBusinessChange={setSelectedBusinessId}
                 placeholder="בחר עסק לניהול הזמנות"
                 className="max-w-md"
+                showAllOption={false}
               />
             </div>
-            {selectedBusinessId && (
+            {businessId && (
               <Badge variant="outline" className="text-xs">
-                מציג נתונים עבור עסק: {selectedBusinessId}
+                מציג נתונים עבור עסק: {businessId}
               </Badge>
             )}
           </div>
@@ -97,7 +94,7 @@ export const OrdersManagement: React.FC = () => {
       </div>
 
       {/* Show content only if business is selected (for super admin) or user has business context */}
-      {(selectedBusinessId || !isSuperAdmin) && (
+      {(businessId || !isSuperAdmin) && (
         <>
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -185,9 +182,9 @@ export const OrdersManagement: React.FC = () => {
       )}
 
       {/* Show business selection prompt for super admin */}
-      {isSuperAdmin && !selectedBusinessId && (
+      {isSuperAdmin && !businessId && (
         <div className="text-center py-12">
-          <ShoppingCart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <Shopping className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">בחר עסק לניהול הזמנות</h2>
           <p className="text-gray-600">יש לבחור עסק ספציפי כדי לצפות בנתוני ההזמנות</p>
         </div>
