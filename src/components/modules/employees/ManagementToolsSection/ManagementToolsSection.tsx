@@ -1,7 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { QuickActionsCard } from './QuickActionsCard';
 import { ManagementToolsGrid } from './ManagementToolsGrid';
+import { CreateEmployeeDialog } from '../CreateEmployeeDialog';
+import { CreateBranchDialog } from '../CreateBranchDialog';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 interface ManagementToolsSectionProps {
@@ -15,15 +17,29 @@ export const ManagementToolsSection: React.FC<ManagementToolsSectionProps> = ({
 }) => {
   const { businessId } = useCurrentBusiness();
   const effectiveBusinessId = selectedBusinessId || businessId;
+  const [showCreateEmployee, setShowCreateEmployee] = useState(false);
+  const [showCreateBranch, setShowCreateBranch] = useState(false);
 
   const handleCreateEmployee = () => {
-    // This will be handled by the parent component
-    console.log('Create employee clicked');
+    console.log('📝 Opening create employee dialog');
+    setShowCreateEmployee(true);
   };
 
   const handleCreateBranch = () => {
-    // This will be handled by the parent component
-    console.log('Create branch clicked');
+    console.log('🏢 Opening create branch dialog');
+    setShowCreateBranch(true);
+  };
+
+  const handleEmployeeCreated = () => {
+    console.log('✅ Employee created successfully');
+    setShowCreateEmployee(false);
+    onRefetch();
+  };
+
+  const handleBranchCreated = () => {
+    console.log('✅ Branch created successfully');
+    setShowCreateBranch(false);
+    onRefetch();
   };
 
   return (
@@ -40,6 +56,22 @@ export const ManagementToolsSection: React.FC<ManagementToolsSectionProps> = ({
           <ManagementToolsGrid businessId={effectiveBusinessId} />
         </div>
       </div>
+
+      {/* Create Employee Dialog */}
+      <CreateEmployeeDialog
+        open={showCreateEmployee}
+        onOpenChange={setShowCreateEmployee}
+        onSuccess={handleEmployeeCreated}
+        businessId={effectiveBusinessId}
+      />
+
+      {/* Create Branch Dialog */}
+      <CreateBranchDialog
+        open={showCreateBranch}
+        onOpenChange={setShowCreateBranch}
+        onSuccess={handleBranchCreated}
+        businessId={effectiveBusinessId}
+      />
     </div>
   );
 };

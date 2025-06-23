@@ -158,7 +158,8 @@ export const EmployeeListContent: React.FC<EmployeeListContentProps> = ({
                       <div className="flex-1">
                         <button
                           onClick={() => handleNameClick(employee)}
-                          className="text-blue-600 hover:text-blue-800 hover:underline text-right font-medium cursor-pointer bg-transparent border-none p-0"
+                          className="text-blue-600 hover:text-blue-800 hover:underline text-right font-medium cursor-pointer bg-transparent border-none p-0 outline-none focus:outline-none"
+                          type="button"
                         >
                           <h3 className="font-medium text-gray-900">
                             {getDisplayName(employee)}
@@ -198,6 +199,7 @@ export const EmployeeListContent: React.FC<EmployeeListContentProps> = ({
                       size="sm"
                       onClick={() => handleViewProfile(employee)}
                       className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                      type="button"
                     >
                       <Eye className="h-4 w-4" />
                       <span>פרופיל</span>
@@ -205,7 +207,7 @@ export const EmployeeListContent: React.FC<EmployeeListContentProps> = ({
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" type="button">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>

@@ -23,7 +23,9 @@ export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
   const navigate = useNavigate();
   const employeeName = `${employee.first_name} ${employee.last_name}`;
 
-  const handleViewProfile = () => {
+  const handleViewProfile = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     const profilePath = `/modules/employees/profile/${employee.id}`;
     console.log('🔗 Navigating to employee profile:', {
       employeeId: employee.id,
@@ -34,6 +36,13 @@ export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
     navigate(profilePath);
   };
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🗑️ Delete button clicked for employee:', employee.id);
+    onDeleteEmployee(employee);
+  };
+
   return (
     <div className="flex flex-col sm:flex-row gap-2 w-full">
       <Button
@@ -41,6 +50,7 @@ export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
         size="sm"
         onClick={handleViewProfile}
         className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-base px-4 py-2 w-full sm:w-auto"
+        type="button"
       >
         <Eye className="h-4 w-4" />
         <span>פרופיל</span>
@@ -63,9 +73,10 @@ export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
       <Button
         variant="outline"
         size="sm"
-        onClick={() => onDeleteEmployee(employee)}
+        onClick={handleDelete}
         disabled={loading}
         className="text-red-600 hover:text-red-800 hover:bg-red-50 text-base px-4 py-2 w-full sm:w-auto"
+        type="button"
       >
         <Trash2 className="h-4 w-4" />
       </Button>

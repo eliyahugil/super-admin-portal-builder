@@ -9,6 +9,24 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
   onCreateEmployee,
   onCreateBranch
 }) => {
+  const handleCreateEmployee = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🚀 Create employee button clicked');
+    if (onCreateEmployee) {
+      onCreateEmployee();
+    }
+  };
+
+  const handleCreateBranch = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🏢 Create branch button clicked');
+    if (onCreateBranch) {
+      onCreateBranch();
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -16,11 +34,20 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
       </CardHeader>
       <CardContent>
         <div className="flex gap-4" dir="rtl">
-          <Button onClick={onCreateEmployee} className="flex items-center gap-2">
+          <Button 
+            onClick={handleCreateEmployee} 
+            className="flex items-center gap-2"
+            type="button"
+          >
             <Users className="h-4 w-4" />
             הוסף עובד
           </Button>
-          <Button onClick={onCreateBranch} variant="outline" className="flex items-center gap-2">
+          <Button 
+            onClick={handleCreateBranch} 
+            variant="outline" 
+            className="flex items-center gap-2"
+            type="button"
+          >
             <Building2 className="h-4 w-4" />
             הוסף סניף
           </Button>
