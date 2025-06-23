@@ -9,7 +9,7 @@ import { ShiftSubmission, ShiftEntry } from '../types';
 export const useShiftSubmissions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
-  const { businessId, loading } = useBusiness();
+  const { businessId, isLoading } = useBusiness();
 
   // Get shift submissions
   const { data: submissions, isLoading: submissionsLoading, refetch } = useQuery({
@@ -27,7 +27,7 @@ export const useShiftSubmissions = () => {
         } : undefined,
       })) as ShiftSubmission[];
     },
-    enabled: !!businessId && !loading,
+    enabled: !!businessId && !isLoading,
   });
 
   // Get all employees to show missing submissions
@@ -45,7 +45,7 @@ export const useShiftSubmissions = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!businessId && !loading,
+    enabled: !!businessId && !isLoading,
   });
 
   // WhatsApp functions
@@ -177,7 +177,7 @@ export const useShiftSubmissions = () => {
     submissions,
     allEmployees,
     dashboardData: filteredData,
-    isLoading: loading || submissionsLoading,
+    isLoading: isLoading || submissionsLoading,
     parseShifts,
     sendWhatsApp,
     sendReminder,
