@@ -23,6 +23,7 @@ interface ShiftTemplate {
   required_employees: number;
   is_active: boolean;
   branch_id: string;
+  business_id: string;
   created_at: string;
   is_archived: boolean;
   role_name?: string;
@@ -129,7 +130,8 @@ export const ShiftTemplatesManager: React.FC<ShiftTemplatesManagerProps> = ({
           end_time: formData.end_time,
           shift_type: formData.shift_type,
           required_employees: formData.required_employees,
-          branch_id: formData.branch_id
+          branch_id: formData.branch_id,
+          business_id: businessId // ✅ הוספת business_id הנדרש
         });
 
       if (error) throw error;
