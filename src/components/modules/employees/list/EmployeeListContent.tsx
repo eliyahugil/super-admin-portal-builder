@@ -92,6 +92,17 @@ export const EmployeeListContent: React.FC<EmployeeListContentProps> = ({
     navigate(profilePath);
   };
 
+  const handleNameClick = (employee: Employee) => {
+    const profilePath = `/modules/employees/profile/${employee.id}`;
+    console.log('🔗 Navigating to employee profile from name click:', {
+      employeeId: employee.id,
+      employeeName: getDisplayName(employee),
+      targetPath: profilePath,
+      currentPath: window.location.pathname
+    });
+    navigate(profilePath);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -145,9 +156,14 @@ export const EmployeeListContent: React.FC<EmployeeListContentProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">
-                          {getDisplayName(employee)}
-                        </h3>
+                        <button
+                          onClick={() => handleNameClick(employee)}
+                          className="text-blue-600 hover:text-blue-800 hover:underline text-right font-medium cursor-pointer bg-transparent border-none p-0"
+                        >
+                          <h3 className="font-medium text-gray-900">
+                            {getDisplayName(employee)}
+                          </h3>
+                        </button>
                         <div className="text-sm text-gray-600 space-y-1">
                           {employee.email && (
                             <div>📧 {employee.email}</div>
