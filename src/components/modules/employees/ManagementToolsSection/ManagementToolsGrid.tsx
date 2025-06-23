@@ -4,6 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Users, Calendar, FileText, Settings, Upload, Download } from 'lucide-react';
 import { ImportManager } from '../ImportManager';
+import { ShiftTemplatesManager } from '../ShiftTemplatesManager';
+import { AdvancedSettingsDialog } from '../AdvancedSettingsDialog';
+import { ExportManager } from '../ExportManager';
 import { useToast } from '@/hooks/use-toast';
 
 interface ManagementToolsGridProps {
@@ -13,6 +16,9 @@ interface ManagementToolsGridProps {
 export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({ businessId }) => {
   console.log('🔧 ManagementToolsGrid rendering with businessId:', businessId);
   const [showImport, setShowImport] = useState(false);
+  const [showShiftTemplates, setShowShiftTemplates] = useState(false);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const { toast } = useToast();
 
   const handleImportEmployees = () => {
@@ -22,18 +28,12 @@ export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({ busine
 
   const handleExportData = () => {
     console.log('📤 Export data clicked');
-    toast({
-      title: 'ייצוא נתונים',
-      description: 'הפיצר בפיתוח - יהיה זמין בקרוב',
-    });
+    setShowExport(true);
   };
 
   const handleShiftTemplates = () => {
     console.log('📅 Shift templates clicked');
-    toast({
-      title: 'ניהול תבניות משמרות',
-      description: 'הפיצר בפיתוח - יהיה זמין בקרוב',
-    });
+    setShowShiftTemplates(true);
   };
 
   const handleDocuments = () => {
@@ -44,10 +44,7 @@ export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({ busine
 
   const handleAdvancedSettings = () => {
     console.log('⚙️ Advanced settings clicked');
-    toast({
-      title: 'הגדרות מתקדמות',
-      description: 'הפיצר בפיתוח - יהיה זמין בקרוב',
-    });
+    setShowAdvancedSettings(true);
   };
 
   const tools = [
@@ -140,6 +137,43 @@ export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({ busine
           </Card>
         </div>
       )}
+
+      {/* Export Dialog */}
+      {showExport && (
+        <div className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>ייצוא נתונים</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ExportManager businessId={businessId} />
+              <div className="mt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowExport(false)}
+                  type="button"
+                >
+                  סגור
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Shift Templates Manager */}
+      <ShiftTemplatesManager
+        open={showShiftTemplates}
+        onOpenChange={setShowShiftTemplates}
+        businessId={businessId}
+      />
+
+      {/* Advanced Settings Dialog */}
+      <AdvancedSettingsDialog
+        open={showAdvancedSettings}
+        onOpenChange={setShowAdvancedSettings}
+        businessId={businessId}
+      />
     </div>
   );
 };

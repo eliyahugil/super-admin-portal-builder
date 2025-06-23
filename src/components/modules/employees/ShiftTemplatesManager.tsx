@@ -11,16 +11,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar, Clock, Plus, Edit, Trash2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useBranchesData } from '@/hooks/useBranchesData';
 
+// Use the actual Supabase types instead of custom types
 interface ShiftTemplate {
   id: string;
   name: string;
   start_time: string;
   end_time: string;
-  break_duration?: number;
-  description?: string;
+  shift_type: 'morning' | 'afternoon' | 'evening' | 'night' | 'full_day';
   required_employees: number;
-  days_of_week: string[];
+  is_active: boolean;
+  branch_id: string;
+  created_at: string;
+  is_archived: boolean;
+  role_name?: string;
 }
 
 interface ShiftTemplatesManagerProps {
@@ -40,24 +45,24 @@ export const ShiftTemplatesManager: React.FC<ShiftTemplatesManagerProps> = ({
   const [editingTemplate, setEditingTemplate] = React.useState<ShiftTemplate | null>(null);
   const [showCreateForm, setShowCreateForm] = React.useState(false);
 
+  // Get branches data
+  const { data: branches = [] } = useBranchesData(businessId);
+
   const [formData, setFormData] = React.useState({
     name: '',
     start_time: '',
     end_time: '',
-    break_duration: 0,
-    description: '',
+    shift_type: 'morning' as const,
     required_employees: 1,
-    days_of_week: [] as string[]
+    branch_id: ''
   });
 
-  const daysOfWeek = [
-    { value: 'sunday', label: 'ראשון' },
-    { value: 'monday', label: 'שני' },
-    { value: 'tuesday', label: 'שלישי' },
-    { value: 'wednesday', label: 'רביעי' },
-    { value: 'thursday', label: 'חמישי' },
-    { value: 'friday', label: 'שישי' },
-    { value: 'saturday', label: 'שבת' }
+  const shiftTypes = [
+    { value: 'morning', label: 'בוקר' },
+    { value: 'afternoon', label: 'צהריים' },
+    { value: 'evening', label: 'ערב' },
+    { value: 'night', label: 'לילה' },
+    { value: 'full_day', label: 'יום מלא' }
   ];
 
   // Fetch templates when dialog opens
@@ -72,10 +77,22 @@ export const ShiftTemplatesManager: React.FC<ShiftTemplatesManagerProps> = ({
 
     setLoading(true);
     try {
+      // Get templates and filter by business through branches
+      const { data: branchIds } = await supabase
+        .from('branches')
+        .select('id')
+        .eq('business_id', businessId);
+
+      if (!branchIds || branchIds.length === 0) {
+        setTemplates([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('shift_templates')
         .select('*')
-        .eq('business_id', businessId)
+        .in('branch_id', branchIds.map(b => b.id))
+        .eq('is_active', true)
         .order('name');
 
       if (error) throw error;
@@ -94,7 +111,7 @@ export const ShiftTemplatesManager: React.FC<ShiftTemplatesManagerProps> = ({
   };
 
   const handleCreateTemplate = async () => {
-    if (!businessId || !formData.name || !formData.start_time || !formData.end_time) {
+    if (!businessId || !formData.name || !formData.start_time || !formData.end_time || !formData.branch_id) {
       toast({
         title: 'שגיאה',
         description: 'יש למלא את כל השדות הנדרשים',
@@ -107,14 +124,12 @@ export const ShiftTemplatesManager: React.FC<ShiftTemplatesManagerProps> = ({
       const { error } = await supabase
         .from('shift_templates')
         .insert({
-          business_id: businessId,
           name: formData.name,
           start_time: formData.start_time,
           end_time: formData.end_time,
-          break_duration: formData.break_duration || null,
-          description: formData.description || null,
+          shift_type: formData.shift_type,
           required_employees: formData.required_employees,
-          days_of_week: formData.days_of_week
+          branch_id: formData.branch_id
         });
 
       if (error) throw error;
@@ -140,7 +155,7 @@ export const ShiftTemplatesManager: React.FC<ShiftTemplatesManagerProps> = ({
     try {
       const { error } = await supabase
         .from('shift_templates')
-        .delete()
+        .update({ is_active: false })
         .eq('id', templateId);
 
       if (error) throw error;
@@ -166,22 +181,20 @@ export const ShiftTemplatesManager: React.FC<ShiftTemplatesManagerProps> = ({
       name: '',
       start_time: '',
       end_time: '',
-      break_duration: 0,
-      description: '',
+      shift_type: 'morning',
       required_employees: 1,
-      days_of_week: []
+      branch_id: ''
     });
     setShowCreateForm(false);
     setEditingTemplate(null);
   };
 
-  const toggleDay = (day: string) => {
-    setFormData(prev => ({
-      ...prev,
-      days_of_week: prev.days_of_week.includes(day)
-        ? prev.days_of_week.filter(d => d !== day)
-        : [...prev.days_of_week, day]
-    }));
+  const getShiftTypeLabel = (type: string) => {
+    return shiftTypes.find(st => st.value === type)?.label || type;
+  };
+
+  const getBranchName = (branchId: string) => {
+    return branches.find(b => b.id === branchId)?.name || 'לא ידוע';
   };
 
   return (
@@ -259,41 +272,36 @@ export const ShiftTemplatesManager: React.FC<ShiftTemplatesManagerProps> = ({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="break_duration">הפסקה (דקות)</Label>
-                    <Input
-                      id="break_duration"
-                      type="number"
-                      min="0"
-                      value={formData.break_duration}
-                      onChange={(e) => setFormData(prev => ({ ...prev, break_duration: parseInt(e.target.value) || 0 }))}
-                    />
+                    <Label htmlFor="shift_type">סוג משמרת</Label>
+                    <Select value={formData.shift_type} onValueChange={(value) => setFormData(prev => ({ ...prev, shift_type: value as any }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {shiftTypes.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
                 <div>
-                  <Label>ימים בשבוע</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {daysOfWeek.map((day) => (
-                      <Badge
-                        key={day.value}
-                        variant={formData.days_of_week.includes(day.value) ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => toggleDay(day.value)}
-                      >
-                        {day.label}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="description">תיאור (אופציונלי)</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="תיאור קצר של המשמרת..."
-                  />
+                  <Label htmlFor="branch_id">סניף</Label>
+                  <Select value={formData.branch_id} onValueChange={(value) => setFormData(prev => ({ ...prev, branch_id: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="בחר סניף" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {branches.map((branch) => (
+                        <SelectItem key={branch.id} value={branch.id}>
+                          {branch.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex gap-2">
@@ -356,22 +364,14 @@ export const ShiftTemplatesManager: React.FC<ShiftTemplatesManagerProps> = ({
                       <span>{template.required_employees} עובדים נדרשים</span>
                     </div>
 
-                    {template.days_of_week.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {template.days_of_week.map((day) => {
-                          const dayLabel = daysOfWeek.find(d => d.value === day)?.label || day;
-                          return (
-                            <Badge key={day} variant="secondary" className="text-xs">
-                              {dayLabel}
-                            </Badge>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {template.description && (
-                      <p className="text-sm text-gray-600">{template.description}</p>
-                    )}
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="secondary" className="text-xs">
+                        {getShiftTypeLabel(template.shift_type)}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {getBranchName(template.branch_id)}
+                      </Badge>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
