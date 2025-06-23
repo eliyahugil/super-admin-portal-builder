@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +14,7 @@ interface EmployeeRequestFormProps {
 }
 
 export const EmployeeRequestForm: React.FC<EmployeeRequestFormProps> = ({ employeeId }) => {
-  const { businessId, loading } = useBusiness();
+  const { businessId, isLoading } = useBusiness();
   const { toast } = useToast();
   const [requestType, setRequestType] = useState('');
   const [subject, setSubject] = useState('');
@@ -82,7 +81,7 @@ export const EmployeeRequestForm: React.FC<EmployeeRequestFormProps> = ({ employ
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div dir="rtl" className="flex items-center justify-center p-6">טוען...</div>;
   }
 

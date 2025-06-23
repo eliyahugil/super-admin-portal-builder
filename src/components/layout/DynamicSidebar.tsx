@@ -16,7 +16,7 @@ import {
 } from './sidebar/menuItems';
 
 export const DynamicSidebar: React.FC = () => {
-  const { isSuperAdmin, business, loading: businessLoading } = useBusiness();
+  const { isSuperAdmin, business, isLoading: businessLoading } = useBusiness();
   const { businessId } = useBusiness();
   const { isModuleEnabled, isLoading: modulesLoading } = useBusinessModules(businessId);
   const { setOpenMobile, isMobile } = useSidebar();

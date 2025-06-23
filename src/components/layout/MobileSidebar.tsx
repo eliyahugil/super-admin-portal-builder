@@ -56,7 +56,7 @@ interface MobileSidebarProps {
 }
 
 export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChange }) => {
-  const { isSuperAdmin, business, loading: businessLoading } = useBusiness();
+  const { isSuperAdmin, business, isLoading: businessLoading } = useBusiness();
   const { businessId } = useBusiness();
   const { isModuleEnabled, isLoading: modulesLoading } = useBusinessModules(businessId);
   const location = useLocation();

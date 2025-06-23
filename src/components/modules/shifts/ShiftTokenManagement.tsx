@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +14,7 @@ export const ShiftTokenManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const { toast } = useToast();
-  const { businessId, loading } = useBusiness();
+  const { businessId, isLoading } = useBusiness();
   const queryClient = useQueryClient();
 
   // Get employees for the business
@@ -38,7 +37,7 @@ export const ShiftTokenManagement: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!businessId && !loading,
+    enabled: !!businessId && !isLoading,
   });
 
   // Get shift tokens
@@ -48,7 +47,7 @@ export const ShiftTokenManagement: React.FC = () => {
       if (!businessId) return [];
       return await ShiftTokenService.getTokensForBusiness(businessId);
     },
-    enabled: !!businessId && !loading,
+    enabled: !!businessId && !isLoading,
   });
 
   // Generate token mutation
@@ -107,7 +106,7 @@ export const ShiftTokenManagement: React.FC = () => {
     token.employee?.employee_id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
+  if (isLoading) {
     return <div className="container mx-auto px-4 py-8" dir="rtl">טוען...</div>;
   }
 

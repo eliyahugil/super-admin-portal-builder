@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
@@ -19,7 +18,7 @@ interface ScheduleSettings {
 }
 
 export const ShiftTokenSchedulePage: React.FC = () => {
-  const { businessId, loading } = useBusiness();
+  const { businessId, isLoading } = useBusiness();
   const { toast } = useToast();
   const [schedule, setSchedule] = useState<ScheduleSettings>({
     send_day: 'Thursday',
@@ -41,7 +40,7 @@ export const ShiftTokenSchedulePage: React.FC = () => {
 
   useEffect(() => {
     const fetchSchedule = async () => {
-      if (!businessId || loading) return;
+      if (!businessId || isLoading) return;
 
       const { data, error } = await supabase
         .from('shift_token_schedules')
@@ -60,7 +59,7 @@ export const ShiftTokenSchedulePage: React.FC = () => {
     };
 
     fetchSchedule();
-  }, [businessId, loading]);
+  }, [businessId, isLoading]);
 
   const updateSchedule = async (updates: Partial<ScheduleSettings>) => {
     if (!businessId) return;
@@ -98,7 +97,7 @@ export const ShiftTokenSchedulePage: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">

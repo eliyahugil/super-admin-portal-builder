@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useRealData } from '@/hooks/useRealData';
@@ -24,20 +23,20 @@ interface ShiftTemplate {
 }
 
 export const ShiftTemplatesManagement: React.FC = () => {
-  const { businessId, loading } = useBusiness();
+  const { businessId, isLoading } = useBusiness();
 
   const { data: templates, refetch } = useRealData<ShiftTemplate>({
     queryKey: ['shift-templates', businessId],
     tableName: 'shift_templates',
     filters: { is_active: true },
-    enabled: !!businessId && !loading
+    enabled: !!businessId && !isLoading
   });
 
   const { data: branches, refetch: refetchBranches } = useRealData<any>({
     queryKey: ['branches-for-templates', businessId],
     tableName: 'branches',
     filters: { is_active: true },
-    enabled: !!businessId && !loading
+    enabled: !!businessId && !isLoading
   });
 
   const {
@@ -50,7 +49,7 @@ export const ShiftTemplatesManagement: React.FC = () => {
     openCreateDialog
   } = useShiftTemplatesLogic(businessId, refetch);
 
-  if (loading) {
+  if (isLoading) {
     return <div className="flex items-center justify-center p-6">טוען...</div>;
   }
 

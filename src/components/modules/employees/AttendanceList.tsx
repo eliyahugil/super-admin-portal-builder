@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,14 +33,14 @@ interface Employee {
 export const AttendanceList: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
-  const { businessId, loading } = useBusiness();
+  const { businessId, isLoading } = useBusiness();
 
   const { data: employees } = useRealData<Employee>({
     queryKey: ['employees', businessId],
     tableName: 'employees',
     filters: businessId !== 'super_admin' ? { business_id: businessId } : {},
     orderBy: { column: 'first_name', ascending: true },
-    enabled: !!businessId && !loading
+    enabled: !!businessId && !isLoading
   });
 
   const attendanceFilters: any = {
@@ -53,7 +52,7 @@ export const AttendanceList: React.FC = () => {
     tableName: 'attendance_records',
     filters: attendanceFilters,
     orderBy: { column: 'recorded_at', ascending: false },
-    enabled: !!businessId && !loading,
+    enabled: !!businessId && !isLoading,
     select: `
       id,
       recorded_at,
@@ -93,7 +92,7 @@ export const AttendanceList: React.FC = () => {
     );
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div className="container mx-auto px-4 py-8" dir="rtl">טוען...</div>;
   }
 
