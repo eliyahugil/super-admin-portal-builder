@@ -25,7 +25,7 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
     const types: Record<string, string> = {
       permanent: 'קבוע',
       temporary: 'זמני',
-      contractor: 'קبלן',
+      contractor: 'קבלן',
       youth: 'נוער',
     };
     return types[type] || type;

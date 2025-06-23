@@ -4,9 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Trash2, Users } from 'lucide-react';
+import { MoreHorizontal, Trash2, Users, Eye } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { EmployeeListPagination } from './EmployeeListPagination';
+import { useNavigate } from 'react-router-dom';
 import type { Employee } from '@/types/employee';
 import type { PageSize } from './useEmployeeListPagination';
 
@@ -43,6 +44,8 @@ export const EmployeeListContent: React.FC<EmployeeListContentProps> = ({
   onPageChange,
   onPageSizeChange,
 }) => {
+  const navigate = useNavigate();
+
   const getEmployeeTypeLabel = (type: string) => {
     const types: Record<string, string> = {
       permanent: 'קבוע',
@@ -76,6 +79,17 @@ export const EmployeeListContent: React.FC<EmployeeListContentProps> = ({
     } else {
       return 'לא הוגדר שם';
     }
+  };
+
+  const handleViewProfile = (employee: Employee) => {
+    const profilePath = `/modules/employees/profile/${employee.id}`;
+    console.log('🔗 Navigating to employee profile:', {
+      employeeId: employee.id,
+      employeeName: getDisplayName(employee),
+      targetPath: profilePath,
+      currentPath: window.location.pathname
+    });
+    navigate(profilePath);
   };
 
   if (loading) {
@@ -161,22 +175,42 @@ export const EmployeeListContent: React.FC<EmployeeListContentProps> = ({
                     </div>
                   </div>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => onDeleteEmployee(employee)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        מחק עובד
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => handleViewProfile(employee)}
+                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span>פרופיל</span>
+                    </Button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleViewProfile(employee)}
+                          className="flex items-center gap-2"
+                        >
+                          <Eye className="h-4 w-4" />
+                          פתח פרופיל מלא
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => onDeleteEmployee(employee)}
+                          className="text-red-600 flex items-center gap-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          מחק עובד
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               </div>
             ))}

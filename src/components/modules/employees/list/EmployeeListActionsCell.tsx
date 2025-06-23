@@ -43,7 +43,7 @@ export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
         className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-base px-4 py-2 w-full sm:w-auto"
       >
         <Eye className="h-4 w-4" />
-        <span>פרופיל מלא</span>
+        <span>פרופיל</span>
       </Button>
       
       <EmployeeTokenButton

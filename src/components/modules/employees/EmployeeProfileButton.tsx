@@ -22,14 +22,21 @@ export const EmployeeProfileButton: React.FC<EmployeeProfileButtonProps> = ({
   hasNotes = false,
   hasDocuments = false,
   hasBranchAssignments = false,
-  variant = 'outline',
+  variant = 'default',
   size = 'sm',
-  showPreview = true,
+  showPreview = false,
 }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/modules/employees/profile/${employeeId}`);
+    const profilePath = `/modules/employees/profile/${employeeId}`;
+    console.log('🔗 Navigating to employee profile:', {
+      employeeId,
+      employeeName,
+      targetPath: profilePath,
+      currentPath: window.location.pathname
+    });
+    navigate(profilePath);
   };
 
   if (!showPreview) {
@@ -38,10 +45,10 @@ export const EmployeeProfileButton: React.FC<EmployeeProfileButtonProps> = ({
         variant={variant}
         size={size}
         onClick={handleClick}
-        className="flex items-center space-x-1"
+        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
       >
-        <Eye className="h-3 w-3" />
-        <span>פרופיל מלא</span>
+        <Eye className="h-4 w-4" />
+        <span>פרופיל</span>
       </Button>
     );
   }
@@ -52,10 +59,10 @@ export const EmployeeProfileButton: React.FC<EmployeeProfileButtonProps> = ({
         variant={variant}
         size={size}
         onClick={handleClick}
-        className="flex items-center space-x-1"
+        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
       >
-        <Eye className="h-3 w-3" />
-        <span>פרופיל מלא</span>
+        <Eye className="h-4 w-4" />
+        <span>פרופיל</span>
       </Button>
 
       {/* Preview Tooltip */}
