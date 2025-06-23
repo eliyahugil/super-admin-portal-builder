@@ -5,6 +5,7 @@ import { ManagementToolsGrid } from './ManagementToolsGrid';
 import { CreateEmployeeDialog } from '../CreateEmployeeDialog';
 import { CreateBranchDialog } from '../CreateBranchDialog';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { useBranchesData } from '@/hooks/useBranchesData';
 
 interface ManagementToolsSectionProps {
   onRefetch: () => void;
@@ -19,6 +20,9 @@ export const ManagementToolsSection: React.FC<ManagementToolsSectionProps> = ({
   const effectiveBusinessId = selectedBusinessId || businessId;
   const [showCreateEmployee, setShowCreateEmployee] = useState(false);
   const [showCreateBranch, setShowCreateBranch] = useState(false);
+
+  // Get branches data for the employee dialog
+  const { data: branches = [] } = useBranchesData(effectiveBusinessId);
 
   const handleCreateEmployee = () => {
     console.log('📝 Opening create employee dialog');
@@ -62,7 +66,7 @@ export const ManagementToolsSection: React.FC<ManagementToolsSectionProps> = ({
         open={showCreateEmployee}
         onOpenChange={setShowCreateEmployee}
         onSuccess={handleEmployeeCreated}
-        businessId={effectiveBusinessId}
+        branches={branches}
       />
 
       {/* Create Branch Dialog */}
@@ -70,7 +74,6 @@ export const ManagementToolsSection: React.FC<ManagementToolsSectionProps> = ({
         open={showCreateBranch}
         onOpenChange={setShowCreateBranch}
         onSuccess={handleBranchCreated}
-        businessId={effectiveBusinessId}
       />
     </div>
   );
