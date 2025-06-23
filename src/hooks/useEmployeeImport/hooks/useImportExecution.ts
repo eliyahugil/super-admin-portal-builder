@@ -49,7 +49,8 @@ export const useImportExecution = ({
     console.log('🚀 Starting import execution:', {
       businessId,
       totalEmployees: previewData.length,
-      validEmployees: previewData.filter(emp => emp.isValid && !emp.isDuplicate).length
+      validEmployees: previewData.filter(emp => emp.isValid && !emp.isDuplicate).length,
+      partialUpdateEmployees: previewData.filter(emp => emp.isValid && emp.isPartialUpdate).length
     });
 
     if (!businessId) {
@@ -60,18 +61,39 @@ export const useImportExecution = ({
     try {
       setStep('importing');
       
-      // Filter valid employees
+      // Filter employees - include both new employees and partial updates
       const validEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate);
-      console.log(`📋 Importing ${validEmployees.length} valid employees`);
+      const partialUpdateEmployees = previewData.filter(emp => emp.isValid && emp.isPartialUpdate);
+      const newEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate && !emp.isPartialUpdate);
+      const errorEmployees = previewData.filter(emp => !emp.isValid);
+
+      console.log(`📋 Import breakdown:`, {
+        total: previewData.length,
+        newEmployees: newEmployees.length,
+        partialUpdates: partialUpdateEmployees.length,
+        errors: errorEmployees.length
+      });
+
+      if (validEmployees.length === 0) {
+        return {
+          success: false,
+          importedCount: 0,
+          errorCount: errorEmployees.length,
+          message: 'לא נמצאו עובדים תקינים לייבוא',
+          errors: errorEmployees.map(emp => ({
+            row: previewData.indexOf(emp) + 2,
+            employee: `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
+            error: emp.validationErrors.join(', ')
+          }))
+        };
+      }
 
       const importedEmployees: Array<{ name: string; email?: string; branch?: string }> = [];
       const errors: Array<{ row: number; employee: string; error: string }> = [];
       let successCount = 0;
+      let updateCount = 0;
 
-      // Log current business ID
-      console.log('🏢 Current business ID for import:', businessId);
-
-      // Process employees in batches to avoid overwhelming the database
+      // Process employees in batches
       const batchSize = 10;
       for (let i = 0; i < validEmployees.length; i += batchSize) {
         const batch = validEmployees.slice(i, i + batchSize);
@@ -79,98 +101,150 @@ export const useImportExecution = ({
 
         for (const employee of batch) {
           try {
-            // Prepare employee data for insertion with proper type validation
-            const employeeData = {
-              business_id: businessId,
-              first_name: employee.first_name || '',
-              last_name: employee.last_name || '',
-              email: employee.email || null,
-              phone: employee.phone || null,
-              id_number: employee.id_number || null,
-              employee_id: employee.employee_id || null,
-              address: employee.address || null,
-              hire_date: employee.hire_date || null,
-              employee_type: normalizeEmployeeType(employee.employee_type),
-              weekly_hours_required: employee.weekly_hours_required ? Number(employee.weekly_hours_required) : null,
-              main_branch_id: employee.main_branch_id || null,
-              notes: employee.notes || null,
-              is_active: true,
-              is_archived: false, // ✅ Explicitly set to false - CRITICAL!
-            };
-
-            console.log(`👤 About to insert employee:`, {
-              name: `${employee.first_name || ''} ${employee.last_name || ''}`.trim(),
-              email: employee.email,
-              employee_id: employee.employee_id,
-              employee_type: employeeData.employee_type,
-              business_id: employeeData.business_id,
-              is_active: employeeData.is_active,
-              is_archived: employeeData.is_archived
-            });
-
-            const { data, error } = await supabase
-              .from('employees')
-              .insert([employeeData])
-              .select('id, first_name, last_name, email, business_id, is_active, is_archived')
-              .single();
-
-            if (error) {
-              console.error(`❌ Error inserting employee:`, {
-                error: error.message,
-                code: error.code,
-                details: error.details,
-                hint: error.hint,
-                employeeData
+            if (employee.isPartialUpdate && employee.existingEmployeeId) {
+              // Update existing employee with only new data
+              console.log(`🔄 Updating existing employee ${employee.existingEmployeeId}`);
+              
+              // Prepare update data - only include fields that have values
+              const updateData: any = {};
+              
+              // List of fields that can be updated
+              const updatableFields = [
+                'first_name', 'last_name', 'email', 'phone', 'id_number', 
+                'employee_id', 'address', 'hire_date', 'employee_type', 
+                'weekly_hours_required', 'main_branch_id', 'notes'
+              ];
+              
+              updatableFields.forEach(field => {
+                if (employee[field] !== undefined && employee[field] !== null && employee[field] !== '') {
+                  if (field === 'employee_type') {
+                    updateData[field] = normalizeEmployeeType(employee[field]);
+                  } else if (field === 'weekly_hours_required') {
+                    updateData[field] = employee[field] ? Number(employee[field]) : null;
+                  } else {
+                    updateData[field] = employee[field].toString().trim();
+                  }
+                }
               });
-              errors.push({
-                row: previewData.indexOf(employee) + 2,
-                employee: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע',
-                error: error.message
+
+              // Only proceed with update if there's actually data to update
+              if (Object.keys(updateData).length > 0) {
+                updateData.updated_at = new Date().toISOString();
+                
+                console.log(`📝 Updating employee with data:`, updateData);
+
+                const { data, error } = await supabase
+                  .from('employees')
+                  .update(updateData)
+                  .eq('id', employee.existingEmployeeId)
+                  .eq('business_id', businessId)
+                  .select('id, first_name, last_name, email, business_id, is_active, is_archived')
+                  .single();
+
+                if (error) {
+                  console.error(`❌ Error updating employee ${employee.existingEmployeeId}:`, error);
+                  errors.push({
+                    row: previewData.indexOf(employee) + 2,
+                    employee: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע',
+                    error: error.message
+                  });
+                  continue;
+                }
+
+                console.log(`✅ Successfully updated employee:`, data);
+                updateCount++;
+                successCount++;
+                
+                importedEmployees.push({
+                  name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'לא ידוע',
+                  email: data.email || undefined,
+                  branch: employee.main_branch_id ? 'עודכן' : undefined
+                });
+              } else {
+                console.log(`⚠️ No new data to update for employee ${employee.existingEmployeeId}`);
+              }
+              
+            } else {
+              // Insert new employee
+              const employeeData = {
+                business_id: businessId,
+                first_name: employee.first_name || '',
+                last_name: employee.last_name || '',
+                email: employee.email || null,
+                phone: employee.phone || null,
+                id_number: employee.id_number || null,
+                employee_id: employee.employee_id || null,
+                address: employee.address || null,
+                hire_date: employee.hire_date || null,
+                employee_type: normalizeEmployeeType(employee.employee_type),
+                weekly_hours_required: employee.weekly_hours_required ? Number(employee.weekly_hours_required) : null,
+                main_branch_id: employee.main_branch_id || null,
+                notes: employee.notes || null,
+                is_active: true,
+                is_archived: false,
+              };
+
+              console.log(`👤 Inserting new employee:`, {
+                name: `${employee.first_name || ''} ${employee.last_name || ''}`.trim(),
+                email: employee.email,
+                employee_id: employee.employee_id,
+                employee_type: employeeData.employee_type,
+                business_id: employeeData.business_id
               });
-              continue;
+
+              const { data, error } = await supabase
+                .from('employees')
+                .insert([employeeData])
+                .select('id, first_name, last_name, email, business_id, is_active, is_archived')
+                .single();
+
+              if (error) {
+                console.error(`❌ Error inserting employee:`, error);
+                errors.push({
+                  row: previewData.indexOf(employee) + 2,
+                  employee: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע',
+                  error: error.message
+                });
+                continue;
+              }
+
+              console.log(`✅ Successfully inserted employee:`, data);
+              successCount++;
+              
+              importedEmployees.push({
+                name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'לא ידוע',
+                email: data.email || undefined,
+                branch: employee.main_branch_id ? 'כן' : undefined
+              });
             }
 
-            console.log(`✅ Successfully inserted employee:`, {
-              id: data.id,
-              name: `${data.first_name} ${data.last_name}`,
-              business_id: data.business_id,
-              is_active: data.is_active,
-              is_archived: data.is_archived
-            });
-
-            // Store custom fields in the notes field if they exist (simplified approach)
+            // Handle custom fields for both new and updated employees
             if (employee.customFields && Object.keys(employee.customFields).length > 0) {
-              console.log(`🔧 Custom fields found for employee ${data.id}:`, employee.customFields);
+              const employeeId = employee.isPartialUpdate ? employee.existingEmployeeId : null; // Will be set from insert result
               
-              const customFieldsText = Object.entries(employee.customFields)
-                .map(([key, value]) => `${key}: ${value}`)
-                .join('; ');
-              
-              // Update notes with custom fields
-              const currentNotes = employeeData.notes || '';
-              const updatedNotes = currentNotes 
-                ? `${currentNotes}\n\nשדות מותאמים: ${customFieldsText}`
-                : `שדות מותאמים: ${customFieldsText}`;
+              if (employeeId) {
+                console.log(`🔧 Processing custom fields for employee ${employeeId}:`, employee.customFields);
+                
+                const customFieldsText = Object.entries(employee.customFields)
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .join('; ');
+                
+                // For now, append custom fields to notes (simplified approach)
+                const { error: notesError } = await supabase
+                  .from('employees')
+                  .update({ 
+                    notes: `${employee.notes || ''}\n\nשדות מותאמים: ${customFieldsText}`.trim()
+                  })
+                  .eq('id', employeeId);
 
-              const { error: updateError } = await supabase
-                .from('employees')
-                .update({ notes: updatedNotes })
-                .eq('id', data.id);
-
-              if (updateError) {
-                console.warn(`⚠️ Error updating notes with custom fields for employee ${data.id}:`, updateError);
+                if (notesError) {
+                  console.warn(`⚠️ Error updating notes with custom fields:`, notesError);
+                }
               }
             }
 
-            successCount++;
-            importedEmployees.push({
-              name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'לא ידוע',
-              email: data.email || undefined,
-              branch: employee.main_branch_id ? 'כן' : undefined
-            });
-
           } catch (error) {
-            console.error(`❌ Unexpected error importing employee:`, error);
+            console.error(`❌ Unexpected error processing employee:`, error);
             errors.push({
               row: previewData.indexOf(employee) + 2,
               employee: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע',
@@ -179,50 +253,21 @@ export const useImportExecution = ({
           }
         }
 
-        // Small delay between batches to avoid rate limiting
+        // Small delay between batches
         if (i + batchSize < validEmployees.length) {
           await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
 
-      // ✅ CRITICAL FIX: After import, invalidate the employees query cache to force refresh
-      console.log('🔄 Import completed, now invalidating cache and verifying data...');
-
-      // Wait a moment for database consistency
+      // Wait for database consistency
       await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Verify what was actually saved in the database
-      console.log('🔍 Verifying imported employees in database...');
-      const { data: savedEmployees, error: verifyError } = await supabase
-        .from('employees')
-        .select('id, first_name, last_name, email, business_id, is_active, is_archived, created_at')
-        .eq('business_id', businessId)
-        .eq('is_archived', false) // ✅ Same filter as useEmployeesData
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (verifyError) {
-        console.error('❌ Error verifying saved employees:', verifyError);
-      } else {
-        console.log('📊 Current NON-ARCHIVED employees in database for this business:', {
-          totalCount: savedEmployees?.length || 0,
-          recentEmployees: savedEmployees?.slice(0, 5).map(emp => ({
-            id: emp.id,
-            name: `${emp.first_name} ${emp.last_name}`,
-            email: emp.email,
-            is_active: emp.is_active,
-            is_archived: emp.is_archived,
-            created_at: emp.created_at
-          }))
-        });
-      }
 
       const result: ImportResult = {
         success: successCount > 0,
         importedCount: successCount,
         errorCount: errors.length,
         message: successCount > 0 
-          ? `יובאו בהצלחה ${successCount} עובדים${errors.length > 0 ? ` (${errors.length} שגיאות)` : ''}`
+          ? `בוצע בהצלחה: ${successCount - updateCount} עובדים חדשים, ${updateCount} עדכונים${errors.length > 0 ? ` (${errors.length} שגיאות)` : ''}`
           : 'הייבוא נכשל - לא יובא אף עובד',
         errors,
         importedEmployees

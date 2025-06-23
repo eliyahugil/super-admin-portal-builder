@@ -1,4 +1,3 @@
-
 export interface FieldMapping {
   id: string;
   systemField: string;
@@ -12,22 +11,24 @@ export interface FieldMapping {
 
 export interface PreviewEmployee {
   business_id: string;
-  first_name?: string;
-  last_name?: string;
+  first_name: string;
+  last_name: string;
   email?: string;
   phone?: string;
   id_number?: string;
   employee_id?: string;
   address?: string;
   hire_date?: string;
-  employee_type?: string;
+  employee_type: 'permanent' | 'temporary' | 'contractor' | 'youth';
   weekly_hours_required?: number;
   main_branch_id?: string;
   notes?: string;
+  customFields: Record<string, any>;
   isValid: boolean;
   isDuplicate: boolean;
+  isPartialUpdate?: boolean; // New flag for partial updates
+  existingEmployeeId?: string; // Store existing employee ID for updates
   validationErrors: string[];
-  customFields: Record<string, any>;
 }
 
 export interface ImportResult {
