@@ -186,7 +186,7 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
       isSuperAdmin
     });
     
-    if (profile) {
+    if (profile && businessId) {
       fetchEmployee();
     }
   }, [employeeId, profile?.id, businessId, profile?.role]);

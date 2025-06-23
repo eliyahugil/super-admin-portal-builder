@@ -6,7 +6,7 @@ import { useBusiness } from '@/hooks/useBusiness';
 import { ModuleRouteHandler } from './routing/ModuleRouteHandler';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { BusinessManagement } from '@/components/business/BusinessManagement';
-import { EmployeeProfilePage } from './employees/EmployeeProfilePage';
+import { EmployeeProfilePage } from './employees/profile/EmployeeProfilePage';
 import { ModuleManagement } from './ModuleManagement';
 
 export const ModuleWrapper: React.FC = () => {

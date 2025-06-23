@@ -4,7 +4,7 @@ import { Tabs } from '@/components/ui/tabs';
 import { EmployeeTabsList } from './tabs/EmployeeTabsList';
 import { EmployeeTabsContent } from './tabs/EmployeeTabsContent';
 import { getAvailableTabs } from './tabs/getAvailableTabs';
-import type { Employee } from '@/types/supabase';
+import type { Employee } from '@/types/employee';
 
 interface EmployeeProfileTabsProps {
   employee: Employee;

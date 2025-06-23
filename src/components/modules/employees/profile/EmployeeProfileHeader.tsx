@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { EmployeeEditButton } from '../edit/EmployeeEditButton';
 import { EmployeeNavigationButtons } from './EmployeeNavigationButtons';
 import { useEmployeeNavigation } from './useEmployeeNavigation';
-import type { Employee } from '@/types/supabase';
+import type { Employee } from '@/types/employee';
 
 interface EmployeeProfileHeaderProps {
   employee: Employee;
