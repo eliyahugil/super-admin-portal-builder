@@ -3,6 +3,7 @@ import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { EmployeeRowActions } from './row/EmployeeRowActions';
+import { useNavigate } from 'react-router-dom';
 import type { Employee } from '@/types/employee';
 
 interface EmployeesTableRowProps {
@@ -16,13 +17,15 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
   onRefetch,
   showBranch = true 
 }) => {
+  const navigate = useNavigate();
+  
   console.log('📋 EmployeesTableRow rendering employee:', employee.first_name, employee.last_name);
 
   const getEmployeeTypeLabel = (type: string) => {
     const types: Record<string, string> = {
       permanent: 'קבוע',
       temporary: 'זמני',
-      contractor: 'קבלן',
+      contractor: 'קبלן',
       youth: 'נוער',
     };
     return types[type] || type;
@@ -38,13 +41,28 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
     return 'לא משויך';
   };
 
+  const handleNameClick = () => {
+    const profilePath = `/modules/employees/profile/${employee.id}`;
+    console.log('🔗 Navigating to employee profile from name click:', {
+      employeeId: employee.id,
+      employeeName: `${employee.first_name} ${employee.last_name}`,
+      targetPath: profilePath
+    });
+    navigate(profilePath);
+  };
+
   // Handle optional is_active with proper default
   const isActive = employee.is_active ?? true;
 
   return (
     <TableRow>
       <TableCell className="font-medium">
-        {employee.first_name} {employee.last_name}
+        <button
+          onClick={handleNameClick}
+          className="text-blue-600 hover:text-blue-800 hover:underline text-right font-medium"
+        >
+          {employee.first_name} {employee.last_name}
+        </button>
       </TableCell>
       <TableCell>
         <div className="text-sm">

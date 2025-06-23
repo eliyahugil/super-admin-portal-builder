@@ -25,6 +25,12 @@ export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
 
   const handleViewProfile = () => {
     const profilePath = `/modules/employees/profile/${employee.id}`;
+    console.log('🔗 Navigating to employee profile:', {
+      employeeId: employee.id,
+      employeeName,
+      targetPath: profilePath,
+      currentPath: window.location.pathname
+    });
     navigate(profilePath);
   };
 

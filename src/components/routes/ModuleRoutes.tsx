@@ -26,6 +26,16 @@ export const ModuleRoutes = () => (
         </AppLayout>
       </ProtectedRoute>
     } />
+    
+    {/* CRITICAL FIX: Specific employee profile route - must come BEFORE the generic routes */}
+    <Route path="/modules/employees/profile/:employeeId" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <EmployeeProfilePage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
     <Route path="/modules/employees/branches" element={
       <ProtectedRoute>
         <AppLayout>
@@ -44,13 +54,6 @@ export const ModuleRoutes = () => (
       <ProtectedRoute>
         <AppLayout>
           <EmployeeDocumentsPage />
-        </AppLayout>
-      </ProtectedRoute>
-    } />
-    <Route path="/modules/employees/profile" element={
-      <ProtectedRoute>
-        <AppLayout>
-          <EmployeeProfilePage />
         </AppLayout>
       </ProtectedRoute>
     } />
@@ -99,15 +102,6 @@ export const ModuleRoutes = () => (
       <ProtectedRoute>
         <AppLayout>
           <ModuleWrapper />
-        </AppLayout>
-      </ProtectedRoute>
-    } />
-
-    {/* Specific employee profile route */}
-    <Route path="/modules/employees/profile/:employeeId" element={
-      <ProtectedRoute>
-        <AppLayout>
-          <EmployeeProfilePage />
         </AppLayout>
       </ProtectedRoute>
     } />
