@@ -30,13 +30,13 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ businessId, employ
     console.log('📤 Starting employee export for business:', businessId);
 
     try {
-      // Fetch employees data with branches
+      // Fetch employees data with branches - fix the relationship name
       const { data: employeesData, error } = await supabase
         .from('employees')
         .select(`
           *,
           main_branch:branches!employees_main_branch_id_fkey(name),
-          branch_assignments(
+          employee_branch_assignments(
             branch:branches(name)
           )
         `)
