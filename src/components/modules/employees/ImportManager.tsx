@@ -8,9 +8,13 @@ import { useEmployeeImport } from '@/hooks/useEmployeeImport';
 
 interface ImportManagerProps {
   selectedBusinessId?: string | null;
+  onRefetch?: () => void;
 }
 
-export const ImportManager: React.FC<ImportManagerProps> = ({ selectedBusinessId }) => {
+export const ImportManager: React.FC<ImportManagerProps> = ({ 
+  selectedBusinessId,
+  onRefetch 
+}) => {
   console.log('📥 ImportManager rendering with selectedBusinessId:', selectedBusinessId);
   
   // Pass selectedBusinessId to the hook
