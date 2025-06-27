@@ -23,11 +23,18 @@ export const useDuplicateEmployees = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  console.log('🔍 useDuplicateEmployees - Business ID:', businessId);
+
   // Fetch all employees for duplicate detection
   const { data: employees = [], isLoading } = useQuery({
-    queryKey: ['employees', businessId],
+    queryKey: ['employees-for-duplicates', businessId],
     queryFn: async (): Promise<Employee[]> => {
-      if (!businessId) return [];
+      if (!businessId) {
+        console.log('❌ No business ID available for duplicate detection');
+        return [];
+      }
+
+      console.log('🔍 Fetching employees for duplicate detection, business:', businessId);
 
       const { data, error } = await supabase
         .from('employees')
@@ -56,18 +63,29 @@ export const useDuplicateEmployees = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching employees for duplicate detection:', error);
+        console.error('❌ Error fetching employees for duplicate detection:', error);
         throw error;
       }
+
+      console.log('✅ Fetched employees for duplicate detection:', {
+        count: data?.length || 0,
+        businessId
+      });
 
       return data || [];
     },
     enabled: !!businessId,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   // Detect duplicate groups
   const duplicateGroups: DuplicateGroup[] = React.useMemo(() => {
-    if (employees.length < 2) return [];
+    console.log('🔍 Analyzing duplicates for', employees.length, 'employees');
+    
+    if (employees.length < 2) {
+      console.log('❌ Not enough employees to detect duplicates');
+      return [];
+    }
 
     const groups: DuplicateGroup[] = [];
     const processed = new Set<string>();
@@ -79,37 +97,57 @@ export const useDuplicateEmployees = () => {
       let reason = '';
       let similarity = 0;
 
-      // Check for exact name matches
+      // Check for matches with remaining employees
       employees.slice(index + 1).forEach(otherEmployee => {
         if (processed.has(otherEmployee.id)) return;
 
+        // Check for exact name matches
         const nameMatch = (
-          employee.first_name.toLowerCase().trim() === otherEmployee.first_name.toLowerCase().trim() &&
-          employee.last_name.toLowerCase().trim() === otherEmployee.last_name.toLowerCase().trim()
+          employee.first_name?.toLowerCase().trim() === otherEmployee.first_name?.toLowerCase().trim() &&
+          employee.last_name?.toLowerCase().trim() === otherEmployee.last_name?.toLowerCase().trim()
         );
 
+        // Check for email matches
         const emailMatch = employee.email && otherEmployee.email && 
           employee.email.toLowerCase() === otherEmployee.email.toLowerCase();
 
+        // Check for phone matches (normalize phone numbers)
         const phoneMatch = employee.phone && otherEmployee.phone &&
           employee.phone.replace(/\D/g, '') === otherEmployee.phone.replace(/\D/g, '');
 
+        // Check for employee ID matches
         const idMatch = employee.employee_id && otherEmployee.employee_id &&
           employee.employee_id === otherEmployee.employee_id;
 
+        // Check for ID number matches
         const idNumberMatch = employee.id_number && otherEmployee.id_number &&
           employee.id_number === otherEmployee.id_number;
 
-        if (nameMatch || emailMatch || phoneMatch || idMatch || idNumberMatch) {
+        // Check for similar names (fuzzy matching)
+        const similarNameMatch = !nameMatch && (
+          employee.first_name?.toLowerCase().includes(otherEmployee.first_name?.toLowerCase() || '') ||
+          otherEmployee.first_name?.toLowerCase().includes(employee.first_name?.toLowerCase() || '')
+        ) && (
+          employee.last_name?.toLowerCase().includes(otherEmployee.last_name?.toLowerCase() || '') ||
+          otherEmployee.last_name?.toLowerCase().includes(employee.last_name?.toLowerCase() || '')
+        );
+
+        if (nameMatch || emailMatch || phoneMatch || idMatch || idNumberMatch || similarNameMatch) {
           duplicates.push(otherEmployee);
           processed.add(otherEmployee.id);
 
-          // Determine the reason and similarity
+          // Determine the reason and similarity score
           if (nameMatch && emailMatch) {
             reason = 'שם מלא ואימייל זהים';
             similarity = Math.max(similarity, 0.95);
           } else if (nameMatch && phoneMatch) {
             reason = 'שם מלא וטלפון זהים';
+            similarity = Math.max(similarity, 0.9);
+          } else if (idNumberMatch) {
+            reason = 'תעודת זהות זהה';
+            similarity = Math.max(similarity, 0.95);
+          } else if (idMatch) {
+            reason = 'מספר עובד זהה';
             similarity = Math.max(similarity, 0.9);
           } else if (emailMatch) {
             reason = 'אימייל זהה';
@@ -120,12 +158,9 @@ export const useDuplicateEmployees = () => {
           } else if (nameMatch) {
             reason = 'שם מלא זהה';
             similarity = Math.max(similarity, 0.75);
-          } else if (idMatch) {
-            reason = 'מספר עובד זהה';
-            similarity = Math.max(similarity, 0.9);
-          } else if (idNumberMatch) {
-            reason = 'תעודת זהות זהה';
-            similarity = Math.max(similarity, 0.95);
+          } else if (similarNameMatch) {
+            reason = 'שמות דומים';
+            similarity = Math.max(similarity, 0.6);
           }
         }
       });
@@ -140,6 +175,11 @@ export const useDuplicateEmployees = () => {
       }
     });
 
+    console.log('✅ Found duplicate groups:', {
+      groupsCount: groups.length,
+      totalDuplicates: groups.reduce((sum, group) => sum + group.employees.length, 0)
+    });
+
     return groups.sort((a, b) => b.similarity - a.similarity);
   }, [employees]);
 
@@ -151,14 +191,28 @@ export const useDuplicateEmployees = () => {
       for (const mergeData of mergeDataArray) {
         const { primaryEmployeeId, duplicateEmployeeIds, mergedData } = mergeData;
 
+        console.log('🔄 Processing merge:', {
+          primary: primaryEmployeeId,
+          duplicates: duplicateEmployeeIds.length
+        });
+
         // Update the primary employee with merged data
         const { error: updateError } = await supabase
           .from('employees')
-          .update(mergedData)
+          .update({
+            first_name: mergedData.first_name,
+            last_name: mergedData.last_name,
+            email: mergedData.email,
+            phone: mergedData.phone,
+            address: mergedData.address,
+            employee_id: mergedData.employee_id,
+            id_number: mergedData.id_number,
+            notes: mergedData.notes
+          })
           .eq('id', primaryEmployeeId);
 
         if (updateError) {
-          console.error('Error updating primary employee:', updateError);
+          console.error('❌ Error updating primary employee:', updateError);
           throw updateError;
         }
 
@@ -169,7 +223,7 @@ export const useDuplicateEmployees = () => {
           .in('id', duplicateEmployeeIds);
 
         if (archiveError) {
-          console.error('Error archiving duplicate employees:', archiveError);
+          console.error('❌ Error archiving duplicate employees:', archiveError);
           throw archiveError;
         }
 
@@ -181,17 +235,20 @@ export const useDuplicateEmployees = () => {
     onSuccess: (mergeDataArray) => {
       const totalMerged = mergeDataArray.reduce((sum, data) => sum + data.duplicateEmployeeIds.length, 0);
       
+      console.log('✅ Merge completed successfully:', { totalMerged });
+      
       toast({
         title: 'הצלחה',
         description: `בוצע מיזוג של ${totalMerged} עובדים כפולים`,
       });
 
-      // Invalidate and refetch related queries
+      // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employees-for-duplicates'] });
       queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
     },
     onError: (error) => {
-      console.error('Error merging employees:', error);
+      console.error('❌ Error merging employees:', error);
       toast({
         title: 'שגיאה',
         description: 'לא ניתן לבצע את מיזוג העובדים',

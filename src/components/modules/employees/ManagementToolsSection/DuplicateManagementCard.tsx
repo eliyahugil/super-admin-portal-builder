@@ -27,6 +27,11 @@ export const DuplicateManagementCard: React.FC = () => {
           <p className="text-xs text-orange-600 mb-2">
             כלי חשוב לניקוי בסיס הנתונים מעובדים כפולים
           </p>
+          <ul className="text-xs text-orange-600 space-y-1">
+            <li>• זיהוי אוטומטי של עובדים עם נתונים דומים</li>
+            <li>• מיזוג בטוח של נתונים</li>
+            <li>• העברת עובדים כפולים לארכיון</li>
+          </ul>
         </div>
         
         <Dialog>
