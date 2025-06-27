@@ -38,7 +38,7 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
         return [];
       }
 
-      console.log('👥 Fetching ACTIVE employees for business:', effectiveBusinessId);
+      console.log('👥 Fetching ACTIVE (non-archived) employees for business:', effectiveBusinessId);
 
       const { data, error } = await supabase
         .from('employees')
@@ -65,7 +65,7 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
           updated_at
         `)
         .eq('business_id', effectiveBusinessId)
-        .eq('is_archived', false)  // רק עובדים לא ארכיוניים
+        .eq('is_archived', false)  // 🔒 CRITICAL: Only non-archived employees
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -73,8 +73,16 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
         throw error;
       }
 
-      console.log('✅ Active employees fetched:', data?.length || 0);
-      return data || [];
+      // Additional safety check: filter out any archived employees
+      const activeEmployees = (data || []).filter(emp => !emp.is_archived);
+
+      console.log('✅ Active (non-archived) employees fetched:', {
+        total: data?.length || 0,
+        active: activeEmployees.length,
+        filtered: (data?.length || 0) - activeEmployees.length
+      });
+
+      return activeEmployees;
     },
     enabled: !!effectiveBusinessId,
     staleTime: 0,
