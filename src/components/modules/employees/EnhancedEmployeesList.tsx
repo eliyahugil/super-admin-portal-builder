@@ -2,7 +2,7 @@
 import React from 'react';
 import { AdvancedEmployeeFilters } from './AdvancedEmployeeFilters';
 import { EmployeeListContent } from './list/EmployeeListContent';
-import { useEmployeeListLogicEnhanced } from './list/useEmployeeListLogicEnhanced';
+import { useEmployeeListLogic } from './list/useEmployeeListLogic';
 import type { Employee } from '@/types/employee';
 import type { Branch } from '@/types/branch';
 
@@ -37,7 +37,9 @@ export const EnhancedEmployeesList: React.FC<EnhancedEmployeesListProps> = ({
     // pagination
     currentPage,
     totalPages,
+    pageSize,
     handlePageChange,
+    handlePageSizeChange,
     
     // בחירה ופעולות
     selectedEmployees,
@@ -49,7 +51,7 @@ export const EnhancedEmployeesList: React.FC<EnhancedEmployeesListProps> = ({
     
     // מצב
     loading,
-  } = useEmployeeListLogicEnhanced(employees, onRefetch, businessId);
+  } = useEmployeeListLogic(employees, onRefetch, businessId);
 
   console.log('📋 EnhancedEmployeesList rendering with:', {
     businessId,
@@ -57,7 +59,7 @@ export const EnhancedEmployeesList: React.FC<EnhancedEmployeesListProps> = ({
     filteredCount,
     selectedCount: selectedEmployees.size,
     currentPage,
-    pageSize: preferences.pageSize,
+    pageSize,
     activeFilters: Object.entries(preferences.filters).filter(([key, value]) => {
       if (key === 'searchTerm') return value.trim() !== '';
       if (key === 'sortBy' || key === 'sortOrder') return false;
@@ -72,7 +74,7 @@ export const EnhancedEmployeesList: React.FC<EnhancedEmployeesListProps> = ({
         filters={preferences.filters}
         onFiltersChange={updateFilters}
         onResetFilters={resetFilters}
-        pageSize={preferences.pageSize}
+        pageSize={pageSize}
         onPageSizeChange={updatePageSize}
         showAdvancedFilters={preferences.showAdvancedFilters}
         onToggleAdvancedFilters={toggleAdvancedFilters}
@@ -93,9 +95,9 @@ export const EnhancedEmployeesList: React.FC<EnhancedEmployeesListProps> = ({
         totalEmployees={filteredCount}
         currentPage={currentPage}
         totalPages={totalPages}
-        pageSize={preferences.pageSize}
+        pageSize={pageSize}
         onPageChange={handlePageChange}
-        onPageSizeChange={updatePageSize}
+        onPageSizeChange={handlePageSizeChange}
       />
 
       {/* כפתור מחיקה קבוצתית */}

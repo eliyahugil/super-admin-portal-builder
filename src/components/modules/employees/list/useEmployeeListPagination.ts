@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Employee } from '@/types/employee';
 
 export type PageSize = 10 | 25 | 50 | 100 | 'unlimited';
@@ -61,11 +61,11 @@ export const useEmployeeListPagination = ({
   };
 
   // Reset current page when employees change significantly
-  useState(() => {
+  useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
     }
-  });
+  }, [currentPage, totalPages]);
 
   return {
     paginatedEmployees,
