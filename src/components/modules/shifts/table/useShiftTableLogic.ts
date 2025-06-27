@@ -1,9 +1,21 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { ShiftData, ShiftSortBy, SortOrder, ShiftFilters } from './types';
+
+// Helper function to map status strings to the correct union type
+const mapStatusToUnion = (status: string): 'pending' | 'approved' | 'rejected' | 'completed' => {
+  switch (status) {
+    case 'pending':
+    case 'approved':
+    case 'rejected':
+    case 'completed':
+      return status as 'pending' | 'approved' | 'rejected' | 'completed';
+    default:
+      return 'pending'; // Default fallback
+  }
+};
 
 export const useShiftTableLogic = (businessId?: string) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,7 +61,7 @@ export const useShiftTableLogic = (businessId?: string) => {
         shift_date: shift.shift_date,
         start_time: shift.start_time,
         end_time: shift.end_time,
-        status: shift.status,
+        status: mapStatusToUnion(shift.status),
         branch_name: shift.branch_preference,
         branch_preference: shift.branch_preference,
         role_preference: shift.role_preference,
