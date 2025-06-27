@@ -38,7 +38,7 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
         return [];
       }
 
-      console.log('👥 Fetching employees for business:', effectiveBusinessId);
+      console.log('👥 Fetching ACTIVE employees for business:', effectiveBusinessId);
 
       const { data, error } = await supabase
         .from('employees')
@@ -65,7 +65,7 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
           updated_at
         `)
         .eq('business_id', effectiveBusinessId)
-        .eq('is_archived', false)
+        .eq('is_archived', false)  // רק עובדים לא ארכיוניים
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -73,11 +73,11 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
         throw error;
       }
 
-      console.log('✅ Employees fetched:', data?.length || 0);
+      console.log('✅ Active employees fetched:', data?.length || 0);
       return data || [];
     },
     enabled: !!effectiveBusinessId,
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 0,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
   });

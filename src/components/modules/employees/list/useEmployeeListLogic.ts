@@ -1,6 +1,6 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import type { Employee } from '@/types/employee';
 import { useEmployeeListPagination } from './useEmployeeListPagination';
 import { useGenericArchive } from '@/hooks/useGenericArchive';
@@ -70,7 +70,7 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
       setSelectedEmployees(newSelected);
 
       // Use the generic archive function
-      archiveEntity(employee);
+      await archiveEntity(employee);
     } catch (error) {
       console.error('Error archiving employee:', error);
       toast({
@@ -100,7 +100,7 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
       // Archive each employee using the generic function
       for (const employee of selectedEmployeesList) {
         try {
-          archiveEntity(employee);
+          await archiveEntity(employee);
         } catch (error) {
           console.error('Error archiving employee:', employee.id, error);
         }
@@ -108,13 +108,8 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
 
       toast({
         title: 'הצלחה',
-        description: `מעביר ${selectedEmployees.size} עובדים לארכיון`,
+        description: `הועברו ${selectedEmployees.size} עובדים לארכיון`,
       });
-
-      // Single refetch after all operations
-      setTimeout(() => {
-        onRefetch();
-      }, 1000);
 
     } catch (error) {
       console.error('Error bulk archiving:', error);

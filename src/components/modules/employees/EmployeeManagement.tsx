@@ -24,21 +24,16 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
   const [showArchived, setShowArchived] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   
-  // Fetch employees data
+  // Fetch employees data - זה כבר מחזיר רק עובדים פעילים
   const { 
-    data: allEmployees = [], 
+    data: activeEmployees = [], 
     isLoading: employeesLoading, 
     error: employeesError,
     refetch: refetchEmployees 
   } = useEmployees(effectiveBusinessId);
 
-  // Filter out archived employees for the main list
-  const activeEmployees = allEmployees.filter(emp => !emp.is_archived);
-
   console.log('📊 EmployeeManagement - Employee data:', {
-    totalEmployees: allEmployees.length,
     activeEmployees: activeEmployees.length,
-    archivedEmployees: allEmployees.filter(emp => emp.is_archived).length,
     showArchived,
     refreshKey
   });

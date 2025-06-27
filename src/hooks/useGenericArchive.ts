@@ -64,21 +64,21 @@ export const useGenericArchive = ({
         description: `${entityName} "${displayName}" הועבר לארכיון`,
       });
 
-      // Clear cache completely for immediate update
+      // מחיקה מיידית של הקאש
       console.log('🔄 Clearing cache after archive...');
       
       const businessId = entity.business_id;
       
-      // Remove from query cache
-      queryClient.removeQueries({ queryKey: ['employees'] });
-      queryClient.removeQueries({ queryKey: ['employee-stats'] });
+      // מחיקת כל השאילתות הקשורות לעובדים
+      await queryClient.invalidateQueries({ queryKey: ['employees'] });
+      await queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
       
       if (businessId) {
-        queryClient.removeQueries({ queryKey: ['employees', businessId] });
-        queryClient.removeQueries({ queryKey: ['employee-stats', businessId] });
+        await queryClient.invalidateQueries({ queryKey: ['employees', businessId] });
+        await queryClient.invalidateQueries({ queryKey: ['employee-stats', businessId] });
       }
       
-      // Call the success callback immediately
+      // הפעלת callback מיידית
       if (onSuccess) {
         console.log('🔄 Calling onSuccess callback after archiving');
         onSuccess();
@@ -131,21 +131,19 @@ export const useGenericArchive = ({
         description: `${entityName} "${displayName}" שוחזר מהארכיון`,
       });
 
-      // Clear cache completely for immediate update
+      // מחיקה מיידית של הקאש
       console.log('🔄 Clearing cache after restore...');
       
       const businessId = entity.business_id;
       
-      // Remove from query cache
-      queryClient.removeQueries({ queryKey: ['employees'] });
-      queryClient.removeQueries({ queryKey: ['employee-stats'] });
+      await queryClient.invalidateQueries({ queryKey: ['employees'] });
+      await queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
       
       if (businessId) {
-        queryClient.removeQueries({ queryKey: ['employees', businessId] });
-        queryClient.removeQueries({ queryKey: ['employee-stats', businessId] });
+        await queryClient.invalidateQueries({ queryKey: ['employees', businessId] });
+        await queryClient.invalidateQueries({ queryKey: ['employee-stats', businessId] });
       }
       
-      // Call the success callback immediately
       if (onSuccess) {
         console.log('🔄 Calling onSuccess callback after restoring');
         onSuccess();
