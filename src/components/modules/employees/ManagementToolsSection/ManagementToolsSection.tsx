@@ -46,12 +46,14 @@ export const ManagementToolsSection: React.FC<ManagementToolsSectionProps> = ({
     onRefetch();
   };
 
+  console.log('🔧 ManagementToolsSection rendering with businessId:', effectiveBusinessId);
+
   return (
     <div className="space-y-6" dir="rtl">
       <div>
         <h2 className="text-xl font-semibold mb-4">כלי ניהול</h2>
         
-        <div className="space-y-4">
+        <div className="space-y-6">
           <QuickActionsCard 
             onCreateEmployee={handleCreateEmployee}
             onCreateBranch={handleCreateBranch}
