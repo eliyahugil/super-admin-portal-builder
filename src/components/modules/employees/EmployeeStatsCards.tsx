@@ -1,44 +1,56 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Users, UserCheck, UserX, Clock } from 'lucide-react';
-import type { Employee } from '@/types/employee';
 
 interface EmployeeStatsCardsProps {
-  employees: Employee[];
+  totalEmployees: number;
+  activeEmployees: number;
+  archivedEmployees: number;
+  inactiveEmployees: number;
+  isLoading?: boolean;
 }
 
-export const EmployeeStatsCards: React.FC<EmployeeStatsCardsProps> = ({ employees }) => {
-  const totalEmployees = employees.length;
-  const activeEmployees = employees.filter(emp => emp.is_active ?? true).length;
-  const inactiveEmployees = totalEmployees - activeEmployees;
-  const permanentEmployees = employees.filter(emp => emp.employee_type === 'permanent').length;
+export const EmployeeStatsCards: React.FC<EmployeeStatsCardsProps> = ({
+  totalEmployees,
+  activeEmployees,
+  archivedEmployees,
+  inactiveEmployees,
+  isLoading = false,
+}) => {
+  console.log('📊 EmployeeStatsCards - Rendering with data:', {
+    totalEmployees,
+    activeEmployees,
+    archivedEmployees,
+    inactiveEmployees,
+    isLoading
+  });
 
-  const stats = [
+  const statsCards = [
     {
-      title: 'סך הכל עובדים',
-      value: totalEmployees,
+      title: 'עובדים קיימים',
+      value: isLoading ? '...' : totalEmployees?.toString() || '0',
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
     {
-      title: 'עובדים פעילים',
-      value: activeEmployees,
-      icon: UserCheck,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-    },
-    {
       title: 'עובדים לא פעילים',
-      value: inactiveEmployees,
+      value: isLoading ? '...' : inactiveEmployees?.toString() || '0',
       icon: UserX,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
     },
     {
-      title: 'עובדים קבועים',
-      value: permanentEmployees,
+      title: 'עובדים פעילים',
+      value: isLoading ? '...' : activeEmployees?.toString() || '0',
+      icon: UserCheck,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+    },
+    {
+      title: 'סה"כ עובדים',
+      value: isLoading ? '...' : (totalEmployees + archivedEmployees)?.toString() || '0',
       icon: Clock,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
@@ -47,20 +59,24 @@ export const EmployeeStatsCards: React.FC<EmployeeStatsCardsProps> = ({ employee
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {stats.map((stat, index) => {
-        const Icon = stat.icon;
+      {statsCards.map((stat, index) => {
+        const IconComponent = stat.icon;
         return (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                {stat.title}
-              </CardTitle>
-              <div className={`p-2 rounded-full ${stat.bgColor}`}>
-                <Icon className={`h-4 w-4 ${stat.color}`} />
+          <Card key={index} className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">
+                    {stat.title}
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stat.value}
+                  </p>
+                </div>
+                <div className={`p-3 rounded-full ${stat.bgColor}`}>
+                  <IconComponent className={`h-5 w-5 ${stat.color}`} />
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
             </CardContent>
           </Card>
         );

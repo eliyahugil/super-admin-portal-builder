@@ -1,113 +1,139 @@
 
-import React from 'react';
-import { EmployeesList } from './EmployeesList';
+import React, { useState } from 'react';
 import { EmployeeManagementHeader } from './EmployeeManagementHeader';
+import { EmployeeStatsCards } from './EmployeeStatsCards';
 import { EmployeeManagementLoading } from './EmployeeManagementLoading';
 import { EmployeeManagementEmptyState } from './EmployeeManagementEmptyState';
-import { EmployeeStatsCards } from './EmployeeStatsCards';
-import { ManagementToolsSection } from './ManagementToolsSection/ManagementToolsSection';
+import { EmployeesList } from './EmployeesList';
 import { ArchivedEmployeesList } from './ArchivedEmployeesList';
-import { useEmployeeManagement } from './hooks/useEmployeeManagement';
-import { useBranchesData } from '@/hooks/useBranchesData';
+import { ManagementToolsSection } from './ManagementToolsSection';
+import { useEmployees } from '@/hooks/useEmployees';
+import { useEmployeeStats } from '@/hooks/useEmployeeStats';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 interface EmployeeManagementProps {
   selectedBusinessId?: string | null;
 }
 
-export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ selectedBusinessId }) => {
-  console.log('👥 EmployeeManagement rendering with selectedBusinessId:', selectedBusinessId);
+export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ 
+  selectedBusinessId 
+}) => {
+  const { businessId: contextBusinessId } = useCurrentBusiness();
+  const effectiveBusinessId = selectedBusinessId || contextBusinessId;
   
-  const {
-    employees,
-    isLoading,
-    error,
-    refetch,
-    searchTerm,
-    setSearchTerm,
-    selectedBranch,
-    setSelectedBranch,
-    selectedEmployeeType,
-    setSelectedEmployeeType,
-    isArchived,
-    setIsArchived,
-  } = useEmployeeManagement(selectedBusinessId);
+  console.log('👥 EmployeeManagement - Effective Business ID:', effectiveBusinessId);
 
-  const { data: branches = [] } = useBranchesData(selectedBusinessId);
+  const [showArchived, setShowArchived] = useState(false);
+  
+  // Fetch employees data
+  const { 
+    data: employees = [], 
+    isLoading: employeesLoading, 
+    error: employeesError,
+    refetch: refetchEmployees 
+  } = useEmployees(effectiveBusinessId);
 
-  console.log('📋 EmployeeManagement rendering with:', {
-    selectedBusinessId,
+  // Fetch employee statistics
+  const { 
+    data: stats = {
+      totalEmployees: 0,
+      activeEmployees: 0,
+      inactiveEmployees: 0,
+      archivedEmployees: 0,
+    }, 
+    isLoading: statsLoading,
+    error: statsError
+  } = useEmployeeStats(effectiveBusinessId);
+
+  console.log('👥 EmployeeManagement - Data state:', {
     employeesCount: employees.length,
-    isArchived,
-    branchesCount: branches.length
+    employeesLoading,
+    employeesError: employeesError?.message,
+    stats,
+    statsLoading,
+    statsError: statsError?.message,
+    effectiveBusinessId
   });
 
-  if (isLoading) {
-    return <EmployeeManagementLoading />;
-  }
-
-  if (error) {
-    console.error('❌ Error in EmployeeManagement:', error);
+  if (!effectiveBusinessId) {
     return (
-      <div className="text-center py-8" dir="rtl">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">שגיאה בטעינת העובדים</h3>
-        <p className="text-gray-600 mb-4">אנא נסה לרענן את הדף</p>
-        <p className="text-sm text-red-600">{error.message}</p>
+      <div className="p-6">
+        <div className="text-center py-12">
+          <p className="text-gray-500">אנא בחר עסק כדי לנהל עובדים</p>
+        </div>
       </div>
     );
   }
 
+  if (employeesLoading || statsLoading) {
+    return <EmployeeManagementLoading />;
+  }
+
+  if (employeesError || statsError) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-12">
+          <p className="text-red-600 mb-4">
+            שגיאה בטעינת נתוני העובדים: {employeesError?.message || statsError?.message}
+          </p>
+          <button 
+            onClick={() => {
+              refetchEmployees();
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            נסה שוב
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Filter employees based on archived status
+  const activeEmployees = employees.filter(emp => !emp.is_archived);
+  const archivedEmployees = employees.filter(emp => emp.is_archived);
+  const currentEmployees = showArchived ? archivedEmployees : activeEmployees;
+
   return (
-    <div className="space-y-6" dir="rtl">
-      <EmployeeManagementHeader
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        selectedBranch={selectedBranch}
-        onBranchChange={setSelectedBranch}
-        selectedEmployeeType={selectedEmployeeType}
-        onEmployeeTypeChange={setSelectedEmployeeType}
-        isArchived={isArchived}
-        onArchivedChange={setIsArchived}
-        branches={branches}
-        onRefetch={refetch}
-        selectedBusinessId={selectedBusinessId}
+    <div className="space-y-6">
+      <EmployeeManagementHeader 
+        businessId={effectiveBusinessId}
+        showArchived={showArchived}
+        onToggleArchived={setShowArchived}
+        totalActiveEmployees={activeEmployees.length}
+        totalArchivedEmployees={archivedEmployees.length}
       />
 
-      {!isArchived && (
-        <>
-          <EmployeeStatsCards employees={employees} />
-          
-          {/* Management Tools Section - Make it prominent */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4 text-blue-900">כלי ניהול מתקדמים</h2>
-            <ManagementToolsSection 
-              onRefetch={refetch} 
-              selectedBusinessId={selectedBusinessId}
-            />
-          </div>
-        </>
-      )}
+      <EmployeeStatsCards
+        totalEmployees={stats.totalEmployees}
+        activeEmployees={stats.activeEmployees}
+        inactiveEmployees={stats.inactiveEmployees}
+        archivedEmployees={stats.archivedEmployees}
+        isLoading={statsLoading}
+      />
 
-      {employees.length === 0 ? (
-        isArchived ? (
-          <div className="text-center py-8">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">אין עובדים מאורכבים</h3>
-            <p className="text-gray-600">לא נמצאו עובדים מאורכבים במערכת</p>
-          </div>
-        ) : (
-          <EmployeeManagementEmptyState onRefetch={refetch} />
-        )
-      ) : isArchived ? (
-        <ArchivedEmployeesList 
-          employees={employees} 
-          onRefetch={refetch}
-          branches={branches}
-        />
+      <ManagementToolsSection selectedBusinessId={effectiveBusinessId} />
+
+      {!showArchived && activeEmployees.length === 0 ? (
+        <EmployeeManagementEmptyState businessId={effectiveBusinessId} />
+      ) : showArchived && archivedEmployees.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500">אין עובדים בארכיון</p>
+        </div>
       ) : (
-        <EmployeesList 
-          employees={employees} 
-          onRefetch={refetch}
-          branches={branches}
-        />
+        <>
+          {showArchived ? (
+            <ArchivedEmployeesList 
+              employees={archivedEmployees}
+              businessId={effectiveBusinessId}
+            />
+          ) : (
+            <EmployeesList 
+              employees={activeEmployees}
+              businessId={effectiveBusinessId}
+            />
+          )}
+        </>
       )}
     </div>
   );
