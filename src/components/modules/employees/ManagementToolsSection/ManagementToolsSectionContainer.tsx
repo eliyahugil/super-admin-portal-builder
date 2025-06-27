@@ -12,22 +12,30 @@ export const ManagementToolsSectionContainer: React.FC<ManagementToolsSectionPro
 }) => {
   const { businessId } = useBusiness();
 
+  const handleRefetch = () => {
+    console.log('🔃 Refetching data...');
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6 w-full">
       {/* Quick Actions */}
       <QuickActionsCard 
         onCreateEmployee={onCreateEmployee}
         onCreateBranch={onCreateBranch}
+        selectedBusinessId={businessId}
       />
 
       {/* Shift Template Creator */}
       <div className="w-full">
-        <ShiftTemplateManagementSection />
+        <ShiftTemplateManagementSection selectedBusinessId={businessId} />
       </div>
 
       {/* Management Tools Grid */}
       <div className="w-full">
-        <ManagementToolsGrid businessId={businessId} />
+        <ManagementToolsGrid 
+          selectedBusinessId={businessId}
+          onRefetch={handleRefetch}
+        />
       </div>
     </div>
   );

@@ -7,12 +7,19 @@ export interface ManagementToolsSectionProps {
 export interface QuickActionsCardProps {
   onCreateEmployee: () => void;
   onCreateBranch: () => void;
+  selectedBusinessId?: string;
+}
+
+export interface ImportToolsCardProps {
+  selectedBusinessId?: string;
+  onRefetch?: () => void;
 }
 
 export interface ShiftTemplateManagementSectionProps {
-  // No specific props needed for now
+  selectedBusinessId?: string;
 }
 
 export interface ManagementToolsGridProps {
-  businessId?: string;
+  selectedBusinessId?: string;
+  onRefetch: () => void;
 }

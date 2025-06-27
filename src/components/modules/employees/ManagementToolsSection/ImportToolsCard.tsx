@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, Download } from 'lucide-react';
 import { ImportManager } from '../ImportManager';
+import { ImportToolsCardProps } from './types';
 
-interface ImportToolsCardProps {
-  selectedBusinessId?: string | null;
-}
-
-export const ImportToolsCard: React.FC<ImportToolsCardProps> = ({ selectedBusinessId }) => {
+export const ImportToolsCard: React.FC<ImportToolsCardProps> = ({ 
+  selectedBusinessId,
+  onRefetch 
+}) => {
   console.log('🔧 ImportToolsCard rendering with selectedBusinessId:', selectedBusinessId);
   
   return (
@@ -25,7 +25,10 @@ export const ImportToolsCard: React.FC<ImportToolsCardProps> = ({ selectedBusine
           
           <div className="p-4 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800 mb-2">מנהל הייבוא:</p>
-            <ImportManager selectedBusinessId={selectedBusinessId} />
+            <ImportManager 
+              selectedBusinessId={selectedBusinessId}
+              onRefetch={onRefetch}
+            />
           </div>
           
           <div className="text-xs text-gray-500">

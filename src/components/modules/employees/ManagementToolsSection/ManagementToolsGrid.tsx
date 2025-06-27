@@ -4,11 +4,7 @@ import { ImportToolsCard } from './ImportToolsCard';
 import { QuickActionsCard } from './QuickActionsCard';
 import { ShiftTemplateManagementSection } from './ShiftTemplateManagementSection';
 import { DuplicateManagementCard } from './DuplicateManagementCard';
-
-interface ManagementToolsGridProps {
-  selectedBusinessId?: string;
-  onRefetch: () => void;
-}
+import { ManagementToolsGridProps } from './types';
 
 export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({
   selectedBusinessId,
@@ -22,8 +18,9 @@ export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({
       />
       
       <QuickActionsCard 
+        onCreateEmployee={() => console.log('Create employee')}
+        onCreateBranch={() => console.log('Create branch')}
         selectedBusinessId={selectedBusinessId}
-        onRefetch={onRefetch}
       />
       
       <DuplicateManagementCard />

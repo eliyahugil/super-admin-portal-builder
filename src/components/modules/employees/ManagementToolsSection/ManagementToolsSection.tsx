@@ -55,9 +55,13 @@ export const ManagementToolsSection: React.FC<ManagementToolsSectionProps> = ({
           <QuickActionsCard 
             onCreateEmployee={handleCreateEmployee}
             onCreateBranch={handleCreateBranch}
+            selectedBusinessId={effectiveBusinessId}
           />
           
-          <ManagementToolsGrid businessId={effectiveBusinessId} />
+          <ManagementToolsGrid 
+            selectedBusinessId={effectiveBusinessId}
+            onRefetch={onRefetch}
+          />
         </div>
       </div>
 

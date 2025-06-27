@@ -7,12 +7,13 @@ import { QuickActionsCardProps } from './types';
 
 export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
   onCreateEmployee,
-  onCreateBranch
+  onCreateBranch,
+  selectedBusinessId
 }) => {
   const handleCreateEmployee = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🚀 Create employee button clicked');
+    console.log('🚀 Create employee button clicked', { selectedBusinessId });
     if (onCreateEmployee) {
       onCreateEmployee();
     }
@@ -21,7 +22,7 @@ export const QuickActionsCard: React.FC<QuickActionsCardProps> = ({
   const handleCreateBranch = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🏢 Create branch button clicked');
+    console.log('🏢 Create branch button clicked', { selectedBusinessId });
     if (onCreateBranch) {
       onCreateBranch();
     }
