@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +10,7 @@ import { ShiftsList } from './ShiftsList';
 import { EmployeeExcelImporter } from './EmployeeExcelImporter';
 import { AttendanceManagement } from './AttendanceManagement';
 import { ArchiveManagement } from '@/components/shared/ArchiveManagement';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import type { Employee } from '@/types/employee';
 import type { Branch } from '@/types/branch';
 
@@ -36,6 +36,7 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
   onCreateBranch
 }) => {
   const [showCreateBranch, setShowCreateBranch] = useState(false);
+  const { businessId } = useCurrentBusiness();
 
   return (
     <Card dir="rtl" className="w-full rounded-2xl shadow">
@@ -58,6 +59,7 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
               title="ניהול עובדים"
               activeContent={
                 <EmployeesList 
+                  businessId={businessId || ''}
                   employees={employees} 
                   onRefetch={onRefetchEmployees}
                   branches={branches}
@@ -65,6 +67,7 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
               }
               archivedContent={
                 <ArchivedEmployeesList 
+                  businessId={businessId || ''}
                   employees={archivedEmployees}
                   onRefetch={onRefetchEmployees}
                   branches={branches}
@@ -78,6 +81,7 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
 
           <TabsContent value="archived" className="mt-4 sm:mt-6">
             <ArchivedEmployeesList 
+              businessId={businessId || ''}
               employees={archivedEmployees}
               onRefetch={onRefetchEmployees}
               branches={branches}
