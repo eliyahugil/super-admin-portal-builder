@@ -12,33 +12,19 @@ import { useState } from 'react';
 import type { Branch } from '@/types/branch';
 
 interface EmployeeManagementHeaderProps {
-  onRefetch: () => void;
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
-  selectedBranch: string;
-  onBranchChange: (value: string) => void;
-  selectedEmployeeType: string;
-  onEmployeeTypeChange: (value: string) => void;
-  isArchived: boolean;
-  onArchivedChange: (value: boolean) => void;
-  branches: Branch[];
-  selectedBusinessId?: string | null;
-  hideFilters?: boolean;
+  businessId: string;
+  showArchived: boolean;
+  onToggleArchived: (value: boolean) => void;
+  totalActiveEmployees: number;
+  totalArchivedEmployees: number;
 }
 
 export const EmployeeManagementHeader: React.FC<EmployeeManagementHeaderProps> = ({
-  onRefetch,
-  searchTerm,
-  onSearchChange,
-  selectedBranch,
-  onBranchChange,
-  selectedEmployeeType,
-  onEmployeeTypeChange,
-  isArchived,
-  onArchivedChange,
-  branches,
-  selectedBusinessId,
-  hideFilters = false,
+  businessId,
+  showArchived,
+  onToggleArchived,
+  totalActiveEmployees,
+  totalArchivedEmployees,
 }) => {
   const [createEmployeeOpen, setCreateEmployeeOpen] = useState(false);
 
@@ -51,9 +37,14 @@ export const EmployeeManagementHeader: React.FC<EmployeeManagementHeaderProps> =
             <h1 className="text-2xl font-bold">ניהול עובדים</h1>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onRefetch}>
-              <RefreshCw className="h-4 w-4 ml-2" />
-              רענן
+            <Button 
+              variant={showArchived ? "default" : "outline"}
+              onClick={() => onToggleArchived(!showArchived)}
+            >
+              {showArchived 
+                ? `עובדים פעילים (${totalActiveEmployees})` 
+                : `ארכיון (${totalArchivedEmployees})`
+              }
             </Button>
             <Button onClick={() => setCreateEmployeeOpen(true)}>
               <Plus className="h-4 w-4 ml-2" />
@@ -61,81 +52,13 @@ export const EmployeeManagementHeader: React.FC<EmployeeManagementHeaderProps> =
             </Button>
           </div>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>סינון וחיפוש</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="חפש עובד לפי שם, טלפון או מייל..."
-                value={searchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="pr-10"
-              />
-            </div>
-
-            {/* Filters - hide when hideFilters is true */}
-            {!hideFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Branch Filter */}
-                <div>
-                  <Label htmlFor="branch-select">סניף</Label>
-                  <Select value={selectedBranch || "all"} onValueChange={(value) => onBranchChange(value === "all" ? "" : value)}>
-                    <SelectTrigger id="branch-select">
-                      <SelectValue placeholder="כל הסניפים" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">כל הסניפים</SelectItem>
-                      {branches?.map((branch) => (
-                        <SelectItem key={branch.id} value={branch.id}>
-                          {branch.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Employee Type Filter */}
-                <div>
-                  <Label htmlFor="type-select">סוג עובד</Label>
-                  <Select value={selectedEmployeeType || "all"} onValueChange={(value) => onEmployeeTypeChange(value === "all" ? "" : value)}>
-                    <SelectTrigger id="type-select">
-                      <SelectValue placeholder="כל הסוגים" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">כל הסוגים</SelectItem>
-                      <SelectItem value="permanent">קבוע</SelectItem>
-                      <SelectItem value="temporary">זמני</SelectItem>
-                      <SelectItem value="contractor">קבלן</SelectItem>
-                      <SelectItem value="youth">נוער</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Archive Toggle */}
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Switch
-                    id="archived-toggle"
-                    checked={isArchived}
-                    onCheckedChange={onArchivedChange}
-                  />
-                  <Label htmlFor="archived-toggle">עובדים בארכיון</Label>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       <CreateEmployeeDialog
         open={createEmployeeOpen}
         onOpenChange={setCreateEmployeeOpen}
-        onSuccess={onRefetch}
-        branches={branches}
+        onSuccess={() => {}}
+        branches={[]}
       />
     </>
   );

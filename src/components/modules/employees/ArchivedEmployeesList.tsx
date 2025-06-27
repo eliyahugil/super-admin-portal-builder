@@ -7,15 +7,17 @@ import type { Employee, EmployeeType } from '@/types/employee';
 import type { Branch } from '@/types/branch';
 
 interface ArchivedEmployeesListProps {
+  businessId: string;
   employees: Employee[];
-  onRefetch: () => void;
-  branches: Branch[];
+  onRefetch?: () => void;
+  branches?: Branch[];
 }
 
 export const ArchivedEmployeesList: React.FC<ArchivedEmployeesListProps> = ({ 
+  businessId,
   employees, 
-  onRefetch, 
-  branches 
+  onRefetch = () => {}, 
+  branches = [] 
 }) => {
   const getEmployeeTypeLabel = (type: EmployeeType) => {
     const types: Record<EmployeeType, string> = {

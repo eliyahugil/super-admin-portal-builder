@@ -112,10 +112,16 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
         isLoading={statsLoading}
       />
 
-      <ManagementToolsSection selectedBusinessId={effectiveBusinessId} />
+      <ManagementToolsSection 
+        selectedBusinessId={effectiveBusinessId} 
+        onRefetch={refetchEmployees}
+      />
 
       {!showArchived && activeEmployees.length === 0 ? (
-        <EmployeeManagementEmptyState businessId={effectiveBusinessId} />
+        <EmployeeManagementEmptyState 
+          businessId={effectiveBusinessId} 
+          onRefetch={refetchEmployees}
+        />
       ) : showArchived && archivedEmployees.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500">אין עובדים בארכיון</p>
@@ -124,13 +130,15 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
         <>
           {showArchived ? (
             <ArchivedEmployeesList 
-              employees={archivedEmployees}
               businessId={effectiveBusinessId}
+              employees={archivedEmployees}
+              onRefetch={refetchEmployees}
             />
           ) : (
             <EmployeesList 
-              employees={activeEmployees}
               businessId={effectiveBusinessId}
+              employees={activeEmployees}
+              onRefetch={refetchEmployees}
             />
           )}
         </>

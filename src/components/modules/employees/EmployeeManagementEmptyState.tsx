@@ -5,10 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Users, Plus } from 'lucide-react';
 
 interface EmployeeManagementEmptyStateProps {
+  businessId: string;
   onRefetch?: () => void;
 }
 
-export const EmployeeManagementEmptyState: React.FC<EmployeeManagementEmptyStateProps> = ({ onRefetch }) => {
+export const EmployeeManagementEmptyState: React.FC<EmployeeManagementEmptyStateProps> = ({ 
+  businessId,
+  onRefetch 
+}) => {
   return (
     <Card>
       <CardContent className="flex flex-col items-center justify-center py-16">

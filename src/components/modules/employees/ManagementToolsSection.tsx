@@ -4,13 +4,13 @@ import { ShiftsAdminTable } from '@/components/modules/employees/ShiftsAdminTabl
 import { CreateShiftFormContainer } from '@/components/modules/employees/CreateShiftForm/CreateShiftFormContainer';
 
 interface ManagementToolsSectionProps {
-  onRefetch: () => void;
   selectedBusinessId?: string | null;
+  onRefetch?: () => void;
 }
 
 export const ManagementToolsSection: React.FC<ManagementToolsSectionProps> = ({ 
-  onRefetch, 
-  selectedBusinessId 
+  selectedBusinessId,
+  onRefetch = () => {}
 }) => {
   // Use selectedBusinessId if provided, otherwise the components will use their own business logic
   const businessIdToUse = selectedBusinessId;

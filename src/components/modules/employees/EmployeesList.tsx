@@ -7,15 +7,17 @@ import type { Employee } from '@/types/employee';
 import type { Branch } from '@/types/branch';
 
 interface EmployeesListProps {
+  businessId: string;
   employees: Employee[];
-  onRefetch: () => void;
-  branches: Branch[];
+  onRefetch?: () => void;
+  branches?: Branch[];
 }
 
 export const EmployeesList: React.FC<EmployeesListProps> = ({
+  businessId,
   employees,
-  onRefetch,
-  branches,
+  onRefetch = () => {},
+  branches = [],
 }) => {
   const {
     searchTerm,
@@ -37,6 +39,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
   } = useEmployeeListLogic(employees, onRefetch);
 
   console.log('📋 EmployeesList rendering with:', {
+    businessId,
     employeesCount: employees.length,
     searchTerm,
     selectedCount: selectedEmployees.size,
