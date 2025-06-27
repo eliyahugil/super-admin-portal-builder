@@ -11,8 +11,6 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { archiveEntity } = useEmployeeArchive();
 
   // Use pagination hook
   const {
@@ -55,25 +53,41 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     }
 
     setLoading(true);
+    
     try {
-      archiveEntity(employee, {
-        onSuccess: () => {
-          // Remove from selection
-          const newSelected = new Set(selectedEmployees);
-          newSelected.delete(employee.id);
-          setSelectedEmployees(newSelected);
-          
-          // Trigger parent refetch
-          setTimeout(() => {
-            onRefetch();
-            setLoading(false);
-          }, 500);
-        },
-        onError: () => {
-          setLoading(false);
-        }
+      const { data, error } = await supabase
+        .from('employees')
+        .update({ is_archived: true })
+        .eq('id', employee.id)
+        .select();
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('✅ Employee archived successfully');
+      
+      toast({
+        title: 'הצלחה',
+        description: `העובד "${employeeName}" הועבר לארכיון`,
       });
+
+      // Remove from selection
+      const newSelected = new Set(selectedEmployees);
+      newSelected.delete(employee.id);
+      setSelectedEmployees(newSelected);
+      
+      // Trigger parent refetch immediately
+      onRefetch();
+      
     } catch (error) {
+      console.error('Error archiving employee:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן להעביר את העובד לארכיון',
+        variant: 'destructive',
+      });
+    } finally {
       setLoading(false);
     }
   };
@@ -94,15 +108,14 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     try {
       for (const employee of selectedEmployeesList) {
         try {
-          await new Promise<void>((resolve, reject) => {
-            archiveEntity(employee, {
-              onSuccess: () => {
-                successCount++;
-                resolve();
-              },
-              onError: (error: any) => reject(error)
-            });
-          });
+          const { error } = await supabase
+            .from('employees')
+            .update({ is_archived: true })
+            .eq('id', employee.id);
+
+          if (!error) {
+            successCount++;
+          }
         } catch (error) {
           console.error('Error archiving employee:', employee.id, error);
         }
@@ -115,14 +128,12 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
 
       setSelectedEmployees(new Set());
       
-      // Trigger parent refetch
-      setTimeout(() => {
-        onRefetch();
-        setLoading(false);
-      }, 500);
+      // Trigger parent refetch immediately
+      onRefetch();
 
     } catch (error) {
       console.error('Error bulk archiving:', error);
+    } finally {
       setLoading(false);
     }
   };

@@ -64,26 +64,21 @@ export const useGenericArchive = ({
         description: `${entityName} "${displayName}" הועבר לארכיון`,
       });
 
-      // Invalidate ALL related queries with proper keys
-      console.log('🔄 Invalidating queries after archive...');
+      // Clear cache completely for immediate update
+      console.log('🔄 Clearing cache after archive...');
       
-      // Base queries
-      await queryClient.invalidateQueries({ queryKey });
-      await queryClient.invalidateQueries({ queryKey: ['employees'] });
-      await queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
-      
-      // Business-specific queries
       const businessId = entity.business_id;
+      
+      // Remove from query cache
+      queryClient.removeQueries({ queryKey: ['employees'] });
+      queryClient.removeQueries({ queryKey: ['employee-stats'] });
+      
       if (businessId) {
-        await queryClient.invalidateQueries({ queryKey: ['employees', businessId] });
-        await queryClient.invalidateQueries({ queryKey: ['employee-stats', businessId] });
-        await queryClient.invalidateQueries({ queryKey: ['employees-data', businessId] });
+        queryClient.removeQueries({ queryKey: ['employees', businessId] });
+        queryClient.removeQueries({ queryKey: ['employee-stats', businessId] });
       }
       
-      // Wait a bit for database consistency
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Call the success callback if provided
+      // Call the success callback immediately
       if (onSuccess) {
         console.log('🔄 Calling onSuccess callback after archiving');
         onSuccess();
@@ -136,26 +131,21 @@ export const useGenericArchive = ({
         description: `${entityName} "${displayName}" שוחזר מהארכיון`,
       });
 
-      // Invalidate ALL related queries with proper keys
-      console.log('🔄 Invalidating queries after restore...');
+      // Clear cache completely for immediate update
+      console.log('🔄 Clearing cache after restore...');
       
-      // Base queries
-      await queryClient.invalidateQueries({ queryKey });
-      await queryClient.invalidateQueries({ queryKey: ['employees'] });
-      await queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
-      
-      // Business-specific queries
       const businessId = entity.business_id;
+      
+      // Remove from query cache
+      queryClient.removeQueries({ queryKey: ['employees'] });
+      queryClient.removeQueries({ queryKey: ['employee-stats'] });
+      
       if (businessId) {
-        await queryClient.invalidateQueries({ queryKey: ['employees', businessId] });
-        await queryClient.invalidateQueries({ queryKey: ['employee-stats', businessId] });
-        await queryClient.invalidateQueries({ queryKey: ['employees-data', businessId] });
+        queryClient.removeQueries({ queryKey: ['employees', businessId] });
+        queryClient.removeQueries({ queryKey: ['employee-stats', businessId] });
       }
       
-      // Wait a bit for database consistency
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Call the success callback if provided
+      // Call the success callback immediately
       if (onSuccess) {
         console.log('🔄 Calling onSuccess callback after restoring');
         onSuccess();

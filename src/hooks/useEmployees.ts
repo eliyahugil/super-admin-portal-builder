@@ -78,7 +78,7 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
     },
     enabled: !!effectiveBusinessId,
     staleTime: 0, // Always fetch fresh data
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchOnMount: true,
   });
 };

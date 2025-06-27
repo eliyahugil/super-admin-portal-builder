@@ -22,6 +22,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
   const effectiveBusinessId = selectedBusinessId || contextBusinessId;
   
   const [showArchived, setShowArchived] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   
   // Fetch employees data
   const { 
@@ -45,6 +46,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
 
   const handleRefetch = async () => {
     console.log('🔄 Manual refetch triggered');
+    setRefreshKey(prev => prev + 1);
     await Promise.all([
       refetchEmployees(),
       refetchStats()
@@ -82,7 +84,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" key={refreshKey}>
       <EmployeeManagementHeader 
         businessId={effectiveBusinessId}
         showArchived={showArchived}
