@@ -1,6 +1,6 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import type { Employee } from '@/types/employee';
 import { useEmployeeListPagination } from './useEmployeeListPagination';
 import { useGenericArchive } from '@/hooks/useGenericArchive';
