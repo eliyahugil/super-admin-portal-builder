@@ -20,8 +20,8 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
   branches = [],
 }) => {
   const {
-    searchTerm,
-    setSearchTerm,
+    preferences,
+    updateFilters,
     selectedEmployees,
     paginatedEmployees,
     loading,
@@ -32,28 +32,28 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
     // Pagination props
     currentPage,
     totalPages,
-    totalEmployees,
+    filteredCount,
     pageSize,
     handlePageSizeChange,
     handlePageChange,
-  } = useEmployeeListLogic(employees, onRefetch);
+  } = useEmployeeListLogic(employees, onRefetch, businessId);
 
   console.log('📋 EmployeesList rendering with:', {
     businessId,
     employeesCount: employees.length,
-    searchTerm,
+    searchTerm: preferences.filters.searchTerm,
     selectedCount: selectedEmployees.size,
     branchesCount: branches.length,
     currentPage,
     pageSize,
-    totalEmployees
+    totalEmployees: filteredCount
   });
 
   return (
     <div className="space-y-4" dir="rtl">
       <EmployeeListHeader
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
+        searchTerm={preferences.filters.searchTerm}
+        onSearchChange={(term) => updateFilters({ searchTerm: term })}
         selectedCount={selectedEmployees.size}
         onBulkDelete={handleBulkDelete}
         loading={loading}
@@ -61,14 +61,14 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
 
       <EmployeeListContent
         employees={paginatedEmployees}
-        searchTerm={searchTerm}
+        searchTerm={preferences.filters.searchTerm}
         selectedEmployees={selectedEmployees}
         onSelectEmployee={handleSelectEmployee}
         onSelectAll={handleSelectAll}
         onDeleteEmployee={handleDeleteEmployee}
         onRefetch={onRefetch}
         loading={loading}
-        totalEmployees={totalEmployees}
+        totalEmployees={filteredCount}
         currentPage={currentPage}
         totalPages={totalPages}
         pageSize={pageSize}

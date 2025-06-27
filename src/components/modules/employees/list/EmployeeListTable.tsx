@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { EmployeeListTableHeader } from './EmployeeListTableHeader';
 import { EmployeeListProfileCell } from './EmployeeListProfileCell';
 import { EmployeeListPhoneCell } from './EmployeeListPhoneCell';
 import { EmployeeListTypeCell } from './EmployeeListTypeCell';
@@ -10,6 +11,7 @@ import { EmployeeListWeeklyHoursCell } from './EmployeeListWeeklyHoursCell';
 import { EmployeeListStatusCell } from './EmployeeListStatusCell';
 import { EmployeeListActionsCell } from './EmployeeListActionsCell';
 import { EmployeeListCard } from './EmployeeListCard';
+import { useEmployeeListPreferences } from '@/hooks/useEmployeeListPreferences';
 import type { Employee } from '@/types/employee';
 
 interface EmployeeListTableProps {
@@ -45,7 +47,17 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
   loading,
 }) => {
   const isMobile = useIsMobile();
+  const { preferences, updateFilters } = useEmployeeListPreferences();
   const allFilteredSelected = employees.length > 0 && employees.every(emp => selectedEmployees.has(emp.id));
+
+  const handleSort = (sortBy: typeof preferences.filters.sortBy) => {
+    const newSortOrder = 
+      preferences.filters.sortBy === sortBy && preferences.filters.sortOrder === 'asc' 
+        ? 'desc' 
+        : 'asc';
+    
+    updateFilters({ sortBy, sortOrder: newSortOrder });
+  };
 
   // Mobile view: show cards in full width container
   if (isMobile) {
@@ -101,14 +113,11 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
                 onCheckedChange={onSelectAll}
               />
             </TableHead>
-            <TableHead className="text-right">שם מלא</TableHead>
-            <TableHead className="text-right">מספר עובד</TableHead>
-            <TableHead className="text-right">טלפון</TableHead>
-            <TableHead className="text-right">סוג עובד</TableHead>
-            <TableHead className="text-right">סניף</TableHead>
-            <TableHead className="text-right">שעות שבועיות</TableHead>
-            <TableHead className="text-right">סטטוס</TableHead>
-            <TableHead className="text-right">פעולות</TableHead>
+            <EmployeeListTableHeader
+              sortBy={preferences.filters.sortBy}
+              sortOrder={preferences.filters.sortOrder}
+              onSort={handleSort}
+            />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -144,6 +153,11 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
               </TableCell>
               <TableCell>
                 <EmployeeListStatusCell isActive={!!employee.is_active} />
+              </TableCell>
+              <TableCell>
+                <span className="text-sm text-gray-500">
+                  {new Date(employee.created_at).toLocaleDateString('he-IL')}
+                </span>
               </TableCell>
               <TableCell>
                 <EmployeeListActionsCell

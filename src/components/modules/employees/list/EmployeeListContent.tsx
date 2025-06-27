@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { EmployeeListHeader } from './EmployeeListHeader';
 import { EmployeeListTable } from './EmployeeListTable';
 import { EmployeeListPagination } from './EmployeeListPagination';
 import type { Employee } from '@/types/employee';
@@ -53,10 +52,13 @@ export const EmployeeListContent: React.FC<EmployeeListContentProps> = ({
   return (
     <div className="space-y-4" dir="rtl">
       <Card>
-        <EmployeeListHeader
-          totalEmployees={totalEmployees}
-          selectedCount={selectedEmployees.size}
-        />
+        <div className="p-4 bg-gray-50 rounded-t-lg">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600">
+              סה"כ {totalEmployees} עובדים
+            </span>
+          </div>
+        </div>
         
         <CardContent>
           <EmployeeListTable
