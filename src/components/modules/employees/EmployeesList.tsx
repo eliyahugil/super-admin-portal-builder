@@ -29,6 +29,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
     handleSelectAll,
     handleDeleteEmployee,
     handleBulkDelete,
+    handleSort,
     // Pagination props
     currentPage,
     totalPages,
@@ -74,6 +75,9 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
         pageSize={pageSize}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
+        sortBy={preferences.filters.sortBy}
+        sortOrder={preferences.filters.sortOrder}
+        onSort={handleSort}
       />
     </div>
   );

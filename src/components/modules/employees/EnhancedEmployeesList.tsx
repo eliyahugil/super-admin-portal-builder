@@ -49,6 +49,9 @@ export const EnhancedEmployeesList: React.FC<EnhancedEmployeesListProps> = ({
     handleBulkDelete,
     clearSelectedEmployees,
     
+    // מיון
+    handleSort,
+    
     // מצב
     loading,
   } = useEmployeeListLogic(employees, onRefetch, businessId);
@@ -98,6 +101,9 @@ export const EnhancedEmployeesList: React.FC<EnhancedEmployeesListProps> = ({
         pageSize={pageSize}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
+        sortBy={preferences.filters.sortBy}
+        sortOrder={preferences.filters.sortOrder}
+        onSort={handleSort}
       />
 
       {/* כפתור מחיקה קבוצתית */}

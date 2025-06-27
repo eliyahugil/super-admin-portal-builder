@@ -68,6 +68,17 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     loading,
   } = useEmployeeActions(onRefetch, selectedEmployees, clearSelectedEmployees);
 
+  // פונקציה לטיפול במיון
+  const handleSort = (sortBy: typeof preferences.filters.sortBy) => {
+    const newSortOrder = 
+      preferences.filters.sortBy === sortBy && preferences.filters.sortOrder === 'asc' 
+        ? 'desc' 
+        : 'asc';
+    
+    console.log('🔄 handleSort in useEmployeeListLogic:', { sortBy, newSortOrder, currentSortBy: preferences.filters.sortBy });
+    updateFilters({ sortBy, sortOrder: newSortOrder });
+  };
+
   return {
     // נתונים
     allEmployees: employees,
@@ -97,6 +108,9 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     handleDeleteEmployee,
     handleBulkDelete: () => handleBulkDelete(sortedEmployees),
     clearSelectedEmployees,
+    
+    // מיון
+    handleSort,
     
     // מצב
     loading,

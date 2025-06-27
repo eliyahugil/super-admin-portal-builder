@@ -5,6 +5,7 @@ import { EmployeeListTable } from './EmployeeListTable';
 import { EmployeeListPagination } from './EmployeeListPagination';
 import type { Employee } from '@/types/employee';
 import type { PageSize } from './useEmployeeListPagination';
+import type { EmployeeListFilters } from '@/hooks/useEmployeeListPreferences';
 
 interface EmployeeListContentProps {
   employees: Employee[];
@@ -21,6 +22,10 @@ interface EmployeeListContentProps {
   pageSize: PageSize;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: PageSize) => void;
+  // הוספת פרופס למיון
+  sortBy: EmployeeListFilters['sortBy'];
+  sortOrder: EmployeeListFilters['sortOrder'];
+  onSort: (sortBy: EmployeeListFilters['sortBy']) => void;
 }
 
 export const EmployeeListContent: React.FC<EmployeeListContentProps> = ({
@@ -38,6 +43,9 @@ export const EmployeeListContent: React.FC<EmployeeListContentProps> = ({
   pageSize,
   onPageChange,
   onPageSizeChange,
+  sortBy,
+  sortOrder,
+  onSort,
 }) => {
   if (loading && employees.length === 0) {
     return (
@@ -69,6 +77,9 @@ export const EmployeeListContent: React.FC<EmployeeListContentProps> = ({
             onDeleteEmployee={onDeleteEmployee}
             onRefetch={onRefetch}
             loading={loading}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSort={onSort}
           />
         </CardContent>
       </Card>

@@ -11,8 +11,8 @@ import { EmployeeListWeeklyHoursCell } from './EmployeeListWeeklyHoursCell';
 import { EmployeeListStatusCell } from './EmployeeListStatusCell';
 import { EmployeeListActionsCell } from './EmployeeListActionsCell';
 import { EmployeeListCard } from './EmployeeListCard';
-import { useEmployeeListPreferences } from '@/hooks/useEmployeeListPreferences';
 import type { Employee } from '@/types/employee';
+import type { EmployeeListFilters } from '@/hooks/useEmployeeListPreferences';
 
 interface EmployeeListTableProps {
   employees: Employee[];
@@ -22,6 +22,10 @@ interface EmployeeListTableProps {
   onDeleteEmployee: (employee: Employee) => void;
   onRefetch: () => void;
   loading: boolean;
+  // הוספת פרופס למיון
+  sortBy: EmployeeListFilters['sortBy'];
+  sortOrder: EmployeeListFilters['sortOrder'];
+  onSort: (sortBy: EmployeeListFilters['sortBy']) => void;
 }
 
 function useIsMobile() {
@@ -45,25 +49,17 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
   onDeleteEmployee,
   onRefetch,
   loading,
+  sortBy,
+  sortOrder,
+  onSort,
 }) => {
   const isMobile = useIsMobile();
-  const { preferences, updateFilters } = useEmployeeListPreferences();
   const allFilteredSelected = employees.length > 0 && employees.every(emp => selectedEmployees.has(emp.id));
-
-  const handleSort = (sortBy: typeof preferences.filters.sortBy) => {
-    const newSortOrder = 
-      preferences.filters.sortBy === sortBy && preferences.filters.sortOrder === 'asc' 
-        ? 'desc' 
-        : 'asc';
-    
-    console.log('🔄 EmployeeListTable handleSort:', { sortBy, newSortOrder, currentSortBy: preferences.filters.sortBy });
-    updateFilters({ sortBy, sortOrder: newSortOrder });
-  };
 
   console.log('📊 EmployeeListTable render:', {
     employeesCount: employees.length,
-    currentSort: preferences.filters.sortBy,
-    currentOrder: preferences.filters.sortOrder,
+    sortBy,
+    sortOrder,
     firstEmployee: employees[0] ? `${employees[0].first_name} ${employees[0].last_name}` : 'none'
   });
 
@@ -122,9 +118,9 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
               />
             </TableHead>
             <EmployeeListTableHeader
-              sortBy={preferences.filters.sortBy}
-              sortOrder={preferences.filters.sortOrder}
-              onSort={handleSort}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={onSort}
             />
           </TableRow>
         </TableHeader>
