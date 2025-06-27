@@ -26,11 +26,22 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
   
   // Fetch employees data
   const { 
-    data: employees = [], 
+    data: allEmployees = [], 
     isLoading: employeesLoading, 
     error: employeesError,
     refetch: refetchEmployees 
   } = useEmployees(effectiveBusinessId);
+
+  // Filter out archived employees for the main list
+  const activeEmployees = allEmployees.filter(emp => !emp.is_archived);
+
+  console.log('📊 EmployeeManagement - Employee data:', {
+    totalEmployees: allEmployees.length,
+    activeEmployees: activeEmployees.length,
+    archivedEmployees: allEmployees.filter(emp => emp.is_archived).length,
+    showArchived,
+    refreshKey
+  });
 
   // Fetch employee statistics
   const { 
@@ -45,7 +56,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
   } = useEmployeeStats(effectiveBusinessId);
 
   const handleRefetch = async () => {
-    console.log('🔄 Manual refetch triggered');
+    console.log('🔄 Manual refetch triggered - incrementing refresh key');
     setRefreshKey(prev => prev + 1);
     await Promise.all([
       refetchEmployees(),
@@ -89,7 +100,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
         businessId={effectiveBusinessId}
         showArchived={showArchived}
         onToggleArchived={setShowArchived}
-        totalActiveEmployees={employees.length}
+        totalActiveEmployees={activeEmployees.length}
         totalArchivedEmployees={stats.archivedEmployees}
       />
 
@@ -106,7 +117,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
         onRefetch={handleRefetch}
       />
 
-      {!showArchived && employees.length === 0 ? (
+      {!showArchived && activeEmployees.length === 0 ? (
         <EmployeeManagementEmptyState 
           businessId={effectiveBusinessId} 
           onRefetch={handleRefetch}
@@ -120,7 +131,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
       ) : (
         <EmployeesList 
           businessId={effectiveBusinessId}
-          employees={employees}
+          employees={activeEmployees}
           onRefetch={handleRefetch}
         />
       )}

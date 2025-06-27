@@ -1,10 +1,9 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
 import type { Employee } from '@/types/employee';
 import { useEmployeeListPagination } from './useEmployeeListPagination';
-import { useEmployeeArchive } from '@/hooks/useEmployeeArchive';
+import { useGenericArchive } from '@/hooks/useGenericArchive';
 
 export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => void) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +23,18 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
   } = useEmployeeListPagination({
     employees,
     searchTerm,
+  });
+
+  // Use the generic archive hook
+  const { archiveEntity, isArchiving } = useGenericArchive({
+    tableName: 'employees',
+    entityName: 'העובד',
+    queryKey: ['employees'],
+    getEntityDisplayName: (emp: Employee) => `${emp.first_name} ${emp.last_name}`,
+    onSuccess: () => {
+      console.log('🔄 Archive success callback - triggering refetch');
+      onRefetch();
+    }
   });
 
   const handleSelectEmployee = (employeeId: string, checked: boolean) => {
@@ -52,34 +63,14 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
       return;
     }
 
-    setLoading(true);
-    
     try {
-      const { data, error } = await supabase
-        .from('employees')
-        .update({ is_archived: true })
-        .eq('id', employee.id)
-        .select();
-
-      if (error) {
-        throw error;
-      }
-
-      console.log('✅ Employee archived successfully');
-      
-      toast({
-        title: 'הצלחה',
-        description: `העובד "${employeeName}" הועבר לארכיון`,
-      });
-
-      // Remove from selection
+      // Remove from selection immediately
       const newSelected = new Set(selectedEmployees);
       newSelected.delete(employee.id);
       setSelectedEmployees(newSelected);
-      
-      // Trigger parent refetch immediately
-      onRefetch();
-      
+
+      // Use the generic archive function
+      archiveEntity(employee);
     } catch (error) {
       console.error('Error archiving employee:', error);
       toast({
@@ -87,8 +78,6 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
         description: 'לא ניתן להעביר את העובד לארכיון',
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -103,19 +92,15 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     }
 
     setLoading(true);
-    let successCount = 0;
     
     try {
+      // Clear selection immediately
+      setSelectedEmployees(new Set());
+
+      // Archive each employee using the generic function
       for (const employee of selectedEmployeesList) {
         try {
-          const { error } = await supabase
-            .from('employees')
-            .update({ is_archived: true })
-            .eq('id', employee.id);
-
-          if (!error) {
-            successCount++;
-          }
+          archiveEntity(employee);
         } catch (error) {
           console.error('Error archiving employee:', employee.id, error);
         }
@@ -123,13 +108,13 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
 
       toast({
         title: 'הצלחה',
-        description: `${successCount} עובדים הועברו לארכיון`,
+        description: `מעביר ${selectedEmployees.size} עובדים לארכיון`,
       });
 
-      setSelectedEmployees(new Set());
-      
-      // Trigger parent refetch immediately
-      onRefetch();
+      // Single refetch after all operations
+      setTimeout(() => {
+        onRefetch();
+      }, 1000);
 
     } catch (error) {
       console.error('Error bulk archiving:', error);
@@ -143,7 +128,7 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     setSearchTerm,
     selectedEmployees,
     paginatedEmployees,
-    loading,
+    loading: loading || isArchiving,
     handleSelectEmployee,
     handleSelectAll,
     handleDeleteEmployee,
