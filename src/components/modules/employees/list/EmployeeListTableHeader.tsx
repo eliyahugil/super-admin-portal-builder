@@ -1,58 +1,8 @@
 
 import React from 'react';
 import { TableHead } from '@/components/ui/table';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { EmployeeListFilters } from '@/hooks/useEmployeeListPreferences';
-
-interface SortableHeaderProps {
-  children: React.ReactNode;
-  sortKey: EmployeeListFilters['sortBy'];
-  currentSortBy: EmployeeListFilters['sortBy'];
-  currentSortOrder: EmployeeListFilters['sortOrder'];
-  onSort: (sortBy: EmployeeListFilters['sortBy']) => void;
-  className?: string;
-}
-
-const SortableHeader: React.FC<SortableHeaderProps> = ({
-  children,
-  sortKey,
-  currentSortBy,
-  currentSortOrder,
-  onSort,
-  className,
-}) => {
-  const isActive = currentSortBy === sortKey;
-  
-  const handleClick = () => {
-    console.log('🔄 Sorting by:', sortKey, 'Current:', currentSortBy, 'Order:', currentSortOrder);
-    onSort(sortKey);
-  };
-  
-  return (
-    <TableHead 
-      className={`cursor-pointer hover:bg-gray-50 select-none ${className}`}
-      onClick={handleClick}
-    >
-      <div className="flex items-center gap-1 justify-end">
-        {children}
-        <div className="flex flex-col w-4">
-          {isActive ? (
-            currentSortOrder === 'asc' ? (
-              <ChevronUp className="h-4 w-4 text-blue-600" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-blue-600" />
-            )
-          ) : (
-            <div className="h-4 w-4 opacity-30 relative">
-              <ChevronUp className="h-2 w-4 absolute" />
-              <ChevronDown className="h-2 w-4 absolute mt-2" />
-            </div>
-          )}
-        </div>
-      </div>
-    </TableHead>
-  );
-};
 
 interface EmployeeListTableHeaderProps {
   sortBy: EmployeeListFilters['sortBy'];
@@ -66,46 +16,55 @@ export const EmployeeListTableHeader: React.FC<EmployeeListTableHeaderProps> = (
   onSort,
 }) => {
   console.log('📋 TableHeader render with sortBy:', sortBy, 'sortOrder:', sortOrder);
-  
+
+  const getSortIcon = (field: EmployeeListFilters['sortBy']) => {
+    if (sortBy !== field) {
+      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+    }
+    return sortOrder === 'asc' 
+      ? <ArrowUp className="h-4 w-4 text-blue-600" />
+      : <ArrowDown className="h-4 w-4 text-blue-600" />;
+  };
+
+  const handleSort = (field: EmployeeListFilters['sortBy']) => {
+    console.log('🔄 TableHeader handleSort called with:', field);
+    onSort(field);
+  };
+
   return (
     <>
-      <SortableHeader
-        sortKey="name"
-        currentSortBy={sortBy}
-        currentSortOrder={sortOrder}
-        onSort={onSort}
-        className="text-right"
+      <TableHead 
+        className="text-right cursor-pointer hover:bg-gray-50 select-none"
+        onClick={() => handleSort('name')}
       >
-        שם מלא
-      </SortableHeader>
-      
+        <div className="flex items-center justify-end gap-2">
+          <span>שם מלא</span>
+          {getSortIcon('name')}
+        </div>
+      </TableHead>
       <TableHead className="text-right">מספר עובד</TableHead>
       <TableHead className="text-right">טלפון</TableHead>
-      
-      <SortableHeader
-        sortKey="employee_type"
-        currentSortBy={sortBy}
-        currentSortOrder={sortOrder}
-        onSort={onSort}
-        className="text-right"
+      <TableHead 
+        className="text-right cursor-pointer hover:bg-gray-50 select-none"
+        onClick={() => handleSort('employee_type')}
       >
-        סוג עובד
-      </SortableHeader>
-      
-      <TableHead className="text-right">סניף</TableHead>
+        <div className="flex items-center justify-end gap-2">
+          <span>סוג עובד</span>
+          {getSortIcon('employee_type')}
+        </div>
+      </TableHead>
+      <TableHead className="text-right">סניף ראשי</TableHead>
       <TableHead className="text-right">שעות שבועיות</TableHead>
       <TableHead className="text-right">סטטוס</TableHead>
-      
-      <SortableHeader
-        sortKey="created_at"
-        currentSortBy={sortBy}
-        currentSortOrder={sortOrder}
-        onSort={onSort}
-        className="text-right"
+      <TableHead 
+        className="text-right cursor-pointer hover:bg-gray-50 select-none"
+        onClick={() => handleSort('created_at')}
       >
-        תאריך הוספה
-      </SortableHeader>
-      
+        <div className="flex items-center justify-end gap-2">
+          <span>תאריך הצטרפות</span>
+          {getSortIcon('created_at')}
+        </div>
+      </TableHead>
       <TableHead className="text-right">פעולות</TableHead>
     </>
   );

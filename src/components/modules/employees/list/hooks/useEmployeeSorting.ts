@@ -33,7 +33,9 @@ const sortEmployees = (employees: Employee[], sortBy: EmployeeListFilters['sortB
     return sortOrder === 'desc' ? -compareValue : compareValue;
   });
   
-  console.log('✅ Sorted employees:', {
+  console.log('✅ Sorted employees result:', {
+    sortBy,
+    sortOrder,
     firstEmployee: sorted[0] ? `${sorted[0].first_name} ${sorted[0].last_name}` : 'none',
     lastEmployee: sorted[sorted.length - 1] ? `${sorted[sorted.length - 1].first_name} ${sorted[sorted.length - 1].last_name}` : 'none'
   });

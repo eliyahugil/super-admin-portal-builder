@@ -1,69 +1,88 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/components/auth/AuthContext';
-
-export type PageSize = 10 | 25 | 50 | 100 | 'unlimited';
 
 export interface EmployeeListFilters {
   searchTerm: string;
-  employeeType: string;
   status: 'all' | 'active' | 'inactive';
+  employeeType: 'all' | 'permanent' | 'temporary' | 'youth' | 'contractor';
   branch: string;
-  tenure: 'all' | 'new' | 'experienced' | 'veteran'; // חדש, מנוסה, ותיק
   sortBy: 'name' | 'hire_date' | 'employee_type' | 'created_at';
   sortOrder: 'asc' | 'desc';
 }
 
 export interface EmployeeListPreferences {
-  pageSize: PageSize;
-  filters: EmployeeListFilters;
+  pageSize: 'limited' | 'unlimited';
   showAdvancedFilters: boolean;
+  filters: EmployeeListFilters;
 }
 
-const DEFAULT_PREFERENCES: EmployeeListPreferences = {
-  pageSize: 25,
-  filters: {
-    searchTerm: '',
-    employeeType: 'all',
-    status: 'all',
-    branch: 'all',
-    tenure: 'all',
-    sortBy: 'created_at',
-    sortOrder: 'desc',
-  },
+const defaultFilters: EmployeeListFilters = {
+  searchTerm: '',
+  status: 'all',
+  employeeType: 'all',
+  branch: 'all',
+  sortBy: 'name',
+  sortOrder: 'asc',
+};
+
+const defaultPreferences: EmployeeListPreferences = {
+  pageSize: 'unlimited',
   showAdvancedFilters: false,
+  filters: defaultFilters,
 };
 
 export const useEmployeeListPreferences = (businessId?: string | null) => {
-  const { profile } = useAuth();
-  const storageKey = `employee-list-preferences-${profile?.id}-${businessId || 'default'}`;
-  
-  const [preferences, setPreferences] = useState<EmployeeListPreferences>(() => {
-    if (typeof window === 'undefined') return DEFAULT_PREFERENCES;
+  const [preferences, setPreferences] = useState<EmployeeListPreferences>(defaultPreferences);
+
+  // Load preferences from localStorage on mount
+  useEffect(() => {
+    if (!businessId) return;
     
     try {
-      const saved = localStorage.getItem(storageKey);
-      return saved ? { ...DEFAULT_PREFERENCES, ...JSON.parse(saved) } : DEFAULT_PREFERENCES;
-    } catch {
-      return DEFAULT_PREFERENCES;
+      const key = `employee-list-preferences-${businessId}`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setPreferences(prev => ({
+          ...prev,
+          ...parsed,
+          filters: {
+            ...prev.filters,
+            ...parsed.filters
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading employee list preferences:', error);
     }
-  });
+  }, [businessId]);
 
-  // שמירה ל-localStorage כאשר העדפות משתנות
+  // Save preferences to localStorage whenever they change
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(storageKey, JSON.stringify(preferences));
+    if (!businessId) return;
+    
+    try {
+      const key = `employee-list-preferences-${businessId}`;
+      localStorage.setItem(key, JSON.stringify(preferences));
+    } catch (error) {
+      console.error('Error saving employee list preferences:', error);
     }
-  }, [preferences, storageKey]);
-
-  const updatePageSize = (pageSize: PageSize) => {
-    setPreferences(prev => ({ ...prev, pageSize }));
-  };
+  }, [preferences, businessId]);
 
   const updateFilters = (updates: Partial<EmployeeListFilters>) => {
     setPreferences(prev => ({
       ...prev,
-      filters: { ...prev.filters, ...updates }
+      filters: {
+        ...prev.filters,
+        ...updates
+      }
+    }));
+  };
+
+  const updatePageSize = (pageSize: EmployeeListPreferences['pageSize']) => {
+    setPreferences(prev => ({
+      ...prev,
+      pageSize
     }));
   };
 
@@ -77,20 +96,15 @@ export const useEmployeeListPreferences = (businessId?: string | null) => {
   const resetFilters = () => {
     setPreferences(prev => ({
       ...prev,
-      filters: DEFAULT_PREFERENCES.filters
+      filters: defaultFilters
     }));
-  };
-
-  const resetAllPreferences = () => {
-    setPreferences(DEFAULT_PREFERENCES);
   };
 
   return {
     preferences,
-    updatePageSize,
     updateFilters,
+    updatePageSize,
     toggleAdvancedFilters,
     resetFilters,
-    resetAllPreferences,
   };
 };
