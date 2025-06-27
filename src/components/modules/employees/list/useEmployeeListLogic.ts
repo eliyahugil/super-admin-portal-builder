@@ -63,8 +63,19 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     try {
       console.log('📁 Archiving employee:', employee.id);
 
-      // העברה לארכיון במקום מחיקה לצמיתות
-      archiveEntity(employee);
+      // השתמש בפונקציה המוכנה לארכיון
+      await new Promise((resolve, reject) => {
+        archiveEntity(employee, {
+          onSuccess: () => {
+            console.log('✅ Employee archived successfully');
+            resolve(true);
+          },
+          onError: (error: any) => {
+            console.error('❌ Failed to archive employee:', error);
+            reject(error);
+          }
+        });
+      });
 
       // הסרה מהבחירה אם נבחר
       const newSelected = new Set(selectedEmployees);
@@ -110,7 +121,12 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
       const selectedEmployeesList = employees.filter(emp => selectedEmployees.has(emp.id));
       
       for (const employee of selectedEmployeesList) {
-        archiveEntity(employee);
+        await new Promise((resolve, reject) => {
+          archiveEntity(employee, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
       }
 
       // רישום פעילות

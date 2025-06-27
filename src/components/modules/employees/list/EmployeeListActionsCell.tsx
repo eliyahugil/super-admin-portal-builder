@@ -10,14 +10,13 @@ import { useNavigate } from "react-router-dom";
 
 interface ActionsCellProps {
   employee: Employee;
-  onDeleteEmployee: (employee: Employee) => void;
+  onDeleteEmployee?: (employee: Employee) => void;
   onRefetch: () => void;
   loading: boolean;
 }
 
 export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
   employee,
-  onDeleteEmployee,
   onRefetch,
   loading,
 }) => {
@@ -37,11 +36,9 @@ export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
     navigate(profilePath);
   };
 
-  const handleArchive = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('📁 Archive button clicked for employee:', employee.id);
-    onDeleteEmployee(employee);
+  const handleArchiveSuccess = () => {
+    console.log('📁 Employee archived successfully, refetching data...');
+    onRefetch();
   };
 
   return (
@@ -76,6 +73,7 @@ export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
         isArchived={false}
         variant="outline"
         size="sm"
+        onSuccess={handleArchiveSuccess}
       />
     </div>
   );

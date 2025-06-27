@@ -8,13 +8,15 @@ interface EmployeeArchiveButtonProps {
   isArchived?: boolean;
   variant?: 'default' | 'ghost' | 'outline';
   size?: 'sm' | 'default' | 'lg';
+  onSuccess?: () => void;
 }
 
 export const EmployeeArchiveButton: React.FC<EmployeeArchiveButtonProps> = ({
   employee,
   isArchived = false,
   variant = 'outline',
-  size = 'sm'
+  size = 'sm',
+  onSuccess
 }) => {
   return (
     <GenericArchiveButton
@@ -26,6 +28,7 @@ export const EmployeeArchiveButton: React.FC<EmployeeArchiveButtonProps> = ({
       isArchived={isArchived}
       variant={variant}
       size={size}
+      onSuccess={onSuccess}
     />
   );
 };

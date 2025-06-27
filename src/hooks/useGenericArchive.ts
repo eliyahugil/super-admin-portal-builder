@@ -12,6 +12,7 @@ interface UseGenericArchiveOptions {
   queryKey: string[];
   getEntityDisplayName: (entity: any) => string;
   getEntityId?: (entity: any) => string;
+  onSuccess?: () => void;
 }
 
 export const useGenericArchive = ({
@@ -19,7 +20,8 @@ export const useGenericArchive = ({
   entityName,
   queryKey,
   getEntityDisplayName,
-  getEntityId = (entity) => entity.id
+  getEntityId = (entity) => entity.id,
+  onSuccess
 }: UseGenericArchiveOptions) => {
   const { toast } = useToast();
   const { logActivity } = useActivityLogger();
@@ -27,12 +29,21 @@ export const useGenericArchive = ({
 
   const archiveEntity = useMutation({
     mutationFn: async (entity: any) => {
-      const { error } = await supabase
+      const entityId = getEntityId(entity);
+      console.log(`📁 Archiving ${entityName} with ID:`, entityId);
+      
+      const { data, error } = await supabase
         .from(tableName)
         .update({ is_archived: true })
-        .eq('id', getEntityId(entity));
+        .eq('id', entityId)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error(`Error archiving ${entityName}:`, error);
+        throw error;
+      }
+      
+      console.log(`✅ ${entityName} archived successfully:`, data);
       return entity;
     },
     onSuccess: (entity) => {
@@ -53,8 +64,16 @@ export const useGenericArchive = ({
         description: `${entityName} "${displayName}" הועבר לארכיון`,
       });
 
-      // Invalidate related queries
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      
+      // Call the success callback if provided
+      if (onSuccess) {
+        console.log('🔄 Calling onSuccess callback after archiving');
+        onSuccess();
+      }
     },
     onError: (error) => {
       console.error(`Error archiving ${entityName}:`, error);
@@ -68,12 +87,21 @@ export const useGenericArchive = ({
 
   const restoreEntity = useMutation({
     mutationFn: async (entity: any) => {
-      const { error } = await supabase
+      const entityId = getEntityId(entity);
+      console.log(`🔄 Restoring ${entityName} with ID:`, entityId);
+      
+      const { data, error } = await supabase
         .from(tableName)
         .update({ is_archived: false })
-        .eq('id', getEntityId(entity));
+        .eq('id', entityId)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error(`Error restoring ${entityName}:`, error);
+        throw error;
+      }
+      
+      console.log(`✅ ${entityName} restored successfully:`, data);
       return entity;
     },
     onSuccess: (entity) => {
@@ -94,8 +122,16 @@ export const useGenericArchive = ({
         description: `${entityName} "${displayName}" שוחזר מהארכיון`,
       });
 
-      // Invalidate related queries
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      
+      // Call the success callback if provided
+      if (onSuccess) {
+        console.log('🔄 Calling onSuccess callback after restoring');
+        onSuccess();
+      }
     },
     onError: (error) => {
       console.error(`Error restoring ${entityName}:`, error);

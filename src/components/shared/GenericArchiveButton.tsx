@@ -16,6 +16,7 @@ interface GenericArchiveButtonProps {
   variant?: 'default' | 'ghost' | 'outline';
   size?: 'sm' | 'default' | 'lg';
   showText?: boolean;
+  onSuccess?: () => void;
 }
 
 export const GenericArchiveButton: React.FC<GenericArchiveButtonProps> = ({
@@ -27,23 +28,29 @@ export const GenericArchiveButton: React.FC<GenericArchiveButtonProps> = ({
   isArchived = false,
   variant = 'outline',
   size = 'sm',
-  showText = true
+  showText = true,
+  onSuccess
 }) => {
   const { archiveEntity, restoreEntity, isArchiving, isRestoring } = useGenericArchive({
     tableName,
     entityName,
     queryKey,
-    getEntityDisplayName
+    getEntityDisplayName,
+    onSuccess
   });
 
-  const handleClick = () => {
-    if (isArchived) {
-      restoreEntity(entity);
-    } else {
-      const displayName = getEntityDisplayName(entity);
-      if (confirm(`האם אתה בטוח שברצונך להעביר את ${displayName} לארכיון?`)) {
-        archiveEntity(entity);
+  const handleClick = async () => {
+    try {
+      if (isArchived) {
+        await restoreEntity(entity);
+      } else {
+        const displayName = getEntityDisplayName(entity);
+        if (confirm(`האם אתה בטוח שברצונך להעביר את ${displayName} לארכיון?`)) {
+          await archiveEntity(entity);
+        }
       }
+    } catch (error) {
+      console.error('Error in archive/restore operation:', error);
     }
   };
 
