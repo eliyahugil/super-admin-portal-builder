@@ -66,6 +66,7 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
             updated_at
           `)
           .eq('business_id', effectiveBusinessId)
+          .eq('is_archived', false)
           .order('created_at', { ascending: false });
 
         if (error) {
@@ -73,7 +74,7 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
           throw error;
         }
 
-        console.log('✅ Employees fetched successfully:', {
+        console.log('✅ Active employees fetched successfully:', {
           count: data?.length || 0,
           businessId: effectiveBusinessId
         });
@@ -86,7 +87,8 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
       }
     },
     enabled: !!effectiveBusinessId,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 30 * 1000, // 30 seconds - shorter for immediate updates
     retry: 3,
+    refetchOnWindowFocus: true, // רענון כשחוזרים לחלון
   });
 };

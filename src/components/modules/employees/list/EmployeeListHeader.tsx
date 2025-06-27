@@ -1,12 +1,12 @@
 
 import React from 'react';
-import { Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Search, Trash2, Archive } from 'lucide-react';
 
 interface EmployeeListHeaderProps {
   searchTerm: string;
-  onSearchChange: (value: string) => void;
+  onSearchChange: (term: string) => void;
   selectedCount: number;
   onBulkDelete: () => void;
   loading: boolean;
@@ -17,18 +17,18 @@ export const EmployeeListHeader: React.FC<EmployeeListHeaderProps> = ({
   onSearchChange,
   selectedCount,
   onBulkDelete,
-  loading,
+  loading
 }) => {
   return (
-    <div className="flex items-center justify-between gap-4" dir="rtl">
-      <div className="flex items-center gap-2 flex-1">
-        <Search className="h-4 w-4 text-gray-500" />
+    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-gray-50 p-4 rounded-lg">
+      <div className="flex-1 relative max-w-md">
+        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
         <Input
           type="text"
-          placeholder="חיפוש לפי שם, מספר עובד, טלפון או אימייל..."
+          placeholder="חיפוש עובדים..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="max-w-md"
+          className="pr-10"
           dir="rtl"
         />
       </div>
@@ -43,8 +43,10 @@ export const EmployeeListHeader: React.FC<EmployeeListHeaderProps> = ({
             size="sm"
             onClick={onBulkDelete}
             disabled={loading}
+            className="flex items-center gap-2"
           >
-            מחק נבחרים
+            <Trash2 className="h-4 w-4" />
+            מחיקה לצמיתות
           </Button>
         </div>
       )}
