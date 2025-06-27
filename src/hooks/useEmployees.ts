@@ -38,7 +38,7 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
         return [];
       }
 
-      console.log('👥 Fetching employees for business:', effectiveBusinessId);
+      console.log('👥 Fetching NON-ARCHIVED employees for business:', effectiveBusinessId);
 
       try {
         const { data, error } = await supabase
@@ -74,9 +74,10 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
           throw error;
         }
 
-        console.log('✅ Active employees fetched successfully:', {
+        console.log('✅ Non-archived employees fetched successfully:', {
           count: data?.length || 0,
-          businessId: effectiveBusinessId
+          businessId: effectiveBusinessId,
+          sampleIds: data?.slice(0, 3).map(emp => emp.id) || []
         });
 
         return data || [];
@@ -87,8 +88,11 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
       }
     },
     enabled: !!effectiveBusinessId,
-    staleTime: 30 * 1000, // 30 seconds - shorter for immediate updates
-    retry: 3,
-    refetchOnWindowFocus: true, // רענון כשחוזרים לחלון
+    staleTime: 10 * 1000, // 10 seconds - very short for immediate updates  
+    gcTime: 30 * 1000, // 30 seconds
+    retry: 2,
+    refetchOnWindowFocus: true,
+    // Force fresh data on each mount
+    refetchOnMount: 'always',
   });
 };

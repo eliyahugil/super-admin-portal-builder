@@ -46,7 +46,7 @@ export const useGenericArchive = ({
       console.log(`✅ ${entityName} archived successfully:`, data);
       return entity;
     },
-    onSuccess: (entity) => {
+    onSuccess: async (entity) => {
       const displayName = getEntityDisplayName(entity);
       
       logActivity({
@@ -64,10 +64,24 @@ export const useGenericArchive = ({
         description: `${entityName} "${displayName}" הועבר לארכיון`,
       });
 
-      // Invalidate all related queries
-      queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      // Invalidate ALL related queries with proper keys
+      console.log('🔄 Invalidating queries after archive...');
+      
+      // Base queries
+      await queryClient.invalidateQueries({ queryKey });
+      await queryClient.invalidateQueries({ queryKey: ['employees'] });
+      await queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
+      
+      // Business-specific queries
+      const businessId = entity.business_id;
+      if (businessId) {
+        await queryClient.invalidateQueries({ queryKey: ['employees', businessId] });
+        await queryClient.invalidateQueries({ queryKey: ['employee-stats', businessId] });
+        await queryClient.invalidateQueries({ queryKey: ['employees-data', businessId] });
+      }
+      
+      // Wait a bit for database consistency
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       // Call the success callback if provided
       if (onSuccess) {
@@ -104,7 +118,7 @@ export const useGenericArchive = ({
       console.log(`✅ ${entityName} restored successfully:`, data);
       return entity;
     },
-    onSuccess: (entity) => {
+    onSuccess: async (entity) => {
       const displayName = getEntityDisplayName(entity);
       
       logActivity({
@@ -122,10 +136,24 @@ export const useGenericArchive = ({
         description: `${entityName} "${displayName}" שוחזר מהארכיון`,
       });
 
-      // Invalidate all related queries
-      queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      // Invalidate ALL related queries with proper keys
+      console.log('🔄 Invalidating queries after restore...');
+      
+      // Base queries
+      await queryClient.invalidateQueries({ queryKey });
+      await queryClient.invalidateQueries({ queryKey: ['employees'] });
+      await queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
+      
+      // Business-specific queries
+      const businessId = entity.business_id;
+      if (businessId) {
+        await queryClient.invalidateQueries({ queryKey: ['employees', businessId] });
+        await queryClient.invalidateQueries({ queryKey: ['employee-stats', businessId] });
+        await queryClient.invalidateQueries({ queryKey: ['employees-data', businessId] });
+      }
+      
+      // Wait a bit for database consistency
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       // Call the success callback if provided
       if (onSuccess) {

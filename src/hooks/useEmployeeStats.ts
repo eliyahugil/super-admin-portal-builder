@@ -20,10 +20,10 @@ export const useEmployeeStats = (selectedBusinessId?: string | null) => {
         };
       }
 
-      console.log('📊 Fetching employee stats for business:', effectiveBusinessId);
+      console.log('📊 Fetching FRESH employee stats for business:', effectiveBusinessId);
 
       try {
-        // Get all employees for the business
+        // Get all employees for the business with explicit filters
         const { data: employees, error } = await supabase
           .from('employees')
           .select('id, is_active, is_archived')
@@ -44,20 +44,31 @@ export const useEmployeeStats = (selectedBusinessId?: string | null) => {
           };
         }
 
-        // Calculate statistics
-        const totalEmployees = employees.filter(emp => !emp.is_archived).length;
-        const activeEmployees = employees.filter(emp => emp.is_active && !emp.is_archived).length;
-        const inactiveEmployees = employees.filter(emp => !emp.is_active && !emp.is_archived).length;
-        const archivedEmployees = employees.filter(emp => emp.is_archived).length;
+        // Calculate statistics with explicit filtering
+        const nonArchivedEmployees = employees.filter(emp => !emp.is_archived);
+        const archivedEmployees = employees.filter(emp => emp.is_archived);
+        
+        const totalEmployees = nonArchivedEmployees.length;
+        const activeEmployees = nonArchivedEmployees.filter(emp => emp.is_active).length;
+        const inactiveEmployees = nonArchivedEmployees.filter(emp => !emp.is_active).length;
+        const archivedCount = archivedEmployees.length;
 
         const stats = {
           totalEmployees,
           activeEmployees,
           inactiveEmployees,
-          archivedEmployees,
+          archivedEmployees: archivedCount,
         };
 
-        console.log('📊 Employee stats calculated:', stats);
+        console.log('📊 Employee stats calculated:', {
+          ...stats,
+          totalInDb: employees.length,
+          breakDown: {
+            nonArchived: nonArchivedEmployees.length,
+            archived: archivedEmployees.length
+          }
+        });
+        
         return stats;
 
       } catch (error) {
@@ -66,7 +77,11 @@ export const useEmployeeStats = (selectedBusinessId?: string | null) => {
       }
     },
     enabled: !!effectiveBusinessId,
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    retry: 3,
+    staleTime: 10 * 1000, // 10 seconds - very short
+    gcTime: 30 * 1000, // 30 seconds
+    retry: 2,
+    refetchOnWindowFocus: true,
+    // Force fresh data on each mount
+    refetchOnMount: 'always',
   });
 };

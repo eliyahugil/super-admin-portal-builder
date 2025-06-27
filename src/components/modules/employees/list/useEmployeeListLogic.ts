@@ -52,6 +52,30 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     }
   };
 
+  const refreshAllData = async () => {
+    console.log('🔄 Refreshing all employee data...');
+    
+    // Get business ID from first employee
+    const businessId = employees[0]?.business_id;
+    
+    // Invalidate all relevant queries
+    await queryClient.invalidateQueries({ queryKey: ['employees'] });
+    await queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
+    
+    if (businessId) {
+      await queryClient.invalidateQueries({ queryKey: ['employees', businessId] });
+      await queryClient.invalidateQueries({ queryKey: ['employee-stats', businessId] });
+    }
+    
+    // Wait for cache invalidation
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Trigger refetch
+    onRefetch();
+    
+    console.log('✅ All data refreshed');
+  };
+
   const handleDeleteEmployee = async (employee: Employee) => {
     const employeeName = `${employee.first_name} ${employee.last_name}`;
     
@@ -63,12 +87,12 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     try {
       console.log('📁 Archiving employee:', employee.id);
 
-      // השתמש בפונקציה המוכנה לארכיון
-      await new Promise((resolve, reject) => {
+      // Use the archive function with proper callback
+      await new Promise<void>((resolve, reject) => {
         archiveEntity(employee, {
           onSuccess: () => {
             console.log('✅ Employee archived successfully');
-            resolve(true);
+            resolve();
           },
           onError: (error: any) => {
             console.error('❌ Failed to archive employee:', error);
@@ -77,17 +101,13 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
         });
       });
 
-      // הסרה מהבחירה אם נבחר
+      // Remove from selection if selected
       const newSelected = new Set(selectedEmployees);
       newSelected.delete(employee.id);
       setSelectedEmployees(newSelected);
 
-      // עדכון מיידי של הקאש
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
-
-      // רענון הנתונים
-      onRefetch();
+      // Refresh all data
+      await refreshAllData();
 
     } catch (error) {
       console.error('💥 Error archiving employee:', error);
@@ -117,19 +137,19 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     try {
       console.log('📁 Bulk archiving employees:', Array.from(selectedEmployees));
 
-      // העברה לארכיון של כל העובדים הנבחרים
       const selectedEmployeesList = employees.filter(emp => selectedEmployees.has(emp.id));
       
+      // Archive employees one by one
       for (const employee of selectedEmployeesList) {
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
           archiveEntity(employee, {
-            onSuccess: resolve,
-            onError: reject
+            onSuccess: () => resolve(),
+            onError: (error: any) => reject(error)
           });
         });
       }
 
-      // רישום פעילות
+      // Log activity
       logActivity({
         action: 'bulk_archive',
         target_type: 'employee',
@@ -146,15 +166,11 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
         description: `${selectedEmployees.size} עובדים הועברו לארכיון`,
       });
 
-      // איפוס הבחירה
+      // Reset selection
       setSelectedEmployees(new Set());
 
-      // עדכון מיידי של הקאש
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
-
-      // רענון הנתונים
-      onRefetch();
+      // Refresh all data
+      await refreshAllData();
 
     } catch (error) {
       console.error('💥 Error bulk archiving employees:', error);

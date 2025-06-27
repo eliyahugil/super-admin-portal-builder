@@ -25,7 +25,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
 
   const [showArchived, setShowArchived] = useState(false);
   
-  // Fetch employees data
+  // Fetch employees data - NON-ARCHIVED ONLY
   const { 
     data: employees = [], 
     isLoading: employeesLoading, 
@@ -42,7 +42,8 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
       archivedEmployees: 0,
     }, 
     isLoading: statsLoading,
-    error: statsError
+    error: statsError,
+    refetch: refetchStats
   } = useEmployeeStats(effectiveBusinessId);
 
   console.log('👥 EmployeeManagement - Data state:', {
@@ -52,8 +53,23 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
     stats,
     statsLoading,
     statsError: statsError?.message,
-    effectiveBusinessId
+    effectiveBusinessId,
+    showArchived
   });
+
+  // Enhanced refetch function
+  const handleRefetch = async () => {
+    console.log('🔄 EmployeeManagement - Manual refetch triggered');
+    try {
+      await Promise.all([
+        refetchEmployees(),
+        refetchStats()
+      ]);
+      console.log('✅ EmployeeManagement - Refetch completed');
+    } catch (error) {
+      console.error('❌ EmployeeManagement - Refetch failed:', error);
+    }
+  };
 
   if (!effectiveBusinessId) {
     return (
@@ -77,9 +93,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
             שגיאה בטעינת נתוני העובדים: {employeesError?.message || statsError?.message}
           </p>
           <button 
-            onClick={() => {
-              refetchEmployees();
-            }}
+            onClick={handleRefetch}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             נסה שוב
@@ -89,9 +103,9 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
     );
   }
 
-  // Filter employees based on archived status
-  const activeEmployees = employees.filter(emp => !emp.is_archived);
-  const archivedEmployees = employees.filter(emp => emp.is_archived);
+  // The employees from useEmployees are already filtered (non-archived only)
+  const activeEmployees = employees; // These are already non-archived
+  const archivedEmployees: any[] = []; // We'll show this from ArchivedEmployeesList component
   const currentEmployees = showArchived ? archivedEmployees : activeEmployees;
 
   return (
@@ -101,7 +115,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
         showArchived={showArchived}
         onToggleArchived={setShowArchived}
         totalActiveEmployees={activeEmployees.length}
-        totalArchivedEmployees={archivedEmployees.length}
+        totalArchivedEmployees={stats.archivedEmployees}
       />
 
       <EmployeeStatsCards
@@ -114,34 +128,26 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
 
       <ManagementToolsSection 
         selectedBusinessId={effectiveBusinessId} 
-        onRefetch={refetchEmployees}
+        onRefetch={handleRefetch}
       />
 
       {!showArchived && activeEmployees.length === 0 ? (
         <EmployeeManagementEmptyState 
           businessId={effectiveBusinessId} 
-          onRefetch={refetchEmployees}
+          onRefetch={handleRefetch}
         />
-      ) : showArchived && archivedEmployees.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500">אין עובדים בארכיון</p>
-        </div>
+      ) : showArchived ? (
+        <ArchivedEmployeesList 
+          businessId={effectiveBusinessId}
+          employees={archivedEmployees}
+          onRefetch={handleRefetch}
+        />
       ) : (
-        <>
-          {showArchived ? (
-            <ArchivedEmployeesList 
-              businessId={effectiveBusinessId}
-              employees={archivedEmployees}
-              onRefetch={refetchEmployees}
-            />
-          ) : (
-            <EmployeesList 
-              businessId={effectiveBusinessId}
-              employees={activeEmployees}
-              onRefetch={refetchEmployees}
-            />
-          )}
-        </>
+        <EmployeesList 
+          businessId={effectiveBusinessId}
+          employees={activeEmployees}
+          onRefetch={handleRefetch}
+        />
       )}
     </div>
   );
