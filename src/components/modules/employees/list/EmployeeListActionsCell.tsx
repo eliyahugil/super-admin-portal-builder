@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Eye, Trash2 } from "lucide-react";
+import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmployeeEditButton } from "../edit/EmployeeEditButton";
 import { EmployeeTokenButton } from "../EmployeeTokenButton";
@@ -37,10 +37,10 @@ export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
     navigate(profilePath);
   };
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleArchive = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🗑️ Permanent delete button clicked for employee:', employee.id);
+    console.log('📁 Archive button clicked for employee:', employee.id);
     onDeleteEmployee(employee);
   };
 
@@ -77,18 +77,6 @@ export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
         variant="outline"
         size="sm"
       />
-      
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleDelete}
-        disabled={loading}
-        className="text-red-600 hover:text-red-800 hover:bg-red-50 text-base px-4 py-2 w-full sm:w-auto"
-        type="button"
-        title="מחיקה לצמיתות"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
     </div>
   );
 };

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Trash2, Archive } from 'lucide-react';
+import { Search, Archive } from 'lucide-react';
 
 interface EmployeeListHeaderProps {
   searchTerm: string;
@@ -39,14 +39,14 @@ export const EmployeeListHeader: React.FC<EmployeeListHeaderProps> = ({
             נבחרו {selectedCount} עובדים
           </span>
           <Button
-            variant="destructive"
+            variant="outline"
             size="sm"
             onClick={onBulkDelete}
             disabled={loading}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 text-orange-600 hover:text-orange-800 hover:bg-orange-50"
           >
-            <Trash2 className="h-4 w-4" />
-            מחיקה לצמיתות
+            <Archive className="h-4 w-4" />
+            העבר לארכיון
           </Button>
         </div>
       )}

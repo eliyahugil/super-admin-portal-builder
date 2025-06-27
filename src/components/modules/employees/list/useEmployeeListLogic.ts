@@ -1,11 +1,11 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Employee } from '@/types/employee';
 import { useEmployeeListPagination } from './useEmployeeListPagination';
+import { useEmployeeArchive } from '@/hooks/useEmployeeArchive';
 
 export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => void) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -14,6 +14,7 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
   const { toast } = useToast();
   const { logActivity } = useActivityLogger();
   const queryClient = useQueryClient();
+  const { archiveEntity } = useEmployeeArchive();
 
   // Use pagination hook
   const {
@@ -54,40 +55,16 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
   const handleDeleteEmployee = async (employee: Employee) => {
     const employeeName = `${employee.first_name} ${employee.last_name}`;
     
-    if (!confirm(`האם אתה בטוח שברצונך למחוק לצמיתות את ${employeeName}? פעולה זו אינה ניתנת לביטול!`)) {
+    if (!confirm(`האם אתה בטוח שברצונך להעביר את ${employeeName} לארכיון?`)) {
       return;
     }
 
     setLoading(true);
     try {
-      console.log('🗑️ Permanently deleting employee:', employee.id);
+      console.log('📁 Archiving employee:', employee.id);
 
-      // מחיקה לצמיתות מהמסד נתונים
-      const { error } = await supabase
-        .from('employees')
-        .delete()
-        .eq('id', employee.id);
-
-      if (error) {
-        console.error('❌ Error deleting employee:', error);
-        throw error;
-      }
-
-      // רישום פעילות
-      logActivity({
-        action: 'permanent_delete',
-        target_type: 'employee',
-        target_id: employee.id,
-        details: { 
-          employee_name: employeeName,
-          employee_id: employee.employee_id || 'לא הוגדר'
-        }
-      });
-
-      toast({
-        title: 'הצלחה',
-        description: `העובד ${employeeName} נמחק לצמיתות`,
-      });
+      // העברה לארכיון במקום מחיקה לצמיתות
+      archiveEntity(employee);
 
       // הסרה מהבחירה אם נבחר
       const newSelected = new Set(selectedEmployees);
@@ -102,10 +79,10 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
       onRefetch();
 
     } catch (error) {
-      console.error('💥 Error deleting employee:', error);
+      console.error('💥 Error archiving employee:', error);
       toast({
         title: 'שגיאה',
-        description: 'לא ניתן למחוק את העובד. נסה שוב מאוחר יותר.',
+        description: 'לא ניתן להעביר את העובד לארכיון. נסה שוב מאוחר יותר.',
         variant: 'destructive',
       });
     } finally {
@@ -121,32 +98,28 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
       .map(emp => `${emp.first_name} ${emp.last_name}`)
       .join(', ');
 
-    if (!confirm(`האם אתה בטוח שברצונך למחוק לצמיתות ${selectedEmployees.size} עובדים?\n\n${employeeNames}\n\nפעולה זו אינה ניתנת לביטול!`)) {
+    if (!confirm(`האם אתה בטוח שברצונך להעביר ${selectedEmployees.size} עובדים לארכיון?\n\n${employeeNames}`)) {
       return;
     }
 
     setLoading(true);
     try {
-      console.log('🗑️ Bulk deleting employees:', Array.from(selectedEmployees));
+      console.log('📁 Bulk archiving employees:', Array.from(selectedEmployees));
 
-      // מחיקה לצמיתות של כל העובדים הנבחרים
-      const { error } = await supabase
-        .from('employees')
-        .delete()
-        .in('id', Array.from(selectedEmployees));
-
-      if (error) {
-        console.error('❌ Error bulk deleting employees:', error);
-        throw error;
+      // העברה לארכיון של כל העובדים הנבחרים
+      const selectedEmployeesList = employees.filter(emp => selectedEmployees.has(emp.id));
+      
+      for (const employee of selectedEmployeesList) {
+        archiveEntity(employee);
       }
 
       // רישום פעילות
       logActivity({
-        action: 'bulk_permanent_delete',
+        action: 'bulk_archive',
         target_type: 'employee',
         target_id: 'multiple',
         details: { 
-          deleted_count: selectedEmployees.size,
+          archived_count: selectedEmployees.size,
           employee_ids: Array.from(selectedEmployees),
           employee_names: employeeNames
         }
@@ -154,7 +127,7 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
 
       toast({
         title: 'הצלחה',
-        description: `${selectedEmployees.size} עובדים נמחקו לצמיתות`,
+        description: `${selectedEmployees.size} עובדים הועברו לארכיון`,
       });
 
       // איפוס הבחירה
@@ -168,10 +141,10 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
       onRefetch();
 
     } catch (error) {
-      console.error('💥 Error bulk deleting employees:', error);
+      console.error('💥 Error bulk archiving employees:', error);
       toast({
         title: 'שגיאה',
-        description: 'לא ניתן למחוק את העובדים. נסה שוב מאוחר יותר.',
+        description: 'לא ניתן להעביר את העובדים לארכיון. נסה שוב מאוחר יותר.',
         variant: 'destructive',
       });
     } finally {
