@@ -17,6 +17,11 @@ export const DisplaySettingsSection: React.FC<DisplaySettingsSectionProps> = ({
   totalEmployees,
   filteredCount,
 }) => {
+  const handlePageSizeChange = (value: string) => {
+    const newPageSize = value === 'unlimited' ? 'unlimited' : Number(value) as PageSize;
+    onPageSizeChange(newPageSize);
+  };
+
   return (
     <div className="border-t pt-4">
       <div className="flex justify-between items-center">
@@ -24,7 +29,7 @@ export const DisplaySettingsSection: React.FC<DisplaySettingsSectionProps> = ({
           <Label className="text-sm font-medium">עובדים בעמוד:</Label>
           <Select 
             value={pageSize.toString()} 
-            onValueChange={(value) => onPageSizeChange(value === 'unlimited' ? 'unlimited' : Number(value) as PageSize)}
+            onValueChange={handlePageSizeChange}
           >
             <SelectTrigger className="w-32">
               <SelectValue />

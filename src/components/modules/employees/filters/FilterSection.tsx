@@ -17,6 +17,14 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
     onFiltersChange({ tenure: value as EmployeeListFilters['tenure'] });
   };
 
+  const handleEmployeeTypeChange = (value: string) => {
+    onFiltersChange({ employeeType: value as EmployeeListFilters['employeeType'] });
+  };
+
+  const handleStatusChange = (value: string) => {
+    onFiltersChange({ status: value as EmployeeListFilters['status'] });
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* סוג עובד */}
@@ -24,7 +32,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         <Label>סוג עובד</Label>
         <Select 
           value={filters.employeeType} 
-          onValueChange={(value) => onFiltersChange({ employeeType: value })}
+          onValueChange={handleEmployeeTypeChange}
         >
           <SelectTrigger>
             <SelectValue />
@@ -44,7 +52,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         <Label>סטטוס</Label>
         <Select 
           value={filters.status} 
-          onValueChange={(value) => onFiltersChange({ status: value as EmployeeListFilters['status'] })}
+          onValueChange={handleStatusChange}
         >
           <SelectTrigger>
             <SelectValue />

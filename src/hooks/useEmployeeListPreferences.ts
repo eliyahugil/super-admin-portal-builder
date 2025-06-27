@@ -1,17 +1,20 @@
 
 import { useState, useEffect } from 'react';
 
+export type PageSize = 10 | 25 | 50 | 100 | 'unlimited';
+
 export interface EmployeeListFilters {
   searchTerm: string;
   status: 'all' | 'active' | 'inactive';
   employeeType: 'all' | 'permanent' | 'temporary' | 'youth' | 'contractor';
+  tenure: 'all' | 'new' | 'experienced' | 'veteran';
   branch: string;
   sortBy: 'name' | 'hire_date' | 'employee_type' | 'created_at';
   sortOrder: 'asc' | 'desc';
 }
 
 export interface EmployeeListPreferences {
-  pageSize: 'limited' | 'unlimited';
+  pageSize: PageSize;
   showAdvancedFilters: boolean;
   filters: EmployeeListFilters;
 }
@@ -20,6 +23,7 @@ const defaultFilters: EmployeeListFilters = {
   searchTerm: '',
   status: 'all',
   employeeType: 'all',
+  tenure: 'all',
   branch: 'all',
   sortBy: 'name',
   sortOrder: 'asc',
@@ -79,7 +83,7 @@ export const useEmployeeListPreferences = (businessId?: string | null) => {
     }));
   };
 
-  const updatePageSize = (pageSize: EmployeeListPreferences['pageSize']) => {
+  const updatePageSize = (pageSize: PageSize) => {
     setPreferences(prev => ({
       ...prev,
       pageSize
