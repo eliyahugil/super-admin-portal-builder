@@ -45,6 +45,7 @@ export const EnhancedEmployeesList: React.FC<EnhancedEmployeesListProps> = ({
     handleSelectAll,
     handleDeleteEmployee,
     handleBulkDelete,
+    clearSelectedEmployees,
     
     // מצב
     loading,
@@ -112,7 +113,7 @@ export const EnhancedEmployeesList: React.FC<EnhancedEmployeesListProps> = ({
               העבר לארכיון
             </button>
             <button
-              onClick={() => setSelectedEmployees(new Set())}
+              onClick={clearSelectedEmployees}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm"
             >
               בטל בחירה

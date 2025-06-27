@@ -167,6 +167,10 @@ export const useEmployeeListLogicEnhanced = (employees: Employee[], onRefetch: (
     }
   };
 
+  const clearSelectedEmployees = () => {
+    setSelectedEmployees(new Set());
+  };
+
   const handleDeleteEmployee = async (employee: Employee) => {
     const employeeName = `${employee.first_name} ${employee.last_name}`;
     
@@ -251,6 +255,7 @@ export const useEmployeeListLogicEnhanced = (employees: Employee[], onRefetch: (
     handleSelectAll,
     handleDeleteEmployee,
     handleBulkDelete,
+    clearSelectedEmployees,
     
     // מצב
     loading: loading || isArchiving,

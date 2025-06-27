@@ -56,6 +56,10 @@ export const useEmployeeListPagination = ({
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
+  const handlePageSizeChange = (newPageSize: PageSize) => {
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
   // Reset current page when employees change significantly
   useState(() => {
     if (currentPage > totalPages && totalPages > 0) {
@@ -68,6 +72,8 @@ export const useEmployeeListPagination = ({
     currentPage,
     totalPages,
     totalEmployees,
+    pageSize,
     handlePageChange,
+    handlePageSizeChange,
   };
 };
