@@ -7,17 +7,20 @@ export type PageSize = 10 | 25 | 50 | 100 | 'unlimited';
 interface UseEmployeeListPaginationProps {
   employees: Employee[];
   searchTerm: string;
+  pageSize?: PageSize;
 }
 
 export const useEmployeeListPagination = ({
   employees,
   searchTerm,
+  pageSize = 25,
 }: UseEmployeeListPaginationProps) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSize>(25);
 
-  // Filter employees based on search term
+  // Filter employees based on search term (if needed - usually already filtered)
   const filteredEmployees = useMemo(() => {
+    if (!searchTerm.trim()) return employees;
+    
     return employees.filter((employee) => {
       const searchLower = searchTerm.toLowerCase();
       const fullName = `${employee.first_name} ${employee.last_name}`.toLowerCase();
@@ -48,23 +51,23 @@ export const useEmployeeListPagination = ({
     return filteredEmployees.slice(startIndex, endIndex);
   }, [filteredEmployees, currentPage, pageSize]);
 
-  // Reset to first page when search changes or page size changes
-  const handlePageSizeChange = (newPageSize: PageSize) => {
-    setPageSize(newPageSize);
-    setCurrentPage(1);
-  };
-
+  // Reset to first page when page size changes
   const handlePageChange = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
+
+  // Reset current page when employees change significantly
+  useState(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  });
 
   return {
     paginatedEmployees,
     currentPage,
     totalPages,
     totalEmployees,
-    pageSize,
-    handlePageSizeChange,
     handlePageChange,
   };
 };

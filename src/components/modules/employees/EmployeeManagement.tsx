@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { EmployeeManagementHeader } from './EmployeeManagementHeader';
 import { EmployeeStatsCards } from './EmployeeStatsCards';
 import { EmployeeManagementLoading } from './EmployeeManagementLoading';
 import { EmployeeManagementEmptyState } from './EmployeeManagementEmptyState';
-import { EmployeesList } from './EmployeesList';
+import { EnhancedEmployeesList } from './EnhancedEmployeesList';
 import { ArchivedEmployeesList } from './ArchivedEmployeesList';
 import { ManagementToolsSection } from './ManagementToolsSection/ManagementToolsSection';
 import { useEmployees } from '@/hooks/useEmployees';
@@ -125,7 +124,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
           onRefetch={handleRefetch}
         />
       ) : (
-        <EmployeesList 
+        <EnhancedEmployeesList 
           businessId={effectiveBusinessId}
           employees={activeEmployees}
           onRefetch={handleRefetch}
