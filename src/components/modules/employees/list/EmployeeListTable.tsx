@@ -56,8 +56,16 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
         ? 'desc' 
         : 'asc';
     
+    console.log('🔄 EmployeeListTable handleSort:', { sortBy, newSortOrder, currentSortBy: preferences.filters.sortBy });
     updateFilters({ sortBy, sortOrder: newSortOrder });
   };
+
+  console.log('📊 EmployeeListTable render:', {
+    employeesCount: employees.length,
+    currentSort: preferences.filters.sortBy,
+    currentOrder: preferences.filters.sortOrder,
+    firstEmployee: employees[0] ? `${employees[0].first_name} ${employees[0].last_name}` : 'none'
+  });
 
   // Mobile view: show cards in full width container
   if (isMobile) {

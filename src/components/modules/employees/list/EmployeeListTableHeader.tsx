@@ -23,10 +23,15 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({
 }) => {
   const isActive = currentSortBy === sortKey;
   
+  const handleClick = () => {
+    console.log('🔄 Sorting by:', sortKey, 'Current:', currentSortBy, 'Order:', currentSortOrder);
+    onSort(sortKey);
+  };
+  
   return (
     <TableHead 
       className={`cursor-pointer hover:bg-gray-50 select-none ${className}`}
-      onClick={() => onSort(sortKey)}
+      onClick={handleClick}
     >
       <div className="flex items-center gap-1 justify-end">
         {children}
@@ -38,7 +43,7 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({
               <ChevronDown className="h-4 w-4 text-blue-600" />
             )
           ) : (
-            <div className="h-4 w-4 opacity-30">
+            <div className="h-4 w-4 opacity-30 relative">
               <ChevronUp className="h-2 w-4 absolute" />
               <ChevronDown className="h-2 w-4 absolute mt-2" />
             </div>
@@ -60,12 +65,10 @@ export const EmployeeListTableHeader: React.FC<EmployeeListTableHeaderProps> = (
   sortOrder,
   onSort,
 }) => {
+  console.log('📋 TableHeader render with sortBy:', sortBy, 'sortOrder:', sortOrder);
+  
   return (
     <>
-      <TableHead className="w-12 text-right">
-        {/* Checkbox column - not sortable */}
-      </TableHead>
-      
       <SortableHeader
         sortKey="name"
         currentSortBy={sortBy}
