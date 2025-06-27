@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { EmployeeListTableHeader } from './EmployeeListTableHeader';
 import { EmployeeListProfileCell } from './EmployeeListProfileCell';
