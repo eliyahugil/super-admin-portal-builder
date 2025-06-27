@@ -21,11 +21,9 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
   const { businessId: contextBusinessId } = useCurrentBusiness();
   const effectiveBusinessId = selectedBusinessId || contextBusinessId;
   
-  console.log('👥 EmployeeManagement - Effective Business ID:', effectiveBusinessId);
-
   const [showArchived, setShowArchived] = useState(false);
   
-  // Fetch employees data - NON-ARCHIVED ONLY
+  // Fetch employees data
   const { 
     data: employees = [], 
     isLoading: employeesLoading, 
@@ -42,33 +40,15 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
       archivedEmployees: 0,
     }, 
     isLoading: statsLoading,
-    error: statsError,
     refetch: refetchStats
   } = useEmployeeStats(effectiveBusinessId);
 
-  console.log('👥 EmployeeManagement - Data state:', {
-    employeesCount: employees.length,
-    employeesLoading,
-    employeesError: employeesError?.message,
-    stats,
-    statsLoading,
-    statsError: statsError?.message,
-    effectiveBusinessId,
-    showArchived
-  });
-
-  // Enhanced refetch function
   const handleRefetch = async () => {
-    console.log('🔄 EmployeeManagement - Manual refetch triggered');
-    try {
-      await Promise.all([
-        refetchEmployees(),
-        refetchStats()
-      ]);
-      console.log('✅ EmployeeManagement - Refetch completed');
-    } catch (error) {
-      console.error('❌ EmployeeManagement - Refetch failed:', error);
-    }
+    console.log('🔄 Manual refetch triggered');
+    await Promise.all([
+      refetchEmployees(),
+      refetchStats()
+    ]);
   };
 
   if (!effectiveBusinessId) {
@@ -85,13 +65,11 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
     return <EmployeeManagementLoading />;
   }
 
-  if (employeesError || statsError) {
+  if (employeesError) {
     return (
       <div className="p-6">
         <div className="text-center py-12">
-          <p className="text-red-600 mb-4">
-            שגיאה בטעינת נתוני העובדים: {employeesError?.message || statsError?.message}
-          </p>
+          <p className="text-red-600 mb-4">שגיאה בטעינת נתוני העובדים</p>
           <button 
             onClick={handleRefetch}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -103,18 +81,13 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
     );
   }
 
-  // The employees from useEmployees are already filtered (non-archived only)
-  const activeEmployees = employees; // These are already non-archived
-  const archivedEmployees: any[] = []; // We'll show this from ArchivedEmployeesList component
-  const currentEmployees = showArchived ? archivedEmployees : activeEmployees;
-
   return (
     <div className="space-y-6">
       <EmployeeManagementHeader 
         businessId={effectiveBusinessId}
         showArchived={showArchived}
         onToggleArchived={setShowArchived}
-        totalActiveEmployees={activeEmployees.length}
+        totalActiveEmployees={employees.length}
         totalArchivedEmployees={stats.archivedEmployees}
       />
 
@@ -131,7 +104,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
         onRefetch={handleRefetch}
       />
 
-      {!showArchived && activeEmployees.length === 0 ? (
+      {!showArchived && employees.length === 0 ? (
         <EmployeeManagementEmptyState 
           businessId={effectiveBusinessId} 
           onRefetch={handleRefetch}
@@ -139,13 +112,13 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
       ) : showArchived ? (
         <ArchivedEmployeesList 
           businessId={effectiveBusinessId}
-          employees={archivedEmployees}
+          employees={[]}
           onRefetch={handleRefetch}
         />
       ) : (
         <EmployeesList 
           businessId={effectiveBusinessId}
-          employees={activeEmployees}
+          employees={employees}
           onRefetch={handleRefetch}
         />
       )}

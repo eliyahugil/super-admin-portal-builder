@@ -38,61 +38,47 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
         return [];
       }
 
-      console.log('👥 Fetching NON-ARCHIVED employees for business:', effectiveBusinessId);
+      console.log('👥 Fetching employees for business:', effectiveBusinessId);
 
-      try {
-        const { data, error } = await supabase
-          .from('employees')
-          .select(`
-            id,
-            business_id,
-            first_name,
-            last_name,
-            email,
-            phone,
-            address,
-            employee_type,
-            hire_date,
-            termination_date,
-            weekly_hours_required,
-            notes,
-            employee_id,
-            id_number,
-            is_active,
-            is_archived,
-            is_system_user,
-            main_branch_id,
-            created_at,
-            updated_at
-          `)
-          .eq('business_id', effectiveBusinessId)
-          .eq('is_archived', false)
-          .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('employees')
+        .select(`
+          id,
+          business_id,
+          first_name,
+          last_name,
+          email,
+          phone,
+          address,
+          employee_type,
+          hire_date,
+          termination_date,
+          weekly_hours_required,
+          notes,
+          employee_id,
+          id_number,
+          is_active,
+          is_archived,
+          is_system_user,
+          main_branch_id,
+          created_at,
+          updated_at
+        `)
+        .eq('business_id', effectiveBusinessId)
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('❌ Error fetching employees:', error);
-          throw error;
-        }
-
-        console.log('✅ Non-archived employees fetched successfully:', {
-          count: data?.length || 0,
-          businessId: effectiveBusinessId,
-          sampleIds: data?.slice(0, 3).map(emp => emp.id) || []
-        });
-
-        return data || [];
-
-      } catch (error) {
-        console.error('💥 Error in employees query:', error);
+      if (error) {
+        console.error('❌ Error fetching employees:', error);
         throw error;
       }
+
+      console.log('✅ Employees fetched:', data?.length || 0);
+      return data || [];
     },
     enabled: !!effectiveBusinessId,
-    staleTime: 10 * 1000, // 10 seconds - very short for immediate updates  
-    gcTime: 30 * 1000, // 30 seconds
-    retry: 2,
+    staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true,
-    // Force fresh data on each mount
-    refetchOnMount: 'always',
+    refetchOnMount: true,
   });
 };
