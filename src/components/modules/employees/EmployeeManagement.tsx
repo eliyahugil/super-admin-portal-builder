@@ -6,7 +6,7 @@ import { EmployeeManagementLoading } from './EmployeeManagementLoading';
 import { EmployeeManagementEmptyState } from './EmployeeManagementEmptyState';
 import { EmployeesList } from './EmployeesList';
 import { ArchivedEmployeesList } from './ArchivedEmployeesList';
-import { ManagementToolsSection } from './ManagementToolsSection';
+import { ManagementToolsSection } from './ManagementToolsSection/ManagementToolsSection';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useEmployeeStats } from '@/hooks/useEmployeeStats';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
