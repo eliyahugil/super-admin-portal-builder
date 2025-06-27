@@ -105,6 +105,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
         inactiveEmployees={stats.inactiveEmployees}
         archivedEmployees={stats.archivedEmployees}
         isLoading={statsLoading}
+        businessId={effectiveBusinessId}
       />
 
       <ManagementToolsSection 
