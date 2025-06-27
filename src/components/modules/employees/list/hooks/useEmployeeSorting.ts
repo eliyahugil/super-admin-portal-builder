@@ -4,6 +4,8 @@ import type { Employee } from '@/types/employee';
 import type { EmployeeListFilters } from '@/hooks/useEmployeeListPreferences';
 
 const sortEmployees = (employees: Employee[], sortBy: EmployeeListFilters['sortBy'], sortOrder: EmployeeListFilters['sortOrder']): Employee[] => {
+  console.log('🔄 Sorting employees:', { count: employees.length, sortBy, sortOrder });
+  
   const sorted = [...employees].sort((a, b) => {
     let compareValue = 0;
     
@@ -29,6 +31,11 @@ const sortEmployees = (employees: Employee[], sortBy: EmployeeListFilters['sortB
     }
     
     return sortOrder === 'desc' ? -compareValue : compareValue;
+  });
+  
+  console.log('✅ Sorted employees:', {
+    firstEmployee: sorted[0] ? `${sorted[0].first_name} ${sorted[0].last_name}` : 'none',
+    lastEmployee: sorted[sorted.length - 1] ? `${sorted[sorted.length - 1].first_name} ${sorted[sorted.length - 1].last_name}` : 'none'
   });
   
   return sorted;

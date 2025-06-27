@@ -19,13 +19,26 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     resetFilters,
   } = useEmployeeListPreferences(businessId);
 
+  console.log('🔍 useEmployeeListLogic - filters applied:', {
+    sortBy: preferences.filters.sortBy,
+    sortOrder: preferences.filters.sortOrder,
+    totalEmployees: employees.length
+  });
+
   // פילטור העובדים
   const filteredEmployees = useEmployeeFiltering(employees, preferences.filters);
 
   // מיון העובדים
   const sortedEmployees = useEmployeeSorting(filteredEmployees, preferences.filters.sortBy, preferences.filters.sortOrder);
 
-  // השתמש ב-pagination hook עם הנתונים המסוננים
+  console.log('📊 useEmployeeListLogic - after sorting:', {
+    sortBy: preferences.filters.sortBy,
+    sortOrder: preferences.filters.sortOrder,
+    firstEmployee: sortedEmployees[0] ? `${sortedEmployees[0].first_name} ${sortedEmployees[0].last_name}` : 'none',
+    lastEmployee: sortedEmployees[sortedEmployees.length - 1] ? `${sortedEmployees[sortedEmployees.length - 1].first_name} ${sortedEmployees[sortedEmployees.length - 1].last_name}` : 'none'
+  });
+
+  // השתמש ב-pagination hook עם הנתונים המסוננים והממוינים
   const {
     paginatedEmployees,
     currentPage,
@@ -35,7 +48,7 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     handlePageChange,
     handlePageSizeChange,
   } = useEmployeeListPagination({
-    employees: sortedEmployees,
+    employees: sortedEmployees, // כבר ממוין וסנן
     searchTerm: '', // כבר סיננו לפי חיפוש
     pageSize: preferences.pageSize,
   });

@@ -109,7 +109,7 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
     );
   }
 
-  // Desktop view: table
+  // Desktop view: table - הנתונים כבר ממוינים לכן אין צורך למיין שוב
   return (
     <div dir="rtl" className="overflow-x-auto w-full">
       <Table className="min-w-[750px] sm:min-w-full">
