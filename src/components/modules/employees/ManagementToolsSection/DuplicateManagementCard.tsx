@@ -35,7 +35,7 @@ export const DuplicateManagementCard: React.FC = () => {
               variant="default" 
               className="w-full flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
             >
-              <SearchClassName="h-4 w-4" />
+              <Search className="h-4 w-4" />
               חפש עובדים כפולים
             </Button>
           </DialogTrigger>
