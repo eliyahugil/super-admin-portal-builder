@@ -61,7 +61,7 @@ export const useImportExecution = ({
     try {
       setStep('importing');
       
-      // Filter employees - include both new employees and partial updates
+      // סינון העובדים - כולל עובדים חדשים ועדכונים חלקיים
       const validEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate);
       const partialUpdateEmployees = previewData.filter(emp => emp.isValid && emp.isPartialUpdate);
       const newEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate && !emp.isPartialUpdate);
@@ -75,7 +75,7 @@ export const useImportExecution = ({
       });
 
       if (validEmployees.length === 0) {
-        return {
+        const result: ImportResult = {
           success: false,
           importedCount: 0,
           errorCount: errorEmployees.length,
@@ -84,8 +84,13 @@ export const useImportExecution = ({
             row: previewData.indexOf(emp) + 2,
             employee: `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
             error: emp.validationErrors.join(', ')
-          }))
+          })),
+          importedEmployees: []
         };
+        
+        setImportResult(result);
+        setStep('results');
+        return;
       }
 
       const importedEmployees: Array<{ name: string; email?: string; branch?: string }> = [];
@@ -93,8 +98,8 @@ export const useImportExecution = ({
       let successCount = 0;
       let updateCount = 0;
 
-      // Process employees in batches
-      const batchSize = 10;
+      // עיבוד עובדים בחבילות
+      const batchSize = 5;
       for (let i = 0; i < validEmployees.length; i += batchSize) {
         const batch = validEmployees.slice(i, i + batchSize);
         console.log(`📦 Processing batch ${Math.floor(i / batchSize) + 1} of ${Math.ceil(validEmployees.length / batchSize)}`);
@@ -102,13 +107,30 @@ export const useImportExecution = ({
         for (const employee of batch) {
           try {
             if (employee.isPartialUpdate && employee.existingEmployeeId) {
-              // Update existing employee with only new data
+              // עדכון עובד קיים - רק שדות ריקים
               console.log(`🔄 Updating existing employee ${employee.existingEmployeeId}`);
               
-              // Prepare update data - only include fields that have values
+              // קבלת נתוני העובד הקיימים מהמסד נתונים
+              const { data: currentEmployee, error: fetchError } = await supabase
+                .from('employees')
+                .select('*')
+                .eq('id', employee.existingEmployeeId)
+                .eq('business_id', businessId)
+                .single();
+
+              if (fetchError || !currentEmployee) {
+                console.error(`❌ Error fetching current employee data:`, fetchError);
+                errors.push({
+                  row: previewData.indexOf(employee) + 2,
+                  employee: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע',
+                  error: 'לא ניתן למצוא את העובד הקיים במסד הנתונים'
+                });
+                continue;
+              }
+
+              // הכנת נתוני העדכון - רק שדות שריקים או null בעובד הקיים
               const updateData: any = {};
               
-              // List of fields that can be updated
               const updatableFields = [
                 'first_name', 'last_name', 'email', 'phone', 'id_number', 
                 'employee_id', 'address', 'hire_date', 'employee_type', 
@@ -116,18 +138,25 @@ export const useImportExecution = ({
               ];
               
               updatableFields.forEach(field => {
-                if (employee[field] !== undefined && employee[field] !== null && employee[field] !== '') {
+                const importValue = employee[field];
+                const currentValue = currentEmployee[field];
+                
+                // עדכן רק אם השדה הקיים ריק או null והיש ערך חדש
+                if ((!currentValue || currentValue === '' || currentValue === null) && 
+                    importValue !== undefined && importValue !== null && importValue !== '') {
+                  
                   if (field === 'employee_type') {
-                    updateData[field] = normalizeEmployeeType(employee[field]);
+                    updateData[field] = normalizeEmployeeType(importValue);
                   } else if (field === 'weekly_hours_required') {
-                    updateData[field] = employee[field] ? Number(employee[field]) : null;
+                    updateData[field] = importValue ? Number(importValue) : null;
                   } else {
-                    updateData[field] = employee[field].toString().trim();
+                    updateData[field] = String(importValue).trim();
                   }
+                  
+                  console.log(`📝 Will update ${field}: "${currentValue}" -> "${importValue}"`);
                 }
               });
 
-              // Only proceed with update if there's actually data to update
               if (Object.keys(updateData).length > 0) {
                 updateData.updated_at = new Date().toISOString();
                 
@@ -158,14 +187,14 @@ export const useImportExecution = ({
                 importedEmployees.push({
                   name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'לא ידוע',
                   email: data.email || undefined,
-                  branch: employee.main_branch_id ? 'עודכן' : undefined
+                  branch: 'עודכן'
                 });
               } else {
-                console.log(`⚠️ No new data to update for employee ${employee.existingEmployeeId}`);
+                console.log(`⚠️ No empty fields to update for employee ${employee.existingEmployeeId}`);
               }
               
             } else {
-              // Insert new employee
+              // הוספת עובד חדש
               const employeeData = {
                 business_id: businessId,
                 first_name: employee.first_name || '',
@@ -218,31 +247,6 @@ export const useImportExecution = ({
               });
             }
 
-            // Handle custom fields for both new and updated employees
-            if (employee.customFields && Object.keys(employee.customFields).length > 0) {
-              const employeeId = employee.isPartialUpdate ? employee.existingEmployeeId : null; // Will be set from insert result
-              
-              if (employeeId) {
-                console.log(`🔧 Processing custom fields for employee ${employeeId}:`, employee.customFields);
-                
-                const customFieldsText = Object.entries(employee.customFields)
-                  .map(([key, value]) => `${key}: ${value}`)
-                  .join('; ');
-                
-                // For now, append custom fields to notes (simplified approach)
-                const { error: notesError } = await supabase
-                  .from('employees')
-                  .update({ 
-                    notes: `${employee.notes || ''}\n\nשדות מותאמים: ${customFieldsText}`.trim()
-                  })
-                  .eq('id', employeeId);
-
-                if (notesError) {
-                  console.warn(`⚠️ Error updating notes with custom fields:`, notesError);
-                }
-              }
-            }
-
           } catch (error) {
             console.error(`❌ Unexpected error processing employee:`, error);
             errors.push({
@@ -253,13 +257,13 @@ export const useImportExecution = ({
           }
         }
 
-        // Small delay between batches
+        // השהייה קטנה בין החבילות
         if (i + batchSize < validEmployees.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
       }
 
-      // Wait for database consistency
+      // המתנה לעקביות מסד הנתונים
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const result: ImportResult = {

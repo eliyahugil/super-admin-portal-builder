@@ -38,26 +38,9 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
     effectiveBusinessId
   });
 
-  // Data hooks - Fix the existing employees data structure to include required id field
+  // Data hooks - Get full employee data for comparison
   const { data: branches = [] } = useBranches(effectiveBusinessId);
-  const { data: rawExistingEmployees = [] } = useExistingEmployees(effectiveBusinessId);
-  
-  // Transform existing employees data to match expected type with required id field
-  const existingEmployees = rawExistingEmployees.map(emp => ({
-    id: emp.id || '', // Ensure id field is always present
-    email: emp.email || undefined,
-    id_number: emp.id_number || undefined,
-    employee_id: emp.employee_id || undefined,
-    first_name: emp.first_name || undefined,
-    last_name: emp.last_name || undefined,
-    phone: emp.phone || undefined,
-    address: emp.address || undefined,
-    employee_type: emp.employee_type || undefined,
-    hire_date: emp.hire_date || undefined,
-    main_branch_id: emp.main_branch_id || undefined,
-    notes: emp.notes || undefined,
-    weekly_hours_required: emp.weekly_hours_required || undefined,
-  }));
+  const { data: existingEmployees = [] } = useExistingEmployees(effectiveBusinessId);
 
   // Custom hooks for different phases
   const { processFile, downloadTemplate, isProcessing } = useFileProcessing({

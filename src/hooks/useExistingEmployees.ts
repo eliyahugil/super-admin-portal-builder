@@ -10,7 +10,7 @@ export const useExistingEmployees = (selectedBusinessId?: string | null) => {
   const businessId = selectedBusinessId || contextBusinessId;
 
   return useQuery({
-    queryKey: ['existing-employees', businessId],
+    queryKey: ['existing-employees-full', businessId],
     queryFn: async () => {
       if (!businessId) {
         return [];
@@ -18,7 +18,7 @@ export const useExistingEmployees = (selectedBusinessId?: string | null) => {
 
       const { data, error } = await supabase
         .from('employees')
-        .select('email, id_number, employee_id')
+        .select('id, email, id_number, employee_id, first_name, last_name, phone, address, employee_type, hire_date, main_branch_id, notes, weekly_hours_required')
         .eq('business_id', businessId)
         .eq('is_active', true);
 
