@@ -49,7 +49,8 @@ export const useImportExecution = ({
     console.log('🚀 Starting import execution:', {
       businessId,
       totalEmployees: previewData.length,
-      validEmployees: previewData.filter(emp => emp.isValid && !emp.isDuplicate).length,
+      validEmployees: previewData.filter(emp => emp.isValid).length,
+      newEmployees: previewData.filter(emp => emp.isValid && !emp.isPartialUpdate).length,
       partialUpdateEmployees: previewData.filter(emp => emp.isValid && emp.isPartialUpdate).length
     });
 
@@ -61,14 +62,15 @@ export const useImportExecution = ({
     try {
       setStep('importing');
       
-      // סינון העובדים - כולל עובדים חדשים ועדכונים חלקיים
-      const validEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate);
-      const partialUpdateEmployees = previewData.filter(emp => emp.isValid && emp.isPartialUpdate);
-      const newEmployees = previewData.filter(emp => emp.isValid && !emp.isDuplicate && !emp.isPartialUpdate);
+      // Filter employees - only valid ones
+      const validEmployees = previewData.filter(emp => emp.isValid);
+      const newEmployees = validEmployees.filter(emp => !emp.isPartialUpdate);
+      const partialUpdateEmployees = validEmployees.filter(emp => emp.isPartialUpdate);
       const errorEmployees = previewData.filter(emp => !emp.isValid);
 
       console.log(`📋 Import breakdown:`, {
         total: previewData.length,
+        valid: validEmployees.length,
         newEmployees: newEmployees.length,
         partialUpdates: partialUpdateEmployees.length,
         errors: errorEmployees.length
@@ -80,10 +82,10 @@ export const useImportExecution = ({
           importedCount: 0,
           errorCount: errorEmployees.length,
           message: 'לא נמצאו עובדים תקינים לייבוא',
-          errors: errorEmployees.map(emp => ({
-            row: previewData.indexOf(emp) + 2,
-            employee: `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
-            error: emp.validationErrors.join(', ')
+          errors: errorEmployees.map((emp, idx) => ({
+            row: idx + 2,
+            employee: `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.email || 'לא ידוע',
+            error: emp.validationErrors?.join(', ') || 'שגיאה לא ידועה'
           })),
           importedEmployees: []
         };
@@ -98,7 +100,7 @@ export const useImportExecution = ({
       let successCount = 0;
       let updateCount = 0;
 
-      // עיבוד עובדים בחבילות
+      // Process employees in batches
       const batchSize = 5;
       for (let i = 0; i < validEmployees.length; i += batchSize) {
         const batch = validEmployees.slice(i, i + batchSize);
@@ -106,11 +108,14 @@ export const useImportExecution = ({
 
         for (const employee of batch) {
           try {
+            const employeeName = `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע';
+            const originalRowIndex = previewData.indexOf(employee) + 2;
+
             if (employee.isPartialUpdate && employee.existingEmployeeId) {
-              // עדכון עובד קיים - רק שדות ריקים
-              console.log(`🔄 Updating existing employee ${employee.existingEmployeeId}`);
+              // Update existing employee - only empty fields
+              console.log(`🔄 Updating existing employee ${employee.existingEmployeeId}: ${employeeName}`);
               
-              // קבלת נתוני העובד הקיימים מהמסד נתונים
+              // Get current employee data from database
               const { data: currentEmployee, error: fetchError } = await supabase
                 .from('employees')
                 .select('*')
@@ -121,14 +126,14 @@ export const useImportExecution = ({
               if (fetchError || !currentEmployee) {
                 console.error(`❌ Error fetching current employee data:`, fetchError);
                 errors.push({
-                  row: previewData.indexOf(employee) + 2,
-                  employee: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע',
+                  row: originalRowIndex,
+                  employee: employeeName,
                   error: 'לא ניתן למצוא את העובד הקיים במסד הנתונים'
                 });
                 continue;
               }
 
-              // הכנת נתוני העדכון - רק שדות שריקים או null בעובד הקיים
+              // Prepare update data - only fields that are empty in existing employee
               const updateData: any = {};
               
               const updatableFields = [
@@ -137,11 +142,12 @@ export const useImportExecution = ({
                 'weekly_hours_required', 'main_branch_id', 'notes'
               ];
               
+              let fieldsUpdated = 0;
               updatableFields.forEach(field => {
                 const importValue = employee[field];
                 const currentValue = currentEmployee[field];
                 
-                // עדכן רק אם השדה הקיים ריק או null והיש ערך חדש
+                // Update only if current field is empty and import has value
                 if ((!currentValue || currentValue === '' || currentValue === null) && 
                     importValue !== undefined && importValue !== null && importValue !== '') {
                   
@@ -153,28 +159,29 @@ export const useImportExecution = ({
                     updateData[field] = String(importValue).trim();
                   }
                   
-                  console.log(`📝 Will update ${field}: "${currentValue}" -> "${importValue}"`);
+                  fieldsUpdated++;
+                  console.log(`📝 Will update ${field}: empty -> "${importValue}"`);
                 }
               });
 
-              if (Object.keys(updateData).length > 0) {
+              if (fieldsUpdated > 0) {
                 updateData.updated_at = new Date().toISOString();
                 
-                console.log(`📝 Updating employee with data:`, updateData);
+                console.log(`📝 Updating employee with ${fieldsUpdated} fields:`, updateData);
 
                 const { data, error } = await supabase
                   .from('employees')
                   .update(updateData)
                   .eq('id', employee.existingEmployeeId)
                   .eq('business_id', businessId)
-                  .select('id, first_name, last_name, email, business_id, is_active, is_archived')
+                  .select('id, first_name, last_name, email')
                   .single();
 
                 if (error) {
                   console.error(`❌ Error updating employee ${employee.existingEmployeeId}:`, error);
                   errors.push({
-                    row: previewData.indexOf(employee) + 2,
-                    employee: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע',
+                    row: originalRowIndex,
+                    employee: employeeName,
                     error: error.message
                   });
                   continue;
@@ -185,16 +192,22 @@ export const useImportExecution = ({
                 successCount++;
                 
                 importedEmployees.push({
-                  name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'לא ידוע',
+                  name: employeeName,
                   email: data.email || undefined,
-                  branch: 'עודכן'
+                  branch: `עודכן (${fieldsUpdated} שדות)`
                 });
               } else {
-                console.log(`⚠️ No empty fields to update for employee ${employee.existingEmployeeId}`);
+                console.log(`⚠️ No fields to update for employee ${employee.existingEmployeeId}`);
+                // This shouldn't happen as we filter these out, but just in case
+                errors.push({
+                  row: originalRowIndex,
+                  employee: employeeName,
+                  error: 'אין שדות לעדכון'
+                });
               }
               
             } else {
-              // הוספת עובד חדש
+              // Create new employee
               const employeeData = {
                 business_id: businessId,
                 first_name: employee.first_name || '',
@@ -213,25 +226,19 @@ export const useImportExecution = ({
                 is_archived: false,
               };
 
-              console.log(`👤 Inserting new employee:`, {
-                name: `${employee.first_name || ''} ${employee.last_name || ''}`.trim(),
-                email: employee.email,
-                employee_id: employee.employee_id,
-                employee_type: employeeData.employee_type,
-                business_id: employeeData.business_id
-              });
+              console.log(`👤 Inserting new employee: ${employeeName}`);
 
               const { data, error } = await supabase
                 .from('employees')
                 .insert([employeeData])
-                .select('id, first_name, last_name, email, business_id, is_active, is_archived')
+                .select('id, first_name, last_name, email')
                 .single();
 
               if (error) {
                 console.error(`❌ Error inserting employee:`, error);
                 errors.push({
-                  row: previewData.indexOf(employee) + 2,
-                  employee: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע',
+                  row: originalRowIndex,
+                  employee: employeeName,
                   error: error.message
                 });
                 continue;
@@ -241,29 +248,32 @@ export const useImportExecution = ({
               successCount++;
               
               importedEmployees.push({
-                name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'לא ידוע',
+                name: employeeName,
                 email: data.email || undefined,
-                branch: employee.main_branch_id ? 'כן' : undefined
+                branch: 'חדש'
               });
             }
 
           } catch (error) {
             console.error(`❌ Unexpected error processing employee:`, error);
+            const employeeName = `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע';
+            const originalRowIndex = previewData.indexOf(employee) + 2;
+            
             errors.push({
-              row: previewData.indexOf(employee) + 2,
-              employee: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email || 'לא ידוע',
+              row: originalRowIndex,
+              employee: employeeName,
               error: error instanceof Error ? error.message : 'שגיאה לא ידועה'
             });
           }
         }
 
-        // השהייה קטנה בין החבילות
+        // Small delay between batches
         if (i + batchSize < validEmployees.length) {
           await new Promise(resolve => setTimeout(resolve, 200));
         }
       }
 
-      // המתנה לעקביות מסד הנתונים
+      // Wait for database consistency
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const result: ImportResult = {
