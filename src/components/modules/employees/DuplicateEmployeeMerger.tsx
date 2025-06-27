@@ -133,13 +133,24 @@ export const DuplicateEmployeeMerger: React.FC = () => {
             </p>
             
             {duplicateGroups.length > 0 && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2 items-center">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleSelectAll}
+                  className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                 >
-                  {selectedGroups.size === duplicateGroups.length ? 'בטל בחירה' : 'בחר הכל'}
+                  {selectedGroups.size === duplicateGroups.length ? (
+                    <>
+                      <X className="h-4 w-4 ml-2" />
+                      בטל בחירת הכל
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4 ml-2" />
+                      בחר הכל ({duplicateGroups.length} קבוצות)
+                    </>
+                  )}
                 </Button>
                 
                 <Button
@@ -159,6 +170,12 @@ export const DuplicateEmployeeMerger: React.FC = () => {
                     </>
                   )}
                 </Button>
+
+                {selectedGroups.size > 0 && (
+                  <div className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+                    נבחרו {selectedGroups.size} מתוך {duplicateGroups.length} קבוצות
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -180,7 +197,7 @@ export const DuplicateEmployeeMerger: React.FC = () => {
 
       {/* Duplicate groups list */}
       {duplicateGroups.map((group: DuplicateGroup, index: number) => (
-        <Card key={index} className="border-orange-200">
+        <Card key={index} className={`border-orange-200 transition-all ${selectedGroups.has(index) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
@@ -188,7 +205,7 @@ export const DuplicateEmployeeMerger: React.FC = () => {
                   type="checkbox"
                   checked={selectedGroups.has(index)}
                   onChange={(e) => handleGroupSelection(index, e.target.checked)}
-                  className="ml-2"
+                  className="ml-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 קבוצה כפולה #{index + 1}
                 <span className="text-sm text-gray-500">({group.reason})</span>
