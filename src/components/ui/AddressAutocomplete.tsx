@@ -40,8 +40,18 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
   const { isReady, isLoading, error, googleMapsService } = useGoogleMaps();
+
+  console.log('AddressAutocomplete - State:', {
+    isReady,
+    isLoading,
+    error,
+    inputValue,
+    suggestions: suggestions.length,
+    isOpen
+  });
 
   // Update input value when value prop changes
   useEffect(() => {
@@ -65,14 +75,19 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   }, []);
 
   const searchPlaces = async (query: string) => {
+    console.log('searchPlaces called with:', query);
+    
     if (!isReady || !query.trim() || query.length < 3) {
+      console.log('Search cancelled - conditions not met:', { isReady, query: query.trim(), length: query.length });
       setSuggestions([]);
       return;
     }
 
     setIsLoadingSuggestions(true);
     try {
+      console.log('Calling Google Maps API...');
       const results = await googleMapsService.getPlaceAutocomplete(query);
+      console.log('Google Maps API results:', results);
       setSuggestions(results);
       setIsOpen(true);
     } catch (error) {
@@ -85,6 +100,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    console.log('Input changed to:', newValue);
     setInputValue(newValue);
     
     // Clear selected value if input is manually changed
@@ -92,15 +108,19 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       onChange(null);
     }
 
-    // Debounce the search
-    const timeoutId = setTimeout(() => {
-      searchPlaces(newValue);
-    }, 300);
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
 
-    return () => clearTimeout(timeoutId);
+    // Debounce the search
+    searchTimeoutRef.current = setTimeout(() => {
+      searchPlaces(newValue);
+    }, 500); // Increased debounce time
   };
 
   const handleSuggestionClick = async (suggestion: PlaceAutocompleteResult) => {
+    console.log('Suggestion clicked:', suggestion);
     setIsLoadingSuggestions(true);
     try {
       const placeDetails = await googleMapsService.getPlaceDetails(suggestion.place_id);
@@ -116,6 +136,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         longitude: placeDetails.geometry.location.lng,
       };
 
+      console.log('Address data created:', addressData);
       setInputValue(placeDetails.formatted_address);
       onChange(addressData);
       setIsOpen(false);
@@ -135,6 +156,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     inputRef.current?.focus();
   };
 
+  // If Google Maps is loading, show loading state
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -147,7 +169,9 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     );
   }
 
+  // If Google Maps is not available or has error, use fallback
   if (error || !isReady) {
+    console.log('Using fallback mode due to:', { error, isReady });
     return (
       <div className="space-y-2">
         {label && <Label htmlFor="address-fallback">{label}</Label>}
@@ -191,6 +215,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             value={inputValue}
             onChange={handleInputChange}
             onFocus={() => {
+              console.log('Input focused');
               if (suggestions.length > 0) {
                 setIsOpen(true);
               }
