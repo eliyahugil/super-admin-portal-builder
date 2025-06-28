@@ -1,4 +1,8 @@
 
+export interface GoogleMapsConfig {
+  api_key: string;
+}
+
 export interface PlaceAutocompleteResult {
   place_id: string;
   description: string;
@@ -24,14 +28,9 @@ export interface PlaceDetails {
 }
 
 export interface AddressComponents {
-  street?: string;
   streetNumber?: string;
+  street?: string;
   city?: string;
   postalCode?: string;
   country?: string;
-}
-
-export interface GoogleMapsConfig {
-  api_key?: string;
-  [key: string]: any;
 }

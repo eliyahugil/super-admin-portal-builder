@@ -1,9 +1,10 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
+import { useAddressSearch } from './useAddressSearch';
+import { useDropdownState } from './useDropdownState';
 import type { AddressData } from '../types';
 
-// Import the types we need from the GoogleMapsService
 interface PlaceAutocompleteResult {
   place_id: string;
   description: string;
@@ -13,34 +14,14 @@ interface PlaceAutocompleteResult {
   };
 }
 
-interface PlaceDetails {
-  formatted_address: string;
-  geometry: {
-    location: {
-      lat: number;
-      lng: number;
-    };
-  };
-  address_components: {
-    long_name: string;
-    short_name: string;
-    types: string[];
-  }[];
-}
-
 export const useAddressAutocomplete = (
   value: AddressData | null,
   onChange: (addressData: AddressData | null) => void
 ) => {
   const [inputValue, setInputValue] = useState(value?.formatted_address || '');
-  const [suggestions, setSuggestions] = useState<PlaceAutocompleteResult[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
-
   const { isReady, isLoading, error, googleMapsService } = useGoogleMaps();
+  const { suggestions, isLoadingSuggestions, searchPlaces, clearSuggestions } = useAddressSearch();
+  const { isOpen, inputRef, dropdownRef, openDropdown, closeDropdown } = useDropdownState();
 
   console.log('🔍 useAddressAutocomplete - State:', {
     isReady,
@@ -58,65 +39,6 @@ export const useAddressAutocomplete = (
     setInputValue(value?.formatted_address || '');
   }, [value]);
 
-  // Handle clicks outside dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        !inputRef.current?.contains(event.target as Node)
-      ) {
-        console.log('👆 Click outside - closing dropdown');
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const searchPlaces = async (query: string) => {
-    console.log('🔎 searchPlaces called with query:', `"${query}"`);
-    
-    if (!isReady) {
-      console.log('❌ Google Maps not ready, skipping search');
-      setSuggestions([]);
-      return;
-    }
-
-    if (!query.trim() || query.length < 2) {
-      console.log('❌ Query too short or empty, skipping search');
-      setSuggestions([]);
-      setIsOpen(false);
-      return;
-    }
-
-    console.log('🚀 Starting Google Maps API search...');
-    setIsLoadingSuggestions(true);
-    
-    try {
-      const results = await googleMapsService.getPlaceAutocomplete(query);
-      console.log('✅ Google Maps API results received:', results.length, 'suggestions');
-      
-      setSuggestions(results);
-      
-      if (results.length > 0) {
-        console.log('📂 Opening dropdown with', results.length, 'suggestions');
-        setIsOpen(true);
-      } else {
-        console.log('❌ No results, keeping dropdown closed');
-        setIsOpen(false);
-      }
-    } catch (error) {
-      console.error('💥 Error fetching place suggestions:', error);
-      setSuggestions([]);
-      setIsOpen(false);
-    } finally {
-      setIsLoadingSuggestions(false);
-      console.log('🏁 Search completed');
-    }
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     console.log('⌨️ Input changed from:', `"${inputValue}"`, 'to:', `"${newValue}"`);
@@ -129,18 +51,8 @@ export const useAddressAutocomplete = (
       onChange(null);
     }
 
-    // Clear previous timeout
-    if (searchTimeoutRef.current) {
-      console.log('⏰ Clearing previous search timeout');
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    // Debounce the search
-    console.log('⏱️ Setting search timeout for 300ms');
-    searchTimeoutRef.current = setTimeout(() => {
-      console.log('⏰ Search timeout triggered, calling searchPlaces');
-      searchPlaces(newValue);
-    }, 300);
+    // Search for places
+    searchPlaces(newValue);
   };
 
   const handleInputFocus = () => {
@@ -148,7 +60,7 @@ export const useAddressAutocomplete = (
     
     if (suggestions.length > 0) {
       console.log('📂 Opening dropdown on focus (has suggestions)');
-      setIsOpen(true);
+      openDropdown();
     }
     
     // Trigger search if there's existing input
@@ -160,7 +72,6 @@ export const useAddressAutocomplete = (
 
   const handleSuggestionClick = async (suggestion: PlaceAutocompleteResult) => {
     console.log('🖱️ Suggestion clicked:', suggestion.description);
-    setIsLoadingSuggestions(true);
     
     try {
       console.log('📍 Getting place details for:', suggestion.place_id);
@@ -183,13 +94,11 @@ export const useAddressAutocomplete = (
       console.log('📊 Final address data:', addressData);
       setInputValue(placeDetails.formatted_address);
       onChange(addressData);
-      setIsOpen(false);
-      setSuggestions([]);
+      closeDropdown();
+      clearSuggestions();
       console.log('✅ Address selection completed');
     } catch (error) {
       console.error('💥 Error fetching place details:', error);
-    } finally {
-      setIsLoadingSuggestions(false);
     }
   };
 
@@ -197,10 +106,19 @@ export const useAddressAutocomplete = (
     console.log('🧹 Clearing input');
     setInputValue('');
     onChange(null);
-    setSuggestions([]);
-    setIsOpen(false);
+    clearSuggestions();
+    closeDropdown();
     inputRef.current?.focus();
   };
+
+  // Update dropdown state based on suggestions
+  useEffect(() => {
+    if (suggestions.length > 0 && inputValue.length >= 2) {
+      openDropdown();
+    } else {
+      closeDropdown();
+    }
+  }, [suggestions.length, inputValue.length]);
 
   return {
     inputValue,
