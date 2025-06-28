@@ -9,8 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
 import type { ScheduleFilters, EmployeeData, BranchData } from './types';
 
 interface ShiftScheduleFiltersProps {
@@ -33,43 +31,18 @@ export const ShiftScheduleFilters: React.FC<ShiftScheduleFiltersProps> = ({
     });
   };
 
-  const clearFilters = () => {
-    onFiltersChange({
-      status: 'all',
-      employee: 'all',
-      branch: 'all',
-      role: 'all'
-    });
-  };
-
-  const hasActiveFilters = Object.values(filters).some(value => value !== 'all');
-
   return (
     <Card>
-      <CardContent className="pt-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium">מסננים</h3>
-          {hasActiveFilters && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearFilters}
-            >
-              <X className="mr-2 h-4 w-4" />
-              נקה הכל
-            </Button>
-          )}
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <CardContent className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2">
             <Label>סטטוס</Label>
             <Select value={filters.status} onValueChange={(value) => updateFilter('status', value)}>
               <SelectTrigger>
-                <SelectValue placeholder="כל הסטטוסים" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">כל הסטטוסים</SelectItem>
+                <SelectItem value="all">הכל</SelectItem>
                 <SelectItem value="pending">ממתין</SelectItem>
                 <SelectItem value="approved">מאושר</SelectItem>
                 <SelectItem value="rejected">נדחה</SelectItem>
@@ -82,11 +55,11 @@ export const ShiftScheduleFilters: React.FC<ShiftScheduleFiltersProps> = ({
             <Label>עובד</Label>
             <Select value={filters.employee} onValueChange={(value) => updateFilter('employee', value)}>
               <SelectTrigger>
-                <SelectValue placeholder="כל העובדים" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">כל העובדים</SelectItem>
-                {employees.map((employee) => (
+                {employees.map(employee => (
                   <SelectItem key={employee.id} value={employee.id}>
                     {employee.first_name} {employee.last_name}
                   </SelectItem>
@@ -99,11 +72,11 @@ export const ShiftScheduleFilters: React.FC<ShiftScheduleFiltersProps> = ({
             <Label>סניף</Label>
             <Select value={filters.branch} onValueChange={(value) => updateFilter('branch', value)}>
               <SelectTrigger>
-                <SelectValue placeholder="כל הסניפים" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">כל הסניפים</SelectItem>
-                {branches.map((branch) => (
+                {branches.map(branch => (
                   <SelectItem key={branch.id} value={branch.id}>
                     {branch.name}
                   </SelectItem>
@@ -116,7 +89,7 @@ export const ShiftScheduleFilters: React.FC<ShiftScheduleFiltersProps> = ({
             <Label>תפקיד</Label>
             <Select value={filters.role} onValueChange={(value) => updateFilter('role', value)}>
               <SelectTrigger>
-                <SelectValue placeholder="כל התפקידים" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">כל התפקידים</SelectItem>

@@ -8,8 +8,8 @@ export interface ShiftScheduleData {
   start_time: string;
   end_time: string;
   status: 'pending' | 'approved' | 'rejected' | 'completed';
-  branch_name?: string;
   branch_id?: string;
+  branch_name?: string;
   role_preference?: string;
   notes?: string;
   created_at: string;
@@ -21,6 +21,7 @@ export interface EmployeeData {
   last_name: string;
   phone?: string;
   email?: string;
+  employee_id?: string;
 }
 
 export interface BranchData {
@@ -30,8 +31,8 @@ export interface BranchData {
 }
 
 export interface ScheduleFilters {
-  status: string;
-  employee: string;
-  branch: string;
-  role: string;
+  status: 'all' | 'pending' | 'approved' | 'rejected' | 'completed';
+  employee: 'all' | string;
+  branch: 'all' | string;
+  role: 'all' | string;
 }
