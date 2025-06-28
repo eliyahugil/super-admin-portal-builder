@@ -26,7 +26,30 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
   onSuggestionClick,
   isLoadingSuggestions,
 }) => {
+  console.log('🔍 SuggestionsDropdown render:', {
+    isOpen,
+    suggestionsCount: suggestions.length,
+    isLoadingSuggestions,
+    suggestions: suggestions.slice(0, 3) // Show first 3 for debugging
+  });
+
+  // Show loading state if we're loading
+  if (isLoadingSuggestions) {
+    console.log('⏳ Showing loading state in dropdown');
+    return (
+      <div
+        ref={dropdownRef}
+        className="absolute top-full left-0 right-0 z-[9999] bg-white border border-gray-200 rounded-md shadow-lg mt-1 p-4"
+        dir="rtl"
+      >
+        <div className="text-center text-gray-500">טוען הצעות...</div>
+      </div>
+    );
+  }
+
+  // Don't show if not open or no suggestions
   if (!isOpen || suggestions.length === 0) {
+    console.log('❌ Not showing dropdown:', { isOpen, suggestionsCount: suggestions.length });
     return null;
   }
 
@@ -40,6 +63,8 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
     console.log('🖱️ Suggestion clicked, calling handler');
     onSuggestionClick(suggestion);
   };
+
+  console.log('✅ Rendering dropdown with suggestions');
 
   return (
     <div

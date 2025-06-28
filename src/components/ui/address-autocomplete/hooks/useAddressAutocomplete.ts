@@ -27,9 +27,9 @@ export const useAddressAutocomplete = (
   const { suggestions, isLoadingSuggestions, searchPlaces, clearSuggestions } = useAddressSearch();
   
   // Simple dropdown state
-  const isOpen = isFocused && suggestions.length > 0 && !isSelecting;
+  const isOpen = isFocused && (suggestions.length > 0 || isLoadingSuggestions) && !isSelecting;
 
-  console.log('🔍 useAddressAutocomplete - State:', {
+  console.log('🔍 useAddressAutocomplete - Full State Debug:', {
     isReady,
     isLoading,
     error,
@@ -38,7 +38,8 @@ export const useAddressAutocomplete = (
     isOpen,
     isLoadingSuggestions,
     isFocused,
-    isSelecting
+    isSelecting,
+    firstSuggestion: suggestions[0]?.description || 'none'
   });
 
   // Update input value when value prop changes
@@ -63,8 +64,10 @@ export const useAddressAutocomplete = (
 
     // Search for places with debouncing
     if (newValue.trim().length >= 2) {
+      console.log('🔍 Starting search for:', `"${newValue}"`);
       searchPlaces(newValue);
     } else {
+      console.log('🧹 Clearing suggestions - query too short');
       clearSuggestions();
     }
   }, [value, onChange, searchPlaces, clearSuggestions]);

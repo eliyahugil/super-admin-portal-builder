@@ -41,12 +41,13 @@ export const useAddressSearch = () => {
       console.log('📍 First few results:', results.slice(0, 3));
       
       setSuggestions(results);
+      console.log('📊 State updated with suggestions:', results.length);
     } catch (error) {
       console.error('💥 Error fetching place suggestions:', error);
       setSuggestions([]);
     } finally {
       setIsLoadingSuggestions(false);
-      console.log('🏁 Search completed');
+      console.log('🏁 Search completed, isLoadingSuggestions set to false');
     }
   };
 
@@ -66,12 +67,19 @@ export const useAddressSearch = () => {
   };
 
   const clearSuggestions = () => {
+    console.log('🧹 Clearing suggestions');
     setSuggestions([]);
     setIsLoadingSuggestions(false);
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
   };
+
+  console.log('🔍 useAddressSearch current state:', {
+    suggestionsCount: suggestions.length,
+    isLoadingSuggestions,
+    isReady
+  });
 
   return {
     suggestions,
