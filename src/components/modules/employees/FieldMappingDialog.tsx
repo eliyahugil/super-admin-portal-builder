@@ -1,17 +1,18 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
+import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
 interface FieldMappingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fileColumns: string[];
   sampleData: any[][];
-  onConfirm: (mappings: Record<string, string>) => void;
+  onConfirm: (mappings: FieldMapping[]) => void;
   onBack?: () => void;
 }
 
@@ -44,6 +45,13 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
     mappings
   });
 
+  // Reset mappings when dialog opens
+  useEffect(() => {
+    if (open) {
+      setMappings({});
+    }
+  }, [open]);
+
   const handleMappingChange = (employeeField: string, fileColumn: string) => {
     console.log('🔄 Mapping changed:', { employeeField, fileColumn });
     setMappings(prev => ({
@@ -63,8 +71,21 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
       alert(`אנא מפה את השדות הנדרשים: ${missingFields.map(f => f.label).join(', ')}`);
       return;
     }
+
+    // Convert simple mappings to FieldMapping[] format
+    const fieldMappings: FieldMapping[] = EMPLOYEE_FIELDS.map(field => ({
+      id: field.key,
+      systemField: field.key,
+      mappedColumns: mappings[field.key] ? [mappings[field.key]] : [],
+      isRequired: field.required,
+      label: field.label,
+      isCustomField: false,
+      columnIndex: mappings[field.key] ? fileColumns.indexOf(mappings[field.key]) : undefined
+    }));
+
+    console.log('🔄 Converted to FieldMapping[]:', fieldMappings);
     
-    onConfirm(mappings);
+    onConfirm(fieldMappings);
   };
 
   const getSampleValue = (columnIndex: number) => {

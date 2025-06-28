@@ -1,3 +1,4 @@
+
 import type { FieldMapping, PreviewEmployee, ImportStep } from '../types';
 
 interface UseFieldMappingProps {
@@ -94,7 +95,7 @@ export const useFieldMapping = ({
     return null;
   };
 
-  const confirmMapping = async (mappings: FieldMapping[]) => {
+  const confirmMapping = async (mappings: FieldMapping[]): Promise<void> => {
     console.log('🔄 useFieldMapping - confirmMapping started with:', {
       mappingsCount: mappings.length,
       businessId,

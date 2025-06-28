@@ -27,7 +27,6 @@ export const EmployeeImportMappingStep: React.FC<EmployeeImportMappingStepProps>
       fileColumns={fileColumns}
       sampleData={sampleData}
       onConfirm={onConfirm}
-      systemFields={systemFields}
     />
   );
 };
