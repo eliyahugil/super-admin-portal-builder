@@ -8,11 +8,19 @@ import { EnhancedFieldMappingDialog } from './EnhancedFieldMappingDialog';
 import { ImportPreview } from './ImportPreview';
 import { ImportResults } from './ImportResults';
 import { useEmployeeImport } from '@/hooks/useEmployeeImport';
-import { useAuth } from '@/components/auth/AuthContext';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
-export const ImportManager: React.FC = () => {
-  const { user } = useAuth();
-  const businessId = user?.business_id;
+interface ImportManagerProps {
+  selectedBusinessId?: string | null;
+  onRefetch?: () => void;
+}
+
+export const ImportManager: React.FC<ImportManagerProps> = ({ 
+  selectedBusinessId,
+  onRefetch 
+}) => {
+  const { businessId: currentBusinessId } = useCurrentBusiness();
+  const businessId = selectedBusinessId || currentBusinessId;
 
   const {
     step,
@@ -179,13 +187,14 @@ export const ImportManager: React.FC = () => {
           {step === 'results' && importResult && (
             <ImportResults
               result={importResult}
-              onReset={() => {
+              onClose={() => {
                 setStep('closed');
                 resetForm();
+                if (onRefetch) onRefetch();
               }}
-              onImportMore={() => {
-                setStep('upload');
-                resetForm();
+              onBackToMapping={() => {
+                setStep('mapping');
+                setShowMappingDialog(true);
               }}
             />
           )}

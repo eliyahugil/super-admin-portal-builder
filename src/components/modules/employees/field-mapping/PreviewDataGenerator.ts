@@ -1,6 +1,15 @@
 
 import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
 
+export interface PreviewCellData {
+  value: string;
+  isMultiColumn: boolean;
+  sourceColumns: string[];
+  isCustomField: boolean;
+  isMapped?: boolean;
+  isEmpty?: boolean;
+}
+
 export const generatePreviewData = (
   mappings: FieldMapping[],
   sampleData: any[]
