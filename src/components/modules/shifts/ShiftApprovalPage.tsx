@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -21,7 +22,9 @@ import {
   XCircle,
   Search,
   MapPin,
-  MessageSquare
+  MessageSquare,
+  Eye,
+  Settings
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/useBusiness';
@@ -52,14 +55,15 @@ export const ShiftApprovalPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [reviewNotes, setReviewNotes] = useState<{ [id: string]: string }>({});
+  const [activeTab, setActiveTab] = useState('approval');
 
   const { toast } = useToast();
   const { businessId } = useBusiness();
   const queryClient = useQueryClient();
 
-  // Fetch shift requests for approval - נשלוף נתונים בצורה נפרדת
+  // Fetch shift requests - נשלוף נתונים בצורה נפרדת
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ['shift-approval-requests', businessId, statusFilter],
+    queryKey: ['shift-requests', businessId, statusFilter],
     queryFn: async (): Promise<ShiftRequest[]> => {
       if (!businessId) return [];
       
@@ -147,7 +151,7 @@ export const ShiftApprovalPage: React.FC = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shift-approval-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['shift-requests'] });
       toast({
         title: 'הצלחה',
         description: 'סטטוס הבקשה עודכן בהצלחה'
@@ -216,15 +220,153 @@ export const ShiftApprovalPage: React.FC = () => {
     );
   }
 
+  const renderRequestCard = (request: ShiftRequest, showActions: boolean = false) => (
+    <Card key={request.id}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <User className="h-4 w-4 text-blue-600" />
+            <span className="font-semibold">{request.employee_name}</span>
+          </div>
+          <Badge className={getStatusColor(request.status)}>
+            {getStatusLabel(request.status)}
+          </Badge>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div>
+            <strong>תאריך:</strong>
+            <p>{format(new Date(request.shift_date), 'dd/MM/yyyy')}</p>
+          </div>
+          <div>
+            <strong>שעות:</strong>
+            <p>{request.start_time} - {request.end_time}</p>
+          </div>
+          {request.branch_preference && (
+            <div>
+              <strong>סניף מועדף:</strong>
+              <p className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {request.branch_preference}
+              </p>
+            </div>
+          )}
+          {request.role_preference && (
+            <div>
+              <strong>תפקיד מועדף:</strong>
+              <p>{request.role_preference}</p>
+            </div>
+          )}
+        </div>
+
+        {request.notes && (
+          <div className="mb-4">
+            <strong>הערות העובד:</strong>
+            <p className="text-gray-700">{request.notes}</p>
+          </div>
+        )}
+
+        <div className="text-sm text-gray-500 mb-3">
+          <Calendar className="inline h-4 w-4 mr-1" />
+          נוצר: {format(new Date(request.created_at), 'dd/MM/yyyy HH:mm')}
+          {request.reviewed_at && (
+            <span className="mr-4">
+              | נבדק: {format(new Date(request.reviewed_at), 'dd/MM/yyyy HH:mm')}
+            </span>
+          )}
+        </div>
+
+        {showActions && request.status === 'pending' && (
+          <div className="border-t pt-4 space-y-3">
+            <div>
+              <label className="block text-sm font-medium mb-2">הערת מנהל:</label>
+              <Textarea
+                placeholder="הוסף הערה (אופציונלי)..."
+                value={reviewNotes[request.id] || ''}
+                onChange={(e) => setReviewNotes(prev => ({ ...prev, [request.id]: e.target.value }))}
+                rows={2}
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => updateStatusMutation.mutate({ 
+                  requestId: request.id, 
+                  status: 'approved',
+                  notes: reviewNotes[request.id]
+                })}
+                disabled={updateStatusMutation.isPending}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="h-4 w-4 mr-1" />
+                אשר
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => updateStatusMutation.mutate({ 
+                  requestId: request.id, 
+                  status: 'rejected',
+                  notes: reviewNotes[request.id]
+                })}
+                disabled={updateStatusMutation.isPending}
+              >
+                <XCircle className="h-4 w-4 mr-1" />
+                דחה
+              </Button>
+              
+              {request.employee?.phone && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => sendWhatsApp(
+                    request.employee!.phone!,
+                    request.employee_name!,
+                    request.status,
+                    format(new Date(request.shift_date), 'dd/MM/yyyy'),
+                    reviewNotes[request.id]
+                  )}
+                >
+                  <MessageSquare className="h-4 w-4 mr-1" />
+                  וואטסאפ
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {request.status !== 'pending' && request.employee?.phone && (
+          <div className="border-t pt-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => sendWhatsApp(
+                request.employee!.phone!,
+                request.employee_name!,
+                request.status,
+                format(new Date(request.shift_date), 'dd/MM/yyyy')
+              )}
+            >
+              <MessageSquare className="h-4 w-4 mr-1" />
+              שלח עדכון בוואטסאפ
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6" dir="rtl">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
-            <CheckCircle className="h-6 w-6 text-green-600" />
-            אישור בקשות משמרות
+            <Settings className="h-6 w-6 text-blue-600" />
+            ניהול בקשות משמרות
           </h2>
-          <p className="text-gray-600">בדיקה ואישור בקשות משמרות מעובדים</p>
+          <p className="text-gray-600">אישור וצפייה בבקשות משמרות מעובדים</p>
         </div>
       </div>
 
@@ -273,184 +415,79 @@ export const ShiftApprovalPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4 items-center">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="חפש לפי עובד..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10"
-          />
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="approval" className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            אישור בקשות
+          </TabsTrigger>
+          <TabsTrigger value="view" className="flex items-center gap-2">
+            <Eye className="h-4 w-4" />
+            צפייה כללית
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Filters */}
+        <div className="flex gap-4 items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="חפש לפי עובד..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pr-10"
+            />
+          </div>
+          
+          <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">כל הסטטוסים</SelectItem>
+              <SelectItem value="pending">ממתין לאישור</SelectItem>
+              <SelectItem value="approved">מאושר</SelectItem>
+              <SelectItem value="rejected">נדחה</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        
-        <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">כל הסטטוסים</SelectItem>
-            <SelectItem value="pending">ממתין לאישור</SelectItem>
-            <SelectItem value="approved">מאושר</SelectItem>
-            <SelectItem value="rejected">נדחה</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      {/* Requests List */}
-      <div className="space-y-4">
-        {filteredRequests.map(request => (
-          <Card key={request.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <User className="h-4 w-4 text-blue-600" />
-                  <span className="font-semibold">{request.employee_name}</span>
-                </div>
-                <Badge className={getStatusColor(request.status)}>
-                  {getStatusLabel(request.status)}
-                </Badge>
-              </div>
+        <TabsContent value="approval" className="space-y-4">
+          <div className="space-y-4">
+            {filteredRequests
+              .filter(req => req.status === 'pending')
+              .map(request => renderRequestCard(request, true))}
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <div>
-                  <strong>תאריך:</strong>
-                  <p>{format(new Date(request.shift_date), 'dd/MM/yyyy')}</p>
-                </div>
-                <div>
-                  <strong>שעות:</strong>
-                  <p>{request.start_time} - {request.end_time}</p>
-                </div>
-                {request.branch_preference && (
-                  <div>
-                    <strong>סניף מועדף:</strong>
-                    <p className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {request.branch_preference}
-                    </p>
-                  </div>
-                )}
-                {request.role_preference && (
-                  <div>
-                    <strong>תפקיד מועדף:</strong>
-                    <p>{request.role_preference}</p>
-                  </div>
-                )}
-              </div>
+          {filteredRequests.filter(req => req.status === 'pending').length === 0 && (
+            <div className="text-center py-12">
+              <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">אין בקשות לאישור</h3>
+              <p className="text-gray-600">כל הבקשות כבר נבדקו ואושרו או נדחו</p>
+            </div>
+          )}
+        </TabsContent>
 
-              {request.notes && (
-                <div className="mb-4">
-                  <strong>הערות העובד:</strong>
-                  <p className="text-gray-700">{request.notes}</p>
-                </div>
-              )}
+        <TabsContent value="view" className="space-y-4">
+          <div className="space-y-4">
+            {filteredRequests.map(request => renderRequestCard(request, false))}
+          </div>
 
-              <div className="text-sm text-gray-500 mb-3">
-                <Calendar className="inline h-4 w-4 mr-1" />
-                נוצר: {format(new Date(request.created_at), 'dd/MM/yyyy HH:mm')}
-                {request.reviewed_at && (
-                  <span className="mr-4">
-                    | נבדק: {format(new Date(request.reviewed_at), 'dd/MM/yyyy HH:mm')}
-                  </span>
-                )}
-              </div>
-
-              {request.status === 'pending' && (
-                <div className="border-t pt-4 space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">הערת מנהל:</label>
-                    <Textarea
-                      placeholder="הוסף הערה (אופציונלי)..."
-                      value={reviewNotes[request.id] || ''}
-                      onChange={(e) => setReviewNotes(prev => ({ ...prev, [request.id]: e.target.value }))}
-                      rows={2}
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => updateStatusMutation.mutate({ 
-                        requestId: request.id, 
-                        status: 'approved',
-                        notes: reviewNotes[request.id]
-                      })}
-                      disabled={updateStatusMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      אשר
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => updateStatusMutation.mutate({ 
-                        requestId: request.id, 
-                        status: 'rejected',
-                        notes: reviewNotes[request.id]
-                      })}
-                      disabled={updateStatusMutation.isPending}
-                    >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      דחה
-                    </Button>
-                    
-                    {request.employee?.phone && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => sendWhatsApp(
-                          request.employee!.phone!,
-                          request.employee_name!,
-                          request.status,
-                          format(new Date(request.shift_date), 'dd/MM/yyyy'),
-                          reviewNotes[request.id]
-                        )}
-                      >
-                        <MessageSquare className="h-4 w-4 mr-1" />
-                        וואטסאפ
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {request.status !== 'pending' && request.employee?.phone && (
-                <div className="border-t pt-3">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => sendWhatsApp(
-                      request.employee!.phone!,
-                      request.employee_name!,
-                      request.status,
-                      format(new Date(request.shift_date), 'dd/MM/yyyy')
-                    )}
-                  >
-                    <MessageSquare className="h-4 w-4 mr-1" />
-                    שלח עדכון בוואטסאפ
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredRequests.length === 0 && (
-        <div className="text-center py-12">
-          <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">אין בקשות לאישור</h3>
-          <p className="text-gray-600">
-            {statusFilter === 'pending' 
-              ? 'אין בקשות ממתינות לאישור'
-              : 'לא נמצאו בקשות במערכת'
-            }
-          </p>
-        </div>
-      )}
+          {filteredRequests.length === 0 && (
+            <div className="text-center py-12">
+              <Eye className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">אין בקשות משמרות</h3>
+              <p className="text-gray-600">
+                {statusFilter === 'pending' 
+                  ? 'אין בקשות ממתינות לאישור'
+                  : 'לא נמצאו בקשות במערכת'
+                }
+              </p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
