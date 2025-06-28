@@ -33,6 +33,11 @@ export interface AddressComponents {
   country?: string;
 }
 
+interface GoogleMapsConfig {
+  api_key?: string;
+  [key: string]: any;
+}
+
 class GoogleMapsService {
   private apiKey: string | null = null;
 
@@ -68,8 +73,10 @@ class GoogleMapsService {
         return;
       }
 
-      if (data?.config?.api_key) {
-        this.setApiKey(data.config.api_key);
+      // Properly type cast the JSON config
+      const config = data?.config as GoogleMapsConfig;
+      if (config?.api_key) {
+        this.setApiKey(config.api_key);
         console.log('Google Maps API key loaded from global settings');
       } else {
         console.log('No Google Maps API key found in global settings');
