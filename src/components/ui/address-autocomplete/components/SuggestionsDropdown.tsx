@@ -46,7 +46,11 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
       ref={dropdownRef}
       className="absolute top-full left-0 right-0 z-[9999] bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto"
       dir="rtl"
-      style={{ backgroundColor: '#ffffff' }} // Force white background
+      style={{ backgroundColor: '#ffffff' }}
+      onMouseDown={(e) => {
+        // מניעת blur של האינפוט כאשר לוחצים על הדרופדאון
+        e.preventDefault();
+      }}
     >
       {isLoadingSuggestions ? (
         <div className="p-4 text-center text-gray-500">
@@ -57,8 +61,12 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
           <button
             key={suggestion.place_id}
             type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => {
+            onMouseDown={(e) => {
+              // מניעת blur של האינפוט
+              e.preventDefault();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
               console.log('🖱️ Suggestion clicked from dropdown:', suggestion.description);
               onSuggestionClick(suggestion);
             }}
