@@ -10,27 +10,29 @@ export const useGoogleMaps = () => {
   useEffect(() => {
     const initializeService = async () => {
       try {
-        console.log('Initializing Google Maps service...');
+        console.log('🚀 useGoogleMaps: Initializing Google Maps service...');
         setIsLoading(true);
         setError(null);
         
         // Refresh the API key from global settings
+        console.log('🔄 useGoogleMaps: Refreshing API key...');
         await googleMapsService.refreshApiKey();
         
         // Test the connection
-        console.log('Testing Google Maps connection...');
+        console.log('🧪 useGoogleMaps: Testing Google Maps connection...');
         const connectionTest = await googleMapsService.testConnection();
-        console.log('Connection test result:', connectionTest);
+        console.log('📊 useGoogleMaps: Connection test result:', connectionTest);
         
         if (connectionTest) {
           setIsReady(true);
-          console.log('Google Maps service is ready');
+          console.log('✅ useGoogleMaps: Google Maps service is ready');
         } else {
-          setError('Google Maps API connection test failed - בדוק שהגדרת את ה-API key בהגדרות האינטגרציות');
-          console.error('Google Maps API connection test failed');
+          const errorMsg = 'Google Maps API connection test failed - בדוק שהגדרת את ה-API key בהגדרות האינטגרציות';
+          setError(errorMsg);
+          console.error('❌ useGoogleMaps:', errorMsg);
         }
       } catch (err) {
-        console.error('Error initializing Google Maps service:', err);
+        console.error('💥 useGoogleMaps: Error initializing Google Maps service:', err);
         setError('Failed to initialize Google Maps service - בדוק שהגדרת את ה-API key בהגדרות האינטגרציות');
       } finally {
         setIsLoading(false);
@@ -45,23 +47,25 @@ export const useGoogleMaps = () => {
     setError(null);
     
     try {
-      console.log('Refreshing Google Maps service...');
+      console.log('🔄 useGoogleMaps: Refreshing Google Maps service...');
       await googleMapsService.refreshApiKey();
       const connectionTest = await googleMapsService.testConnection();
       
       if (connectionTest) {
         setIsReady(true);
-        console.log('Google Maps service refreshed successfully');
+        console.log('✅ useGoogleMaps: Google Maps service refreshed successfully');
       } else {
         setError('Google Maps API connection test failed after refresh');
       }
     } catch (err) {
-      console.error('Error refreshing Google Maps service:', err);
+      console.error('💥 useGoogleMaps: Error refreshing Google Maps service:', err);
       setError('Failed to refresh Google Maps service');
     } finally {
       setIsLoading(false);
     }
   };
+
+  console.log('📊 useGoogleMaps current state:', { isReady, isLoading, error });
 
   return {
     isReady,
