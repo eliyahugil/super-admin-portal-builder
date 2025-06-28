@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Clock, User } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { ShiftScheduleData, EmployeeData } from './types';
 
 interface WeeklyScheduleViewProps {
@@ -21,6 +22,8 @@ export const WeeklyScheduleView: React.FC<WeeklyScheduleViewProps> = ({
   onShiftClick,
   onShiftUpdate
 }) => {
+  const isMobile = useIsMobile();
+
   const getWeekDays = () => {
     const startOfWeek = new Date(currentDate);
     startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
@@ -78,6 +81,83 @@ export const WeeklyScheduleView: React.FC<WeeklyScheduleViewProps> = ({
   const weekDays = getWeekDays();
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
+  // Mobile view - vertical cards for each day
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-full space-y-4" dir="rtl">
+        <ScrollArea className="flex-1">
+          <div className="space-y-4 p-2">
+            {weekDays.map((day, dayIndex) => {
+              const dayShifts = getShiftsForDay(day);
+              const isCurrentDay = isToday(day);
+              
+              return (
+                <Card 
+                  key={day.toISOString()}
+                  className={`p-4 ${isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : 'bg-white'}`}
+                >
+                  {/* Day header */}
+                  <div className="mb-4 pb-3 border-b">
+                    <div className={`text-lg font-bold ${isCurrentDay ? 'text-blue-600' : 'text-gray-900'}`}>
+                      {dayNames[dayIndex]}
+                    </div>
+                    <div className={`text-2xl font-bold ${isCurrentDay ? 'text-blue-600' : 'text-gray-700'}`}>
+                      {day.getDate()}
+                    </div>
+                  </div>
+
+                  {/* Shifts for this day */}
+                  <div className="space-y-3">
+                    {dayShifts.map((shift) => (
+                      <Card 
+                        key={shift.id}
+                        className="p-3 cursor-pointer hover:shadow-md transition-shadow bg-white border border-gray-200 hover:border-blue-300"
+                        onClick={() => onShiftClick(shift)}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Clock className="h-4 w-4" />
+                              <span className="font-medium">{formatTime(shift.start_time)} - {formatTime(shift.end_time)}</span>
+                            </div>
+                            <Badge 
+                              className={`text-xs ${getStatusColor(shift.status)}`}
+                              variant="secondary"
+                            >
+                              {getStatusText(shift.status)}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-sm text-gray-700">
+                            <User className="h-4 w-4" />
+                            <span className="font-medium">{getEmployeeName(shift.employee_id)}</span>
+                          </div>
+                          
+                          {shift.branch_name && (
+                            <div className="text-sm text-gray-600">
+                              {shift.branch_name}
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
+                    
+                    {dayShifts.length === 0 && (
+                      <div className="text-center text-gray-400 text-sm py-6">
+                        אין משמרות
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
+
+  // Desktop view - table layout
   return (
     <div className="flex flex-col h-full">
       {/* Days Headers - Fixed */}

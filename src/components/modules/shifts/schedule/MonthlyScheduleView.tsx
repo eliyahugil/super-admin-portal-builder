@@ -3,6 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { ShiftScheduleData, EmployeeData } from './types';
 
 interface MonthlyScheduleViewProps {
@@ -19,6 +20,8 @@ export const MonthlyScheduleView: React.FC<MonthlyScheduleViewProps> = ({
   currentDate,
   onShiftClick
 }) => {
+  const isMobile = useIsMobile();
+
   const getMonthCalendar = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -63,6 +66,70 @@ export const MonthlyScheduleView: React.FC<MonthlyScheduleViewProps> = ({
   const calendar = getMonthCalendar();
   const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 
+  // Mobile view - list of days with shifts
+  if (isMobile) {
+    const daysWithShifts = calendar.flat()
+      .filter(day => isCurrentMonth(day) && getShiftsForDay(day).length > 0)
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    return (
+      <div className="flex flex-col h-full" dir="rtl">
+        <ScrollArea className="flex-1">
+          <div className="space-y-4 p-2">
+            {daysWithShifts.map((day) => {
+              const dayShifts = getShiftsForDay(day);
+              const isCurrentDay = isToday(day);
+              
+              return (
+                <Card 
+                  key={day.toISOString()}
+                  className={`p-4 ${isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : 'bg-white'}`}
+                >
+                  {/* Day header */}
+                  <div className="mb-4 pb-3 border-b">
+                    <div className={`text-lg font-bold ${isCurrentDay ? 'text-blue-600' : 'text-gray-900'}`}>
+                      {day.toLocaleDateString('he-IL', { weekday: 'long' })}
+                    </div>
+                    <div className={`text-2xl font-bold ${isCurrentDay ? 'text-blue-600' : 'text-gray-700'}`}>
+                      {day.getDate()} {day.toLocaleDateString('he-IL', { month: 'long' })}
+                    </div>
+                  </div>
+
+                  {/* Shifts for this day */}
+                  <div className="space-y-2">
+                    {dayShifts.map((shift) => (
+                      <div
+                        key={shift.id}
+                        className="p-3 bg-blue-100 text-blue-800 rounded cursor-pointer hover:bg-blue-200 transition-colors"
+                        onClick={() => onShiftClick(shift)}
+                      >
+                        <div className="font-medium">
+                          {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
+                        </div>
+                        {shift.branch_name && (
+                          <div className="text-sm opacity-80">
+                            {shift.branch_name}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              );
+            })}
+
+            {daysWithShifts.length === 0 && (
+              <div className="text-center text-gray-400 py-12">
+                אין משמרות מתוכננות לחודש זה
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
+
+  // Desktop view - calendar grid
   return (
     <div className="flex flex-col h-full">
       {/* Days of week header - Fixed */}
