@@ -32,21 +32,19 @@ interface QuickRequest {
   id: string;
   employee_id: string;
   employee_name?: string;
-  request_type: 'shift_change' | 'overtime' | 'absence' | 'schedule_conflict' | 'other';
+  request_type: 'vacation' | 'equipment' | 'shift_change';
   subject: string;
   description: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'pending' | 'in_progress' | 'resolved' | 'cancelled';
+  status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   resolved_at?: string;
 }
 
 const requestTypes = [
   { value: 'shift_change', label: 'שינוי משמרת', icon: '🔄' },
-  { value: 'overtime', label: 'שעות נוספות', icon: '⏰' },
-  { value: 'absence', label: 'היעדרות', icon: '🏠' },
-  { value: 'schedule_conflict', label: 'קונפליקט בלוח זמנים', icon: '⚠️' },
-  { value: 'other', label: 'אחר', icon: '📝' }
+  { value: 'equipment', label: 'בקשת ציוד', icon: '🛠️' },
+  { value: 'vacation', label: 'חופשה מהירה', icon: '🏖️' }
 ];
 
 const priorityLevels = [
@@ -59,12 +57,12 @@ const priorityLevels = [
 export const QuickRequestRegistration: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [requestType, setRequestType] = useState<'shift_change' | 'overtime' | 'absence' | 'schedule_conflict' | 'other'>('shift_change');
+  const [requestType, setRequestType] = useState<'vacation' | 'equipment' | 'shift_change'>('shift_change');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_progress' | 'resolved'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
   const { toast } = useToast();
   const { businessId } = useBusiness();
@@ -101,11 +99,11 @@ export const QuickRequestRegistration: React.FC = () => {
           *,
           employee:employees(first_name, last_name)
         `)
-        .in('request_type', ['shift_change', 'overtime', 'absence', 'schedule_conflict', 'other'])
+        .in('request_type', ['shift_change', 'equipment', 'vacation'])
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter === 'in_progress' ? 'pending' : statusFilter);
+        query = query.eq('status', statusFilter);
       }
 
       const { data, error } = await query;
@@ -115,11 +113,11 @@ export const QuickRequestRegistration: React.FC = () => {
         id: req.id,
         employee_id: req.employee_id,
         employee_name: req.employee ? `${req.employee.first_name} ${req.employee.last_name}` : 'לא ידוע',
-        request_type: req.request_type as any,
+        request_type: req.request_type as 'vacation' | 'equipment' | 'shift_change',
         subject: req.subject,
         description: req.description || '',
         priority: (req.request_data as any)?.priority || 'medium',
-        status: req.status === 'pending' ? 'pending' : req.status,
+        status: req.status as 'pending' | 'approved' | 'rejected',
         created_at: req.created_at,
         resolved_at: req.reviewed_at
       }));
@@ -131,7 +129,7 @@ export const QuickRequestRegistration: React.FC = () => {
   const createRequestMutation = useMutation({
     mutationFn: async (requestData: {
       employee_id: string;
-      request_type: string;
+      request_type: 'vacation' | 'equipment' | 'shift_change';
       subject: string;
       description: string;
       priority: string;
@@ -171,10 +169,10 @@ export const QuickRequestRegistration: React.FC = () => {
 
   // Update status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ requestId, status }: { requestId: string; status: 'in_progress' | 'resolved' | 'cancelled' }) => {
+    mutationFn: async ({ requestId, status }: { requestId: string; status: 'approved' | 'rejected' }) => {
       const updateData: any = { status };
       
-      if (status === 'resolved') {
+      if (status === 'approved') {
         updateData.reviewed_at = new Date().toISOString();
       }
 
@@ -241,9 +239,8 @@ export const QuickRequestRegistration: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'in_progress': return 'bg-blue-100 text-blue-800';
-      case 'resolved': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-gray-100 text-gray-800';
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -251,9 +248,8 @@ export const QuickRequestRegistration: React.FC = () => {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'pending': return 'ממתין';
-      case 'in_progress': return 'בטיפול';
-      case 'resolved': return 'נפתר';
-      case 'cancelled': return 'בוטל';
+      case 'approved': return 'מאושר';
+      case 'rejected': return 'נדחה';
       default: return status;
     }
   };
@@ -448,8 +444,8 @@ export const QuickRequestRegistration: React.FC = () => {
           <SelectContent>
             <SelectItem value="all">כל הסטטוסים</SelectItem>
             <SelectItem value="pending">ממתין</SelectItem>
-            <SelectItem value="in_progress">בטיפול</SelectItem>
-            <SelectItem value="resolved">נפתר</SelectItem>
+            <SelectItem value="approved">מאושר</SelectItem>
+            <SelectItem value="rejected">נדחה</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -500,40 +496,19 @@ export const QuickRequestRegistration: React.FC = () => {
                   <div className="flex gap-2 mt-3 pt-3 border-t">
                     <Button
                       size="sm"
-                      variant="outline"
-                      onClick={() => updateStatusMutation.mutate({ requestId: request.id, status: 'in_progress' })}
-                      disabled={updateStatusMutation.isPending}
-                    >
-                      התחל טיפול
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => updateStatusMutation.mutate({ requestId: request.id, status: 'resolved' })}
+                      onClick={() => updateStatusMutation.mutate({ requestId: request.id, status: 'approved' })}
                       disabled={updateStatusMutation.isPending}
                       className="bg-green-600 hover:bg-green-700"
                     >
-                      סגור כנפתר
+                      אשר
                     </Button>
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => updateStatusMutation.mutate({ requestId: request.id, status: 'cancelled' })}
+                      onClick={() => updateStatusMutation.mutate({ requestId: request.id, status: 'rejected' })}
                       disabled={updateStatusMutation.isPending}
                     >
-                      בטל
-                    </Button>
-                  </div>
-                )}
-
-                {request.status === 'in_progress' && (
-                  <div className="flex gap-2 mt-3 pt-3 border-t">
-                    <Button
-                      size="sm"
-                      onClick={() => updateStatusMutation.mutate({ requestId: request.id, status: 'resolved' })}
-                      disabled={updateStatusMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      סגור כנפתר
+                      דחה
                     </Button>
                   </div>
                 )}
