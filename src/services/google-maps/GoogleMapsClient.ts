@@ -1,6 +1,14 @@
+
 import type { PlaceAutocompleteResult, PlaceDetails } from './types';
 import { GoogleMapsConfigManager } from './GoogleMapsConfig';
 import { Loader } from '@googlemaps/js-api-loader';
+
+// Global singleton instances to prevent recreating the loader
+let globalLoader: Loader | null = null;
+let globalAutocompletService: google.maps.places.AutocompleteService | null = null;
+let globalPlacesService: google.maps.places.PlacesService | null = null;
+let globalMapDiv: HTMLDivElement | null = null;
+let isInitialized = false;
 
 export class GoogleMapsClient {
   private loader: Loader | null = null;
@@ -11,8 +19,13 @@ export class GoogleMapsClient {
   constructor(private configManager: GoogleMapsConfigManager) {}
 
   private async initializeServices(): Promise<void> {
-    if (this.autocompleteService && this.placesService) {
-      return; // Already initialized
+    // Use global instances if already initialized
+    if (isInitialized && globalAutocompletService && globalPlacesService) {
+      this.loader = globalLoader;
+      this.autocompleteService = globalAutocompletService;
+      this.placesService = globalPlacesService;
+      this.mapDiv = globalMapDiv;
+      return;
     }
 
     const apiKey = this.configManager.getApiKey();
@@ -25,29 +38,50 @@ export class GoogleMapsClient {
     }
 
     try {
-      this.loader = new Loader({
-        apiKey: apiKey || '',
-        version: 'weekly',
-        libraries: ['places'],
-        language: 'he',
-        region: 'IL'
-      });
+      // Create loader only once with consistent parameters
+      if (!globalLoader) {
+        console.log('Creating new Google Maps Loader with Hebrew/Israel settings');
+        globalLoader = new Loader({
+          apiKey: this.configManager.getApiKey() || '',
+          version: 'weekly',
+          libraries: ['places'],
+          language: 'he',
+          region: 'IL'
+        });
+      }
 
+      this.loader = globalLoader;
+      
+      console.log('Loading Google Maps API...');
       await this.loader.load();
       
-      this.autocompleteService = new google.maps.places.AutocompleteService();
-      
-      // Create a hidden div for the PlacesService
-      if (!this.mapDiv) {
-        this.mapDiv = document.createElement('div');
-        this.mapDiv.style.display = 'none';
-        document.body.appendChild(this.mapDiv);
+      // Create services only once
+      if (!globalAutocompletService) {
+        console.log('Creating AutocompleteService...');
+        globalAutocompletService = new google.maps.places.AutocompleteService();
       }
       
-      const map = new google.maps.Map(this.mapDiv);
-      this.placesService = new google.maps.places.PlacesService(map);
+      if (!globalPlacesService) {
+        console.log('Creating PlacesService...');
+        // Create a hidden div for the PlacesService only once
+        if (!globalMapDiv) {
+          globalMapDiv = document.createElement('div');
+          globalMapDiv.style.display = 'none';
+          document.body.appendChild(globalMapDiv);
+        }
+        
+        const map = new google.maps.Map(globalMapDiv);
+        globalPlacesService = new google.maps.places.PlacesService(map);
+      }
       
-      console.log('Google Maps services initialized successfully with Hebrew/Israel settings');
+      // Assign global instances to class properties
+      this.autocompleteService = globalAutocompletService;
+      this.placesService = globalPlacesService;
+      this.mapDiv = globalMapDiv;
+      
+      isInitialized = true;
+      console.log('Google Maps services initialized successfully');
+      
     } catch (error) {
       console.error('Failed to initialize Google Maps services:', error);
       throw error;
@@ -60,6 +94,8 @@ export class GoogleMapsClient {
     if (!this.autocompleteService) {
       throw new Error('AutocompleteService not initialized');
     }
+
+    console.log('🔍 Making Google Maps API autocomplete request for:', input);
 
     return new Promise((resolve, reject) => {
       this.autocompleteService!.getPlacePredictions(
@@ -82,6 +118,7 @@ export class GoogleMapsClient {
               }
             }));
             console.log('✅ Processed results:', results.length);
+            console.log('📍 Sample results:', results.slice(0, 2));
             resolve(results);
           } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
             console.log('📭 Zero results from API');

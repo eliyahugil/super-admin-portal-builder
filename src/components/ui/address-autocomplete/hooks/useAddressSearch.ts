@@ -19,6 +19,7 @@ export const useAddressSearch = () => {
 
   const searchPlaces = async (query: string) => {
     console.log('🔎 searchPlaces called with query:', `"${query}"`);
+    console.log('🔧 Current state - isReady:', isReady, 'googleMapsService available:', !!googleMapsService);
     
     if (!isReady) {
       console.log('❌ Google Maps not ready, skipping search');
@@ -36,14 +37,24 @@ export const useAddressSearch = () => {
     setIsLoadingSuggestions(true);
     
     try {
+      console.log('📡 Calling googleMapsService.getPlaceAutocomplete...');
       const results = await googleMapsService.getPlaceAutocomplete(query);
       console.log('✅ Google Maps API results received:', results.length, 'suggestions');
-      console.log('📍 First few results:', results.slice(0, 3));
+      
+      if (results.length > 0) {
+        console.log('📍 First few results:', results.slice(0, 3));
+      } else {
+        console.log('📭 No results found for query:', query);
+      }
       
       setSuggestions(results);
       console.log('📊 State updated with suggestions:', results.length);
     } catch (error) {
       console.error('💥 Error fetching place suggestions:', error);
+      console.error('🔍 Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       setSuggestions([]);
     } finally {
       setIsLoadingSuggestions(false);
@@ -59,7 +70,7 @@ export const useAddressSearch = () => {
     }
 
     // Debounce the search
-    console.log('⏱️ Setting search timeout for 300ms');
+    console.log('⏱️ Setting search timeout for 300ms for query:', `"${query}"`);
     searchTimeoutRef.current = setTimeout(() => {
       console.log('⏰ Search timeout triggered, calling searchPlaces');
       searchPlaces(query);
