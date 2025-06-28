@@ -1,7 +1,15 @@
 
 import React from 'react';
 import { MapPin } from 'lucide-react';
-import type { PlaceAutocompleteResult } from '@/services/GoogleMapsService';
+
+interface PlaceAutocompleteResult {
+  place_id: string;
+  description: string;
+  structured_formatting: {
+    main_text: string;
+    secondary_text: string;
+  };
+}
 
 interface SuggestionsDropdownProps {
   dropdownRef: React.RefObject<HTMLDivElement>;

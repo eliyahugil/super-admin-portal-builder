@@ -1,8 +1,32 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
-import type { PlaceAutocompleteResult, PlaceDetails } from '@/services/GoogleMapsService';
 import type { AddressData } from '../types';
+
+// Import the types we need from the GoogleMapsService
+interface PlaceAutocompleteResult {
+  place_id: string;
+  description: string;
+  structured_formatting: {
+    main_text: string;
+    secondary_text: string;
+  };
+}
+
+interface PlaceDetails {
+  formatted_address: string;
+  geometry: {
+    location: {
+      lat: number;
+      lng: number;
+    };
+  };
+  address_components: {
+    long_name: string;
+    short_name: string;
+    types: string[];
+  }[];
+}
 
 export const useAddressAutocomplete = (
   value: AddressData | null,
