@@ -9,7 +9,7 @@ interface AddressInputProps {
   inputValue: string;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onInputFocus: () => void;
-  onInputBlur: () => void;
+  onInputBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
   onClear: () => void;
   placeholder: string;
   required: boolean;
