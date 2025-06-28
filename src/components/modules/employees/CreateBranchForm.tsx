@@ -3,8 +3,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { AddressAutocomplete } from '@/components/ui/AddressAutocomplete';
 
 interface BranchFormData {
   name: string;
@@ -30,6 +30,24 @@ export const CreateBranchForm: React.FC<CreateBranchFormProps> = ({
   onCancel,
   loading,
 }) => {
+  const handleAddressChange = (addressData: any) => {
+    if (addressData) {
+      setFormData(prev => ({
+        ...prev,
+        address: addressData.formatted_address,
+        latitude: addressData.latitude.toString(),
+        longitude: addressData.longitude.toString(),
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        address: '',
+        latitude: '',
+        longitude: '',
+      }));
+    }
+  };
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
@@ -45,14 +63,19 @@ export const CreateBranchForm: React.FC<CreateBranchFormProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="branch-address">כתובת</Label>
-        <Textarea
-          id="branch-address"
-          value={formData.address}
-          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-          placeholder="הזן כתובת הסניף"
-          rows={2}
-          disabled={loading}
+        <AddressAutocomplete
+          label="כתובת הסניף"
+          placeholder="חפש כתובת..."
+          onChange={handleAddressChange}
+          value={formData.address ? {
+            formatted_address: formData.address,
+            street: '',
+            city: '',
+            postalCode: '',
+            country: 'Israel',
+            latitude: parseFloat(formData.latitude) || 0,
+            longitude: parseFloat(formData.longitude) || 0,
+          } : null}
         />
       </div>
 
@@ -89,11 +112,14 @@ export const CreateBranchForm: React.FC<CreateBranchFormProps> = ({
           id="branch-radius"
           type="number"
           min="10"
-          max="1000"
+          max="5000"
           value={formData.gps_radius}
           onChange={(e) => setFormData({ ...formData, gps_radius: parseInt(e.target.value) || 100 })}
           disabled={loading}
         />
+        <p className="text-sm text-gray-500 mt-1">
+          רדיוס בין 10 ל-5000 מטרים לבדיקת נוכחות עובדים
+        </p>
       </div>
 
       <div className="flex items-center justify-between">

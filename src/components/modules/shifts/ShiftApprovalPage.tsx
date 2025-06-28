@@ -23,6 +23,7 @@ interface ShiftRequest {
   notes?: string;
   created_at: string;
   reviewed_at?: string;
+  review_notes?: string;
   employee?: {
     first_name: string;
     last_name: string;
@@ -96,6 +97,7 @@ export const ShiftApprovalPage: React.FC = () => {
           notes: req.notes,
           created_at: req.created_at,
           reviewed_at: req.reviewed_at,
+          review_notes: req.review_notes,
           employee: employee ? {
             first_name: employee.first_name,
             last_name: employee.last_name,

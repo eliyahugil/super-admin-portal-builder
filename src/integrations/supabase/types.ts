@@ -1683,6 +1683,7 @@ export type Database = {
           end_time: string
           id: string
           notes: string | null
+          review_notes: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           role_preference: string | null
@@ -1699,6 +1700,7 @@ export type Database = {
           end_time: string
           id?: string
           notes?: string | null
+          review_notes?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           role_preference?: string | null
@@ -1715,6 +1717,7 @@ export type Database = {
           end_time?: string
           id?: string
           notes?: string | null
+          review_notes?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           role_preference?: string | null

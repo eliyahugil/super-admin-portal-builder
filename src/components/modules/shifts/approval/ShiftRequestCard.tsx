@@ -27,6 +27,7 @@ interface ShiftRequest {
   notes?: string;
   created_at: string;
   reviewed_at?: string;
+  review_notes?: string;
   employee?: {
     first_name: string;
     last_name: string;
@@ -117,6 +118,13 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
           </div>
         )}
 
+        {request.review_notes && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+            <strong>הערת מנהל:</strong>
+            <p className="text-gray-700 mt-1">{request.review_notes}</p>
+          </div>
+        )}
+
         <div className="text-sm text-gray-500 mb-3">
           <Calendar className="inline h-4 w-4 mr-1" />
           נוצר: {format(new Date(request.created_at), 'dd/MM/yyyy HH:mm')}
@@ -189,7 +197,8 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
                 request.employee!.phone!,
                 request.employee_name!,
                 request.status,
-                format(new Date(request.shift_date), 'dd/MM/yyyy')
+                format(new Date(request.shift_date), 'dd/MM/yyyy'),
+                request.review_notes
               )}
             >
               <MessageSquare className="h-4 w-4 mr-1" />
