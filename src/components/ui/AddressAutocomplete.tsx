@@ -1,14 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Input } from './input';
-import { Label } from './label';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './command';
-import { Popover, PopoverContent, PopoverTrigger } from './popover';
-import { Button } from './button';
-import { Check, ChevronsUpDown, MapPin } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { googleMapsService, type PlaceAutocompleteResult } from '@/services/GoogleMapsService';
-import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { MapPin, Loader2 } from 'lucide-react';
+import { useGoogleMaps } from '@/hooks/useGoogleMaps';
+import type { PlaceAutocompleteResult, PlaceDetails, AddressComponents } from '@/services/GoogleMapsService';
 
 interface AddressData {
   formatted_address: string;
@@ -24,163 +21,231 @@ interface AddressAutocompleteProps {
   label?: string;
   placeholder?: string;
   value?: AddressData | null;
-  onChange?: (address: AddressData | null) => void;
+  onChange: (addressData: AddressData | null) => void;
   required?: boolean;
-  className?: string;
+  disabled?: boolean;
 }
 
 export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   label = 'כתובת',
-  placeholder = 'הקלד כתובת...',
+  placeholder = 'חפש כתובת...',
   value,
   onChange,
   required = false,
-  className
+  disabled = false,
 }) => {
-  const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value?.formatted_address || '');
-  const [predictions, setPredictions] = useState<PlaceAutocompleteResult[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  const { toast } = useToast();
+  const [suggestions, setSuggestions] = useState<PlaceAutocompleteResult[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const { isReady, isLoading, error, googleMapsService } = useGoogleMaps();
+
+  // Update input value when value prop changes
   useEffect(() => {
-    if (value) {
-      setInputValue(value.formatted_address);
-    }
+    setInputValue(value?.formatted_address || '');
   }, [value]);
 
-  const searchPredictions = async (input: string) => {
-    if (input.length < 3) {
-      setPredictions([]);
+  // Handle clicks outside dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        !inputRef.current?.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const searchPlaces = async (query: string) => {
+    if (!isReady || !query.trim() || query.length < 3) {
+      setSuggestions([]);
       return;
     }
 
+    setIsLoadingSuggestions(true);
     try {
-      setIsLoading(true);
-      const results = await googleMapsService.getPlaceAutocomplete(input);
-      setPredictions(results);
+      const results = await googleMapsService.getPlaceAutocomplete(query);
+      setSuggestions(results);
+      setIsOpen(true);
     } catch (error) {
-      console.error('Error fetching predictions:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן לטעון הצעות כתובת. אנא בדוק את הגדרות Google Maps.',
-        variant: 'destructive',
-      });
+      console.error('Error fetching place suggestions:', error);
+      setSuggestions([]);
     } finally {
-      setIsLoading(false);
+      setIsLoadingSuggestions(false);
     }
   };
 
-  const handleInputChange = (newValue: string) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
     setInputValue(newValue);
     
-    // Clear existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    // Clear selected value if input is manually changed
+    if (value && newValue !== value.formatted_address) {
+      onChange(null);
     }
 
-    // Set new timeout for search
-    timeoutRef.current = setTimeout(() => {
-      searchPredictions(newValue);
+    // Debounce the search
+    const timeoutId = setTimeout(() => {
+      searchPlaces(newValue);
     }, 300);
+
+    return () => clearTimeout(timeoutId);
   };
 
-  const handleSelectPlace = async (prediction: PlaceAutocompleteResult) => {
+  const handleSuggestionClick = async (suggestion: PlaceAutocompleteResult) => {
+    setIsLoadingSuggestions(true);
     try {
-      setIsLoading(true);
-      const placeDetails = await googleMapsService.getPlaceDetails(prediction.place_id);
-      const parsedComponents = googleMapsService.parseAddressComponents(placeDetails.address_components);
+      const placeDetails = await googleMapsService.getPlaceDetails(suggestion.place_id);
+      const addressComponents = googleMapsService.parseAddressComponents(placeDetails.address_components);
       
       const addressData: AddressData = {
         formatted_address: placeDetails.formatted_address,
-        street: `${parsedComponents.streetNumber || ''} ${parsedComponents.street || ''}`.trim(),
-        city: parsedComponents.city || '',
-        postalCode: parsedComponents.postalCode || '',
-        country: parsedComponents.country || 'Israel',
+        street: `${addressComponents.streetNumber || ''} ${addressComponents.street || ''}`.trim(),
+        city: addressComponents.city || '',
+        postalCode: addressComponents.postalCode || '',
+        country: addressComponents.country || '',
         latitude: placeDetails.geometry.location.lat,
         longitude: placeDetails.geometry.location.lng,
       };
 
-      setInputValue(addressData.formatted_address);
-      onChange?.(addressData);
-      setOpen(false);
-      setPredictions([]);
+      setInputValue(placeDetails.formatted_address);
+      onChange(addressData);
+      setIsOpen(false);
+      setSuggestions([]);
     } catch (error) {
-      console.error('Error getting place details:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן לטעון פרטי הכתובת',
-        variant: 'destructive',
-      });
+      console.error('Error fetching place details:', error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingSuggestions(false);
     }
   };
 
-  return (
-    <div className={cn('space-y-2', className)}>
-      <Label htmlFor="address-input">{label} {required && '*'}</Label>
-      
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-          >
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-gray-500" />
-              <span className={cn("flex-1 text-right", !inputValue && "text-muted-foreground")}>
-                {inputValue || placeholder}
-              </span>
-            </div>
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        
-        <PopoverContent className="w-full p-0" align="start">
-          <Command>
-            <CommandInput
-              placeholder="חפש כתובת..."
-              value={inputValue}
-              onValueChange={handleInputChange}
-            />
-            <CommandList>
-              {isLoading && (
-                <CommandEmpty>מחפש כתובות...</CommandEmpty>
-              )}
-              {!isLoading && predictions.length === 0 && inputValue.length >= 3 && (
-                <CommandEmpty>לא נמצאו כתובות</CommandEmpty>
-              )}
-              {!isLoading && predictions.length > 0 && (
-                <CommandGroup>
-                  {predictions.map((prediction) => (
-                    <CommandItem
-                      key={prediction.place_id}
-                      onSelect={() => handleSelectPlace(prediction)}
-                      className="cursor-pointer"
-                    >
-                      <MapPin className="ml-2 h-4 w-4" />
-                      <div className="flex flex-col">
-                        <span className="font-medium">{prediction.structured_formatting.main_text}</span>
-                        <span className="text-sm text-gray-500">{prediction.structured_formatting.secondary_text}</span>
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+  const handleClear = () => {
+    setInputValue('');
+    onChange(null);
+    setSuggestions([]);
+    setIsOpen(false);
+    inputRef.current?.focus();
+  };
 
-      {value && typeof value.latitude === 'number' && typeof value.longitude === 'number' && (
-        <div className="text-sm text-gray-500 space-y-1">
-          <div>📍 {value.latitude.toFixed(6)}, {value.longitude.toFixed(6)}</div>
-          {value.city && <div>🏙️ {value.city}</div>}
-          {value.postalCode && <div>📮 {value.postalCode}</div>}
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        {label && <Label>{label}</Label>}
+        <div className="flex items-center space-x-2 p-2 border rounded">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm text-gray-500">טוען שירות המפות...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !isReady) {
+    return (
+      <div className="space-y-2">
+        {label && <Label htmlFor="address-fallback">{label}</Label>}
+        <Input
+          id="address-fallback"
+          value={inputValue}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            // For fallback, create a simple address object
+            onChange({
+              formatted_address: e.target.value,
+              street: e.target.value,
+              city: '',
+              postalCode: '',
+              country: 'Israel',
+              latitude: 0,
+              longitude: 0,
+            });
+          }}
+          placeholder={placeholder}
+          required={required}
+          disabled={disabled}
+        />
+        {error && (
+          <p className="text-sm text-amber-600">
+            שירות המפות לא זמין. אנא הזן כתובת ידנית.
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 relative">
+      {label && <Label htmlFor="address-autocomplete">{label}</Label>}
+      <div className="relative">
+        <div className="relative">
+          <Input
+            id="address-autocomplete"
+            ref={inputRef}
+            value={inputValue}
+            onChange={handleInputChange}
+            onFocus={() => {
+              if (suggestions.length > 0) {
+                setIsOpen(true);
+              }
+            }}
+            placeholder={placeholder}
+            required={required}
+            disabled={disabled || isLoadingSuggestions}
+            className="pl-10"
+          />
+          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          {isLoadingSuggestions && (
+            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
+          )}
+        </div>
+        
+        {inputValue && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleClear}
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+          >
+            ×
+          </Button>
+        )}
+      </div>
+
+      {/* Suggestions Dropdown */}
+      {isOpen && suggestions.length > 0 && (
+        <div
+          ref={dropdownRef}
+          className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
+        >
+          {suggestions.map((suggestion) => (
+            <button
+              key={suggestion.place_id}
+              type="button"
+              onClick={() => handleSuggestionClick(suggestion)}
+              className="w-full text-right px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 focus:outline-none focus:bg-gray-50 transition-colors"
+              disabled={isLoadingSuggestions}
+            >
+              <div className="flex items-center justify-end space-x-2 space-x-reverse">
+                <div className="flex-1 text-right">
+                  <div className="font-medium text-sm">
+                    {suggestion.structured_formatting.main_text}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {suggestion.structured_formatting.secondary_text}
+                  </div>
+                </div>
+                <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+              </div>
+            </button>
+          ))}
         </div>
       )}
     </div>

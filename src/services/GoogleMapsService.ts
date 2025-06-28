@@ -1,4 +1,6 @@
 
+import { supabase } from '@/integrations/supabase/client';
+
 export interface PlaceAutocompleteResult {
   place_id: string;
   description: string;
@@ -34,32 +36,55 @@ export interface AddressComponents {
 class GoogleMapsService {
   private apiKey: string | null = null;
 
+  constructor() {
+    // Initialize by fetching the API key on service creation
+    this.initializeApiKey();
+  }
+
+  private async initializeApiKey(): Promise<void> {
+    try {
+      await this.refreshApiKey();
+    } catch (error) {
+      console.error('Failed to initialize Google Maps API key:', error);
+    }
+  }
+
   setApiKey(apiKey: string) {
     this.apiKey = apiKey;
   }
 
   async refreshApiKey(): Promise<void> {
     console.log('Refreshing Google Maps API key from global settings...');
-    // Here we could fetch the API key from Supabase global_integrations table
-    // For now, we'll just log that we're refreshing
     try {
-      // In a real implementation, this would fetch from the database
-      // const { data } = await supabase
-      //   .from('global_integrations')
-      //   .select('config')
-      //   .eq('integration_name', 'google_maps')
-      //   .single();
-      // 
-      // if (data?.config?.api_key) {
-      //   this.setApiKey(data.config.api_key);
-      // }
-      console.log('API key refresh completed');
+      const { data, error } = await supabase
+        .from('global_integrations')
+        .select('config')
+        .eq('integration_name', 'google_maps')
+        .eq('is_active', true)
+        .single();
+
+      if (error) {
+        console.error('Error fetching Google Maps global integration:', error);
+        return;
+      }
+
+      if (data?.config?.api_key) {
+        this.setApiKey(data.config.api_key);
+        console.log('Google Maps API key loaded from global settings');
+      } else {
+        console.log('No Google Maps API key found in global settings');
+      }
     } catch (error) {
       console.error('Failed to refresh Google Maps API key:', error);
     }
   }
 
   async testConnection(): Promise<boolean> {
+    // Ensure we have the latest API key
+    if (!this.apiKey) {
+      await this.refreshApiKey();
+    }
+
     if (!this.apiKey) {
       console.log('No API key available for Google Maps test');
       return false;
@@ -93,6 +118,11 @@ class GoogleMapsService {
   }
 
   async getPlaceAutocomplete(input: string): Promise<PlaceAutocompleteResult[]> {
+    // Ensure we have the latest API key
+    if (!this.apiKey) {
+      await this.refreshApiKey();
+    }
+
     if (!this.apiKey) {
       throw new Error('Google Maps API key not configured');
     }
@@ -110,6 +140,11 @@ class GoogleMapsService {
   }
 
   async getPlaceDetails(placeId: string): Promise<PlaceDetails> {
+    // Ensure we have the latest API key
+    if (!this.apiKey) {
+      await this.refreshApiKey();
+    }
+
     if (!this.apiKey) {
       throw new Error('Google Maps API key not configured');
     }
