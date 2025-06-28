@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight, Building, Mail, Phone, User, Send, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AddressAutocomplete, AddressData } from '@/components/ui/AddressAutocomplete';
 
 const availableModules = [
   { key: 'shift_management', label: 'ניהול משמרות' },
@@ -28,8 +29,8 @@ export const CreateBusinessPage: React.FC = () => {
     admin_email: '',
     contact_phone: '',
     description: '',
-    address: '',
   });
+  const [address, setAddress] = useState<AddressData | null>(null);
   const [activeModules, setActiveModules] = useState<string[]>(['shift_management']);
   const [loading, setLoading] = useState(false);
   const [sendInvitation, setSendInvitation] = useState(true);
@@ -44,6 +45,15 @@ export const CreateBusinessPage: React.FC = () => {
       [field]: value
     }));
     // Clear errors when user starts typing
+    if (errors.length > 0) {
+      setErrors([]);
+    }
+  };
+
+  const handleAddressChange = (newAddress: AddressData | null) => {
+    console.log('🏠 Address changed in CreateBusinessPage:', newAddress);
+    setAddress(newAddress);
+    // Clear errors when address is set
     if (errors.length > 0) {
       setErrors([]);
     }
@@ -98,20 +108,34 @@ export const CreateBusinessPage: React.FC = () => {
       console.log('📝 Creating business with data:', {
         name: formData.name,
         admin_email: formData.admin_email,
-        modules: activeModules
+        modules: activeModules,
+        address: address?.formatted_address || null
       });
+
+      const businessData = {
+        name: formData.name,
+        contact_email: formData.contact_email || formData.admin_email,
+        admin_email: formData.admin_email,
+        contact_phone: formData.contact_phone,
+        description: formData.description,
+        address: address?.formatted_address || null,
+        is_active: true,
+      };
+
+      // Add location data if address is available
+      if (address) {
+        Object.assign(businessData, {
+          latitude: address.latitude,
+          longitude: address.longitude,
+          city: address.city,
+          postal_code: address.postalCode,
+          country: address.country,
+        });
+      }
 
       const { data: business, error: businessError } = await supabase
         .from('businesses')
-        .insert({
-          name: formData.name,
-          contact_email: formData.contact_email || formData.admin_email,
-          admin_email: formData.admin_email,
-          contact_phone: formData.contact_phone,
-          description: formData.description,
-          address: formData.address,
-          is_active: true,
-        })
+        .insert(businessData)
         .select()
         .single();
 
@@ -156,7 +180,7 @@ export const CreateBusinessPage: React.FC = () => {
               businessData: {
                 name: formData.name,
                 contact_phone: formData.contact_phone,
-                address: formData.address,
+                address: address?.formatted_address || null,
                 description: formData.description,
                 selectedModules: activeModules
               },
@@ -361,14 +385,13 @@ export const CreateBusinessPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Address Autocomplete */}
             <div className="space-y-2">
-              <Label htmlFor="address">כתובת</Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="כתובת העסק"
-                className="text-right"
+              <AddressAutocomplete
+                label="כתובת העסק"
+                value={address}
+                onChange={handleAddressChange}
+                placeholder="הקלד כתובת העסק..."
               />
             </div>
 
