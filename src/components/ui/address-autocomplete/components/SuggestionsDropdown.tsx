@@ -30,10 +30,10 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
     return null;
   }
 
-  const handleSuggestionMouseDown = (e: React.MouseEvent, suggestion: PlaceAutocompleteResult) => {
-    // Prevent default to avoid input blur before click
+  const handleSuggestionMouseDown = (e: React.MouseEvent) => {
+    // Prevent blur event from firing
     e.preventDefault();
-    console.log('🖱️ Suggestion mouse down prevented blur');
+    console.log('🖱️ Preventing blur on suggestion mousedown');
   };
 
   const handleSuggestionClick = (suggestion: PlaceAutocompleteResult) => {
@@ -45,14 +45,13 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
     <div
       ref={dropdownRef}
       className="absolute top-full left-0 right-0 z-[9999] bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1"
-      style={{ zIndex: 9999 }}
       dir="rtl"
     >
       {suggestions.map((suggestion) => (
         <button
           key={suggestion.place_id}
           type="button"
-          onMouseDown={(e) => handleSuggestionMouseDown(e, suggestion)}
+          onMouseDown={handleSuggestionMouseDown}
           onClick={() => handleSuggestionClick(suggestion)}
           className="w-full text-right px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 focus:outline-none focus:bg-gray-100 transition-colors bg-white"
           disabled={isLoadingSuggestions}

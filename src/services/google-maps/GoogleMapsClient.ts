@@ -1,4 +1,3 @@
-
 import type { PlaceAutocompleteResult, PlaceDetails } from './types';
 import { GoogleMapsConfigManager } from './GoogleMapsConfig';
 import { Loader } from '@googlemaps/js-api-loader';
@@ -29,7 +28,9 @@ export class GoogleMapsClient {
       this.loader = new Loader({
         apiKey: apiKey || '',
         version: 'weekly',
-        libraries: ['places']
+        libraries: ['places'],
+        language: 'he',
+        region: 'IL'
       });
 
       await this.loader.load();
@@ -46,7 +47,7 @@ export class GoogleMapsClient {
       const map = new google.maps.Map(this.mapDiv);
       this.placesService = new google.maps.places.PlacesService(map);
       
-      console.log('Google Maps services initialized successfully');
+      console.log('Google Maps services initialized successfully with Hebrew/Israel settings');
     } catch (error) {
       console.error('Failed to initialize Google Maps services:', error);
       throw error;
@@ -65,9 +66,12 @@ export class GoogleMapsClient {
         {
           input,
           componentRestrictions: { country: 'il' },
-          language: 'he'
+          language: 'he',
+          types: ['establishment', 'geocode']
         },
         (predictions, status) => {
+          console.log('🔍 Google Maps API response:', { status, predictionsCount: predictions?.length || 0 });
+          
           if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
             const results: PlaceAutocompleteResult[] = predictions.map(prediction => ({
               place_id: prediction.place_id!,
@@ -77,11 +81,13 @@ export class GoogleMapsClient {
                 secondary_text: prediction.structured_formatting?.secondary_text || ''
               }
             }));
+            console.log('✅ Processed results:', results.length);
             resolve(results);
           } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+            console.log('📭 Zero results from API');
             resolve([]);
           } else {
-            console.error('Autocomplete service error:', status);
+            console.error('❌ Autocomplete service error:', status);
             reject(new Error(`Autocomplete service failed: ${status}`));
           }
         }

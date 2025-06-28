@@ -38,6 +38,7 @@ export const useAddressSearch = () => {
     try {
       const results = await googleMapsService.getPlaceAutocomplete(query);
       console.log('✅ Google Maps API results received:', results.length, 'suggestions');
+      console.log('📍 First few results:', results.slice(0, 3));
       
       setSuggestions(results);
     } catch (error) {
