@@ -14,6 +14,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const handleMobileMenuToggle = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -21,10 +25,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         {!isMobile && <DynamicSidebar />}
         
         <SidebarInset className="flex-1">
-          {/* Header */}
-          <Header />
+          {/* Header with mobile menu toggle */}
+          <Header onMobileMenuToggle={isMobile ? handleMobileMenuToggle : undefined} />
           
-          {/* Mobile Sidebar - Only render when mobile */}
+          {/* Mobile Sidebar - Always render when mobile */}
           {isMobile && (
             <MobileSidebar 
               isOpen={mobileMenuOpen} 
