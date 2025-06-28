@@ -44,17 +44,19 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   const { isReady, isLoading, error, googleMapsService } = useGoogleMaps();
 
-  console.log('AddressAutocomplete - State:', {
+  console.log('🔍 AddressAutocomplete render - State:', {
     isReady,
     isLoading,
     error,
     inputValue,
-    suggestions: suggestions.length,
-    isOpen
+    suggestionsCount: suggestions.length,
+    isOpen,
+    isLoadingSuggestions
   });
 
   // Update input value when value prop changes
   useEffect(() => {
+    console.log('📝 Value prop changed:', value?.formatted_address);
     setInputValue(value?.formatted_address || '');
   }, [value]);
 
@@ -66,6 +68,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         !dropdownRef.current.contains(event.target as Node) &&
         !inputRef.current?.contains(event.target as Node)
       ) {
+        console.log('👆 Click outside - closing dropdown');
         setIsOpen(false);
       }
     };
@@ -75,56 +78,107 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   }, []);
 
   const searchPlaces = async (query: string) => {
-    console.log('searchPlaces called with:', query);
+    console.log('🔎 searchPlaces called with query:', `"${query}"`);
+    console.log('🔎 Search conditions:', { 
+      isReady, 
+      queryTrimmed: query.trim(), 
+      queryLength: query.length,
+      minLength: 3 
+    });
     
-    if (!isReady || !query.trim() || query.length < 3) {
-      console.log('Search cancelled - conditions not met:', { isReady, query: query.trim(), length: query.length });
+    if (!isReady) {
+      console.log('❌ Google Maps not ready, skipping search');
       setSuggestions([]);
       return;
     }
 
-    setIsLoadingSuggestions(true);
-    try {
-      console.log('Calling Google Maps API...');
-      const results = await googleMapsService.getPlaceAutocomplete(query);
-      console.log('Google Maps API results:', results);
-      setSuggestions(results);
-      setIsOpen(true);
-    } catch (error) {
-      console.error('Error fetching place suggestions:', error);
+    if (!query.trim() || query.length < 2) {
+      console.log('❌ Query too short or empty, skipping search');
       setSuggestions([]);
+      setIsOpen(false);
+      return;
+    }
+
+    console.log('🚀 Starting Google Maps API search...');
+    setIsLoadingSuggestions(true);
+    
+    try {
+      const results = await googleMapsService.getPlaceAutocomplete(query);
+      console.log('✅ Google Maps API results received:', results.length, 'suggestions');
+      console.log('📋 First suggestion:', results[0]?.description);
+      
+      setSuggestions(results);
+      
+      if (results.length > 0) {
+        console.log('📂 Opening dropdown with', results.length, 'suggestions');
+        setIsOpen(true);
+      } else {
+        console.log('❌ No results, keeping dropdown closed');
+        setIsOpen(false);
+      }
+    } catch (error) {
+      console.error('💥 Error fetching place suggestions:', error);
+      setSuggestions([]);
+      setIsOpen(false);
     } finally {
       setIsLoadingSuggestions(false);
+      console.log('🏁 Search completed');
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    console.log('Input changed to:', newValue);
+    console.log('⌨️ Input changed from:', `"${inputValue}"`, 'to:', `"${newValue}"`);
+    
     setInputValue(newValue);
     
     // Clear selected value if input is manually changed
     if (value && newValue !== value.formatted_address) {
+      console.log('🧹 Clearing selected value due to manual input change');
       onChange(null);
     }
 
     // Clear previous timeout
     if (searchTimeoutRef.current) {
+      console.log('⏰ Clearing previous search timeout');
       clearTimeout(searchTimeoutRef.current);
     }
 
     // Debounce the search
+    console.log('⏱️ Setting search timeout for 300ms');
     searchTimeoutRef.current = setTimeout(() => {
+      console.log('⏰ Search timeout triggered, calling searchPlaces');
       searchPlaces(newValue);
-    }, 500); // Increased debounce time
+    }, 300);
+  };
+
+  const handleInputFocus = () => {
+    console.log('🎯 Input focused');
+    console.log('🎯 Current suggestions count:', suggestions.length);
+    
+    if (suggestions.length > 0) {
+      console.log('📂 Opening dropdown on focus (has suggestions)');
+      setIsOpen(true);
+    }
+    
+    // Trigger search if there's existing input
+    if (inputValue.length >= 2) {
+      console.log('🔍 Triggering search on focus with existing input:', inputValue);
+      searchPlaces(inputValue);
+    }
   };
 
   const handleSuggestionClick = async (suggestion: PlaceAutocompleteResult) => {
-    console.log('Suggestion clicked:', suggestion);
+    console.log('🖱️ Suggestion clicked:', suggestion.description);
     setIsLoadingSuggestions(true);
+    
     try {
+      console.log('📍 Getting place details for:', suggestion.place_id);
       const placeDetails = await googleMapsService.getPlaceDetails(suggestion.place_id);
+      console.log('🏠 Place details received:', placeDetails.formatted_address);
+      
       const addressComponents = googleMapsService.parseAddressComponents(placeDetails.address_components);
+      console.log('🔧 Address components parsed:', addressComponents);
       
       const addressData: AddressData = {
         formatted_address: placeDetails.formatted_address,
@@ -136,19 +190,21 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         longitude: placeDetails.geometry.location.lng,
       };
 
-      console.log('Address data created:', addressData);
+      console.log('📊 Final address data:', addressData);
       setInputValue(placeDetails.formatted_address);
       onChange(addressData);
       setIsOpen(false);
       setSuggestions([]);
+      console.log('✅ Address selection completed');
     } catch (error) {
-      console.error('Error fetching place details:', error);
+      console.error('💥 Error fetching place details:', error);
     } finally {
       setIsLoadingSuggestions(false);
     }
   };
 
   const handleClear = () => {
+    console.log('🧹 Clearing input');
     setInputValue('');
     onChange(null);
     setSuggestions([]);
@@ -171,7 +227,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   // If Google Maps is not available or has error, use fallback
   if (error || !isReady) {
-    console.log('Using fallback mode due to:', { error, isReady });
+    console.log('🔄 Using fallback mode due to:', { error, isReady });
     return (
       <div className="space-y-2">
         {label && <Label htmlFor="address-fallback">{label}</Label>}
@@ -214,20 +270,16 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             ref={inputRef}
             value={inputValue}
             onChange={handleInputChange}
-            onFocus={() => {
-              console.log('Input focused');
-              if (suggestions.length > 0) {
-                setIsOpen(true);
-              }
-            }}
+            onFocus={handleInputFocus}
             placeholder={placeholder}
             required={required}
             disabled={disabled || isLoadingSuggestions}
             className="pl-10"
+            autoComplete="off"
           />
           <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           {isLoadingSuggestions && (
-            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
+            <Loader2 className="absolute right-10 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
           )}
         </div>
         
@@ -238,6 +290,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             size="sm"
             onClick={handleClear}
             className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+            tabIndex={-1}
           >
             ×
           </Button>
@@ -248,19 +301,21 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       {isOpen && suggestions.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
+          className="absolute top-full left-0 right-0 z-[9999] bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1"
+          style={{ zIndex: 9999 }}
         >
-          {suggestions.map((suggestion) => (
+          {suggestions.map((suggestion, index) => (
             <button
               key={suggestion.place_id}
               type="button"
               onClick={() => handleSuggestionClick(suggestion)}
-              className="w-full text-right px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 focus:outline-none focus:bg-gray-50 transition-colors"
+              className="w-full text-right px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 focus:outline-none focus:bg-gray-100 transition-colors bg-white"
               disabled={isLoadingSuggestions}
+              tabIndex={0}
             >
               <div className="flex items-center justify-end space-x-2 space-x-reverse">
                 <div className="flex-1 text-right">
-                  <div className="font-medium text-sm">
+                  <div className="font-medium text-sm text-gray-900">
                     {suggestion.structured_formatting.main_text}
                   </div>
                   <div className="text-xs text-gray-500">
@@ -271,6 +326,13 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
               </div>
             </button>
           ))}
+        </div>
+      )}
+      
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-gray-400 mt-1">
+          Debug: isOpen={isOpen.toString()}, suggestions={suggestions.length}, isReady={isReady.toString()}
         </div>
       )}
     </div>
