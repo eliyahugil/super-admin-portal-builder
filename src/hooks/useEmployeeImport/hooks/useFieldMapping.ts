@@ -135,16 +135,17 @@ export const useFieldMapping = ({
 
       console.log('📋 Column index mapping:', columnIndexMap);
 
-      // Update mappings with correct column indices
+      // Update mappings with correct column indices for multi-column support
       const updatedMappings = mappings.map(mapping => ({
         ...mapping,
-        columnIndex: mapping.mappedColumns[0] ? columnIndexMap[mapping.mappedColumns[0]] : undefined
+        columnIndex: mapping.mappedColumns[0] ? columnIndexMap[mapping.mappedColumns[0]] : undefined,
+        columnIndices: mapping.mappedColumns.map(col => columnIndexMap[col]).filter(idx => idx !== undefined)
       }));
 
       console.log('🗺️ Updated mappings with indices:', updatedMappings.map(m => ({
         systemField: m.systemField,
-        columnName: m.mappedColumns[0],
-        columnIndex: m.columnIndex
+        mappedColumns: m.mappedColumns,
+        columnIndices: m.columnIndices || []
       })));
 
       // Process the raw data based on mappings
@@ -167,25 +168,50 @@ export const useFieldMapping = ({
           customFields: {}
         };
 
-        // Apply field mappings using the correct column indices
+        // Apply field mappings using multiple columns support
         updatedMappings.forEach(mapping => {
-          if (!mapping.mappedColumns || mapping.mappedColumns.length === 0 || mapping.columnIndex === undefined) {
+          if (!mapping.mappedColumns || mapping.mappedColumns.length === 0) {
             return;
           }
 
-          let fieldValue = '';
+          const fieldValues: string[] = [];
           
           try {
-            if (Array.isArray(row) && mapping.columnIndex >= 0 && mapping.columnIndex < row.length) {
-              const rawValue = row[mapping.columnIndex];
-              fieldValue = rawValue !== null && rawValue !== undefined ? String(rawValue).trim() : '';
+            // Process all mapped columns
+            mapping.mappedColumns.forEach(columnName => {
+              const columnIndex = columnIndexMap[columnName];
+              if (columnIndex !== undefined && Array.isArray(row) && columnIndex >= 0 && columnIndex < row.length) {
+                const rawValue = row[columnIndex];
+                const fieldValue = rawValue !== null && rawValue !== undefined ? String(rawValue).trim() : '';
+                if (fieldValue && fieldValue !== '') {
+                  fieldValues.push(fieldValue);
+                }
+              }
+            });
+
+            // Combine multiple values based on field type
+            let combinedValue = '';
+            if (fieldValues.length > 0) {
+              if (mapping.systemField === 'first_name' || mapping.systemField === 'last_name') {
+                // For names, use first non-empty value
+                combinedValue = fieldValues[0];
+              } else if (mapping.systemField === 'address') {
+                // For address, combine with commas
+                combinedValue = fieldValues.join(', ');
+              } else if (mapping.systemField === 'phone') {
+                // For phone, use first valid value
+                combinedValue = fieldValues[0];
+              } else {
+                // Default: combine with spaces
+                combinedValue = fieldValues.join(' ').trim();
+              }
             }
             
-            if (fieldValue && fieldValue !== '') {
+            if (combinedValue && combinedValue !== '') {
               if (mapping.isCustomField) {
-                employee.customFields[mapping.systemField] = fieldValue;
+                employee.customFields[mapping.systemField] = combinedValue;
               } else {
-                employee[mapping.systemField] = fieldValue;
+                employee[mapping.systemField] = combinedValue;
               }
             }
           } catch (error) {
@@ -287,7 +313,8 @@ export const useFieldMapping = ({
           isPartialUpdate: employee.isPartialUpdate,
           existingEmployeeId: employee.existingEmployeeId,
           errorsCount: employee.validationErrors?.length || 0,
-          errors: employee.validationErrors
+          errors: employee.validationErrors,
+          customFields: Object.keys(employee.customFields || {})
         });
 
         return employee as PreviewEmployee;
@@ -308,7 +335,8 @@ export const useFieldMapping = ({
         validEmployees: finalPreviewData.filter(emp => emp.isValid).length,
         newEmployees: finalPreviewData.filter(emp => !emp.isPartialUpdate && emp.isValid).length,
         partialUpdateEmployees: finalPreviewData.filter(emp => emp.isPartialUpdate && emp.isValid).length,
-        errorEmployees: finalPreviewData.filter(emp => !emp.isValid).length
+        errorEmployees: finalPreviewData.filter(emp => !emp.isValid).length,
+        customFieldsUsed: [...new Set(finalPreviewData.flatMap(emp => Object.keys(emp.customFields || {})))]
       });
 
       setFieldMappings(updatedMappings);
