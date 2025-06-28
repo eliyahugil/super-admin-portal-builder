@@ -1,23 +1,31 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { FieldMappingDialogHeader } from './field-mapping/FieldMappingDialogHeader';
-import { FieldMappingDialogTabs } from './field-mapping/FieldMappingDialogTabs';
-import { FieldMappingDialogFooter } from './field-mapping/FieldMappingDialogFooter';
-import { useFieldMappingLogic } from './field-mapping/useFieldMappingLogic';
-import { SYSTEM_FIELDS } from '@/constants/systemFields';
-import { useIsMobile } from '@/hooks/use-mobile';
-import type { FieldMapping } from '@/hooks/useEmployeeImport/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
 
 interface FieldMappingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fileColumns: string[];
-  sampleData: any[];
-  onConfirm: (mappings: FieldMapping[]) => void;
+  sampleData: any[][];
+  onConfirm: (mappings: Record<string, string>) => void;
   onBack?: () => void;
-  systemFields?: Array<{ value: string; label: string }>;
 }
+
+const EMPLOYEE_FIELDS = [
+  { key: 'first_name', label: 'שם פרטי', required: true },
+  { key: 'last_name', label: 'שם משפחה', required: true },
+  { key: 'email', label: 'אימייל', required: false },
+  { key: 'phone', label: 'טלפון', required: false },
+  { key: 'id_number', label: 'תעודת זהות', required: false },
+  { key: 'employee_id', label: 'מספר עובד', required: false },
+  { key: 'hire_date', label: 'תאריך התחלה', required: false },
+  { key: 'address', label: 'כתובת', required: false },
+  { key: 'notes', label: 'הערות', required: false },
+];
 
 export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   open,
@@ -26,120 +34,131 @@ export const FieldMappingDialog: React.FC<FieldMappingDialogProps> = ({
   sampleData,
   onConfirm,
   onBack,
-  systemFields = SYSTEM_FIELDS,
 }) => {
-  const isMobile = useIsMobile();
-  
-  console.log('🗺️ FieldMappingDialog rendered with:', {
+  const [mappings, setMappings] = useState<Record<string, string>>({});
+
+  console.log('🗺️ FieldMappingDialog props:', {
     open,
-    isMobile,
-    fileColumnsCount: fileColumns.length,
-    sampleDataCount: sampleData.length,
-    systemFieldsCount: systemFields?.length || 0,
-    sampleColumns: fileColumns.slice(0, 3),
-    sampleData: sampleData.slice(0, 1)
+    fileColumns,
+    sampleDataLength: sampleData.length,
+    mappings
   });
 
-  const {
-    mappings,
-    setMappings,
-    unmappedColumns,
-    mappedSystemFields,
-    addMapping,
-    updateMapping,
-    removeMapping,
-    canProceed,
-    validationErrors,
-    reapplyAutoMapping,
-    clearAllMappings,
-    removeUnmappedFields,
-  } = useFieldMappingLogic(fileColumns, systemFields);
-
-  const [activeTab, setActiveTab] = useState('mapping');
+  const handleMappingChange = (employeeField: string, fileColumn: string) => {
+    console.log('🔄 Mapping changed:', { employeeField, fileColumn });
+    setMappings(prev => ({
+      ...prev,
+      [employeeField]: fileColumn === 'none' ? '' : fileColumn
+    }));
+  };
 
   const handleConfirm = () => {
-    console.log('✅ FieldMappingDialog - confirming mappings:', {
-      totalMappings: mappings.length,
-      activeMappings: mappings.filter(m => m.mappedColumns.length > 0).length,
-      mappings: mappings.map(m => ({
-        systemField: m.systemField,
-        mappedColumns: m.mappedColumns,
-        label: m.label
-      }))
-    });
+    console.log('✅ Confirming mappings:', mappings);
     
-    const validMappings = mappings.filter(mapping => 
-      mapping.mappedColumns && mapping.mappedColumns.length > 0
-    );
+    // Validate required fields
+    const requiredFields = EMPLOYEE_FIELDS.filter(field => field.required);
+    const missingFields = requiredFields.filter(field => !mappings[field.key]);
     
-    console.log('📤 Sending valid mappings:', validMappings.length);
-    onConfirm(validMappings);
+    if (missingFields.length > 0) {
+      alert(`אנא מפה את השדות הנדרשים: ${missingFields.map(f => f.label).join(', ')}`);
+      return;
+    }
+    
+    onConfirm(mappings);
   };
 
-  const handleBack = () => {
-    console.log('⬅️ FieldMappingDialog - going back');
-    if (onBack) {
-      onBack();
-    } else {
-      onOpenChange(false);
+  const getSampleValue = (columnIndex: number) => {
+    if (sampleData.length > 0 && sampleData[0] && sampleData[0][columnIndex] !== undefined) {
+      return sampleData[0][columnIndex];
     }
-  };
-
-  const handleAddSystemField = async (newField: { value: string; label: string }): Promise<boolean> => {
-    try {
-      console.log('➕ Adding new system field:', newField);
-      const customMapping: FieldMapping = {
-        id: `custom-${newField.value}-${Date.now()}`,
-        systemField: newField.value,
-        mappedColumns: [],
-        isRequired: false,
-        label: newField.label,
-        isCustomField: true,
-        customFieldName: newField.label,
-      };
-      
-      setMappings([...mappings, customMapping]);
-      return true;
-    } catch (error) {
-      console.error('Error adding system field:', error);
-      return false;
-    }
+    return '';
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${isMobile ? 'max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] p-0' : 'max-w-6xl max-h-[90vh] p-0'}`}>
-        <FieldMappingDialogHeader
-          hasAutoDetections={mappings.some(m => m.mappedColumns.length > 0)}
-          mappedCount={mappings.filter(m => m.mappedColumns.length > 0).length}
-          totalColumns={fileColumns.length}
-          onApplyAutoMapping={reapplyAutoMapping}
-          onClearMappings={clearAllMappings}
-          onRemoveUnmapped={removeUnmappedFields}
-          onBack={handleBack}
-        />
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5" />
+            מיפוי שדות הקובץ לשדות המערכת
+          </DialogTitle>
+        </DialogHeader>
 
-        <FieldMappingDialogTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          mappings={mappings}
-          fileColumns={fileColumns}
-          sampleData={sampleData}
-          systemFields={[...systemFields]}
-          validationErrors={validationErrors}
-          unmappedColumns={unmappedColumns}
-          onUpdateMapping={updateMapping}
-          onRemoveMapping={removeMapping}
-          onAddSystemField={handleAddSystemField}
-        />
+        <div className="space-y-6">
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <p className="text-blue-800 text-sm">
+              קשר בין העמודות בקובץ Excel לשדות במערכת. שדות המסומנים בכוכבית (*) הם חובה.
+            </p>
+          </div>
 
-        <FieldMappingDialogFooter
-          mappings={mappings}
-          fileColumns={fileColumns}
-          canProceed={canProceed}
-          onBack={handleBack}
-          onConfirm={handleConfirm}
-        />
+          <div className="grid gap-4">
+            {EMPLOYEE_FIELDS.map((field) => (
+              <Card key={field.key} className="border-2">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    {field.label}
+                    {field.required && <span className="text-red-500">*</span>}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-3 gap-4 items-center">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        בחר עמודה מהקובץ:
+                      </label>
+                      <Select
+                        value={mappings[field.key] || 'none'}
+                        onValueChange={(value) => handleMappingChange(field.key, value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="בחר עמודה..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">--- לא ממופה ---</SelectItem>
+                          {fileColumns.map((column, index) => (
+                            <SelectItem key={index} value={column}>
+                              {column}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {mappings[field.key] && (
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium mb-2">
+                          דוגמה מהקובץ:
+                        </label>
+                        <div className="bg-gray-50 p-2 rounded border">
+                          <code className="text-sm">
+                            {getSampleValue(fileColumns.indexOf(mappings[field.key]))}
+                          </code>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="flex justify-between pt-4">
+            {onBack && (
+              <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
+                <ArrowRight className="h-4 w-4" />
+                חזור לעלית קובץ
+              </Button>
+            )}
+            
+            <Button 
+              onClick={handleConfirm}
+              className="flex items-center gap-2 mr-auto"
+            >
+              המשך לתצוגה מקדימה
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

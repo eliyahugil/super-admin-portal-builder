@@ -77,7 +77,7 @@ export const useFileProcessing = ({
         if (header && header.toString().trim()) {
           return header.toString().trim();
         }
-        return `Column ${index + 1}`;
+        return `עמודה ${index + 1}`;
       });
 
       console.log('📋 Processed headers:', headers);
@@ -103,12 +103,16 @@ export const useFileProcessing = ({
       setFile(file);
       setHeaders(headers);
       setRawData(dataRows);
+      
+      // Move to mapping step
+      setStep('mapping');
       setShowMappingDialog(true);
       
       console.log('✅ File processing completed successfully:', {
         headersCount: headers.length,
         dataRowsCount: dataRows.length,
-        fileName: file.name
+        fileName: file.name,
+        nextStep: 'mapping'
       });
 
     } catch (error) {

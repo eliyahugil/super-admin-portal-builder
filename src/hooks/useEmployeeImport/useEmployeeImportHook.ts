@@ -32,10 +32,11 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
   // Determine effective business ID
   const effectiveBusinessId = selectedBusinessId || contextBusinessId;
 
-  console.log('🔄 useEmployeeImport - businessId logic:', {
+  console.log('🔄 useEmployeeImportHook - businessId logic:', {
     selectedBusinessId,
     contextBusinessId,
-    effectiveBusinessId
+    effectiveBusinessId,
+    step
   });
 
   // Data hooks - Get full employee data for comparison
@@ -61,7 +62,7 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
     setPreviewData,
     setStep,
     setShowMappingDialog,
-    headers, // Pass headers to the field mapping hook
+    headers,
   });
 
   const { executeImport: executeImportInternal } = useImportExecution({

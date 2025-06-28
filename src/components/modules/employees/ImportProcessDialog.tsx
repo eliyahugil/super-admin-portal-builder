@@ -3,10 +3,8 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, XCircle, AlertCircle, Upload, FileText, Eye, Download } from 'lucide-react';
-import { ImportFileUpload } from './ImportFileUpload';
-import { ImportPreview } from './ImportPreview';
-import { ImportResults } from './ImportResults';
+import { CheckCircle, XCircle, AlertCircle, Upload, FileText, Eye, Download, X } from 'lucide-react';
+import { ImportStepContent } from './import/ImportStepContent';
 
 interface ImportProcessDialogProps {
   importHook: any;
@@ -16,13 +14,7 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
   const {
     step,
     setStep,
-    file,
-    previewData,
-    importResult,
-    processFile,
-    executeImport,
     resetForm,
-    downloadTemplate,
   } = importHook;
 
   // Dialog should be open when step is not 'closed'
@@ -30,14 +22,16 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
 
   console.log('📋 ImportProcessDialog - Dialog state:', {
     step,
-    hasFile: !!file,
-    isOpen
+    isOpen,
+    importHook: Object.keys(importHook)
   });
 
   const getStepIcon = (currentStep: string) => {
     switch (currentStep) {
       case 'upload':
         return <Upload className="h-5 w-5" />;
+      case 'mapping':
+        return <FileText className="h-5 w-5" />;
       case 'preview':
         return <Eye className="h-5 w-5" />;
       case 'results':
@@ -51,6 +45,8 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
     switch (step) {
       case 'upload':
         return 'העלאת קובץ אקסל';
+      case 'mapping':
+        return 'מיפוי שדות';
       case 'preview':
         return 'תצוגה מקדימה';
       case 'importing':
@@ -62,47 +58,27 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
     }
   };
 
+  const getProgressValue = () => {
+    switch (step) {
+      case 'upload':
+        return 20;
+      case 'mapping':
+        return 40;
+      case 'preview':
+        return 60;
+      case 'importing':
+        return 80;
+      case 'results':
+        return 100;
+      default:
+        return 0;
+    }
+  };
+
   const handleClose = () => {
     console.log('🔄 Closing import dialog');
     setStep('closed');
     resetForm();
-  };
-
-  const renderContent = () => {
-    switch (step) {
-      case 'upload':
-        return (
-          <ImportFileUpload
-            onFileSelect={processFile}
-            onDownloadTemplate={downloadTemplate}
-          />
-        );
-      case 'preview':
-        return (
-          <ImportPreview
-            previewData={previewData}
-            onConfirm={executeImport}
-            onCancel={handleClose}
-          />
-        );
-      case 'importing':
-        return (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h3 className="text-lg font-medium mb-2">מייבא עובדים...</h3>
-            <p className="text-gray-600">אנא המתן, זה עלול לקחת כמה רגעים</p>
-          </div>
-        );
-      case 'results':
-        return (
-          <ImportResults
-            result={importResult}
-            onClose={handleClose}
-          />
-        );
-      default:
-        return null;
-    }
   };
 
   if (!isOpen) {
@@ -116,30 +92,29 @@ export const ImportProcessDialog: React.FC<ImportProcessDialogProps> = ({ import
         handleClose();
       }
     }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-right">
-            {getStepIcon(step)}
-            {getStepTitle()}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              {getStepIcon(step)}
+              {getStepTitle()}
+            </DialogTitle>
+            <Button variant="ghost" size="sm" onClick={handleClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
         
         {/* Progress Indicator */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-gray-500">שלב {step === 'upload' ? '1' : step === 'preview' ? '2' : '3'} מתוך 3</span>
+            <span className="text-sm text-gray-500">התקדמות</span>
+            <span className="text-sm text-gray-500">{getProgressValue()}%</span>
           </div>
-          <Progress 
-            value={
-              step === 'upload' ? 33 : 
-              step === 'preview' ? 66 : 
-              100
-            } 
-            className="h-2"
-          />
+          <Progress value={getProgressValue()} className="h-2" />
         </div>
 
-        {renderContent()}
+        <ImportStepContent step={step} importHook={importHook} />
       </DialogContent>
     </Dialog>
   );
