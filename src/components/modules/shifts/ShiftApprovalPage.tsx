@@ -57,46 +57,72 @@ export const ShiftApprovalPage: React.FC = () => {
   const { businessId } = useBusiness();
   const queryClient = useQueryClient();
 
-  // Fetch shift requests for approval
+  // Fetch shift requests for approval - נשלוף נתונים בצורה נפרדת
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['shift-approval-requests', businessId, statusFilter],
     queryFn: async (): Promise<ShiftRequest[]> => {
       if (!businessId) return [];
       
-      let query = supabase
+      console.log('Fetching shift requests for business:', businessId);
+      
+      // קודם נשלוף את הבקשות
+      let requestsQuery = supabase
         .from('employee_shift_requests')
-        .select(`
-          *,
-          employee:employees!inner(first_name, last_name, phone, business_id)
-        `)
-        .eq('employee.business_id', businessId)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
+        requestsQuery = requestsQuery.eq('status', statusFilter);
       }
 
-      const { data, error } = await query;
-      if (error) {
-        console.error('Error fetching shift requests:', error);
-        throw error;
+      const { data: requestsData, error: requestsError } = await requestsQuery;
+      
+      if (requestsError) {
+        console.error('Error fetching shift requests:', requestsError);
+        throw requestsError;
       }
 
-      return (data || []).map(req => ({
-        id: req.id,
-        employee_id: req.employee_id,
-        employee_name: req.employee ? `${req.employee.first_name} ${req.employee.last_name}` : 'לא ידוע',
-        shift_date: req.shift_date,
-        start_time: req.start_time,
-        end_time: req.end_time,
-        branch_preference: req.branch_preference,
-        role_preference: req.role_preference,
-        status: req.status as 'pending' | 'approved' | 'rejected',
-        notes: req.notes,
-        created_at: req.created_at,
-        reviewed_at: req.reviewed_at,
-        employee: req.employee
-      }));
+      if (!requestsData || requestsData.length === 0) {
+        return [];
+      }
+
+      // עכשיו נשלוף את פרטי העובדים לבקשות הרלוונטיות
+      const employeeIds = requestsData.map(req => req.employee_id);
+      
+      const { data: employeesData, error: employeesError } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, phone, business_id')
+        .eq('business_id', businessId)
+        .in('id', employeeIds);
+
+      if (employeesError) {
+        console.error('Error fetching employees:', employeesError);
+        throw employeesError;
+      }
+
+      // נחבר את הנתונים
+      return requestsData.map(req => {
+        const employee = employeesData?.find(emp => emp.id === req.employee_id);
+        return {
+          id: req.id,
+          employee_id: req.employee_id,
+          employee_name: employee ? `${employee.first_name} ${employee.last_name}` : 'לא ידוע',
+          shift_date: req.shift_date,
+          start_time: req.start_time,
+          end_time: req.end_time,
+          branch_preference: req.branch_preference,
+          role_preference: req.role_preference,
+          status: req.status as 'pending' | 'approved' | 'rejected',
+          notes: req.notes,
+          created_at: req.created_at,
+          reviewed_at: req.reviewed_at,
+          employee: employee ? {
+            first_name: employee.first_name,
+            last_name: employee.last_name,
+            phone: employee.phone
+          } : undefined
+        };
+      });
     },
     enabled: !!businessId
   });
