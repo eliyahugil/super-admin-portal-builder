@@ -10,6 +10,8 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Building2, Mail, User, Phone, AlertTriangle } from 'lucide-react';
+import { AddressField } from '@/components/ui/address';
+import type { AddressData } from '@/components/ui/address';
 
 interface BusinessFormData {
   name: string;
@@ -32,29 +34,50 @@ export const CreateBusinessForm: React.FC = () => {
   
   const [loading, setLoading] = useState(false);
   const [createUser, setCreateUser] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleInputChange = (field: keyof BusinessFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (error) {
+      setError(null);
+    }
+  };
+
+  const handleAddressChange = (addressData: AddressData | null) => {
+    setFormData(prev => ({
+      ...prev,
+      address: addressData?.formatted_address || ''
+    }));
   };
 
   const createBusinessWithUser = async () => {
     if (!formData.name || !formData.admin_email || !formData.admin_full_name) {
+      const errorMsg = 'יש למלא את כל השדות הנדרשים';
+      setError(errorMsg);
       toast({
         title: 'שגיאה',
-        description: 'יש למלא את כל השדות הנדרשים',
+        description: errorMsg,
         variant: 'destructive',
       });
       return;
     }
 
     setLoading(true);
+    setError(null);
 
     try {
       console.log('🚀 Starting business creation process...');
       
       // Step 1: Create the business first
+      console.log('📝 Creating business with data:', {
+        name: formData.name,
+        admin_email: formData.admin_email,
+        address: formData.address
+      });
+
       const { data: business, error: businessError } = await supabase
         .from('businesses')
         .insert({
@@ -70,8 +93,8 @@ export const CreateBusinessForm: React.FC = () => {
         .single();
 
       if (businessError) {
-        console.error('Error creating business:', businessError);
-        throw new Error('שגיאה ביצירת העסק');
+        console.error('❌ Error creating business:', businessError);
+        throw new Error(`שגיאה ביצירת העסק: ${businessError.message}`);
       }
 
       console.log('✅ Business created successfully:', business.name);
@@ -79,61 +102,92 @@ export const CreateBusinessForm: React.FC = () => {
       let userCreationResult = null;
       
       if (createUser) {
-        // Step 2: Create user with default password 123456
-        console.log('👤 Creating admin user...');
+        console.log('👤 Creating admin user via Edge Function...');
         
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: formData.admin_email,
-          password: '123456',
-          email_confirm: true,
-          user_metadata: {
-            full_name: formData.admin_full_name,
-            business_id: business.id,
-            role: 'business_admin'
-          }
-        });
-
-        if (authError) {
-          console.error('Error creating user:', authError);
-          
-          // Try to clean up the business if user creation failed
-          await supabase.from('businesses').delete().eq('id', business.id);
-          throw new Error('שגיאה ביצירת המשתמש למנהל העסק');
-        }
-
-        console.log('✅ User created successfully:', authData.user.email);
-
-        // Step 3: Update business with owner_id
-        const { error: updateError } = await supabase
-          .from('businesses')
-          .update({ owner_id: authData.user.id })
-          .eq('id', business.id);
-
-        if (updateError) {
-          console.error('Error updating business owner:', updateError);
-          // Don't fail the entire process for this
-        }
-
-        // Step 4: Create profile record for the new user
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: authData.user.id,
-            email: formData.admin_email,
-            full_name: formData.admin_full_name,
-            role: 'business_admin',
-            business_id: business.id
+        try {
+          // Use the edge function to create the admin user
+          const { data: edgeData, error: edgeError } = await supabase.functions.invoke('create-business-admin', {
+            body: {
+              businessData: {
+                name: formData.name,
+                contact_phone: formData.contact_phone,
+                address: formData.address,
+                description: formData.description,
+                selectedModules: ['shift_management', 'employee_documents', 'employee_notes']
+              },
+              adminData: {
+                email: formData.admin_email,
+                full_name: formData.admin_full_name
+              }
+            }
           });
 
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-          // Don't fail for profile creation error
-        }
+          if (edgeError) {
+            console.error('⚠️ Edge function error:', edgeError);
+            throw new Error(`שגיאה ביצירת המנהל דרך Edge Function: ${edgeError.message}`);
+          }
 
-        userCreationResult = { success: true, email: formData.admin_email };
+          if (edgeData && !edgeData.success) {
+            console.error('⚠️ Edge function returned error:', edgeData.error);
+            throw new Error(`שגיאה ביצירת המנהל: ${edgeData.error}`);
+          }
+
+          console.log('✅ Admin user created successfully via edge function');
+          userCreationResult = { success: true, email: formData.admin_email };
+          
+        } catch (edgeError) {
+          console.warn('⚠️ Edge function failed, trying direct approach...', edgeError);
+          
+          // Fallback: try creating user directly with Supabase admin API
+          try {
+            const tempPassword = '123456';
+            console.log('🔄 Attempting direct user creation with admin API...');
+            
+            const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+              email: formData.admin_email,
+              password: tempPassword,
+              email_confirm: true,
+              user_metadata: {
+                full_name: formData.admin_full_name,
+                business_id: business.id,
+                role: 'business_admin'
+              }
+            });
+
+            if (authError) {
+              console.error('❌ Direct auth creation failed:', authError);
+              throw new Error(`שגיאה ביצירת המשתמש: ${authError.message}`);
+            }
+
+            console.log('✅ Direct user creation succeeded:', authData.user?.email);
+
+            // Update business with owner
+            const { error: updateError } = await supabase
+              .from('businesses')
+              .update({ owner_id: authData.user?.id })
+              .eq('id', business.id);
+
+            if (updateError) {
+              console.error('⚠️ Error updating business owner:', updateError);
+              // Don't fail the entire process for this
+            }
+
+            userCreationResult = { success: true, email: formData.admin_email, password: tempPassword };
+            
+          } catch (directError) {
+            console.error('❌ Direct user creation also failed:', directError);
+            
+            // Show warning but don't fail the entire process
+            toast({
+              title: 'אזהרה',
+              description: `העסק נוצר בהצלחה אך לא ניתן ליצור משתמש למנהל. שגיאה: ${directError instanceof Error ? directError.message : 'שגיאה לא ידועה'}`,
+              variant: 'destructive',
+            });
+          }
+        }
       }
 
-      // Step 5: Create default business module configurations
+      // Create default business module configurations
       const defaultModules = [
         'shift_management',
         'employee_documents', 
@@ -151,37 +205,13 @@ export const CreateBusinessForm: React.FC = () => {
             business_id: business.id,
             module_key,
             is_enabled: true,
-            enabled_by: userCreationResult ? business.owner_id : null,
             enabled_at: new Date().toISOString()
           }))
         );
 
       if (modulesError) {
-        console.error('Error creating default modules:', modulesError);
+        console.error('⚠️ Error creating default modules:', modulesError);
         // Don't fail the entire process for module configuration errors
-      }
-
-      // Step 6: Log the business creation activity
-      const { data: currentUser } = await supabase.auth.getUser();
-      if (currentUser.user) {
-        const { error: logError } = await supabase
-          .from('activity_logs')
-          .insert({
-            user_id: currentUser.user.id,
-            action: 'business_created',
-            target_type: 'business',
-            target_id: business.id,
-            details: {
-              business_name: business.name,
-              admin_email: formData.admin_email,
-              user_created: !!userCreationResult,
-              created_at: new Date().toISOString()
-            }
-          });
-
-        if (logError) {
-          console.error('Error logging activity:', logError);
-        }
       }
 
       // Show success message
@@ -191,11 +221,13 @@ export const CreateBusinessForm: React.FC = () => {
           description: `העסק "${business.name}" נוצר והמשתמש נוצר בהצלחה`,
         });
         
-        toast({
-          title: 'פרטי כניסה ראשוניים',
-          description: `המייל: ${formData.admin_email}\nהסיסמה הראשונית: 123456`,
-          variant: 'default',
-        });
+        if (userCreationResult.password) {
+          toast({
+            title: 'פרטי כניסה ראשוניים',
+            description: `המייל: ${formData.admin_email}\nהסיסמה הראשונית: ${userCreationResult.password}`,
+            variant: 'default',
+          });
+        }
       } else {
         toast({
           title: 'הצלחה!',
@@ -208,9 +240,12 @@ export const CreateBusinessForm: React.FC = () => {
 
     } catch (error) {
       console.error('💥 Error in createBusinessWithUser:', error);
+      const errorMessage = error instanceof Error ? error.message : 'שגיאה ביצירת העסק';
+      setError(errorMessage);
+      
       toast({
         title: 'שגיאה',
-        description: error instanceof Error ? error.message : 'שגיאה ביצירת העסק',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -227,6 +262,17 @@ export const CreateBusinessForm: React.FC = () => {
         </h1>
         <p className="text-gray-600 mt-2">הזן את פרטי העסק והמנהל הראשי</p>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center gap-2 text-red-800">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="font-medium">שגיאה</span>
+          </div>
+          <p className="text-red-700 mt-1">{error}</p>
+        </div>
+      )}
 
       <div className="space-y-6">
         <Card>
@@ -271,12 +317,11 @@ export const CreateBusinessForm: React.FC = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="address">כתובת</Label>
-                <Input
-                  id="address"
+                <AddressField
+                  label="כתובת העסק"
                   value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder="כתובת העסק"
+                  onChange={handleAddressChange}
+                  placeholder="הקלד כתובת העסק..."
                 />
               </div>
             </div>
@@ -345,17 +390,6 @@ export const CreateBusinessForm: React.FC = () => {
                     <br />
                     יש להחליף אותה בהתחברות הראשונה.
                   </p>
-                </div>
-
-                <div className="bg-amber-50 p-4 rounded-lg flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm">
-                    <p className="font-medium text-amber-800">הערה חשובה:</p>
-                    <p className="text-amber-700">
-                      יצירת המשתמש תתבצע עם הרשאות מנהל עסק. 
-                      המשתמש יקבל גישה מלאה לכל מודולי העסק.
-                    </p>
-                  </div>
                 </div>
               </>
             )}
