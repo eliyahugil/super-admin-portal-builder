@@ -1,12 +1,11 @@
 
-import { GoogleMapsService } from './GoogleMapsService';
-import { GoogleMapsConfigManager } from './GoogleMapsConfig';
-import { GoogleMapsClient } from './GoogleMapsClient';
-import { GoogleMapsUtils } from './GoogleMapsUtils';
-
 export { GoogleMapsService } from './GoogleMapsService';
 export { GoogleMapsConfigManager } from './GoogleMapsConfig';
 export { GoogleMapsClient } from './GoogleMapsClient';
+export { GoogleMapsLoader } from './GoogleMapsLoader';
+export { GoogleMapsServices } from './GoogleMapsServices';
+export { GoogleMapsAutocomplete } from './GoogleMapsAutocomplete';
+export { GoogleMapsPlaceDetails } from './GoogleMapsPlaceDetails';
 export { GoogleMapsUtils } from './GoogleMapsUtils';
 export type {
   PlaceAutocompleteResult,
