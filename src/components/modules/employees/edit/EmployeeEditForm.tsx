@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AddressAutocomplete, AddressData } from '@/components/ui/AddressAutocomplete';
 import type { EmployeeType } from '@/types/employee';
 
 interface EmployeeFormData {
@@ -19,7 +19,7 @@ interface EmployeeFormData {
   notes: string;
   main_branch_id: string;
   username?: string;
-  password?: string; // only for edit form
+  password?: string;
   is_system_user?: boolean;
   termination_date?: string | null;
 }
@@ -33,8 +33,14 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
   formData,
   setFormData,
 }) => {
-  // Toggle password reveal for the password field (optional—security)
   const [showPassword, setShowPassword] = useState(false);
+
+  const handleAddressChange = (addressData: AddressData | null) => {
+    setFormData({
+      ...formData,
+      address: addressData?.formatted_address || ''
+    });
+  };
 
   return (
     <div className="space-y-4" dir="rtl">
@@ -84,12 +90,19 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="address">כתובת</Label>
-        <Input
-          id="address"
-          value={formData.address}
-          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-          className="text-right"
+        <AddressAutocomplete
+          label="כתובת העובד"
+          placeholder="חפש כתובת..."
+          value={formData.address ? {
+            formatted_address: formData.address,
+            street: '',
+            city: '',
+            postalCode: '',
+            country: 'Israel',
+            latitude: 0,
+            longitude: 0,
+          } : null}
+          onChange={handleAddressChange}
         />
       </div>
 

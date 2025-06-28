@@ -4,11 +4,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
+import { AddressAutocomplete, AddressData } from '@/components/ui/AddressAutocomplete';
 import { Branch } from '@/types/branch';
 
 interface EditBranchDialogProps {
@@ -48,6 +48,24 @@ export const EditBranchDialog: React.FC<EditBranchDialogProps> = ({
       });
     }
   }, [branch]);
+
+  const handleAddressChange = (addressData: AddressData | null) => {
+    if (addressData) {
+      setFormData(prev => ({
+        ...prev,
+        address: addressData.formatted_address,
+        latitude: addressData.latitude.toString(),
+        longitude: addressData.longitude.toString(),
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        address: '',
+        latitude: '',
+        longitude: '',
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,13 +184,19 @@ export const EditBranchDialog: React.FC<EditBranchDialogProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="address">כתובת</Label>
-            <Textarea
-              id="address"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="הזן כתובת הסניף"
-              rows={3}
+            <AddressAutocomplete
+              label="כתובת הסניף"
+              placeholder="חפש כתובת..."
+              onChange={handleAddressChange}
+              value={formData.address ? {
+                formatted_address: formData.address,
+                street: '',
+                city: '',
+                postalCode: '',
+                country: 'Israel',
+                latitude: parseFloat(formData.latitude) || 0,
+                longitude: parseFloat(formData.longitude) || 0,
+              } : null}
             />
           </div>
 
