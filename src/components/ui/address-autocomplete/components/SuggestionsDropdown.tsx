@@ -35,6 +35,7 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
       ref={dropdownRef}
       className="absolute top-full left-0 right-0 z-[9999] bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1"
       style={{ zIndex: 9999 }}
+      dir="rtl"
     >
       {suggestions.map((suggestion) => (
         <button
@@ -45,7 +46,8 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
           disabled={isLoadingSuggestions}
           tabIndex={0}
         >
-          <div className="flex items-center justify-end space-x-2 space-x-reverse">
+          <div className="flex items-center justify-start space-x-2 space-x-reverse">
+            <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 ml-2" />
             <div className="flex-1 text-right">
               <div className="font-medium text-sm text-gray-900">
                 {suggestion.structured_formatting.main_text}
@@ -54,7 +56,6 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
                 {suggestion.structured_formatting.secondary_text}
               </div>
             </div>
-            <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
           </div>
         </button>
       ))}

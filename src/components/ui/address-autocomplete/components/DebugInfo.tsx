@@ -17,8 +17,10 @@ export const DebugInfo: React.FC<DebugInfoProps> = ({
   }
 
   return (
-    <div className="text-xs text-gray-400 mt-1">
-      Debug: isOpen={isOpen.toString()}, suggestions={suggestionsCount}, isReady={isReady.toString()}
+    <div className="text-xs text-gray-500 mt-1">
+      Debug: Dropdown {isOpen ? 'פתוח' : 'סגור'} | 
+      הצעות: {suggestionsCount} | 
+      Google Maps: {isReady ? 'מוכן' : 'לא מוכן'}
     </div>
   );
 };

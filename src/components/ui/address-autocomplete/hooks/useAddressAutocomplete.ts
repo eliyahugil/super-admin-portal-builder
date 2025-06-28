@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { useAddressSearch } from './useAddressSearch';
 import { useDropdownState } from './useDropdownState';
@@ -35,13 +35,15 @@ export const useAddressAutocomplete = (
 
   // Update input value when value prop changes
   useEffect(() => {
-    console.log('📝 Value prop changed:', value?.formatted_address);
-    setInputValue(value?.formatted_address || '');
-  }, [value]);
+    if (value?.formatted_address !== inputValue) {
+      console.log('📝 Value prop changed:', value?.formatted_address);
+      setInputValue(value?.formatted_address || '');
+    }
+  }, [value?.formatted_address]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    console.log('⌨️ Input changed from:', `"${inputValue}"`, 'to:', `"${newValue}"`);
+    console.log('⌨️ Input changed to:', `"${newValue}"`);
     
     setInputValue(newValue);
     
@@ -51,11 +53,15 @@ export const useAddressAutocomplete = (
       onChange(null);
     }
 
-    // Search for places
-    searchPlaces(newValue);
-  };
+    // Search for places with debouncing
+    if (newValue.trim().length >= 2) {
+      searchPlaces(newValue);
+    } else {
+      clearSuggestions();
+    }
+  }, [value, onChange, searchPlaces, clearSuggestions]);
 
-  const handleInputFocus = () => {
+  const handleInputFocus = useCallback(() => {
     console.log('🎯 Input focused');
     
     if (suggestions.length > 0) {
@@ -68,7 +74,7 @@ export const useAddressAutocomplete = (
       console.log('🔍 Triggering search on focus with existing input:', inputValue);
       searchPlaces(inputValue);
     }
-  };
+  }, [suggestions.length, inputValue, searchPlaces, openDropdown]);
 
   const handleSuggestionClick = async (suggestion: PlaceAutocompleteResult) => {
     console.log('🖱️ Suggestion clicked:', suggestion.description);
@@ -102,14 +108,14 @@ export const useAddressAutocomplete = (
     }
   };
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     console.log('🧹 Clearing input');
     setInputValue('');
     onChange(null);
     clearSuggestions();
     closeDropdown();
-    inputRef.current?.focus();
-  };
+    // Don't auto-focus to prevent keyboard issues
+  }, [onChange, clearSuggestions, closeDropdown]);
 
   // Update dropdown state based on suggestions
   useEffect(() => {
@@ -118,7 +124,7 @@ export const useAddressAutocomplete = (
     } else {
       closeDropdown();
     }
-  }, [suggestions.length, inputValue.length]);
+  }, [suggestions.length, inputValue.length, openDropdown, closeDropdown]);
 
   return {
     inputValue,

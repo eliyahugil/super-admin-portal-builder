@@ -2,7 +2,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { MapPin, Loader2 } from 'lucide-react';
+import { MapPin, Loader2, X } from 'lucide-react';
 
 interface AddressInputProps {
   inputRef: React.RefObject<HTMLInputElement>;
@@ -39,12 +39,13 @@ export const AddressInput: React.FC<AddressInputProps> = ({
           placeholder={placeholder}
           required={required}
           disabled={disabled || isLoadingSuggestions}
-          className="pl-10"
+          className="pr-10 pl-3 text-right"
           autoComplete="off"
+          dir="rtl"
         />
-        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         {isLoadingSuggestions && (
-          <Loader2 className="absolute right-10 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
+          <Loader2 className="absolute left-10 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
         )}
       </div>
       
@@ -54,10 +55,10 @@ export const AddressInput: React.FC<AddressInputProps> = ({
           variant="ghost"
           size="sm"
           onClick={onClear}
-          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+          className="absolute left-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0 hover:bg-gray-100"
           tabIndex={-1}
         >
-          ×
+          <X className="h-4 w-4" />
         </Button>
       )}
     </div>
