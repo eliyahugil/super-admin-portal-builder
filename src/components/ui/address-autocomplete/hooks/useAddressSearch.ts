@@ -35,34 +35,28 @@ export const useAddressSearch = () => {
       return;
     }
 
-    console.log('🚀 Starting Google Maps search with valid conditions...');
+    console.log('🚀 Starting Google Maps search - setting loading to TRUE');
     setIsLoadingSuggestions(true);
     
     try {
       console.log('📡 Calling googleMapsService.getPlaceAutocomplete...');
-      console.log('🔍 Searching for addresses containing:', `"${query}"`);
       
       const results = await googleMapsService.getPlaceAutocomplete(query);
       
       console.log('✅ Search completed successfully:', {
         resultsCount: results.length,
-        results: results.map(r => r.description),
-        firstResult: results[0]?.description || 'none'
+        results: results.slice(0, 3).map(r => r.description)
       });
       
       setSuggestions(results);
+      console.log('📝 Suggestions state updated with', results.length, 'results');
       
     } catch (error) {
       console.error('💥 Error in searchPlaces:', error);
-      console.error('🔍 Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        name: error instanceof Error ? error.name : 'Unknown'
-      });
       setSuggestions([]);
     } finally {
+      console.log('🏁 Setting loading to FALSE');
       setIsLoadingSuggestions(false);
-      console.log('🏁 Search process completed, loading state cleared');
     }
   };
 
@@ -78,7 +72,7 @@ export const useAddressSearch = () => {
     // Debounce the search
     console.log('⏲️ Setting new search timeout (300ms)');
     searchTimeoutRef.current = setTimeout(() => {
-      console.log('⏰ Timeout triggered, executing search');
+      console.log('⏰ Timeout triggered, executing search for:', `"${query}"`);
       searchPlaces(query);
     }, 300);
   };
@@ -97,8 +91,7 @@ export const useAddressSearch = () => {
     suggestionsCount: suggestions.length,
     isLoadingSuggestions,
     isReady,
-    hasGoogleMapsService: !!googleMapsService,
-    suggestions: suggestions.slice(0, 2).map(s => s.description)
+    hasGoogleMapsService: !!googleMapsService
   });
 
   return {

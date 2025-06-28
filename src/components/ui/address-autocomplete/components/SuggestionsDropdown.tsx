@@ -26,22 +26,27 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
   onSuggestionClick,
   isLoadingSuggestions,
 }) => {
-  console.log('🔍 SuggestionsDropdown render:', {
+  console.log('🔍 SuggestionsDropdown render - DETAILED:', {
     isOpen,
     suggestionsCount: suggestions.length,
-    isLoadingSuggestions
+    isLoadingSuggestions,
+    hasRef: !!dropdownRef.current,
+    suggestions: suggestions.slice(0, 2).map(s => s.description)
   });
 
   if (!isOpen) {
-    console.log('❌ Dropdown not open');
+    console.log('❌ Dropdown NOT OPEN - returning null');
     return null;
   }
+
+  console.log('✅ Dropdown IS OPEN - rendering dropdown');
 
   return (
     <div
       ref={dropdownRef}
       className="absolute top-full left-0 right-0 z-[9999] bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto"
       dir="rtl"
+      style={{ backgroundColor: '#ffffff' }} // Force white background
     >
       {isLoadingSuggestions ? (
         <div className="p-4 text-center text-gray-500">

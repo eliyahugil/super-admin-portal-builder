@@ -19,23 +19,24 @@ export const useAddressAutocomplete = (
 ) => {
   const [inputValue, setInputValue] = useState(value?.formatted_address || '');
   const [isFocused, setIsFocused] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { isReady, isLoading, error, googleMapsService } = useGoogleMaps();
   const { suggestions, isLoadingSuggestions, searchPlaces, clearSuggestions } = useAddressSearch();
   
-  // פשוט את הלוגיקה - הדרופדאון יפתח אם יש פוקוס ויש הצעות או טעינה
-  const isOpen = showDropdown && isFocused && (suggestions.length > 0 || isLoadingSuggestions);
-
-  console.log('🔍 useAddressAutocomplete - State:', {
-    inputValue,
+  // פישוט הלוגיקה - הדרופדאון יפתח אם יש פוקוס ויש הצעות או טעינה
+  const shouldShowDropdown = isFocused && (suggestions.length > 0 || isLoadingSuggestions);
+  
+  console.log('🔍 useAddressAutocomplete - Full State Debug:', {
+    inputValue: `"${inputValue}"`,
     isFocused,
-    showDropdown,
     suggestionsCount: suggestions.length,
     isLoadingSuggestions,
-    isOpen,
-    isReady
+    shouldShowDropdown,
+    isReady,
+    isLoading,
+    error: error || 'none',
+    suggestions: suggestions.slice(0, 3).map(s => s.description)
   });
 
   // Update input value when value prop changes
@@ -58,37 +59,34 @@ export const useAddressAutocomplete = (
       onChange(null);
     }
 
-    // Search for places with debouncing
+    // Search for places immediately when typing
     if (newValue.trim().length >= 2) {
       console.log('🔍 Starting search for:', `"${newValue}"`);
-      setShowDropdown(true);
       searchPlaces(newValue);
     } else {
       console.log('🧹 Clearing suggestions - query too short');
-      setShowDropdown(false);
       clearSuggestions();
     }
   }, [value, onChange, searchPlaces, clearSuggestions]);
 
   const handleInputFocus = useCallback(() => {
-    console.log('🎯 Input focused');
+    console.log('🎯 Input focused - setting isFocused to true');
     setIsFocused(true);
     
-    // אם יש טקסט, הראה את הדרופדאון ותחפש
+    // אם יש טקסט, תחפש מיד
     if (inputValue.trim().length >= 2) {
-      console.log('🔍 Showing dropdown and searching on focus');
-      setShowDropdown(true);
+      console.log('🔍 Searching on focus for:', `"${inputValue}"`);
       searchPlaces(inputValue);
     }
   }, [inputValue, searchPlaces]);
 
   const handleInputBlur = useCallback(() => {
-    console.log('😴 Input blur - hiding dropdown after delay');
+    console.log('😴 Input blur - will hide dropdown after delay');
     
     // תן זמן לקליק על הצעה
     setTimeout(() => {
+      console.log('😴 Actually hiding dropdown now');
       setIsFocused(false);
-      setShowDropdown(false);
     }, 200);
   }, []);
 
@@ -116,7 +114,6 @@ export const useAddressAutocomplete = (
       console.log('📊 Final address data:', addressData);
       setInputValue(placeDetails.formatted_address);
       onChange(addressData);
-      setShowDropdown(false);
       setIsFocused(false);
       
       // Blur the input to close mobile keyboard
@@ -135,14 +132,13 @@ export const useAddressAutocomplete = (
     console.log('🧹 Clearing input');
     setInputValue('');
     onChange(null);
-    setShowDropdown(false);
     clearSuggestions();
   }, [onChange, clearSuggestions]);
 
   return {
     inputValue,
     suggestions,
-    isOpen,
+    isOpen: shouldShowDropdown,
     isLoadingSuggestions,
     inputRef,
     dropdownRef,
