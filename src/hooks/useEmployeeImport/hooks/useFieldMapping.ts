@@ -1,4 +1,3 @@
-
 import type { FieldMapping, PreviewEmployee, ImportStep } from '../types';
 
 interface UseFieldMappingProps {
@@ -106,13 +105,25 @@ export const useFieldMapping = ({
     });
 
     if (!businessId) {
-      console.error('❌ No business ID available for mapping');
-      throw new Error('לא נבחר עסק למיפוי');
+      throw new Error('לא נבחר עסק למיפוי - אנא בחר עסק ונסה שוב');
     }
 
     if (!mappings.length) {
-      console.error('❌ No mappings provided');
-      throw new Error('לא הוגדרו מיפויי שדות');
+      throw new Error('לא הוגדרו מיפויי שדות - אנא בחר לפחות שדה אחד למיפוי');
+    }
+
+    // Check if any required fields are mapped
+    const requiredMappings = mappings.filter(m => m.isRequired && m.mappedColumns.length > 0);
+    if (requiredMappings.length === 0) {
+      throw new Error('חובה למפות לפחות אחד מהשדות הנדרשים: שם פרטי או שם משפחה');
+    }
+
+    if (!rawData || rawData.length === 0) {
+      throw new Error('אין נתוני עובדים לעיבוד - הקובץ ריק מנתונים');
+    }
+
+    if (!headers || headers.length === 0) {
+      throw new Error('לא נמצאו כותרות עמודות - הקובץ לא תקין');
     }
 
     try {

@@ -40,6 +40,11 @@ export const useFileProcessing = ({
     try {
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      
+      if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+        throw new Error('הקובץ לא מכיל גליונות עבודה תקינים');
+      }
+      
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
 
@@ -63,13 +68,13 @@ export const useFileProcessing = ({
       });
 
       if (!jsonData || jsonData.length === 0) {
-        throw new Error('הקובץ ריק או לא תקין');
+        throw new Error('הקובץ ריק לחלוטין. אנא וודא שהקובץ מכיל נתונים.');
       }
 
       // First row should be headers
       const rawHeaders = jsonData[0] as any[];
       if (!rawHeaders || rawHeaders.length === 0) {
-        throw new Error('לא נמצאו כותרות בקובץ');
+        throw new Error('לא נמצאו כותרות בשורה הראשונה של הקובץ. אנא וודא שהשורה הראשונה מכילה כותרות עמודות.');
       }
 
       // Generate column names (Column 1, Column 2, etc.)
@@ -96,7 +101,11 @@ export const useFileProcessing = ({
       });
 
       if (dataRows.length === 0) {
-        throw new Error('לא נמצאו נתונים בקובץ');
+        throw new Error(
+          `הקובץ מכיל רק כותרות אך אין בו נתוני עובדים לייבוא.\n\n` +
+          `נמצאו כותרות: ${headers.join(', ')}\n\n` +
+          `אנא וודא שיש שורות נתונים מתחת לכותרות והקובץ אינו ריק מנתונים.`
+        );
       }
 
       // Store the processed data
@@ -117,7 +126,20 @@ export const useFileProcessing = ({
 
     } catch (error) {
       console.error('💥 Error processing file:', error);
-      throw error;
+      
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('Unsupported file')) {
+          throw new Error('פורמט הקובץ לא נתמך. אנא השתמש בקבצי Excel (.xlsx, .xls) או CSV בלבד.');
+        } else if (error.message.includes('corrupted') || error.message.includes('invalid')) {
+          throw new Error('הקובץ פגום או לא תקין. אנא נסה לשמור אותו מחדש מ-Excel ולנסות שוב.');
+        } else {
+          // Use the original error message if it's already descriptive
+          throw error;
+        }
+      } else {
+        throw new Error('שגיאה לא צפויה בעיבוד הקובץ. אנא נסה קובץ אחר או פנה לתמיכה.');
+      }
     } finally {
       setIsProcessing(false);
     }
