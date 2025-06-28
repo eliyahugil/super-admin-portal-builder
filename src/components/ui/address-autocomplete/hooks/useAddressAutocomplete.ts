@@ -19,27 +19,23 @@ export const useAddressAutocomplete = (
 ) => {
   const [inputValue, setInputValue] = useState(value?.formatted_address || '');
   const [isFocused, setIsFocused] = useState(false);
-  const [forceShowDropdown, setForceShowDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const blurTimeoutRef = useRef<NodeJS.Timeout>();
   const { isReady, isLoading, error, googleMapsService } = useGoogleMaps();
   const { suggestions, isLoadingSuggestions, searchPlaces, clearSuggestions } = useAddressSearch();
   
-  // שינוי: הדרופדאון יוצג אם יש פוקוס או אם נאלץ להציגו, ויש הצעות או טעינה
-  const shouldShowDropdown = (isFocused || forceShowDropdown) && (suggestions.length > 0 || isLoadingSuggestions);
+  // הדרופדאון יוצג אם האינפוט מרוכז וגם יש הצעות או טעינה או אם יש טקסט באינפוט
+  const shouldShowDropdown = isFocused && (suggestions.length > 0 || isLoadingSuggestions || inputValue.trim().length >= 1);
   
-  console.log('🔍 useAddressAutocomplete - Full State Debug:', {
+  console.log('🔍 useAddressAutocomplete - State Debug:', {
     inputValue: `"${inputValue}"`,
     isFocused,
-    forceShowDropdown,
     suggestionsCount: suggestions.length,
     isLoadingSuggestions,
     shouldShowDropdown,
     isReady,
     isLoading,
-    error: error || 'none',
-    suggestions: suggestions.slice(0, 3).map(s => s.description)
+    error: error || 'none'
   });
 
   // Update input value when value prop changes
@@ -56,11 +52,6 @@ export const useAddressAutocomplete = (
     
     setInputValue(newValue);
     
-    // כאשר המשתמש מתחיל לכתוב, נציג את הדרופדאון
-    if (newValue.trim().length >= 1) {
-      setForceShowDropdown(true);
-    }
-    
     // Clear selected value if input is manually changed
     if (value && newValue !== value.formatted_address) {
       console.log('🧹 Clearing selected value due to manual input change');
@@ -74,7 +65,6 @@ export const useAddressAutocomplete = (
     } else if (newValue.trim().length === 0) {
       console.log('🧹 Clearing suggestions - input is empty');
       clearSuggestions();
-      setForceShowDropdown(false);
     }
   }, [value, onChange, searchPlaces, clearSuggestions]);
 
@@ -82,48 +72,37 @@ export const useAddressAutocomplete = (
     console.log('🎯 Input focused - setting isFocused to true');
     setIsFocused(true);
     
-    // ביטול timeout של blur אם יש
-    if (blurTimeoutRef.current) {
-      clearTimeout(blurTimeoutRef.current);
-      blurTimeoutRef.current = undefined;
-    }
-    
-    // אם יש טקסט, תחפש מיד ותציג דרופדאון
+    // אם יש טקסט, תחפש מיד
     if (inputValue.trim().length >= 2) {
       console.log('🔍 Searching on focus for:', `"${inputValue}"`);
-      setForceShowDropdown(true);
       searchPlaces(inputValue);
-    } else if (inputValue.trim().length >= 1) {
-      setForceShowDropdown(true);
     }
   }, [inputValue, searchPlaces]);
 
   const handleInputBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    console.log('😴 Input blur - checking if should hide dropdown');
+    console.log('😴 Input blur - checking relatedTarget');
     
     // בדיקה אם הקליק היה על הדרופדאון
     const relatedTarget = e.relatedTarget as HTMLElement;
+    
+    // אם הקליק היה על הדרופדאון או על אחד מהאלמנטים שלו, לא נסגור
     if (relatedTarget && dropdownRef.current?.contains(relatedTarget)) {
-      console.log('😴 Blur ignored - clicked on dropdown');
+      console.log('😴 Blur ignored - clicked inside dropdown');
+      // החזר פוקוס לאינפוט כדי שהמקלדת לא תיסגר
+      if (inputRef.current) {
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
+      }
       return;
     }
     
-    // השהיה ארוכה יותר לפני סגירת הדרופדאון
-    blurTimeoutRef.current = setTimeout(() => {
-      console.log('😴 Actually hiding dropdown now');
-      setIsFocused(false);
-      setForceShowDropdown(false);
-    }, 500); // השהיה של 500ms במקום 200ms
+    console.log('😴 Actually hiding dropdown now');
+    setIsFocused(false);
   }, []);
 
   const handleSuggestionClick = async (suggestion: PlaceAutocompleteResult) => {
     console.log('🖱️ Suggestion clicked:', suggestion.description);
-    
-    // ביטול timeout של blur
-    if (blurTimeoutRef.current) {
-      clearTimeout(blurTimeoutRef.current);
-      blurTimeoutRef.current = undefined;
-    }
     
     try {
       console.log('📍 Getting place details for:', suggestion.place_id);
@@ -149,13 +128,6 @@ export const useAddressAutocomplete = (
       
       // סגירת הדרופדאון אחרי בחירה
       setIsFocused(false);
-      setForceShowDropdown(false);
-      
-      // Blur the input to close mobile keyboard - רק אחרי בחירה
-      if (inputRef.current) {
-        console.log('📱 Closing mobile keyboard after selection');
-        inputRef.current.blur();
-      }
       
       console.log('✅ Address selection completed');
     } catch (error) {
@@ -168,17 +140,7 @@ export const useAddressAutocomplete = (
     setInputValue('');
     onChange(null);
     clearSuggestions();
-    setForceShowDropdown(false);
   }, [onChange, clearSuggestions]);
-
-  // ניקוי timeout בעת unmount
-  useEffect(() => {
-    return () => {
-      if (blurTimeoutRef.current) {
-        clearTimeout(blurTimeoutRef.current);
-      }
-    };
-  }, []);
 
   return {
     inputValue,

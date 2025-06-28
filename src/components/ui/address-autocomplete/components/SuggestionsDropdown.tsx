@@ -26,12 +26,10 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
   onSuggestionClick,
   isLoadingSuggestions,
 }) => {
-  console.log('🔍 SuggestionsDropdown render - DETAILED:', {
+  console.log('🔍 SuggestionsDropdown render:', {
     isOpen,
     suggestionsCount: suggestions.length,
-    isLoadingSuggestions,
-    hasRef: !!dropdownRef.current,
-    suggestions: suggestions.slice(0, 2).map(s => s.description)
+    isLoadingSuggestions
   });
 
   if (!isOpen) {
@@ -50,6 +48,7 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
       onMouseDown={(e) => {
         // מניעת blur של האינפוט כאשר לוחצים על הדרופדאון
         e.preventDefault();
+        e.stopPropagation();
       }}
     >
       {isLoadingSuggestions ? (
@@ -64,9 +63,11 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
             onMouseDown={(e) => {
               // מניעת blur של האינפוט
               e.preventDefault();
+              e.stopPropagation();
             }}
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               console.log('🖱️ Suggestion clicked from dropdown:', suggestion.description);
               onSuggestionClick(suggestion);
             }}
