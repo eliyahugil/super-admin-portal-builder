@@ -40,9 +40,13 @@ export const useAddressSearch = () => {
     
     try {
       console.log('📡 Calling googleMapsService.getPlaceAutocomplete...');
+      console.log('🔍 Searching for addresses containing:', `"${query}"`);
+      
       const results = await googleMapsService.getPlaceAutocomplete(query);
+      
       console.log('✅ Search completed successfully:', {
         resultsCount: results.length,
+        results: results.map(r => r.description),
         firstResult: results[0]?.description || 'none'
       });
       
@@ -93,7 +97,8 @@ export const useAddressSearch = () => {
     suggestionsCount: suggestions.length,
     isLoadingSuggestions,
     isReady,
-    hasGoogleMapsService: !!googleMapsService
+    hasGoogleMapsService: !!googleMapsService,
+    suggestions: suggestions.slice(0, 2).map(s => s.description)
   });
 
   return {

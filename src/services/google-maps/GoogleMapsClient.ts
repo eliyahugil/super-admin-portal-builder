@@ -133,15 +133,16 @@ export class GoogleMapsClient {
       this.autocompleteService!.getPlacePredictions(
         {
           input,
-          componentRestrictions: { country: 'il' },
-          language: 'he',
-          types: ['establishment', 'geocode']
+          componentRestristics: { country: 'il' },
+          language: 'he'
+          // הסרנו את types כדי לקבל יותר תוצאות
         },
         (predictions, status) => {
           console.log('📨 Google Maps API response:', { 
             status, 
             predictionsCount: predictions?.length || 0,
-            statusEnum: google.maps.places.PlacesServiceStatus
+            statusEnum: google.maps.places.PlacesServiceStatus,
+            firstPrediction: predictions?.[0]?.description || 'none'
           });
           
           if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
