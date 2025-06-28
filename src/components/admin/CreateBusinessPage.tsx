@@ -112,26 +112,16 @@ export const CreateBusinessPage: React.FC = () => {
         address: address?.formatted_address || null
       });
 
+      // Only include fields that exist in the businesses table
       const businessData = {
         name: formData.name,
         contact_email: formData.contact_email || formData.admin_email,
         admin_email: formData.admin_email,
         contact_phone: formData.contact_phone,
         description: formData.description,
-        address: address?.formatted_address || null,
+        address: address?.formatted_address || null, // This field exists in the schema
         is_active: true,
       };
-
-      // Add location data if address is available
-      if (address) {
-        Object.assign(businessData, {
-          latitude: address.latitude,
-          longitude: address.longitude,
-          city: address.city,
-          postal_code: address.postalCode,
-          country: address.country,
-        });
-      }
 
       const { data: business, error: businessError } = await supabase
         .from('businesses')
