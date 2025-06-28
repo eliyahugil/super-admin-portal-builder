@@ -54,6 +54,18 @@ export const useAddressSearch = () => {
     } catch (error) {
       console.error('💥 Error in searchPlaces:', error);
       setSuggestions([]);
+      
+      // Try to reinitialize the service on error
+      console.log('🔄 Attempting to refresh Google Maps service...');
+      try {
+        await googleMapsService.refreshApiKey();
+        console.log('🔄 Service refreshed, retrying search...');
+        const retryResults = await googleMapsService.getPlaceAutocomplete(query);
+        setSuggestions(retryResults);
+        console.log('✅ Retry search successful with', retryResults.length, 'results');
+      } catch (retryError) {
+        console.error('💥 Retry also failed:', retryError);
+      }
     } finally {
       console.log('🏁 Setting loading to FALSE');
       setIsLoadingSuggestions(false);

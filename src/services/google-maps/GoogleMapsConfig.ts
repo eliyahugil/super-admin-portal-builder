@@ -4,12 +4,15 @@ import type { GoogleMapsConfig } from './types';
 
 export class GoogleMapsConfigManager {
   private apiKey: string | null = null;
+  private isLoading = false;
 
   constructor() {
     this.initializeApiKey();
   }
 
   private async initializeApiKey(): Promise<void> {
+    if (this.isLoading) return;
+    
     try {
       await this.refreshApiKey();
     } catch (error) {
@@ -26,7 +29,18 @@ export class GoogleMapsConfigManager {
   }
 
   async refreshApiKey(): Promise<void> {
+    if (this.isLoading) {
+      console.log('API key refresh already in progress, waiting...');
+      // Wait for current refresh to complete
+      while (this.isLoading) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      return;
+    }
+
+    this.isLoading = true;
     console.log('Refreshing Google Maps API key from global settings...');
+    
     try {
       const { data, error } = await supabase
         .from('global_integrations')
@@ -54,6 +68,8 @@ export class GoogleMapsConfigManager {
       }
     } catch (error) {
       console.error('Failed to refresh Google Maps API key:', error);
+    } finally {
+      this.isLoading = false;
     }
   }
 
@@ -72,13 +88,13 @@ export class GoogleMapsConfigManager {
       
       // Test by trying to load the Google Maps JavaScript API
       const { Loader } = await import('@googlemaps/js-api-loader');
-      const loader = new Loader({
+      const testLoader = new Loader({
         apiKey: this.apiKey,
         version: 'weekly',
         libraries: ['places']
       });
 
-      await loader.load();
+      await testLoader.load();
       console.log('Google Maps API test successful');
       return true;
       

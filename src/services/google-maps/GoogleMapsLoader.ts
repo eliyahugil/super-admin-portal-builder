@@ -6,6 +6,7 @@ import type { GoogleMapsConfigManager } from './GoogleMapsConfig';
 let globalLoader: Loader | null = null;
 let isInitialized = false;
 let isInitializing = false;
+let currentApiKey: string | null = null;
 
 export class GoogleMapsLoader {
   private loader: Loader | null = null;
@@ -13,9 +14,20 @@ export class GoogleMapsLoader {
   constructor(private configManager: GoogleMapsConfigManager) {}
 
   async initializeLoader(): Promise<Loader> {
-    // If already initialized, use global instance
-    if (isInitialized && globalLoader) {
-      console.log('Using existing Google Maps loader');
+    const apiKey = this.configManager.getApiKey();
+    if (!apiKey) {
+      await this.configManager.refreshApiKey();
+      const refreshedApiKey = this.configManager.getApiKey();
+      if (!refreshedApiKey) {
+        throw new Error('Google Maps API key not configured');
+      }
+    }
+
+    const finalApiKey = this.configManager.getApiKey() || '';
+
+    // If already initialized with the same API key, use global instance
+    if (isInitialized && globalLoader && currentApiKey === finalApiKey) {
+      console.log('Using existing Google Maps loader with same API key');
       this.loader = globalLoader;
       return globalLoader;
     }
@@ -30,7 +42,7 @@ export class GoogleMapsLoader {
         attempts++;
       }
       
-      if (isInitialized && globalLoader) {
+      if (isInitialized && globalLoader && currentApiKey === finalApiKey) {
         this.loader = globalLoader;
         return globalLoader;
       }
@@ -38,28 +50,27 @@ export class GoogleMapsLoader {
 
     // Start initialization
     isInitializing = true;
-    console.log('Starting Google Maps loader initialization...');
+    console.log('Starting Google Maps loader initialization with API key:', finalApiKey.substring(0, 10) + '...');
 
     try {
-      const apiKey = this.configManager.getApiKey();
-      if (!apiKey) {
-        await this.configManager.refreshApiKey();
-        const refreshedApiKey = this.configManager.getApiKey();
-        if (!refreshedApiKey) {
-          throw new Error('Google Maps API key not configured');
-        }
+      // Reset previous loader if API key changed
+      if (currentApiKey !== finalApiKey) {
+        console.log('API key changed, creating new loader');
+        globalLoader = null;
+        isInitialized = false;
       }
 
       // Create loader only once with consistent parameters
       if (!globalLoader) {
-        console.log('Creating new Google Maps Loader with consistent settings');
+        console.log('Creating new Google Maps Loader');
         globalLoader = new Loader({
-          apiKey: this.configManager.getApiKey() || '',
+          apiKey: finalApiKey,
           version: 'weekly',
           libraries: ['places'],
           language: 'he',
           region: 'IL'
         });
+        currentApiKey = finalApiKey;
       }
 
       this.loader = globalLoader;
@@ -74,6 +85,10 @@ export class GoogleMapsLoader {
       
     } catch (error) {
       console.error('❌ Failed to initialize Google Maps loader:', error);
+      // Reset on error
+      globalLoader = null;
+      isInitialized = false;
+      currentApiKey = null;
       throw error;
     } finally {
       isInitializing = false;
