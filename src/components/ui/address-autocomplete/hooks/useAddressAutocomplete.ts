@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { useAddressSearch } from './useAddressSearch';
 import { useDropdownState } from './useDropdownState';
@@ -20,6 +20,8 @@ export const useAddressAutocomplete = (
 ) => {
   const [inputValue, setInputValue] = useState(value?.formatted_address || '');
   const [hasFocus, setHasFocus] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { isReady, isLoading, error, googleMapsService } = useGoogleMaps();
   const { suggestions, isLoadingSuggestions, searchPlaces, clearSuggestions } = useAddressSearch();
   const { isOpen, inputRef, dropdownRef, openDropdown, closeDropdown } = useDropdownState();
@@ -32,7 +34,8 @@ export const useAddressAutocomplete = (
     suggestionsCount: suggestions.length,
     isOpen,
     isLoadingSuggestions,
-    hasFocus
+    hasFocus,
+    isSelecting
   });
 
   // Update input value when value prop changes
@@ -68,6 +71,12 @@ export const useAddressAutocomplete = (
     console.log('🎯 Input focused');
     setHasFocus(true);
     
+    // Cancel any pending blur timeout
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
+    
     // Only open dropdown if we already have suggestions and input has content
     if (suggestions.length > 0 && inputValue.length >= 2) {
       console.log('📂 Opening dropdown on focus (has suggestions)');
@@ -82,18 +91,36 @@ export const useAddressAutocomplete = (
   }, [suggestions.length, inputValue, searchPlaces, openDropdown]);
 
   const handleInputBlur = useCallback(() => {
-    console.log('😴 Input blurred');
+    console.log('😴 Input blur initiated, isSelecting:', isSelecting);
+    
+    // Don't blur if user is currently selecting from dropdown
+    if (isSelecting) {
+      console.log('🚫 Preventing blur - user is selecting');
+      return;
+    }
+    
     setHasFocus(false);
-    // Don't close dropdown immediately - let click events on suggestions fire first
-    setTimeout(() => {
-      if (!hasFocus) {
+    
+    // Use a longer delay and check if we're still not selecting
+    blurTimeoutRef.current = setTimeout(() => {
+      if (!isSelecting) {
+        console.log('😴 Actually blurring after timeout');
         closeDropdown();
+      } else {
+        console.log('🚫 Cancelled blur - user started selecting');
       }
-    }, 150);
-  }, [hasFocus, closeDropdown]);
+    }, 300);
+  }, [isSelecting, closeDropdown]);
 
   const handleSuggestionClick = async (suggestion: PlaceAutocompleteResult) => {
     console.log('🖱️ Suggestion clicked:', suggestion.description);
+    setIsSelecting(true);
+    
+    // Cancel any pending blur timeout
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
     
     try {
       console.log('📍 Getting place details for:', suggestion.place_id);
@@ -119,15 +146,20 @@ export const useAddressAutocomplete = (
       closeDropdown();
       clearSuggestions();
       setHasFocus(false);
+      setIsSelecting(false);
       
-      // Blur the input to close mobile keyboard
-      if (inputRef.current) {
-        inputRef.current.blur();
-      }
+      // Blur the input to close mobile keyboard - but only after selection is complete
+      setTimeout(() => {
+        if (inputRef.current) {
+          console.log('📱 Closing mobile keyboard after selection');
+          inputRef.current.blur();
+        }
+      }, 100);
       
       console.log('✅ Address selection completed');
     } catch (error) {
       console.error('💥 Error fetching place details:', error);
+      setIsSelecting(false);
     }
   };
 
@@ -138,18 +170,34 @@ export const useAddressAutocomplete = (
     clearSuggestions();
     closeDropdown();
     setHasFocus(false);
+    setIsSelecting(false);
+    
+    // Cancel any pending blur timeout
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
   }, [onChange, clearSuggestions, closeDropdown]);
 
   // Only update dropdown state when input has focus AND we have suggestions
   useEffect(() => {
-    if (hasFocus && suggestions.length > 0 && inputValue.length >= 2) {
+    if (hasFocus && suggestions.length > 0 && inputValue.length >= 2 && !isSelecting) {
       console.log('📂 Opening dropdown due to new suggestions while focused');
       openDropdown();
     } else if (!hasFocus || suggestions.length === 0 || inputValue.length < 2) {
       console.log('📁 Closing dropdown - no focus or no suggestions');
       closeDropdown();
     }
-  }, [suggestions.length, inputValue.length, hasFocus, openDropdown, closeDropdown]);
+  }, [suggestions.length, inputValue.length, hasFocus, isSelecting, openDropdown, closeDropdown]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     inputValue,
