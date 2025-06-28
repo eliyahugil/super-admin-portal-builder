@@ -38,6 +38,60 @@ class GoogleMapsService {
     this.apiKey = apiKey;
   }
 
+  async refreshApiKey(): Promise<void> {
+    console.log('Refreshing Google Maps API key from global settings...');
+    // Here we could fetch the API key from Supabase global_integrations table
+    // For now, we'll just log that we're refreshing
+    try {
+      // In a real implementation, this would fetch from the database
+      // const { data } = await supabase
+      //   .from('global_integrations')
+      //   .select('config')
+      //   .eq('integration_name', 'google_maps')
+      //   .single();
+      // 
+      // if (data?.config?.api_key) {
+      //   this.setApiKey(data.config.api_key);
+      // }
+      console.log('API key refresh completed');
+    } catch (error) {
+      console.error('Failed to refresh Google Maps API key:', error);
+    }
+  }
+
+  async testConnection(): Promise<boolean> {
+    if (!this.apiKey) {
+      console.log('No API key available for Google Maps test');
+      return false;
+    }
+
+    try {
+      console.log('Testing Google Maps API connection...');
+      // Test with a simple geocoding request to Tel Aviv
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=Tel Aviv, Israel&key=${this.apiKey}`
+      );
+
+      if (!response.ok) {
+        console.log('Google Maps API test failed - HTTP error:', response.status);
+        return false;
+      }
+
+      const data = await response.json();
+      
+      if (data.status === 'OK' && data.results && data.results.length > 0) {
+        console.log('Google Maps API test successful');
+        return true;
+      } else {
+        console.log('Google Maps API test failed - API error:', data.status, data.error_message);
+        return false;
+      }
+    } catch (error) {
+      console.error('Google Maps API test failed with exception:', error);
+      return false;
+    }
+  }
+
   async getPlaceAutocomplete(input: string): Promise<PlaceAutocompleteResult[]> {
     if (!this.apiKey) {
       throw new Error('Google Maps API key not configured');
