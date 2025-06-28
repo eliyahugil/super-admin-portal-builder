@@ -12,15 +12,16 @@ export const DebugInfo: React.FC<DebugInfoProps> = ({
   suggestionsCount,
   isReady,
 }) => {
-  if (process.env.NODE_ENV !== 'development') {
+  // Debug info - remove in production
+  if (process.env.NODE_ENV === 'production') {
     return null;
   }
 
   return (
-    <div className="text-xs text-gray-500 mt-1">
-      Debug: Dropdown {isOpen ? 'פתוח' : 'סגור'} | 
-      הצעות: {suggestionsCount} | 
-      Google Maps: {isReady ? 'מוכן' : 'לא מוכן'}
+    <div className="text-xs text-gray-400 mt-1">
+      Debug: {isReady ? '✅' : '❌'} Google Maps | 
+      {isOpen ? ' 📂' : ' 📁'} Dropdown | 
+      📋 {suggestionsCount} הצעות
     </div>
   );
 };

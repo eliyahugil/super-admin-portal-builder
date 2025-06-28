@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { useAddressSearch } from './useAddressSearch';
-import { useDropdownState } from './useDropdownState';
 import type { AddressData } from '../types';
 
 interface PlaceAutocompleteResult {
@@ -26,7 +25,7 @@ export const useAddressAutocomplete = (
   const { isReady, isLoading, error, googleMapsService } = useGoogleMaps();
   const { suggestions, isLoadingSuggestions, searchPlaces, clearSuggestions } = useAddressSearch();
   
-  // Simple dropdown state
+  // עכשיו הדרופדאון יפתח אם יש פוקוס ויש הצעות או טוען
   const isOpen = isFocused && (suggestions.length > 0 || isLoadingSuggestions) && !isSelecting;
 
   console.log('🔍 useAddressAutocomplete - Full State Debug:', {
@@ -76,32 +75,34 @@ export const useAddressAutocomplete = (
     console.log('🎯 Input focused');
     setIsFocused(true);
     
-    // Trigger search if there's existing input
-    if (inputValue.length >= 2) {
+    // כשהשדה מקבל פוקוס, תיכף נחפש הצעות אם יש טקסט
+    if (inputValue.trim().length >= 2) {
       console.log('🔍 Triggering search on focus with existing input:', inputValue);
       searchPlaces(inputValue);
     }
   }, [inputValue, searchPlaces]);
 
-  const handleInputBlur = useCallback(() => {
+  const handleInputBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
     console.log('😴 Input blur initiated, isSelecting:', isSelecting);
     
-    // Don't blur if user is currently selecting from dropdown
+    // אם המשתמש לוחץ על הצעה, אל תסגור
     if (isSelecting) {
       console.log('🚫 Preventing blur - user is selecting');
+      e.preventDefault();
       return;
     }
     
-    // Use timeout to allow suggestion click to register
+    // תן זמן להצעות להירשם
     setTimeout(() => {
       if (!isSelecting) {
         console.log('😴 Actually blurring after timeout');
         setIsFocused(false);
+        clearSuggestions();
       } else {
         console.log('🚫 Cancelled blur - user started selecting');
       }
-    }, 200);
-  }, [isSelecting]);
+    }, 150);
+  }, [isSelecting, clearSuggestions]);
 
   const handleSuggestionClick = async (suggestion: PlaceAutocompleteResult) => {
     console.log('🖱️ Suggestion clicked:', suggestion.description);
@@ -130,7 +131,6 @@ export const useAddressAutocomplete = (
       onChange(addressData);
       clearSuggestions();
       setIsFocused(false);
-      setIsSelecting(false);
       
       // Blur the input to close mobile keyboard
       if (inputRef.current) {
@@ -141,6 +141,7 @@ export const useAddressAutocomplete = (
       console.log('✅ Address selection completed');
     } catch (error) {
       console.error('💥 Error fetching place details:', error);
+    } finally {
       setIsSelecting(false);
     }
   };

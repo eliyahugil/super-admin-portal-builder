@@ -30,11 +30,11 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
     isOpen,
     suggestionsCount: suggestions.length,
     isLoadingSuggestions,
-    suggestions: suggestions.slice(0, 3) // Show first 3 for debugging
+    suggestions: suggestions.slice(0, 3)
   });
 
   // Show loading state if we're loading
-  if (isLoadingSuggestions) {
+  if (isLoadingSuggestions && isOpen) {
     console.log('⏳ Showing loading state in dropdown');
     return (
       <div
@@ -42,7 +42,7 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
         className="absolute top-full left-0 right-0 z-[9999] bg-white border border-gray-200 rounded-md shadow-lg mt-1 p-4"
         dir="rtl"
       >
-        <div className="text-center text-gray-500">טוען הצעות...</div>
+        <div className="text-center text-gray-500">מחפש כתובות...</div>
       </div>
     );
   }
@@ -52,17 +52,6 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
     console.log('❌ Not showing dropdown:', { isOpen, suggestionsCount: suggestions.length });
     return null;
   }
-
-  const handleSuggestionMouseDown = (e: React.MouseEvent) => {
-    // Prevent blur event from firing
-    e.preventDefault();
-    console.log('🖱️ Preventing blur on suggestion mousedown');
-  };
-
-  const handleSuggestionClick = (suggestion: PlaceAutocompleteResult) => {
-    console.log('🖱️ Suggestion clicked, calling handler');
-    onSuggestionClick(suggestion);
-  };
 
   console.log('✅ Rendering dropdown with suggestions');
 
@@ -76,10 +65,15 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
         <button
           key={suggestion.place_id}
           type="button"
-          onMouseDown={handleSuggestionMouseDown}
-          onClick={() => handleSuggestionClick(suggestion)}
+          onMouseDown={(e) => {
+            // מונע את ה-blur של השדה
+            e.preventDefault();
+          }}
+          onClick={() => {
+            console.log('🖱️ Suggestion clicked from dropdown');
+            onSuggestionClick(suggestion);
+          }}
           className="w-full text-right px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 focus:outline-none focus:bg-gray-100 transition-colors bg-white"
-          disabled={isLoadingSuggestions}
           tabIndex={0}
         >
           <div className="flex items-center justify-start space-x-2 space-x-reverse">
