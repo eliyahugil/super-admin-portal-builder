@@ -29,66 +29,54 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
   console.log('🔍 SuggestionsDropdown render:', {
     isOpen,
     suggestionsCount: suggestions.length,
-    isLoadingSuggestions,
-    suggestions: suggestions.slice(0, 3)
+    isLoadingSuggestions
   });
 
-  // Show loading state if we're loading
-  if (isLoadingSuggestions && isOpen) {
-    console.log('⏳ Showing loading state in dropdown');
-    return (
-      <div
-        ref={dropdownRef}
-        className="absolute top-full left-0 right-0 z-[9999] bg-white border border-gray-200 rounded-md shadow-lg mt-1 p-4"
-        dir="rtl"
-      >
-        <div className="text-center text-gray-500">מחפש כתובות...</div>
-      </div>
-    );
-  }
-
-  // Don't show if not open or no suggestions
-  if (!isOpen || suggestions.length === 0) {
-    console.log('❌ Not showing dropdown:', { isOpen, suggestionsCount: suggestions.length });
+  if (!isOpen) {
+    console.log('❌ Dropdown not open');
     return null;
   }
-
-  console.log('✅ Rendering dropdown with suggestions');
 
   return (
     <div
       ref={dropdownRef}
-      className="absolute top-full left-0 right-0 z-[9999] bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1"
+      className="absolute top-full left-0 right-0 z-[9999] bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto"
       dir="rtl"
     >
-      {suggestions.map((suggestion) => (
-        <button
-          key={suggestion.place_id}
-          type="button"
-          onMouseDown={(e) => {
-            // מונע את ה-blur של השדה
-            e.preventDefault();
-          }}
-          onClick={() => {
-            console.log('🖱️ Suggestion clicked from dropdown');
-            onSuggestionClick(suggestion);
-          }}
-          className="w-full text-right px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 focus:outline-none focus:bg-gray-100 transition-colors bg-white"
-          tabIndex={0}
-        >
-          <div className="flex items-center justify-start space-x-2 space-x-reverse">
-            <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 ml-2" />
-            <div className="flex-1 text-right">
-              <div className="font-medium text-sm text-gray-900">
-                {suggestion.structured_formatting.main_text}
-              </div>
-              <div className="text-xs text-gray-500">
-                {suggestion.structured_formatting.secondary_text}
+      {isLoadingSuggestions ? (
+        <div className="p-4 text-center text-gray-500">
+          מחפש כתובות...
+        </div>
+      ) : suggestions.length > 0 ? (
+        suggestions.map((suggestion) => (
+          <button
+            key={suggestion.place_id}
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              console.log('🖱️ Suggestion clicked from dropdown:', suggestion.description);
+              onSuggestionClick(suggestion);
+            }}
+            className="w-full text-right px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 focus:outline-none focus:bg-gray-100 transition-colors bg-white"
+          >
+            <div className="flex items-center justify-start space-x-2 space-x-reverse">
+              <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 ml-2" />
+              <div className="flex-1 text-right">
+                <div className="font-medium text-sm text-gray-900">
+                  {suggestion.structured_formatting.main_text}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {suggestion.structured_formatting.secondary_text}
+                </div>
               </div>
             </div>
-          </div>
-        </button>
-      ))}
+          </button>
+        ))
+      ) : (
+        <div className="p-4 text-center text-gray-500">
+          לא נמצאו כתובות
+        </div>
+      )}
     </div>
   );
 };

@@ -19,26 +19,23 @@ export const useAddressAutocomplete = (
 ) => {
   const [inputValue, setInputValue] = useState(value?.formatted_address || '');
   const [isFocused, setIsFocused] = useState(false);
-  const [isSelecting, setIsSelecting] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { isReady, isLoading, error, googleMapsService } = useGoogleMaps();
   const { suggestions, isLoadingSuggestions, searchPlaces, clearSuggestions } = useAddressSearch();
   
-  // עכשיו הדרופדאון יפתח אם יש פוקוס ויש הצעות או טוען
-  const isOpen = isFocused && (suggestions.length > 0 || isLoadingSuggestions) && !isSelecting;
+  // פשוט את הלוגיקה - הדרופדאון יפתח אם יש פוקוס ויש הצעות או טעינה
+  const isOpen = showDropdown && isFocused && (suggestions.length > 0 || isLoadingSuggestions);
 
-  console.log('🔍 useAddressAutocomplete - Full State Debug:', {
-    isReady,
-    isLoading,
-    error,
+  console.log('🔍 useAddressAutocomplete - State:', {
     inputValue,
-    suggestionsCount: suggestions.length,
-    isOpen,
-    isLoadingSuggestions,
     isFocused,
-    isSelecting,
-    firstSuggestion: suggestions[0]?.description || 'none'
+    showDropdown,
+    suggestionsCount: suggestions.length,
+    isLoadingSuggestions,
+    isOpen,
+    isReady
   });
 
   // Update input value when value prop changes
@@ -64,9 +61,11 @@ export const useAddressAutocomplete = (
     // Search for places with debouncing
     if (newValue.trim().length >= 2) {
       console.log('🔍 Starting search for:', `"${newValue}"`);
+      setShowDropdown(true);
       searchPlaces(newValue);
     } else {
       console.log('🧹 Clearing suggestions - query too short');
+      setShowDropdown(false);
       clearSuggestions();
     }
   }, [value, onChange, searchPlaces, clearSuggestions]);
@@ -75,38 +74,26 @@ export const useAddressAutocomplete = (
     console.log('🎯 Input focused');
     setIsFocused(true);
     
-    // כשהשדה מקבל פוקוס, תיכף נחפש הצעות אם יש טקסט
+    // אם יש טקסט, הראה את הדרופדאון ותחפש
     if (inputValue.trim().length >= 2) {
-      console.log('🔍 Triggering search on focus with existing input:', inputValue);
+      console.log('🔍 Showing dropdown and searching on focus');
+      setShowDropdown(true);
       searchPlaces(inputValue);
     }
   }, [inputValue, searchPlaces]);
 
-  const handleInputBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    console.log('😴 Input blur initiated, isSelecting:', isSelecting);
+  const handleInputBlur = useCallback(() => {
+    console.log('😴 Input blur - hiding dropdown after delay');
     
-    // אם המשתמש לוחץ על הצעה, אל תסגור
-    if (isSelecting) {
-      console.log('🚫 Preventing blur - user is selecting');
-      e.preventDefault();
-      return;
-    }
-    
-    // תן זמן להצעות להירשם
+    // תן זמן לקליק על הצעה
     setTimeout(() => {
-      if (!isSelecting) {
-        console.log('😴 Actually blurring after timeout');
-        setIsFocused(false);
-        clearSuggestions();
-      } else {
-        console.log('🚫 Cancelled blur - user started selecting');
-      }
-    }, 150);
-  }, [isSelecting, clearSuggestions]);
+      setIsFocused(false);
+      setShowDropdown(false);
+    }, 200);
+  }, []);
 
   const handleSuggestionClick = async (suggestion: PlaceAutocompleteResult) => {
     console.log('🖱️ Suggestion clicked:', suggestion.description);
-    setIsSelecting(true);
     
     try {
       console.log('📍 Getting place details for:', suggestion.place_id);
@@ -129,7 +116,7 @@ export const useAddressAutocomplete = (
       console.log('📊 Final address data:', addressData);
       setInputValue(placeDetails.formatted_address);
       onChange(addressData);
-      clearSuggestions();
+      setShowDropdown(false);
       setIsFocused(false);
       
       // Blur the input to close mobile keyboard
@@ -141,8 +128,6 @@ export const useAddressAutocomplete = (
       console.log('✅ Address selection completed');
     } catch (error) {
       console.error('💥 Error fetching place details:', error);
-    } finally {
-      setIsSelecting(false);
     }
   };
 
@@ -150,9 +135,8 @@ export const useAddressAutocomplete = (
     console.log('🧹 Clearing input');
     setInputValue('');
     onChange(null);
+    setShowDropdown(false);
     clearSuggestions();
-    setIsFocused(false);
-    setIsSelecting(false);
   }, [onChange, clearSuggestions]);
 
   return {
