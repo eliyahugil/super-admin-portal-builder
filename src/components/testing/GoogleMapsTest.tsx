@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { MapPin, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import type { PlaceAutocompleteResult } from '@/services/GoogleMapsService';
+import type { PlaceAutocompleteResult } from '@/services/google-maps/types';
 
 export const GoogleMapsTest: React.FC = () => {
   const { isReady, isLoading, error, googleMapsService } = useGoogleMaps();

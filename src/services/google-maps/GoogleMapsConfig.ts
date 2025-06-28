@@ -40,12 +40,17 @@ export class GoogleMapsConfigManager {
         return;
       }
 
-      const config = data?.config as GoogleMapsConfig;
-      if (config?.api_key) {
-        this.setApiKey(config.api_key);
-        console.log('Google Maps API key loaded from global settings');
+      // Type guard to ensure we have valid config
+      if (data?.config && typeof data.config === 'object' && !Array.isArray(data.config)) {
+        const config = data.config as unknown as GoogleMapsConfig;
+        if (config?.api_key) {
+          this.setApiKey(config.api_key);
+          console.log('Google Maps API key loaded from global settings');
+        } else {
+          console.log('No Google Maps API key found in global settings');
+        }
       } else {
-        console.log('No Google Maps API key found in global settings');
+        console.log('Invalid or missing config in global settings');
       }
     } catch (error) {
       console.error('Failed to refresh Google Maps API key:', error);
