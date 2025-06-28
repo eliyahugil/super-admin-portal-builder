@@ -24,11 +24,12 @@ export const useAddressAutocomplete = (
   const { isReady, isLoading, error, googleMapsService } = useGoogleMaps();
   const { suggestions, isLoadingSuggestions, searchPlaces, clearSuggestions } = useAddressSearch();
   
-  // הדרופדאון יוצג אם האינפוט מרוכז וגם יש הצעות או טעינה או אם יש טקסט באינפוט
-  const shouldShowDropdown = isFocused && (suggestions.length > 0 || isLoadingSuggestions || inputValue.trim().length >= 1);
+  // הדרופדאון יוצג אם האינפוט מרוכז ויש טקסט או הצעות או טעינה
+  const shouldShowDropdown = isFocused && (inputValue.trim().length >= 1 || suggestions.length > 0 || isLoadingSuggestions);
   
   console.log('🔍 useAddressAutocomplete - State Debug:', {
     inputValue: `"${inputValue}"`,
+    inputValueLength: inputValue.length,
     isFocused,
     suggestionsCount: suggestions.length,
     isLoadingSuggestions,
@@ -58,12 +59,12 @@ export const useAddressAutocomplete = (
       onChange(null);
     }
 
-    // Search for places immediately when typing
-    if (newValue.trim().length >= 2) {
-      console.log('🔍 Starting search for:', `"${newValue}"`);
+    // Search for places immediately when typing - reduced threshold to 1 character
+    if (newValue.trim().length >= 1) {
+      console.log('🔍 Triggering search for:', `"${newValue}"`);
       searchPlaces(newValue);
-    } else if (newValue.trim().length === 0) {
-      console.log('🧹 Clearing suggestions - input is empty');
+    } else {
+      console.log('🧹 Clearing suggestions - input too short');
       clearSuggestions();
     }
   }, [value, onChange, searchPlaces, clearSuggestions]);
@@ -73,32 +74,29 @@ export const useAddressAutocomplete = (
     setIsFocused(true);
     
     // אם יש טקסט, תחפש מיד
-    if (inputValue.trim().length >= 2) {
+    if (inputValue.trim().length >= 1) {
       console.log('🔍 Searching on focus for:', `"${inputValue}"`);
       searchPlaces(inputValue);
     }
   }, [inputValue, searchPlaces]);
 
   const handleInputBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    console.log('😴 Input blur - checking relatedTarget');
+    console.log('😴 Input blur event triggered');
     
-    // בדיקה אם הקליק היה על הדרופדאון
-    const relatedTarget = e.relatedTarget as HTMLElement;
-    
-    // אם הקליק היה על הדרופדאון או על אחד מהאלמנטים שלו, לא נסגור
-    if (relatedTarget && dropdownRef.current?.contains(relatedTarget)) {
-      console.log('😴 Blur ignored - clicked inside dropdown');
-      // החזר פוקוס לאינפוט כדי שהמקלדת לא תיסגר
-      if (inputRef.current) {
-        setTimeout(() => {
-          inputRef.current?.focus();
-        }, 0);
+    // Don't close dropdown immediately - give time for clicks
+    setTimeout(() => {
+      // Check if focus moved to dropdown or its children
+      const activeElement = document.activeElement;
+      const dropdownElement = dropdownRef.current;
+      
+      if (dropdownElement && (dropdownElement.contains(activeElement) || activeElement === dropdownElement)) {
+        console.log('😴 Blur ignored - focus is on dropdown');
+        return;
       }
-      return;
-    }
-    
-    console.log('😴 Actually hiding dropdown now');
-    setIsFocused(false);
+      
+      console.log('😴 Actually closing dropdown now');
+      setIsFocused(false);
+    }, 150); // Give time for click events to register
   }, []);
 
   const handleSuggestionClick = async (suggestion: PlaceAutocompleteResult) => {

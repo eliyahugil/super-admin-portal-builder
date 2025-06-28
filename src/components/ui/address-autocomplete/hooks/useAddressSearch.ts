@@ -28,7 +28,7 @@ export const useAddressSearch = () => {
       return;
     }
 
-    if (!query.trim() || query.length < 2) {
+    if (!query.trim() || query.length < 1) {
       console.log('❌ Query too short, clearing suggestions');
       setSuggestions([]);
       setIsLoadingSuggestions(false);
@@ -56,22 +56,14 @@ export const useAddressSearch = () => {
       setSuggestions([]);
       
       // Try to reinitialize the service on error
-      console.log('🔄 Attempting to refresh Google Maps service...');
-      try {
-        await googleMapsService.refreshApiKey();
-        console.log('🔄 Service refreshed, retrying search...');
-        const retryResults = await googleMapsService.getPlaceAutocomplete(query);
-        setSuggestions(retryResults);
-        console.log('✅ Retry search successful with', retryResults.length, 'results');
-      } catch (retryError) {
-        console.error('💥 Retry also failed:', retryError);
-      }
+      console.log('🔄 Error occurred, not retrying to avoid infinite loops');
     } finally {
       console.log('🏁 Setting loading to FALSE');
       setIsLoadingSuggestions(false);
     }
   };
 
+  // Reduced debounce time for faster response
   const debouncedSearch = (query: string) => {
     console.log('⏱️ debouncedSearch called with:', `"${query}"`);
     
@@ -81,12 +73,12 @@ export const useAddressSearch = () => {
       clearTimeout(searchTimeoutRef.current);
     }
 
-    // Debounce the search
-    console.log('⏲️ Setting new search timeout (300ms)');
+    // Debounce the search - reduced from 300ms to 200ms
+    console.log('⏲️ Setting new search timeout (200ms)');
     searchTimeoutRef.current = setTimeout(() => {
       console.log('⏰ Timeout triggered, executing search for:', `"${query}"`);
       searchPlaces(query);
-    }, 300);
+    }, 200);
   };
 
   const clearSuggestions = () => {

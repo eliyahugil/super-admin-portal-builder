@@ -47,13 +47,23 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
       style={{ backgroundColor: '#ffffff' }}
       onMouseDown={(e) => {
         // מניעת blur של האינפוט כאשר לוחצים על הדרופדאון
+        console.log('🖱️ Dropdown mousedown - preventing blur');
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onTouchStart={(e) => {
+        // מניעת סגירה במובייל
+        console.log('📱 Dropdown touch start - preventing blur');
         e.preventDefault();
         e.stopPropagation();
       }}
     >
       {isLoadingSuggestions ? (
         <div className="p-4 text-center text-gray-500">
-          מחפש כתובות...
+          <div className="flex items-center justify-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            מחפש כתובות...
+          </div>
         </div>
       ) : suggestions.length > 0 ? (
         suggestions.map((suggestion) => (
@@ -62,6 +72,13 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
             type="button"
             onMouseDown={(e) => {
               // מניעת blur של האינפוט
+              console.log('🖱️ Suggestion mousedown - preventing blur');
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onTouchStart={(e) => {
+              // מניעת סגירה במובייל
+              console.log('📱 Suggestion touch start');
               e.preventDefault();
               e.stopPropagation();
             }}
@@ -88,7 +105,7 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
         ))
       ) : (
         <div className="p-4 text-center text-gray-500">
-          לא נמצאו כתובות
+          לא נמצאו כתובות - נסה חיפוש אחר
         </div>
       )}
     </div>

@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { MapPin, Loader2, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface AddressInputProps {
   inputRef: React.RefObject<HTMLInputElement>;
@@ -11,10 +10,10 @@ interface AddressInputProps {
   onInputFocus: () => void;
   onInputBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
   onClear: () => void;
-  placeholder: string;
-  required: boolean;
-  disabled: boolean;
-  isLoadingSuggestions: boolean;
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+  isLoadingSuggestions?: boolean;
 }
 
 export const AddressInput: React.FC<AddressInputProps> = ({
@@ -24,45 +23,64 @@ export const AddressInput: React.FC<AddressInputProps> = ({
   onInputFocus,
   onInputBlur,
   onClear,
-  placeholder,
-  required,
-  disabled,
-  isLoadingSuggestions,
+  placeholder = 'חפש כתובת...',
+  required = false,
+  disabled = false,
+  isLoadingSuggestions = false,
 }) => {
+  console.log('🎯 AddressInput render:', {
+    inputValue: `"${inputValue}"`,
+    isLoadingSuggestions,
+    disabled
+  });
+
   return (
-    <div className="relative">
-      <div className="relative">
-        <Input
-          id="address-autocomplete"
-          ref={inputRef}
-          value={inputValue}
-          onChange={onInputChange}
-          onFocus={onInputFocus}
-          onBlur={onInputBlur}
-          placeholder={placeholder}
-          required={required}
-          disabled={disabled || isLoadingSuggestions}
-          className="pr-10 pl-3 text-right"
-          autoComplete="off"
-          dir="rtl"
-        />
-        <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-        {isLoadingSuggestions && (
-          <Loader2 className="absolute left-10 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
-        )}
-      </div>
+    <div className="relative" dir="rtl">
+      <Input
+        ref={inputRef}
+        id="address-autocomplete"
+        type="text"
+        value={inputValue}
+        onChange={onInputChange}
+        onFocus={onInputFocus}
+        onBlur={onInputBlur}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+        autoComplete="off"
+        className="pr-10"
+        // Prevent mobile keyboard from closing
+        onTouchStart={(e) => {
+          console.log('📱 Touch start on input');
+          e.stopPropagation();
+        }}
+      />
       
-      {inputValue && (
-        <Button
+      {/* Clear button */}
+      {inputValue && !disabled && (
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onClear}
-          className="absolute left-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0 hover:bg-gray-100"
-          tabIndex={-1}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🧹 Clear button clicked');
+            onClear();
+          }}
+          onMouseDown={(e) => {
+            // Prevent input from losing focus when clicking clear
+            e.preventDefault();
+          }}
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
         >
           <X className="h-4 w-4" />
-        </Button>
+        </button>
+      )}
+      
+      {/* Loading indicator */}
+      {isLoadingSuggestions && (
+        <div className="absolute left-8 top-1/2 transform -translate-y-1/2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+        </div>
       )}
     </div>
   );
