@@ -11,13 +11,15 @@ import {
   ChevronLeft, 
   ChevronRight,
   Filter,
-  Download
+  Download,
+  Copy
 } from 'lucide-react';
 import { WeeklyScheduleView } from './schedule/WeeklyScheduleView';
 import { MonthlyScheduleView } from './schedule/MonthlyScheduleView';
 import { ShiftScheduleFilters } from './schedule/ShiftScheduleFilters';
 import { CreateShiftDialog } from './schedule/CreateShiftDialog';
 import { ShiftDetailsDialog } from './schedule/ShiftDetailsDialog';
+import { BulkShiftCreator } from './schedule/BulkShiftCreator';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
 import type { ScheduleView, ShiftScheduleData } from './schedule/types';
 
@@ -25,6 +27,7 @@ export const ShiftSchedule: React.FC = () => {
   const [view, setView] = useState<ScheduleView>('week');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showBulkCreator, setShowBulkCreator] = useState(false);
   const [selectedShift, setSelectedShift] = useState<ShiftScheduleData | null>(null);
   
   const {
@@ -68,6 +71,12 @@ export const ShiftSchedule: React.FC = () => {
     setSelectedShift(null);
   };
 
+  const handleBulkCreate = async (shifts: Omit<ShiftScheduleData, 'id' | 'created_at'>[]) => {
+    for (const shift of shifts) {
+      await createShift(shift);
+    }
+  };
+
   const getScheduleStats = () => {
     const today = new Date();
     const todayShifts = shifts.filter(shift => 
@@ -91,7 +100,7 @@ export const ShiftSchedule: React.FC = () => {
   const stats = getScheduleStats();
 
   return (
-    <div className="p-6 space-y-6" dir="rtl">
+    <div className="p-6 space-y-6 h-full flex flex-col" dir="rtl">
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
@@ -110,6 +119,13 @@ export const ShiftSchedule: React.FC = () => {
           <Button variant="outline">
             <Download className="mr-2 h-4 w-4" />
             יצוא
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowBulkCreator(true)}
+          >
+            <Copy className="mr-2 h-4 w-4" />
+            יצירה בכמות
           </Button>
           <Button onClick={() => setShowCreateDialog(true)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -173,8 +189,8 @@ export const ShiftSchedule: React.FC = () => {
         />
       )}
 
-      {/* Calendar Navigation */}
-      <Card>
+      {/* Calendar Navigation & Content */}
+      <Card className="flex-1 flex flex-col">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -223,7 +239,7 @@ export const ShiftSchedule: React.FC = () => {
           </div>
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="flex-1 flex flex-col min-h-0">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -254,6 +270,16 @@ export const ShiftSchedule: React.FC = () => {
           isOpen={showCreateDialog}
           onClose={() => setShowCreateDialog(false)}
           onSubmit={createShift}
+          employees={employees}
+          branches={branches}
+        />
+      )}
+
+      {showBulkCreator && (
+        <BulkShiftCreator
+          isOpen={showBulkCreator}
+          onClose={() => setShowBulkCreator(false)}
+          onSubmit={handleBulkCreate}
           employees={employees}
           branches={branches}
         />

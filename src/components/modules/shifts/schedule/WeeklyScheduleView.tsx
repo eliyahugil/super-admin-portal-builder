@@ -3,6 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Clock, User } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ShiftScheduleData, EmployeeData } from './types';
 
 interface WeeklyScheduleViewProps {
@@ -66,7 +67,7 @@ export const WeeklyScheduleView: React.FC<WeeklyScheduleViewProps> = ({
   };
 
   const formatTime = (time: string) => {
-    return time.slice(0, 5); // HH:MM format
+    return time.slice(0, 5);
   };
 
   const isToday = (date: Date) => {
@@ -78,67 +79,84 @@ export const WeeklyScheduleView: React.FC<WeeklyScheduleViewProps> = ({
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
   return (
-    <div className="grid grid-cols-7 gap-1 h-96 overflow-auto">
-      {weekDays.map((day, dayIndex) => {
-        const dayShifts = getShiftsForDay(day);
-        const isCurrentDay = isToday(day);
-        
-        return (
-          <div key={day.toISOString()} className="border-l border-gray-200 first:border-l-0">
-            {/* Day Header */}
-            <div className={`p-3 text-center border-b ${isCurrentDay ? 'bg-blue-50' : 'bg-gray-50'}`}>
+    <div className="flex flex-col h-full">
+      {/* Days Headers - Fixed */}
+      <div className="grid grid-cols-7 gap-1 bg-gray-50 sticky top-0 z-10 border-b">
+        {weekDays.map((day, dayIndex) => {
+          const isCurrentDay = isToday(day);
+          return (
+            <div 
+              key={day.toISOString()} 
+              className={`p-3 text-center border-l border-gray-200 first:border-l-0 ${
+                isCurrentDay ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'
+              }`}
+            >
               <div className="font-medium text-sm text-gray-900">
                 {dayNames[dayIndex]}
               </div>
-              <div className={`text-lg font-bold ${isCurrentDay ? 'text-blue-600' : 'text-gray-700'}`}>
+              <div className={`text-lg font-bold ${
+                isCurrentDay ? 'text-blue-600' : 'text-gray-700'
+              }`}>
                 {day.getDate()}
               </div>
             </div>
+          );
+        })}
+      </div>
+
+      {/* Scrollable Content */}
+      <ScrollArea className="flex-1">
+        <div className="grid grid-cols-7 gap-1 min-h-96">
+          {weekDays.map((day) => {
+            const dayShifts = getShiftsForDay(day);
             
-            {/* Shifts */}
-            <div className="p-2 space-y-2 min-h-80">
-              {dayShifts.map((shift) => (
-                <Card 
-                  key={shift.id}
-                  className="p-2 cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => onShiftClick(shift)}
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1 text-xs">
-                      <Clock className="h-3 w-3" />
-                      <span>{formatTime(shift.start_time)} - {formatTime(shift.end_time)}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-1 text-xs">
-                      <User className="h-3 w-3" />
-                      <span className="truncate">{getEmployeeName(shift.employee_id)}</span>
-                    </div>
-                    
-                    {shift.branch_name && (
-                      <div className="text-xs text-gray-600 truncate">
-                        {shift.branch_name}
-                      </div>
-                    )}
-                    
-                    <Badge 
-                      className={`text-xs ${getStatusColor(shift.status)}`}
-                      variant="secondary"
+            return (
+              <div key={day.toISOString()} className="border-l border-gray-200 first:border-l-0 p-2">
+                <div className="space-y-2">
+                  {dayShifts.map((shift) => (
+                    <Card 
+                      key={shift.id}
+                      className="p-2 cursor-pointer hover:shadow-md transition-shadow bg-white border border-gray-200 hover:border-blue-300"
+                      onClick={() => onShiftClick(shift)}
                     >
-                      {getStatusText(shift.status)}
-                    </Badge>
-                  </div>
-                </Card>
-              ))}
-              
-              {dayShifts.length === 0 && (
-                <div className="text-center text-gray-400 text-sm py-4">
-                  אין משמרות
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatTime(shift.start_time)} - {formatTime(shift.end_time)}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1 text-xs text-gray-700">
+                          <User className="h-3 w-3" />
+                          <span className="truncate font-medium">{getEmployeeName(shift.employee_id)}</span>
+                        </div>
+                        
+                        {shift.branch_name && (
+                          <div className="text-xs text-gray-600 truncate">
+                            {shift.branch_name}
+                          </div>
+                        )}
+                        
+                        <Badge 
+                          className={`text-xs ${getStatusColor(shift.status)}`}
+                          variant="secondary"
+                        >
+                          {getStatusText(shift.status)}
+                        </Badge>
+                      </div>
+                    </Card>
+                  ))}
+                  
+                  {dayShifts.length === 0 && (
+                    <div className="text-center text-gray-400 text-sm py-8">
+                      אין משמרות
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        );
-      })}
+              </div>
+            );
+          })}
+        </div>
+      </ScrollArea>
     </div>
   );
 };
