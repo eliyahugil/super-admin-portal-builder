@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +20,13 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
 }) => {
   const { businessId: currentBusinessId } = useCurrentBusiness();
   const businessId = selectedBusinessId || currentBusinessId;
+
+  console.log('🔧 ImportManager - Rendering with:', {
+    selectedBusinessId,
+    currentBusinessId,
+    businessId,
+    onRefetch: !!onRefetch
+  });
 
   const {
     step,
@@ -47,19 +53,46 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
     headersCount: headers.length,
     rawDataCount: rawData.length,
     previewDataCount: previewData.length,
-    showMappingDialog
+    showMappingDialog,
+    fieldMappingsCount: fieldMappings.length,
+    importResult: !!importResult
   });
 
   const handleBack = () => {
+    console.log('🔄 ImportManager - handleBack called, current step:', step);
+    
     if (step === 'preview') {
+      console.log('🔄 Going back from preview to mapping');
       setStep('mapping');
       setShowMappingDialog(true);
     } else if (step === 'results') {
+      console.log('🔄 Going back from results, resetting form');
       setStep('closed');
       resetForm();
     } else {
+      console.log('🔄 Default back action, resetting form');
       setStep('closed');
       resetForm();
+    }
+  };
+
+  const handleExecuteImport = async () => {
+    console.log('🚀 ImportManager - Starting import execution');
+    console.log('📊 Preview data for import:', {
+      count: previewData.length,
+      sample: previewData.slice(0, 2).map(emp => ({
+        first_name: emp.first_name,
+        last_name: emp.last_name,
+        email: emp.email,
+        business_id: emp.business_id
+      }))
+    });
+    
+    try {
+      await executeImport();
+      console.log('✅ Import execution completed successfully');
+    } catch (error) {
+      console.error('💥 Import execution failed:', error);
     }
   };
 
@@ -113,7 +146,10 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
             <p className="text-gray-600 mb-4">
               העלה קובץ Excel עם פרטי עובדים וקבל מיפוי מתקדם עם יכולות תיקון ידני
             </p>
-            <Button onClick={() => setStep('upload')} className="flex items-center gap-2">
+            <Button onClick={() => {
+              console.log('🔄 Starting import process');
+              setStep('upload');
+            }} className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
               התחל ייבוא
             </Button>
@@ -164,12 +200,14 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
           {step === 'preview' && (
             <ImportPreview
               previewData={previewData}
-              onConfirm={executeImport}
+              onConfirm={handleExecuteImport}
               onCancel={() => {
+                console.log('🔄 ImportPreview - Cancel clicked');
                 setStep('closed');
                 resetForm();
               }}
               onBack={() => {
+                console.log('🔄 ImportPreview - Back clicked');
                 setStep('mapping');
                 setShowMappingDialog(true);
               }}
@@ -188,11 +226,13 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
             <ImportResults
               result={importResult}
               onClose={() => {
+                console.log('🔄 ImportResults - Close clicked');
                 setStep('closed');
                 resetForm();
                 if (onRefetch) onRefetch();
               }}
               onBackToMapping={() => {
+                console.log('🔄 ImportResults - Back to mapping clicked');
                 setStep('mapping');
                 setShowMappingDialog(true);
               }}
@@ -204,11 +244,15 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
       {/* Enhanced Field Mapping Dialog */}
       <EnhancedFieldMappingDialog
         open={showMappingDialog}
-        onOpenChange={setShowMappingDialog}
+        onOpenChange={(open) => {
+          console.log('🗺️ EnhancedFieldMappingDialog - onOpenChange:', open);
+          setShowMappingDialog(open);
+        }}
         fileColumns={headers}
         sampleData={rawData.slice(0, 5)}
         onConfirm={confirmMapping}
         onBack={() => {
+          console.log('🔄 EnhancedFieldMappingDialog - Back clicked');
           setStep('upload');
           setShowMappingDialog(false);
         }}

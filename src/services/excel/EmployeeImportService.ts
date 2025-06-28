@@ -4,7 +4,20 @@ import type { PreviewEmployee, ImportResult } from '@/hooks/useEmployeeImport/ty
 
 export class EmployeeImportService {
   static async importEmployees(employees: PreviewEmployee[]): Promise<ImportResult> {
-    console.log('🚀 EmployeeImportService - Starting import:', employees.length);
+    console.log('🚀 EmployeeImportService - Starting import process');
+    console.log('📊 Input employees data:', {
+      totalCount: employees.length,
+      validCount: employees.filter(emp => emp.isValid).length,
+      duplicateCount: employees.filter(emp => emp.isDuplicate).length,
+      invalidCount: employees.filter(emp => !emp.isValid).length,
+      sampleEmployee: employees[0] ? {
+        first_name: employees[0].first_name,
+        last_name: employees[0].last_name,
+        business_id: employees[0].business_id,
+        isValid: employees[0].isValid,
+        isDuplicate: employees[0].isDuplicate
+      } : null
+    });
 
     const errors: Array<{ row: number; employee: string; error: string }> = [];
     const importedEmployees: Array<{ name: string; email?: string; branch?: string }> = [];
@@ -19,6 +32,8 @@ export class EmployeeImportService {
         batches.push(employees.slice(i, i + batchSize));
       }
 
+      console.log(`📦 Processing ${batches.length} batches of employees`);
+
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
         const batch = batches[batchIndex];
         console.log(`📦 Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} employees`);
@@ -27,26 +42,39 @@ export class EmployeeImportService {
           const employee = batch[employeeIndex];
           const globalIndex = batchIndex * batchSize + employeeIndex;
 
+          console.log(`👤 Processing employee ${globalIndex + 1}:`, {
+            name: `${employee.first_name} ${employee.last_name}`,
+            business_id: employee.business_id,
+            isValid: employee.isValid,
+            isDuplicate: employee.isDuplicate
+          });
+
+          // Skip invalid or duplicate employees
+          if (!employee.isValid || employee.isDuplicate) {
+            console.log(`⏭️ Skipping employee ${globalIndex + 1} - not valid or duplicate`);
+            continue;
+          }
+
           try {
             // Prepare employee data for insertion
             const employeeData = {
               business_id: employee.business_id,
-              first_name: employee.first_name,
-              last_name: employee.last_name,
-              email: employee.email || null,
-              phone: employee.phone || null,
-              id_number: employee.id_number || null,
-              employee_id: employee.employee_id || null,
-              address: employee.address || null,
+              first_name: employee.first_name?.toString().trim() || '',
+              last_name: employee.last_name?.toString().trim() || '',
+              email: employee.email?.toString().trim() || null,
+              phone: employee.phone?.toString().trim() || null,
+              id_number: employee.id_number?.toString().trim() || null,
+              employee_id: employee.employee_id?.toString().trim() || null,
+              address: employee.address?.toString().trim() || null,
               hire_date: employee.hire_date || null,
-              employee_type: employee.employee_type,
+              employee_type: employee.employee_type || 'permanent',
               weekly_hours_required: employee.weekly_hours_required || 0,
               main_branch_id: employee.main_branch_id || null,
-              notes: employee.notes || null,
+              notes: employee.notes?.toString().trim() || null,
               is_active: true
             };
 
-            console.log(`👤 Importing employee ${globalIndex + 1}: ${employee.first_name} ${employee.last_name}`);
+            console.log(`💾 Inserting employee ${globalIndex + 1} with data:`, employeeData);
 
             const { data, error } = await supabase
               .from('employees')
@@ -63,7 +91,6 @@ export class EmployeeImportService {
               });
             } else {
               console.log(`✅ Successfully imported employee ${globalIndex + 1}:`, data);
-              // Transform to match the expected type
               importedEmployees.push({
                 name: `${employee.first_name} ${employee.last_name}`,
                 email: employee.email,

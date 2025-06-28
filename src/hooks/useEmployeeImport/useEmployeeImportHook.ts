@@ -32,16 +32,30 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
   // Determine effective business ID
   const effectiveBusinessId = selectedBusinessId || contextBusinessId;
 
-  console.log('🔄 useEmployeeImportHook - businessId logic:', {
+  console.log('🏢 useEmployeeImportHook - Business ID logic:', {
     selectedBusinessId,
     contextBusinessId,
     effectiveBusinessId,
-    step
+    step,
+    stateData: {
+      fileSelected: !!file,
+      headersCount: headers.length,
+      rawDataCount: rawData.length,
+      fieldMappingsCount: fieldMappings.length,
+      previewDataCount: previewData.length,
+      showMappingDialog,
+      importResultExists: !!importResult
+    }
   });
 
   // Data hooks - Get full employee data for comparison
   const { data: branches = [] } = useBranches(effectiveBusinessId);
   const { data: existingEmployees = [] } = useExistingEmployees(effectiveBusinessId);
+
+  console.log('📊 useEmployeeImportHook - Data hooks:', {
+    branchesCount: branches.length,
+    existingEmployeesCount: existingEmployees.length
+  });
 
   // Custom hooks for different phases
   const { processFile, downloadTemplate, isProcessing } = useFileProcessing({
@@ -74,11 +88,29 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
 
   // Wrap executeImport to match the expected Promise<void> signature
   const executeImport = useCallback(async (): Promise<void> => {
-    await executeImportInternal();
-  }, [executeImportInternal]);
+    console.log('🚀 useEmployeeImportHook - executeImport called');
+    console.log('📊 Current preview data for import:', {
+      count: previewData.length,
+      validCount: previewData.filter(emp => emp.isValid).length,
+      sampleData: previewData.slice(0, 2).map(emp => ({
+        first_name: emp.first_name,
+        last_name: emp.last_name,
+        business_id: emp.business_id,
+        isValid: emp.isValid
+      }))
+    });
+    
+    try {
+      await executeImportInternal();
+      console.log('✅ useEmployeeImportHook - executeImport completed successfully');
+    } catch (error) {
+      console.error('💥 useEmployeeImportHook - executeImport failed:', error);
+      throw error;
+    }
+  }, [executeImportInternal, previewData]);
 
   const resetForm = useCallback(() => {
-    console.log('🔄 Resetting import form');
+    console.log('🔄 useEmployeeImportHook - Resetting import form');
     setStep('closed');
     setFile(null);
     setHeaders([]);
