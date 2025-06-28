@@ -8,6 +8,7 @@ import { ShiftTokenManagement } from '../shifts/ShiftTokenManagement';
 import { WeeklyTokenManagement } from '../shifts/WeeklyTokenManagement';
 import { QuickRequestRegistration } from '../shifts/QuickRequestRegistration';
 import { ShiftRequests } from '../shifts/ShiftRequests';
+import { ShiftApprovalPage } from '../shifts/ShiftApprovalPage';
 
 interface Props {
   route: string;
@@ -25,6 +26,9 @@ export const ShiftsModuleRouter: React.FC<Props> = ({ route }) => {
       return <VacationRequestSystem />;
     case 'requests':
       return <ShiftRequests />;
+    case 'approval':
+    case 'approval-dashboard':
+      return <ShiftApprovalPage />;
     case 'quick-requests':
       return <QuickRequestRegistration />;
     case 'tokens':
