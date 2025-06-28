@@ -29,6 +29,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     error,
     handleInputChange,
     handleInputFocus,
+    handleInputBlur,
     handleSuggestionClick,
     handleClear
   } = useAddressAutocomplete(value, onChange);
@@ -64,6 +65,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         inputValue={inputValue}
         onInputChange={handleInputChange}
         onInputFocus={handleInputFocus}
+        onInputBlur={handleInputBlur}
         onClear={handleClear}
         placeholder={placeholder}
         required={required}

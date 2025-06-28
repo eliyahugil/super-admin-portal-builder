@@ -19,6 +19,7 @@ export const useAddressAutocomplete = (
   onChange: (addressData: AddressData | null) => void
 ) => {
   const [inputValue, setInputValue] = useState(value?.formatted_address || '');
+  const [hasFocus, setHasFocus] = useState(false);
   const { isReady, isLoading, error, googleMapsService } = useGoogleMaps();
   const { suggestions, isLoadingSuggestions, searchPlaces, clearSuggestions } = useAddressSearch();
   const { isOpen, inputRef, dropdownRef, openDropdown, closeDropdown } = useDropdownState();
@@ -30,7 +31,8 @@ export const useAddressAutocomplete = (
     inputValue,
     suggestionsCount: suggestions.length,
     isOpen,
-    isLoadingSuggestions
+    isLoadingSuggestions,
+    hasFocus
   });
 
   // Update input value when value prop changes
@@ -58,13 +60,16 @@ export const useAddressAutocomplete = (
       searchPlaces(newValue);
     } else {
       clearSuggestions();
+      closeDropdown();
     }
-  }, [value, onChange, searchPlaces, clearSuggestions]);
+  }, [value, onChange, searchPlaces, clearSuggestions, closeDropdown]);
 
   const handleInputFocus = useCallback(() => {
     console.log('🎯 Input focused');
+    setHasFocus(true);
     
-    if (suggestions.length > 0) {
+    // Only open dropdown if we already have suggestions and input has content
+    if (suggestions.length > 0 && inputValue.length >= 2) {
       console.log('📂 Opening dropdown on focus (has suggestions)');
       openDropdown();
     }
@@ -75,6 +80,17 @@ export const useAddressAutocomplete = (
       searchPlaces(inputValue);
     }
   }, [suggestions.length, inputValue, searchPlaces, openDropdown]);
+
+  const handleInputBlur = useCallback(() => {
+    console.log('😴 Input blurred');
+    setHasFocus(false);
+    // Don't close dropdown immediately - let click events on suggestions fire first
+    setTimeout(() => {
+      if (!hasFocus) {
+        closeDropdown();
+      }
+    }, 150);
+  }, [hasFocus, closeDropdown]);
 
   const handleSuggestionClick = async (suggestion: PlaceAutocompleteResult) => {
     console.log('🖱️ Suggestion clicked:', suggestion.description);
@@ -102,6 +118,13 @@ export const useAddressAutocomplete = (
       onChange(addressData);
       closeDropdown();
       clearSuggestions();
+      setHasFocus(false);
+      
+      // Blur the input to close mobile keyboard
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
+      
       console.log('✅ Address selection completed');
     } catch (error) {
       console.error('💥 Error fetching place details:', error);
@@ -114,17 +137,19 @@ export const useAddressAutocomplete = (
     onChange(null);
     clearSuggestions();
     closeDropdown();
-    // Don't auto-focus to prevent keyboard issues
+    setHasFocus(false);
   }, [onChange, clearSuggestions, closeDropdown]);
 
-  // Update dropdown state based on suggestions
+  // Only update dropdown state when input has focus AND we have suggestions
   useEffect(() => {
-    if (suggestions.length > 0 && inputValue.length >= 2) {
+    if (hasFocus && suggestions.length > 0 && inputValue.length >= 2) {
+      console.log('📂 Opening dropdown due to new suggestions while focused');
       openDropdown();
-    } else {
+    } else if (!hasFocus || suggestions.length === 0 || inputValue.length < 2) {
+      console.log('📁 Closing dropdown - no focus or no suggestions');
       closeDropdown();
     }
-  }, [suggestions.length, inputValue.length, openDropdown, closeDropdown]);
+  }, [suggestions.length, inputValue.length, hasFocus, openDropdown, closeDropdown]);
 
   return {
     inputValue,
@@ -138,6 +163,7 @@ export const useAddressAutocomplete = (
     error,
     handleInputChange,
     handleInputFocus,
+    handleInputBlur,
     handleSuggestionClick,
     handleClear
   };

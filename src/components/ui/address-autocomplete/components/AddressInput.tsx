@@ -9,6 +9,7 @@ interface AddressInputProps {
   inputValue: string;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onInputFocus: () => void;
+  onInputBlur: () => void;
   onClear: () => void;
   placeholder: string;
   required: boolean;
@@ -21,6 +22,7 @@ export const AddressInput: React.FC<AddressInputProps> = ({
   inputValue,
   onInputChange,
   onInputFocus,
+  onInputBlur,
   onClear,
   placeholder,
   required,
@@ -36,6 +38,7 @@ export const AddressInput: React.FC<AddressInputProps> = ({
           value={inputValue}
           onChange={onInputChange}
           onFocus={onInputFocus}
+          onBlur={onInputBlur}
           placeholder={placeholder}
           required={required}
           disabled={disabled || isLoadingSuggestions}
