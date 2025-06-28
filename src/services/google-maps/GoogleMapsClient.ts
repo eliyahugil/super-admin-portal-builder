@@ -133,7 +133,7 @@ export class GoogleMapsClient {
       this.autocompleteService!.getPlacePredictions(
         {
           input,
-          componentRestristics: { country: 'il' },
+          componentRestrictions: { country: 'il' },
           language: 'he'
           // הסרנו את types כדי לקבל יותר תוצאות
         },
