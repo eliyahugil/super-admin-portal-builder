@@ -18,51 +18,53 @@ export const useAddressSearch = () => {
   const { isReady, googleMapsService } = useGoogleMaps();
 
   const searchPlaces = async (query: string) => {
-    console.log('🔎 searchPlaces called with query:', `"${query}"`);
-    console.log('🔧 Current state - isReady:', isReady, 'googleMapsService available:', !!googleMapsService);
+    console.log('🔎 useAddressSearch.searchPlaces called with:', `"${query}"`);
+    console.log('🔧 Google Maps state:', { isReady, googleMapsService: !!googleMapsService });
     
-    if (!isReady) {
+    if (!isReady || !googleMapsService) {
       console.log('❌ Google Maps not ready, skipping search');
       setSuggestions([]);
+      setIsLoadingSuggestions(false);
       return;
     }
 
     if (!query.trim() || query.length < 2) {
-      console.log('❌ Query too short or empty, skipping search');
+      console.log('❌ Query too short, clearing suggestions');
       setSuggestions([]);
+      setIsLoadingSuggestions(false);
       return;
     }
 
-    console.log('🚀 Starting Google Maps API search...');
+    console.log('🚀 Starting Google Maps search with valid conditions...');
     setIsLoadingSuggestions(true);
     
     try {
       console.log('📡 Calling googleMapsService.getPlaceAutocomplete...');
       const results = await googleMapsService.getPlaceAutocomplete(query);
-      console.log('✅ Google Maps API results received:', results.length, 'suggestions');
-      
-      if (results.length > 0) {
-        console.log('📍 First few results:', results.slice(0, 3));
-      } else {
-        console.log('📭 No results found for query:', query);
-      }
+      console.log('✅ Search completed successfully:', {
+        resultsCount: results.length,
+        firstResult: results[0]?.description || 'none'
+      });
       
       setSuggestions(results);
-      console.log('📊 State updated with suggestions:', results.length);
+      
     } catch (error) {
-      console.error('💥 Error fetching place suggestions:', error);
+      console.error('💥 Error in searchPlaces:', error);
       console.error('🔍 Error details:', {
         message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
+        name: error instanceof Error ? error.name : 'Unknown'
       });
       setSuggestions([]);
     } finally {
       setIsLoadingSuggestions(false);
-      console.log('🏁 Search completed, isLoadingSuggestions set to false');
+      console.log('🏁 Search process completed, loading state cleared');
     }
   };
 
   const debouncedSearch = (query: string) => {
+    console.log('⏱️ debouncedSearch called with:', `"${query}"`);
+    
     // Clear previous timeout
     if (searchTimeoutRef.current) {
       console.log('⏰ Clearing previous search timeout');
@@ -70,26 +72,28 @@ export const useAddressSearch = () => {
     }
 
     // Debounce the search
-    console.log('⏱️ Setting search timeout for 300ms for query:', `"${query}"`);
+    console.log('⏲️ Setting new search timeout (300ms)');
     searchTimeoutRef.current = setTimeout(() => {
-      console.log('⏰ Search timeout triggered, calling searchPlaces');
+      console.log('⏰ Timeout triggered, executing search');
       searchPlaces(query);
     }, 300);
   };
 
   const clearSuggestions = () => {
-    console.log('🧹 Clearing suggestions');
+    console.log('🧹 Clearing suggestions and timeouts');
     setSuggestions([]);
     setIsLoadingSuggestions(false);
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = undefined;
     }
   };
 
-  console.log('🔍 useAddressSearch current state:', {
+  console.log('🔍 useAddressSearch render state:', {
     suggestionsCount: suggestions.length,
     isLoadingSuggestions,
-    isReady
+    isReady,
+    hasGoogleMapsService: !!googleMapsService
   });
 
   return {
