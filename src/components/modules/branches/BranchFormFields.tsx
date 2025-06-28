@@ -2,8 +2,8 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { AddressAutocomplete } from '@/components/ui/AddressAutocomplete';
 
 interface BranchFormData {
   name: string;
@@ -23,6 +23,24 @@ export const BranchFormFields: React.FC<BranchFormFieldsProps> = ({
   formData,
   setFormData,
 }) => {
+  const handleAddressChange = (addressData: any) => {
+    if (addressData) {
+      setFormData(prev => ({
+        ...prev,
+        address: addressData.formatted_address,
+        latitude: addressData.latitude.toString(),
+        longitude: addressData.longitude.toString(),
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        address: '',
+        latitude: '',
+        longitude: '',
+      }));
+    }
+  };
+
   return (
     <>
       <div>
@@ -37,19 +55,25 @@ export const BranchFormFields: React.FC<BranchFormFieldsProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="address">כתובת</Label>
-        <Textarea
-          id="address"
-          value={formData.address}
-          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-          placeholder="הזן כתובת הסניף"
-          rows={3}
+        <AddressAutocomplete
+          label="כתובת הסניף"
+          placeholder="חפש כתובת..."
+          onChange={handleAddressChange}
+          value={formData.address ? {
+            formatted_address: formData.address,
+            street: '',
+            city: '',
+            postalCode: '',
+            country: 'Israel',
+            latitude: parseFloat(formData.latitude) || 0,
+            longitude: parseFloat(formData.longitude) || 0,
+          } : null}
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="latitude">קו רוחב</Label>
+          <Label htmlFor="latitude">קו רוחב (נמלא אוטומטית)</Label>
           <Input
             id="latitude"
             type="number"
@@ -57,10 +81,13 @@ export const BranchFormFields: React.FC<BranchFormFieldsProps> = ({
             value={formData.latitude}
             onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
             placeholder="31.7683"
+            readOnly
+            className="bg-gray-50"
           />
+          <p className="text-xs text-gray-500 mt-1">מתעדכן אוטומטית עם בחירת הכתובת</p>
         </div>
         <div>
-          <Label htmlFor="longitude">קו אורך</Label>
+          <Label htmlFor="longitude">קו אורך (נמלא אוטומטית)</Label>
           <Input
             id="longitude"
             type="number"
@@ -68,7 +95,10 @@ export const BranchFormFields: React.FC<BranchFormFieldsProps> = ({
             value={formData.longitude}
             onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
             placeholder="35.2137"
+            readOnly
+            className="bg-gray-50"
           />
+          <p className="text-xs text-gray-500 mt-1">מתעדכן אוטומטית עם בחירת הכתובת</p>
         </div>
       </div>
 
@@ -82,6 +112,9 @@ export const BranchFormFields: React.FC<BranchFormFieldsProps> = ({
           value={formData.gps_radius}
           onChange={(e) => setFormData({ ...formData, gps_radius: parseInt(e.target.value) || 100 })}
         />
+        <p className="text-sm text-gray-500 mt-1">
+          רדיוס בו עובדים יכולים לבצע ניקוב כניסה/יציאה (10-1000 מטרים)
+        </p>
       </div>
 
       <div className="flex items-center justify-between">
