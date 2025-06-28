@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -19,9 +18,9 @@ import {
   CheckCircle,
   XCircle,
   Search,
-  MapPin
+  MapPin,
+  Eye
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/useBusiness';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -46,9 +45,7 @@ export const ShiftRequests: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { toast } = useToast();
   const { businessId } = useBusiness();
-  const queryClient = useQueryClient();
 
   // Fetch shift requests
   const { data: requests = [], isLoading } = useQuery({
@@ -87,42 +84,6 @@ export const ShiftRequests: React.FC = () => {
       }));
     },
     enabled: !!businessId
-  });
-
-  // Update status mutation
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ requestId, status, reviewNotes }: { requestId: string; status: 'approved' | 'rejected'; reviewNotes?: string }) => {
-      const updateData: any = { 
-        status,
-        reviewed_at: new Date().toISOString()
-      };
-      
-      if (reviewNotes) {
-        updateData.review_notes = reviewNotes;
-      }
-
-      const { error } = await supabase
-        .from('employee_shift_requests')
-        .update(updateData)
-        .eq('id', requestId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shift-requests'] });
-      toast({
-        title: 'הצלחה',
-        description: 'סטטוס הבקשה עודכן בהצלחה'
-      });
-    },
-    onError: (error) => {
-      console.error('Error updating request status:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן לעדכן את סטטוס הבקשה',
-        variant: 'destructive'
-      });
-    }
   });
 
   const getStatusColor = (status: string) => {
@@ -169,10 +130,10 @@ export const ShiftRequests: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Calendar className="h-6 w-6 text-blue-600" />
-            בקשות משמרות עובדים
+            <Eye className="h-6 w-6 text-blue-600" />
+            צפייה בבקשות משמרות
           </h2>
-          <p className="text-gray-600">ניהול ואישור בקשות משמרות מעובדים</p>
+          <p className="text-gray-600">סקירה וצפייה בכל בקשות המשמרות מעובדים</p>
         </div>
       </div>
 
@@ -294,7 +255,7 @@ export const ShiftRequests: React.FC = () => {
                 </div>
               )}
 
-              <div className="text-sm text-gray-500 mb-3">
+              <div className="text-sm text-gray-500">
                 <Calendar className="inline h-4 w-4 mr-1" />
                 נוצר: {format(new Date(request.created_at), 'dd/MM/yyyy HH:mm')}
                 {request.reviewed_at && (
@@ -303,27 +264,6 @@ export const ShiftRequests: React.FC = () => {
                   </span>
                 )}
               </div>
-
-              {request.status === 'pending' && (
-                <div className="flex gap-2 pt-3 border-t">
-                  <Button
-                    size="sm"
-                    onClick={() => updateStatusMutation.mutate({ requestId: request.id, status: 'approved' })}
-                    disabled={updateStatusMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    אשר
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => updateStatusMutation.mutate({ requestId: request.id, status: 'rejected' })}
-                    disabled={updateStatusMutation.isPending}
-                  >
-                    דחה
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         ))}
@@ -331,7 +271,7 @@ export const ShiftRequests: React.FC = () => {
 
       {filteredRequests.length === 0 && (
         <div className="text-center py-12">
-          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <Eye className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">אין בקשות משמרות</h3>
           <p className="text-gray-600">לא נמצאו בקשות במערכת</p>
         </div>
