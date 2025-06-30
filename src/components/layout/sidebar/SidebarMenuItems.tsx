@@ -1,23 +1,15 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
-
-interface MenuItem {
-  path: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  subItems?: {
-    path: string;
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    moduleKey?: string;
-  }[];
-}
+import { MenuItem } from './types';
 
 interface SidebarMenuItemsProps {
   items: MenuItem[];
@@ -36,50 +28,99 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
   isSuperAdmin,
   modulesLoading,
   collapsed,
-  onMenuItemClick,
+  onMenuItemClick
 }) => {
-  const getNavCls = ({ isActive: active }: { isActive: boolean }) =>
-    active ? "bg-muted text-primary font-medium" : "hover:bg-muted/50";
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+
+  // פתיחה ראשונית של פריטים עם תת-פריטים פעילים
+  useEffect(() => {
+    const initialExpanded: Record<string, boolean> = {};
+    
+    items.forEach(item => {
+      if (item.subItems) {
+        const hasActiveSubItem = item.subItems.some(subItem => isActive(subItem.path));
+        if (hasActiveSubItem || isActive(item.path)) {
+          initialExpanded[item.path] = true;
+        }
+      }
+    });
+    
+    setExpandedItems(initialExpanded);
+  }, [items, isActive]);
+
+  const toggleExpanded = (path: string) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [path]: !prev[path]
+    }));
+  };
+
+  const handleMenuItemClick = (hasSubItems: boolean, path: string) => {
+    if (hasSubItems) {
+      toggleExpanded(path);
+    } else {
+      // רק אם זה לא פריט עם תת-פריטים, נסגור את הסייד-בר במובייל
+      onMenuItemClick();
+    }
+  };
 
   return (
     <SidebarMenu>
-      {items.map((item) => (
-        <SidebarMenuItem key={item.path}>
-          <SidebarMenuButton asChild isActive={isActive(item.path)}>
-            <NavLink 
-              to={item.path} 
-              className="flex items-center gap-3 px-3 py-2 text-right hover:bg-gray-100 rounded-lg transition-colors"
-              onClick={onMenuItemClick}
-            >
-              <span className="flex-1 text-right text-sm font-medium">{item.label}</span>
-              <item.icon className="h-4 w-4 flex-shrink-0" />
-            </NavLink>
-          </SidebarMenuButton>
-          {item.subItems && isActive(item.path) && (
-            <div className="mr-6 mt-1 space-y-1">
-              {item.subItems
-                .filter(subItem => {
-                  if (subItem.moduleKey && !isSuperAdmin && !modulesLoading) {
-                    return isModuleEnabled(subItem.moduleKey);
-                  }
-                  return true;
-                })
-                .map((subItem) => (
-                  <SidebarMenuButton key={subItem.path} asChild size="sm">
-                    <NavLink
-                      to={subItem.path}
-                      className="flex items-center gap-2 px-4 py-1 text-right text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                      onClick={onMenuItemClick}
-                    >
-                      <span className="flex-1 text-right">{subItem.label}</span>
-                      <subItem.icon className="h-3 w-3 flex-shrink-0" />
-                    </NavLink>
-                  </SidebarMenuButton>
+      {items.map((item) => {
+        const hasSubItems = item.subItems && item.subItems.length > 0;
+        const isExpanded = expandedItems[item.path] || false;
+        const itemIsActive = isActive(item.path);
+        const hasActiveSubItem = hasSubItems && item.subItems!.some(subItem => isActive(subItem.path));
+
+        return (
+          <SidebarMenuItem key={item.path}>
+            <SidebarMenuButton asChild={!hasSubItems} isActive={itemIsActive || hasActiveSubItem}>
+              {hasSubItems ? (
+                <button
+                  onClick={() => handleMenuItemClick(true, item.path)}
+                  className="flex items-center gap-2 text-right w-full"
+                >
+                  <span className="flex-1 text-right">{item.label}</span>
+                  <item.icon className="h-4 w-4 flex-shrink-0" />
+                  {!collapsed && (
+                    <span className={`text-xs transform transition-transform duration-200 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
+                      ▶
+                    </span>
+                  )}
+                </button>
+              ) : (
+                <NavLink 
+                  to={item.path} 
+                  className="flex items-center gap-2 text-right"
+                  onClick={() => handleMenuItemClick(false, item.path)}
+                >
+                  <span className="flex-1 text-right">{item.label}</span>
+                  <item.icon className="h-4 w-4 flex-shrink-0" />
+                </NavLink>
+              )}
+            </SidebarMenuButton>
+            
+            {hasSubItems && isExpanded && !collapsed && (
+              <SidebarMenuSub>
+                {item.subItems!.map((subItem) => (
+                  <SidebarMenuSubItem key={subItem.path}>
+                    <SidebarMenuSubButton asChild isActive={isActive(subItem.path)}>
+                      <NavLink
+                        to={subItem.path}
+                        className="flex items-center gap-2 text-right text-sm"
+                        onClick={onMenuItemClick}
+                      >
+                        <span className="flex-1 text-right">{subItem.label}</span>
+                        <subItem.icon className="h-3 w-3 flex-shrink-0" />
+                      </NavLink>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
                 ))}
-            </div>
-          )}
-        </SidebarMenuItem>
-      ))}
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
+        );
+      })}
     </SidebarMenu>
   );
 };
