@@ -44,14 +44,10 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
   // Only proceed with data fetching if we have a valid business ID
   const shouldFetchData = !!effectiveBusinessId;
 
-  // Data hooks - only fetch when we have valid business ID
-  const { data: branches = [], isLoading: branchesLoading } = useBranches(effectiveBusinessId, {
-    enabled: shouldFetchData
-  });
+  // Data hooks - fix the argument count by passing only the business ID
+  const { data: branches = [], isLoading: branchesLoading } = useBranches(effectiveBusinessId);
   
-  const { data: existingEmployees = [], isLoading: employeesLoading } = useExistingEmployees(effectiveBusinessId, {
-    enabled: shouldFetchData
-  });
+  const { data: existingEmployees = [], isLoading: employeesLoading } = useExistingEmployees(effectiveBusinessId);
 
   console.log('📊 useEmployeeImportHook - Data status:', {
     businessId: effectiveBusinessId,
@@ -63,7 +59,7 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
   });
 
   // Custom hooks for different phases
-  const { processFile, downloadTemplate, isProcessing } = useFileProcessing({
+  const { processFile: processFileInternal, downloadTemplate, isProcessing } = useFileProcessing({
     businessId: effectiveBusinessId,
     setFile,
     setRawData,
@@ -90,6 +86,69 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
     setStep,
     setImportResult,
   });
+
+  // Enhanced processFile with business ID validation - ensure consistent return type
+  const processFile = useCallback(async (file: File): Promise<void> => {
+    console.log('🚀 useEmployeeImportHook - processFile validation:', {
+      effectiveBusinessId,
+      fileName: file.name,
+      fileSize: file.size
+    });
+
+    if (!effectiveBusinessId) {
+      console.error('❌ No business ID available for file processing');
+      toast({
+        title: "שגיאה",
+        description: "לא נבחר עסק לעיבוד הקובץ. אנא בחר עסק ונסה שוב.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await processFileInternal(file);
+      console.log('✅ useEmployeeImportHook - processFile completed successfully');
+    } catch (error) {
+      console.error('💥 useEmployeeImportHook - processFile failed:', error);
+      toast({
+        title: "שגיאה בעיבוד הקובץ",
+        description: error instanceof Error ? error.message : "שגיאה לא צפויה",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }, [processFileInternal, effectiveBusinessId, toast]);
+
+  // Enhanced confirmMapping with business ID validation
+  const confirmMappingEnhanced = useCallback(async (mappings: FieldMapping[]): Promise<void> => {
+    console.log('🚀 useEmployeeImportHook - confirmMapping validation:', {
+      effectiveBusinessId,
+      mappingsCount: mappings.length
+    });
+
+    if (!effectiveBusinessId) {
+      console.error('❌ No business ID available for mapping confirmation');
+      toast({
+        title: "שגיאה",
+        description: "לא נבחר עסק לביצוע מיפוי. אנא בחר עסק ונסה שוב.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await confirmMapping(mappings);
+      console.log('✅ useEmployeeImportHook - confirmMapping completed successfully');
+    } catch (error) {
+      console.error('💥 useEmployeeImportHook - confirmMapping failed:', error);
+      toast({
+        title: "שגיאה במיפוי השדות",
+        description: error instanceof Error ? error.message : "שגיאה לא צפויה",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }, [confirmMapping, effectiveBusinessId, toast]);
 
   // Enhanced executeImport with business ID validation
   const executeImport = useCallback(async (): Promise<void> => {
@@ -145,8 +204,8 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
     setShowMappingDialog(false);
   }, []);
 
-  // Enhanced validation before returning hook data
-  const hookData = {
+  // Return hook data with consistent types
+  const hookData: EmployeeImportHook = {
     step,
     setStep,
     file,
@@ -158,20 +217,8 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
     showMappingDialog,
     setShowMappingDialog,
     businessId: effectiveBusinessId,
-    processFile: effectiveBusinessId ? processFile : () => {
-      toast({
-        title: "שגיאה",
-        description: "אנא בחר עסק לפני ביצוע ייבוא",
-        variant: "destructive"
-      });
-    },
-    confirmMapping: effectiveBusinessId ? confirmMapping : async () => {
-      toast({
-        title: "שגיאה", 
-        description: "אנא בחר עסק לפני ביצוע מיפוי",
-        variant: "destructive"
-      });
-    },
+    processFile,
+    confirmMapping: confirmMappingEnhanced,
     executeImport,
     resetForm,
     downloadTemplate,
