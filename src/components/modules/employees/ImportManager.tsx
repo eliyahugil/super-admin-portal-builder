@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,12 +20,13 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
   onRefetch 
 }) => {
   const { businessId: currentBusinessId } = useCurrentBusiness();
-  const businessId = selectedBusinessId || currentBusinessId;
+  const effectiveBusinessId = selectedBusinessId || currentBusinessId;
 
-  console.log('🔧 ImportManager - Rendering with:', {
+  console.log('🔧 ImportManager - Rendering with validated business context:', {
     selectedBusinessId,
     currentBusinessId,
-    businessId,
+    effectiveBusinessId,
+    hasValidBusinessId: !!effectiveBusinessId,
     onRefetch: !!onRefetch
   });
 
@@ -44,11 +46,14 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
     executeImport,
     resetForm,
     downloadTemplate,
-  } = useEmployeeImport(businessId);
+    businessId: hookBusinessId
+  } = useEmployeeImport(effectiveBusinessId);
 
-  console.log('📊 ImportManager - Current state:', {
+  console.log('📊 ImportManager - Hook state validation:', {
     step,
-    businessId,
+    hookBusinessId,
+    effectiveBusinessId,
+    businessIdMatch: hookBusinessId === effectiveBusinessId,
     fileSelected: !!file,
     headersCount: headers.length,
     rawDataCount: rawData.length,
@@ -57,6 +62,29 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
     fieldMappingsCount: fieldMappings.length,
     importResult: !!importResult
   });
+
+  // Enhanced business validation
+  if (!effectiveBusinessId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-600">
+            <AlertCircle className="h-5 w-5" />
+            שגיאה - לא נבחר עסק
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <AlertCircle className="h-16 w-16 mx-auto text-red-400 mb-4" />
+            <h3 className="text-lg font-medium mb-2">חובה לבחור עסק לפני ביצוע ייבוא</h3>
+            <p className="text-gray-600 mb-4">
+              אנא בחר עסק מהרשימה בחלק העליון של המסך
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const handleBack = () => {
     console.log('🔄 ImportManager - handleBack called, current step:', step);
@@ -77,20 +105,24 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
   };
 
   const handleExecuteImport = async () => {
-    console.log('🚀 ImportManager - Starting import execution');
-    console.log('📊 Preview data for import:', {
-      count: previewData.length,
-      sample: previewData.slice(0, 2).map(emp => ({
-        first_name: emp.first_name,
-        last_name: emp.last_name,
-        email: emp.email,
-        business_id: emp.business_id
-      }))
+    console.log('🚀 ImportManager - Starting import execution with validation:', {
+      businessId: hookBusinessId,
+      previewDataCount: previewData.length,
+      validEmployeesCount: previewData.filter(emp => emp.isValid).length
     });
+    
+    if (!hookBusinessId) {
+      console.error('❌ No business ID available for import execution');
+      return;
+    }
     
     try {
       await executeImport();
       console.log('✅ Import execution completed successfully');
+      if (onRefetch) {
+        console.log('🔄 Triggering data refresh');
+        onRefetch();
+      }
     } catch (error) {
       console.error('💥 Import execution failed:', error);
     }
@@ -138,6 +170,9 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
             <Upload className="h-5 w-5" />
             ייבוא עובדים מקובץ Excel
           </CardTitle>
+          <p className="text-sm text-gray-600">
+            עסק נבחר: {effectiveBusinessId ? 'כן' : 'לא'}
+          </p>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
@@ -147,7 +182,7 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
               העלה קובץ Excel עם פרטי עובדים וקבל מיפוי מתקדם עם יכולות תיקון ידני
             </p>
             <Button onClick={() => {
-              console.log('🔄 Starting import process');
+              console.log('🔄 Starting import process with business ID:', effectiveBusinessId);
               setStep('upload');
             }} className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
@@ -174,6 +209,9 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
                     קובץ: {file.name} • {headers.length} עמודות • {rawData.length} שורות נתונים
                   </p>
                 )}
+                <p className="text-xs text-gray-500 mt-1">
+                  עסק: {hookBusinessId || 'לא זוהה'}
+                </p>
               </div>
             </div>
             
@@ -219,6 +257,7 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
               <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <h3 className="text-lg font-medium mb-2">מבצע ייבוא עובדים...</h3>
               <p className="text-gray-600">אנא המתן בזמן עיבוד הנתונים</p>
+              <p className="text-sm text-gray-500 mt-2">עסק: {hookBusinessId}</p>
             </div>
           )}
 
@@ -256,7 +295,7 @@ export const ImportManager: React.FC<ImportManagerProps> = ({
           setStep('upload');
           setShowMappingDialog(false);
         }}
-        businessId={businessId}
+        businessId={hookBusinessId}
       />
     </div>
   );

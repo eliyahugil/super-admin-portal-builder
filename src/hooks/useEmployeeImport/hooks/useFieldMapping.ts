@@ -1,3 +1,4 @@
+
 import type { FieldMapping, PreviewEmployee, ImportStep } from '../types';
 
 interface UseFieldMappingProps {
@@ -39,58 +40,70 @@ export const useFieldMapping = ({
 }: UseFieldMappingProps) => {
   
   const findExistingEmployee = (importedEmployee: any) => {
-    // Priority order for matching: email > id_number > employee_id > name combination
+    // Enhanced duplicate detection with better matching
     let existingEmployee = null;
     
-    // 1. Try to match by email (most reliable)
+    console.log('🔍 Searching for existing employee:', {
+      email: importedEmployee.email,
+      phone: importedEmployee.phone,
+      id_number: importedEmployee.id_number,
+      employee_id: importedEmployee.employee_id,
+      name: `${importedEmployee.first_name || ''} ${importedEmployee.last_name || ''}`.trim()
+    });
+    
+    // 1. Email matching (most reliable)
     if (importedEmployee.email && importedEmployee.email.trim() !== '') {
+      const email = importedEmployee.email.toLowerCase().trim();
       existingEmployee = existingEmployees.find(emp => 
-        emp.email && emp.email.toLowerCase().trim() === importedEmployee.email.toLowerCase().trim()
+        emp.email && emp.email.toLowerCase().trim() === email
       );
       if (existingEmployee) {
-        console.log(`🔍 Found existing employee by email: ${existingEmployee.email}`);
+        console.log(`✅ Found existing employee by email: ${existingEmployee.email} (ID: ${existingEmployee.id})`);
         return existingEmployee;
       }
     }
     
-    // 2. Try to match by ID number
+    // 2. ID number matching
     if (importedEmployee.id_number && importedEmployee.id_number.trim() !== '') {
+      const idNumber = importedEmployee.id_number.trim();
       existingEmployee = existingEmployees.find(emp => 
-        emp.id_number && emp.id_number.trim() === importedEmployee.id_number.trim()
+        emp.id_number && emp.id_number.trim() === idNumber
       );
       if (existingEmployee) {
-        console.log(`🔍 Found existing employee by ID number: ${existingEmployee.id_number}`);
+        console.log(`✅ Found existing employee by ID number: ${existingEmployee.id_number} (ID: ${existingEmployee.id})`);
         return existingEmployee;
       }
     }
     
-    // 3. Try to match by employee_id
+    // 3. Employee ID matching  
     if (importedEmployee.employee_id && importedEmployee.employee_id.trim() !== '') {
+      const employeeId = importedEmployee.employee_id.trim();
       existingEmployee = existingEmployees.find(emp => 
-        emp.employee_id && emp.employee_id.trim() === importedEmployee.employee_id.trim()
+        emp.employee_id && emp.employee_id.trim() === employeeId
       );
       if (existingEmployee) {
-        console.log(`🔍 Found existing employee by employee ID: ${existingEmployee.employee_id}`);
+        console.log(`✅ Found existing employee by employee ID: ${existingEmployee.employee_id} (ID: ${existingEmployee.id})`);
         return existingEmployee;
       }
     }
     
-    // 4. Try to match by full name combination (less reliable)
-    if (importedEmployee.first_name && importedEmployee.last_name) {
-      const importedFullName = `${importedEmployee.first_name} ${importedEmployee.last_name}`.toLowerCase().trim();
-      existingEmployee = existingEmployees.find(emp => {
-        if (emp.first_name && emp.last_name) {
-          const existingFullName = `${emp.first_name} ${emp.last_name}`.toLowerCase().trim();
-          return existingFullName === importedFullName;
+    // 4. Phone matching (if available)
+    if (importedEmployee.phone && importedEmployee.phone.trim() !== '') {
+      const phone = importedEmployee.phone.trim().replace(/\D/g, ''); // Remove non-digits
+      if (phone.length >= 9) { // Israeli phone numbers
+        existingEmployee = existingEmployees.find(emp => {
+          if (!emp.phone) return false;
+          const existingPhone = emp.phone.trim().replace(/\D/g, '');
+          return existingPhone === phone;
+        });
+        if (existingEmployee) {
+          console.log(`✅ Found existing employee by phone: ${existingEmployee.phone} (ID: ${existingEmployee.id})`);
+          return existingEmployee;
         }
-        return false;
-      });
-      if (existingEmployee) {
-        console.log(`🔍 Found existing employee by name: ${existingEmployee.first_name} ${existingEmployee.last_name}`);
-        return existingEmployee;
       }
     }
     
+    console.log('❌ No existing employee found for imported data');
     return null;
   };
 
@@ -104,6 +117,7 @@ export const useFieldMapping = ({
       existingEmployeesCount: existingEmployees.length
     });
 
+    // Enhanced validation
     if (!businessId) {
       throw new Error('לא נבחר עסק למיפוי - אנא בחר עסק ונסה שוב');
     }
@@ -112,10 +126,14 @@ export const useFieldMapping = ({
       throw new Error('לא הוגדרו מיפויי שדות - אנא בחר לפחות שדה אחד למיפוי');
     }
 
-    // Check if any required fields are mapped
-    const requiredMappings = mappings.filter(m => m.isRequired && m.mappedColumns.length > 0);
-    if (requiredMappings.length === 0) {
-      throw new Error('חובה למפות לפחות אחד מהשדות הנדרשים: שם פרטי או שם משפחה');
+    // Check for essential mappings
+    const hasNameMapping = mappings.some(m => 
+      (m.systemField === 'first_name' || m.systemField === 'last_name') && 
+      m.mappedColumns.length > 0
+    );
+    
+    if (!hasNameMapping) {
+      throw new Error('חובה למפות לפחות שדה שם (שם פרטי או שם משפחה)');
     }
 
     if (!rawData || rawData.length === 0) {
@@ -127,7 +145,7 @@ export const useFieldMapping = ({
     }
 
     try {
-      // Create a mapping from column name to index
+      // Create column index mapping for faster lookups
       const columnIndexMap: Record<string, number> = {};
       headers.forEach((header, index) => {
         columnIndexMap[header] = index;
@@ -135,24 +153,13 @@ export const useFieldMapping = ({
 
       console.log('📋 Column index mapping:', columnIndexMap);
 
-      // Update mappings with correct column indices for multi-column support
-      const updatedMappings = mappings.map(mapping => ({
-        ...mapping,
-        columnIndex: mapping.mappedColumns[0] ? columnIndexMap[mapping.mappedColumns[0]] : undefined,
-        columnIndices: mapping.mappedColumns.map(col => columnIndexMap[col]).filter(idx => idx !== undefined)
-      }));
-
-      console.log('🗺️ Updated mappings with indices:', updatedMappings.map(m => ({
-        systemField: m.systemField,
-        mappedColumns: m.mappedColumns,
-        columnIndices: m.columnIndices || []
-      })));
-
-      // Process the raw data based on mappings
-      console.log('📊 Processing raw data with mappings');
+      // Process raw data with improved error handling
+      const previewData: PreviewEmployee[] = [];
       
-      const previewData: PreviewEmployee[] = rawData.map((row, index) => {
-        console.log(`📋 Processing row ${index + 1}:`, {
+      for (let rowIndex = 0; rowIndex < rawData.length; rowIndex++) {
+        const row = rawData[rowIndex];
+        
+        console.log(`📋 Processing row ${rowIndex + 1}/${rawData.length}:`, {
           rowType: typeof row,
           isArray: Array.isArray(row),
           rowLength: Array.isArray(row) ? row.length : Object.keys(row || {}).length
@@ -168,8 +175,8 @@ export const useFieldMapping = ({
           customFields: {}
         };
 
-        // Apply field mappings using multiple columns support
-        updatedMappings.forEach(mapping => {
+        // Apply field mappings with better error handling
+        mappings.forEach(mapping => {
           if (!mapping.mappedColumns || mapping.mappedColumns.length === 0) {
             return;
           }
@@ -177,7 +184,6 @@ export const useFieldMapping = ({
           const fieldValues: string[] = [];
           
           try {
-            // Process all mapped columns
             mapping.mappedColumns.forEach(columnName => {
               const columnIndex = columnIndexMap[columnName];
               if (columnIndex !== undefined && Array.isArray(row) && columnIndex >= 0 && columnIndex < row.length) {
@@ -189,21 +195,17 @@ export const useFieldMapping = ({
               }
             });
 
-            // Combine multiple values based on field type
+            // Combine multiple values intelligently
             let combinedValue = '';
             if (fieldValues.length > 0) {
               if (mapping.systemField === 'first_name' || mapping.systemField === 'last_name') {
-                // For names, use first non-empty value
-                combinedValue = fieldValues[0];
+                combinedValue = fieldValues[0]; // Use first non-empty value
               } else if (mapping.systemField === 'address') {
-                // For address, combine with commas
-                combinedValue = fieldValues.join(', ');
+                combinedValue = fieldValues.join(', '); // Combine addresses
               } else if (mapping.systemField === 'phone') {
-                // For phone, use first valid value
-                combinedValue = fieldValues[0];
+                combinedValue = fieldValues[0]; // Use first phone
               } else {
-                // Default: combine with spaces
-                combinedValue = fieldValues.join(' ').trim();
+                combinedValue = fieldValues.join(' ').trim(); // Default combination
               }
             }
             
@@ -215,34 +217,25 @@ export const useFieldMapping = ({
               }
             }
           } catch (error) {
-            console.error(`💥 Error mapping ${mapping.systemField}:`, error);
+            console.error(`💥 Error mapping ${mapping.systemField} for row ${rowIndex + 1}:`, error);
           }
         });
 
-        // Set default values
+        // Set default employee type
         if (!employee.employee_type) {
           employee.employee_type = 'permanent';
         }
 
-        // Check if this employee already exists in the system
+        // Enhanced duplicate detection and validation
         const existingEmployee = findExistingEmployee(employee);
         const validationErrors = [];
         
         if (existingEmployee) {
-          console.log(`🔄 Found existing employee for row ${index + 1}:`, {
-            existingId: existingEmployee.id,
-            existingEmail: existingEmployee.email,
-            existingName: `${existingEmployee.first_name} ${existingEmployee.last_name}`,
-            importedEmail: employee.email,
-            importedName: `${employee.first_name} ${employee.last_name}`
-          });
-
-          // Mark as partial update instead of duplicate
           employee.isDuplicate = false;
           employee.isPartialUpdate = true;
           employee.existingEmployeeId = existingEmployee.id;
           
-          // Count how many fields will be updated (only empty fields in existing employee)
+          // Count fields that can be updated
           let fieldsToUpdate = 0;
           const updateableFields = [
             'first_name', 'last_name', 'email', 'phone', 'id_number', 
@@ -254,7 +247,6 @@ export const useFieldMapping = ({
             const importValue = employee[field];
             const existingValue = existingEmployee[field];
             
-            // Count field if existing is empty and import has value
             if ((!existingValue || existingValue === '' || existingValue === null) && 
                 importValue !== undefined && importValue !== null && importValue !== '') {
               fieldsToUpdate++;
@@ -264,11 +256,11 @@ export const useFieldMapping = ({
           if (fieldsToUpdate > 0) {
             validationErrors.push(`עדכון חלקי - יתווספו ${fieldsToUpdate} שדות חסרים`);
           } else {
-            validationErrors.push(`עובד קיים - אין שדות חסרים לעדכון`);
-            employee.isValid = false; // Don't process if no updates needed
+            validationErrors.push(`עובד קיים - כל השדות כבר מלאים`);
+            employee.isValid = false;
           }
           
-          // Keep the existing employee's current data for display
+          // Merge existing data for display
           Object.keys(existingEmployee).forEach(field => {
             if (field !== 'id' && (!employee[field] || employee[field] === '')) {
               employee[field] = existingEmployee[field];
@@ -276,7 +268,7 @@ export const useFieldMapping = ({
           });
           
         } else {
-          // New employee - validate required fields
+          // New employee validation
           const hasName = (employee.first_name && employee.first_name.trim()) || 
                          (employee.last_name && employee.last_name.trim());
           const hasEmail = employee.email && employee.email.trim();
@@ -287,7 +279,7 @@ export const useFieldMapping = ({
           }
         }
 
-        // Email validation (if provided)
+        // Email validation
         if (employee.email && employee.email.trim() !== '') {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(employee.email)) {
@@ -296,51 +288,57 @@ export const useFieldMapping = ({
           }
         }
 
-        // Set validation results
+        // Branch validation
+        if (employee.main_branch_id) {
+          const branch = branches.find(b => 
+            b.id === employee.main_branch_id || 
+            b.name.toLowerCase() === employee.main_branch_id.toLowerCase()
+          );
+          if (branch) {
+            employee.main_branch_id = branch.id;
+          } else {
+            validationErrors.push('סניף לא נמצא במערכת');
+            employee.main_branch_id = null;
+          }
+        }
+
         employee.validationErrors = validationErrors;
         
-        // If we had validation errors that made it invalid, keep that status
-        if (validationErrors.some(error => !error.includes('עדכון חלקי') && !error.includes('אין שדות חסרים'))) {
+        if (validationErrors.some(error => 
+          !error.includes('עדכון חלקי') && 
+          !error.includes('עובד קיים') && 
+          !error.includes('סניף לא נמצא')
+        )) {
           employee.isValid = false;
         }
 
         const displayName = `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 
-                           employee.email || 'לא הוגדר שם';
+                           employee.email || `שורה ${rowIndex + 1}`;
 
-        console.log(`✅ Employee ${index + 1} "${displayName}" processed:`, {
+        console.log(`✅ Processed employee "${displayName}":`, {
           isValid: employee.isValid,
           isDuplicate: employee.isDuplicate,
           isPartialUpdate: employee.isPartialUpdate,
           existingEmployeeId: employee.existingEmployeeId,
           errorsCount: employee.validationErrors?.length || 0,
-          errors: employee.validationErrors,
-          customFields: Object.keys(employee.customFields || {})
+          businessId: employee.business_id
         });
 
-        return employee as PreviewEmployee;
-      });
-
-      // Filter out duplicates that were marked as invalid
-      const finalPreviewData = previewData.filter(emp => {
-        if (emp.isDuplicate && !emp.isPartialUpdate) {
-          console.log(`🚫 Filtering out duplicate employee: ${emp.first_name} ${emp.last_name}`);
-          return false;
-        }
-        return true;
-      });
+        previewData.push(employee as PreviewEmployee);
+      }
 
       console.log('📊 Field mapping completed:', {
         totalRows: rawData.length,
-        processedEmployees: finalPreviewData.length,
-        validEmployees: finalPreviewData.filter(emp => emp.isValid).length,
-        newEmployees: finalPreviewData.filter(emp => !emp.isPartialUpdate && emp.isValid).length,
-        partialUpdateEmployees: finalPreviewData.filter(emp => emp.isPartialUpdate && emp.isValid).length,
-        errorEmployees: finalPreviewData.filter(emp => !emp.isValid).length,
-        customFieldsUsed: [...new Set(finalPreviewData.flatMap(emp => Object.keys(emp.customFields || {})))]
+        processedEmployees: previewData.length,
+        validEmployees: previewData.filter(emp => emp.isValid).length,
+        newEmployees: previewData.filter(emp => !emp.isPartialUpdate && emp.isValid).length,
+        partialUpdateEmployees: previewData.filter(emp => emp.isPartialUpdate && emp.isValid).length,
+        errorEmployees: previewData.filter(emp => !emp.isValid).length,
+        businessId
       });
 
-      setFieldMappings(updatedMappings);
-      setPreviewData(finalPreviewData);
+      setFieldMappings(mappings);
+      setPreviewData(previewData);
       setShowMappingDialog(false);
       setStep('preview');
       

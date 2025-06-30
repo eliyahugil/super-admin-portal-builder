@@ -29,32 +29,37 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
   const { toast } = useToast();
   const { businessId: contextBusinessId } = useCurrentBusiness();
   
-  // Determine effective business ID
+  // Determine effective business ID with better fallback handling
   const effectiveBusinessId = selectedBusinessId || contextBusinessId;
 
-  console.log('🏢 useEmployeeImportHook - Business ID logic:', {
+  console.log('🏢 useEmployeeImportHook - Business ID consistency check:', {
     selectedBusinessId,
     contextBusinessId,
     effectiveBusinessId,
+    isEffectiveIdValid: !!effectiveBusinessId,
     step,
-    stateData: {
-      fileSelected: !!file,
-      headersCount: headers.length,
-      rawDataCount: rawData.length,
-      fieldMappingsCount: fieldMappings.length,
-      previewDataCount: previewData.length,
-      showMappingDialog,
-      importResultExists: !!importResult
-    }
+    fileExists: !!file
   });
 
-  // Data hooks - Get full employee data for comparison
-  const { data: branches = [] } = useBranches(effectiveBusinessId);
-  const { data: existingEmployees = [] } = useExistingEmployees(effectiveBusinessId);
+  // Only proceed with data fetching if we have a valid business ID
+  const shouldFetchData = !!effectiveBusinessId;
 
-  console.log('📊 useEmployeeImportHook - Data hooks:', {
+  // Data hooks - only fetch when we have valid business ID
+  const { data: branches = [], isLoading: branchesLoading } = useBranches(effectiveBusinessId, {
+    enabled: shouldFetchData
+  });
+  
+  const { data: existingEmployees = [], isLoading: employeesLoading } = useExistingEmployees(effectiveBusinessId, {
+    enabled: shouldFetchData
+  });
+
+  console.log('📊 useEmployeeImportHook - Data status:', {
+    businessId: effectiveBusinessId,
+    shouldFetchData,
     branchesCount: branches.length,
-    existingEmployeesCount: existingEmployees.length
+    branchesLoading,
+    existingEmployeesCount: existingEmployees.length,
+    employeesLoading
   });
 
   // Custom hooks for different phases
@@ -86,28 +91,47 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
     setImportResult,
   });
 
-  // Wrap executeImport to match the expected Promise<void> signature
+  // Enhanced executeImport with business ID validation
   const executeImport = useCallback(async (): Promise<void> => {
-    console.log('🚀 useEmployeeImportHook - executeImport called');
-    console.log('📊 Current preview data for import:', {
-      count: previewData.length,
-      validCount: previewData.filter(emp => emp.isValid).length,
-      sampleData: previewData.slice(0, 2).map(emp => ({
-        first_name: emp.first_name,
-        last_name: emp.last_name,
-        business_id: emp.business_id,
-        isValid: emp.isValid
-      }))
+    console.log('🚀 useEmployeeImportHook - executeImport validation:', {
+      effectiveBusinessId,
+      previewDataCount: previewData.length,
+      validPreviewCount: previewData.filter(emp => emp.isValid).length
     });
+
+    if (!effectiveBusinessId) {
+      console.error('❌ No business ID available for import execution');
+      toast({
+        title: "שגיאה",
+        description: "לא נבחר עסק לייבוא. אנא בחר עסק ונסה שוב.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (previewData.length === 0) {
+      console.error('❌ No preview data available for import');
+      toast({
+        title: "שגיאה", 
+        description: "אין נתוני תצוגה מקדימה לייבוא",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
       await executeImportInternal();
       console.log('✅ useEmployeeImportHook - executeImport completed successfully');
     } catch (error) {
       console.error('💥 useEmployeeImportHook - executeImport failed:', error);
+      toast({
+        title: "שגיאה בייבוא",
+        description: error instanceof Error ? error.message : "שגיאה לא צפויה",
+        variant: "destructive"
+      });
       throw error;
     }
-  }, [executeImportInternal, previewData]);
+  }, [executeImportInternal, previewData, effectiveBusinessId, toast]);
 
   const resetForm = useCallback(() => {
     console.log('🔄 useEmployeeImportHook - Resetting import form');
@@ -121,7 +145,8 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
     setShowMappingDialog(false);
   }, []);
 
-  return {
+  // Enhanced validation before returning hook data
+  const hookData = {
     step,
     setStep,
     file,
@@ -133,10 +158,32 @@ export const useEmployeeImportHook = (selectedBusinessId?: string | null): Emplo
     showMappingDialog,
     setShowMappingDialog,
     businessId: effectiveBusinessId,
-    processFile,
-    confirmMapping,
+    processFile: effectiveBusinessId ? processFile : () => {
+      toast({
+        title: "שגיאה",
+        description: "אנא בחר עסק לפני ביצוע ייבוא",
+        variant: "destructive"
+      });
+    },
+    confirmMapping: effectiveBusinessId ? confirmMapping : async () => {
+      toast({
+        title: "שגיאה", 
+        description: "אנא בחר עסק לפני ביצוע מיפוי",
+        variant: "destructive"
+      });
+    },
     executeImport,
     resetForm,
     downloadTemplate,
   };
+
+  console.log('📤 useEmployeeImportHook - Returning hook data:', {
+    step: hookData.step,
+    businessId: hookData.businessId,
+    hasValidBusinessId: !!hookData.businessId,
+    fileExists: !!hookData.file,
+    previewCount: hookData.previewData.length
+  });
+
+  return hookData;
 };
