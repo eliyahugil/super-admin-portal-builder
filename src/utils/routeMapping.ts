@@ -195,6 +195,7 @@ export const getModuleRoutes = (businessId?: string | number) => {
     },
     shifts: {
       base: `${prefix}/modules/shifts`,
+      submission: `${prefix}/modules/shifts/submission`,
       requests: `${prefix}/modules/shifts/requests`,
       approval: `${prefix}/modules/shifts/approval`,
       schedule: `${prefix}/modules/shifts/schedule`,
