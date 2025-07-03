@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Calendar, Link, Copy, Send, Sparkles, X } from 'lucide-react';
+import { MessageCircle, Calendar, Link, Copy, Send, Sparkles, X, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -235,10 +235,24 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
     }
   };
 
-  const handleRevokeToken = () => {
+  const handleOpenLink = (useAdvanced = false) => {
+    const url = useAdvanced ? tokenData?.advancedSubmissionUrl : tokenData?.submissionUrl;
+    if (url) {
+      window.open(url, '_blank');
+      toast({
+        title: 'הקישור נפתח',
+        description: `קישור הגשת המשמרות ${useAdvanced ? '(מתקדם)' : ''} נפתח בכרטיסייה חדשה`,
+      });
+    }
+  };
+
+  const handleRevokeToken = async () => {
     setRevoking(true);
-    revokeTokenMutation.mutate();
-    setRevoking(false);
+    try {
+      await revokeTokenMutation.mutateAsync();
+    } finally {
+      setRevoking(false);
+    }
   };
 
   if (isLoading) {
@@ -299,19 +313,27 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
               variant="outline" 
               size="sm"
               className="flex items-center gap-2"
-              title="העתק קישור"
+              title="פעולות קישור"
             >
-              <Copy className="h-4 w-4" />
+              <Link className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleOpenLink(false)}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              פתח טופס רגיל
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleOpenLink(true)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              פתח מערכת מתקדמת
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleCopyLink(false)}>
               <Copy className="h-4 w-4 mr-2" />
-              טופס רגיל
+              העתק טופס רגיל
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleCopyLink(true)}>
-              <Sparkles className="h-4 w-4 mr-2" />
-              מערכת מתקדמת
+              <Copy className="h-4 w-4 mr-2" />
+              העתק מערכת מתקדמת
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -398,20 +420,28 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
             <Button 
               variant="outline" 
               className="flex items-center gap-2"
-              title="העתק קישור"
+              title="פעולות קישור"
             >
-              <Copy className="h-4 w-4" />
-              העתק קישור
+              <Link className="h-4 w-4" />
+              פעולות קישור
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleOpenLink(false)}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              פתח טופס רגיל
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleOpenLink(true)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              פתח מערכת מתקדמת
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleCopyLink(false)}>
               <Copy className="h-4 w-4 mr-2" />
-              טופס רגיל
+              העתק טופס רגיל
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleCopyLink(true)}>
-              <Sparkles className="h-4 w-4 mr-2" />
-              מערכת מתקדמת
+              <Copy className="h-4 w-4 mr-2" />
+              העתק מערכת מתקדמת
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
