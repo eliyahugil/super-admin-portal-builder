@@ -96,7 +96,13 @@ export const TokenBasedShiftManager: React.FC = () => {
         return;
       }
 
-      setTokenData(data as TokenData);
+      // Map the data to match TokenData interface, adding the missing is_used property
+      const mappedTokenData: TokenData = {
+        ...data,
+        is_used: !data.is_active // Convert is_active to is_used (inverse logic)
+      };
+
+      setTokenData(mappedTokenData);
       
     } catch (error) {
       console.error('Error validating token:', error);
@@ -332,7 +338,6 @@ export const TokenBasedShiftManager: React.FC = () => {
           <VacationRequestForm
             onSubmit={handleVacationRequest}
             onCancel={() => setViewMode('calendar')}
-            submitting={submitting}
           />
         )}
       </div>
