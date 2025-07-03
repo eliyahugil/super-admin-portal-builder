@@ -12,6 +12,7 @@ export interface ShiftScheduleData {
   branch_id?: string;
   branch_name?: string;
   status: 'pending' | 'approved' | 'rejected' | 'completed';
+  role_preference?: string;
   notes?: string;
   created_at: string;
 }
@@ -38,6 +39,13 @@ export interface ShiftFilters {
     start: Date;
     end: Date;
   };
+}
+
+export interface ScheduleFilters {
+  status: string;
+  employee: string;
+  branch: string;
+  role: string;
 }
 
 export interface ShiftScheduleViewProps {
