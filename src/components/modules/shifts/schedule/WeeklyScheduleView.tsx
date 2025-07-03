@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Clock, User } from 'lucide-react';
+import { Clock, User, Calendar as CalendarIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsraeliHolidays } from '@/hooks/useIsraeliHolidays';
 import type { ShiftScheduleData, EmployeeData } from './types';
 
 interface WeeklyScheduleViewProps {
@@ -23,6 +23,7 @@ export const WeeklyScheduleView: React.FC<WeeklyScheduleViewProps> = ({
   onShiftUpdate
 }) => {
   const isMobile = useIsMobile();
+  const { getHolidaysForDate, isHoliday } = useIsraeliHolidays();
 
   const getWeekDays = () => {
     const startOfWeek = new Date(currentDate);
@@ -90,20 +91,34 @@ export const WeeklyScheduleView: React.FC<WeeklyScheduleViewProps> = ({
             {weekDays.map((day, dayIndex) => {
               const dayShifts = getShiftsForDay(day);
               const isCurrentDay = isToday(day);
+              const holidaysForDay = getHolidaysForDate(day);
+              const hasHoliday = isHoliday(day);
               
               return (
                 <Card 
                   key={day.toISOString()}
-                  className={`p-4 ${isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : 'bg-white'}`}
+                  className={`p-4 ${isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : 'bg-white'} ${hasHoliday ? 'border-green-300 bg-green-50' : ''}`}
                 >
                   {/* Day header */}
                   <div className="mb-4 pb-3 border-b">
-                    <div className={`text-lg font-bold ${isCurrentDay ? 'text-blue-600' : 'text-gray-900'}`}>
+                    <div className={`text-lg font-bold ${isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-900'}`}>
                       {dayNames[dayIndex]}
                     </div>
-                    <div className={`text-2xl font-bold ${isCurrentDay ? 'text-blue-600' : 'text-gray-700'}`}>
+                    <div className={`text-2xl font-bold ${isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-700'}`}>
                       {day.getDate()}
                     </div>
+                    
+                    {/* Holiday badges */}
+                    {holidaysForDay.map((holiday, index) => (
+                      <Badge 
+                        key={index}
+                        variant="secondary"
+                        className="mt-2 bg-green-100 text-green-800 text-xs"
+                      >
+                        <CalendarIcon className="h-3 w-3 mr-1" />
+                        {holiday.hebrewName}
+                      </Badge>
+                    ))}
                   </div>
 
                   {/* Shifts for this day */}
@@ -164,21 +179,31 @@ export const WeeklyScheduleView: React.FC<WeeklyScheduleViewProps> = ({
       <div className="grid grid-cols-7 gap-1 bg-gray-50 sticky top-0 z-10 border-b">
         {weekDays.map((day, dayIndex) => {
           const isCurrentDay = isToday(day);
+          const holidaysForDay = getHolidaysForDate(day);
+          const hasHoliday = isHoliday(day);
+          
           return (
             <div 
               key={day.toISOString()} 
               className={`p-3 text-center border-l border-gray-200 first:border-l-0 ${
-                isCurrentDay ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'
+                isCurrentDay ? 'bg-blue-50 border-blue-200' : hasHoliday ? 'bg-green-50 border-green-200' : 'bg-gray-50'
               }`}
             >
               <div className="font-medium text-sm text-gray-900">
                 {dayNames[dayIndex]}
               </div>
               <div className={`text-lg font-bold ${
-                isCurrentDay ? 'text-blue-600' : 'text-gray-700'
+                isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-700'
               }`}>
                 {day.getDate()}
               </div>
+              
+              {/* Holiday indicator */}
+              {holidaysForDay.length > 0 && (
+                <div className="text-xs text-green-700 font-medium mt-1 truncate" title={holidaysForDay[0].hebrewName}>
+                  {holidaysForDay[0].hebrewName}
+                </div>
+              )}
             </div>
           );
         })}
@@ -189,9 +214,10 @@ export const WeeklyScheduleView: React.FC<WeeklyScheduleViewProps> = ({
         <div className="grid grid-cols-7 gap-1 min-h-96">
           {weekDays.map((day) => {
             const dayShifts = getShiftsForDay(day);
+            const hasHoliday = isHoliday(day);
             
             return (
-              <div key={day.toISOString()} className="border-l border-gray-200 first:border-l-0 p-2">
+              <div key={day.toISOString()} className={`border-l border-gray-200 first:border-l-0 p-2 ${hasHoliday ? 'bg-green-50' : ''}`}>
                 <div className="space-y-2">
                   {dayShifts.map((shift) => (
                     <Card 

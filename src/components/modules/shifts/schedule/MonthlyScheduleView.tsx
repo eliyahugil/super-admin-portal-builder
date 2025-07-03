@@ -1,9 +1,10 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsraeliHolidays } from '@/hooks/useIsraeliHolidays';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import type { ShiftScheduleData, EmployeeData } from './types';
 
 interface MonthlyScheduleViewProps {
@@ -21,6 +22,7 @@ export const MonthlyScheduleView: React.FC<MonthlyScheduleViewProps> = ({
   onShiftClick
 }) => {
   const isMobile = useIsMobile();
+  const { getHolidaysForDate, isHoliday } = useIsraeliHolidays();
 
   const getMonthCalendar = () => {
     const year = currentDate.getFullYear();
@@ -79,20 +81,34 @@ export const MonthlyScheduleView: React.FC<MonthlyScheduleViewProps> = ({
             {daysWithShifts.map((day) => {
               const dayShifts = getShiftsForDay(day);
               const isCurrentDay = isToday(day);
+              const holidaysForDay = getHolidaysForDate(day);
+              const hasHoliday = isHoliday(day);
               
               return (
                 <Card 
                   key={day.toISOString()}
-                  className={`p-4 ${isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : 'bg-white'}`}
+                  className={`p-4 ${isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : 'bg-white'} ${hasHoliday ? 'border-green-300 bg-green-50' : ''}`}
                 >
                   {/* Day header */}
                   <div className="mb-4 pb-3 border-b">
-                    <div className={`text-lg font-bold ${isCurrentDay ? 'text-blue-600' : 'text-gray-900'}`}>
+                    <div className={`text-lg font-bold ${isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-900'}`}>
                       {day.toLocaleDateString('he-IL', { weekday: 'long' })}
                     </div>
-                    <div className={`text-2xl font-bold ${isCurrentDay ? 'text-blue-600' : 'text-gray-700'}`}>
+                    <div className={`text-2xl font-bold ${isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-700'}`}>
                       {day.getDate()} {day.toLocaleDateString('he-IL', { month: 'long' })}
                     </div>
+                    
+                    {/* Holiday badges */}
+                    {holidaysForDay.map((holiday, index) => (
+                      <Badge 
+                        key={index}
+                        variant="secondary"
+                        className="mt-2 bg-green-100 text-green-800 text-xs"
+                      >
+                        <CalendarIcon className="h-3 w-3 mr-1" />
+                        {holiday.hebrewName}
+                      </Badge>
+                    ))}
                   </div>
 
                   {/* Shifts for this day */}
@@ -150,6 +166,8 @@ export const MonthlyScheduleView: React.FC<MonthlyScheduleViewProps> = ({
                 const dayShifts = getShiftsForDay(day);
                 const isCurrentMonthDay = isCurrentMonth(day);
                 const isCurrentDay = isToday(day);
+                const holidaysForDay = getHolidaysForDate(day);
+                const hasHoliday = isHoliday(day);
                 
                 return (
                   <Card 
@@ -158,14 +176,23 @@ export const MonthlyScheduleView: React.FC<MonthlyScheduleViewProps> = ({
                       !isCurrentMonthDay ? 'opacity-30 bg-gray-50' : 'bg-white'
                     } ${
                       isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                    } ${
+                      hasHoliday ? 'border-green-300 bg-green-50' : ''
                     } hover:shadow-sm transition-shadow`}
                   >
                     <div className="space-y-1">
                       <div className={`text-sm font-medium ${
-                        isCurrentDay ? 'text-blue-600' : 'text-gray-900'
+                        isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-900'
                       }`}>
                         {day.getDate()}
                       </div>
+                      
+                      {/* Holiday indicator */}
+                      {holidaysForDay.length > 0 && (
+                        <div className="text-xs text-green-700 font-medium truncate" title={holidaysForDay[0].hebrewName}>
+                          {holidaysForDay[0].hebrewName}
+                        </div>
+                      )}
                       
                       <div className="space-y-1 max-h-16 overflow-hidden">
                         {dayShifts.slice(0, 2).map((shift) => (
