@@ -231,18 +231,19 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
               {settings?.use_whatsapp_api && (
                 <span className="text-xs text-blue-600">(API)</span>
               )}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleSendWhatsApp(false)}>
-                <Send className="h-4 w-4 mr-2" />
-                טופס רגיל
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSendWhatsApp(true)}>
-                <Sparkles className="h-4 w-4 mr-2" />
-                מערכת מתקדמת
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleSendWhatsApp(false)}>
+              <Send className="h-4 w-4 mr-2" />
+              טופס רגיל
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleSendWhatsApp(true)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              מערכת מתקדמת
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
