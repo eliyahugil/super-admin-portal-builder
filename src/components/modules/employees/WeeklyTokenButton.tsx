@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Calendar, Link, Copy, Send, Sparkles } from 'lucide-react';
+import { MessageCircle, Calendar, Link, Copy, Send, Sparkles, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface WeeklyTokenButtonProps {
   phone: string;
@@ -30,6 +41,7 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
   compact = false,
 }) => {
   const [loading, setLoading] = useState(false);
+  const [revoking, setRevoking] = useState(false);
   const { businessId } = useBusiness();
   const { settings } = useBusinessSettings(businessId);
   const { toast } = useToast();
@@ -122,6 +134,35 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
     },
   });
 
+  // Revoke token mutation
+  const revokeTokenMutation = useMutation({
+    mutationFn: async () => {
+      if (!tokenData?.id) throw new Error('No token to revoke');
+      
+      const { error } = await supabase
+        .from('employee_weekly_tokens')
+        .update({ is_active: false })
+        .eq('id', tokenData.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'הטוקן בוטל',
+        description: `הטוקן של ${employeeName} בוטל בהצלחה`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['weekly-token', employeeId] });
+    },
+    onError: (error) => {
+      console.error('Error revoking token:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן לבטל את הטוקן',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleSendWhatsApp = async (useAdvanced = false) => {
     if (!phone || !tokenData?.submissionUrl) {
       toast({
@@ -194,6 +235,12 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
     }
   };
 
+  const handleRevokeToken = () => {
+    setRevoking(true);
+    revokeTokenMutation.mutate();
+    setRevoking(false);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center gap-2">
@@ -214,6 +261,7 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
   const weekStart = new Date(tokenData.week_start_date).toLocaleDateString('he-IL');
   const weekEnd = new Date(tokenData.week_end_date).toLocaleDateString('he-IL');
   const isExpired = new Date(tokenData.expires_at) < new Date();
+  const isActive = tokenData.is_active && !isExpired;
 
   if (compact) {
     return (
@@ -223,7 +271,7 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
             <Button 
               variant="outline" 
               size="sm"
-              disabled={loading || !phone || isExpired}
+              disabled={loading || !phone || !isActive}
               className="flex items-center gap-2"
             >
               <MessageCircle className="h-4 w-4" />
@@ -267,6 +315,43 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Revoke Token Button */}
+        {isActive && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                title="בטל טוקן"
+                disabled={revoking}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>בטל טוקן</AlertDialogTitle>
+                <AlertDialogDescription>
+                  האם אתה בטוח שברצונך לבטל את הטוקן של {employeeName}?
+                  <br />
+                  פעולה זו תמנע מהעובד להגיש משמרות עם הטוקן הנוכחי.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>ביטול</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleRevokeToken}
+                  className="bg-red-600 hover:bg-red-700"
+                  disabled={revoking}
+                >
+                  {revoking ? 'מבטל...' : 'בטל טוקן'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
     );
   }
@@ -276,8 +361,8 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
       <div className="flex items-center gap-2">
         <Calendar className="h-4 w-4 text-blue-600" />
         <span className="text-sm font-medium">טוכן שבוע {weekStart} - {weekEnd}</span>
-        <Badge variant={isExpired ? "destructive" : "default"}>
-          {isExpired ? "פג תוקף" : "פעיל"}
+        <Badge variant={!isActive ? "destructive" : "default"}>
+          {!tokenData.is_active ? "בוטל" : isExpired ? "פג תוקף" : "פעיל"}
         </Badge>
       </div>
       
@@ -286,7 +371,7 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
           <DropdownMenuTrigger asChild>
             <Button 
               variant="outline" 
-              disabled={loading || !phone || isExpired}
+              disabled={loading || !phone || !isActive}
               className="flex items-center gap-2"
             >
               <MessageCircle className="h-4 w-4" />
@@ -330,6 +415,42 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Revoke Token Button */}
+        {isActive && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                disabled={revoking}
+              >
+                <X className="h-4 w-4" />
+                בטל טוקן
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>בטל טוקן</AlertDialogTitle>
+                <AlertDialogDescription>
+                  האם אתה בטוח שברצונך לבטל את הטוקן של {employeeName}?
+                  <br />
+                  פעולה זו תמנע מהעובד להגיש משמרות עם הטוקן הנוכחי.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>ביטול</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleRevokeToken}
+                  className="bg-red-600 hover:bg-red-700"
+                  disabled={revoking}
+                >
+                  {revoking ? 'מבטל...' : 'בטל טוקן'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
       
       <div className="space-y-1 text-xs text-gray-500">
