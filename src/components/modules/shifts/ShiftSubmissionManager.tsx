@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { ShiftSubmissionCalendar } from './ShiftSubmissionCalendar';
 import { VacationRequestForm } from './VacationRequestForm';
 import { useToast } from '@/hooks/use-toast';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 interface SelectedShift {
   date: Date;
@@ -27,7 +27,7 @@ type ViewMode = 'calendar' | 'vacation';
 export const ShiftSubmissionManager: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const { toast } = useToast();
-  const { businessId } = useBusiness();
+  const { businessId, loading, error } = useCurrentBusiness();
 
   const handleShiftSubmission = async (shifts: SelectedShift[]) => {
     try {
@@ -85,10 +85,35 @@ export const ShiftSubmissionManager: React.FC = () => {
     setViewMode('calendar');
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="p-6 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-2 text-gray-600">טוען...</p>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-red-600 mb-4">{error}</p>
+        <p className="text-gray-600">אנא בחר עסק מהתפריט העליון</p>
+      </div>
+    );
+  }
+
+  // Show business selection message
   if (!businessId) {
     return (
       <div className="p-6 text-center">
-        <p className="text-gray-600">לא נבחר עסק</p>
+        <h2 className="text-xl font-semibold mb-4">לא נבחר עסק</h2>
+        <p className="text-gray-600 mb-4">אנא בחר עסק מהתפריט העליון כדי להמשיך</p>
+        <p className="text-sm text-gray-500">
+          ניתן לבחור עסק מהרשימה הנפתחת בחלק העליון של העמוד
+        </p>
       </div>
     );
   }
