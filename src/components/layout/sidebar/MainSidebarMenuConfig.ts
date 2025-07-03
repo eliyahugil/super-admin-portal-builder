@@ -1,4 +1,3 @@
-
 import {
   LayoutDashboard, 
   Users, 
@@ -16,7 +15,8 @@ import {
   CheckSquare,
   Calendar,
   User,
-  LinkIcon
+  LinkIcon,
+  Send
 } from "lucide-react";
 import { getModuleRoutes } from "@/utils/routeMapping";
 import { MenuItem } from "./MainSidebarTypes";
@@ -56,6 +56,7 @@ export const buildMainSidebarMenuItems = (isSuperAdmin: boolean, business?: { id
       icon: Clock, 
       category: 'main',
       subItems: [
+        { path: moduleRoutes.shifts.submission, label: 'הגשת משמרות', icon: Send },
         { path: moduleRoutes.shifts.requests, label: 'בקשות משמרת', icon: CheckSquare },
         { path: moduleRoutes.shifts.approval, label: 'אישור משמרות', icon: UserCheck },
         { path: moduleRoutes.shifts.schedule, label: 'לוח משמרות', icon: Calendar },
