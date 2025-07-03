@@ -1,4 +1,3 @@
-
 import {
   Users, 
   User, 
@@ -18,6 +17,7 @@ import {
   MessageCircle,
   ListChecks,
   FolderInput,
+  Send,
 } from 'lucide-react';
 import { getModuleRoutes } from '@/utils/routeMapping';
 import { MenuItem } from './types';
@@ -43,6 +43,20 @@ export const createEmployeesMenuItems = (business: { id: string } | undefined): 
         { path: moduleRoutes.employees.import, label: 'ייבוא עובדים', icon: FolderInput, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.shifts, label: 'משמרות עובדים', icon: Clock, moduleKey: 'shift_management' },
         { path: moduleRoutes.branches.base, label: 'ניהול סניפים', icon: Building, moduleKey: 'branch_management' },
+      ]
+    },
+    { 
+      path: moduleRoutes.shifts.base, 
+      label: 'ניהול משמרות', 
+      icon: Clock, 
+      category: 'shifts',
+      moduleKey: 'shift_management',
+      subItems: [
+        { path: moduleRoutes.shifts.submission, label: 'הגשת משמרות', icon: Send, moduleKey: 'shift_management' },
+        { path: moduleRoutes.shifts.requests, label: 'בקשות משמרת', icon: CheckSquare, moduleKey: 'shift_management' },
+        { path: moduleRoutes.shifts.approval, label: 'אישור משמרות', icon: UserCheck, moduleKey: 'shift_management' },
+        { path: moduleRoutes.shifts.schedule, label: 'לוח משמרות', icon: Calendar, moduleKey: 'shift_management' },
+        { path: moduleRoutes.shifts.admin, label: 'כלי מנהל', icon: Settings, moduleKey: 'shift_management' },
       ]
     },
   ];
