@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Calendar, Link, Copy, Send } from 'lucide-react';
+import { MessageCircle, Calendar, Link, Copy, Send, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +9,12 @@ import { sendShiftTokenWhatsapp } from '@/utils/sendWhatsappReminder';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { useBusiness } from '@/hooks/useBusiness';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface WeeklyTokenButtonProps {
   phone: string;
@@ -58,7 +64,8 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
       if (existingToken) {
         return {
           ...existingToken,
-          submissionUrl: `${window.location.origin}/weekly-shift-submission/${existingToken.token}`
+          submissionUrl: `${window.location.origin}/weekly-shift-submission/${existingToken.token}`,
+          advancedSubmissionUrl: `${window.location.origin}/advanced-shift-submission/${existingToken.token}`
         };
       }
 
@@ -83,7 +90,8 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
 
       return {
         ...newTokenData,
-        submissionUrl: `${window.location.origin}/weekly-shift-submission/${newTokenData.token}`
+        submissionUrl: `${window.location.origin}/weekly-shift-submission/${newTokenData.token}`,
+        advancedSubmissionUrl: `${window.location.origin}/advanced-shift-submission/${newTokenData.token}`
       };
     },
     enabled: !!employeeId,
@@ -114,7 +122,7 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
     },
   });
 
-  const handleSendWhatsApp = async () => {
+  const handleSendWhatsApp = async (useAdvanced = false) => {
     if (!phone || !tokenData?.submissionUrl) {
       toast({
         title: 'שגיאה',
@@ -128,27 +136,30 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
       setLoading(true);
       
       const useAPI = settings?.use_whatsapp_api || false;
+      const submissionUrl = useAdvanced ? tokenData.advancedSubmissionUrl : tokenData.submissionUrl;
       
       await sendShiftTokenWhatsapp({
         phone,
         employeeName,
         employeeId,
-        tokenUrl: tokenData.submissionUrl,
+        tokenUrl: submissionUrl,
         useAPI,
+        isAdvanced: useAdvanced,
       });
       
       // Log successful reminder
       await logReminderMutation.mutateAsync({
         phone,
-        message: `שליחת טוכן שבועי ל-${employeeName}`,
+        message: `שליחת טוכן ${useAdvanced ? 'מתקדם' : 'רגיל'} ל-${employeeName}`,
         method: useAPI ? 'whatsapp_api' : 'browser',
         status: 'success',
       });
       
       const methodText = useAPI ? 'WhatsApp API' : 'דפדפן';
+      const systemText = useAdvanced ? 'מערכת מתקדמת' : 'מערכת רגילה';
       toast({
         title: useAPI ? 'הודעה נשלחה' : 'נפתח WhatsApp',
-        description: `${useAPI ? 'הודעה נשלחה בהצלחה' : 'WhatsApp נפתח עם הודעה מוכנה'} ל-${employeeName} דרך ${methodText}`,
+        description: `${useAPI ? 'הודעה נשלחה בהצלחה' : 'WhatsApp נפתח עם הודעה מוכנה'} ל-${employeeName} דרך ${methodText} (${systemText})`,
       });
     } catch (error) {
       console.error('Error sending WhatsApp reminder:', error);
@@ -172,12 +183,13 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
     }
   };
 
-  const handleCopyLink = () => {
-    if (tokenData?.submissionUrl) {
-      navigator.clipboard.writeText(tokenData.submissionUrl);
+  const handleCopyLink = (useAdvanced = false) => {
+    const url = useAdvanced ? tokenData?.advancedSubmissionUrl : tokenData?.submissionUrl;
+    if (url) {
+      navigator.clipboard.writeText(url);
       toast({
         title: 'הקישור הועתק',
-        description: 'קישור הגשת המשמרות הועתק ללוח',
+        description: `קישור הגשת המשמרות ${useAdvanced ? '(מתקדם)' : ''} הועתק ללוח`,
       });
     }
   };
@@ -206,30 +218,54 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
   if (compact) {
     return (
       <div className="flex gap-2">
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={handleSendWhatsApp}
-          disabled={loading || !phone || isExpired}
-          className="flex items-center gap-2"
-          title={settings?.use_whatsapp_api ? 'שלח דרך WhatsApp API' : 'פתח WhatsApp בדפדפן'}
-        >
-          <MessageCircle className="h-4 w-4" />
-          {loading ? 'שולח...' : 'שלח בוואטסאפ'}
-          {settings?.use_whatsapp_api && (
-            <span className="text-xs text-blue-600">(API)</span>
-          )}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm"
+              disabled={loading || !phone || isExpired}
+              className="flex items-center gap-2"
+            >
+              <MessageCircle className="h-4 w-4" />
+              {loading ? 'שולח...' : 'שלח בוואטסאפ'}
+              {settings?.use_whatsapp_api && (
+                <span className="text-xs text-blue-600">(API)</span>
+              )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleSendWhatsApp(false)}>
+                <Send className="h-4 w-4 mr-2" />
+                טופס רגיל
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSendWhatsApp(true)}>
+                <Sparkles className="h-4 w-4 mr-2" />
+                מערכת מתקדמת
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={handleCopyLink}
-          className="flex items-center gap-2"
-          title="העתק קישור"
-        >
-          <Copy className="h-4 w-4" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-2"
+              title="העתק קישור"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleCopyLink(false)}>
+              <Copy className="h-4 w-4 mr-2" />
+              טופס רגיל
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleCopyLink(true)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              מערכת מתקדמת
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     );
   }
@@ -245,34 +281,65 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
       </div>
       
       <div className="flex gap-2">
-        <Button 
-          variant="outline" 
-          onClick={handleSendWhatsApp}
-          disabled={loading || !phone || isExpired}
-          className="flex items-center gap-2"
-          title={settings?.use_whatsapp_api ? 'שלח דרך WhatsApp API' : 'פתח WhatsApp בדפדפן'}
-        >
-          <MessageCircle className="h-4 w-4" />
-          {loading ? 'שולח...' : 'שלח בוואטסאפ'}
-          {settings?.use_whatsapp_api && (
-            <span className="text-xs text-blue-600">(API)</span>
-          )}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              disabled={loading || !phone || isExpired}
+              className="flex items-center gap-2"
+            >
+              <MessageCircle className="h-4 w-4" />
+              {loading ? 'שולח...' : 'שלח בוואטסאפ'}
+              {settings?.use_whatsapp_api && (
+                <span className="text-xs text-blue-600">(API)</span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleSendWhatsApp(false)}>
+              <Send className="h-4 w-4 mr-2" />
+              טופס רגיל
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleSendWhatsApp(true)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              מערכת מתקדמת
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         
-        <Button 
-          variant="outline" 
-          onClick={handleCopyLink}
-          className="flex items-center gap-2"
-          title="העתק קישור"
-        >
-          <Copy className="h-4 w-4" />
-          העתק קישור
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              title="העתק קישור"
+            >
+              <Copy className="h-4 w-4" />
+              העתק קישור
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleCopyLink(false)}>
+              <Copy className="h-4 w-4 mr-2" />
+              טופס רגיל
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleCopyLink(true)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              מערכת מתקדמת
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
-      <div className="text-xs text-gray-500">
-        <Link className="h-3 w-3 inline mr-1" />
-        {tokenData.submissionUrl}
+      <div className="space-y-1 text-xs text-gray-500">
+        <div className="flex items-center">
+          <Link className="h-3 w-3 inline mr-1" />
+          <span>רגיל: {tokenData.submissionUrl}</span>
+        </div>
+        <div className="flex items-center">
+          <Sparkles className="h-3 w-3 inline mr-1" />
+          <span>מתקדם: {tokenData.advancedSubmissionUrl}</span>
+        </div>
       </div>
     </div>
   );

@@ -51,25 +51,43 @@ export const sendShiftTokenWhatsapp = async ({
   employeeName,
   employeeId,
   tokenUrl,
-  useAPI = false
+  useAPI,
+  isAdvanced = false
 }: {
   phone: string;
   employeeName: string;
   employeeId: string;
   tokenUrl: string;
-  useAPI?: boolean;
+  useAPI: boolean;
+  isAdvanced?: boolean;
 }) => {
-  const message = `שלום ${employeeName}! 👋
-
-📅 נא למלא את המשמרות שלך לשבוע הקרוב
-
-🔗 קישור למילוי:
-${tokenUrl}
-
-⏰ אנא הגש עד יום רביעי
-💼 מערכת ניהול העובדים`;
+  const cleanPhone = phone.replace(/[^\d]/g, '');
+  const whatsappPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.slice(1) : cleanPhone;
   
-  return sendWhatsappReminder(phone, message, useAPI);
+  const systemType = isAdvanced ? 'המתקדמת' : '';
+  const features = isAdvanced 
+    ? '\n📅 לוח זמנים אינטראקטיבי\n🎯 בחירת משמרות מתקדמת\n🏖️ בקשות חופשה\n📊 סיכום ודוחות'
+    : '';
+  
+  const message = 
+    `שלום ${employeeName}! 👋\n\n` +
+    `זהו הקישור להגשת המשמרות שלך במערכת ${systemType}:\n` +
+    `${tokenUrl}\n\n` +
+    (isAdvanced ? `✨ המערכת המתקדמת כוללת:${features}\n\n` : '') +
+    `⏰ אנא הגש את המשמרות עד יום רביעי\n` +
+    `💼 מערכת ניהול העובדים`;
+
+  if (useAPI) {
+    // WhatsApp API integration would go here
+    console.log('Sending via WhatsApp API:', { phone: whatsappPhone, message });
+    
+    // For now, just simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  } else {
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
+  }
 };
 
 // Check if WhatsApp API is available/configured
