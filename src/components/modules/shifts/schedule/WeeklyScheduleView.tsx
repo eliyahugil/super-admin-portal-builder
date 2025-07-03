@@ -1,29 +1,21 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Clock, User, Calendar as CalendarIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useIsraeliHolidays } from '@/hooks/useIsraeliHolidays';
-import type { ShiftScheduleData, EmployeeData } from './types';
+import type { ShiftScheduleViewProps } from './types';
 
-interface WeeklyScheduleViewProps {
-  shifts: ShiftScheduleData[];
-  employees: EmployeeData[];
-  currentDate: Date;
-  onShiftClick: (shift: ShiftScheduleData) => void;
-  onShiftUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
-}
-
-export const WeeklyScheduleView: React.FC<WeeklyScheduleViewProps> = ({
+export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   shifts,
   employees,
   currentDate,
+  holidays,
   onShiftClick,
   onShiftUpdate
 }) => {
   const isMobile = useIsMobile();
-  const { getHolidaysForDate, isHoliday } = useIsraeliHolidays();
 
   const getWeekDays = () => {
     const startOfWeek = new Date(currentDate);
@@ -77,6 +69,15 @@ export const WeeklyScheduleView: React.FC<WeeklyScheduleViewProps> = ({
   const isToday = (date: Date) => {
     const today = new Date();
     return date.toDateString() === today.toDateString();
+  };
+
+  const getHolidaysForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return holidays.filter(holiday => holiday.date === dateStr);
+  };
+
+  const isHoliday = (date: Date) => {
+    return getHolidaysForDate(date).length > 0;
   };
 
   const weekDays = getWeekDays();

@@ -1,28 +1,20 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useIsraeliHolidays } from '@/hooks/useIsraeliHolidays';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import type { ShiftScheduleData, EmployeeData } from './types';
+import type { ShiftScheduleViewProps } from './types';
 
-interface MonthlyScheduleViewProps {
-  shifts: ShiftScheduleData[];
-  employees: EmployeeData[];
-  currentDate: Date;
-  onShiftClick: (shift: ShiftScheduleData) => void;
-  onShiftUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
-}
-
-export const MonthlyScheduleView: React.FC<MonthlyScheduleViewProps> = ({
+export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   shifts,
   employees,
   currentDate,
+  holidays,
   onShiftClick
 }) => {
   const isMobile = useIsMobile();
-  const { getHolidaysForDate, isHoliday } = useIsraeliHolidays();
 
   const getMonthCalendar = () => {
     const year = currentDate.getFullYear();
@@ -63,6 +55,15 @@ export const MonthlyScheduleView: React.FC<MonthlyScheduleViewProps> = ({
   const isToday = (date: Date) => {
     const today = new Date();
     return date.toDateString() === today.toDateString();
+  };
+
+  const getHolidaysForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return holidays.filter(holiday => holiday.date === dateStr);
+  };
+
+  const isHoliday = (date: Date) => {
+    return getHolidaysForDate(date).length > 0;
   };
 
   const calendar = getMonthCalendar();

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +21,7 @@ import { CreateShiftDialog } from './schedule/CreateShiftDialog';
 import { ShiftDetailsDialog } from './schedule/ShiftDetailsDialog';
 import { BulkShiftCreator } from './schedule/BulkShiftCreator';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
+import { useIsraeliHolidays } from '@/hooks/useIsraeliHolidays';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { ScheduleView, ShiftScheduleData } from './schedule/types';
 
@@ -47,6 +47,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     filters,
     updateFilters
   } = useShiftSchedule();
+
+  const { holidays, isLoading: holidaysLoading } = useIsraeliHolidays();
 
   const formatDateRange = () => {
     if (view === 'week') {
@@ -301,7 +303,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
         </CardHeader>
         
         <CardContent className="flex-1 flex flex-col min-h-0 p-0">
-          {loading ? (
+          {loading || holidaysLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
@@ -310,6 +312,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
               shifts={shifts}
               employees={employees}
               currentDate={currentDate}
+              holidays={holidays}
               onShiftClick={handleShiftClick}
               onShiftUpdate={updateShift}
             />
@@ -318,6 +321,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
               shifts={shifts}
               employees={employees}
               currentDate={currentDate}
+              holidays={holidays}
               onShiftClick={handleShiftClick}
               onShiftUpdate={updateShift}
             />

@@ -1,16 +1,17 @@
 
+import type { IsraeliHoliday } from '@/hooks/useIsraeliHolidays';
+
 export type ScheduleView = 'week' | 'month';
 
 export interface ShiftScheduleData {
   id: string;
-  employee_id: string;
   shift_date: string;
   start_time: string;
   end_time: string;
-  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  employee_id: string;
   branch_id?: string;
   branch_name?: string;
-  role_preference?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
   notes?: string;
   created_at: string;
 }
@@ -21,7 +22,6 @@ export interface EmployeeData {
   last_name: string;
   phone?: string;
   email?: string;
-  employee_id?: string;
 }
 
 export interface BranchData {
@@ -30,9 +30,21 @@ export interface BranchData {
   address?: string;
 }
 
-export interface ScheduleFilters {
-  status: 'all' | 'pending' | 'approved' | 'rejected' | 'completed';
-  employee: 'all' | string;
-  branch: 'all' | string;
-  role: 'all' | string;
+export interface ShiftFilters {
+  employeeId?: string;
+  branchId?: string;
+  status?: string;
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+}
+
+export interface ShiftScheduleViewProps {
+  shifts: ShiftScheduleData[];
+  employees: EmployeeData[];
+  currentDate: Date;
+  holidays: IsraeliHoliday[];
+  onShiftClick: (shift: ShiftScheduleData) => void;
+  onShiftUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
 }
