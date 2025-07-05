@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { ShiftScheduleData, Employee, Branch } from '../types';
@@ -40,7 +39,9 @@ export const useShiftScheduleData = (businessId: string | null) => {
             is_assigned,
             is_archived,
             created_at,
+            updated_at,
             business_id,
+            shift_template_id,
             employee:employees(first_name, last_name, business_id),
             branch:branches(name, business_id)
           `)
@@ -55,23 +56,29 @@ export const useShiftScheduleData = (businessId: string | null) => {
 
         console.log('✅ Raw shifts data:', data);
 
-        const transformedShifts = (data || []).map(shift => {
+        const transformedShifts: ShiftScheduleData[] = (data || []).map(shift => {
           // Determine status based on is_assigned field
           const rawStatus = shift.is_assigned ? 'approved' : 'pending';
           const validatedStatus = parseStatus(rawStatus);
 
           return {
             id: shift.id,
+            business_id: shift.business_id,
             employee_id: shift.employee_id || '',
             shift_date: shift.shift_date,
             start_time: '09:00', // Default time - this should come from shift templates later
             end_time: '17:00', // Default time - this should come from shift templates later
+            role: undefined,
+            notes: shift.notes || '',
             status: validatedStatus,
+            created_at: shift.created_at,
+            updated_at: shift.updated_at || shift.created_at,
+            is_assigned: shift.is_assigned,
+            is_archived: shift.is_archived,
+            shift_template_id: shift.shift_template_id || undefined,
             branch_id: shift.branch_id || '',
             branch_name: shift.branch?.name || 'לא צוין',
-            role_preference: '',
-            notes: shift.notes || '',
-            created_at: shift.created_at
+            role_preference: ''
           };
         });
 

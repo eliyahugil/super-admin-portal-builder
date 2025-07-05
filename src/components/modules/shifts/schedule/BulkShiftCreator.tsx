@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,7 @@ import type { ShiftScheduleData, Employee, Branch } from './types';
 interface BulkShiftCreatorProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (shifts: Omit<ShiftScheduleData, 'id' | 'created_at'>[]) => Promise<void>;
+  onSubmit: (shifts: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>[]) => Promise<void>;
   employees: Employee[];
   branches: Branch[];
 }
@@ -55,10 +54,10 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
     );
   };
 
-  const generateShifts = (): Omit<ShiftScheduleData, 'id' | 'created_at'>[] => {
+  const generateShifts = (): Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>[] => {
     if (!startDate || !endDate || selectedDays.length === 0) return [];
 
-    const shifts: Omit<ShiftScheduleData, 'id' | 'created_at'>[] = [];
+    const shifts: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>[] = [];
     let currentDate = new Date(startDate);
 
     while (!isAfter(currentDate, endDate)) {
@@ -69,9 +68,14 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
           shift_date: format(currentDate, 'yyyy-MM-dd'),
           start_time: startTime,
           end_time: endTime,
+          employee_id: undefined,
           branch_id: branchId || undefined,
           role: role || undefined,
-          status: 'pending'
+          notes: undefined,
+          status: 'pending',
+          shift_template_id: undefined,
+          branch_name: undefined,
+          role_preference: undefined
         });
       }
       
