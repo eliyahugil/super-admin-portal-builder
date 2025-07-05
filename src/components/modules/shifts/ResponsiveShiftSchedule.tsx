@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { WeeklyScheduleView } from './schedule/WeeklyScheduleView';
@@ -11,8 +10,8 @@ import { BulkShiftCreator } from './schedule/BulkShiftCreator';
 import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
 import { ScheduleErrorBoundary } from './schedule/ScheduleErrorBoundary';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
-import { useIsraeliHolidays } from '@/hooks/useIsraeliHolidays';
-import { useShabbatTimes } from '@/hooks/useShabbatTimes';
+import { useIsraeliHolidaysFromGov } from '@/hooks/useIsraeliHolidaysFromGov';
+import { useShabbatTimesFromGov } from '@/hooks/useShabbatTimesFromGov';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScheduleHeader } from './schedule/components/ScheduleHeader';
 import { ScheduleActions } from './schedule/components/ScheduleActions';
@@ -45,8 +44,9 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     businessId
   } = useShiftSchedule();
 
-  const { holidays, isLoading: holidaysLoading } = useIsraeliHolidays();
-  const { shabbatTimes, isLoading: shabbatLoading } = useShabbatTimes();
+  // Use the new government API hooks
+  const { holidays, isLoading: holidaysLoading } = useIsraeliHolidaysFromGov();
+  const { shabbatTimes, isLoading: shabbatLoading } = useShabbatTimesFromGov();
 
   console.log('📊 ResponsiveShiftSchedule - Current state:', {
     businessId,
@@ -56,7 +56,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     holidaysCount: holidays.length,
     shabbatTimesCount: shabbatTimes.length,
     loading,
-    error: error?.message || null
+    error: error?.message || null,
+    usingGovernmentAPI: true
   });
 
   // Handle retry for errors
@@ -127,7 +128,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900`}>לוח משמרות</h1>
-            <p className="text-gray-600 mt-1">ניהול וצפייה בלוח הזמנים השבועי והחודשי</p>
+            <p className="text-gray-600 mt-1">ניהול וצפייה בלוח הזמנים השבועי והחודשי עם חגים וזמני שבת</p>
           </div>
           
           <ScheduleActions
@@ -172,7 +173,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-gray-600">טוען נתוני משמרות...</p>
+                <p className="mt-2 text-gray-600">טוען נתוני משמרות, חגים וזמני שבת מ-API הממשלתי...</p>
               </div>
             </div>
           ) : view === 'week' ? (
