@@ -30,7 +30,7 @@ export const ShabbatIndicator: React.FC<ShabbatIndicatorProps> = ({
           <div>🕯️ הדלקת נרות: {shabbatTimes.candleLighting}</div>
         )}
         {isShabbat && shabbatTimes?.havdalah && (
-          <div>⭐ הבדלה: {shabbatTimes.havdalah}</div>
+          <div>⭐ צאת שבת: {shabbatTimes.havdalah}</div>
         )}
         {isShabbat && !shabbatTimes?.havdalah && (
           <div>🕯️ שבת</div>
@@ -51,7 +51,7 @@ export const ShabbatIndicator: React.FC<ShabbatIndicatorProps> = ({
         {isShabbat && shabbatTimes?.havdalah && (
           <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
             <Star className="h-3 w-3 mr-1" />
-            הבדלה: {shabbatTimes.havdalah}
+            צאת שבת: {shabbatTimes.havdalah}
           </Badge>
         )}
         {isShabbat && !shabbatTimes?.havdalah && (
