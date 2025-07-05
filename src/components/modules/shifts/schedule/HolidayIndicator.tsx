@@ -2,7 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Star } from 'lucide-react';
-import { IsraeliHoliday } from '@/hooks/useIsraeliHolidays';
+import { IsraeliHoliday } from '@/hooks/useIsraeliHolidaysFromHebcal';
 
 interface HolidayIndicatorProps {
   holidays: IsraeliHoliday[];
@@ -27,6 +27,8 @@ export const HolidayIndicator: React.FC<HolidayIndicatorProps> = ({
         return 'bg-gray-100 text-gray-800';
       case 'יום עצמאות':
         return 'bg-blue-100 text-blue-800';
+      case 'צום':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-green-100 text-green-800';
     }
@@ -41,6 +43,8 @@ export const HolidayIndicator: React.FC<HolidayIndicatorProps> = ({
         return <Calendar className="h-3 w-3" />;
       case 'יום עצמאות':
         return <Star className="h-3 w-3" />;
+      case 'צום':
+        return <Calendar className="h-3 w-3" />;
       default:
         return <Calendar className="h-3 w-3" />;
     }
