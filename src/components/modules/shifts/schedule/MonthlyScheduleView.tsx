@@ -53,13 +53,20 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     }
   };
 
+  const hebrewMonthNames = [
+    'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+    'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
+  ];
+
+  const currentMonthName = hebrewMonthNames[currentDate.getMonth()];
+
   return (
     <div className="h-full flex gap-4" dir="rtl">
       {/* Calendar */}
       <Card className="flex-1">
         <CardHeader>
-          <h3 className="text-lg font-semibold">
-            {currentDate.toLocaleDateString('he-IL', { year: 'numeric', month: 'long' })}
+          <h3 className="text-lg font-semibold text-center">
+            {currentMonthName} {currentDate.getFullYear()}
           </h3>
         </CardHeader>
         <CardContent>
@@ -68,6 +75,18 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
             selected={currentDate}
             onSelect={handleDateSelect}
             className="w-full"
+            dir="rtl"
+            locale={{
+              localize: {
+                day: (n: number) => {
+                  const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+                  return days[n];
+                },
+                month: (n: number) => hebrewMonthNames[n]
+              },
+              formatLong: {},
+              match: {}
+            } as any}
             modifiers={{
               hasShifts: (date) => getShiftsForDate(date).length > 0,
               isHoliday: (date) => getHolidaysForDate(date).length > 0,
@@ -96,25 +115,25 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
           <div className="space-y-2">
             <h4 className="font-semibold">סטטיסטיקות חודשיות</h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="p-2 bg-blue-50 rounded">
-                <div className="font-semibold text-blue-800">{shifts.length}</div>
-                <div className="text-blue-600">סה"כ משמרות</div>
+              <div className="p-2 bg-blue-50 rounded text-center">
+                <div className="font-semibold text-blue-800 text-lg">{shifts.length}</div>
+                <div className="text-blue-600 text-xs">סה"כ משמרות</div>
               </div>
-              <div className="p-2 bg-green-50 rounded">
-                <div className="font-semibold text-green-800">
+              <div className="p-2 bg-green-50 rounded text-center">
+                <div className="font-semibold text-green-800 text-lg">
                   {shifts.filter(s => s.status === 'approved').length}
                 </div>
-                <div className="text-green-600">משמרות מאושרות</div>
+                <div className="text-green-600 text-xs">משמרות מאושרות</div>
               </div>
-              <div className="p-2 bg-yellow-50 rounded">
-                <div className="font-semibold text-yellow-800">
+              <div className="p-2 bg-yellow-50 rounded text-center">
+                <div className="font-semibold text-yellow-800 text-lg">
                   {shifts.filter(s => s.status === 'pending').length}
                 </div>
-                <div className="text-yellow-600">ממתינות לאישור</div>
+                <div className="text-yellow-600 text-xs">ממתינות לאישור</div>
               </div>
-              <div className="p-2 bg-purple-50 rounded">
-                <div className="font-semibold text-purple-800">{holidays.length}</div>
-                <div className="text-purple-600">חגים ומועדים</div>
+              <div className="p-2 bg-purple-50 rounded text-center">
+                <div className="font-semibold text-purple-800 text-lg">{holidays.length}</div>
+                <div className="text-purple-600 text-xs">חגים ומועדים</div>
               </div>
             </div>
           </div>

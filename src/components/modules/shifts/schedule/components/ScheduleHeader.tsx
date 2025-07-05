@@ -20,6 +20,11 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
   navigateDate,
   isMobile
 }) => {
+  const hebrewMonthNames = [
+    'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+    'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
+  ];
+
   const formatDateRange = () => {
     if (view === 'week') {
       const startOfWeek = new Date(currentDate);
@@ -27,32 +32,41 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       
-      return `${startOfWeek.toLocaleDateString('he-IL')} - ${endOfWeek.toLocaleDateString('he-IL')}`;
+      const startMonth = hebrewMonthNames[startOfWeek.getMonth()];
+      const endMonth = hebrewMonthNames[endOfWeek.getMonth()];
+      
+      if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
+        return `${startOfWeek.getDate()}-${endOfWeek.getDate()} ${startMonth} ${startOfWeek.getFullYear()}`;
+      } else {
+        return `${startOfWeek.getDate()} ${startMonth} - ${endOfWeek.getDate()} ${endMonth} ${endOfWeek.getFullYear()}`;
+      }
     } else if (view === 'month') {
-      return currentDate.toLocaleDateString('he-IL', { year: 'numeric', month: 'long' });
+      return `${hebrewMonthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
     } else {
-      return currentDate.toLocaleDateString('he-IL', { year: 'numeric' });
+      return `${currentDate.getFullYear()}`;
     }
   };
 
   return (
     <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'items-center justify-between'}`}>
       <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center gap-4'}`}>
-        <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'}`}>
+        <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} text-center`}>
           {formatDateRange()}
         </CardTitle>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-center gap-1">
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigateDate(-1)}
           >
             <ChevronRight className="h-4 w-4" />
+            {view === 'week' ? 'שבוע קודם' : view === 'month' ? 'חודש קודם' : 'שנה קודמת'}
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigateDate(0)}
+            className="px-4"
           >
             היום
           </Button>
@@ -62,11 +76,12 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
             onClick={() => navigateDate(1)}
           >
             <ChevronLeft className="h-4 w-4" />
+            {view === 'week' ? 'שבוע הבא' : view === 'month' ? 'חודש הבא' : 'שנה הבאה'}
           </Button>
         </div>
       </div>
       
-      <div className="flex items-center gap-2">
+      <div className={`flex items-center gap-2 ${isMobile ? 'justify-center' : ''}`}>
         <Button
           variant={view === 'week' ? 'default' : 'outline'}
           size="sm"

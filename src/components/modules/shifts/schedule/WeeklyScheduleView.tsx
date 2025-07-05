@@ -66,6 +66,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     }
   };
 
+  // Hebrew day names - ordered from Sunday to Saturday for RTL display
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
   // Mobile layout - vertical scrolling list
@@ -174,10 +175,10 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     );
   }
 
-  // Desktop layout - grid view
+  // Desktop layout - grid view with RTL ordering (Sunday on right, Saturday on left)
   return (
     <div className="h-full flex flex-col" dir="rtl">
-      <div className="grid grid-cols-7 gap-2 flex-1">
+      <div className="grid grid-cols-7 gap-2 flex-1" style={{ direction: 'rtl' }}>
         {weekDays.map((date, index) => {
           const dayShifts = getShiftsForDate(date);
           const dayHolidays = getHolidaysForDate(date);
@@ -188,11 +189,14 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
           return (
             <Card key={date.toISOString()} className={`flex flex-col min-h-0 ${isToday ? 'ring-2 ring-blue-500' : ''}`}>
               <CardHeader className="pb-2">
-                <CardTitle className={`text-sm font-medium ${isWeekend ? 'text-blue-600' : ''}`}>
+                <CardTitle className={`text-sm font-medium text-center ${isWeekend ? 'text-blue-600' : ''}`}>
                   <div className="flex flex-col items-center">
                     <span>{dayNames[index]}</span>
                     <span className={`text-lg ${isToday ? 'font-bold text-blue-600' : ''}`}>
                       {date.getDate()}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {date.toLocaleDateString('he-IL', { month: 'short' })}
                     </span>
                   </div>
                 </CardTitle>
@@ -222,7 +226,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                       onClick={() => onShiftClick(shift)}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <Badge variant="secondary" className={getStatusColor(shift.status || 'pending')}>
+                        <Badge variant="secondary" className={`text-xs ${getStatusColor(shift.status || 'pending')}`}>
                           {shift.status === 'approved' ? 'מאושר' : 
                            shift.status === 'pending' ? 'ממתין' :
                            shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
@@ -231,20 +235,20 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                       
                       <div className="space-y-1 text-xs">
                         <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{shift.start_time} - {shift.end_time}</span>
+                          <Clock className="h-3 w-3 text-gray-500" />
+                          <span className="font-medium">{shift.start_time} - {shift.end_time}</span>
                         </div>
                         
                         {shift.employee_id && (
                           <div className="flex items-center gap-1">
-                            <User className="h-3 w-3" />
+                            <User className="h-3 w-3 text-gray-500" />
                             <span className="truncate">{getEmployeeName(shift.employee_id)}</span>
                           </div>
                         )}
                         
                         {shift.branch_name && (
                           <div className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
+                            <MapPin className="h-3 w-3 text-gray-500" />
                             <span className="truncate">{shift.branch_name}</span>
                           </div>
                         )}
@@ -257,7 +261,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full mt-2"
+                  className="w-full mt-2 text-xs"
                   onClick={() => {
                     console.log('Add shift for date:', date);
                   }}
