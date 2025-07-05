@@ -3,208 +3,130 @@ import { useQuery } from '@tanstack/react-query';
 
 export interface ShabbatTimes {
   date: string;
-  candleLighting: string;
-  havdalah: string;
-  parsha: string;
-  location: string;
+  candleLighting?: string;
+  havdalah?: string;
+  parsha?: string;
 }
 
-interface HebcalResponse {
-  title: string;
-  date: string;
-  location?: {
-    title: string;
-    city: string;
-    tzid: string;
-    latitude: number;
-    longitude: number;
-    cc: string;
-    country: string;
-  };
-  range: {
-    start: string;
-    end: string;
-  };
+interface HebcalShabbatResponse {
   items: Array<{
-    title: string;
     date: string;
-    hdate?: string;
+    hebrew?: string;
+    title: string;
     category: string;
     subcat?: string;
-    hebrew?: string;
     memo?: string;
-    title_orig?: string;
   }>;
 }
 
 const fetchShabbatTimesFromHebcal = async (): Promise<ShabbatTimes[]> => {
   try {
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = new Date().getFullYear();
+    const nextYear = currentYear + 1;
     
-    // Get data for current and next month to ensure we have upcoming Shabbat times
-    const months = [currentMonth, currentMonth + 1].map(month => {
-      const adjustedMonth = month > 12 ? month - 12 : month;
-      const adjustedYear = month > 12 ? currentYear + 1 : currentYear;
-      return { year: adjustedYear, month: adjustedMonth };
-    });
-
-    let allShabbatTimes: ShabbatTimes[] = [];
-
-    for (const { year, month } of months) {
-      // Build Hebcal.com API URL for Israel with candle lighting and havdalah times
-      const params = new URLSearchParams({
-        v: '1',
-        cfg: 'json',
-        year: year.toString(),
-        month: month.toString(),
-        i: 'on', // Israel
-        c: 'on', // Candle lighting times
-        M: 'on', // Havdalah times
-        s: 'on', // Parsha (Torah reading)
-        geo: 'geonameid',
-        geonameid: '294640', // Jerusalem, Israel
-        b: '40', // Jerusalem - 40 minutes before sunset for candle lighting
-      });
-
-      const url = `https://www.hebcal.com/hebcal?${params.toString()}`;
+    console.log('🕯️ Fetching Shabbat times from Hebcal for years:', currentYear, nextYear);
+    
+    const promises = [currentYear, nextYear].map(async (year) => {
+      // URL לקבלת זמני שבת ופרשות השבוע מירושלים
+      const url = `https://www.hebcal.com/hebcal?v=1&cfg=json&c=on&geo=geoname&geonameid=281184&year=${year}&s=on`;
       
-      console.log(`🔍 Fetching Shabbat times from Hebcal.com for ${year}-${month}:`, url);
+      console.log(`🕯️ Fetching Shabbat times for year ${year}:`, url);
       
       const response = await fetch(url);
       
       if (!response.ok) {
-        console.warn(`Failed to fetch Shabbat times: ${response.status}`);
-        continue;
+        console.error(`HTTP error for Shabbat times year ${year}:`, response.status);
+        return [];
       }
       
-      const data: HebcalResponse = await response.json();
+      const data: HebcalShabbatResponse = await response.json();
+      console.log(`✅ Received ${data.items?.length || 0} Shabbat items for year ${year}`);
       
-      console.log(`🕯️ Received ${data.items?.length || 0} items from Hebcal.com for ${year}-${month}`);
-      
-      if (!data.items || data.items.length === 0) {
-        continue;
+      if (!data.items || !Array.isArray(data.items)) {
+        console.warn(`No Shabbat items found for year ${year}`);
+        return [];
       }
-
-      // Group items by date to combine candle lighting, havdalah, and parsha
-      const itemsByDate: { [key: string]: any[] } = {};
+      
+      // קבץ את האירועים לפי תאריכי שבת
+      const shabbatMap = new Map<string, Partial<ShabbatTimes>>();
       
       data.items.forEach(item => {
-        let dateStr = item.date;
-        if (dateStr.includes('T')) {
-          dateStr = dateStr.split('T')[0];
+        const itemDate = new Date(item.date);
+        const fridayDate = new Date(itemDate);
+        
+        // מצא את יום שישי הקרוב
+        const dayOfWeek = itemDate.getDay();
+        if (dayOfWeek === 5) { // יום שישי
+          fridayDate.setDate(itemDate.getDate());
+        } else if (dayOfWeek === 6) { // יום שבת
+          fridayDate.setDate(itemDate.getDate() - 1);
+        } else {
+          return; // לא רלוונטי
         }
         
-        if (!itemsByDate[dateStr]) {
-          itemsByDate[dateStr] = [];
-        }
-        itemsByDate[dateStr].push(item);
-      });
-
-      // Process each date and extract Shabbat-related information
-      Object.entries(itemsByDate).forEach(([dateStr, items]) => {
-        const date = new Date(dateStr);
-        const dayOfWeek = date.getDay();
+        const shabbatKey = fridayDate.toISOString().split('T')[0];
         
-        // Look for Friday (candle lighting) and Saturday (havdalah, parsha)
-        if (dayOfWeek === 5 || dayOfWeek === 6) { // Friday or Saturday
-          let candleLighting = '';
-          let havdalah = '';
-          let parsha = '';
-          
-          items.forEach(item => {
-            if (item.category === 'candles') {
-              // Extract time from title like "Candle lighting: 17:11"
-              const timeMatch = item.title.match(/(\d{1,2}:\d{2})/);
-              if (timeMatch) {
-                if (dayOfWeek === 5) { // Friday
-                  candleLighting = timeMatch[1];
-                } else if (dayOfWeek === 6) { // Saturday
-                  candleLighting = timeMatch[1];
-                }
-              }
-            } else if (item.category === 'havdalah') {
-              // Extract time from title like "Havdalah: 18:05"
-              const timeMatch = item.title.match(/(\d{1,2}:\d{2})/);
-              if (timeMatch) {
-                havdalah = timeMatch[1];
-              }
-            } else if (item.category === 'parashat') {
-              // Get parsha name
-              parsha = item.hebrew || item.title.replace('Parashat ', '').replace('פרשת ', '');
-            }
-          });
-          
-          // Create entry if we have meaningful data
-          if (candleLighting || havdalah || parsha) {
-            allShabbatTimes.push({
-              date: dateStr,
-              candleLighting: candleLighting,
-              havdalah: havdalah,
-              parsha: parsha,
-              location: data.location?.city || 'ירושלים'
-            });
-          }
+        if (!shabbatMap.has(shabbatKey)) {
+          shabbatMap.set(shabbatKey, { date: shabbatKey });
+        }
+        
+        const shabbatEntry = shabbatMap.get(shabbatKey)!;
+        
+        if (item.category === 'candles') {
+          shabbatEntry.candleLighting = item.title.match(/\d{2}:\d{2}/)?.[0];
+        } else if (item.category === 'havdalah') {
+          shabbatEntry.havdalah = item.title.match(/\d{2}:\d{2}/)?.[0];
+        } else if (item.category === 'parashat') {
+          shabbatEntry.parsha = item.hebrew || item.title.replace('Parashat ', '');
         }
       });
-    }
+      
+      return Array.from(shabbatMap.values()) as ShabbatTimes[];
+    });
     
-    // Remove duplicates and sort by date
-    const uniqueShabbatTimes = allShabbatTimes.filter((times, index, self) => 
-      index === self.findIndex(t => t.date === times.date)
-    ).sort((a, b) => a.date.localeCompare(b.date));
+    const results = await Promise.all(promises);
+    const allShabbats = results.flat().filter(s => s.candleLighting || s.havdalah || s.parsha);
     
-    console.log(`🕯️ Final result: ${uniqueShabbatTimes.length} unique Shabbat times from Hebcal.com`);
-    return uniqueShabbatTimes;
+    console.log('🕯️ Total Shabbat times loaded:', allShabbats.length);
+    console.log('🕯️ Sample Shabbat times:', allShabbats.slice(0, 3));
+    
+    return allShabbats;
   } catch (error) {
-    console.error('Error fetching Shabbat times from Hebcal.com:', error);
+    console.error('❌ Error fetching Shabbat times from Hebcal:', error);
     return [];
   }
 };
 
 export const useShabbatTimesFromHebcal = () => {
-  const { data: shabbatTimes = [], isLoading, error } = useQuery({
+  const { data: shabbatTimes = [], isLoading, error, refetch } = useQuery({
     queryKey: ['shabbat-times-hebcal'],
     queryFn: fetchShabbatTimesFromHebcal,
     staleTime: 1000 * 60 * 60 * 12, // Cache for 12 hours
-    gcTime: 1000 * 60 * 60 * 24 * 3, // Keep in memory for 3 days
-    retry: 2,
+    gcTime: 1000 * 60 * 60 * 24, // Keep in memory for 24 hours
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const getShabbatTimesForDate = (date: Date): ShabbatTimes | null => {
+  console.log('🔍 useShabbatTimesFromHebcal state:', {
+    shabbatTimesCount: shabbatTimes.length,
+    isLoading,
+    hasError: !!error
+  });
+
+  const getShabbatForDate = (date: Date): ShabbatTimes | null => {
     const dateStr = date.toISOString().split('T')[0];
-    return shabbatTimes.find(times => times.date === dateStr) || null;
-  };
-
-  const getShabbatTimesForWeek = (startDate: Date): ShabbatTimes[] => {
-    const weekTimes: ShabbatTimes[] = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      const times = getShabbatTimesForDate(date);
-      if (times) {
-        weekTimes.push(times);
-      }
+    const found = shabbatTimes.find(shabbat => shabbat.date === dateStr);
+    if (found) {
+      console.log(`🕯️ Shabbat for ${dateStr}:`, found);
     }
-    return weekTimes;
-  };
-
-  const isShabbat = (date: Date): boolean => {
-    return date.getDay() === 6; // Saturday
-  };
-
-  const isFriday = (date: Date): boolean => {
-    return date.getDay() === 5; // Friday
+    return found || null;
   };
 
   return {
     shabbatTimes,
     isLoading,
     error,
-    getShabbatTimesForDate,
-    getShabbatTimesForWeek,
-    isShabbat,
-    isFriday
+    refetch,
+    getShabbatForDate
   };
 };

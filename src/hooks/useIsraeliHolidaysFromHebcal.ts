@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 export interface IsraeliHoliday {
@@ -7,38 +8,16 @@ export interface IsraeliHoliday {
   hebrewName: string;
   type: 'חג' | 'מועד' | 'יום זיכרון' | 'יום עצמאות' | 'צום';
   isWorkingDay: boolean;
-  category: string;
-  subCategory?: string;
-  isYomTov?: boolean;
-  link?: string;
-  memo?: string;
 }
 
 interface HebcalResponse {
-  title: string;
-  date: string;
-  location?: {
-    title: string;
-    city: string;
-    tzid: string;
-    latitude: number;
-    longitude: number;
-    cc: string;
-    country: string;
-  };
-  range: {
-    start: string;
-    end: string;
-  };
   items: Array<{
-    title: string;
     date: string;
-    hdate?: string;
+    hebrew: string;
+    title: string;
     category: string;
     subcat?: string;
     yomtov?: boolean;
-    hebrew?: string;
-    link?: string;
     memo?: string;
   }>;
 }
@@ -46,116 +25,98 @@ interface HebcalResponse {
 const fetchIsraeliHolidaysFromHebcal = async (): Promise<IsraeliHoliday[]> => {
   try {
     const currentYear = new Date().getFullYear();
+    const nextYear = currentYear + 1;
     
-    // Build Hebcal.com API URL for Israel with comprehensive holiday data
-    const params = new URLSearchParams({
-      v: '1',
-      cfg: 'json',
-      year: currentYear.toString(),
-      i: 'on', // Israel holidays and Torah readings
-      maj: 'on', // Major holidays
-      min: 'on', // Minor holidays
-      mod: 'on', // Modern holidays (Yom HaShoah, Yom Ha'atzmaut, etc.)
-      nx: 'on', // Rosh Chodesh
-      mf: 'on', // Minor fasts
-      ss: 'on', // Special Shabbatot
-      c: 'on', // Candle lighting times
-      M: 'on', // Havdalah
-      geo: 'geonameid',
-      geonameid: '294640', // Jerusalem, Israel
-      lg: 'h', // Hebrew language for event titles
+    console.log('🎃 Fetching holidays from Hebcal for years:', currentYear, nextYear);
+    
+    // נקבל נתונים לשנה הנוכחית והשנה הבאה
+    const promises = [currentYear, nextYear].map(async (year) => {
+      const url = `https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&year=${year}&month=x&ss=on&mf=on&c=on&geo=geoname&geonameid=281184&M=on&s=on`;
+      
+      console.log(`📅 Fetching holidays for year ${year}:`, url);
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        console.error(`HTTP error for year ${year}:`, response.status);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data: HebcalResponse = await response.json();
+      console.log(`✅ Received ${data.items?.length || 0} items for year ${year}`);
+      
+      if (!data.items || !Array.isArray(data.items)) {
+        console.warn(`No items array found for year ${year}`);
+        return [];
+      }
+      
+      return data.items
+        .filter(item => {
+          // סנן רק חגים ומועדים רלוונטיים
+          const isRelevant = item.category === 'holiday' || 
+                           item.category === 'roshchodesh' ||
+                           item.yomtov === true ||
+                           item.subcat === 'major' ||
+                           item.subcat === 'minor';
+          
+          if (isRelevant) {
+            console.log(`📍 Including holiday: ${item.hebrew} (${item.title}) - ${item.date}`);
+          }
+          
+          return isRelevant;
+        })
+        .map(item => ({
+          date: item.date,
+          name: item.title || item.hebrew,
+          hebrewName: item.hebrew || item.title,
+          type: mapHolidayType(item.category, item.subcat, item.title),
+          isWorkingDay: !item.yomtov // אם זה לא יום טוב, זה יום עבודה
+        }));
     });
-
-    const url = `https://www.hebcal.com/hebcal?${params.toString()}`;
     
-    console.log('🔍 Fetching holidays from Hebcal.com:', url);
+    const results = await Promise.all(promises);
+    const allHolidays = results.flat();
     
-    const response = await fetch(url);
+    console.log('🎊 Total holidays loaded:', allHolidays.length);
+    console.log('🎊 Sample holidays:', allHolidays.slice(0, 5));
     
-    if (!response.ok) {
-      throw new Error(`Hebcal API request failed: ${response.status}`);
-    }
-    
-    const data: HebcalResponse = await response.json();
-    
-    console.log(`📅 Received ${data.items?.length || 0} items from Hebcal.com`);
-    
-    if (!data.items || data.items.length === 0) {
-      console.warn('No items received from Hebcal API');
-      return [];
-    }
-
-    // Filter and transform holiday data
-    const holidays = data.items
-      .filter(item => {
-        // Include only actual holidays, exclude candle lighting and havdalah times
-        return item.category === 'holiday' || 
-               item.category === 'roshchodesh' ||
-               item.category === 'modern' ||
-               item.category === 'minor' ||
-               (item.category === 'fast' && item.subcat !== 'modern');
-      })
-      .map(item => {
-        // Parse date to ensure proper format
-        let dateStr = item.date;
-        if (dateStr.includes('T')) {
-          dateStr = dateStr.split('T')[0];
-        }
-        
-        return {
-          date: dateStr,
-          name: item.title || '',
-          hebrewName: item.hebrew || item.title || '',
-          type: mapHolidayType(item.category, item.subcat),
-          isWorkingDay: !item.yomtov, // Yom Tov means no work
-          category: item.category,
-          subCategory: item.subcat,
-          isYomTov: item.yomtov || false,
-          link: item.link,
-          memo: item.memo
-        };
-      })
-      .filter(holiday => holiday.date && holiday.hebrewName);
-
-    console.log(`✅ Successfully parsed ${holidays.length} holidays from Hebcal.com`);
-    return holidays;
+    return allHolidays;
   } catch (error) {
-    console.error('Error fetching holidays from Hebcal.com:', error);
+    console.error('❌ Error fetching Israeli holidays from Hebcal:', error);
+    // החזר רשימה ריקה במקום לגרום לקריסה
     return [];
   }
 };
 
-const mapHolidayType = (category: string, subCategory?: string): IsraeliHoliday['type'] => {
-  if (category === 'holiday') {
-    if (subCategory === 'major') return 'חג';
-    if (subCategory === 'minor') return 'מועד';
-    return 'חג';
-  }
-  
-  if (category === 'modern') {
-    if (subCategory === 'memorial') return 'יום זיכרון';
-    return 'יום עצמאות';
-  }
-  
-  if (category === 'fast') return 'צום';
-  if (category === 'roshchodesh') return 'מועד';
-  if (category === 'minor') return 'מועד';
-  
-  return 'חג';
+const mapHolidayType = (category: string, subcat?: string, title?: string): IsraeliHoliday['type'] => {
+  if (title?.includes('זיכרון') || title?.includes('Memorial')) return 'יום זיכרון';
+  if (title?.includes('עצמאות') || title?.includes('Independence')) return 'יום עצמאות';
+  if (title?.includes('צום') || title?.includes('Fast')) return 'צום';
+  if (category === 'holiday' || subcat === 'major') return 'חג';
+  return 'מועד';
 };
 
 export const useIsraeliHolidaysFromHebcal = () => {
-  const { data: holidays = [], isLoading, error } = useQuery({
+  const { data: holidays = [], isLoading, error, refetch } = useQuery({
     queryKey: ['israeli-holidays-hebcal'],
     queryFn: fetchIsraeliHolidaysFromHebcal,
-    staleTime: 1000 * 60 * 60 * 24, // Cache for 24 hours
-    gcTime: 1000 * 60 * 60 * 24 * 7, // Keep in memory for 7 days
-    retry: 2,
+    staleTime: 1000 * 60 * 60 * 12, // Cache for 12 hours
+    gcTime: 1000 * 60 * 60 * 24, // Keep in memory for 24 hours
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
+
+  console.log('🔍 useIsraeliHolidaysFromHebcal state:', {
+    holidaysCount: holidays.length,
+    isLoading,
+    hasError: !!error
   });
 
   const getHolidaysForDate = (date: Date): IsraeliHoliday[] => {
     const dateStr = date.toISOString().split('T')[0];
-    return holidays.filter(holiday => holiday.date === dateStr);
+    const found = holidays.filter(holiday => holiday.date === dateStr);
+    console.log(`📅 Holidays for ${dateStr}:`, found);
+    return found;
   };
 
   const getHolidaysForMonth = (year: number, month: number): IsraeliHoliday[] => {
@@ -179,6 +140,7 @@ export const useIsraeliHolidaysFromHebcal = () => {
     holidays,
     isLoading,
     error,
+    refetch,
     getHolidaysForDate,
     getHolidaysForMonth,
     isHoliday,

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Star } from 'lucide-react';
+import { Calendar, Star, Heart } from 'lucide-react';
 import { IsraeliHoliday } from '@/hooks/useIsraeliHolidaysFromHebcal';
 
 interface HolidayIndicatorProps {
@@ -15,22 +15,27 @@ export const HolidayIndicator: React.FC<HolidayIndicatorProps> = ({
   variant = 'badge',
   className = ''
 }) => {
-  if (holidays.length === 0) return null;
+  console.log('🎃 HolidayIndicator rendered with:', { holidaysCount: holidays.length, variant });
+
+  if (!holidays || holidays.length === 0) {
+    console.log('🎃 No holidays to display');
+    return null;
+  }
 
   const getHolidayColor = (type: IsraeliHoliday['type']) => {
     switch (type) {
       case 'חג':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'מועד':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'יום זיכרון':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
       case 'יום עצמאות':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'צום':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 text-purple-800 border-purple-200';
       default:
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 border-green-200';
     }
   };
 
@@ -40,7 +45,7 @@ export const HolidayIndicator: React.FC<HolidayIndicatorProps> = ({
       case 'מועד':
         return <Star className="h-3 w-3" />;
       case 'יום זיכרון':
-        return <Calendar className="h-3 w-3" />;
+        return <Heart className="h-3 w-3" />;
       case 'יום עצמאות':
         return <Star className="h-3 w-3" />;
       case 'צום':
@@ -66,20 +71,24 @@ export const HolidayIndicator: React.FC<HolidayIndicatorProps> = ({
     );
   }
 
+  // Default badge variant
   return (
     <div className={`space-y-1 ${className}`}>
-      {holidays.slice(0, 2).map((holiday, index) => (
-        <Badge
-          key={index}
-          variant="secondary"
-          className={`text-xs ${getHolidayColor(holiday.type)}`}
-        >
-          {getHolidayIcon(holiday.type)}
-          <span className="mr-1">{holiday.hebrewName}</span>
-        </Badge>
-      ))}
+      {holidays.slice(0, 2).map((holiday, index) => {
+        console.log('🎃 Rendering holiday badge:', holiday.hebrewName);
+        return (
+          <Badge
+            key={`${holiday.date}-${index}`}
+            variant="secondary"
+            className={`text-xs border ${getHolidayColor(holiday.type)} flex items-center gap-1`}
+          >
+            {getHolidayIcon(holiday.type)}
+            <span>{holiday.hebrewName}</span>
+          </Badge>
+        );
+      })}
       {holidays.length > 2 && (
-        <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
+        <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 border border-gray-200">
           +{holidays.length - 2} עוד
         </Badge>
       )}

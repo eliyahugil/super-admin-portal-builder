@@ -20,6 +20,13 @@ export const useCalendarIntegration = ({
   const { holidays, isLoading: holidaysLoading } = useIsraeliHolidaysFromHebcal();
   const { shabbatTimes, isLoading: shabbatLoading } = useShabbatTimesFromHebcal();
 
+  console.log('🔗 useCalendarIntegration state:', {
+    googleEventsCount: googleEvents.length,
+    holidaysCount: holidays.length,
+    shabbatTimesCount: shabbatTimes.length,
+    loading: { googleLoading, holidaysLoading, shabbatLoading }
+  });
+
   const combinedEvents = useMemo((): CalendarEvent[] => {
     const events: CalendarEvent[] = [];
 
@@ -41,8 +48,9 @@ export const useCalendarIntegration = ({
 
     // Add holidays
     holidays.forEach(holiday => {
+      console.log('🎃 Adding holiday to combined events:', holiday.hebrewName, holiday.date);
       events.push({
-        id: `holiday-${holiday.date}`,
+        id: `holiday-${holiday.date}-${holiday.hebrewName}`,
         title: holiday.hebrewName,
         date: holiday.date,
         type: 'holiday',
@@ -55,6 +63,7 @@ export const useCalendarIntegration = ({
 
     // Add Shabbat times
     shabbatTimes.forEach(shabbat => {
+      console.log('🕯️ Adding Shabbat to combined events:', shabbat.date);
       if (shabbat.candleLighting || shabbat.havdalah) {
         events.push({
           id: `shabbat-${shabbat.date}`,
@@ -92,12 +101,23 @@ export const useCalendarIntegration = ({
       });
     });
 
-    return events.sort((a, b) => a.date.localeCompare(b.date));
+    const sortedEvents = events.sort((a, b) => a.date.localeCompare(b.date));
+    console.log('🔗 Combined events created:', {
+      totalEvents: sortedEvents.length,
+      shifts: shifts.length,
+      holidays: holidays.length,
+      shabbats: shabbatTimes.length,
+      googleEvents: googleEvents.length
+    });
+
+    return sortedEvents;
   }, [shifts, employees, holidays, shabbatTimes, googleEvents]);
 
   const getEventsForDate = (date: Date): CalendarEvent[] => {
     const dateStr = date.toISOString().split('T')[0];
-    return combinedEvents.filter(event => event.date === dateStr);
+    const eventsForDate = combinedEvents.filter(event => event.date === dateStr);
+    console.log(`📅 Events for ${dateStr}:`, eventsForDate.length);
+    return eventsForDate;
   };
 
   const getEventsForDateRange = (startDate: Date, endDate: Date): CalendarEvent[] => {
