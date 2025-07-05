@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { HolidayIndicator } from './HolidayIndicator';
 import { ShabbatIndicator } from './components/ShabbatIndicator';
+import { GoogleCalendarFormatter } from '@/services/google-calendar/GoogleCalendarFormatter';
 import type { ShiftScheduleViewProps } from './types';
 
 export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
@@ -19,6 +20,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   onShiftUpdate
 }) => {
   const isMobile = useIsMobile();
+  const calendarFormatter = new GoogleCalendarFormatter();
 
   console.log('📅 WeeklyScheduleView - Received data:', {
     holidaysCount: holidays.length,
@@ -37,7 +39,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     for (let i = 0; i < 7; i++) {
       const day = new Date(startOfWeek);
       day.setDate(startOfWeek.getDate() + i);
-      days.push(day);
+      days.push(calendarFormatter.formatCalendarDay(day));
     }
     return days;
   };
@@ -74,10 +76,6 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     }
   };
 
-  const formatTime = (time: string) => {
-    return time.slice(0, 5);
-  };
-
   const isToday = (date: Date) => {
     const today = new Date();
     return date.toDateString() === today.toDateString();
@@ -105,12 +103,6 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     return getHolidaysForDate(date).length > 0;
   };
 
-  // Helper function to get Hebrew day name based on day.getDay()
-  const getHebrewDayName = (dayIndex: number) => {
-    const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-    return dayNames[dayIndex];
-  };
-
   const weekDays = getWeekDays();
 
   // Mobile view - vertical cards for each day
@@ -119,7 +111,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
       <div className="flex flex-col h-full space-y-4" dir="rtl">
         <ScrollArea className="flex-1">
           <div className="space-y-4 p-2">
-            {weekDays.map((day) => {
+            {weekDays.map((formattedDay) => {
+              const day = formattedDay.gregorianDate;
               const dayShifts = getShiftsForDay(day);
               const isCurrentDay = isToday(day);
               const holidaysForDay = getHolidaysForDate(day);
@@ -134,7 +127,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   {/* Day header */}
                   <div className="mb-4 pb-3 border-b">
                     <div className={`text-lg font-bold ${isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-900'}`}>
-                      {getHebrewDayName(day.getDay())}
+                      {formattedDay.hebrewDayName}
                     </div>
                     <div className={`text-2xl font-bold ${isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-700'}`}>
                       {day.getDate()}
@@ -169,7 +162,9 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-sm text-gray-600">
                               <Clock className="h-4 w-4" />
-                              <span className="font-medium">{formatTime(shift.start_time)} - {formatTime(shift.end_time)}</span>
+                              <span className="font-medium">
+                                {calendarFormatter.formatTimeForDisplay(shift.start_time)} - {calendarFormatter.formatTimeForDisplay(shift.end_time)}
+                              </span>
                             </div>
                             <Badge 
                               className={`text-xs ${getStatusColor(shift.status)}`}
@@ -211,9 +206,10 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   // Desktop view - table layout with RTL ordering
   return (
     <div className="flex flex-col h-full">
-      {/* Days Headers - Fixed - Sunday to Saturday (right to left for Hebrew) */}
+      {/* Days Headers - Fixed - Hebrew order (Sunday to Saturday, RTL) */}
       <div className="grid grid-cols-7 gap-1 bg-gray-50 sticky top-0 z-10 border-b">
-        {weekDays.slice().reverse().map((day) => {
+        {weekDays.slice().reverse().map((formattedDay) => {
+          const day = formattedDay.gregorianDate;
           const isCurrentDay = isToday(day);
           const holidaysForDay = getHolidaysForDate(day);
           const shabbatTimesForDay = getShabbatTimesForDate(day);
@@ -227,7 +223,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
               }`}
             >
               <div className="font-medium text-sm text-gray-900">
-                {getHebrewDayName(day.getDay())}
+                {formattedDay.hebrewDayName}
               </div>
               <div className={`text-lg font-bold ${
                 isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-700'
@@ -254,7 +250,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
       {/* Scrollable Content */}
       <ScrollArea className="flex-1">
         <div className="grid grid-cols-7 gap-1 min-h-96">
-          {weekDays.slice().reverse().map((day) => {
+          {weekDays.slice().reverse().map((formattedDay) => {
+            const day = formattedDay.gregorianDate;
             const dayShifts = getShiftsForDay(day);
             const hasHoliday = isHoliday(day);
             
@@ -270,7 +267,9 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                       <div className="space-y-1">
                         <div className="flex items-center gap-1 text-xs text-gray-600">
                           <Clock className="h-3 w-3" />
-                          <span>{formatTime(shift.start_time)} - {formatTime(shift.end_time)}</span>
+                          <span>
+                            {calendarFormatter.formatTimeForDisplay(shift.start_time)} - {calendarFormatter.formatTimeForDisplay(shift.end_time)}
+                          </span>
                         </div>
                         
                         <div className="flex items-center gap-1 text-xs text-gray-700">

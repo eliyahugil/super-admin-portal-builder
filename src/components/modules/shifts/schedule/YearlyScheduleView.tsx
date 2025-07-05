@@ -7,6 +7,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { HolidayIndicator } from './HolidayIndicator';
 import { ShabbatIndicator } from './components/ShabbatIndicator';
+import { GoogleCalendarFormatter } from '@/services/google-calendar/GoogleCalendarFormatter';
 import type { ShiftScheduleViewProps } from './types';
 
 export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
@@ -18,6 +19,7 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   onShiftClick
 }) => {
   const isMobile = useIsMobile();
+  const calendarFormatter = new GoogleCalendarFormatter();
 
   console.log('📅 YearlyScheduleView - Received data:', {
     holidaysCount: holidays.length,
@@ -25,33 +27,6 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     shiftsCount: shifts.length,
     currentYear: currentDate.getFullYear()
   });
-
-  const getYearCalendar = () => {
-    const year = currentDate.getFullYear();
-    const months = [];
-    
-    for (let month = 0; month < 12; month++) {
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      const daysInMonth = lastDay.getDate();
-      
-      const monthData = {
-        name: firstDay.toLocaleDateString('he-IL', { month: 'long' }),
-        month: month,
-        days: [],
-        firstDayOfWeek: firstDay.getDay() // 0 = Sunday, 1 = Monday, etc.
-      };
-      
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        monthData.days.push(date);
-      }
-      
-      months.push(monthData);
-    }
-    
-    return months;
-  };
 
   const getShiftsForDay = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
@@ -85,7 +60,8 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     return getHolidaysForDate(date).length > 0;
   };
 
-  const yearCalendar = getYearCalendar();
+  const yearCalendar = calendarFormatter.getYearCalendar(currentDate.getFullYear());
+  const weekDaysHeader = calendarFormatter.getWeekDaysHeader('short');
 
   return (
     <div className="flex flex-col h-full" dir="rtl">
@@ -94,43 +70,42 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
           {yearCalendar.map((monthData) => (
             <Card key={monthData.month} className="p-4">
               <h3 className="text-lg font-bold text-center mb-4 text-gray-800">
-                {monthData.name}
+                {monthData.hebrewName}
               </h3>
               
               <div className="grid grid-cols-7 gap-1 text-xs">
-                {/* Days of week header - Sunday to Saturday (right to left for Hebrew) */}
-                {['שבת', 'ו', 'ה', 'ד', 'ג', 'ב', 'א'].map((dayName) => (
+                {/* Days of week header - Hebrew order (Sunday to Saturday, RTL) */}
+                {weekDaysHeader.map((dayName) => (
                   <div key={dayName} className="text-center font-medium text-gray-600 p-1">
                     {dayName}
                   </div>
                 ))}
                 
-                {/* Empty cells for days before first day of month - RTL layout */}
-                {Array.from({ length: (6 - monthData.firstDayOfWeek) }, (_, i) => (
-                  <div key={`empty-${i}`} className="p-1"></div>
+                {/* Empty cells for days before first day of month */}
+                {Array.from({ length: monthData.firstDayOfWeek }, (_, i) => (
+                  <div key={`empty-start-${i}`} className="p-1"></div>
                 ))}
                 
-                {/* Days of the month - in natural order for RTL layout */}
-                {monthData.days.map((day) => {
+                {/* Days of the month - properly ordered */}
+                {monthData.days.map((formattedDay, dayIndex) => {
+                  const day = formattedDay.gregorianDate;
                   const dayShifts = getShiftsForDay(day);
                   const isCurrentDay = isToday(day);
                   const holidaysForDay = getHolidaysForDate(day);
                   const shabbatTimesForDay = getShabbatTimesForDate(day);
                   const hasHoliday = holidaysForDay.length > 0;
-                  const isShabbat = day.getDay() === 6;
-                  const isFriday = day.getDay() === 5;
                   
                   return (
                     <div
-                      key={day.toISOString()}
+                      key={`${monthData.month}-${dayIndex}`}
                       className={`p-1 text-center min-h-12 flex flex-col items-center justify-start rounded text-xs relative ${
                         isCurrentDay ? 'bg-blue-100 text-blue-800 font-bold border-2 border-blue-300' : 
                         hasHoliday ? 'bg-green-100 text-green-700 border border-green-300' :
-                        isShabbat ? 'bg-purple-50 text-purple-700' :
-                        isFriday && shabbatTimesForDay ? 'bg-purple-50 text-purple-700' :
+                        formattedDay.isShabbat ? 'bg-purple-50 text-purple-700' :
+                        formattedDay.isFriday && shabbatTimesForDay ? 'bg-purple-50 text-purple-700' :
                         'text-gray-700 hover:bg-gray-50'
                       } ${dayShifts.length > 0 ? 'ring-2 ring-blue-400' : ''}`}
-                      title={`${day.getDate()} ${monthData.name}${hasHoliday ? ` - ${holidaysForDay[0]?.hebrewName}` : ''}`}
+                      title={`${day.getDate()} ${monthData.hebrewName}${hasHoliday ? ` - ${holidaysForDay[0]?.hebrewName}` : ''}`}
                     >
                       <div className="font-medium mb-1">{day.getDate()}</div>
                       
@@ -151,13 +126,13 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                         )}
                         
                         {/* Shabbat indicators */}
-                        {isFriday && shabbatTimesForDay?.candleLighting && (
+                        {formattedDay.isFriday && shabbatTimesForDay?.candleLighting && (
                           <div className="text-xs text-purple-600 text-center">
                             🕯️
                           </div>
                         )}
                         
-                        {isShabbat && shabbatTimesForDay?.havdalah && (
+                        {formattedDay.isShabbat && shabbatTimesForDay?.havdalah && (
                           <div className="text-xs text-blue-600 text-center">
                             ⭐
                           </div>
@@ -166,6 +141,15 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                     </div>
                   );
                 })}
+                
+                {/* Empty cells for days after last day of month to complete the grid */}
+                {(() => {
+                  const totalCells = monthData.firstDayOfWeek + monthData.days.length;
+                  const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+                  return Array.from({ length: remainingCells }, (_, i) => (
+                    <div key={`empty-end-${i}`} className="p-1"></div>
+                  ));
+                })()}
               </div>
             </Card>
           ))}
