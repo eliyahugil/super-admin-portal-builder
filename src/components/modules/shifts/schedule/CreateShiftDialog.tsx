@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -41,28 +41,51 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
     shift_date: defaultDate || new Date().toISOString().split('T')[0],
     start_time: '09:00',
     end_time: '17:00',
-    employee_id: '', // Optional - can be empty for unassigned shifts
-    branch_id: branches[0]?.id || '',
-    branch_name: branches[0]?.name || '',
+    employee_id: '',
+    branch_id: '',
+    branch_name: '',
     role_preference: '',
     notes: '',
     status: 'pending' as const
   });
 
+  // Log for debugging
+  useEffect(() => {
+    console.log('📋 CreateShiftDialog - Available data:', {
+      branchesCount: branches.length,
+      employeesCount: employees.length,
+      branches: branches.map(b => ({ id: b.id, name: b.name, business_id: b.business_id }))
+    });
+  }, [branches, employees]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('📝 Creating shift with form data:', formData);
+    
     // Validate required fields
     if (!formData.shift_date || !formData.start_time || !formData.end_time) {
+      console.error('❌ Missing required fields');
+      return;
+    }
+
+    if (!formData.branch_id) {
+      console.error('❌ Branch is required');
       return;
     }
 
     const selectedBranch = branches.find(b => b.id === formData.branch_id);
     
+    if (!selectedBranch) {
+      console.error('❌ Selected branch not found in available branches');
+      return;
+    }
+
+    console.log('✅ Submitting shift data');
     onSubmit({
       ...formData,
-      branch_name: selectedBranch?.name || formData.branch_name,
-      employee_id: formData.employee_id || '', // Allow empty for unassigned shifts
+      branch_name: selectedBranch.name,
+      employee_id: formData.employee_id || '',
     });
 
     // Reset form
@@ -71,8 +94,8 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
       start_time: '09:00',
       end_time: '17:00',
       employee_id: '',
-      branch_id: branches[0]?.id || '',
-      branch_name: branches[0]?.name || '',
+      branch_id: '',
+      branch_name: '',
       role_preference: '',
       notes: '',
       status: 'pending'
@@ -84,6 +107,32 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Show warning if no branches available
+  if (branches.length === 0) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Calendar className="h-5 w-5" />
+              לא ניתן ליצור משמרת
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              לא נמצאו סניפים פעילים לעסק הזה. יש ליצור לפחות סניף אחד כדי ליצור משמרות.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={onClose}>
+                סגור
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -143,7 +192,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
           <div className="space-y-2">
             <Label htmlFor="branch" className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
-              סניף
+              סניף *
             </Label>
             <Select
               value={formData.branch_id}
@@ -152,6 +201,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
                 updateField('branch_id', value);
                 updateField('branch_name', selectedBranch?.name || '');
               }}
+              required
             >
               <SelectTrigger>
                 <SelectValue placeholder="בחר סניף" />

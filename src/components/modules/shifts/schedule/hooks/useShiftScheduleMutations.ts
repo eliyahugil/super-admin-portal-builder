@@ -1,32 +1,45 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { ShiftScheduleData } from '../types';
 
 export const useShiftScheduleMutations = (businessId: string | null) => {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Create shift mutation
   const createShiftMutation = useMutation({
     mutationFn: async (shiftData: Omit<ShiftScheduleData, 'id' | 'created_at'>) => {
-      console.log('🔧 Creating new shift:', shiftData);
+      console.log('🔄 Creating shift with data:', shiftData);
       
-      const insertData = {
-        shift_date: shiftData.shift_date,
-        branch_id: shiftData.branch_id || null,
-        employee_id: shiftData.employee_id || null,
-        is_assigned: !!shiftData.employee_id,
-        notes: shiftData.notes || null,
-        business_id: businessId,
-        shift_template_id: null,
-        is_archived: false
-      };
+      if (!businessId) {
+        throw new Error('Business ID is required');
+      }
 
+      // Verify the branch belongs to the current business
+      if (shiftData.branch_id) {
+        const { data: branch, error: branchError } = await supabase
+          .from('branches')
+          .select('business_id')
+          .eq('id', shiftData.branch_id)
+          .eq('business_id', businessId)
+          .single();
+
+        if (branchError || !branch) {
+          throw new Error('הסניף שנבחר לא שייך לעסק הזה');
+        }
+      }
+
+      // Create scheduled shift
       const { data, error } = await supabase
         .from('scheduled_shifts')
-        .insert(insertData)
+        .insert({
+          shift_date: shiftData.shift_date,
+          branch_id: shiftData.branch_id || null,
+          employee_id: shiftData.employee_id || null,
+          notes: shiftData.notes || null,
+          is_assigned: !!shiftData.employee_id,
+          business_id: businessId
+        })
         .select()
         .single();
 
@@ -39,105 +52,118 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-shifts'] });
-      toast({
-        title: 'הצלחה',
-        description: 'המשמרת נוצרה בהצלחה'
-      });
+      queryClient.invalidateQueries({ queryKey: ['schedule-shifts', businessId] });
+      toast.success('המשמרת נוצרה בהצלחה');
     },
-    onError: (error) => {
-      console.error('💥 Error creating shift:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן ליצור את המשמרת',
-        variant: 'destructive'
-      });
+    onError: (error: any) => {
+      console.error('❌ Create shift error:', error);
+      toast.error(error.message || 'שגיאה ביצירת המשמרת');
     }
   });
 
-  // Update shift mutation
   const updateShiftMutation = useMutation({
     mutationFn: async ({ shiftId, updates }: { shiftId: string; updates: Partial<ShiftScheduleData> }) => {
-      console.log('🔧 Updating shift:', shiftId, updates);
+      console.log('🔄 Updating shift:', shiftId, updates);
       
-      const updateData: any = {};
-      
-      if (updates.employee_id !== undefined) {
-        updateData.employee_id = updates.employee_id || null;
-        updateData.is_assigned = !!updates.employee_id;
+      if (!businessId) {
+        throw new Error('Business ID is required');
       }
-      if (updates.shift_date) updateData.shift_date = updates.shift_date;
-      if (updates.branch_id) updateData.branch_id = updates.branch_id;
-      if (updates.notes !== undefined) updateData.notes = updates.notes || null;
 
-      const { error } = await supabase
+      // Verify shift belongs to current business
+      const { data: existingShift, error: checkError } = await supabase
         .from('scheduled_shifts')
-        .update(updateData)
-        .eq('id', shiftId);
+        .select('business_id')
+        .eq('id', shiftId)
+        .eq('business_id', businessId)
+        .single();
+
+      if (checkError || !existingShift) {
+        throw new Error('המשמרת לא נמצאה או לא שייכת לעסק');
+      }
+
+      // If updating branch, verify it belongs to the business
+      if (updates.branch_id) {
+        const { data: branch, error: branchError } = await supabase
+          .from('branches')
+          .select('business_id')
+          .eq('id', updates.branch_id)
+          .eq('business_id', businessId)
+          .single();
+
+        if (branchError || !branch) {
+          throw new Error('הסניף שנבחר לא שייך לעסק הזה');
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('scheduled_shifts')
+        .update({
+          ...(updates.shift_date && { shift_date: updates.shift_date }),
+          ...(updates.branch_id !== undefined && { branch_id: updates.branch_id }),
+          ...(updates.employee_id !== undefined && { 
+            employee_id: updates.employee_id || null,
+            is_assigned: !!updates.employee_id
+          }),
+          ...(updates.notes !== undefined && { notes: updates.notes }),
+        })
+        .eq('id', shiftId)
+        .eq('business_id', businessId)
+        .select()
+        .single();
 
       if (error) {
         console.error('❌ Error updating shift:', error);
         throw error;
       }
 
-      console.log('✅ Shift updated successfully');
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-shifts'] });
-      toast({
-        title: 'הצלחה',
-        description: 'המשמרת עודכנה בהצלחה'
-      });
+      queryClient.invalidateQueries({ queryKey: ['schedule-shifts', businessId] });
+      toast.success('המשמרת עודכנה בהצלחה');
     },
-    onError: (error) => {
-      console.error('💥 Error updating shift:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן לעדכן את המשמרת',
-        variant: 'destructive'
-      });
+    onError: (error: any) => {
+      console.error('❌ Update shift error:', error);
+      toast.error(error.message || 'שגיאה בעדכון המשמרת');
     }
   });
 
-  // Delete shift mutation
   const deleteShiftMutation = useMutation({
     mutationFn: async (shiftId: string) => {
-      console.log('🗑️ Deleting shift:', shiftId);
+      console.log('🔄 Deleting shift:', shiftId);
       
-      const { error } = await supabase
-        .from('scheduled_shifts')
-        .update({ is_archived: true })
-        .eq('id', shiftId);
-
-      if (error) {
-        console.error('❌ Error archiving shift:', error);
-        throw error;
+      if (!businessId) {
+        throw new Error('Business ID is required');
       }
 
-      console.log('✅ Shift archived successfully');
+      const { error } = await supabase
+        .from('scheduled_shifts')
+        .delete()
+        .eq('id', shiftId)
+        .eq('business_id', businessId);
+
+      if (error) {
+        console.error('❌ Error deleting shift:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-shifts'] });
-      toast({
-        title: 'הצלחה',
-        description: 'המשמרת נמחקה בהצלחה'
-      });
+      queryClient.invalidateQueries({ queryKey: ['schedule-shifts', businessId] });
+      toast.success('המשמרת נמחקה בהצלחה');
     },
-    onError: (error) => {
-      console.error('💥 Error deleting shift:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן למחוק את המשמרת',
-        variant: 'destructive'
-      });
+    onError: (error: any) => {
+      console.error('❌ Delete shift error:', error);
+      toast.error(error.message || 'שגיאה במחיקת המשמרת');
     }
   });
 
   return {
-    createShift: (shiftData: Omit<ShiftScheduleData, 'id' | 'created_at'>) => 
-      createShiftMutation.mutate(shiftData),
+    createShift: createShiftMutation.mutate,
     updateShift: (shiftId: string, updates: Partial<ShiftScheduleData>) => 
       updateShiftMutation.mutate({ shiftId, updates }),
-    deleteShift: (shiftId: string) => deleteShiftMutation.mutate(shiftId)
+    deleteShift: deleteShiftMutation.mutate,
+    isCreating: createShiftMutation.isPending,
+    isUpdating: updateShiftMutation.isPending,
+    isDeleting: deleteShiftMutation.isPending
   };
 };

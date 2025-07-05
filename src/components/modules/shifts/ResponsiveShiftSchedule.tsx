@@ -37,10 +37,19 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     updateFilters,
     updateShift,
     deleteShift,
-    createShift
+    createShift,
+    businessId
   } = useShiftSchedule();
 
   const { holidays, isLoading: holidaysLoading } = useIsraeliHolidays();
+
+  console.log('📊 ResponsiveShiftSchedule - Current state:', {
+    businessId,
+    shiftsCount: shifts.length,
+    employeesCount: employees.length,
+    branchesCount: branches.length,
+    loading
+  });
 
   const handleShiftClick = (shift: ShiftScheduleData) => {
     setSelectedShift(shift);
@@ -57,6 +66,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   };
 
   const handleBulkCreate = async (shifts: Omit<ShiftScheduleData, 'id' | 'created_at'>[]) => {
+    console.log('📝 Creating bulk shifts:', shifts.length);
     for (const shift of shifts) {
       await createShift(shift);
     }
@@ -71,6 +81,18 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     await updateShift(shiftId, { employee_id: '' });
     setAssignmentShift(null);
   };
+
+  // Show loading state if no business context
+  if (!businessId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">טוען נתוני עסק...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`${isMobile ? 'p-4' : 'p-6'} space-y-4 lg:space-y-6 h-full flex flex-col`} dir="rtl">
