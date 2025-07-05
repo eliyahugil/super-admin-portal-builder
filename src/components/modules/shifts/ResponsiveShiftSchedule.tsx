@@ -145,13 +145,13 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const isLoading = loading || calendarLoading;
 
   return (
-    <div className={`${isMobile ? 'p-4' : 'p-6'} space-y-4 lg:space-y-6 h-full flex flex-col`} dir="rtl">
-      {/* Header */}
-      <div className="flex flex-col space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900`}>לוח משמרות</h1>
-            <p className="text-gray-600 mt-1">ניהול וצפייה בלוח הזמנים עם אינטגרציית Google Calendar, חגים וזמני שבת</p>
+    <div className={`${isMobile ? 'p-2' : 'p-6'} space-y-2 lg:space-y-6 h-full flex flex-col overflow-hidden`} dir="rtl">
+      {/* Mobile optimized header */}
+      <div className="flex flex-col space-y-2">
+        <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center justify-between'}`}>
+          <div className={isMobile ? 'text-center' : ''}>
+            <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-gray-900`}>לוח משמרות</h1>
+            {!isMobile && <p className="text-gray-600 mt-1">ניהול וצפייה בלוח הזמנים עם אינטגרציית Google Calendar, חגים וזמני שבת</p>}
           </div>
           
           <ScheduleActions
@@ -166,31 +166,33 @@ export const ResponsiveShiftSchedule: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Compact Stats Cards for mobile */}
       <ScheduleStats shifts={shifts} isMobile={isMobile} />
 
-      {/* Filters */}
+      {/* Compact Filters for mobile */}
       {showFilters && (
-        <ShiftScheduleFilters
-          filters={filters}
-          onFiltersChange={updateFilters}
-          employees={employees}
-          branches={branches}
-        />
+        <div className={isMobile ? 'pb-2' : ''}>
+          <ShiftScheduleFilters
+            filters={filters}
+            onFiltersChange={updateFilters}
+            employees={employees}
+            branches={branches}
+          />
+        </div>
       )}
 
-      {/* Main Content with Tabs */}
-      <div className="flex-1 flex flex-col min-h-0">
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="schedule">לוח משמרות</TabsTrigger>
-            <TabsTrigger value="holidays">חגים ומועדים</TabsTrigger>
-            <TabsTrigger value="google-calendar">Google Calendar</TabsTrigger>
+      {/* Main Content with Mobile-Optimized Tabs */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3 mb-2 h-8 text-xs' : 'grid-cols-3 mb-4'}`}>
+            <TabsTrigger value="schedule" className={isMobile ? 'text-xs px-2' : ''}>לוח משמרות</TabsTrigger>
+            <TabsTrigger value="holidays" className={isMobile ? 'text-xs px-2' : ''}>חגים ומועדים</TabsTrigger>
+            <TabsTrigger value="google-calendar" className={isMobile ? 'text-xs px-1' : ''}>Google</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="schedule" className="flex-1 flex flex-col min-h-0">
-            <Card className="flex-1 flex flex-col min-h-0">
-              <CardHeader className="pb-3">
+          <TabsContent value="schedule" className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <CardHeader className={`${isMobile ? 'pb-1 px-2 pt-2' : 'pb-3'}`}>
                 <ScheduleHeader
                   currentDate={currentDate}
                   view={view}
@@ -200,12 +202,12 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                 />
               </CardHeader>
               
-              <CardContent className="flex-1 flex flex-col min-h-0 p-0">
+              <CardContent className={`flex-1 flex flex-col min-h-0 overflow-hidden ${isMobile ? 'p-0' : 'p-0'}`}>
                 {isLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="mt-2 text-gray-600">טוען נתוני משמרות ולוח שנה...</p>
+                      <p className="mt-2 text-gray-600 text-sm">טוען נתוני משמרות ולוח שנה...</p>
                     </div>
                   </div>
                 ) : view === 'week' ? (
@@ -246,50 +248,50 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             </Card>
           </TabsContent>
           
-          <TabsContent value="holidays" className="flex-1">
+          <TabsContent value="holidays" className="flex-1 overflow-hidden">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">טוען נתוני חגים ומועדים...</p>
+                  <p className="mt-2 text-gray-600 text-sm">טוען נתוני חגים ומועדים...</p>
                 </div>
               </div>
             ) : (
               <HolidaysAndFestivalsTable 
                 holidays={holidays}
                 shabbatTimes={shabbatTimes}
-                className="h-full"
+                className="h-full overflow-auto"
               />
             )}
           </TabsContent>
 
-          <TabsContent value="google-calendar" className="flex-1">
+          <TabsContent value="google-calendar" className="flex-1 overflow-hidden">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">טוען אירועי Google Calendar...</p>
+                  <p className="mt-2 text-gray-600 text-sm">טוען אירועי Google Calendar...</p>
                 </div>
               </div>
             ) : (
               <GoogleCalendarEventsTable 
                 events={googleEvents}
                 businessId={businessId}
-                className="h-full"
+                className="h-full overflow-auto"
               />
             )}
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Debug Information */}
+      {/* Debug Information - smaller on mobile */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 left-4 bg-gray-800 text-white p-2 rounded text-xs max-w-xs opacity-75">
+        <div className={`fixed bottom-4 left-4 bg-gray-800 text-white p-2 rounded ${isMobile ? 'text-[10px] max-w-[120px]' : 'text-xs max-w-xs'} opacity-75`}>
           <div>טאב פעיל: {activeTab}</div>
-          <div>אירועים משולבים: {combinedEvents.length}</div>
-          <div>Google Calendar: {googleEvents.length}</div>
+          <div>אירועים: {combinedEvents.length}</div>
+          <div>Google: {googleEvents.length}</div>
           <div>חגים: {holidays.length}</div>
-          <div>זמני שבת: {shabbatTimes.length}</div>
+          <div>שבת: {shabbatTimes.length}</div>
           <div>טוען: {isLoading ? 'כן' : 'לא'}</div>
         </div>
       )}
