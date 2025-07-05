@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, Star, Clock } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar, Star, Clock, Filter } from 'lucide-react';
 import { IsraeliHoliday } from '@/hooks/useIsraeliHolidaysFromHebcal';
 import { ShabbatTimes } from '@/hooks/useShabbatTimesFromHebcal';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -19,6 +20,7 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
   className = ''
 }) => {
   const isMobile = useIsMobile();
+  const [typeFilter, setTypeFilter] = useState<string>('all');
 
   const combinedEvents = useMemo(() => {
     const events = [
@@ -46,6 +48,19 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
     
     return events;
   }, [holidays, shabbatTimes]);
+
+  // Filter events by type
+  const filteredEvents = useMemo(() => {
+    if (typeFilter === 'all') return combinedEvents;
+    
+    if (typeFilter === 'shabbat') {
+      return combinedEvents.filter(event => event.type === 'shabbat');
+    }
+    
+    return combinedEvents.filter(event => 
+      event.type === 'holiday' && event.category === typeFilter
+    );
+  }, [combinedEvents, typeFilter]);
 
   const getTypeColor = (type: string, category: string) => {
     if (type === 'shabbat') return 'bg-purple-100 text-purple-800';
@@ -92,22 +107,42 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
     });
   };
 
-  const getUpcomingEvents = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    return combinedEvents.filter(event => {
-      const eventDate = new Date(event.date);
-      return eventDate >= today;
-    }).slice(0, isMobile ? 15 : 10);
-  };
-
-  const upcomingEvents = getUpcomingEvents();
+  // Get unique categories for filter options
+  const availableTypes = useMemo(() => {
+    const types = new Set<string>();
+    types.add('שבת');
+    holidays.forEach(holiday => types.add(holiday.type));
+    return Array.from(types).sort();
+  }, [holidays]);
 
   // Mobile layout
   if (isMobile) {
     return (
       <div className={`space-y-4 p-2 ${className}`} dir="rtl">
+        {/* Filter Section */}
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-3">
+              <Filter className="h-4 w-4 text-gray-600" />
+              <span className="text-sm font-medium">סינון לפי סוג:</span>
+            </div>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הסוגים ({combinedEvents.length})</SelectItem>
+                <SelectItem value="shabbat">שבת ({shabbatTimes.length})</SelectItem>
+                {availableTypes.filter(type => type !== 'שבת').map(type => (
+                  <SelectItem key={type} value={type}>
+                    {type} ({holidays.filter(h => h.type === type).length})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </Card>
+
         {/* Statistics Cards - Mobile optimized */}
         <div className="grid grid-cols-2 gap-2">
           <Card className="p-2">
@@ -155,31 +190,31 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-orange-600" />
                 <div className="text-right">
-                  <div className="text-xl font-bold text-orange-600">{combinedEvents.length}</div>
-                  <div className="text-xs text-gray-600">סה"כ</div>
+                  <div className="text-xl font-bold text-orange-600">{filteredEvents.length}</div>
+                  <div className="text-xs text-gray-600">מוצגים</div>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Mobile Events List */}
+        {/* Mobile Events List - Full scrollable list */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              אירועים קרובים
+              {typeFilter === 'all' ? 'כל האירועים' : `${typeFilter} (${filteredEvents.length})`}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-2">
-            {upcomingEvents.length === 0 ? (
+            {filteredEvents.length === 0 ? (
               <div className="text-center py-6 text-gray-500">
                 <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">אין אירועים קרובים</p>
+                <p className="text-sm">אין אירועים מסוג זה</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {upcomingEvents.map((event) => (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {filteredEvents.map((event) => (
                   <Card key={event.id} className="p-3 bg-gray-50">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -229,9 +264,35 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
     );
   }
 
-  // Desktop layout - keep existing code
+  // Desktop layout - keep existing code with filter
   return (
     <div className={`space-y-6 ${className}`} dir="rtl">
+      {/* Filter Section */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-600" />
+              <span className="text-sm font-medium">סינון לפי סוג:</span>
+            </div>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-64">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הסוגים ({combinedEvents.length})</SelectItem>
+                <SelectItem value="shabbat">שבת ({shabbatTimes.length})</SelectItem>
+                {availableTypes.filter(type => type !== 'שבת').map(type => (
+                  <SelectItem key={type} value={type}>
+                    {type} ({holidays.filter(h => h.type === type).length})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -279,83 +340,85 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-orange-600" />
               <div>
-                <div className="text-2xl font-bold text-orange-600">{combinedEvents.length}</div>
-                <div className="text-sm text-gray-600">סה"כ אירועים</div>
+                <div className="text-2xl font-bold text-orange-600">{filteredEvents.length}</div>
+                <div className="text-sm text-gray-600">מוצגים</div>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Upcoming Events */}
+      {/* Desktop Events Table */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            אירועים קרובים
+            {typeFilter === 'all' ? 'כל האירועים' : `${typeFilter} (${filteredEvents.length})`}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {upcomingEvents.length === 0 ? (
+          {filteredEvents.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>אין אירועים קרובים</p>
+              <p>אין אירועים מסוג זה</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">תאריך</TableHead>
-                  <TableHead className="text-right">אירוע</TableHead>
-                  <TableHead className="text-right">סוג</TableHead>
-                  <TableHead className="text-right">פרטים</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {upcomingEvents.map((event) => (
-                  <TableRow key={event.id}>
-                    <TableCell className="font-medium">
-                      {formatDate(event.date)}
-                    </TableCell>
-                    <TableCell>{event.title}</TableCell>
-                    <TableCell>
-                      <Badge className={getTypeColor(event.type, event.category)}>
-                        {getTypeIcon(event.type, event.category)}
-                        <span className="mr-1">{event.category}</span>
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1 text-xs">
-                        {event.type === 'shabbat' && (
-                          <>
-                            {event.candleLighting && (
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                <span>הדלקת נרות: {event.candleLighting}</span>
-                              </div>
-                            )}
-                            {event.havdalah && (
-                              <div className="flex items-center gap-1">
-                                <Star className="h-3 w-3" />
-                                <span>צאת שבת: {event.havdalah}</span>
-                              </div>
-                            )}
-                          </>
-                        )}
-                        {event.type === 'holiday' && (
-                          <Badge 
-                            variant="secondary" 
-                            className={event.isWorkingDay ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}
-                          >
-                            {event.isWorkingDay ? 'יום עבודה' : 'לא יום עבודה'}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
+            <div className="max-h-96 overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right">תאריך</TableHead>
+                    <TableHead className="text-right">אירוע</TableHead>
+                    <TableHead className="text-right">סוג</TableHead>
+                    <TableHead className="text-right">פרטים</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredEvents.map((event) => (
+                    <TableRow key={event.id}>
+                      <TableCell className="font-medium">
+                        {formatDate(event.date)}
+                      </TableCell>
+                      <TableCell>{event.title}</TableCell>
+                      <TableCell>
+                        <Badge className={getTypeColor(event.type, event.category)}>
+                          {getTypeIcon(event.type, event.category)}
+                          <span className="mr-1">{event.category}</span>
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1 text-xs">
+                          {event.type === 'shabbat' && (
+                            <>
+                              {event.candleLighting && (
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  <span>הדלקת נרות: {event.candleLighting}</span>
+                                </div>
+                              )}
+                              {event.havdalah && (
+                                <div className="flex items-center gap-1">
+                                  <Star className="h-3 w-3" />
+                                  <span>צאת שבת: {event.havdalah}</span>
+                                </div>
+                              )}
+                            </>
+                          )}
+                          {event.type === 'holiday' && (
+                            <Badge 
+                              variant="secondary" 
+                              className={event.isWorkingDay ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}
+                            >
+                              {event.isWorkingDay ? 'יום עבודה' : 'לא יום עבודה'}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
