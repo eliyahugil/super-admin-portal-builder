@@ -86,7 +86,7 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   <div key={`empty-start-${i}`} className="p-1"></div>
                 ))}
                 
-                {/* Days of the month - properly ordered from right to left */}
+                {/* Days of the month - display in Hebrew RTL order */}
                 {monthData.days.map((formattedDay, dayIndex) => {
                   const day = formattedDay.gregorianDate;
                   const dayShifts = getShiftsForDay(day);

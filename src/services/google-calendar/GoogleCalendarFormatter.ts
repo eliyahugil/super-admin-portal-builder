@@ -29,9 +29,9 @@ export class GoogleCalendarFormatter {
     this.config = config;
   }
 
-  // Hebrew day names (Sunday to Saturday)
+  // Hebrew day names (Sunday to Saturday) - ordered for RTL display
   private hebrewDayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-  private hebrewDayNamesShort = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'שבת'];
+  private hebrewDayNamesShort = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 
   formatCalendarDay(date: Date): FormattedCalendarDay {
     const dayOfWeek = date.getDay(); // 0 = Sunday
@@ -50,10 +50,10 @@ export class GoogleCalendarFormatter {
   }
 
   getWeekDaysHeader(format: 'full' | 'short' = 'short'): string[] {
-    // Hebrew calendar starts with Sunday and goes right to left
+    // Hebrew calendar starts with Sunday and is displayed RTL
     const names = format === 'short' ? this.hebrewDayNamesShort : this.hebrewDayNames;
-    // Return in correct Hebrew order: Sunday to Saturday (not reversed)
-    return names;
+    // For RTL Hebrew display, we need to reverse the order so Sunday appears on the right
+    return names.slice().reverse();
   }
 
   getMonthCalendar(year: number, month: number): FormattedCalendarDay[][] {
