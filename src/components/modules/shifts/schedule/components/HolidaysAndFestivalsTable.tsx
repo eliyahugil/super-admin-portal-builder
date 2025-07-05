@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Calendar, Star, Clock } from 'lucide-react';
 import { IsraeliHoliday } from '@/hooks/useIsraeliHolidaysFromHebcal';
 import { ShabbatTimes } from '@/hooks/useShabbatTimesFromHebcal';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface HolidaysAndFestivalsTableProps {
   holidays: IsraeliHoliday[];
@@ -18,6 +18,8 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
   shabbatTimes,
   className = ''
 }) => {
+  const isMobile = useIsMobile();
+
   const combinedEvents = useMemo(() => {
     const events = [
       ...holidays.map(holiday => ({
@@ -76,6 +78,12 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
+    if (isMobile) {
+      return date.toLocaleDateString('he-IL', {
+        day: 'numeric',
+        month: 'short'
+      });
+    }
     return date.toLocaleDateString('he-IL', {
       weekday: 'long',
       year: 'numeric',
@@ -91,11 +99,137 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
     return combinedEvents.filter(event => {
       const eventDate = new Date(event.date);
       return eventDate >= today;
-    }).slice(0, 10);
+    }).slice(0, isMobile ? 15 : 10);
   };
 
   const upcomingEvents = getUpcomingEvents();
 
+  // Mobile layout
+  if (isMobile) {
+    return (
+      <div className={`space-y-4 p-2 ${className}`} dir="rtl">
+        {/* Statistics Cards - Mobile optimized */}
+        <div className="grid grid-cols-2 gap-2">
+          <Card className="p-2">
+            <CardContent className="p-2">
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 text-green-600" />
+                <div className="text-right">
+                  <div className="text-xl font-bold text-green-600">
+                    {holidays.filter(h => h.type === 'חג').length}
+                  </div>
+                  <div className="text-xs text-gray-600">חגים</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="p-2">
+            <CardContent className="p-2">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-blue-600" />
+                <div className="text-right">
+                  <div className="text-xl font-bold text-blue-600">
+                    {holidays.filter(h => h.type === 'מועד').length}
+                  </div>
+                  <div className="text-xs text-gray-600">מועדים</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="p-2">
+            <CardContent className="p-2">
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 text-purple-600" />
+                <div className="text-right">
+                  <div className="text-xl font-bold text-purple-600">{shabbatTimes.length}</div>
+                  <div className="text-xs text-gray-600">שבתות</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="p-2">
+            <CardContent className="p-2">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-orange-600" />
+                <div className="text-right">
+                  <div className="text-xl font-bold text-orange-600">{combinedEvents.length}</div>
+                  <div className="text-xs text-gray-600">סה"כ</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Mobile Events List */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              אירועים קרובים
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-2">
+            {upcomingEvents.length === 0 ? (
+              <div className="text-center py-6 text-gray-500">
+                <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">אין אירועים קרובים</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {upcomingEvents.map((event) => (
+                  <Card key={event.id} className="p-3 bg-gray-50">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Badge className={`text-xs ${getTypeColor(event.type, event.category)}`}>
+                          {getTypeIcon(event.type, event.category)}
+                          <span className="mr-1">{event.category}</span>
+                        </Badge>
+                        <span className="text-xs text-gray-600">{formatDate(event.date)}</span>
+                      </div>
+                      
+                      <div className="font-medium text-sm">{event.title}</div>
+                      
+                      <div className="flex flex-col gap-1">
+                        {event.type === 'shabbat' && (
+                          <div className="space-y-1">
+                            {event.candleLighting && (
+                              <div className="flex items-center gap-1 text-xs text-gray-600">
+                                <Clock className="h-3 w-3" />
+                                <span>הדלקת נרות: {event.candleLighting}</span>
+                              </div>
+                            )}
+                            {event.havdalah && (
+                              <div className="flex items-center gap-1 text-xs text-gray-600">
+                                <Star className="h-3 w-3" />
+                                <span>צאת שבת: {event.havdalah}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {event.type === 'holiday' && (
+                          <Badge 
+                            variant="secondary" 
+                            className={`text-xs w-fit ${event.isWorkingDay ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
+                          >
+                            {event.isWorkingDay ? 'יום עבודה' : 'לא יום עבודה'}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Desktop layout - keep existing code
   return (
     <div className={`space-y-6 ${className}`} dir="rtl">
       {/* Statistics Cards */}

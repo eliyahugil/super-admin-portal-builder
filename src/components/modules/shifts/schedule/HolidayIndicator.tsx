@@ -3,6 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Star, Heart } from 'lucide-react';
 import { IsraeliHoliday } from '@/hooks/useIsraeliHolidaysFromHebcal';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface HolidayIndicatorProps {
   holidays: IsraeliHoliday[];
@@ -15,6 +16,8 @@ export const HolidayIndicator: React.FC<HolidayIndicatorProps> = ({
   variant = 'badge',
   className = ''
 }) => {
+  const isMobile = useIsMobile();
+  
   console.log('🎃 HolidayIndicator rendered with:', { holidaysCount: holidays.length, variant });
 
   if (!holidays || holidays.length === 0) {
@@ -43,15 +46,15 @@ export const HolidayIndicator: React.FC<HolidayIndicatorProps> = ({
     switch (type) {
       case 'חג':
       case 'מועד':
-        return <Star className="h-3 w-3" />;
+        return <Star className={`${isMobile ? 'h-2 w-2' : 'h-3 w-3'}`} />;
       case 'יום זיכרון':
-        return <Heart className="h-3 w-3" />;
+        return <Heart className={`${isMobile ? 'h-2 w-2' : 'h-3 w-3'}`} />;
       case 'יום עצמאות':
-        return <Star className="h-3 w-3" />;
+        return <Star className={`${isMobile ? 'h-2 w-2' : 'h-3 w-3'}`} />;
       case 'צום':
-        return <Calendar className="h-3 w-3" />;
+        return <Calendar className={`${isMobile ? 'h-2 w-2' : 'h-3 w-3'}`} />;
       default:
-        return <Calendar className="h-3 w-3" />;
+        return <Calendar className={`${isMobile ? 'h-2 w-2' : 'h-3 w-3'}`} />;
     }
   };
 
@@ -65,7 +68,7 @@ export const HolidayIndicator: React.FC<HolidayIndicatorProps> = ({
 
   if (variant === 'text') {
     return (
-      <div className={`text-xs text-green-700 font-medium ${className}`}>
+      <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-green-700 font-medium ${className}`}>
         {holidays[0].hebrewName}
       </div>
     );
@@ -74,22 +77,22 @@ export const HolidayIndicator: React.FC<HolidayIndicatorProps> = ({
   // Default badge variant
   return (
     <div className={`space-y-1 ${className}`}>
-      {holidays.slice(0, 2).map((holiday, index) => {
+      {holidays.slice(0, isMobile ? 1 : 2).map((holiday, index) => {
         console.log('🎃 Rendering holiday badge:', holiday.hebrewName);
         return (
           <Badge
             key={`${holiday.date}-${index}`}
             variant="secondary"
-            className={`text-xs border ${getHolidayColor(holiday.type)} flex items-center gap-1`}
+            className={`${isMobile ? 'text-[10px] px-1 py-0.5' : 'text-xs'} border ${getHolidayColor(holiday.type)} flex items-center gap-1`}
           >
             {getHolidayIcon(holiday.type)}
-            <span>{holiday.hebrewName}</span>
+            <span className={isMobile ? 'truncate max-w-[40px]' : ''}>{holiday.hebrewName}</span>
           </Badge>
         );
       })}
-      {holidays.length > 2 && (
-        <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 border border-gray-200">
-          +{holidays.length - 2} עוד
+      {holidays.length > (isMobile ? 1 : 2) && (
+        <Badge variant="secondary" className={`${isMobile ? 'text-[10px] px-1 py-0.5' : 'text-xs'} bg-gray-100 text-gray-600 border border-gray-200`}>
+          +{holidays.length - (isMobile ? 1 : 2)} עוד
         </Badge>
       )}
     </div>
