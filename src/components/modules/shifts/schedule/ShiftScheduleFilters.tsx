@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -9,11 +8,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { ScheduleFilters, EmployeeData, BranchData } from './types';
+import type { ShiftScheduleFilters, EmployeeData, BranchData } from './types';
 
 interface ShiftScheduleFiltersProps {
-  filters: ScheduleFilters;
-  onFiltersChange: (filters: ScheduleFilters) => void;
+  filters: ShiftScheduleFilters;
+  onFiltersChange: (filters: ShiftScheduleFilters) => void;
   employees: EmployeeData[];
   branches: BranchData[];
 }
@@ -24,7 +23,7 @@ export const ShiftScheduleFilters: React.FC<ShiftScheduleFiltersProps> = ({
   employees,
   branches
 }) => {
-  const updateFilter = (key: keyof ScheduleFilters, value: string) => {
+  const updateFilter = (key: keyof ShiftScheduleFilters, value: string) => {
     onFiltersChange({
       ...filters,
       [key]: value

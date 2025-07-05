@@ -1,4 +1,5 @@
 
+
 import type { IsraeliHoliday } from '@/hooks/useIsraeliHolidays';
 import type { ShabbatTimes } from '@/hooks/useShabbatTimes';
 
@@ -38,6 +39,9 @@ export interface ShiftScheduleFilters {
   status: string;
   date_from: string;
   date_to: string;
+  employee: string;
+  branch: string;
+  role: string;
 }
 
 export type ScheduleView = 'week' | 'month';
