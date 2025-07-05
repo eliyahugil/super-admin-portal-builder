@@ -13,11 +13,17 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   shifts,
   employees,
   currentDate,
-  holidays,
+  holidays = [],
   shabbatTimes = [],
   onShiftClick
 }) => {
   const isMobile = useIsMobile();
+
+  console.log('📅 YearlyScheduleView - Received data:', {
+    holidaysCount: holidays.length,
+    shabbatTimesCount: shabbatTimes.length,
+    shiftsCount: shifts.length
+  });
 
   const getYearCalendar = () => {
     const year = currentDate.getFullYear();
@@ -57,12 +63,18 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
 
   const getHolidaysForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return holidays.filter(holiday => holiday.date === dateStr);
+    const foundHolidays = holidays.filter(holiday => holiday.date === dateStr);
+    console.log(`🔍 Checking holidays for ${dateStr}:`, foundHolidays);
+    return foundHolidays;
   };
 
   const getShabbatTimesForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return shabbatTimes.find(times => times.date === dateStr) || null;
+    const foundTimes = shabbatTimes.find(times => times.date === dateStr) || null;
+    if (foundTimes) {
+      console.log(`🕯️ Found Shabbat times for ${dateStr}:`, foundTimes);
+    }
+    return foundTimes;
   };
 
   const isHoliday = (date: Date) => {
@@ -100,39 +112,60 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   const isCurrentDay = isToday(day);
                   const holidaysForDay = getHolidaysForDate(day);
                   const shabbatTimesForDay = getShabbatTimesForDate(day);
-                  const hasHoliday = isHoliday(day);
+                  const hasHoliday = holidaysForDay.length > 0;
                   const isShabbat = day.getDay() === 6;
                   const isFriday = day.getDay() === 5;
                   
                   return (
                     <div
                       key={day.toISOString()}
-                      className={`p-1 text-center min-h-8 flex flex-col items-center justify-start rounded text-xs ${
-                        isCurrentDay ? 'bg-blue-100 text-blue-800 font-bold' : 
-                        hasHoliday ? 'bg-green-50 text-green-700' :
+                      className={`p-1 text-center min-h-12 flex flex-col items-center justify-start rounded text-xs relative ${
+                        isCurrentDay ? 'bg-blue-100 text-blue-800 font-bold border-2 border-blue-300' : 
+                        hasHoliday ? 'bg-green-100 text-green-700 border border-green-300' :
                         isShabbat ? 'bg-purple-50 text-purple-700' :
                         isFriday && shabbatTimesForDay ? 'bg-purple-50 text-purple-700' :
-                        'text-gray-700'
-                      } ${dayShifts.length > 0 ? 'border-2 border-blue-300' : ''}`}
+                        'text-gray-700 hover:bg-gray-50'
+                      } ${dayShifts.length > 0 ? 'ring-2 ring-blue-400' : ''}`}
+                      title={`${day.getDate()} ${monthData.name}${hasHoliday ? ` - ${holidaysForDay[0]?.hebrewName}` : ''}`}
                     >
-                      <div className="font-medium">{day.getDate()}</div>
+                      <div className="font-medium mb-1">{day.getDate()}</div>
                       
-                      {/* Indicators */}
-                      {dayShifts.length > 0 && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-1"></div>
-                      )}
-                      
-                      {holidaysForDay.length > 0 && (
-                        <div className="w-2 h-2 bg-green-500 rounded-full mt-1"></div>
-                      )}
-                      
-                      {(isFriday && shabbatTimesForDay?.candleLighting) && (
-                        <div className="text-purple-600">🕯️</div>
-                      )}
-                      
-                      {(isShabbat && shabbatTimesForDay?.havdalah) && (
-                        <div className="text-blue-600">⭐</div>
-                      )}
+                      {/* Indicators container */}
+                      <div className="flex flex-col items-center space-y-1 w-full">
+                        {/* Shift indicator */}
+                        {dayShifts.length > 0 && (
+                          <div className="text-xs text-blue-600 font-bold">
+                            {dayShifts.length} משמרות
+                          </div>
+                        )}
+                        
+                        {/* Holiday indicator */}
+                        {hasHoliday && (
+                          <div className="text-xs text-green-700 font-bold text-center leading-tight">
+                            {holidaysForDay[0]?.hebrewName}
+                          </div>
+                        )}
+                        
+                        {/* Shabbat indicators */}
+                        {isFriday && shabbatTimesForDay?.candleLighting && (
+                          <div className="text-xs text-purple-600 text-center">
+                            🕯️ {shabbatTimesForDay.candleLighting}
+                          </div>
+                        )}
+                        
+                        {isShabbat && shabbatTimesForDay?.havdalah && (
+                          <div className="text-xs text-blue-600 text-center">
+                            ⭐ {shabbatTimesForDay.havdalah}
+                          </div>
+                        )}
+                        
+                        {/* Parsha indicator */}
+                        {isShabbat && shabbatTimesForDay?.parsha && (
+                          <div className="text-xs text-gray-600 text-center leading-tight">
+                            {shabbatTimesForDay.parsha}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

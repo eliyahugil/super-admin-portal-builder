@@ -13,11 +13,17 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   shifts,
   employees,
   currentDate,
-  holidays,
+  holidays = [],
   shabbatTimes = [],
   onShiftClick
 }) => {
   const isMobile = useIsMobile();
+
+  console.log('📅 MonthlyScheduleView - Received data:', {
+    holidaysCount: holidays.length,
+    shabbatTimesCount: shabbatTimes.length,
+    shiftsCount: shifts.length
+  });
 
   const getMonthCalendar = () => {
     const year = currentDate.getFullYear();
@@ -65,12 +71,20 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
 
   const getHolidaysForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return holidays.filter(holiday => holiday.date === dateStr);
+    const foundHolidays = holidays.filter(holiday => holiday.date === dateStr);
+    if (foundHolidays.length > 0) {
+      console.log(`🎉 Found holidays for ${dateStr}:`, foundHolidays);
+    }
+    return foundHolidays;
   };
 
   const getShabbatTimesForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return shabbatTimes.find(times => times.date === dateStr) || null;
+    const foundTimes = shabbatTimes.find(times => times.date === dateStr) || null;
+    if (foundTimes) {
+      console.log(`🕯️ Found Shabbat times for ${dateStr}:`, foundTimes);
+    }
+    return foundTimes;
   };
 
   const isHoliday = (date: Date) => {
@@ -113,8 +127,16 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                     </div>
                     
                     {/* Holiday and Shabbat indicators */}
-                    <div className="mt-2 space-y-1">
-                      <HolidayIndicator holidays={holidaysForDay} />
+                    <div className="mt-2 space-y-2">
+                      {holidaysForDay.length > 0 && (
+                        <div className="space-y-1">
+                          {holidaysForDay.map((holiday, index) => (
+                            <Badge key={index} variant="secondary" className="bg-green-100 text-green-800">
+                              🎉 {holiday.hebrewName}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                       <ShabbatIndicator shabbatTimes={shabbatTimesForDay} date={day} variant="detailed" />
                     </div>
                   </div>
@@ -181,7 +203,7 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 return (
                   <Card 
                     key={day.toISOString()}
-                    className={`min-h-24 p-2 ${
+                    className={`min-h-32 p-2 ${
                       !isCurrentMonthDay ? 'opacity-30 bg-gray-50' : 'bg-white'
                     } ${
                       isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : ''
@@ -196,11 +218,19 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                         {day.getDate()}
                       </div>
                       
-                      {/* Holiday and Shabbat indicators */}
-                      <div className="space-y-1">
-                        <HolidayIndicator holidays={holidaysForDay} variant="text" />
-                        <ShabbatIndicator shabbatTimes={shabbatTimesForDay} date={day} variant="text" />
-                      </div>
+                      {/* Holiday indicators */}
+                      {hasHoliday && (
+                        <div className="space-y-1">
+                          {holidaysForDay.slice(0, 1).map((holiday, index) => (
+                            <div key={index} className="text-xs text-green-700 font-medium leading-tight">
+                              🎉 {holiday.hebrewName}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Shabbat indicators */}
+                      <ShabbatIndicator shabbatTimes={shabbatTimesForDay} date={day} variant="text" />
                       
                       <div className="space-y-1 max-h-16 overflow-hidden">
                         {dayShifts.slice(0, 2).map((shift) => (

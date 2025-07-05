@@ -13,12 +13,18 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   shifts,
   employees,
   currentDate,
-  holidays,
+  holidays = [],
   shabbatTimes = [],
   onShiftClick,
   onShiftUpdate
 }) => {
   const isMobile = useIsMobile();
+
+  console.log('📅 WeeklyScheduleView - Received data:', {
+    holidaysCount: holidays.length,
+    shabbatTimesCount: shabbatTimes.length,
+    shiftsCount: shifts.length
+  });
 
   const getWeekDays = () => {
     // Start from Sunday of the current week
@@ -78,12 +84,20 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
 
   const getHolidaysForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return holidays.filter(holiday => holiday.date === dateStr);
+    const foundHolidays = holidays.filter(holiday => holiday.date === dateStr);
+    if (foundHolidays.length > 0) {
+      console.log(`🎉 Found holidays for ${dateStr}:`, foundHolidays);
+    }
+    return foundHolidays;
   };
 
   const getShabbatTimesForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return shabbatTimes.find(times => times.date === dateStr) || null;
+    const foundTimes = shabbatTimes.find(times => times.date === dateStr) || null;
+    if (foundTimes) {
+      console.log(`🕯️ Found Shabbat times for ${dateStr}:`, foundTimes);
+    }
+    return foundTimes;
   };
 
   const isHoliday = (date: Date) => {
@@ -121,9 +135,19 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                       {day.getDate()}
                     </div>
                     
-                    {/* Holiday and Shabbat indicators */}
-                    <div className="mt-2 space-y-1">
-                      <HolidayIndicator holidays={holidaysForDay} />
+                    {/* Holiday indicators */}
+                    {holidaysForDay.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {holidaysForDay.map((holiday, index) => (
+                          <Badge key={index} variant="secondary" className="bg-green-100 text-green-800">
+                            🎉 {holiday.hebrewName}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Shabbat indicators */}
+                    <div className="mt-2">
                       <ShabbatIndicator shabbatTimes={shabbatTimesForDay} date={day} variant="detailed" />
                     </div>
                   </div>
@@ -206,9 +230,15 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 {day.getDate()}
               </div>
               
-              {/* Holiday and Shabbat indicators */}
-              <div className="mt-1 space-y-1">
-                <HolidayIndicator holidays={holidaysForDay} variant="text" />
+              {/* Holiday indicators */}
+              {hasHoliday && (
+                <div className="mt-1 text-xs text-green-700 font-medium">
+                  🎉 {holidaysForDay[0]?.hebrewName}
+                </div>
+              )}
+              
+              {/* Shabbat indicators */}
+              <div className="mt-1">
                 <ShabbatIndicator shabbatTimes={shabbatTimesForDay} date={day} variant="text" />
               </div>
             </div>
