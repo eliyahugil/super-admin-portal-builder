@@ -57,7 +57,11 @@ const fetchIsraeliHolidaysFromHebcal = async (): Promise<IsraeliHoliday[]> => {
                            item.category === 'roshchodesh' ||
                            item.yomtov === true ||
                            item.subcat === 'major' ||
-                           item.subcat === 'minor';
+                           item.subcat === 'minor' ||
+                           item.title?.includes('Independence') ||
+                           item.title?.includes('Memorial') ||
+                           item.hebrew?.includes('זיכרון') ||
+                           item.hebrew?.includes('עצמאות');
           
           if (isRelevant) {
             console.log(`📍 Including holiday: ${item.hebrew} (${item.title}) - ${item.date}`);
@@ -69,7 +73,7 @@ const fetchIsraeliHolidaysFromHebcal = async (): Promise<IsraeliHoliday[]> => {
           date: item.date,
           name: item.title || item.hebrew,
           hebrewName: item.hebrew || item.title,
-          type: mapHolidayType(item.category, item.subcat, item.title),
+          type: mapHolidayType(item.category, item.subcat, item.title, item.hebrew),
           isWorkingDay: !item.yomtov // אם זה לא יום טוב, זה יום עבודה
         }));
     });
@@ -88,10 +92,13 @@ const fetchIsraeliHolidaysFromHebcal = async (): Promise<IsraeliHoliday[]> => {
   }
 };
 
-const mapHolidayType = (category: string, subcat?: string, title?: string): IsraeliHoliday['type'] => {
-  if (title?.includes('זיכרון') || title?.includes('Memorial')) return 'יום זיכרון';
-  if (title?.includes('עצמאות') || title?.includes('Independence')) return 'יום עצמאות';
-  if (title?.includes('צום') || title?.includes('Fast')) return 'צום';
+const mapHolidayType = (category: string, subcat?: string, title?: string, hebrew?: string): IsraeliHoliday['type'] => {
+  const titleText = title?.toLowerCase() || '';
+  const hebrewText = hebrew?.toLowerCase() || '';
+  
+  if (titleText.includes('memorial') || hebrewText.includes('זיכרון')) return 'יום זיכרון';
+  if (titleText.includes('independence') || hebrewText.includes('עצמאות')) return 'יום עצמאות';
+  if (titleText.includes('fast') || hebrewText.includes('צום')) return 'צום';
   if (category === 'holiday' || subcat === 'major') return 'חג';
   return 'מועד';
 };

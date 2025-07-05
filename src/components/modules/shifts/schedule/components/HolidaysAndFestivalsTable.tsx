@@ -23,6 +23,13 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
   const isMobile = useIsMobile();
   const [typeFilter, setTypeFilter] = useState<string>('all');
 
+  console.log('🎊 HolidaysAndFestivalsTable - Input data:', {
+    holidaysCount: holidays.length,
+    shabbatTimesCount: shabbatTimes.length,
+    isMobile,
+    typeFilter
+  });
+
   const {
     combinedEvents,
     availableTypes,
@@ -32,15 +39,24 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
 
   // Filter events by type
   const filteredEvents = useMemo(() => {
-    if (typeFilter === 'all') return combinedEvents;
+    console.log('🔍 Filtering events with filter:', typeFilter);
     
-    if (typeFilter === 'shabbat') {
-      return combinedEvents.filter(event => event.type === 'shabbat');
+    if (typeFilter === 'all') {
+      console.log('📋 Returning all combined events:', combinedEvents.length);
+      return combinedEvents;
     }
     
-    return combinedEvents.filter(event => 
+    if (typeFilter === 'shabbat') {
+      const shabbatEvents = combinedEvents.filter(event => event.type === 'shabbat');
+      console.log('🕯️ Filtered Shabbat events:', shabbatEvents.length);
+      return shabbatEvents;
+    }
+    
+    const categoryEvents = combinedEvents.filter(event => 
       event.type === 'holiday' && event.category === typeFilter
     );
+    console.log('🎃 Filtered category events for', typeFilter, ':', categoryEvents.length);
+    return categoryEvents;
   }, [combinedEvents, typeFilter]);
 
   const formatDate = (dateStr: string) => {
@@ -66,6 +82,24 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
       dayOfWeek: dayOfWeek
     };
   };
+
+  // Show loading or empty state if no data
+  if (holidays.length === 0 && shabbatTimes.length === 0) {
+    return (
+      <div className={`flex items-center justify-center min-h-[400px] ${className}`}>
+        <div className="text-center">
+          <div className="text-gray-500 mb-2">טוען נתוני חגים ושבתות...</div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('🎊 Rendering with data:', {
+    combinedEventsCount: combinedEvents.length,
+    filteredEventsCount: filteredEvents.length,
+    availableTypesCount: availableTypes.length
+  });
 
   // Mobile layout
   if (isMobile) {

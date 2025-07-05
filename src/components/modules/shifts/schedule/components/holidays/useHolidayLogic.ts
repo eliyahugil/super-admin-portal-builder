@@ -16,45 +16,68 @@ interface CombinedEvent {
 }
 
 export const useHolidayLogic = (holidays: IsraeliHoliday[], shabbatTimes: ShabbatTimes[]) => {
+  console.log('🎃 useHolidayLogic - Input data:', {
+    holidaysCount: holidays.length,
+    shabbatTimesCount: shabbatTimes.length,
+    sampleHolidays: holidays.slice(0, 3),
+    sampleShabbat: shabbatTimes.slice(0, 3)
+  });
+
   const combinedEvents = useMemo((): CombinedEvent[] => {
     const events = [
-      ...holidays.map(holiday => ({
-        id: `holiday-${holiday.date}`,
-        date: holiday.date,
-        title: holiday.hebrewName,
-        type: 'holiday' as const,
-        category: holiday.type,
-        isWorkingDay: holiday.isWorkingDay,
-        data: holiday
-      })),
-      ...shabbatTimes.map(shabbat => ({
-        id: `shabbat-${shabbat.date}`,
-        date: shabbat.date,
-        title: `שבת${shabbat.parsha ? ` - פרשת ${shabbat.parsha}` : ''}`,
-        type: 'shabbat' as const,
-        category: 'שבת',
-        isWorkingDay: false,
-        candleLighting: shabbat.candleLighting,
-        havdalah: shabbat.havdalah,
-        data: shabbat
-      }))
+      ...holidays.map(holiday => {
+        console.log('🎃 Processing holiday:', holiday);
+        return {
+          id: `holiday-${holiday.date}-${holiday.hebrewName}`,
+          date: holiday.date,
+          title: holiday.hebrewName,
+          type: 'holiday' as const,
+          category: holiday.type,
+          isWorkingDay: holiday.isWorkingDay,
+          data: holiday
+        };
+      }),
+      ...shabbatTimes.map(shabbat => {
+        console.log('🕯️ Processing shabbat:', shabbat);
+        return {
+          id: `shabbat-${shabbat.date}`,
+          date: shabbat.date,
+          title: `שבת${shabbat.parsha ? ` - פרשת ${shabbat.parsha}` : ''}`,
+          type: 'shabbat' as const,
+          category: 'שבת',
+          isWorkingDay: false,
+          candleLighting: shabbat.candleLighting,
+          havdalah: shabbat.havdalah,
+          data: shabbat
+        };
+      })
     ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
+    console.log('🔗 Combined events created:', events.length);
     return events;
   }, [holidays, shabbatTimes]);
 
   const availableTypes = useMemo(() => {
     const types = new Set<string>();
     types.add('שבת');
-    holidays.forEach(holiday => types.add(holiday.type));
-    return Array.from(types).sort();
+    holidays.forEach(holiday => {
+      if (holiday.type) {
+        types.add(holiday.type);
+      }
+    });
+    const typesArray = Array.from(types).sort();
+    console.log('📋 Available types:', typesArray);
+    return typesArray;
   }, [holidays]);
 
   const holidayTypeCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     holidays.forEach(holiday => {
-      counts[holiday.type] = (counts[holiday.type] || 0) + 1;
+      if (holiday.type) {
+        counts[holiday.type] = (counts[holiday.type] || 0) + 1;
+      }
     });
+    console.log('📊 Holiday type counts:', counts);
     return counts;
   }, [holidays]);
 

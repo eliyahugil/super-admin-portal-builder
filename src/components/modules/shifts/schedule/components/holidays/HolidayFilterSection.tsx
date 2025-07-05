@@ -23,6 +23,14 @@ export const HolidayFilterSection: React.FC<HolidayFilterSectionProps> = ({
   holidayTypeCounts,
   isMobile = false
 }) => {
+  console.log('🔍 HolidayFilterSection props:', {
+    typeFilter,
+    totalEvents,
+    shabbatCount,
+    availableTypes,
+    holidayTypeCounts
+  });
+
   return (
     <Card className="shadow-sm">
       <CardContent className={isMobile ? 'p-3' : 'p-4'}>
