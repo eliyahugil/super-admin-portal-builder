@@ -7,7 +7,7 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
   const queryClient = useQueryClient();
 
   const createShift = useMutation({
-    mutationFn: async (shiftData: Omit<ShiftScheduleData, 'id' | 'created_at'>) => {
+    mutationFn: async (shiftData: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>) => {
       console.log('🔄 Creating shift:', shiftData);
       
       if (!businessId) {
@@ -23,7 +23,8 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
           branch_id: shiftData.branch_id || null,
           notes: shiftData.notes || null,
           is_assigned: !!shiftData.employee_id,
-          is_archived: false
+          is_archived: false,
+          shift_template_id: shiftData.shift_template_id || null
         })
         .select()
         .single();
@@ -58,6 +59,10 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       
       if (updates.notes !== undefined) {
         updateData.notes = updates.notes || null;
+      }
+
+      if (updates.shift_template_id !== undefined) {
+        updateData.shift_template_id = updates.shift_template_id || null;
       }
 
       const { data, error } = await supabase
@@ -102,10 +107,15 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
   });
 
   return {
-    createShift: createShift.mutateAsync,
-    updateShift: (shiftId: string, updates: Partial<ShiftScheduleData>) => 
-      updateShift.mutateAsync({ shiftId, updates }),
-    deleteShift: deleteShift.mutateAsync,
+    createShift: async (shiftData: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>) => {
+      await createShift.mutateAsync(shiftData);
+    },
+    updateShift: async (shiftId: string, updates: Partial<ShiftScheduleData>) => {
+      await updateShift.mutateAsync({ shiftId, updates });
+    },
+    deleteShift: async (shiftId: string) => {
+      await deleteShift.mutateAsync(shiftId);
+    },
     isCreating: createShift.isPending,
     isUpdating: updateShift.isPending,
     isDeleting: deleteShift.isPending

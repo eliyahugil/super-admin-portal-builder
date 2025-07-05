@@ -7,6 +7,7 @@ export type ScheduleView = 'week' | 'month' | 'year';
 
 export interface ShiftScheduleData {
   id: string;
+  business_id: string;
   employee_id?: string;
   branch_id?: string;
   shift_date: string;
@@ -16,6 +17,10 @@ export interface ShiftScheduleData {
   notes?: string;
   status?: string;
   created_at: string;
+  updated_at: string;
+  is_assigned: boolean;
+  is_archived: boolean;
+  shift_template_id?: string;
   // נוספו השדות החסרים:
   branch_name?: string;
   role_preference?: string;

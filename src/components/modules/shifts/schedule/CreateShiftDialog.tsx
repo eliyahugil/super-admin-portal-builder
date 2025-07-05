@@ -16,7 +16,7 @@ import type { ShiftScheduleData, Employee, Branch } from './types';
 interface CreateShiftDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (shift: Omit<ShiftScheduleData, 'id' | 'created_at'>) => Promise<void>;
+  onSubmit: (shift: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>) => Promise<void>;
   employees: Employee[];
   branches: Branch[];
 }
