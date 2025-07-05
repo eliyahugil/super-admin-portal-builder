@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Clock, User, MapPin } from 'lucide-react';
 import { HolidayIndicator } from './HolidayIndicator';
 import { ShabbatIndicator } from './components/ShabbatIndicator';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { ShiftScheduleViewProps } from './types';
 
 export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
@@ -18,6 +19,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   onShiftClick,
   onShiftUpdate
 }) => {
+  const isMobile = useIsMobile();
+  
   // Generate week days starting from Sunday
   const weekDays = useMemo(() => {
     const startOfWeek = new Date(currentDate);
@@ -65,6 +68,113 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
 
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
+  // Mobile layout - vertical scrolling list
+  if (isMobile) {
+    return (
+      <div className="h-full flex flex-col space-y-3 p-2" dir="rtl">
+        {weekDays.map((date, index) => {
+          const dayShifts = getShiftsForDate(date);
+          const dayHolidays = getHolidaysForDate(date);
+          const dayShabbat = getShabbatForDate(date);
+          const isToday = date.toDateString() === new Date().toDateString();
+          const isWeekend = index === 5 || index === 6;
+
+          return (
+            <Card key={date.toISOString()} className={`${isToday ? 'ring-2 ring-blue-500' : ''}`}>
+              <CardHeader className="pb-3">
+                <CardTitle className={`text-lg font-medium text-center ${isWeekend ? 'text-blue-600' : ''}`}>
+                  <div className="flex items-center justify-between">
+                    <span>{dayNames[index]}</span>
+                    <span className={`text-xl ${isToday ? 'font-bold text-blue-600' : ''}`}>
+                      {date.getDate()}/{date.getMonth() + 1}
+                    </span>
+                  </div>
+                </CardTitle>
+                
+                {/* Holidays and Shabbat indicators */}
+                {(dayHolidays.length > 0 || dayShabbat) && (
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {dayHolidays.length > 0 && (
+                      <HolidayIndicator holidays={dayHolidays} variant="badge" />
+                    )}
+                    {dayShabbat && (
+                      <ShabbatIndicator 
+                        shabbatTimes={dayShabbat}
+                        date={date}
+                        variant="badge"
+                      />
+                    )}
+                  </div>
+                )}
+              </CardHeader>
+              
+              <CardContent className="space-y-3">
+                {dayShifts.length > 0 ? (
+                  <div className="space-y-2">
+                    {dayShifts.map((shift) => (
+                      <div
+                        key={shift.id}
+                        className="p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => onShiftClick(shift)}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <Badge variant="secondary" className={`${getStatusColor(shift.status || 'pending')} text-xs`}>
+                            {shift.status === 'approved' ? 'מאושר' : 
+                             shift.status === 'pending' ? 'ממתין' :
+                             shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-gray-500" />
+                            <span className="font-medium">{shift.start_time} - {shift.end_time}</span>
+                          </div>
+                          
+                          {shift.employee_id && (
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-gray-500" />
+                              <span>{getEmployeeName(shift.employee_id)}</span>
+                            </div>
+                          )}
+                          
+                          {shift.branch_name && (
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4 text-gray-500" />
+                              <span>{shift.branch_name}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    <p className="text-sm">אין משמרות</p>
+                  </div>
+                )}
+                
+                {/* Add shift button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    console.log('Add shift for date:', date);
+                  }}
+                >
+                  <Plus className="h-4 w-4 ml-2" />
+                  הוסף משמרת
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Desktop layout - grid view
   return (
     <div className="h-full flex flex-col" dir="rtl">
       <div className="grid grid-cols-7 gap-2 flex-1">
@@ -73,7 +183,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
           const dayHolidays = getHolidaysForDate(date);
           const dayShabbat = getShabbatForDate(date);
           const isToday = date.toDateString() === new Date().toDateString();
-          const isWeekend = index === 5 || index === 6; // Friday or Saturday
+          const isWeekend = index === 5 || index === 6;
 
           return (
             <Card key={date.toISOString()} className={`flex flex-col min-h-0 ${isToday ? 'ring-2 ring-blue-500' : ''}`}>
@@ -149,7 +259,6 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   size="sm"
                   className="w-full mt-2"
                   onClick={() => {
-                    // This will be handled by the parent component
                     console.log('Add shift for date:', date);
                   }}
                 >

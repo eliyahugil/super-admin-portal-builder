@@ -1,14 +1,13 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { 
-  Plus, 
-  Filter, 
-  Download, 
-  Copy, 
-  Menu 
-} from 'lucide-react';
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { Plus, Filter, MoreVertical, Calendar, Users } from 'lucide-react';
 
 interface ScheduleActionsProps {
   showFilters: boolean;
@@ -31,82 +30,61 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
 }) => {
   if (isMobile) {
     return (
-      <>
+      <div className="flex items-center gap-2">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onClick={() => setShowFilters(!showFilters)}
         >
-          <Menu className="h-4 w-4" />
+          <Filter className="h-4 w-4" />
         </Button>
         
-        {mobileMenuOpen && (
-          <Card className="p-4 space-y-2">
-            <Button
-              variant={showFilters ? "default" : "outline"}
-              className="w-full justify-start"
-              onClick={() => {
-                setShowFilters(!showFilters);
-                setMobileMenuOpen(false);
-              }}
-            >
-              <Filter className="mr-2 h-4 w-4" />
-              מסננים
+        <DropdownMenu open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <MoreVertical className="h-4 w-4" />
             </Button>
-            <Button variant="outline" className="w-full justify-start">
-              <Download className="mr-2 h-4 w-4" />
-              יצוא
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => {
-                setShowBulkCreator(true);
-                setMobileMenuOpen(false);
-              }}
-            >
-              <Copy className="mr-2 h-4 w-4" />
-              יצירה בכמות
-            </Button>
-            <Button 
-              className="w-full justify-start"
-              onClick={() => {
-                setShowCreateDialog(true);
-                setMobileMenuOpen(false);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => setShowCreateDialog(true)}>
+              <Plus className="h-4 w-4 ml-2" />
               משמרת חדשה
-            </Button>
-          </Card>
-        )}
-      </>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowBulkCreator(true)}>
+              <Calendar className="h-4 w-4 ml-2" />
+              יצירה בכמות
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     );
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex items-center gap-2">
       <Button
-        variant={showFilters ? "default" : "outline"}
+        variant="outline"
+        size="sm"
         onClick={() => setShowFilters(!showFilters)}
       >
-        <Filter className="mr-2 h-4 w-4" />
-        מסננים
-      </Button>
-      <Button variant="outline">
-        <Download className="mr-2 h-4 w-4" />
-        יצוא
+        <Filter className="h-4 w-4 mr-2" />
+        {showFilters ? 'הסתר מסננים' : 'הצג מסננים'}
       </Button>
       <Button
         variant="outline"
+        size="sm"
+        onClick={() => setShowCreateDialog(true)}
+      >
+        <Plus className="h-4 w-4 mr-2" />
+        משמרת חדשה
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => setShowBulkCreator(true)}
       >
-        <Copy className="mr-2 h-4 w-4" />
+        <Users className="h-4 w-4 mr-2" />
         יצירה בכמות
-      </Button>
-      <Button onClick={() => setShowCreateDialog(true)}>
-        <Plus className="mr-2 h-4 w-4" />
-        משמרת חדשה
       </Button>
     </div>
   );
