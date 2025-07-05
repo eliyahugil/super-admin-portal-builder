@@ -66,7 +66,7 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     const dateStr = date.toISOString().split('T')[0];
     const foundHolidays = holidays.filter(holiday => holiday.date === dateStr);
     if (foundHolidays.length > 0) {
-      console.log(`🎉 Checking holidays for ${dateStr}:`, foundHolidays);
+      console.log(`🎉 Found holidays for ${dateStr}:`, foundHolidays);
     }
     return foundHolidays;
   };
@@ -98,18 +98,18 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
               
               <div className="grid grid-cols-7 gap-1 text-xs">
                 {/* Days of week header - Sunday to Saturday (right to left for Hebrew) */}
-                {['ש', 'ו', 'ה', 'ד', 'ג', 'ב', 'א'].map((dayName) => (
+                {['שבת', 'ו', 'ה', 'ד', 'ג', 'ב', 'א'].map((dayName) => (
                   <div key={dayName} className="text-center font-medium text-gray-600 p-1">
                     {dayName}
                   </div>
                 ))}
                 
-                {/* Empty cells for days before first day of month - start from Sunday, but displayed right to left */}
-                {Array.from({ length: monthData.days[0].getDay() }, (_, i) => (
+                {/* Empty cells for days before first day of month - adjust for RTL */}
+                {Array.from({ length: (7 - monthData.days[0].getDay()) % 7 }, (_, i) => (
                   <div key={`empty-${i}`} className="p-1"></div>
                 ))}
                 
-                {/* Days of the month - reverse order for RTL display */}
+                {/* Days of the month */}
                 {monthData.days.map((day) => {
                   const dayShifts = getShiftsForDay(day);
                   const isCurrentDay = isToday(day);
@@ -138,34 +138,27 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                         {/* Holiday indicator */}
                         {hasHoliday && (
                           <div className="text-xs text-green-700 font-bold text-center leading-tight">
-                            🎉 {holidaysForDay[0]?.hebrewName}
+                            🎉
                           </div>
                         )}
                         
                         {/* Shift indicator */}
                         {dayShifts.length > 0 && (
                           <div className="text-xs text-blue-600 font-bold">
-                            {dayShifts.length} משמרות
+                            {dayShifts.length}
                           </div>
                         )}
                         
                         {/* Shabbat indicators */}
                         {isFriday && shabbatTimesForDay?.candleLighting && (
                           <div className="text-xs text-purple-600 text-center">
-                            🕯️ {shabbatTimesForDay.candleLighting}
+                            🕯️
                           </div>
                         )}
                         
                         {isShabbat && shabbatTimesForDay?.havdalah && (
                           <div className="text-xs text-blue-600 text-center">
-                            ⭐ {shabbatTimesForDay.havdalah}
-                          </div>
-                        )}
-                        
-                        {/* Parsha indicator */}
-                        {isShabbat && shabbatTimesForDay?.parsha && (
-                          <div className="text-xs text-gray-600 text-center leading-tight">
-                            {shabbatTimesForDay.parsha}
+                            ⭐
                           </div>
                         )}
                       </div>

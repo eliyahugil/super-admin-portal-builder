@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -206,6 +205,8 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 const holidaysForDay = getHolidaysForDate(day);
                 const shabbatTimesForDay = getShabbatTimesForDate(day);
                 const hasHoliday = isHoliday(day);
+                const isShabbat = day.getDay() === 6;
+                const isFriday = day.getDay() === 5;
                 
                 return (
                   <Card 
@@ -237,8 +238,18 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                         </div>
                       )}
                       
-                      {/* Shabbat indicators */}
-                      <ShabbatIndicator shabbatTimes={shabbatTimesForDay} date={day} variant="text" />
+                      {/* Shabbat times display for Friday and Saturday */}
+                      {isFriday && shabbatTimesForDay?.candleLighting && (
+                        <div className="text-xs text-purple-700 font-medium">
+                          🕯️ כניסת שבת: {shabbatTimesForDay.candleLighting}
+                        </div>
+                      )}
+                      
+                      {isShabbat && shabbatTimesForDay?.havdalah && (
+                        <div className="text-xs text-blue-700 font-medium">
+                          ⭐ יציאת שבת: {shabbatTimesForDay.havdalah}
+                        </div>
+                      )}
                       
                       <div className="space-y-1 max-h-16 overflow-hidden">
                         {dayShifts.slice(0, 2).map((shift) => (
