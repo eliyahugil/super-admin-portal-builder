@@ -94,18 +94,51 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
+    const dayOfWeek = date.toLocaleDateString('he-IL', { weekday: 'long' });
+    
     if (isMobile) {
-      return date.toLocaleDateString('he-IL', {
-        day: 'numeric',
-        month: 'short'
-      });
+      return {
+        full: date.toLocaleDateString('he-IL', {
+          day: 'numeric',
+          month: 'short'
+        }),
+        dayOfWeek: dayOfWeek
+      };
     }
-    return date.toLocaleDateString('he-IL', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    return {
+      full: date.toLocaleDateString('he-IL', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      dayOfWeek: dayOfWeek
+    };
+  };
+
+  const getHolidayTimes = (event: any) => {
+    if (event.type === 'shabbat') {
+      return {
+        entry: event.candleLighting || null,
+        exit: event.havdalah || null
+      };
+    }
+    // For holidays, we can use typical Jewish holiday times
+    // Entry is typically at sunset (similar to candle lighting)
+    // Exit is typically after nightfall (similar to havdalah)
+    const eventDate = new Date(event.date);
+    const fridayBefore = new Date(eventDate);
+    fridayBefore.setDate(eventDate.getDate() - ((eventDate.getDay() + 2) % 7));
+    
+    // Find Shabbat times for reference
+    const nearbyShabbat = shabbatTimes.find(s => 
+      Math.abs(new Date(s.date).getTime() - eventDate.getTime()) < 7 * 24 * 60 * 60 * 1000
+    );
+    
+    return {
+      entry: nearbyShabbat?.candleLighting || null,
+      exit: nearbyShabbat?.havdalah || null
+    };
   };
 
   // Get unique categories for filter options
@@ -119,16 +152,16 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
   // Mobile layout
   if (isMobile) {
     return (
-      <div className={`space-y-4 p-2 ${className}`} dir="rtl">
+      <div className={`space-y-3 p-3 h-full overflow-y-auto ${className}`} dir="rtl">
         {/* Filter Section */}
-        <Card>
+        <Card className="shadow-sm">
           <CardContent className="p-3">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-2">
               <Filter className="h-4 w-4 text-gray-600" />
               <span className="text-sm font-medium">סינון לפי סוג:</span>
             </div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -146,12 +179,12 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
 
         {/* Statistics Cards - Mobile optimized */}
         <div className="grid grid-cols-2 gap-2">
-          <Card className="p-2">
-            <CardContent className="p-2">
+          <Card className="shadow-sm">
+            <CardContent className="p-3">
               <div className="flex items-center gap-2">
                 <Star className="h-4 w-4 text-green-600" />
                 <div className="text-right">
-                  <div className="text-xl font-bold text-green-600">
+                  <div className="text-lg font-bold text-green-600">
                     {holidays.filter(h => h.type === 'חג').length}
                   </div>
                   <div className="text-xs text-gray-600">חגים</div>
@@ -160,12 +193,12 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
             </CardContent>
           </Card>
           
-          <Card className="p-2">
-            <CardContent className="p-2">
+          <Card className="shadow-sm">
+            <CardContent className="p-3">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-blue-600" />
                 <div className="text-right">
-                  <div className="text-xl font-bold text-blue-600">
+                  <div className="text-lg font-bold text-blue-600">
                     {holidays.filter(h => h.type === 'מועד').length}
                   </div>
                   <div className="text-xs text-gray-600">מועדים</div>
@@ -174,24 +207,24 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
             </CardContent>
           </Card>
           
-          <Card className="p-2">
-            <CardContent className="p-2">
+          <Card className="shadow-sm">
+            <CardContent className="p-3">
               <div className="flex items-center gap-2">
                 <Star className="h-4 w-4 text-purple-600" />
                 <div className="text-right">
-                  <div className="text-xl font-bold text-purple-600">{shabbatTimes.length}</div>
+                  <div className="text-lg font-bold text-purple-600">{shabbatTimes.length}</div>
                   <div className="text-xs text-gray-600">שבתות</div>
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="p-2">
-            <CardContent className="p-2">
+          <Card className="shadow-sm">
+            <CardContent className="p-3">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-orange-600" />
                 <div className="text-right">
-                  <div className="text-xl font-bold text-orange-600">{filteredEvents.length}</div>
+                  <div className="text-lg font-bold text-orange-600">{filteredEvents.length}</div>
                   <div className="text-xs text-gray-600">מוצגים</div>
                 </div>
               </div>
@@ -199,64 +232,74 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
           </Card>
         </div>
 
-        {/* Mobile Events List - Full scrollable list */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
+        {/* Mobile Events List - Improved spacing and scrolling */}
+        <Card className="flex-1 shadow-sm">
+          <CardHeader className="pb-2 px-3 pt-3">
+            <CardTitle className="text-base flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               {typeFilter === 'all' ? 'כל האירועים' : `${typeFilter} (${filteredEvents.length})`}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-2">
+          <CardContent className="p-0">
             {filteredEvents.length === 0 ? (
-              <div className="text-center py-6 text-gray-500">
+              <div className="text-center py-8 text-gray-500 px-3">
                 <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">אין אירועים מסוג זה</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {filteredEvents.map((event) => (
-                  <Card key={event.id} className="p-3 bg-gray-50">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Badge className={`text-xs ${getTypeColor(event.type, event.category)}`}>
-                          {getTypeIcon(event.type, event.category)}
-                          <span className="mr-1">{event.category}</span>
-                        </Badge>
-                        <span className="text-xs text-gray-600">{formatDate(event.date)}</span>
-                      </div>
-                      
-                      <div className="font-medium text-sm">{event.title}</div>
-                      
-                      <div className="flex flex-col gap-1">
-                        {event.type === 'shabbat' && (
+              <div className="space-y-1 px-3 pb-3">
+                {filteredEvents.map((event) => {
+                  const dateInfo = formatDate(event.date);
+                  const times = getHolidayTimes(event);
+                  
+                  return (
+                    <Card key={event.id} className="bg-gray-50 border border-gray-200">
+                      <CardContent className="p-3">
+                        <div className="space-y-2">
+                          {/* Header with type and date */}
+                          <div className="flex items-center justify-between">
+                            <Badge className={`text-xs ${getTypeColor(event.type, event.category)} flex items-center gap-1`}>
+                              {getTypeIcon(event.type, event.category)}
+                              <span>{event.category}</span>
+                            </Badge>
+                            <div className="text-left">
+                              <div className="text-xs font-medium text-gray-900">{dateInfo.full}</div>
+                              <div className="text-xs text-gray-600">{dateInfo.dayOfWeek}</div>
+                            </div>
+                          </div>
+                          
+                          {/* Event title */}
+                          <div className="font-medium text-sm text-gray-900">{event.title}</div>
+                          
+                          {/* Times and details */}
                           <div className="space-y-1">
-                            {event.candleLighting && (
+                            {times.entry && (
                               <div className="flex items-center gap-1 text-xs text-gray-600">
                                 <Clock className="h-3 w-3" />
-                                <span>הדלקת נרות: {event.candleLighting}</span>
+                                <span>כניסה: {times.entry}</span>
                               </div>
                             )}
-                            {event.havdalah && (
+                            {times.exit && (
                               <div className="flex items-center gap-1 text-xs text-gray-600">
                                 <Star className="h-3 w-3" />
-                                <span>צאת שבת: {event.havdalah}</span>
+                                <span>יציאה: {times.exit}</span>
                               </div>
                             )}
+                            
+                            {event.type === 'holiday' && (
+                              <Badge 
+                                variant="secondary" 
+                                className={`text-xs w-fit ${event.isWorkingDay ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}
+                              >
+                                {event.isWorkingDay ? 'יום עבודה' : 'לא יום עבודה'}
+                              </Badge>
+                            )}
                           </div>
-                        )}
-                        {event.type === 'holiday' && (
-                          <Badge 
-                            variant="secondary" 
-                            className={`text-xs w-fit ${event.isWorkingDay ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
-                          >
-                            {event.isWorkingDay ? 'יום עבודה' : 'לא יום עבודה'}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -369,42 +412,50 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-right">תאריך</TableHead>
+                    <TableHead className="text-right">יום</TableHead>
                     <TableHead className="text-right">אירוע</TableHead>
                     <TableHead className="text-right">סוג</TableHead>
+                    <TableHead className="text-right">שעות</TableHead>
                     <TableHead className="text-right">פרטים</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEvents.map((event) => (
-                    <TableRow key={event.id}>
-                      <TableCell className="font-medium">
-                        {formatDate(event.date)}
-                      </TableCell>
-                      <TableCell>{event.title}</TableCell>
-                      <TableCell>
-                        <Badge className={getTypeColor(event.type, event.category)}>
-                          {getTypeIcon(event.type, event.category)}
-                          <span className="mr-1">{event.category}</span>
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1 text-xs">
-                          {event.type === 'shabbat' && (
-                            <>
-                              {event.candleLighting && (
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  <span>הדלקת נרות: {event.candleLighting}</span>
-                                </div>
-                              )}
-                              {event.havdalah && (
-                                <div className="flex items-center gap-1">
-                                  <Star className="h-3 w-3" />
-                                  <span>צאת שבת: {event.havdalah}</span>
-                                </div>
-                              )}
-                            </>
-                          )}
+                  {filteredEvents.map((event) => {
+                    const dateInfo = formatDate(event.date);
+                    const times = getHolidayTimes(event);
+                    
+                    return (
+                      <TableRow key={event.id}>
+                        <TableCell className="font-medium">
+                          {dateInfo.full}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600">
+                          {dateInfo.dayOfWeek}
+                        </TableCell>
+                        <TableCell>{event.title}</TableCell>
+                        <TableCell>
+                          <Badge className={getTypeColor(event.type, event.category)}>
+                            {getTypeIcon(event.type, event.category)}
+                            <span className="mr-1">{event.category}</span>
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1 text-xs">
+                            {times.entry && (
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                <span>כניסה: {times.entry}</span>
+                              </div>
+                            )}
+                            {times.exit && (
+                              <div className="flex items-center gap-1">
+                                <Star className="h-3 w-3" />
+                                <span>יציאה: {times.exit}</span>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
                           {event.type === 'holiday' && (
                             <Badge 
                               variant="secondary" 
@@ -413,10 +464,10 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
                               {event.isWorkingDay ? 'יום עבודה' : 'לא יום עבודה'}
                             </Badge>
                           )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
