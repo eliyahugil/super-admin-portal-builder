@@ -98,14 +98,14 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
               
               <div className="grid grid-cols-7 gap-1 text-xs">
                 {/* Days of week header - Sunday to Saturday (right to left for Hebrew) */}
-                {['שבת', 'ו', 'ה', 'ד', 'ג', 'ב', 'א'].map((dayName) => (
+                {['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'שבת'].map((dayName) => (
                   <div key={dayName} className="text-center font-medium text-gray-600 p-1">
                     {dayName}
                   </div>
                 ))}
                 
-                {/* Empty cells for days before first day of month - adjust for RTL */}
-                {Array.from({ length: (7 - monthData.days[0].getDay()) % 7 }, (_, i) => (
+                {/* Empty cells for days before first day of month */}
+                {Array.from({ length: monthData.days[0].getDay() }, (_, i) => (
                   <div key={`empty-${i}`} className="p-1"></div>
                 ))}
                 
