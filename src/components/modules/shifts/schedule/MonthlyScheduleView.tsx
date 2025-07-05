@@ -99,8 +99,8 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   };
 
   const calendar = getMonthCalendar();
-  // Order: Sunday to Saturday (right to left in Hebrew) - header order
-  const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+  // Order: Sunday to Saturday (right to left in Hebrew) - header order reversed for RTL
+  const dayNames = ['שבת', 'שישי', 'חמישי', 'רביעי', 'שלישי', 'שני', 'ראשון'];
 
   // Mobile view - list of days with shifts
   if (isMobile) {
@@ -185,7 +185,7 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   // Desktop view - calendar grid
   return (
     <div className="flex flex-col h-full">
-      {/* Days of week header - Fixed - Sunday to Saturday */}
+      {/* Days of week header - Fixed - Sunday to Saturday (right to left for Hebrew) */}
       <div className="grid grid-cols-7 gap-1 mb-2 bg-gray-50 sticky top-0 z-10">
         {dayNames.map((dayName) => (
           <div key={dayName} className="p-2 text-center font-medium text-gray-600 bg-gray-50 rounded">
@@ -199,7 +199,7 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
         <div className="space-y-1">
           {calendar.map((week, weekIndex) => (
             <div key={weekIndex} className="grid grid-cols-7 gap-1">
-              {week.map((day) => {
+              {week.slice().reverse().map((day) => {
                 const dayShifts = getShiftsForDay(day);
                 const isCurrentMonthDay = isCurrentMonth(day);
                 const isCurrentDay = isToday(day);

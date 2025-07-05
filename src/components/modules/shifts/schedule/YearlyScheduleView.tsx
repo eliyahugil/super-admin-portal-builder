@@ -97,19 +97,19 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
               </h3>
               
               <div className="grid grid-cols-7 gap-1 text-xs">
-                {/* Days of week header - Sunday to Saturday */}
-                {['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'].map((dayName) => (
+                {/* Days of week header - Sunday to Saturday (right to left for Hebrew) */}
+                {['ש', 'ו', 'ה', 'ד', 'ג', 'ב', 'א'].map((dayName) => (
                   <div key={dayName} className="text-center font-medium text-gray-600 p-1">
                     {dayName}
                   </div>
                 ))}
                 
-                {/* Empty cells for days before first day of month - start from Sunday */}
+                {/* Empty cells for days before first day of month - start from Sunday, but displayed right to left */}
                 {Array.from({ length: monthData.days[0].getDay() }, (_, i) => (
                   <div key={`empty-${i}`} className="p-1"></div>
                 ))}
                 
-                {/* Days of the month */}
+                {/* Days of the month - reverse order for RTL display */}
                 {monthData.days.map((day) => {
                   const dayShifts = getShiftsForDay(day);
                   const isCurrentDay = isToday(day);
@@ -135,17 +135,17 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                       
                       {/* Indicators container */}
                       <div className="flex flex-col items-center space-y-1 w-full">
+                        {/* Holiday indicator */}
+                        {hasHoliday && (
+                          <div className="text-xs text-green-700 font-bold text-center leading-tight">
+                            🎉 {holidaysForDay[0]?.hebrewName}
+                          </div>
+                        )}
+                        
                         {/* Shift indicator */}
                         {dayShifts.length > 0 && (
                           <div className="text-xs text-blue-600 font-bold">
                             {dayShifts.length} משמרות
-                          </div>
-                        )}
-                        
-                        {/* Holiday indicator */}
-                        {hasHoliday && (
-                          <div className="text-xs text-green-700 font-bold text-center leading-tight">
-                            {holidaysForDay[0]?.hebrewName}
                           </div>
                         )}
                         
