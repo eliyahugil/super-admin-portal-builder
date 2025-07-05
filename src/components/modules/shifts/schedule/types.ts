@@ -44,7 +44,7 @@ export interface Branch {
 export type EmployeeData = Employee;
 export type BranchData = Branch;
 
-// Consolidated filter interface - using only one definition
+// Filter interface - single, clear definition
 export interface ShiftScheduleFilters {
   status: string;
   employee: string;
