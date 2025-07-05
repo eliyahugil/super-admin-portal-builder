@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -140,7 +141,7 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </CardContent>
         </Card>
 
         {/* Statistics Cards - Mobile optimized */}
