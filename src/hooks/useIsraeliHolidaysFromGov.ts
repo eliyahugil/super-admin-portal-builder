@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -6,7 +5,7 @@ export interface IsraeliHoliday {
   date: string;
   name: string;
   hebrewName: string;
-  type: 'חג' | 'מועד' | 'יום זיכרון' | 'יום עצמאות';
+  type: 'חג' | 'מועד' | 'יום זיכרון' | 'יום עצמאות' | 'צום';
   isWorkingDay: boolean;
 }
 
@@ -129,12 +128,11 @@ const mapHolidayType = (type: string): IsraeliHoliday['type'] => {
   if (lowerType.includes('מועד') || lowerType.includes('festival')) return 'מועד';
   if (lowerType.includes('זיכרון') || lowerType.includes('memorial')) return 'יום זיכרון';
   if (lowerType.includes('עצמאות') || lowerType.includes('independence')) return 'יום עצמאות';
+  if (lowerType.includes('צום') || lowerType.includes('fast')) return 'צום';
   return 'חג';
 };
 
 const getFallbackHolidays = (year: number): IsraeliHoliday[] => {
-  // Comprehensive fallback holidays for the current year
-  // These are approximate dates based on typical years
   return [
     // חגי תשרי
     {
@@ -250,14 +248,14 @@ const getFallbackHolidays = (year: number): IsraeliHoliday[] => {
       date: `${year}-07-17`,
       name: 'Fast of Tammuz',
       hebrewName: 'צום תמוז',
-      type: 'מועד',
+      type: 'צום',
       isWorkingDay: true
     },
     {
       date: `${year}-08-07`,
       name: 'Tisha B\'Av',
       hebrewName: 'תשעה באב',
-      type: 'מועד',
+      type: 'צום',
       isWorkingDay: true
     },
     {

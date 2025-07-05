@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Star, Clock } from 'lucide-react';
-import { IsraeliHoliday } from '@/hooks/useIsraeliHolidaysFromGov';
-import { ShabbatTimes } from '@/hooks/useShabbatTimesFromGov';
+import { IsraeliHoliday } from '@/hooks/useIsraeliHolidaysFromHebcal';
+import { ShabbatTimes } from '@/hooks/useShabbatTimesFromHebcal';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface HolidaysAndFestivalsTableProps {
@@ -19,7 +18,6 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
   shabbatTimes,
   className = ''
 }) => {
-  // מיזוג וסידור הנתונים לפי תאריך
   const combinedEvents = React.useMemo(() => {
     const events: Array<{
       date: string;
@@ -79,6 +77,8 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
         return <Calendar className="h-4 w-4 text-gray-600" />;
       case 'יום עצמאות':
         return <Star className="h-4 w-4 text-blue-600" />;
+      case 'צום':
+        return <Calendar className="h-4 w-4 text-purple-600" />;
       default:
         return <Calendar className="h-4 w-4 text-gray-600" />;
     }
@@ -95,6 +95,8 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
         return 'bg-gray-100 text-gray-800';
       case 'יום עצמאות':
         return 'bg-blue-100 text-blue-800';
+      case 'צום':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -127,7 +129,7 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
           חגים ומועדים וזמני שבת
         </CardTitle>
         <p className="text-sm text-gray-600">
-          רשימת החגים, המועדים וזמני השבת הקרובים (נתונים מ-API הממשלתי)
+          רשימת החגים, המועדים וזמני השבת הקרובים (נתונים מ-Hebcal.com API)
         </p>
       </CardHeader>
       <CardContent>
