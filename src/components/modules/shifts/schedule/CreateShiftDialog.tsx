@@ -18,14 +18,14 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar, Clock, MapPin, User } from 'lucide-react';
-import type { EmployeeData, BranchData, ShiftScheduleData } from './types';
+import type { Employee, Branch, ShiftScheduleData } from './types';
 
 interface CreateShiftDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (shift: Omit<ShiftScheduleData, 'id' | 'created_at'>) => void;
-  employees: EmployeeData[];
-  branches: BranchData[];
+  employees: Employee[];
+  branches: Branch[];
   defaultDate?: string;
 }
 

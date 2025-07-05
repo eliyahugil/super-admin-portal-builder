@@ -9,13 +9,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { ShiftScheduleFilters as ShiftFiltersType, EmployeeData, BranchData } from './types';
+import type { ShiftScheduleFilters, Employee, Branch } from './types';
 
 interface ShiftScheduleFiltersProps {
-  filters: ShiftFiltersType;
-  onFiltersChange: (filters: ShiftFiltersType) => void;
-  employees: EmployeeData[];
-  branches: BranchData[];
+  filters: ShiftScheduleFilters;
+  onFiltersChange: (filters: ShiftScheduleFilters) => void;
+  employees: Employee[];
+  branches: Branch[];
 }
 
 export const ShiftScheduleFilters: React.FC<ShiftScheduleFiltersProps> = ({
@@ -24,7 +24,7 @@ export const ShiftScheduleFilters: React.FC<ShiftScheduleFiltersProps> = ({
   employees,
   branches
 }) => {
-  const updateFilter = (key: keyof ShiftFiltersType, value: string) => {
+  const updateFilter = (key: keyof ShiftScheduleFilters, value: string) => {
     onFiltersChange({
       ...filters,
       [key]: value

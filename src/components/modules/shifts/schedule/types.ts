@@ -16,6 +16,9 @@ export interface ShiftScheduleData {
   notes?: string;
   status?: string;
   created_at: string;
+  // נוספו השדות החסרים:
+  branch_name?: string;
+  role_preference?: string;
 }
 
 export interface Employee {
@@ -25,6 +28,8 @@ export interface Employee {
   employee_id?: string;
   business_id: string;
   is_active: boolean;
+  phone?: string;
+  email?: string;
 }
 
 export interface Branch {
@@ -35,6 +40,10 @@ export interface Branch {
   is_active: boolean;
 }
 
+// הוספת טיפוסים חסרים:
+export type EmployeeData = Employee;
+export type BranchData = Branch;
+
 export interface ScheduleFilters {
   employeeId?: string;
   branchId?: string;
@@ -44,6 +53,14 @@ export interface ScheduleFilters {
     end: Date;
   };
 }
+
+// הוספת השמות הישנים לתאימות:
+export type ShiftScheduleFilters = {
+  status: string;
+  employee: string;
+  branch: string;
+  role: string;
+};
 
 // Combined calendar event type for unified handling
 export interface CalendarEvent {
@@ -57,4 +74,16 @@ export interface CalendarEvent {
   data?: ShiftScheduleData | IsraeliHoliday | ShabbatTimes | GoogleCalendarEvent;
   color?: string;
   isWorkingDay?: boolean;
+}
+
+// הוספת טיפוס לקומפוננטי תצוגה:
+export interface ShiftScheduleViewProps {
+  shifts: ShiftScheduleData[];
+  employees: Employee[];
+  currentDate: Date;
+  holidays: IsraeliHoliday[];
+  shabbatTimes: ShabbatTimes[];
+  calendarEvents: CalendarEvent[];
+  onShiftClick: (shift: ShiftScheduleData) => void;
+  onShiftUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
 }

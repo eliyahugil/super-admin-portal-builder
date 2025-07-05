@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus, Minus } from 'lucide-react';
-import type { EmployeeData } from '../types';
+import type { Employee } from '../types';
 
 interface ShiftTemplate {
   start_time: string;
@@ -26,7 +26,7 @@ interface ShiftTemplate {
 interface BulkShiftCreatorShiftTemplateProps {
   shiftTemplate: ShiftTemplate;
   setShiftTemplate: React.Dispatch<React.SetStateAction<ShiftTemplate>>;
-  employees: EmployeeData[];
+  employees: Employee[];
   toggleEmployee: (employeeId: string) => void;
 }
 

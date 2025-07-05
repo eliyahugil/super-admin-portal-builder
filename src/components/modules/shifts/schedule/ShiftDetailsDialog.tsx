@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -27,12 +26,12 @@ import {
   Save,
   UserPlus
 } from 'lucide-react';
-import type { ShiftScheduleData, EmployeeData, BranchData } from './types';
+import type { ShiftScheduleData, Employee, Branch } from './types';
 
 interface ShiftDetailsDialogProps {
   shift: ShiftScheduleData;
-  employees: EmployeeData[];
-  branches: BranchData[];
+  employees: Employee[];
+  branches: Branch[];
   onClose: () => void;
   onUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
   onDelete: (shiftId: string) => void;
@@ -110,8 +109,8 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               <Calendar className="h-5 w-5" />
               פרטי משמרת
             </span>
-            <Badge className={getStatusColor(shift.status)}>
-              {getStatusText(shift.status)}
+            <Badge className={getStatusColor(shift.status || 'pending')}>
+              {getStatusText(shift.status || 'pending')}
             </Badge>
           </DialogTitle>
         </DialogHeader>

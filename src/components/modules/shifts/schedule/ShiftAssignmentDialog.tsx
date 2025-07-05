@@ -16,13 +16,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { User, Calendar, Clock, MapPin } from 'lucide-react';
-import type { EmployeeData, ShiftScheduleData } from './types';
+import type { Employee, ShiftScheduleData } from './types';
 
 interface ShiftAssignmentDialogProps {
   isOpen: boolean;
   onClose: () => void;
   shift: ShiftScheduleData;
-  employees: EmployeeData[];
+  employees: Employee[];
   onAssign: (shiftId: string, employeeId: string) => void;
   onUnassign: (shiftId: string) => void;
 }
@@ -75,7 +75,7 @@ export const ShiftAssignmentDialog: React.FC<ShiftAssignmentDialogProps> = ({
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <MapPin className="h-4 w-4" />
-              <span>{shift.branch_name}</span>
+              <span>{shift.branch_name || 'לא צוין'}</span>
             </div>
             {shift.role_preference && (
               <Badge variant="outline" className="mt-2">

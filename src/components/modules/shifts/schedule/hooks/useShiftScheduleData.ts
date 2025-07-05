@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { ShiftScheduleData, EmployeeData, BranchData } from '../types';
+import type { ShiftScheduleData, Employee, Branch } from '../types';
 
 // Helper function to validate and parse status
 const allowedStatuses = ["pending", "approved", "rejected", "completed"] as const;
@@ -90,7 +90,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
   // Fetch employees - only from current business
   const { data: employees = [], isLoading: employeesLoading, error: employeesError } = useQuery({
     queryKey: ['schedule-employees', businessId],
-    queryFn: async (): Promise<EmployeeData[]> => {
+    queryFn: async (): Promise<Employee[]> => {
       if (!businessId) {
         console.log('❌ No business ID for employees');
         return [];
@@ -101,7 +101,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
       try {
         const { data, error } = await supabase
           .from('employees')
-          .select('id, first_name, last_name, phone, email, business_id')
+          .select('id, first_name, last_name, phone, email, business_id, employee_id, is_active')
           .eq('business_id', businessId)
           .eq('is_active', true);
 
@@ -125,7 +125,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
   // Fetch branches - only from current business with security check
   const { data: branches = [], isLoading: branchesLoading, error: branchesError } = useQuery({
     queryKey: ['schedule-branches', businessId],
-    queryFn: async (): Promise<BranchData[]> => {
+    queryFn: async (): Promise<Branch[]> => {
       if (!businessId) {
         console.log('❌ No business ID for branches');
         return [];
@@ -136,7 +136,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
       try {
         const { data, error } = await supabase
           .from('branches')
-          .select('id, name, address, business_id')
+          .select('id, name, address, business_id, is_active')
           .eq('business_id', businessId)
           .eq('is_active', true);
 
