@@ -220,7 +220,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
               <Checkbox
                 id="use-range"
                 checked={useWeekdayRange}
-                onCheckedChange={setUseWeekdayRange}
+                onCheckedChange={(checked) => setUseWeekdayRange(checked === true)}
               />
               <Label htmlFor="use-range">השתמש בטווח תאריכים עם ימי שבוע</Label>
             </div>
@@ -283,7 +283,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
                         <Checkbox
                           id={`weekday-${weekday.value}`}
                           checked={dateRange.selectedWeekdays.includes(weekday.value)}
-                          onCheckedChange={() => toggleWeekday(weekday.value)}
+                          onCheckedChange={(checked) => checked === true && toggleWeekday(weekday.value)}
                         />
                         <Label htmlFor={`weekday-${weekday.value}`}>
                           {weekday.label}
@@ -305,7 +305,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
                   <Checkbox
                     id={`branch-${branch.id}`}
                     checked={selectedBranches.includes(branch.id)}
-                    onCheckedChange={() => toggleBranch(branch.id)}
+                    onCheckedChange={(checked) => checked === true && toggleBranch(branch.id)}
                   />
                   <Label htmlFor={`branch-${branch.id}`} className="flex-1 cursor-pointer">
                     {branch.name}
@@ -410,7 +410,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
                   checked={shiftTemplate.assign_employees}
                   onCheckedChange={(checked) => setShiftTemplate(prev => ({
                     ...prev,
-                    assign_employees: !!checked,
+                    assign_employees: checked === true,
                     selected_employees: []
                   }))}
                 />
@@ -424,7 +424,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
                       <Checkbox
                         id={`employee-${employee.id}`}
                         checked={shiftTemplate.selected_employees.includes(employee.id)}
-                        onCheckedChange={() => toggleEmployee(employee.id)}
+                        onCheckedChange={(checked) => checked === true && toggleEmployee(employee.id)}
                       />
                       <Label htmlFor={`employee-${employee.id}`} className="flex-1 cursor-pointer text-sm">
                         {employee.first_name} {employee.last_name}

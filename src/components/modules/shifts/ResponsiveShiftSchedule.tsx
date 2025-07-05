@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +25,7 @@ import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
 import { useIsraeliHolidays } from '@/hooks/useIsraeliHolidays';
 import { useIsMobile } from '@/hooks/use-mobile';
-import type { ScheduleView, ShiftScheduleData } from './schedule/types';
+import type { ScheduleView, ShiftScheduleData, ScheduleFilters } from './schedule/types';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
   const isMobile = useIsMobile();
@@ -37,7 +36,15 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const [selectedShift, setSelectedShift] = useState<ShiftScheduleData | null>(null);
   const [assignmentShift, setAssignmentShift] = useState<ShiftScheduleData | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+
+  // Add filters state
+  const [filters, setFilters] = useState<ScheduleFilters>({
+    status: 'all',
+    employee: 'all',
+    branch: 'all',
+    role: 'all'
+  });
+
   const {
     currentDate,
     shifts,
@@ -51,6 +58,20 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   } = useShiftSchedule();
 
   const { holidays, isLoading: holidaysLoading } = useIsraeliHolidays();
+
+  // Update filters function
+  const updateFilters = (newFilters: Partial<ScheduleFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
+
+  // Filter shifts based on current filters
+  const filteredShifts = shifts.filter(shift => {
+    if (filters.status !== 'all' && shift.status !== filters.status) return false;
+    if (filters.employee !== 'all' && shift.employee_id !== filters.employee) return false;
+    if (filters.branch !== 'all' && shift.branch_id !== filters.branch) return false;
+    if (filters.role !== 'all' && shift.role_preference !== filters.role) return false;
+    return true;
+  });
 
   const formatDateRange = () => {
     if (view === 'week') {
@@ -97,13 +118,13 @@ export const ResponsiveShiftSchedule: React.FC = () => {
 
   const getScheduleStats = () => {
     const today = new Date();
-    const todayShifts = shifts.filter(shift => 
+    const todayShifts = filteredShifts.filter(shift => 
       new Date(shift.shift_date).toDateString() === today.toDateString()
     );
     
-    const assignedShifts = shifts.filter(shift => shift.employee_id && shift.employee_id !== '');
-    const unassignedShifts = shifts.filter(shift => !shift.employee_id || shift.employee_id === '');
-    const totalEmployees = new Set(shifts.map(shift => shift.employee_id).filter(Boolean)).size;
+    const assignedShifts = filteredShifts.filter(shift => shift.employee_id && shift.employee_id !== '');
+    const unassignedShifts = filteredShifts.filter(shift => !shift.employee_id || shift.employee_id === '');
+    const totalEmployees = new Set(filteredShifts.map(shift => shift.employee_id).filter(Boolean)).size;
 
     return {
       todayShifts: todayShifts.length,
@@ -333,7 +354,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             </div>
           ) : view === 'week' ? (
             <WeeklyScheduleView
-              shifts={shifts}
+              shifts={filteredShifts}
               employees={employees}
               currentDate={currentDate}
               holidays={holidays}
@@ -342,7 +363,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             />
           ) : (
             <MonthlyScheduleView
-              shifts={shifts}
+              shifts={filteredShifts}
               employees={employees}
               currentDate={currentDate}
               holidays={holidays}

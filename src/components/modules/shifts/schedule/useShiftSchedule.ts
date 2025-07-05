@@ -62,8 +62,8 @@ export const useShiftSchedule = () => {
         id: shift.id,
         employee_id: shift.employee_id || '',
         shift_date: shift.shift_date,
-        start_time: shift.shift_template?.start_time || '09:00',
-        end_time: shift.shift_template?.end_time || '17:00',
+        start_time: '09:00', // Default time since shift_template is not available
+        end_time: '17:00',   // Default time since shift_template is not available
         status: shift.is_assigned ? 'approved' : 'pending',
         branch_id: shift.branch_id || '',
         branch_name: shift.branch?.name || 'לא צוין',
