@@ -1,9 +1,9 @@
 
 import { useState } from 'react';
-import type { ShiftScheduleFilters, ShiftScheduleData } from '../types';
+import type { ScheduleFiltersType, ShiftScheduleData } from '../types';
 
 export const useShiftScheduleFilters = (shifts: ShiftScheduleData[]) => {
-  const [filters, setFilters] = useState<ShiftScheduleFilters>({
+  const [filters, setFilters] = useState<ScheduleFiltersType>({
     status: 'all',
     employee: 'all',
     branch: 'all',

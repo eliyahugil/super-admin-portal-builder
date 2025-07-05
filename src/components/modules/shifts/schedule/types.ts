@@ -44,8 +44,8 @@ export interface Branch {
 export type EmployeeData = Employee;
 export type BranchData = Branch;
 
-// Filter interface - single, clear definition
-export interface ShiftScheduleFilters {
+// Shift schedule filters interface
+export interface ScheduleFiltersType {
   status: string;
   employee: string;
   branch: string;
