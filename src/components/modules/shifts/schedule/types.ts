@@ -44,23 +44,13 @@ export interface Branch {
 export type EmployeeData = Employee;
 export type BranchData = Branch;
 
-export interface ScheduleFilters {
-  employeeId?: string;
-  branchId?: string;
-  status?: string;
-  dateRange?: {
-    start: Date;
-    end: Date;
-  };
-}
-
-// הוספת השמות הישנים לתאימות:
-export type ShiftScheduleFilters = {
+// Consolidated filter interface - using only one definition
+export interface ShiftScheduleFilters {
   status: string;
   employee: string;
   branch: string;
   role: string;
-};
+}
 
 // Combined calendar event type for unified handling
 export interface CalendarEvent {
