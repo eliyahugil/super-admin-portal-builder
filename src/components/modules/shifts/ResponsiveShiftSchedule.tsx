@@ -11,6 +11,7 @@ import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
 import { ScheduleErrorBoundary } from './schedule/ScheduleErrorBoundary';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
 import { useIsraeliHolidays } from '@/hooks/useIsraeliHolidays';
+import { useShabbatTimes } from '@/hooks/useShabbatTimes';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScheduleHeader } from './schedule/components/ScheduleHeader';
 import { ScheduleActions } from './schedule/components/ScheduleActions';
@@ -44,12 +45,15 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   } = useShiftSchedule();
 
   const { holidays, isLoading: holidaysLoading } = useIsraeliHolidays();
+  const { shabbatTimes, isLoading: shabbatLoading } = useShabbatTimes();
 
   console.log('📊 ResponsiveShiftSchedule - Current state:', {
     businessId,
     shiftsCount: shifts.length,
     employeesCount: employees.length,
     branchesCount: branches.length,
+    holidaysCount: holidays.length,
+    shabbatTimesCount: shabbatTimes.length,
     loading,
     error: error?.message || null
   });
@@ -163,7 +167,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
         </CardHeader>
         
         <CardContent className="flex-1 flex flex-col min-h-0 p-0">
-          {loading || holidaysLoading ? (
+          {loading || holidaysLoading || shabbatLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -176,6 +180,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
               employees={employees}
               currentDate={currentDate}
               holidays={holidays}
+              shabbatTimes={shabbatTimes}
               onShiftClick={handleShiftClick}
               onShiftUpdate={updateShift}
             />
@@ -185,6 +190,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
               employees={employees}
               currentDate={currentDate}
               holidays={holidays}
+              shabbatTimes={shabbatTimes}
               onShiftClick={handleShiftClick}
               onShiftUpdate={updateShift}
             />

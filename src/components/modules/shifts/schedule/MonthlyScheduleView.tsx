@@ -5,6 +5,8 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Calendar as CalendarIcon } from 'lucide-react';
+import { HolidayIndicator } from './HolidayIndicator';
+import { ShabbatIndicator } from './components/ShabbatIndicator';
 import type { ShiftScheduleViewProps } from './types';
 
 export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
@@ -12,6 +14,7 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   employees,
   currentDate,
   holidays,
+  shabbatTimes = [],
   onShiftClick
 }) => {
   const isMobile = useIsMobile();
@@ -62,6 +65,11 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     return holidays.filter(holiday => holiday.date === dateStr);
   };
 
+  const getShabbatTimesForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return shabbatTimes.find(times => times.date === dateStr) || null;
+  };
+
   const isHoliday = (date: Date) => {
     return getHolidaysForDate(date).length > 0;
   };
@@ -72,7 +80,7 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   // Mobile view - list of days with shifts
   if (isMobile) {
     const daysWithShifts = calendar.flat()
-      .filter(day => isCurrentMonth(day) && getShiftsForDay(day).length > 0)
+      .filter(day => isCurrentMonth(day) && (getShiftsForDay(day).length > 0 || getHolidaysForDate(day).length > 0 || getShabbatTimesForDate(day) !== null))
       .sort((a, b) => a.getTime() - b.getTime());
 
     return (
@@ -83,6 +91,7 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
               const dayShifts = getShiftsForDay(day);
               const isCurrentDay = isToday(day);
               const holidaysForDay = getHolidaysForDate(day);
+              const shabbatTimesForDay = getShabbatTimesForDate(day);
               const hasHoliday = isHoliday(day);
               
               return (
@@ -99,17 +108,11 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                       {day.getDate()} {day.toLocaleDateString('he-IL', { month: 'long' })}
                     </div>
                     
-                    {/* Holiday badges */}
-                    {holidaysForDay.map((holiday, index) => (
-                      <Badge 
-                        key={index}
-                        variant="secondary"
-                        className="mt-2 bg-green-100 text-green-800 text-xs"
-                      >
-                        <CalendarIcon className="h-3 w-3 mr-1" />
-                        {holiday.hebrewName}
-                      </Badge>
-                    ))}
+                    {/* Holiday and Shabbat indicators */}
+                    <div className="mt-2 space-y-1">
+                      <HolidayIndicator holidays={holidaysForDay} />
+                      <ShabbatIndicator shabbatTimes={shabbatTimesForDay} date={day} variant="detailed" />
+                    </div>
                   </div>
 
                   {/* Shifts for this day */}
@@ -137,7 +140,7 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
 
             {daysWithShifts.length === 0 && (
               <div className="text-center text-gray-400 py-12">
-                אין משמרות מתוכננות לחודש זה
+                אין משמרות, חגים או זמני שבת מתוכננים לחודש זה
               </div>
             )}
           </div>
@@ -168,6 +171,7 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 const isCurrentMonthDay = isCurrentMonth(day);
                 const isCurrentDay = isToday(day);
                 const holidaysForDay = getHolidaysForDate(day);
+                const shabbatTimesForDay = getShabbatTimesForDate(day);
                 const hasHoliday = isHoliday(day);
                 
                 return (
@@ -188,12 +192,11 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                         {day.getDate()}
                       </div>
                       
-                      {/* Holiday indicator */}
-                      {holidaysForDay.length > 0 && (
-                        <div className="text-xs text-green-700 font-medium truncate" title={holidaysForDay[0].hebrewName}>
-                          {holidaysForDay[0].hebrewName}
-                        </div>
-                      )}
+                      {/* Holiday and Shabbat indicators */}
+                      <div className="space-y-1">
+                        <HolidayIndicator holidays={holidaysForDay} variant="text" />
+                        <ShabbatIndicator shabbatTimes={shabbatTimesForDay} date={day} variant="text" />
+                      </div>
                       
                       <div className="space-y-1 max-h-16 overflow-hidden">
                         {dayShifts.slice(0, 2).map((shift) => (

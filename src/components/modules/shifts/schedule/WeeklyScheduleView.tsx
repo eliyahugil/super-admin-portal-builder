@@ -5,6 +5,8 @@ import { Card } from '@/components/ui/card';
 import { Clock, User, Calendar as CalendarIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { HolidayIndicator } from './HolidayIndicator';
+import { ShabbatIndicator } from './components/ShabbatIndicator';
 import type { ShiftScheduleViewProps } from './types';
 
 export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
@@ -12,6 +14,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   employees,
   currentDate,
   holidays,
+  shabbatTimes = [],
   onShiftClick,
   onShiftUpdate
 }) => {
@@ -76,6 +79,11 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     return holidays.filter(holiday => holiday.date === dateStr);
   };
 
+  const getShabbatTimesForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return shabbatTimes.find(times => times.date === dateStr) || null;
+  };
+
   const isHoliday = (date: Date) => {
     return getHolidaysForDate(date).length > 0;
   };
@@ -93,6 +101,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
               const dayShifts = getShiftsForDay(day);
               const isCurrentDay = isToday(day);
               const holidaysForDay = getHolidaysForDate(day);
+              const shabbatTimesForDay = getShabbatTimesForDate(day);
               const hasHoliday = isHoliday(day);
               
               return (
@@ -109,17 +118,11 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                       {day.getDate()}
                     </div>
                     
-                    {/* Holiday badges */}
-                    {holidaysForDay.map((holiday, index) => (
-                      <Badge 
-                        key={index}
-                        variant="secondary"
-                        className="mt-2 bg-green-100 text-green-800 text-xs"
-                      >
-                        <CalendarIcon className="h-3 w-3 mr-1" />
-                        {holiday.hebrewName}
-                      </Badge>
-                    ))}
+                    {/* Holiday and Shabbat indicators */}
+                    <div className="mt-2 space-y-1">
+                      <HolidayIndicator holidays={holidaysForDay} />
+                      <ShabbatIndicator shabbatTimes={shabbatTimesForDay} date={day} variant="detailed" />
+                    </div>
                   </div>
 
                   {/* Shifts for this day */}
@@ -181,6 +184,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
         {weekDays.map((day, dayIndex) => {
           const isCurrentDay = isToday(day);
           const holidaysForDay = getHolidaysForDate(day);
+          const shabbatTimesForDay = getShabbatTimesForDate(day);
           const hasHoliday = isHoliday(day);
           
           return (
@@ -199,12 +203,11 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 {day.getDate()}
               </div>
               
-              {/* Holiday indicator */}
-              {holidaysForDay.length > 0 && (
-                <div className="text-xs text-green-700 font-medium mt-1 truncate" title={holidaysForDay[0].hebrewName}>
-                  {holidaysForDay[0].hebrewName}
-                </div>
-              )}
+              {/* Holiday and Shabbat indicators */}
+              <div className="mt-1 space-y-1">
+                <HolidayIndicator holidays={holidaysForDay} variant="text" />
+                <ShabbatIndicator shabbatTimes={shabbatTimesForDay} date={day} variant="text" />
+              </div>
             </div>
           );
         })}
