@@ -112,7 +112,7 @@ export const BulkShiftCreatorShiftTemplate: React.FC<BulkShiftCreatorShiftTempla
               <SelectValue placeholder="בחר תפקיד" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">כל התפקידים</SelectItem>
+              <SelectItem value="none">כל התפקידים</SelectItem>
               <SelectItem value="cashier">קופאי</SelectItem>
               <SelectItem value="sales">מכירות</SelectItem>
               <SelectItem value="manager">מנהל</SelectItem>

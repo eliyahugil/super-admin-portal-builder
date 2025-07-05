@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -34,7 +35,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
     start_time: '09:00',
     end_time: '17:00',
     required_employees: 1,
-    role_preference: '',
+    role_preference: 'none',
     assign_employees: false,
     selected_employees: [] as string[]
   });
@@ -129,7 +130,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
               status: 'pending',
               branch_id: branchId,
               branch_name: branch?.name,
-              role_preference: shiftTemplate.role_preference,
+              role_preference: shiftTemplate.role_preference === 'none' ? '' : shiftTemplate.role_preference,
               notes: `משמרת שנוצרה דרך יצירה בכמות`
             });
           });
@@ -143,7 +144,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
               status: 'pending',
               branch_id: branchId,
               branch_name: branch?.name,
-              role_preference: shiftTemplate.role_preference,
+              role_preference: shiftTemplate.role_preference === 'none' ? '' : shiftTemplate.role_preference,
               notes: `משמרת ${i + 1} מתוך ${shiftTemplate.required_employees} - לא מוקצית`
             });
           }
@@ -156,6 +157,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
 
   const handleSubmit = () => {
     const shifts = generateShifts();
+    console.log('📝 Bulk creating shifts:', shifts);
     onSubmit(shifts);
     
     // Reset form
@@ -165,7 +167,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
       start_time: '09:00',
       end_time: '17:00',
       required_employees: 1,
-      role_preference: '',
+      role_preference: 'none',
       assign_employees: false,
       selected_employees: []
     });
@@ -208,20 +210,26 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
           {/* Branch Selection */}
           <div className="space-y-3">
             <Label className="text-lg font-semibold">בחירת סניפים</Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {branches.map(branch => (
-                <div key={branch.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`branch-${branch.id}`}
-                    checked={selectedBranches.includes(branch.id)}
-                    onCheckedChange={(checked) => checked === true && toggleBranch(branch.id)}
-                  />
-                  <Label htmlFor={`branch-${branch.id}`} className="flex-1 cursor-pointer">
-                    {branch.name}
-                  </Label>
-                </div>
-              ))}
-            </div>
+            {branches.length === 0 ? (
+              <div className="text-center py-4 text-gray-500">
+                אין סניפים זמינים. יש ליצור סניף לפני יצירת משמרות.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {branches.map(branch => (
+                  <div key={branch.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`branch-${branch.id}`}
+                      checked={selectedBranches.includes(branch.id)}
+                      onCheckedChange={(checked) => checked === true && toggleBranch(branch.id)}
+                    />
+                    <Label htmlFor={`branch-${branch.id}`} className="flex-1 cursor-pointer">
+                      {branch.name}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Shift Template */}
