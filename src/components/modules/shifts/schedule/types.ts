@@ -1,5 +1,4 @@
 
-
 import type { IsraeliHoliday } from '@/hooks/useIsraeliHolidays';
 import type { ShabbatTimes } from '@/hooks/useShabbatTimes';
 
@@ -34,11 +33,7 @@ export interface BranchData {
 }
 
 export interface ShiftScheduleFilters {
-  employee_id: string;
-  branch_id: string;
   status: string;
-  date_from: string;
-  date_to: string;
   employee: string;
   branch: string;
   role: string;
