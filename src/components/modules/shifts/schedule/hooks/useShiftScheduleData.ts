@@ -3,6 +3,17 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { ShiftScheduleData, EmployeeData, BranchData } from '../types';
 
+// Helper function to validate and parse status
+const allowedStatuses = ["pending", "approved", "rejected", "completed"] as const;
+type ShiftStatus = typeof allowedStatuses[number];
+
+function parseStatus(status: string | null): ShiftStatus {
+  if (status && allowedStatuses.includes(status as ShiftStatus)) {
+    return status as ShiftStatus;
+  }
+  return "pending"; // Default status if invalid or null
+}
+
 export const useShiftScheduleData = (businessId: string | null) => {
   console.log('🔍 useShiftScheduleData initialized with businessId:', businessId);
 
@@ -44,19 +55,25 @@ export const useShiftScheduleData = (businessId: string | null) => {
 
         console.log('✅ Raw shifts data:', data);
 
-        const transformedShifts = (data || []).map(shift => ({
-          id: shift.id,
-          employee_id: shift.employee_id || '',
-          shift_date: shift.shift_date,
-          start_time: '09:00', // Default time - this should come from shift templates later
-          end_time: '17:00', // Default time - this should come from shift templates later
-          status: shift.is_assigned ? 'approved' : 'pending',
-          branch_id: shift.branch_id || '',
-          branch_name: shift.branch?.name || 'לא צוין',
-          role_preference: '',
-          notes: shift.notes || '',
-          created_at: shift.created_at
-        }));
+        const transformedShifts = (data || []).map(shift => {
+          // Determine status based on is_assigned field
+          const rawStatus = shift.is_assigned ? 'approved' : 'pending';
+          const validatedStatus = parseStatus(rawStatus);
+
+          return {
+            id: shift.id,
+            employee_id: shift.employee_id || '',
+            shift_date: shift.shift_date,
+            start_time: '09:00', // Default time - this should come from shift templates later
+            end_time: '17:00', // Default time - this should come from shift templates later
+            status: validatedStatus,
+            branch_id: shift.branch_id || '',
+            branch_name: shift.branch?.name || 'לא צוין',
+            role_preference: '',
+            notes: shift.notes || '',
+            created_at: shift.created_at
+          };
+        });
 
         console.log('✅ Transformed shifts:', transformedShifts.length, 'shifts');
         return transformedShifts;
