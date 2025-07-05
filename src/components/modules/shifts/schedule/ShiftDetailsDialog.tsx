@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -17,9 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Save } from 'lucide-react';
-import type { EmployeeData, BranchData, ShiftScheduleData } from './types';
+import { 
+  Calendar, 
+  Clock, 
+  MapPin, 
+  User, 
+  Trash2, 
+  Save,
+  UserPlus
+} from 'lucide-react';
+import type { ShiftScheduleData, EmployeeData, BranchData } from './types';
 
 interface ShiftDetailsDialogProps {
   shift: ShiftScheduleData;
@@ -28,6 +36,7 @@ interface ShiftDetailsDialogProps {
   onClose: () => void;
   onUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
   onDelete: (shiftId: string) => void;
+  onAssignEmployee?: (shift: ShiftScheduleData) => void;
 }
 
 export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
@@ -36,33 +45,32 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
   branches,
   onClose,
   onUpdate,
-  onDelete
+  onDelete,
+  onAssignEmployee
 }) => {
+  const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
-    employee_id: shift.employee_id,
     shift_date: shift.shift_date,
     start_time: shift.start_time,
     end_time: shift.end_time,
-    status: shift.status,
+    employee_id: shift.employee_id || '',
     branch_id: shift.branch_id || '',
+    status: shift.status,
     role_preference: shift.role_preference || '',
     notes: shift.notes || ''
   });
 
-  const handleUpdate = () => {
-    const branch = branches.find(b => b.id === formData.branch_id);
+  const assignedEmployee = employees.find(emp => emp.id === shift.employee_id);
+  const assignedBranch = branches.find(branch => branch.id === shift.branch_id);
+
+  const handleSave = () => {
+    const selectedBranch = branches.find(b => b.id === formData.branch_id);
     
     onUpdate(shift.id, {
-      employee_id: formData.employee_id,
-      shift_date: formData.shift_date,
-      start_time: formData.start_time,
-      end_time: formData.end_time,
-      status: formData.status,
-      branch_id: formData.branch_id,
-      branch_name: branch?.name,
-      role_preference: formData.role_preference,
-      notes: formData.notes
+      ...formData,
+      branch_name: selectedBranch?.name
     });
+    setEditMode(false);
   };
 
   const handleDelete = () => {
@@ -71,29 +79,26 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
     }
   };
 
+  const updateField = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'rejected': return 'bg-red-100 text-red-800';
       case 'completed': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-yellow-100 text-yellow-800';
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'approved': return 'מאושר';
-      case 'pending': return 'ממתין';
-      case 'rejected': return 'נדחה';
-      case 'completed': return 'הושלם';
-      default: return status;
+      case 'approved': return 'אושרה';
+      case 'rejected': return 'נדחתה';
+      case 'completed': return 'הושלמה';
+      default: return 'בהמתנה';
     }
-  };
-
-  const getEmployeeName = (employeeId: string) => {
-    const employee = employees.find(emp => emp.id === employeeId);
-    return employee ? `${employee.first_name} ${employee.last_name}` : 'לא נמצא';
   };
 
   return (
@@ -101,134 +106,219 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
       <DialogContent className="max-w-md" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            פרטי המשמרת
+            <span className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              פרטי משמרת
+            </span>
             <Badge className={getStatusColor(shift.status)}>
               {getStatusText(shift.status)}
             </Badge>
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>עובד</Label>
-            <Select value={formData.employee_id} onValueChange={(value) => setFormData({...formData, employee_id: value})}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {employees.map(employee => (
-                  <SelectItem key={employee.id} value={employee.id}>
-                    {employee.first_name} {employee.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {editMode ? (
+            // Edit mode
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="shift_date">תאריך</Label>
+                <Input
+                  id="shift_date"
+                  type="date"
+                  value={formData.shift_date}
+                  onChange={(e) => updateField('shift_date', e.target.value)}
+                />
+              </div>
 
-          <div className="space-y-2">
-            <Label>תאריך</Label>
-            <Input
-              type="date"
-              value={formData.shift_date}
-              onChange={(e) => setFormData({...formData, shift_date: e.target.value})}
-            />
-          </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start_time">שעת התחלה</Label>
+                  <Input
+                    id="start_time"
+                    type="time"
+                    value={formData.start_time}
+                    onChange={(e) => updateField('start_time', e.target.value)}
+                  />
+                </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>שעת התחלה</Label>
-              <Input
-                type="time"
-                value={formData.start_time}
-                onChange={(e) => setFormData({...formData, start_time: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>שעת סיום</Label>
-              <Input
-                type="time"
-                value={formData.end_time}
-                onChange={(e) => setFormData({...formData, end_time: e.target.value})}
-              />
-            </div>
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end_time">שעת סיום</Label>
+                  <Input
+                    id="end_time"
+                    type="time"
+                    value={formData.end_time}
+                    onChange={(e) => updateField('end_time', e.target.value)}
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label>סטטוס</Label>
-            <Select value={formData.status} onValueChange={(value: any) => setFormData({...formData, status: value})}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">ממתין</SelectItem>
-                <SelectItem value="approved">מאושר</SelectItem>
-                <SelectItem value="rejected">נדחה</SelectItem>
-                <SelectItem value="completed">הושלם</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="branch">סניף</Label>
+                <Select
+                  value={formData.branch_id}
+                  onValueChange={(value) => updateField('branch_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר סניף" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="space-y-2">
-            <Label>סניף</Label>
-            <Select value={formData.branch_id} onValueChange={(value) => setFormData({...formData, branch_id: value})}>
-              <SelectTrigger>
-                <SelectValue placeholder="בחר סניף" />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map(branch => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="employee">עובד</Label>
+                <Select
+                  value={formData.employee_id}
+                  onValueChange={(value) => updateField('employee_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר עובד" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">ללא הקצאה</SelectItem>
+                    {employees.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.first_name} {employee.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="space-y-2">
-            <Label>תפקיד</Label>
-            <Select value={formData.role_preference} onValueChange={(value) => setFormData({...formData, role_preference: value})}>
-              <SelectTrigger>
-                <SelectValue placeholder="בחר תפקיד" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">ללא תפקيد ספציפי</SelectItem>
-                <SelectItem value="cashier">קופאי</SelectItem>
-                <SelectItem value="sales">מכירות</SelectItem>
-                <SelectItem value="manager">מנהל</SelectItem>
-                <SelectItem value="security">אבטחה</SelectItem>
-                <SelectItem value="cleaner">ניקיון</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">סטטוס</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => updateField('status', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">בהמתנה</SelectItem>
+                    <SelectItem value="approved">אושרה</SelectItem>
+                    <SelectItem value="rejected">נדחתה</SelectItem>
+                    <SelectItem value="completed">הושלמה</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="space-y-2">
-            <Label>הערות</Label>
-            <Textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              placeholder="הערות נוספות..."
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">תפקיד</Label>
+                <Input
+                  id="role"
+                  placeholder="תפקיד..."
+                  value={formData.role_preference}
+                  onChange={(e) => updateField('role_preference', e.target.value)}
+                />
+              </div>
 
-          <div className="flex justify-between pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="notes">הערות</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="הערות..."
+                  value={formData.notes}
+                  onChange={(e) => updateField('notes', e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </>
+          ) : (
+            // View mode
+            <>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Calendar className="h-4 w-4" />
+                  <span>{new Date(shift.shift_date).toLocaleDateString('he-IL')}</span>
+                </div>
+
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Clock className="h-4 w-4" />
+                  <span>{shift.start_time} - {shift.end_time}</span>
+                </div>
+
+                <div className="flex items-center gap-2 text-gray-600">
+                  <MapPin className="h-4 w-4" />
+                  <span>{assignedBranch?.name || 'לא צוין'}</span>
+                </div>
+
+                <div className="flex items-center gap-2 text-gray-600">
+                  <User className="h-4 w-4" />
+                  <span>
+                    {assignedEmployee 
+                      ? `${assignedEmployee.first_name} ${assignedEmployee.last_name}`
+                      : 'לא מוקצה'
+                    }
+                  </span>
+                  {onAssignEmployee && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onAssignEmployee(shift)}
+                      className="mr-2"
+                    >
+                      <UserPlus className="h-3 w-3 mr-1" />
+                      {assignedEmployee ? 'שנה' : 'הקצה'}
+                    </Button>
+                  )}
+                </div>
+
+                {shift.role_preference && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">תפקיד:</span>
+                    <Badge variant="outline">{shift.role_preference}</Badge>
+                  </div>
+                )}
+
+                {shift.notes && (
+                  <div className="space-y-1">
+                    <span className="text-sm text-gray-600">הערות:</span>
+                    <p className="text-sm bg-gray-50 p-2 rounded">{shift.notes}</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Actions */}
+          <div className="flex justify-between pt-4 border-t">
+            {editMode ? (
+              <div className="flex gap-2">
+                <Button onClick={handleSave} className="flex items-center gap-2">
+                  <Save className="h-4 w-4" />
+                  שמור
+                </Button>
+                <Button variant="outline" onClick={() => setEditMode(false)}>
+                  ביטול
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Button onClick={() => setEditMode(true)}>
+                  עריכה
+                </Button>
+                <Button variant="outline" onClick={onClose}>
+                  סגור
+                </Button>
+              </div>
+            )}
+            
             <Button
               variant="destructive"
+              size="sm"
               onClick={handleDelete}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1"
             >
               <Trash2 className="h-4 w-4" />
               מחק
             </Button>
-            
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={onClose}>
-                ביטול
-              </Button>
-              <Button onClick={handleUpdate} className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                שמור
-              </Button>
-            </div>
           </div>
         </div>
       </DialogContent>

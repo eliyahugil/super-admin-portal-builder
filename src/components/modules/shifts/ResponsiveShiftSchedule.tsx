@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,8 @@ import {
   Filter,
   Download,
   Copy,
-  Menu
+  Menu,
+  UserPlus
 } from 'lucide-react';
 import { WeeklyScheduleView } from './schedule/WeeklyScheduleView';
 import { MonthlyScheduleView } from './schedule/MonthlyScheduleView';
@@ -20,6 +22,7 @@ import { ShiftScheduleFilters } from './schedule/ShiftScheduleFilters';
 import { CreateShiftDialog } from './schedule/CreateShiftDialog';
 import { ShiftDetailsDialog } from './schedule/ShiftDetailsDialog';
 import { BulkShiftCreator } from './schedule/BulkShiftCreator';
+import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
 import { useIsraeliHolidays } from '@/hooks/useIsraeliHolidays';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -32,6 +35,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showBulkCreator, setShowBulkCreator] = useState(false);
   const [selectedShift, setSelectedShift] = useState<ShiftScheduleData | null>(null);
+  const [assignmentShift, setAssignmentShift] = useState<ShiftScheduleData | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const {
@@ -43,9 +47,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     navigateDate,
     updateShift,
     deleteShift,
-    createShift,
-    filters,
-    updateFilters
+    createShift
   } = useShiftSchedule();
 
   const { holidays, isLoading: holidaysLoading } = useIsraeliHolidays();
@@ -83,23 +85,31 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     }
   };
 
+  const handleAssignEmployee = async (shiftId: string, employeeId: string) => {
+    await updateShift(shiftId, { employee_id: employeeId });
+    setAssignmentShift(null);
+  };
+
+  const handleUnassignEmployee = async (shiftId: string) => {
+    await updateShift(shiftId, { employee_id: '' });
+    setAssignmentShift(null);
+  };
+
   const getScheduleStats = () => {
     const today = new Date();
     const todayShifts = shifts.filter(shift => 
       new Date(shift.shift_date).toDateString() === today.toDateString()
     );
     
-    const totalEmployees = new Set(shifts.map(shift => shift.employee_id)).size;
-    const totalHours = shifts.reduce((sum, shift) => {
-      const start = new Date(`2000-01-01T${shift.start_time}`);
-      const end = new Date(`2000-01-01T${shift.end_time}`);
-      return sum + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-    }, 0);
+    const assignedShifts = shifts.filter(shift => shift.employee_id && shift.employee_id !== '');
+    const unassignedShifts = shifts.filter(shift => !shift.employee_id || shift.employee_id === '');
+    const totalEmployees = new Set(shifts.map(shift => shift.employee_id).filter(Boolean)).size;
 
     return {
       todayShifts: todayShifts.length,
       totalEmployees,
-      totalHours: Math.round(totalHours)
+      assignedShifts: assignedShifts.length,
+      unassignedShifts: unassignedShifts.length
     };
   };
 
@@ -198,7 +208,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'} gap-4`}>
+      <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-4'} gap-4`}>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -231,11 +241,25 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-100 rounded-lg">
-                <Calendar className="h-5 w-5 text-purple-600" />
+                <UserPlus className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">סה"כ שעות</p>
-                <p className="text-2xl font-bold">{stats.totalHours}</p>
+                <p className="text-sm text-gray-600">משמרות מוקצות</p>
+                <p className="text-2xl font-bold">{stats.assignedShifts}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <Calendar className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">משמרות פנויות</p>
+                <p className="text-2xl font-bold">{stats.unassignedShifts}</p>
               </div>
             </div>
           </CardContent>
@@ -358,6 +382,18 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           onClose={() => setSelectedShift(null)}
           onUpdate={handleShiftUpdate}
           onDelete={handleShiftDelete}
+          onAssignEmployee={(shift) => setAssignmentShift(shift)}
+        />
+      )}
+
+      {assignmentShift && (
+        <ShiftAssignmentDialog
+          isOpen={!!assignmentShift}
+          onClose={() => setAssignmentShift(null)}
+          shift={assignmentShift}
+          employees={employees}
+          onAssign={handleAssignEmployee}
+          onUnassign={handleUnassignEmployee}
         />
       )}
     </div>
