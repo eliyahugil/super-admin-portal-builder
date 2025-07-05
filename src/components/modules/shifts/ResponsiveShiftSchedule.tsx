@@ -1,20 +1,6 @@
+
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Calendar, 
-  Users, 
-  Clock, 
-  Plus, 
-  ChevronLeft, 
-  ChevronRight,
-  Filter,
-  Download,
-  Copy,
-  Menu,
-  UserPlus
-} from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { WeeklyScheduleView } from './schedule/WeeklyScheduleView';
 import { MonthlyScheduleView } from './schedule/MonthlyScheduleView';
 import { ShiftScheduleFilters } from './schedule/ShiftScheduleFilters';
@@ -25,7 +11,10 @@ import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
 import { useIsraeliHolidays } from '@/hooks/useIsraeliHolidays';
 import { useIsMobile } from '@/hooks/use-mobile';
-import type { ScheduleView, ShiftScheduleData, ScheduleFilters } from './schedule/types';
+import { ScheduleHeader } from './schedule/components/ScheduleHeader';
+import { ScheduleActions } from './schedule/components/ScheduleActions';
+import { ScheduleStats } from './schedule/components/ScheduleStats';
+import type { ScheduleView, ShiftScheduleData } from './schedule/types';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
   const isMobile = useIsMobile();
@@ -37,54 +26,21 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const [assignmentShift, setAssignmentShift] = useState<ShiftScheduleData | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Add filters state
-  const [filters, setFilters] = useState<ScheduleFilters>({
-    status: 'all',
-    employee: 'all',
-    branch: 'all',
-    role: 'all'
-  });
-
   const {
     currentDate,
     shifts,
     employees,
     branches,
     loading,
+    filters,
     navigateDate,
+    updateFilters,
     updateShift,
     deleteShift,
     createShift
   } = useShiftSchedule();
 
   const { holidays, isLoading: holidaysLoading } = useIsraeliHolidays();
-
-  // Update filters function
-  const updateFilters = (newFilters: Partial<ScheduleFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  };
-
-  // Filter shifts based on current filters
-  const filteredShifts = shifts.filter(shift => {
-    if (filters.status !== 'all' && shift.status !== filters.status) return false;
-    if (filters.employee !== 'all' && shift.employee_id !== filters.employee) return false;
-    if (filters.branch !== 'all' && shift.branch_id !== filters.branch) return false;
-    if (filters.role !== 'all' && shift.role_preference !== filters.role) return false;
-    return true;
-  });
-
-  const formatDateRange = () => {
-    if (view === 'week') {
-      const startOfWeek = new Date(currentDate);
-      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-      
-      return `${startOfWeek.toLocaleDateString('he-IL')} - ${endOfWeek.toLocaleDateString('he-IL')}`;
-    } else {
-      return currentDate.toLocaleDateString('he-IL', { year: 'numeric', month: 'long' });
-    }
-  };
 
   const handleShiftClick = (shift: ShiftScheduleData) => {
     setSelectedShift(shift);
@@ -116,26 +72,6 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     setAssignmentShift(null);
   };
 
-  const getScheduleStats = () => {
-    const today = new Date();
-    const todayShifts = filteredShifts.filter(shift => 
-      new Date(shift.shift_date).toDateString() === today.toDateString()
-    );
-    
-    const assignedShifts = filteredShifts.filter(shift => shift.employee_id && shift.employee_id !== '');
-    const unassignedShifts = filteredShifts.filter(shift => !shift.employee_id || shift.employee_id === '');
-    const totalEmployees = new Set(filteredShifts.map(shift => shift.employee_id).filter(Boolean)).size;
-
-    return {
-      todayShifts: todayShifts.length,
-      totalEmployees,
-      assignedShifts: assignedShifts.length,
-      unassignedShifts: unassignedShifts.length
-    };
-  };
-
-  const stats = getScheduleStats();
-
   return (
     <div className={`${isMobile ? 'p-4' : 'p-6'} space-y-4 lg:space-y-6 h-full flex flex-col`} dir="rtl">
       {/* Header */}
@@ -146,146 +82,20 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             <p className="text-gray-600 mt-1">ניהול וצפייה בלוח הזמנים השבועי והחודשי</p>
           </div>
           
-          {isMobile && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
-          )}
+          <ScheduleActions
+            showFilters={showFilters}
+            setShowFilters={setShowFilters}
+            setShowCreateDialog={setShowCreateDialog}
+            setShowBulkCreator={setShowBulkCreator}
+            mobileMenuOpen={mobileMenuOpen}
+            setMobileMenuOpen={setMobileMenuOpen}
+            isMobile={isMobile}
+          />
         </div>
-        
-        {/* Mobile Actions Menu */}
-        {isMobile && mobileMenuOpen && (
-          <Card className="p-4 space-y-2">
-            <Button
-              variant={showFilters ? "default" : "outline"}
-              className="w-full justify-start"
-              onClick={() => {
-                setShowFilters(!showFilters);
-                setMobileMenuOpen(false);
-              }}
-            >
-              <Filter className="mr-2 h-4 w-4" />
-              מסננים
-            </Button>
-            <Button variant="outline" className="w-full justify-start">
-              <Download className="mr-2 h-4 w-4" />
-              יצוא
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => {
-                setShowBulkCreator(true);
-                setMobileMenuOpen(false);
-              }}
-            >
-              <Copy className="mr-2 h-4 w-4" />
-              יצירה בכמות
-            </Button>
-            <Button 
-              className="w-full justify-start"
-              onClick={() => {
-                setShowCreateDialog(true);
-                setMobileMenuOpen(false);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              משמרת חדשה
-            </Button>
-          </Card>
-        )}
-
-        {/* Desktop Actions */}
-        {!isMobile && (
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={showFilters ? "default" : "outline"}
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <Filter className="mr-2 h-4 w-4" />
-              מסננים
-            </Button>
-            <Button variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              יצוא
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowBulkCreator(true)}
-            >
-              <Copy className="mr-2 h-4 w-4" />
-              יצירה בכמות
-            </Button>
-            <Button onClick={() => setShowCreateDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              משמרת חדשה
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Stats Cards */}
-      <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-4'} gap-4`}>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Clock className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">משמרות היום</p>
-                <p className="text-2xl font-bold">{stats.todayShifts}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Users className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">עובדים פעילים</p>
-                <p className="text-2xl font-bold">{stats.totalEmployees}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <UserPlus className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">משמרות מוקצות</p>
-                <p className="text-2xl font-bold">{stats.assignedShifts}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Calendar className="h-5 w-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">משמרות פנויות</p>
-                <p className="text-2xl font-bold">{stats.unassignedShifts}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <ScheduleStats shifts={shifts} isMobile={isMobile} />
 
       {/* Filters */}
       {showFilters && (
@@ -300,51 +110,13 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       {/* Calendar Navigation & Content */}
       <Card className="flex-1 flex flex-col min-h-0">
         <CardHeader className="pb-3">
-          <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'items-center justify-between'}`}>
-            <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center gap-4'}`}>
-              <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'}`}>{formatDateRange()}</CardTitle>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigateDate(-1)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigateDate(0)}
-                >
-                  היום
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigateDate(1)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant={view === 'week' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setView('week')}
-              >
-                שבוע
-              </Button>
-              <Button
-                variant={view === 'month' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setView('month')}
-              >
-                חודש
-              </Button>
-            </div>
-          </div>
+          <ScheduleHeader
+            currentDate={currentDate}
+            view={view}
+            setView={setView}
+            navigateDate={navigateDate}
+            isMobile={isMobile}
+          />
         </CardHeader>
         
         <CardContent className="flex-1 flex flex-col min-h-0 p-0">
@@ -354,7 +126,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             </div>
           ) : view === 'week' ? (
             <WeeklyScheduleView
-              shifts={filteredShifts}
+              shifts={shifts}
               employees={employees}
               currentDate={currentDate}
               holidays={holidays}
@@ -363,7 +135,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             />
           ) : (
             <MonthlyScheduleView
-              shifts={filteredShifts}
+              shifts={shifts}
               employees={employees}
               currentDate={currentDate}
               holidays={holidays}
