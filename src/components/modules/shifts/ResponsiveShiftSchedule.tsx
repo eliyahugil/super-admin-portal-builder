@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { WeeklyScheduleView } from './schedule/WeeklyScheduleView';
@@ -10,13 +11,13 @@ import { BulkShiftCreator } from './schedule/BulkShiftCreator';
 import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
 import { ScheduleErrorBoundary } from './schedule/ScheduleErrorBoundary';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
-import { useIsraeliHolidaysFromHebcal } from '@/hooks/useIsraeliHolidaysFromHebcal';
-import { useShabbatTimesFromHebcal } from '@/hooks/useShabbatTimesFromHebcal';
+import { useCalendarIntegration } from './schedule/hooks/useCalendarIntegration';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScheduleHeader } from './schedule/components/ScheduleHeader';
 import { ScheduleActions } from './schedule/components/ScheduleActions';
 import { ScheduleStats } from './schedule/components/ScheduleStats';
 import { HolidaysAndFestivalsTable } from './schedule/components/HolidaysAndFestivalsTable';
+import { GoogleCalendarEventsTable } from './schedule/components/GoogleCalendarEventsTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ScheduleView, ShiftScheduleData } from './schedule/types';
 
@@ -47,28 +48,37 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     businessId
   } = useShiftSchedule();
 
-  // Use the new Hebcal.com API hooks
-  const { holidays, isLoading: holidaysLoading } = useIsraeliHolidaysFromHebcal();
-  const { shabbatTimes, isLoading: shabbatLoading } = useShabbatTimesFromHebcal();
+  // Use the integrated calendar hook
+  const {
+    combinedEvents,
+    googleEvents,
+    holidays,
+    shabbatTimes,
+    loading: calendarLoading,
+    getEventsForDate
+  } = useCalendarIntegration({
+    businessId: businessId || '',
+    shifts,
+    employees
+  });
 
   console.log('📊 ResponsiveShiftSchedule - Current state:', {
     businessId,
     shiftsCount: shifts.length,
     employeesCount: employees.length,
     branchesCount: branches.length,
+    combinedEventsCount: combinedEvents.length,
+    googleEventsCount: googleEvents.length,
     holidaysCount: holidays.length,
     shabbatTimesCount: shabbatTimes.length,
-    loading,
+    loading: loading || calendarLoading,
     error: error?.message || null,
-    usingHebcalAPI: true,
-    activeTab,
-    holidaysLoading,
-    shabbatLoading
+    activeTab
   });
 
   // Handle retry for errors
   const handleRetry = () => {
-    window.location.reload(); // Simple retry by reloading the page
+    window.location.reload();
   };
 
   // Show error state if there's an error
@@ -132,6 +142,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     setActiveTab(value);
   };
 
+  const isLoading = loading || calendarLoading;
+
   return (
     <div className={`${isMobile ? 'p-4' : 'p-6'} space-y-4 lg:space-y-6 h-full flex flex-col`} dir="rtl">
       {/* Header */}
@@ -139,7 +151,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900`}>לוח משמרות</h1>
-            <p className="text-gray-600 mt-1">ניהול וצפייה בלוח הזמנים השבועי והחודשי עם חגים וזמני שבת מ-Hebcal.com</p>
+            <p className="text-gray-600 mt-1">ניהול וצפייה בלוח הזמנים עם אינטגרציית Google Calendar, חגים וזמני שבת</p>
           </div>
           
           <ScheduleActions
@@ -170,13 +182,13 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       {/* Main Content with Tabs */}
       <div className="flex-1 flex flex-col min-h-0">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="schedule">לוח משמרות</TabsTrigger>
             <TabsTrigger value="holidays">חגים ומועדים</TabsTrigger>
+            <TabsTrigger value="google-calendar">Google Calendar</TabsTrigger>
           </TabsList>
           
           <TabsContent value="schedule" className="flex-1 flex flex-col min-h-0">
-            {/* Calendar Navigation & Content */}
             <Card className="flex-1 flex flex-col min-h-0">
               <CardHeader className="pb-3">
                 <ScheduleHeader
@@ -189,11 +201,11 @@ export const ResponsiveShiftSchedule: React.FC = () => {
               </CardHeader>
               
               <CardContent className="flex-1 flex flex-col min-h-0 p-0">
-                {loading || holidaysLoading || shabbatLoading ? (
+                {isLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="mt-2 text-gray-600">טוען נתוני משמרות, חגים וזמני שבת מ-Hebcal.com...</p>
+                      <p className="mt-2 text-gray-600">טוען נתוני משמרות ולוח שנה...</p>
                     </div>
                   </div>
                 ) : view === 'week' ? (
@@ -203,6 +215,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                     currentDate={currentDate}
                     holidays={holidays}
                     shabbatTimes={shabbatTimes}
+                    calendarEvents={combinedEvents}
                     onShiftClick={handleShiftClick}
                     onShiftUpdate={updateShift}
                   />
@@ -213,6 +226,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                     currentDate={currentDate}
                     holidays={holidays}
                     shabbatTimes={shabbatTimes}
+                    calendarEvents={combinedEvents}
                     onShiftClick={handleShiftClick}
                     onShiftUpdate={updateShift}
                   />
@@ -223,6 +237,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                     currentDate={currentDate}
                     holidays={holidays}
                     shabbatTimes={shabbatTimes}
+                    calendarEvents={combinedEvents}
                     onShiftClick={handleShiftClick}
                     onShiftUpdate={updateShift}
                   />
@@ -232,17 +247,34 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="holidays" className="flex-1">
-            {holidaysLoading || shabbatLoading ? (
+            {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">טוען נתוני חגים ומועדים מ-Hebcal.com...</p>
+                  <p className="mt-2 text-gray-600">טוען נתוני חגים ומועדים...</p>
                 </div>
               </div>
             ) : (
               <HolidaysAndFestivalsTable 
                 holidays={holidays}
                 shabbatTimes={shabbatTimes}
+                className="h-full"
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="google-calendar" className="flex-1">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">טוען אירועי Google Calendar...</p>
+                </div>
+              </div>
+            ) : (
+              <GoogleCalendarEventsTable 
+                events={googleEvents}
+                businessId={businessId}
                 className="h-full"
               />
             )}
@@ -254,11 +286,11 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 bg-gray-800 text-white p-2 rounded text-xs max-w-xs opacity-75">
           <div>טאב פעיל: {activeTab}</div>
+          <div>אירועים משולבים: {combinedEvents.length}</div>
+          <div>Google Calendar: {googleEvents.length}</div>
           <div>חגים: {holidays.length}</div>
           <div>זמני שבת: {shabbatTimes.length}</div>
-          <div>מקור: Hebcal.com</div>
-          <div>טוען חגים: {holidaysLoading ? 'כן' : 'לא'}</div>
-          <div>טוען שבת: {shabbatLoading ? 'כן' : 'לא'}</div>
+          <div>טוען: {isLoading ? 'כן' : 'לא'}</div>
         </div>
       )}
 
