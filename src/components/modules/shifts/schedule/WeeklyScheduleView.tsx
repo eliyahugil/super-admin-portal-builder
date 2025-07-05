@@ -23,7 +23,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   console.log('📅 WeeklyScheduleView - Received data:', {
     holidaysCount: holidays.length,
     shabbatTimesCount: shabbatTimes.length,
-    shiftsCount: shifts.length
+    shiftsCount: shifts.length,
+    currentWeek: currentDate.toLocaleDateString('he-IL')
   });
 
   const getWeekDays = () => {
@@ -104,6 +105,12 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     return getHolidaysForDate(date).length > 0;
   };
 
+  // Helper function to get Hebrew day name based on day.getDay()
+  const getHebrewDayName = (dayIndex: number) => {
+    const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    return dayNames[dayIndex];
+  };
+
   const weekDays = getWeekDays();
   // Order: Sunday to Saturday (right to left in Hebrew)
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
@@ -114,7 +121,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
       <div className="flex flex-col h-full space-y-4" dir="rtl">
         <ScrollArea className="flex-1">
           <div className="space-y-4 p-2">
-            {weekDays.map((day, dayIndex) => {
+            {weekDays.map((day) => {
               const dayShifts = getShiftsForDay(day);
               const isCurrentDay = isToday(day);
               const holidaysForDay = getHolidaysForDate(day);
@@ -129,7 +136,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   {/* Day header */}
                   <div className="mb-4 pb-3 border-b">
                     <div className={`text-lg font-bold ${isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-900'}`}>
-                      {dayNames[dayIndex]}
+                      {getHebrewDayName(day.getDay())}
                     </div>
                     <div className={`text-2xl font-bold ${isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-700'}`}>
                       {day.getDate()}
@@ -208,7 +215,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     <div className="flex flex-col h-full">
       {/* Days Headers - Fixed - Sunday to Saturday */}
       <div className="grid grid-cols-7 gap-1 bg-gray-50 sticky top-0 z-10 border-b">
-        {weekDays.map((day, dayIndex) => {
+        {weekDays.map((day) => {
           const isCurrentDay = isToday(day);
           const holidaysForDay = getHolidaysForDate(day);
           const shabbatTimesForDay = getShabbatTimesForDate(day);
@@ -222,7 +229,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
               }`}
             >
               <div className="font-medium text-sm text-gray-900">
-                {dayNames[dayIndex]}
+                {getHebrewDayName(day.getDay())}
               </div>
               <div className={`text-lg font-bold ${
                 isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-700'

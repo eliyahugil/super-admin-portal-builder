@@ -22,7 +22,8 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   console.log('📅 MonthlyScheduleView - Received data:', {
     holidaysCount: holidays.length,
     shabbatTimesCount: shabbatTimes.length,
-    shiftsCount: shifts.length
+    shiftsCount: shifts.length,
+    currentMonth: currentDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })
   });
 
   const getMonthCalendar = () => {
@@ -32,7 +33,7 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     
-    // Start from Sunday (day 0) instead of the first day of month
+    // Start from Sunday (day 0) - in Hebrew calendar, Sunday is the first day
     const startDate = new Date(firstDay);
     const firstDayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
     startDate.setDate(firstDay.getDate() - firstDayOfWeek);
@@ -91,8 +92,14 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     return getHolidaysForDate(date).length > 0;
   };
 
+  // Helper function to get Hebrew day name based on day.getDay()
+  const getHebrewDayName = (dayIndex: number) => {
+    const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    return dayNames[dayIndex];
+  };
+
   const calendar = getMonthCalendar();
-  // Order: Sunday to Saturday (right to left in Hebrew)
+  // Order: Sunday to Saturday (right to left in Hebrew) - header order
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
   // Mobile view - list of days with shifts
@@ -120,7 +127,7 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   {/* Day header */}
                   <div className="mb-4 pb-3 border-b">
                     <div className={`text-lg font-bold ${isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-900'}`}>
-                      {dayNames[day.getDay()]}
+                      {getHebrewDayName(day.getDay())}
                     </div>
                     <div className={`text-2xl font-bold ${isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-700'}`}>
                       {day.getDate()} {day.toLocaleDateString('he-IL', { month: 'long' })}
@@ -212,10 +219,11 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                     } hover:shadow-sm transition-shadow`}
                   >
                     <div className="space-y-1">
-                      <div className={`text-sm font-medium ${
+                      <div className={`text-sm font-medium flex justify-between items-center ${
                         isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-900'
                       }`}>
-                        {day.getDate()}
+                        <span>{day.getDate()}</span>
+                        <span className="text-xs text-gray-500">{getHebrewDayName(day.getDay())}</span>
                       </div>
                       
                       {/* Holiday indicators */}

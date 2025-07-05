@@ -22,7 +22,8 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   console.log('📅 YearlyScheduleView - Received data:', {
     holidaysCount: holidays.length,
     shabbatTimesCount: shabbatTimes.length,
-    shiftsCount: shifts.length
+    shiftsCount: shifts.length,
+    currentYear: currentDate.getFullYear()
   });
 
   const getYearCalendar = () => {
@@ -64,7 +65,9 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   const getHolidaysForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     const foundHolidays = holidays.filter(holiday => holiday.date === dateStr);
-    console.log(`🔍 Checking holidays for ${dateStr}:`, foundHolidays);
+    if (foundHolidays.length > 0) {
+      console.log(`🎉 Checking holidays for ${dateStr}:`, foundHolidays);
+    }
     return foundHolidays;
   };
 
