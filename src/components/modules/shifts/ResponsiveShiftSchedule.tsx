@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { WeeklyScheduleView } from './schedule/WeeklyScheduleView';
@@ -16,6 +17,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ScheduleHeader } from './schedule/components/ScheduleHeader';
 import { ScheduleActions } from './schedule/components/ScheduleActions';
 import { ScheduleStats } from './schedule/components/ScheduleStats';
+import { HolidaysAndFestivalsTable } from './schedule/components/HolidaysAndFestivalsTable';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ScheduleView, ShiftScheduleData } from './schedule/types';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
@@ -156,59 +159,79 @@ export const ResponsiveShiftSchedule: React.FC = () => {
         />
       )}
 
-      {/* Calendar Navigation & Content */}
-      <Card className="flex-1 flex flex-col min-h-0">
-        <CardHeader className="pb-3">
-          <ScheduleHeader
-            currentDate={currentDate}
-            view={view}
-            setView={setView}
-            navigateDate={navigateDate}
-            isMobile={isMobile}
-          />
-        </CardHeader>
-        
-        <CardContent className="flex-1 flex flex-col min-h-0 p-0">
-          {loading || holidaysLoading || shabbatLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-gray-600">טוען נתוני משמרות, חגים וזמני שבת מ-API הממשלתי...</p>
-              </div>
-            </div>
-          ) : view === 'week' ? (
-            <WeeklyScheduleView
-              shifts={shifts}
-              employees={employees}
-              currentDate={currentDate}
+      {/* Main Content with Tabs */}
+      <div className="flex-1 flex flex-col min-h-0">
+        <Tabs defaultValue="schedule" className="flex-1 flex flex-col">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="schedule">לוח משמרות</TabsTrigger>
+            <TabsTrigger value="holidays">חגים ומועדים</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="schedule" className="flex-1 flex flex-col min-h-0">
+            {/* Calendar Navigation & Content */}
+            <Card className="flex-1 flex flex-col min-h-0">
+              <CardHeader className="pb-3">
+                <ScheduleHeader
+                  currentDate={currentDate}
+                  view={view}
+                  setView={setView}
+                  navigateDate={navigateDate}
+                  isMobile={isMobile}
+                />
+              </CardHeader>
+              
+              <CardContent className="flex-1 flex flex-col min-h-0 p-0">
+                {loading || holidaysLoading || shabbatLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="mt-2 text-gray-600">טוען נתוני משמרות, חגים וזמני שבת מ-API הממשלתי...</p>
+                    </div>
+                  </div>
+                ) : view === 'week' ? (
+                  <WeeklyScheduleView
+                    shifts={shifts}
+                    employees={employees}
+                    currentDate={currentDate}
+                    holidays={holidays}
+                    shabbatTimes={shabbatTimes}
+                    onShiftClick={handleShiftClick}
+                    onShiftUpdate={updateShift}
+                  />
+                ) : view === 'month' ? (
+                  <MonthlyScheduleView
+                    shifts={shifts}
+                    employees={employees}
+                    currentDate={currentDate}
+                    holidays={holidays}
+                    shabbatTimes={shabbatTimes}
+                    onShiftClick={handleShiftClick}
+                    onShiftUpdate={updateShift}
+                  />
+                ) : (
+                  <YearlyScheduleView
+                    shifts={shifts}
+                    employees={employees}
+                    currentDate={currentDate}
+                    holidays={holidays}
+                    shabbatTimes={shabbatTimes}
+                    onShiftClick={handleShiftClick}
+                    onShiftUpdate={updateShift}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="holidays" className="flex-1">
+            <HolidaysAndFestivalsTable 
               holidays={holidays}
               shabbatTimes={shabbatTimes}
-              onShiftClick={handleShiftClick}
-              onShiftUpdate={updateShift}
+              className="h-full"
             />
-          ) : view === 'month' ? (
-            <MonthlyScheduleView
-              shifts={shifts}
-              employees={employees}
-              currentDate={currentDate}
-              holidays={holidays}
-              shabbatTimes={shabbatTimes}
-              onShiftClick={handleShiftClick}
-              onShiftUpdate={updateShift}
-            />
-          ) : (
-            <YearlyScheduleView
-              shifts={shifts}
-              employees={employees}
-              currentDate={currentDate}
-              holidays={holidays}
-              shabbatTimes={shabbatTimes}
-              onShiftClick={handleShiftClick}
-              onShiftUpdate={updateShift}
-            />
-          )}
-        </CardContent>
-      </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {/* Dialogs */}
       {showCreateDialog && (
