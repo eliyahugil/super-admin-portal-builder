@@ -29,6 +29,7 @@ export interface BranchData {
   id: string;
   name: string;
   address?: string;
+  business_id: string; // ✅ הוספתי את business_id
 }
 
 export interface ShiftFilters {

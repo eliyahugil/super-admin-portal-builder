@@ -91,7 +91,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
 
       const { data, error } = await supabase
         .from('branches')
-        .select('id, name, address, business_id')
+        .select('id, name, address, business_id') // ✅ כעת כולל business_id
         .eq('business_id', businessId)
         .eq('is_active', true);
 

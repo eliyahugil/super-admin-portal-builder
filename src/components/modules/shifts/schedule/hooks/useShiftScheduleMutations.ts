@@ -29,13 +29,14 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         }
       }
 
-      // Create scheduled shift
+      // Create scheduled shift with shift_template_id set to null for now
       const { data, error } = await supabase
         .from('scheduled_shifts')
         .insert({
           shift_date: shiftData.shift_date,
           branch_id: shiftData.branch_id || null,
           employee_id: shiftData.employee_id || null,
+          shift_template_id: null, // ✅ הוספתי את השדה החובה
           notes: shiftData.notes || null,
           is_assigned: !!shiftData.employee_id,
           business_id: businessId
