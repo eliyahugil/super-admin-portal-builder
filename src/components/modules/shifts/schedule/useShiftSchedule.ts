@@ -1,12 +1,12 @@
 
-import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useShiftScheduleData } from './hooks/useShiftScheduleData';
 import { useShiftScheduleMutations } from './hooks/useShiftScheduleMutations';
 import { useShiftScheduleFilters } from './hooks/useShiftScheduleFilters';
 import { useShiftScheduleNavigation } from './hooks/useShiftScheduleNavigation';
 
 export const useShiftSchedule = () => {
-  const { businessId } = useBusiness();
+  const { businessId } = useCurrentBusiness();
   const { currentDate, navigateDate } = useShiftScheduleNavigation();
   const { shifts, employees, branches, loading, error } = useShiftScheduleData(businessId);
   const { filters, filteredShifts, updateFilters } = useShiftScheduleFilters(shifts);
