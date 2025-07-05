@@ -69,6 +69,8 @@ export const TokenBasedShiftManager: React.FC = () => {
 
   const validateToken = async () => {
     try {
+      console.log('🔍 Validating token:', token);
+      
       const { data, error } = await supabase
         .from('employee_weekly_tokens')
         .select(`
@@ -88,6 +90,7 @@ export const TokenBasedShiftManager: React.FC = () => {
         .single();
 
       if (error || !data) {
+        console.error('❌ Token validation failed:', error);
         toast({
           title: 'טוקן לא תקין',
           description: 'הטוקן פג תוקף או כבר נוצל',
@@ -96,7 +99,25 @@ export const TokenBasedShiftManager: React.FC = () => {
         return;
       }
 
-      // Map the data to match TokenData interface, adding the missing is_used property
+      // Validate that we have all required employee data
+      if (!data.employee || !data.employee.business_id) {
+        console.error('❌ Missing employee or business data:', data);
+        toast({
+          title: 'שגיאה בנתוני המשתמש',
+          description: 'חסרים פרטי עובד או עסק. אנא פנה למנהל המערכת.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      console.log('✅ Token validated successfully:', {
+        tokenId: data.id,
+        employeeId: data.employee.id,
+        businessId: data.employee.business_id,
+        employeeName: `${data.employee.first_name} ${data.employee.last_name}`
+      });
+
+      // Map the data to match TokenData interface
       const mappedTokenData: TokenData = {
         ...data,
         is_used: !data.is_active // Convert is_active to is_used (inverse logic)
@@ -105,7 +126,7 @@ export const TokenBasedShiftManager: React.FC = () => {
       setTokenData(mappedTokenData);
       
     } catch (error) {
-      console.error('Error validating token:', error);
+      console.error('💥 Error validating token:', error);
       toast({
         title: 'שגיאה',
         description: 'שגיאה בבדיקת הטוקן',
@@ -117,26 +138,61 @@ export const TokenBasedShiftManager: React.FC = () => {
   };
 
   const handleShiftSubmission = async (shifts: SelectedShift[]) => {
-    if (!tokenData || !token) return;
+    if (!tokenData || !token) {
+      console.error('❌ Missing token data for shift submission');
+      toast({
+        title: 'שגיאה',
+        description: 'חסרים נתוני טוקן',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate employee data before submission
+    if (!tokenData.employee || !tokenData.employee.business_id) {
+      console.error('❌ Missing employee business data:', tokenData.employee);
+      toast({
+        title: 'שגיאה בנתוני המשתמש',
+        description: 'חסרים פרטי עסק של העובד. אנא פנה למנהל המערכת.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    console.log('📊 Submitting shifts:', {
+      shiftsCount: shifts.length,
+      employeeId: tokenData.employee_id,
+      businessId: tokenData.employee.business_id,
+      employeeName: `${tokenData.employee.first_name} ${tokenData.employee.last_name}`
+    });
 
     setSubmitting(true);
     try {
-      // Save shifts to database
+      // Save shifts to database with all required data
       const shiftInserts = shifts.map(shift => ({
         employee_id: tokenData.employee_id,
         shift_date: shift.date.toISOString().split('T')[0],
         start_time: shift.startTime,
         end_time: shift.endTime,
         branch_preference: shift.branchName,
-        notes: `משמרת נבחרה דרך טוקן - ${shift.shiftName}`,
-        status: 'pending'
+        notes: `משמרת נבחרה דרך טוקן מתקדם - ${shift.shiftName}`,
+        status: 'pending',
+        submission_token: tokenData.id, // Add token reference
+        created_at: new Date().toISOString()
       }));
+
+      console.log('💾 Inserting shift requests:', shiftInserts);
 
       const { error: shiftError } = await supabase
         .from('employee_shift_requests')
         .insert(shiftInserts);
 
-      if (shiftError) throw shiftError;
+      if (shiftError) {
+        console.error('❌ Error inserting shifts:', shiftError);
+        throw shiftError;
+      }
+
+      console.log('✅ Shifts inserted successfully');
 
       // Mark token as used
       const { error: updateError } = await supabase
@@ -146,17 +202,22 @@ export const TokenBasedShiftManager: React.FC = () => {
         })
         .eq('token', token);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('❌ Error updating token:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ Token marked as used');
 
       toast({
         title: 'הצלחה!',
-        description: `${shifts.length} משמרות נשלחו בהצלחה`,
+        description: `${shifts.length} משמרות נשלחו בהצלחה עבור ${tokenData.employee.first_name} ${tokenData.employee.last_name}`,
       });
 
       setViewMode('submitted');
 
     } catch (error) {
-      console.error('Error submitting shifts:', error);
+      console.error('💥 Error submitting shifts:', error);
       toast({
         title: 'שגיאה',
         description: 'שגיאה בשליחת המשמרות. נסה שוב.',
@@ -168,12 +229,34 @@ export const TokenBasedShiftManager: React.FC = () => {
   };
 
   const handleVacationRequest = async (request: VacationRequest) => {
-    if (!tokenData) return;
+    if (!tokenData) {
+      console.error('❌ Missing token data for vacation request');
+      return;
+    }
+
+    // Validate employee data
+    if (!tokenData.employee || !tokenData.employee.business_id) {
+      console.error('❌ Missing employee business data for vacation request');
+      toast({
+        title: 'שגיאה בנתוני המשתמש',
+        description: 'חסרים פרטי עסק של העובד. אנא פנה למנהל המערכת.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    console.log('🏖️ Submitting vacation request:', {
+      employeeId: tokenData.employee_id,
+      businessId: tokenData.employee.business_id,
+      requestType: request.type,
+      startDate: request.startDate.toISOString().split('T')[0],
+      endDate: request.endDate.toISOString().split('T')[0]
+    });
 
     try {
       setSubmitting(true);
       
-      // Save vacation request to database
+      // Save vacation request to database with all required data
       const { error } = await supabase
         .from('employee_requests')
         .insert({
@@ -185,21 +268,29 @@ export const TokenBasedShiftManager: React.FC = () => {
             start_date: request.startDate.toISOString().split('T')[0],
             end_date: request.endDate.toISOString().split('T')[0],
             vacation_type: request.type,
-            reason: request.reason
+            reason: request.reason,
+            business_id: tokenData.employee.business_id, // Include business_id
+            employee_name: `${tokenData.employee.first_name} ${tokenData.employee.last_name}`
           },
-          status: 'pending'
+          status: 'pending',
+          created_at: new Date().toISOString()
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error submitting vacation request:', error);
+        throw error;
+      }
+
+      console.log('✅ Vacation request submitted successfully');
 
       toast({
         title: 'בקשת חופשה נשלחה!',
-        description: `בקשה לחופשה מ-${request.startDate.toLocaleDateString('he-IL')} עד ${request.endDate.toLocaleDateString('he-IL')}`,
+        description: `בקשה לחופשה מ-${request.startDate.toLocaleDateString('he-IL')} עד ${request.endDate.toLocaleDateString('he-IL')} עבור ${tokenData.employee.first_name} ${tokenData.employee.last_name}`,
       });
 
       setViewMode('calendar');
     } catch (error) {
-      console.error('Error submitting vacation request:', error);
+      console.error('💥 Error submitting vacation request:', error);
       toast({
         title: 'שגיאה',
         description: 'שגיאה בשליחת בקשת החופשה. נסה שוב.',
@@ -251,7 +342,10 @@ export const TokenBasedShiftManager: React.FC = () => {
           <CardContent className="p-6 text-center">
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900 mb-2">נשלח בהצלחה!</h2>
-            <p className="text-gray-600 mb-4">הבקשות שלך נשלחו בהצלחה ויטופלו בקרוב</p>
+            <p className="text-gray-600 mb-2">
+              הבקשות של {tokenData.employee.first_name} {tokenData.employee.last_name} נשלחו בהצלחה
+            </p>
+            <p className="text-sm text-gray-500 mb-4">מס' עובד: {tokenData.employee.employee_id}</p>
             <Button 
               onClick={() => navigate('/shift-submitted')}
               className="w-full"
@@ -280,6 +374,7 @@ export const TokenBasedShiftManager: React.FC = () => {
                   <p className="text-gray-600 text-sm">
                     {tokenData.employee.first_name} {tokenData.employee.last_name} | 
                     מס' עובד: {tokenData.employee.employee_id}
+                    {tokenData.employee.phone && ` | טלפון: ${tokenData.employee.phone}`}
                   </p>
                 </div>
               </div>

@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { WeeklyShiftService, ShiftEntry, WeeklySubmissionData } from '@/services/WeeklyShiftService';
-import { Clock, MapPin, User, Calendar, Plus, Trash2 } from 'lucide-react';
+import { Clock, MapPin, User, Calendar, Plus, Trash2, AlertTriangle } from 'lucide-react';
 
 export const WeeklyShiftSubmissionForm: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -24,6 +24,7 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
   useEffect(() => {
     const validateToken = async () => {
       if (!token) {
+        console.error('❌ No token provided');
         toast({
           title: 'שגיאה',
           description: 'לא נמצא טוקן תקף',
@@ -34,8 +35,11 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
       }
 
       try {
+        console.log('🔍 Validating weekly token:', token);
+        
         const data = await WeeklyShiftService.validateWeeklyToken(token);
         if (!data) {
+          console.error('❌ Token validation failed - invalid or expired');
           toast({
             title: 'טוקן לא תקף',
             description: 'הטוקן פג תוקף או כבר נוצל',
@@ -44,6 +48,27 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           navigate('/');
           return;
         }
+
+        // Validate that we have all required employee data
+        if (!data.employee || !data.employee.first_name || !data.employee.last_name) {
+          console.error('❌ Missing employee data:', data.employee);
+          toast({
+            title: 'שגיאה בנתוני המשתמש',
+            description: 'חסרים פרטי עובד. אנא פנה למנהל המערכת.',
+            variant: 'destructive',
+          });
+          navigate('/');
+          return;
+        }
+
+        console.log('✅ Token validated successfully:', {
+          employeeId: data.employee_id,
+          employeeName: `${data.employee.first_name} ${data.employee.last_name}`,
+          employeeIdNumber: data.employee.employee_id,
+          weekStart: data.week_start_date,
+          weekEnd: data.week_end_date
+        });
+
         setTokenData(data);
         
         // Initialize with one empty shift
@@ -56,7 +81,7 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           notes: '',
         }]);
       } catch (error) {
-        console.error('Token validation error:', error);
+        console.error('💥 Token validation error:', error);
         toast({
           title: 'שגיאה',
           description: 'שגיאה בבדיקת הטוקן',
@@ -96,7 +121,26 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token || !tokenData) return;
+    if (!token || !tokenData) {
+      console.error('❌ Missing token or token data');
+      toast({
+        title: 'שגיאה',
+        description: 'חסרים נתוני טוקן',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate employee data
+    if (!tokenData.employee || !tokenData.employee.first_name || !tokenData.employee.last_name) {
+      console.error('❌ Missing employee data for submission:', tokenData.employee);
+      toast({
+        title: 'שגיאה בנתוני המשתמש',
+        description: 'חסרים פרטי עובד. אנא רענן את הדף ונסה שוב.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     // Filter out empty shifts
     const validShifts = shifts.filter(shift => 
@@ -112,6 +156,14 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
       return;
     }
 
+    console.log('📊 Submitting weekly shifts:', {
+      shiftsCount: validShifts.length,
+      employeeId: tokenData.employee_id,
+      employeeName: `${tokenData.employee.first_name} ${tokenData.employee.last_name}`,
+      weekStart: tokenData.week_start_date,
+      weekEnd: tokenData.week_end_date
+    });
+
     setSubmitting(true);
     try {
       const submissionData: WeeklySubmissionData = {
@@ -122,13 +174,16 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
       };
 
       await WeeklyShiftService.submitWeeklyShifts(token, submissionData);
+      
+      console.log('✅ Weekly shifts submitted successfully');
+      
       toast({
         title: 'הצלחה!',
-        description: 'משמרות השבוע נשלחו בהצלחה',
+        description: `${validShifts.length} משמרות נשלחו בהצלחה עבור ${tokenData.employee.first_name} ${tokenData.employee.last_name}`,
       });
       navigate('/shift-submitted');
     } catch (error: any) {
-      console.error('Weekly shifts submission error:', error);
+      console.error('💥 Weekly shifts submission error:', error);
       toast({
         title: 'שגיאה',
         description: error.message || 'שגיאה בשליחת משמרות השבוע',
@@ -151,7 +206,17 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
   }
 
   if (!tokenData) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6 text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">שגיאה בטעינת הנתונים</h2>
+            <p className="text-gray-600">לא ניתן לטעון את פרטי המשתמש או הטוקן</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const formatDate = (dateStr: string) => {
@@ -172,6 +237,11 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                 <span>
                   {tokenData.employee?.first_name} {tokenData.employee?.last_name}
                 </span>
+                {tokenData.employee?.employee_id && (
+                  <span className="text-sm">
+                    (מס' עובד: {tokenData.employee.employee_id})
+                  </span>
+                )}
               </div>
               <div className="flex items-center justify-center gap-2">
                 <Calendar className="h-4 w-4" />
@@ -179,6 +249,11 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                   שבוע: {formatDate(tokenData.week_start_date)} - {formatDate(tokenData.week_end_date)}
                 </span>
               </div>
+              {tokenData.employee?.phone && (
+                <div className="flex items-center justify-center gap-2 text-sm">
+                  <span>טלפון: {tokenData.employee.phone}</span>
+                </div>
+              )}
             </div>
           </CardHeader>
           
@@ -315,6 +390,12 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                   <strong>שימו לב:</strong> לאחר שליחת הבקשה לא ניתן יהיה לערוך אותה. 
                   אנא ודאו שכל הפרטים נכונים לפני השליחה.
                 </p>
+                {tokenData.employee && (
+                  <p className="text-xs text-yellow-700 mt-2">
+                    הבקשה תישלח עבור: {tokenData.employee.first_name} {tokenData.employee.last_name}
+                    {tokenData.employee.employee_id && ` (מס' עובד: ${tokenData.employee.employee_id})`}
+                  </p>
+                )}
               </div>
 
               <Button 
