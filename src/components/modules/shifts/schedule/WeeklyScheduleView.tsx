@@ -119,7 +119,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
       <div className="flex flex-col h-full space-y-4" dir="rtl">
         <ScrollArea className="flex-1">
           <div className="space-y-4 p-2">
-            {weekDays.slice().reverse().map((day) => {
+            {weekDays.map((day) => {
               const dayShifts = getShiftsForDay(day);
               const isCurrentDay = isToday(day);
               const holidaysForDay = getHolidaysForDate(day);
@@ -208,12 +208,12 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     );
   }
 
-  // Desktop view - table layout
+  // Desktop view - table layout with RTL ordering
   return (
     <div className="flex flex-col h-full">
       {/* Days Headers - Fixed - Sunday to Saturday (right to left for Hebrew) */}
       <div className="grid grid-cols-7 gap-1 bg-gray-50 sticky top-0 z-10 border-b">
-        {weekDays.map((day) => {
+        {weekDays.slice().reverse().map((day) => {
           const isCurrentDay = isToday(day);
           const holidaysForDay = getHolidaysForDate(day);
           const shabbatTimesForDay = getShabbatTimesForDate(day);
@@ -254,7 +254,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
       {/* Scrollable Content */}
       <ScrollArea className="flex-1">
         <div className="grid grid-cols-7 gap-1 min-h-96">
-          {weekDays.map((day) => {
+          {weekDays.slice().reverse().map((day) => {
             const dayShifts = getShiftsForDay(day);
             const hasHoliday = isHoliday(day);
             

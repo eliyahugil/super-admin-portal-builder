@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -98,7 +99,7 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   };
 
   const calendar = getMonthCalendar();
-  // Order: Sunday to Saturday (right to left in Hebrew) - header order reversed for RTL
+  // Order: Sunday to Saturday (right to left in Hebrew) - header order for RTL
   const dayNames = ['שבת', 'שישי', 'חמישי', 'רביעי', 'שלישי', 'שני', 'ראשון'];
 
   // Mobile view - list of days with shifts
