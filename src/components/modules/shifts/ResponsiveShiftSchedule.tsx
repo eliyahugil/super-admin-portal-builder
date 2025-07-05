@@ -30,6 +30,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const [selectedShift, setSelectedShift] = useState<ShiftScheduleData | null>(null);
   const [assignmentShift, setAssignmentShift] = useState<ShiftScheduleData | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('schedule');
 
   const {
     currentDate,
@@ -60,7 +61,10 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     shabbatTimesCount: shabbatTimes.length,
     loading,
     error: error?.message || null,
-    usingGovernmentAPI: true
+    usingGovernmentAPI: true,
+    activeTab,
+    holidaysLoading,
+    shabbatLoading
   });
 
   // Handle retry for errors
@@ -124,6 +128,11 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     setAssignmentShift(null);
   };
 
+  const handleTabChange = (value: string) => {
+    console.log('🔄 Tab changed to:', value);
+    setActiveTab(value);
+  };
+
   return (
     <div className={`${isMobile ? 'p-4' : 'p-6'} space-y-4 lg:space-y-6 h-full flex flex-col`} dir="rtl">
       {/* Header */}
@@ -161,7 +170,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
 
       {/* Main Content with Tabs */}
       <div className="flex-1 flex flex-col min-h-0">
-        <Tabs defaultValue="schedule" className="flex-1 flex flex-col">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col">
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="schedule">לוח משמרות</TabsTrigger>
             <TabsTrigger value="holidays">חגים ומועדים</TabsTrigger>
@@ -224,14 +233,34 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="holidays" className="flex-1">
-            <HolidaysAndFestivalsTable 
-              holidays={holidays}
-              shabbatTimes={shabbatTimes}
-              className="h-full"
-            />
+            {holidaysLoading || shabbatLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">טוען נתוני חגים ומועדים...</p>
+                </div>
+              </div>
+            ) : (
+              <HolidaysAndFestivalsTable 
+                holidays={holidays}
+                shabbatTimes={shabbatTimes}
+                className="h-full"
+              />
+            )}
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Debug Information */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 left-4 bg-gray-800 text-white p-2 rounded text-xs max-w-xs opacity-75">
+          <div>טאב פעיל: {activeTab}</div>
+          <div>חגים: {holidays.length}</div>
+          <div>זמני שבת: {shabbatTimes.length}</div>
+          <div>טוען חגים: {holidaysLoading ? 'כן' : 'לא'}</div>
+          <div>טוען שבת: {shabbatLoading ? 'כן' : 'לא'}</div>
+        </div>
+      )}
 
       {/* Dialogs */}
       {showCreateDialog && (
