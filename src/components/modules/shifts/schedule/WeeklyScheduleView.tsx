@@ -21,8 +21,10 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   const isMobile = useIsMobile();
 
   const getWeekDays = () => {
+    // Start from Sunday of the current week
     const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+    const currentDay = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    startOfWeek.setDate(currentDate.getDate() - currentDay);
     
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -89,6 +91,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   };
 
   const weekDays = getWeekDays();
+  // Order: Sunday to Saturday (right to left in Hebrew)
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
   // Mobile view - vertical cards for each day
@@ -179,7 +182,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   // Desktop view - table layout
   return (
     <div className="flex flex-col h-full">
-      {/* Days Headers - Fixed */}
+      {/* Days Headers - Fixed - Sunday to Saturday */}
       <div className="grid grid-cols-7 gap-1 bg-gray-50 sticky top-0 z-10 border-b">
         {weekDays.map((day, dayIndex) => {
           const isCurrentDay = isToday(day);

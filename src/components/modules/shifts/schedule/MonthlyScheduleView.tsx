@@ -25,8 +25,11 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
+    
+    // Start from Sunday (day 0) instead of the first day of month
     const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    const firstDayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    startDate.setDate(firstDay.getDate() - firstDayOfWeek);
     
     const calendar = [];
     let currentWeek = [];
@@ -75,7 +78,8 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   };
 
   const calendar = getMonthCalendar();
-  const dayNames = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
+  // Order: Sunday to Saturday (right to left in Hebrew)
+  const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
   // Mobile view - list of days with shifts
   if (isMobile) {
@@ -102,7 +106,7 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   {/* Day header */}
                   <div className="mb-4 pb-3 border-b">
                     <div className={`text-lg font-bold ${isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-900'}`}>
-                      {day.toLocaleDateString('he-IL', { weekday: 'long' })}
+                      {dayNames[day.getDay()]}
                     </div>
                     <div className={`text-2xl font-bold ${isCurrentDay ? 'text-blue-600' : hasHoliday ? 'text-green-700' : 'text-gray-700'}`}>
                       {day.getDate()} {day.toLocaleDateString('he-IL', { month: 'long' })}
@@ -152,7 +156,7 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   // Desktop view - calendar grid
   return (
     <div className="flex flex-col h-full">
-      {/* Days of week header - Fixed */}
+      {/* Days of week header - Fixed - Sunday to Saturday */}
       <div className="grid grid-cols-7 gap-1 mb-2 bg-gray-50 sticky top-0 z-10">
         {dayNames.map((dayName) => (
           <div key={dayName} className="p-2 text-center font-medium text-gray-600 bg-gray-50 rounded">
