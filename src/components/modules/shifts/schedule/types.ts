@@ -39,7 +39,7 @@ export interface ShiftScheduleFilters {
   role: string;
 }
 
-export type ScheduleView = 'week' | 'month';
+export type ScheduleView = 'week' | 'month' | 'year';
 
 export interface ShiftScheduleViewProps {
   shifts: ShiftScheduleData[];

@@ -17,16 +17,24 @@ export const ShabbatIndicator: React.FC<ShabbatIndicatorProps> = ({
   variant = 'badge',
   className = ''
 }) => {
-  const isShabbat = date.getDay() === 6;
-  const isFriday = date.getDay() === 5;
+  const isShabbat = date.getDay() === 6; // Saturday
+  const isFriday = date.getDay() === 5; // Friday
   
+  // Don't show anything if no Shabbat times and it's not Friday/Saturday
   if (!shabbatTimes && !isShabbat && !isFriday) return null;
 
   if (variant === 'text') {
     return (
       <div className={`text-xs text-purple-700 font-medium ${className}`}>
-        {isShabbat && '🕯️ שבת'}
-        {isFriday && shabbatTimes?.candleLighting && `🕯️ ${shabbatTimes.candleLighting}`}
+        {isFriday && shabbatTimes?.candleLighting && (
+          <div>🕯️ הדלקת נרות: {shabbatTimes.candleLighting}</div>
+        )}
+        {isShabbat && shabbatTimes?.havdalah && (
+          <div>⭐ הבדלה: {shabbatTimes.havdalah}</div>
+        )}
+        {isShabbat && !shabbatTimes?.havdalah && (
+          <div>🕯️ שבת</div>
+        )}
       </div>
     );
   }
@@ -46,6 +54,12 @@ export const ShabbatIndicator: React.FC<ShabbatIndicatorProps> = ({
             הבדלה: {shabbatTimes.havdalah}
           </Badge>
         )}
+        {isShabbat && !shabbatTimes?.havdalah && (
+          <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+            <Star className="h-3 w-3 mr-1" />
+            שבת
+          </Badge>
+        )}
         {shabbatTimes?.parsha && (
           <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-700">
             פרשת {shabbatTimes.parsha}
@@ -63,7 +77,13 @@ export const ShabbatIndicator: React.FC<ShabbatIndicatorProps> = ({
           {shabbatTimes.candleLighting}
         </Badge>
       )}
-      {isShabbat && (
+      {isShabbat && shabbatTimes?.havdalah && (
+        <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+          <Star className="h-3 w-3 mr-1" />
+          {shabbatTimes.havdalah}
+        </Badge>
+      )}
+      {isShabbat && !shabbatTimes?.havdalah && (
         <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
           <Star className="h-3 w-3 mr-1" />
           שבת

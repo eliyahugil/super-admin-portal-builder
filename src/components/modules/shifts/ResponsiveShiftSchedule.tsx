@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { WeeklyScheduleView } from './schedule/WeeklyScheduleView';
 import { MonthlyScheduleView } from './schedule/MonthlyScheduleView';
+import { YearlyScheduleView } from './schedule/YearlyScheduleView';
 import { ShiftScheduleFilters } from './schedule/ShiftScheduleFilters';
 import { CreateShiftDialog } from './schedule/CreateShiftDialog';
 import { ShiftDetailsDialog } from './schedule/ShiftDetailsDialog';
@@ -184,8 +185,18 @@ export const ResponsiveShiftSchedule: React.FC = () => {
               onShiftClick={handleShiftClick}
               onShiftUpdate={updateShift}
             />
-          ) : (
+          ) : view === 'month' ? (
             <MonthlyScheduleView
+              shifts={shifts}
+              employees={employees}
+              currentDate={currentDate}
+              holidays={holidays}
+              shabbatTimes={shabbatTimes}
+              onShiftClick={handleShiftClick}
+              onShiftUpdate={updateShift}
+            />
+          ) : (
+            <YearlyScheduleView
               shifts={shifts}
               employees={employees}
               currentDate={currentDate}

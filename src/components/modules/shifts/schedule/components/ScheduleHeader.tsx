@@ -28,8 +28,10 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       
       return `${startOfWeek.toLocaleDateString('he-IL')} - ${endOfWeek.toLocaleDateString('he-IL')}`;
-    } else {
+    } else if (view === 'month') {
       return currentDate.toLocaleDateString('he-IL', { year: 'numeric', month: 'long' });
+    } else {
+      return currentDate.toLocaleDateString('he-IL', { year: 'numeric' });
     }
   };
 
@@ -78,6 +80,13 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
           onClick={() => setView('month')}
         >
           חודש
+        </Button>
+        <Button
+          variant={view === 'year' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setView('year')}
+        >
+          שנה
         </Button>
       </div>
     </div>
