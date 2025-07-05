@@ -1,30 +1,21 @@
 
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { User, Calendar, Clock, MapPin } from 'lucide-react';
-import type { Employee, ShiftScheduleData } from './types';
+import { User, Search, Clock, Calendar } from 'lucide-react';
+import type { ShiftScheduleData, Employee } from './types';
 
 interface ShiftAssignmentDialogProps {
   isOpen: boolean;
   onClose: () => void;
   shift: ShiftScheduleData;
   employees: Employee[];
-  onAssign: (shiftId: string, employeeId: string) => void;
-  onUnassign: (shiftId: string) => void;
+  onAssign: (shiftId: string, employeeId: string) => Promise<void>;
+  onUnassign: (shiftId: string) => Promise<void>;
 }
 
 export const ShiftAssignmentDialog: React.FC<ShiftAssignmentDialogProps> = ({
@@ -35,124 +26,181 @@ export const ShiftAssignmentDialog: React.FC<ShiftAssignmentDialogProps> = ({
   onAssign,
   onUnassign
 }) => {
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState(shift.employee_id || '');
-  
-  const currentEmployee = employees.find(emp => emp.id === shift.employee_id);
-  const selectedEmployee = employees.find(emp => emp.id === selectedEmployeeId);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isAssigning, setIsAssigning] = useState(false);
 
-  const handleAssign = () => {
-    if (selectedEmployeeId && selectedEmployeeId !== shift.employee_id) {
-      onAssign(shift.id, selectedEmployeeId);
+  const currentEmployee = employees.find(emp => emp.id === shift.employee_id);
+  
+  const filteredEmployees = employees.filter(employee => {
+    const fullName = `${employee.first_name} ${employee.last_name}`.toLowerCase();
+    return fullName.includes(searchTerm.toLowerCase()) || 
+           employee.employee_id?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  const handleAssign = async () => {
+    if (!selectedEmployeeId) {
+      alert('אנא בחר עובד');
+      return;
     }
-    onClose();
+
+    setIsAssigning(true);
+    try {
+      await onAssign(shift.id, selectedEmployeeId);
+      onClose();
+    } catch (error) {
+      console.error('Error assigning employee:', error);
+      alert('שגיאה בהקצאת העובד');
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
-  const handleUnassign = () => {
-    onUnassign(shift.id);
-    onClose();
+  const handleUnassign = async () => {
+    if (!confirm('האם להסיר את העובד מהמשמרת?')) {
+      return;
+    }
+
+    setIsAssigning(true);
+    try {
+      await onUnassign(shift.id);
+      onClose();
+    } catch (error) {
+      console.error('Error unassigning employee:', error);
+      alert('שגיאה בהסרת העובד');
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md" dir="rtl">
+      <DialogContent className="sm:max-w-[500px]" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            הקצאת עובד למשמרת
-          </DialogTitle>
+          <DialogTitle>הקצאת עובד למשמרת</DialogTitle>
         </DialogHeader>
-
+        
         <div className="space-y-4">
-          {/* Shift Info */}
-          <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Calendar className="h-4 w-4" />
-              <span>{new Date(shift.shift_date).toLocaleDateString('he-IL')}</span>
+          {/* Shift Details */}
+          <div className="p-3 bg-gray-50 rounded-lg space-y-2">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-gray-600" />
+              <span className="font-medium">
+                {new Date(shift.shift_date).toLocaleDateString('he-IL', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Clock className="h-4 w-4" />
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-gray-600" />
               <span>{shift.start_time} - {shift.end_time}</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <MapPin className="h-4 w-4" />
-              <span>{shift.branch_name || 'לא צוין'}</span>
-            </div>
-            {shift.role_preference && (
-              <Badge variant="outline" className="mt-2">
-                {shift.role_preference}
-              </Badge>
-            )}
           </div>
 
           {/* Current Assignment */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">עובד נוכחי:</label>
-            {currentEmployee ? (
-              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                <span className="font-medium text-green-800">
-                  {currentEmployee.first_name} {currentEmployee.last_name}
-                </span>
+          {currentEmployee && (
+            <div className="p-3 border rounded-lg">
+              <Label className="text-sm font-medium">עובד נוכחי:</Label>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span>{currentEmployee.first_name} {currentEmployee.last_name}</span>
+                  {currentEmployee.employee_id && (
+                    <Badge variant="secondary">{currentEmployee.employee_id}</Badge>
+                  )}
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleUnassign}
-                  className="text-red-600 hover:bg-red-50"
+                  disabled={isAssigning}
                 >
-                  בטל הקצאה
+                  הסר עובד
                 </Button>
-              </div>
-            ) : (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <span className="text-yellow-800">לא מוקצה עובד</span>
-              </div>
-            )}
-          </div>
-
-          {/* Employee Selection */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">בחירת עובד חדש:</label>
-            <Select
-              value={selectedEmployeeId}
-              onValueChange={setSelectedEmployeeId}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="בחר עובד" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">ללא הקצאה</SelectItem>
-                {employees.map((employee) => (
-                  <SelectItem key={employee.id} value={employee.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{employee.first_name} {employee.last_name}</span>
-                      {employee.phone && (
-                        <span className="text-xs text-gray-500">({employee.phone})</span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Preview */}
-          {selectedEmployee && selectedEmployeeId !== shift.employee_id && (
-            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-              <div className="text-sm text-blue-800">
-                <strong>תצוגה מקדימה:</strong> המשמרת תוקצה ל{selectedEmployee.first_name} {selectedEmployee.last_name}
               </div>
             </div>
           )}
 
+          {/* Employee Search */}
+          <div className="space-y-2">
+            <Label>חיפוש עובד</Label>
+            <div className="relative">
+              <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+              <Input
+                placeholder="חפש לפי שם או מספר עובד..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10"
+              />
+            </div>
+          </div>
+
+          {/* Employee Selection */}
+          <div className="space-y-2">
+            <Label>בחר עובד חדש</Label>
+            <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+              <SelectTrigger>
+                <SelectValue placeholder="בחר עובד..." />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredEmployees.length === 0 ? (
+                  <SelectItem value="" disabled>
+                    לא נמצאו עובדים
+                  </SelectItem>
+                ) : (
+                  filteredEmployees.map(employee => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{employee.first_name} {employee.last_name}</span>
+                        {employee.employee_id && (
+                          <Badge variant="secondary" className="text-xs">
+                            {employee.employee_id}
+                          </Badge>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Selected Employee Preview */}
+          {selectedEmployeeId && (
+            <div className="p-3 bg-green-50 rounded-lg">
+              <Label className="text-sm font-medium text-green-800">עובד נבחר:</Label>
+              {(() => {
+                const employee = employees.find(emp => emp.id === selectedEmployeeId);
+                return employee ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <User className="h-4 w-4 text-green-600" />
+                    <span className="text-green-700">
+                      {employee.first_name} {employee.last_name}
+                    </span>
+                    {employee.employee_id && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        {employee.employee_id}
+                      </Badge>
+                    )}
+                  </div>
+                ) : null;
+              })()}
+            </div>
+          )}
+
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex gap-2 pt-4">
+            <Button 
+              onClick={handleAssign} 
+              disabled={!selectedEmployeeId || isAssigning}
+            >
+              {isAssigning ? 'מקצה...' : 'הקצה עובד'}
+            </Button>
             <Button variant="outline" onClick={onClose}>
               ביטול
-            </Button>
-            <Button 
-              onClick={handleAssign}
-              disabled={selectedEmployeeId === shift.employee_id}
-            >
-              עדכן הקצאה
             </Button>
           </div>
         </div>

@@ -1,32 +1,24 @@
 
-import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Clock, MapPin, User } from 'lucide-react';
-import type { Employee, Branch, ShiftScheduleData } from './types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import type { ShiftScheduleData, Employee, Branch } from './types';
 
 interface CreateShiftDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (shift: Omit<ShiftScheduleData, 'id' | 'created_at'>) => void;
+  onSubmit: (shift: Omit<ShiftScheduleData, 'id' | 'created_at'>) => Promise<void>;
   employees: Employee[];
   branches: Branch[];
-  defaultDate?: string;
 }
 
 export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
@@ -34,203 +26,123 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
   onClose,
   onSubmit,
   employees,
-  branches,
-  defaultDate
+  branches
 }) => {
-  const [formData, setFormData] = useState({
-    shift_date: defaultDate || new Date().toISOString().split('T')[0],
-    start_time: '09:00',
-    end_time: '17:00',
-    employee_id: '',
-    branch_id: '',
-    branch_name: '',
-    role_preference: '',
-    notes: '',
-    status: 'pending' as const
-  });
+  const [date, setDate] = useState<Date>();
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('17:00');
+  const [employeeId, setEmployeeId] = useState<string>('');
+  const [branchId, setBranchId] = useState<string>('');
+  const [role, setRole] = useState<string>('');
+  const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Log for debugging
-  useEffect(() => {
-    console.log('📋 CreateShiftDialog - Available data:', {
-      branchesCount: branches.length,
-      employeesCount: employees.length,
-      branches: branches.map(b => ({ id: b.id, name: b.name, business_id: b.business_id }))
-    });
-  }, [branches, employees]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('📝 Creating shift with form data:', formData);
-    
-    // Validate required fields
-    if (!formData.shift_date || !formData.start_time || !formData.end_time) {
-      console.error('❌ Missing required fields');
+    if (!date) {
+      alert('אנא בחר תאריך');
       return;
     }
 
-    if (!formData.branch_id) {
-      console.error('❌ Branch is required');
-      return;
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        shift_date: format(date, 'yyyy-MM-dd'),
+        start_time: startTime,
+        end_time: endTime,
+        employee_id: employeeId || undefined,
+        branch_id: branchId || undefined,
+        role: role || undefined,
+        notes: notes || undefined,
+        status: 'pending'
+      });
+      
+      // Reset form
+      setDate(undefined);
+      setStartTime('09:00');
+      setEndTime('17:00');
+      setEmployeeId('');
+      setBranchId('');
+      setRole('');
+      setNotes('');
+      onClose();
+    } catch (error) {
+      console.error('Error creating shift:', error);
+      alert('שגיאה ביצירת המשמרת');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const selectedBranch = branches.find(b => b.id === formData.branch_id);
-    
-    if (!selectedBranch) {
-      console.error('❌ Selected branch not found in available branches');
-      return;
-    }
-
-    console.log('✅ Submitting shift data');
-    onSubmit({
-      ...formData,
-      branch_name: selectedBranch.name,
-      employee_id: formData.employee_id || '',
-    });
-
-    // Reset form
-    setFormData({
-      shift_date: defaultDate || new Date().toISOString().split('T')[0],
-      start_time: '09:00',
-      end_time: '17:00',
-      employee_id: '',
-      branch_id: '',
-      branch_name: '',
-      role_preference: '',
-      notes: '',
-      status: 'pending'
-    });
-    
-    onClose();
   };
-
-  const updateField = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  // Show warning if no branches available
-  if (branches.length === 0) {
-    return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <Calendar className="h-5 w-5" />
-              לא ניתן ליצור משמרת
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              לא נמצאו סניפים פעילים לעסק הזה. יש ליצור לפחות סניף אחד כדי ליצור משמרות.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={onClose}>
-                סגור
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md" dir="rtl">
+      <DialogContent className="sm:max-w-[500px]" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            יצירת משמרת חדשה
-          </DialogTitle>
+          <DialogTitle>יצירת משמרת חדשה</DialogTitle>
         </DialogHeader>
-
+        
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Date Picker */}
           <div className="space-y-2">
-            <Label htmlFor="shift_date" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              תאריך משמרת
-            </Label>
-            <Input
-              id="shift_date"
-              type="date"
-              value={formData.shift_date}
-              onChange={(e) => updateField('shift_date', e.target.value)}
-              required
-            />
+            <Label>תאריך *</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon />
+                  {date ? format(date, 'dd/MM/yyyy') : <span>בחר תאריך</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
+          {/* Time Inputs */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="start_time" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                שעת התחלה
-              </Label>
+              <Label>שעת התחלה</Label>
               <Input
-                id="start_time"
                 type="time"
-                value={formData.start_time}
-                onChange={(e) => updateField('start_time', e.target.value)}
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
                 required
               />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="end_time" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                שעת סיום
-              </Label>
+              <Label>שעת סיום</Label>
               <Input
-                id="end_time"
                 type="time"
-                value={formData.end_time}
-                onChange={(e) => updateField('end_time', e.target.value)}
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
                 required
               />
             </div>
           </div>
 
+          {/* Employee Selection */}
           <div className="space-y-2">
-            <Label htmlFor="branch" className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              סניף *
-            </Label>
-            <Select
-              value={formData.branch_id}
-              onValueChange={(value) => {
-                const selectedBranch = branches.find(b => b.id === value);
-                updateField('branch_id', value);
-                updateField('branch_name', selectedBranch?.name || '');
-              }}
-              required
-            >
+            <Label>עובד</Label>
+            <Select value={employeeId} onValueChange={setEmployeeId}>
               <SelectTrigger>
-                <SelectValue placeholder="בחר סניף" />
+                <SelectValue placeholder="בחר עובד (אופציונלי)" />
               </SelectTrigger>
               <SelectContent>
-                {branches.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="employee" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              עובד (אופציונלי)
-            </Label>
-            <Select
-              value={formData.employee_id}
-              onValueChange={(value) => updateField('employee_id', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="בחר עובד או השאר ריק" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">ללא הקצאה</SelectItem>
-                {employees.map((employee) => (
+                <SelectItem value="">ללא עובד מוקצה</SelectItem>
+                {employees.map(employee => (
                   <SelectItem key={employee.id} value={employee.id}>
                     {employee.first_name} {employee.last_name}
                   </SelectItem>
@@ -239,17 +151,33 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
             </Select>
           </div>
 
+          {/* Branch Selection */}
           <div className="space-y-2">
-            <Label htmlFor="role">תפקיד (אופציונלי)</Label>
-            <Select
-              value={formData.role_preference}
-              onValueChange={(value) => updateField('role_preference', value)}
-            >
+            <Label>סניף</Label>
+            <Select value={branchId} onValueChange={setBranchId}>
               <SelectTrigger>
-                <SelectValue placeholder="בחר תפקיד" />
+                <SelectValue placeholder="בחר סניף (אופציונלי)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">כל התפקידים</SelectItem>
+                <SelectItem value="">ללא סניף</SelectItem>
+                {branches.map(branch => (
+                  <SelectItem key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Role Input */}
+          <div className="space-y-2">
+            <Label>תפקיד</Label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="בחר תפקיד (אופציונלי)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">ללא תפקיד מוגדר</SelectItem>
                 <SelectItem value="cashier">קופאי</SelectItem>
                 <SelectItem value="sales">מכירות</SelectItem>
                 <SelectItem value="manager">מנהל</SelectItem>
@@ -259,23 +187,24 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
             </Select>
           </div>
 
+          {/* Notes */}
           <div className="space-y-2">
-            <Label htmlFor="notes">הערות</Label>
+            <Label>הערות</Label>
             <Textarea
-              id="notes"
-              placeholder="הערות למשמרת..."
-              value={formData.notes}
-              onChange={(e) => updateField('notes', e.target.value)}
-              rows={2}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="הערות נוספות..."
+              rows={3}
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          {/* Actions */}
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'יוצר...' : 'צור משמרת'}
+            </Button>
             <Button type="button" variant="outline" onClick={onClose}>
               ביטול
-            </Button>
-            <Button type="submit">
-              צור משמרת
             </Button>
           </div>
         </form>

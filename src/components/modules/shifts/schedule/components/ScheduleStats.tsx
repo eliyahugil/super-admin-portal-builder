@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Clock, Users, UserPlus, Calendar } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock, User, CheckCircle } from 'lucide-react';
 import type { ShiftScheduleData } from '../types';
 
 interface ScheduleStatsProps {
@@ -9,84 +10,67 @@ interface ScheduleStatsProps {
   isMobile: boolean;
 }
 
-export const ScheduleStats: React.FC<ScheduleStatsProps> = ({ shifts, isMobile }) => {
-  const getScheduleStats = () => {
-    const today = new Date();
-    const todayShifts = shifts.filter(shift => 
-      new Date(shift.shift_date).toDateString() === today.toDateString()
-    );
-    
-    const assignedShifts = shifts.filter(shift => shift.employee_id && shift.employee_id !== '');
-    const unassignedShifts = shifts.filter(shift => !shift.employee_id || shift.employee_id === '');
-    const totalEmployees = new Set(shifts.map(shift => shift.employee_id).filter(Boolean)).size;
+export const ScheduleStats: React.FC<ScheduleStatsProps> = ({
+  shifts,
+  isMobile
+}) => {
+  const totalShifts = shifts.length;
+  const approvedShifts = shifts.filter(s => s.status === 'approved').length;
+  const pendingShifts = shifts.filter(s => s.status === 'pending').length;
+  const assignedShifts = shifts.filter(s => s.employee_id).length;
 
-    return {
-      todayShifts: todayShifts.length,
-      totalEmployees,
-      assignedShifts: assignedShifts.length,
-      unassignedShifts: unassignedShifts.length
-    };
-  };
-
-  const stats = getScheduleStats();
+  const stats = [
+    {
+      icon: Calendar,
+      label: 'סה"כ משמרות',
+      value: totalShifts,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50'
+    },
+    {
+      icon: CheckCircle,
+      label: 'מאושרות',
+      value: approvedShifts,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50'
+    },
+    {
+      icon: Clock,
+      label: 'ממתינות',
+      value: pendingShifts,
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50'
+    },
+    {
+      icon: User,
+      label: 'מוקצות',
+      value: assignedShifts,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50'
+    }
+  ];
 
   return (
-    <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-4'} gap-4`}>
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Clock className="h-5 w-5 text-blue-600" />
+    <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-4`}>
+      {stats.map((stat, index) => (
+        <Card key={index}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              </div>
+              <div>
+                <div className={`text-2xl font-bold ${stat.color}`}>
+                  {stat.value}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {stat.label}
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">משמרות היום</p>
-              <p className="text-2xl font-bold">{stats.todayShifts}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Users className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">עובדים פעילים</p>
-              <p className="text-2xl font-bold">{stats.totalEmployees}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <UserPlus className="h-5 w-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">משמרות מוקצות</p>
-              <p className="text-2xl font-bold">{stats.assignedShifts}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <Calendar className="h-5 w-5 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">משמרות פנויות</p>
-              <p className="text-2xl font-bold">{stats.unassignedShifts}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Star } from 'lucide-react';
-import { ShabbatTimes } from '@/hooks/useShabbatTimes';
+import { ShabbatTimes } from '@/hooks/useShabbatTimesFromHebcal';
 
 interface ShabbatIndicatorProps {
   shabbatTimes: ShabbatTimes | null;

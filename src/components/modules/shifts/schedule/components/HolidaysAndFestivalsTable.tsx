@@ -1,11 +1,11 @@
-import React from 'react';
+
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar, Star, Clock } from 'lucide-react';
 import { IsraeliHoliday } from '@/hooks/useIsraeliHolidaysFromHebcal';
 import { ShabbatTimes } from '@/hooks/useShabbatTimesFromHebcal';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface HolidaysAndFestivalsTableProps {
   holidays: IsraeliHoliday[];
@@ -18,247 +18,213 @@ export const HolidaysAndFestivalsTable: React.FC<HolidaysAndFestivalsTableProps>
   shabbatTimes,
   className = ''
 }) => {
-  const combinedEvents = React.useMemo(() => {
-    const events: Array<{
-      date: string;
-      type: 'holiday' | 'shabbat';
-      hebrewName: string;
-      englishName?: string;
-      category: string;
-      isWorkingDay?: boolean;
-      candleLighting?: string;
-      havdalah?: string;
-      parsha?: string;
-    }> = [];
-
-    // הוספת חגים
-    holidays.forEach(holiday => {
-      events.push({
+  const combinedEvents = useMemo(() => {
+    const events = [
+      ...holidays.map(holiday => ({
+        id: `holiday-${holiday.date}`,
         date: holiday.date,
-        type: 'holiday',
-        hebrewName: holiday.hebrewName,
-        englishName: holiday.name,
+        title: holiday.hebrewName,
+        type: 'holiday' as const,
         category: holiday.type,
-        isWorkingDay: holiday.isWorkingDay
-      });
-    });
-
-    // הוספת זמני שבת
-    shabbatTimes.forEach(shabbat => {
-      const date = new Date(shabbat.date);
-      const dayOfWeek = date.getDay();
-      
-      // הוספה רק אם יש נתונים משמעותיים
-      if (shabbat.candleLighting || shabbat.havdalah) {
-        events.push({
-          date: shabbat.date,
-          type: 'shabbat',
-          hebrewName: dayOfWeek === 5 ? 'כניסת שבת' : dayOfWeek === 6 ? 'יציאת שבת' : 'שבת',
-          category: 'זמני שבת',
-          candleLighting: shabbat.candleLighting,
-          havdalah: shabbat.havdalah,
-          parsha: shabbat.parsha
-        });
-      }
-    });
-
-    // סידור לפי תאריך
-    return events.sort((a, b) => a.date.localeCompare(b.date));
+        isWorkingDay: holiday.isWorkingDay,
+        data: holiday
+      })),
+      ...shabbatTimes.map(shabbat => ({
+        id: `shabbat-${shabbat.date}`,
+        date: shabbat.date,
+        title: `שבת${shabbat.parsha ? ` - פרשת ${shabbat.parsha}` : ''}`,
+        type: 'shabbat' as const,
+        category: 'שבת',
+        isWorkingDay: false,
+        candleLighting: shabbat.candleLighting,
+        havdalah: shabbat.havdalah,
+        data: shabbat
+      }))
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    return events;
   }, [holidays, shabbatTimes]);
 
-  const getTypeIcon = (type: string, category: string) => {
-    if (type === 'shabbat') return <Star className="h-4 w-4 text-blue-600" />;
+  const getTypeColor = (type: string, category: string) => {
+    if (type === 'shabbat') return 'bg-purple-100 text-purple-800';
     
     switch (category) {
-      case 'חג':
-      case 'מועד':
-        return <Star className="h-4 w-4 text-green-600" />;
-      case 'יום זיכרון':
-        return <Calendar className="h-4 w-4 text-gray-600" />;
-      case 'יום עצמאות':
-        return <Star className="h-4 w-4 text-blue-600" />;
-      case 'צום':
-        return <Calendar className="h-4 w-4 text-purple-600" />;
-      default:
-        return <Calendar className="h-4 w-4 text-gray-600" />;
+      case 'חג': return 'bg-green-100 text-green-800';
+      case 'מועד': return 'bg-blue-100 text-blue-800';
+      case 'יום זיכרון': return 'bg-gray-100 text-gray-800';
+      case 'יום עצמאות': return 'bg-blue-100 text-blue-800';
+      case 'צום': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getTypeBadgeColor = (type: string, category: string) => {
-    if (type === 'shabbat') return 'bg-blue-100 text-blue-800';
+  const getTypeIcon = (type: string, category: string) => {
+    if (type === 'shabbat') return <Star className="h-3 w-3" />;
     
     switch (category) {
       case 'חג':
       case 'מועד':
-        return 'bg-green-100 text-green-800';
+        return <Star className="h-3 w-3" />;
       case 'יום זיכרון':
-        return 'bg-gray-100 text-gray-800';
       case 'יום עצמאות':
-        return 'bg-blue-100 text-blue-800';
       case 'צום':
-        return 'bg-purple-100 text-purple-800';
+        return <Calendar className="h-3 w-3" />;
       default:
-        return 'bg-gray-100 text-gray-800';
+        return <Calendar className="h-3 w-3" />;
     }
   };
 
   const formatDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('he-IL', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return dateStr;
-    }
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('he-IL', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
-  const formatTime = (time: string) => {
-    if (!time) return '';
-    return time.length === 5 ? time : time;
+  const getUpcomingEvents = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return combinedEvents.filter(event => {
+      const eventDate = new Date(event.date);
+      return eventDate >= today;
+    }).slice(0, 10);
   };
+
+  const upcomingEvents = getUpcomingEvents();
 
   return (
-    <Card className={className} dir="rtl">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
-          חגים ומועדים וזמני שבת
-        </CardTitle>
-        <p className="text-sm text-gray-600">
-          רשימת החגים, המועדים וזמני השבת הקרובים (נתונים מ-Hebcal.com API)
-        </p>
-      </CardHeader>
-      <CardContent>
-        {combinedEvents.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            אין נתונים זמינים כרגע
-          </div>
-        ) : (
-          <ScrollArea className="h-96">
+    <div className={`space-y-6 ${className}`} dir="rtl">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-green-600" />
+              <div>
+                <div className="text-2xl font-bold text-green-600">
+                  {holidays.filter(h => h.type === 'חג').length}
+                </div>
+                <div className="text-sm text-gray-600">חגים</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-blue-600" />
+              <div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {holidays.filter(h => h.type === 'מועד').length}
+                </div>
+                <div className="text-sm text-gray-600">מועדים</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-purple-600" />
+              <div>
+                <div className="text-2xl font-bold text-purple-600">{shabbatTimes.length}</div>
+                <div className="text-sm text-gray-600">שבתות</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-orange-600" />
+              <div>
+                <div className="text-2xl font-bold text-orange-600">{combinedEvents.length}</div>
+                <div className="text-sm text-gray-600">סה"כ אירועים</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Upcoming Events */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            אירועים קרובים
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {upcomingEvents.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>אין אירועים קרובים</p>
+            </div>
+          ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-right">תאריך</TableHead>
-                  <TableHead className="text-right">שם</TableHead>
-                  <TableHead className="text-right">קטגורייה</TableHead>
-                  <TableHead className="text-right">פרטים נוספים</TableHead>
-                  <TableHead className="text-right">יום עבודה</TableHead>
+                  <TableHead className="text-right">אירוע</TableHead>
+                  <TableHead className="text-right">סוג</TableHead>
+                  <TableHead className="text-right">פרטים</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {combinedEvents.map((event, index) => (
-                  <TableRow key={`${event.date}-${index}`} className="hover:bg-gray-50">
-                    <TableCell className="text-right">
-                      <div className="text-sm font-medium">
-                        {formatDate(event.date)}
-                      </div>
+                {upcomingEvents.map((event) => (
+                  <TableRow key={event.id}>
+                    <TableCell className="font-medium">
+                      {formatDate(event.date)}
                     </TableCell>
-                    
-                    <TableCell className="text-right">
-                      <div className="flex items-center gap-2 justify-end">
+                    <TableCell>{event.title}</TableCell>
+                    <TableCell>
+                      <Badge className={getTypeColor(event.type, event.category)}>
                         {getTypeIcon(event.type, event.category)}
-                        <div>
-                          <div className="font-medium">{event.hebrewName}</div>
-                          {event.englishName && (
-                            <div className="text-xs text-gray-500">{event.englishName}</div>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell className="text-right">
-                      <Badge 
-                        variant="secondary" 
-                        className={`text-xs ${getTypeBadgeColor(event.type, event.category)}`}
-                      >
-                        {event.category}
+                        <span className="mr-1">{event.category}</span>
                       </Badge>
                     </TableCell>
-                    
-                    <TableCell className="text-right">
-                      <div className="space-y-1">
-                        {event.candleLighting && (
-                          <div className="flex items-center gap-1 text-xs text-purple-700 justify-end">
-                            <span>{formatTime(event.candleLighting)}</span>
-                            <Clock className="h-3 w-3" />
-                            <span>הדלקת נרות</span>
-                          </div>
+                    <TableCell>
+                      <div className="flex flex-col gap-1 text-xs">
+                        {event.type === 'shabbat' && (
+                          <>
+                            {event.candleLighting && (
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                <span>הדלקת נרות: {event.candleLighting}</span>
+                              </div>
+                            )}
+                            {event.havdalah && (
+                              <div className="flex items-center gap-1">
+                                <Star className="h-3 w-3" />
+                                <span>צאת שבת: {event.havdalah}</span>
+                              </div>
+                            )}
+                          </>
                         )}
-                        {event.havdalah && (
-                          <div className="flex items-center gap-1 text-xs text-blue-700 justify-end">
-                            <span>{formatTime(event.havdalah)}</span>
-                            <Star className="h-3 w-3" />
-                            <span>צאת שבת</span>
-                          </div>
-                        )}
-                        {event.parsha && (
-                          <div className="text-xs text-gray-600">
-                            פרשת {event.parsha}
-                          </div>
+                        {event.type === 'holiday' && (
+                          <Badge 
+                            variant="secondary" 
+                            className={event.isWorkingDay ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}
+                          >
+                            {event.isWorkingDay ? 'יום עבודה' : 'לא יום עבודה'}
+                          </Badge>
                         )}
                       </div>
-                    </TableCell>
-                    
-                    <TableCell className="text-right">
-                      {event.type === 'holiday' && (
-                        <Badge 
-                          variant={event.isWorkingDay ? "default" : "secondary"}
-                          className={`text-xs ${
-                            event.isWorkingDay 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {event.isWorkingDay ? 'יום עבודה' : 'לא יום עבודה'}
-                        </Badge>
-                      )}
-                      {event.type === 'shabbat' && (
-                        <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800">
-                          שבת
-                        </Badge>
-                      )}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </ScrollArea>
-        )}
-        
-        {/* סטטיסטיקות */}
-        <div className="mt-4 pt-4 border-t">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                {holidays.length}
-              </div>
-              <div className="text-xs text-gray-600">חגים ומועדים</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-600">
-                {shabbatTimes.length}
-              </div>
-              <div className="text-xs text-gray-600">זמני שבת</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-red-600">
-                {holidays.filter(h => !h.isWorkingDay).length}
-              </div>
-              <div className="text-xs text-gray-600">לא ימי עבודה</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-orange-600">
-                {combinedEvents.length}
-              </div>
-              <div className="text-xs text-gray-600">סה"כ אירועים</div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
