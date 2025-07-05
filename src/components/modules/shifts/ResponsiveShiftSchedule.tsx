@@ -8,6 +8,7 @@ import { CreateShiftDialog } from './schedule/CreateShiftDialog';
 import { ShiftDetailsDialog } from './schedule/ShiftDetailsDialog';
 import { BulkShiftCreator } from './schedule/BulkShiftCreator';
 import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
+import { ScheduleErrorBoundary } from './schedule/ScheduleErrorBoundary';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
 import { useIsraeliHolidays } from '@/hooks/useIsraeliHolidays';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -32,6 +33,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     employees,
     branches,
     loading,
+    error,
     filters,
     navigateDate,
     updateFilters,
@@ -48,8 +50,39 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     shiftsCount: shifts.length,
     employeesCount: employees.length,
     branchesCount: branches.length,
-    loading
+    loading,
+    error: error?.message || null
   });
+
+  // Handle retry for errors
+  const handleRetry = () => {
+    window.location.reload(); // Simple retry by reloading the page
+  };
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="min-h-screen p-4">
+        <ScheduleErrorBoundary 
+          error={error} 
+          onRetry={handleRetry}
+          businessId={businessId}
+        />
+      </div>
+    );
+  }
+
+  // Show loading state if no business context
+  if (!businessId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">טוען נתוני עסק...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleShiftClick = (shift: ShiftScheduleData) => {
     setSelectedShift(shift);
@@ -81,18 +114,6 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     await updateShift(shiftId, { employee_id: '' });
     setAssignmentShift(null);
   };
-
-  // Show loading state if no business context
-  if (!businessId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">טוען נתוני עסק...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={`${isMobile ? 'p-4' : 'p-6'} space-y-4 lg:space-y-6 h-full flex flex-col`} dir="rtl">
@@ -144,7 +165,10 @@ export const ResponsiveShiftSchedule: React.FC = () => {
         <CardContent className="flex-1 flex flex-col min-h-0 p-0">
           {loading || holidaysLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-2 text-gray-600">טוען נתוני משמרות...</p>
+              </div>
             </div>
           ) : view === 'week' ? (
             <WeeklyScheduleView

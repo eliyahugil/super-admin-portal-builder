@@ -8,7 +8,7 @@ import { useShiftScheduleNavigation } from './hooks/useShiftScheduleNavigation';
 export const useShiftSchedule = () => {
   const { businessId } = useBusiness();
   const { currentDate, navigateDate } = useShiftScheduleNavigation();
-  const { shifts, employees, branches, loading } = useShiftScheduleData(businessId);
+  const { shifts, employees, branches, loading, error } = useShiftScheduleData(businessId);
   const { filters, filteredShifts, updateFilters } = useShiftScheduleFilters(shifts);
   const { createShift, updateShift, deleteShift, isCreating, isUpdating, isDeleting } = useShiftScheduleMutations(businessId);
 
@@ -17,15 +17,20 @@ export const useShiftSchedule = () => {
     shiftsCount: shifts.length,
     employeesCount: employees.length,
     branchesCount: branches.length,
-    loading
+    loading,
+    error: error?.message || null
   });
+
+  // Show error in loading state if there's an error
+  const isLoading = loading || isCreating || isUpdating || isDeleting;
 
   return {
     currentDate,
     shifts: filteredShifts,
     employees,
     branches,
-    loading: loading || isCreating || isUpdating || isDeleting,
+    loading: isLoading,
+    error,
     filters,
     navigateDate,
     updateFilters,
