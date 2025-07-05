@@ -38,7 +38,8 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
       const monthData = {
         name: firstDay.toLocaleDateString('he-IL', { month: 'long' }),
         month: month,
-        days: []
+        days: [],
+        firstDayOfWeek: firstDay.getDay() // 0 = Sunday, 1 = Monday, etc.
       };
       
       for (let day = 1; day <= daysInMonth; day++) {
@@ -104,13 +105,13 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   </div>
                 ))}
                 
-                {/* Empty cells for days before first day of month - RTL adjustment */}
-                {Array.from({ length: (7 - monthData.days[0].getDay()) % 7 }, (_, i) => (
+                {/* Empty cells for days before first day of month - RTL layout */}
+                {Array.from({ length: (6 - monthData.firstDayOfWeek) }, (_, i) => (
                   <div key={`empty-${i}`} className="p-1"></div>
                 ))}
                 
-                {/* Days of the month - reversed for RTL */}
-                {monthData.days.slice().reverse().map((day) => {
+                {/* Days of the month - in natural order for RTL layout */}
+                {monthData.days.map((day) => {
                   const dayShifts = getShiftsForDay(day);
                   const isCurrentDay = isToday(day);
                   const holidaysForDay = getHolidaysForDate(day);
