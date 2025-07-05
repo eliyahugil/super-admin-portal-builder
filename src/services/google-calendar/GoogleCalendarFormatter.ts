@@ -1,4 +1,3 @@
-
 export interface HebrewCalendarConfig {
   primaryCalendar: 'hebrew' | 'gregorian';
   showHebrewDates: boolean;
@@ -53,8 +52,8 @@ export class GoogleCalendarFormatter {
   getWeekDaysHeader(format: 'full' | 'short' = 'short'): string[] {
     // Hebrew calendar starts with Sunday and goes right to left
     const names = format === 'short' ? this.hebrewDayNamesShort : this.hebrewDayNames;
-    // Return in RTL order: Saturday to Sunday
-    return names.slice().reverse();
+    // Return in correct Hebrew order: Sunday to Saturday (not reversed)
+    return names;
   }
 
   getMonthCalendar(year: number, month: number): FormattedCalendarDay[][] {
