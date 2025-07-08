@@ -17,6 +17,17 @@ const ShiftSubmissionPage: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center" dir="rtl">
+        <div className="text-center">
+          <div className="text-red-600 mb-2">שגיאה בטעינת העסק</div>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       <ShiftSubmissionManager />

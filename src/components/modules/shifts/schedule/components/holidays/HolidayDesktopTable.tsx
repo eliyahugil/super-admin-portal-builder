@@ -2,8 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, Star, Clock } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 
 interface CombinedEvent {
   id: string;
@@ -30,113 +29,99 @@ export const HolidayDesktopTable: React.FC<HolidayDesktopTableProps> = ({
   formatDate,
   getHolidayTimes
 }) => {
-  const getTypeColor = (type: string, category: string) => {
-    if (type === 'shabbat') return 'bg-purple-100 text-purple-800';
-    
-    switch (category) {
-      case 'חג': return 'bg-green-100 text-green-800';
-      case 'מועד': return 'bg-blue-100 text-blue-800';
-      case 'יום זיכרון': return 'bg-gray-100 text-gray-800';
-      case 'יום עצמאות': return 'bg-blue-100 text-blue-800';
-      case 'צום': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getTypeIcon = (type: string, category: string) => {
-    if (type === 'shabbat') return <Star className="h-3 w-3" />;
-    
-    switch (category) {
-      case 'חג':
-      case 'מועד':
-        return <Star className="h-3 w-3" />;
-      case 'יום זיכרון':
-      case 'יום עצמאות':
-      case 'צום':
-        return <Calendar className="h-3 w-3" />;
-      default:
-        return <Calendar className="h-3 w-3" />;
-    }
+  const getEventBadgeColor = (event: CombinedEvent) => {
+    if (event.type === 'shabbat') return 'default';
+    if (event.category === 'חג') return 'default';
+    if (event.category === 'יום עצמאות') return 'default';
+    if (event.category === 'יום זיכרון') return 'secondary';
+    return 'outline';
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className="shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg flex items-center gap-2">
           <Calendar className="h-5 w-5" />
           {typeFilter === 'all' ? 'כל האירועים' : `${typeFilter} (${filteredEvents.length})`}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {filteredEvents.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-12 text-gray-500">
             <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>אין אירועים מסוג זה</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">אין אירועים</h3>
+            <p className="text-gray-600">אין אירועים מסוג זה</p>
           </div>
         ) : (
-          <div className="max-h-96 overflow-y-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">תאריך</TableHead>
-                  <TableHead className="text-right">יום</TableHead>
-                  <TableHead className="text-right">אירוע</TableHead>
-                  <TableHead className="text-right">סוג</TableHead>
-                  <TableHead className="text-right">שעות</TableHead>
-                  <TableHead className="text-right">פרטים</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    תאריך
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    שם האירוע
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    סוג
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    זמנים
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    סטטוס עבודה
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
                 {filteredEvents.map((event) => {
                   const dateInfo = formatDate(event.date);
                   const times = getHolidayTimes(event);
                   
                   return (
-                    <TableRow key={event.id}>
-                      <TableCell className="font-medium">
-                        {dateInfo.full}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {dateInfo.dayOfWeek}
-                      </TableCell>
-                      <TableCell>{event.title}</TableCell>
-                      <TableCell>
-                        <Badge className={getTypeColor(event.type, event.category)}>
-                          {getTypeIcon(event.type, event.category)}
-                          <span className="mr-1">{event.category}</span>
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1 text-xs">
-                          {times.entry && (
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              <span>כניסה: {times.entry}</span>
-                            </div>
-                          )}
-                          {times.exit && (
-                            <div className="flex items-center gap-1">
-                              <Star className="h-3 w-3" />
-                              <span>יציאה: {times.exit}</span>
-                            </div>
-                          )}
+                    <tr key={event.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div>
+                          <div className="font-medium">{dateInfo.full}</div>
+                          <div className="text-gray-500">{dateInfo.dayOfWeek}</div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {event.type === 'holiday' && (
-                          <Badge 
-                            variant="secondary" 
-                            className={event.isWorkingDay ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}
-                          >
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {event.title}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant={getEventBadgeColor(event)}>
+                          {event.category}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {times.entry || times.exit ? (
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <div>
+                              {times.entry && <div>כניסה: {times.entry}</div>}
+                              {times.exit && <div>יציאה: {times.exit}</div>}
+                            </div>
+                          </div>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {event.isWorkingDay !== undefined && (
+                          <Badge variant={event.isWorkingDay ? "outline" : "secondary"}>
                             {event.isWorkingDay ? 'יום עבודה' : 'לא יום עבודה'}
                           </Badge>
                         )}
-                      </TableCell>
-                    </TableRow>
+                      </td>
+                    </tr>
                   );
                 })}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
         )}
       </CardContent>

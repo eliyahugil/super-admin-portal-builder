@@ -9,7 +9,7 @@ import { WeeklyTokenManagement } from '../shifts/WeeklyTokenManagement';
 import { QuickRequestRegistration } from '../shifts/QuickRequestRegistration';
 import { ShiftRequests } from '../shifts/ShiftRequests';
 import { ShiftApprovalPage } from '../shifts/ShiftApprovalPage';
-import ShiftSubmissionPage from '../../../pages/business/shifts/ShiftSubmissionPage';
+import { ShiftSubmissionManager } from '../shifts/ShiftSubmissionManager';
 
 interface Props {
   route: string;
@@ -22,7 +22,7 @@ export const ShiftsModuleRouter: React.FC<Props> = ({ route }) => {
     case 'schedule':
       return <ShiftSchedule />;
     case 'submission':
-      return <ShiftSubmissionPage />;
+      return <ShiftSubmissionManager />;
     case 'auto-assignment':
       return <AutoShiftAssignment />;
     case 'vacation-requests':

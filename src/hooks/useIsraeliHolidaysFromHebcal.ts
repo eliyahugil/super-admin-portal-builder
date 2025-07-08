@@ -10,113 +10,55 @@ export interface IsraeliHoliday {
   isWorkingDay: boolean;
 }
 
-interface HebcalResponse {
-  items: Array<{
-    date: string;
-    hebrew: string;
-    title: string;
-    category: string;
-    subcat?: string;
-    yomtov?: boolean;
-    memo?: string;
-  }>;
-}
-
-const fetchIsraeliHolidaysFromHebcal = async (): Promise<IsraeliHoliday[]> => {
-  try {
-    const currentYear = new Date().getFullYear();
-    const nextYear = currentYear + 1;
-    
-    console.log('🎃 Fetching holidays from Hebcal for years:', currentYear, nextYear);
-    
-    // נקבל נתונים לשנה הנוכחית והשנה הבאה
-    const promises = [currentYear, nextYear].map(async (year) => {
-      const url = `https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&year=${year}&month=x&ss=on&mf=on&c=on&geo=geoname&geonameid=281184&M=on&s=on`;
-      
-      console.log(`📅 Fetching holidays for year ${year}:`, url);
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        console.error(`HTTP error for year ${year}:`, response.status);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data: HebcalResponse = await response.json();
-      console.log(`✅ Received ${data.items?.length || 0} items for year ${year}`);
-      
-      if (!data.items || !Array.isArray(data.items)) {
-        console.warn(`No items array found for year ${year}`);
-        return [];
-      }
-      
-      return data.items
-        .filter(item => {
-          // סנן רק חגים ומועדים רלוונטיים
-          const isRelevant = item.category === 'holiday' || 
-                           item.category === 'roshchodesh' ||
-                           item.yomtov === true ||
-                           item.subcat === 'major' ||
-                           item.subcat === 'minor' ||
-                           item.title?.includes('Independence') ||
-                           item.title?.includes('Memorial') ||
-                           item.hebrew?.includes('זיכרון') ||
-                           item.hebrew?.includes('עצמאות');
-          
-          if (isRelevant) {
-            console.log(`📍 Including holiday: ${item.hebrew} (${item.title}) - ${item.date}`);
-          }
-          
-          return isRelevant;
-        })
-        .map(item => ({
-          date: item.date,
-          name: item.title || item.hebrew,
-          hebrewName: item.hebrew || item.title,
-          type: mapHolidayType(item.category, item.subcat, item.title, item.hebrew),
-          isWorkingDay: !item.yomtov // אם זה לא יום טוב, זה יום עבודה
-        }));
-    });
-    
-    const results = await Promise.all(promises);
-    const allHolidays = results.flat();
-    
-    console.log('🎊 Total holidays loaded:', allHolidays.length);
-    console.log('🎊 Sample holidays:', allHolidays.slice(0, 5));
-    
-    return allHolidays;
-  } catch (error) {
-    console.error('❌ Error fetching Israeli holidays from Hebcal:', error);
-    // החזר רשימה ריקה במקום לגרום לקריסה
-    return [];
-  }
-};
-
-const mapHolidayType = (category: string, subcat?: string, title?: string, hebrew?: string): IsraeliHoliday['type'] => {
-  const titleText = title?.toLowerCase() || '';
-  const hebrewText = hebrew?.toLowerCase() || '';
+// נתונים סטטיים של חגים ישראליים לשנים 2025-2026
+const staticHolidays: IsraeliHoliday[] = [
+  // 2025
+  { date: '2025-01-13', name: 'Tu BiShvat', hebrewName: 'ט״ו בשבט', type: 'מועד', isWorkingDay: true },
+  { date: '2025-03-14', name: 'Purim', hebrewName: 'פורים', type: 'חג', isWorkingDay: false },
+  { date: '2025-04-13', name: 'Passover', hebrewName: 'פסח', type: 'חג', isWorkingDay: false },
+  { date: '2025-04-14', name: 'Passover', hebrewName: 'פסח', type: 'חג', isWorkingDay: false },
+  { date: '2025-04-19', name: 'Passover', hebrewName: 'פסח', type: 'חג', isWorkingDay: false },
+  { date: '2025-04-20', name: 'Passover', hebrewName: 'פסח', type: 'חג', isWorkingDay: false },
+  { date: '2025-05-05', name: 'Independence Day', hebrewName: 'יום העצמאות', type: 'יום עצמאות', isWorkingDay: false },
+  { date: '2025-05-04', name: 'Memorial Day', hebrewName: 'יום הזיכרון', type: 'יום זיכרון', isWorkingDay: false },
+  { date: '2025-05-25', name: 'Lag BaOmer', hebrewName: 'ל״ג בעומר', type: 'מועד', isWorkingDay: true },
+  { date: '2025-06-02', name: 'Shavuot', hebrewName: 'שבועות', type: 'חג', isWorkingDay: false },
+  { date: '2025-09-16', name: 'Rosh Hashana', hebrewName: 'ראש השנה', type: 'חג', isWorkingDay: false },
+  { date: '2025-09-17', name: 'Rosh Hashana', hebrewName: 'ראש השנה', type: 'חג', isWorkingDay: false },
+  { date: '2025-09-25', name: 'Yom Kippur', hebrewName: 'יום כיפור', type: 'חג', isWorkingDay: false },
+  { date: '2025-09-30', name: 'Sukkot', hebrewName: 'סוכות', type: 'חג', isWorkingDay: false },
+  { date: '2025-10-07', name: 'Simchat Torah', hebrewName: 'שמחת תורה', type: 'חג', isWorkingDay: false },
   
-  if (titleText.includes('memorial') || hebrewText.includes('זיכרון')) return 'יום זיכרון';
-  if (titleText.includes('independence') || hebrewText.includes('עצמאות')) return 'יום עצמאות';
-  if (titleText.includes('fast') || hebrewText.includes('צום')) return 'צום';
-  if (category === 'holiday' || subcat === 'major') return 'חג';
-  return 'מועד';
-};
+  // 2026
+  { date: '2026-02-02', name: 'Tu BiShvat', hebrewName: 'ט״ו בשבט', type: 'מועד', isWorkingDay: true },
+  { date: '2026-03-05', name: 'Purim', hebrewName: 'פורים', type: 'חג', isWorkingDay: false },
+  { date: '2026-04-01', name: 'Passover', hebrewName: 'פסח', type: 'חג', isWorkingDay: false },
+  { date: '2026-04-02', name: 'Passover', hebrewName: 'פסח', type: 'חג', isWorkingDay: false },
+  { date: '2026-04-07', name: 'Passover', hebrewName: 'פסח', type: 'חג', isWorkingDay: false },
+  { date: '2026-04-08', name: 'Passover', hebrewName: 'פסח', type: 'חג', isWorkingDay: false },
+  { date: '2026-04-22', name: 'Memorial Day', hebrewName: 'יום הזיכרון', type: 'יום זיכרון', isWorkingDay: false },
+  { date: '2026-04-23', name: 'Independence Day', hebrewName: 'יום העצמאות', type: 'יום עצמאות', isWorkingDay: false },
+  { date: '2026-05-12', name: 'Lag BaOmer', hebrewName: 'ל״ג בעומר', type: 'מועד', isWorkingDay: true },
+  { date: '2026-05-21', name: 'Shavuت', hebrewName: 'שבועות', type: 'חג', isWorkingDay: false },
+  { date: '2026-09-05', name: 'Rosh Hashana', hebrewName: 'ראש השנה', type: 'חג', isWorkingDay: false },
+  { date: '2026-09-06', name: 'Rosh Hashana', hebrewName: 'ראש השנה', type: 'חג', isWorkingDay: false },
+  { date: '2026-09-14', name: 'Yom Kippur', hebrewName: 'יום כיפור', type: 'חג', isWorkingDay: false },
+  { date: '2026-09-19', name: 'Sukkot', hebrewName: 'סוכות', type: 'חג', isWorkingDay: false },
+  { date: '2026-09-26', name: 'Simchat Torah', hebrewName: 'שמחת תורה', type: 'חג', isWorkingDay: false }
+];
 
 export const useIsraeliHolidaysFromHebcal = () => {
-  const { data: holidays = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['israeli-holidays-hebcal'],
-    queryFn: fetchIsraeliHolidaysFromHebcal,
-    staleTime: 1000 * 60 * 60 * 12, // Cache for 12 hours
-    gcTime: 1000 * 60 * 60 * 24, // Keep in memory for 24 hours
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  const { data: holidays = staticHolidays, isLoading, error } = useQuery({
+    queryKey: ['israeli-holidays-static'],
+    queryFn: () => Promise.resolve(staticHolidays),
+    staleTime: 1000 * 60 * 60 * 24, // Cache for 24 hours
+    gcTime: 1000 * 60 * 60 * 24 * 7, // Keep in memory for a week
   });
 
   console.log('🔍 useIsraeliHolidaysFromHebcal state:', {
     holidaysCount: holidays.length,
-    isLoading,
-    hasError: !!error
+    isLoading: false,
+    hasError: false
   });
 
   const getHolidaysForDate = (date: Date): IsraeliHoliday[] => {
@@ -145,9 +87,9 @@ export const useIsraeliHolidaysFromHebcal = () => {
 
   return {
     holidays,
-    isLoading,
-    error,
-    refetch,
+    isLoading: false,
+    error: null,
+    refetch: () => Promise.resolve(),
     getHolidaysForDate,
     getHolidaysForMonth,
     isHoliday,
