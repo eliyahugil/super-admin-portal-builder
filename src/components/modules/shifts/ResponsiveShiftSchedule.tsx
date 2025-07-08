@@ -120,6 +120,11 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     setSelectedShift(null);
   };
 
+  const handleCreateShift = async (shiftData: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>) => {
+    console.log('📝 Creating single shift:', shiftData);
+    await createShift(shiftData);
+  };
+
   const handleBulkCreate = async (shifts: Omit<ShiftScheduleData, 'id' | 'created_at'>[]) => {
     console.log('📝 Creating bulk shifts:', shifts.length);
     for (const shift of shifts) {
@@ -301,7 +306,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
         <CreateShiftDialog
           isOpen={showCreateDialog}
           onClose={() => setShowCreateDialog(false)}
-          onSubmit={createShift}
+          onSubmit={handleCreateShift}
           employees={employees}
           branches={branches}
         />

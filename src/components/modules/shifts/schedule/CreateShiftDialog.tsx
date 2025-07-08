@@ -47,7 +47,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
 
     setIsSubmitting(true);
     try {
-      await onSubmit({
+      const shiftData: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'> = {
         shift_date: format(date, 'yyyy-MM-dd'),
         start_time: startTime,
         end_time: endTime,
@@ -55,8 +55,11 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
         branch_id: branchId || undefined,
         role: role || undefined,
         notes: notes || undefined,
-        status: 'pending'
-      });
+        status: 'pending',
+        shift_template_id: undefined
+      };
+
+      await onSubmit(shiftData);
       
       // Reset form
       setDate(undefined);
@@ -95,7 +98,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
                     !date && "text-muted-foreground"
                   )}
                 >
-                  <CalendarIcon />
+                  <CalendarIcon className="mr-2 h-4 w-4" />
                   {date ? format(date, 'dd/MM/yyyy') : <span>בחר תאריך</span>}
                 </Button>
               </PopoverTrigger>
