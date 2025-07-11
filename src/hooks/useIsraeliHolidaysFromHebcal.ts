@@ -1,15 +1,8 @@
 
 import { useQuery } from '@tanstack/react-query';
+import type { IsraeliHoliday } from '@/types/calendar';
 
-export interface IsraeliHoliday {
-  id: string;
-  name: string;
-  hebrewName: string;
-  date: string;
-  type: 'חג' | 'מועד' | 'יום זיכרון' | 'יום עצמאות' | 'צום';
-  description?: string;
-  isWorkingDay: boolean;
-}
+export type { IsraeliHoliday };
 
 export const useIsraeliHolidaysFromHebcal = () => {
   const { data: holidays = [], isLoading, error } = useQuery({

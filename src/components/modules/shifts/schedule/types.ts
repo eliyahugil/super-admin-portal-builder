@@ -1,4 +1,7 @@
 
+// Re-export types from central location
+export type { CalendarEvent, GoogleCalendarEvent, IsraeliHoliday, ShabbatTimes } from '@/types/calendar';
+
 export interface Employee {
   id: string;
   first_name: string;
@@ -49,39 +52,14 @@ export interface ScheduleFiltersType {
   role: 'all' | string;
 }
 
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  date: string;
-  type: 'holiday' | 'event';
-  description?: string;
-}
-
-// Updated Holiday interface to match IsraeliHoliday requirements
-export interface Holiday {
-  id: string;
-  name: string;
-  hebrewName: string; // Added to match IsraeliHoliday
-  date: string;
-  type: 'national' | 'religious' | 'business' | 'חג' | 'מועד' | 'יום זיכרון' | 'יום עצמאות' | 'צום';
-  description?: string;
-  isWorkingDay: boolean; // Added to match IsraeliHoliday
-}
-
-export interface ShabbatTimes {
-  date: string;
-  candle_lighting: string;
-  havdalah: string;
-  torah_portion?: string;
-  parsha?: string; // Added for compatibility
-  candleLighting?: string; // Added for compatibility
-}
+// Backward compatibility alias
+export type Holiday = IsraeliHoliday;
 
 export interface ShiftScheduleViewProps {
   shifts: ShiftScheduleData[];
   employees: Employee[];
   currentDate: Date;
-  holidays: Holiday[];
+  holidays: IsraeliHoliday[];
   shabbatTimes: ShabbatTimes[];
   calendarEvents: CalendarEvent[];
   onShiftClick: (shift: ShiftScheduleData) => void;

@@ -1,9 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { CalendarEvent } from '../types';
-import type { IsraeliHoliday } from '@/hooks/useIsraeliHolidaysFromHebcal';
-import type { ShabbatTimes } from '@/hooks/useShabbatTimesFromHebcal';
+import type { CalendarEvent, GoogleCalendarEvent, IsraeliHoliday, ShabbatTimes } from '@/types/calendar';
 import type { ShiftScheduleData, Employee } from '../types';
 
 interface UseCalendarIntegrationParams {
@@ -51,7 +49,7 @@ export const useCalendarIntegration = (params: UseCalendarIntegrationParams) => 
   // Mock Google events for now
   const { data: googleEvents = [], isLoading: googleLoading } = useQuery({
     queryKey: ['google-events', businessId],
-    queryFn: async (): Promise<CalendarEvent[]> => {
+    queryFn: async (): Promise<GoogleCalendarEvent[]> => {
       // Return empty array for now, can be implemented later
       return [];
     },
@@ -62,7 +60,6 @@ export const useCalendarIntegration = (params: UseCalendarIntegrationParams) => 
   // Combine all events
   const combinedEvents = [
     ...calendarEvents,
-    ...googleEvents,
     ...holidays.map(holiday => ({
       id: `holiday-${holiday.date}`,
       title: holiday.hebrewName || holiday.name || 'חג',
@@ -75,7 +72,7 @@ export const useCalendarIntegration = (params: UseCalendarIntegrationParams) => 
       title: `שבת${shabbat.parsha ? ` - פרשת ${shabbat.parsha}` : ''}`,
       date: shabbat.date,
       type: 'event' as const,
-      description: `הדלקת נרות: ${shabbat.candleLighting || 'לא זמין'}, הבדלה: ${shabbat.havdalah || 'לא זמין'}`
+      description: `הדלקת נרות: ${shabbat.candleLighting || shabbat.candle_lighting || 'לא זמין'}, הבדלה: ${shabbat.havdalah || 'לא זמין'}`
     }))
   ];
 

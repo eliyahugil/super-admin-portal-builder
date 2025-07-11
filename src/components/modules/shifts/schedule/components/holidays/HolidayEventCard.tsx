@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock, Star, Heart } from 'lucide-react';
 
 interface CombinedEvent {
   id: string;
@@ -27,56 +26,82 @@ export const HolidayEventCard: React.FC<HolidayEventCardProps> = ({
   dateInfo,
   times
 }) => {
-  const getEventColor = (event: CombinedEvent) => {
-    if (event.type === 'shabbat') return 'bg-purple-50 border-purple-200';
-    if (event.category === 'חג') return 'bg-green-50 border-green-200';
-    if (event.category === 'יום עצמאות') return 'bg-blue-50 border-blue-200';
-    if (event.category === 'יום זיכרון') return 'bg-gray-50 border-gray-200';
-    return 'bg-orange-50 border-orange-200';
+  const getEventIcon = () => {
+    if (event.type === 'shabbat') {
+      return <Calendar className="h-4 w-4 text-purple-600" />;
+    }
+    
+    switch (event.category) {
+      case 'חג':
+      case 'מועד':
+        return <Star className="h-4 w-4 text-green-600" />;
+      case 'יום זיכרון':
+        return <Heart className="h-4 w-4 text-gray-600" />;
+      case 'יום עצמאות':
+        return <Star className="h-4 w-4 text-blue-600" />;
+      default:
+        return <Calendar className="h-4 w-4 text-gray-600" />;
+    }
   };
 
-  const getEventBadgeColor = (event: CombinedEvent) => {
-    if (event.type === 'shabbat') return 'default';
-    if (event.category === 'חג') return 'default';
-    if (event.category === 'יום עצמאות') return 'default';
-    if (event.category === 'יום זיכרון') return 'secondary';
-    return 'outline';
+  const getEventColor = () => {
+    if (event.type === 'shabbat') {
+      return 'bg-purple-50 border-purple-200';
+    }
+    
+    switch (event.category) {
+      case 'חג':
+        return 'bg-green-50 border-green-200';
+      case 'מועד':
+        return 'bg-blue-50 border-blue-200';
+      case 'יום זיכרון':
+        return 'bg-gray-50 border-gray-200';
+      case 'יום עצמאות':
+        return 'bg-blue-50 border-blue-200';
+      case 'צום':
+        return 'bg-purple-50 border-purple-200';
+      default:
+        return 'bg-gray-50 border-gray-200';
+    }
   };
 
   return (
-    <Card className={`${getEventColor(event)} hover:shadow-md transition-shadow`}>
-      <CardContent className="p-3">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium text-sm">{event.title}</h3>
-            <Badge variant={getEventBadgeColor(event)} className="text-xs">
-              {event.category}
+    <div className={`border rounded-lg p-3 ${getEventColor()}`}>
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-2 flex-1">
+          {getEventIcon()}
+          <h4 className="font-medium text-sm truncate">{event.title}</h4>
+        </div>
+        <Badge variant="secondary" className="text-xs">
+          {event.type === 'shabbat' ? 'שבת' : event.category}
+        </Badge>
+      </div>
+      
+      <div className="space-y-1 text-xs text-gray-600">
+        <div className="flex items-center justify-between">
+          <span className="font-medium">{dateInfo.dayOfWeek}</span>
+          <span>{dateInfo.full}</span>
+        </div>
+        
+        {(times.entry || times.exit) && (
+          <div className="flex items-center gap-2">
+            <Clock className="h-3 w-3" />
+            <span>
+              {times.entry && `כניסה: ${times.entry}`}
+              {times.entry && times.exit && ' • '}
+              {times.exit && `יציאה: ${times.exit}`}
+            </span>
+          </div>
+        )}
+        
+        {event.isWorkingDay !== undefined && (
+          <div className="text-xs">
+            <Badge variant={event.isWorkingDay ? "secondary" : "outline"} className="text-xs">
+              {event.isWorkingDay ? 'יום עבודה' : 'יום חופש'}
             </Badge>
           </div>
-          
-          <div className="flex items-center gap-2 text-xs text-gray-600">
-            <Calendar className="h-3 w-3" />
-            <span>{dateInfo.full}</span>
-            <span>({dateInfo.dayOfWeek})</span>
-          </div>
-
-          {(times.entry || times.exit) && (
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <Clock className="h-3 w-3" />
-              {times.entry && <span>כניסה: {times.entry}</span>}
-              {times.exit && <span>יציאה: {times.exit}</span>}
-            </div>
-          )}
-
-          {event.isWorkingDay !== undefined && (
-            <div className="text-xs">
-              <Badge variant={event.isWorkingDay ? "outline" : "secondary"}>
-                {event.isWorkingDay ? 'יום עבודה' : 'לא יום עבודה'}
-              </Badge>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        )}
+      </div>
+    </div>
   );
 };

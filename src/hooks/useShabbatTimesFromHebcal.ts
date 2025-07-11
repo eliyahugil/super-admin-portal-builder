@@ -1,13 +1,8 @@
 
 import { useQuery } from '@tanstack/react-query';
+import type { ShabbatTimes } from '@/types/calendar';
 
-export interface ShabbatTimes {
-  date: string;
-  candleLighting: string;
-  havdalah: string;
-  parsha?: string;
-  candle_lighting?: string; // For backward compatibility
-}
+export type { ShabbatTimes };
 
 export const useShabbatTimesFromHebcal = () => {
   const { data: shabbatTimes = [], isLoading, error } = useQuery({

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Star, Heart } from 'lucide-react';
-import { IsraeliHoliday } from '@/hooks/useIsraeliHolidaysFromHebcal';
+import type { IsraeliHoliday } from '@/types/calendar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface HolidayIndicatorProps {
