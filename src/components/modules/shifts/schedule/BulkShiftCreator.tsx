@@ -73,9 +73,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
           role: role || undefined,
           notes: undefined,
           status: 'pending',
-          shift_template_id: undefined,
-          branch_name: undefined,
-          role_preference: undefined
+          shift_template_id: undefined
         });
       }
       

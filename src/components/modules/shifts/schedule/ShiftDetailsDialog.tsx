@@ -145,7 +145,12 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               {/* Edit Status */}
               <div className="space-y-2">
                 <Label>סטטוס</Label>
-                <Select value={editData.status} onValueChange={(value) => setEditData(prev => ({ ...prev, status: value }))}>
+                <Select 
+                  value={editData.status} 
+                  onValueChange={(value: 'pending' | 'approved' | 'rejected' | 'completed') => 
+                    setEditData(prev => ({ ...prev, status: value }))
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
