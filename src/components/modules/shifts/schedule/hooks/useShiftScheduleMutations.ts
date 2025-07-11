@@ -1,13 +1,13 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { ShiftScheduleData } from '../types';
+import type { ShiftScheduleData, CreateShiftData } from '../types';
 
 export const useShiftScheduleMutations = (businessId: string | null) => {
   const queryClient = useQueryClient();
 
   const createShift = useMutation({
-    mutationFn: async (shiftData: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>) => {
+    mutationFn: async (shiftData: CreateShiftData) => {
       console.log('🔄 Creating shift:', shiftData);
       
       if (!businessId) {
@@ -19,12 +19,12 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         .insert({
           business_id: businessId,
           shift_date: shiftData.shift_date,
-          employee_id: shiftData.employee_id || null,
-          branch_id: shiftData.branch_id || null,
-          notes: shiftData.notes || null,
+          employee_id: shiftData.employee_id,
+          branch_id: shiftData.branch_id,
+          notes: shiftData.notes,
           is_assigned: !!shiftData.employee_id,
           is_archived: false,
-          shift_template_id: shiftData.shift_template_id || null
+          shift_template_id: shiftData.shift_template_id
         })
         .select()
         .single();
@@ -107,7 +107,7 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
   });
 
   return {
-    createShift: async (shiftData: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>) => {
+    createShift: async (shiftData: CreateShiftData) => {
       await createShift.mutateAsync(shiftData);
     },
     updateShift: async (shiftId: string, updates: Partial<ShiftScheduleData>) => {

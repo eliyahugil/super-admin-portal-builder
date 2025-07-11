@@ -19,7 +19,7 @@ import { ScheduleStats } from './schedule/components/ScheduleStats';
 import { HolidaysAndFestivalsTable } from './schedule/components/HolidaysAndFestivalsTable';
 import { GoogleCalendarEventsTable } from './schedule/components/GoogleCalendarEventsTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { ScheduleView, ShiftScheduleData } from './schedule/types';
+import type { ScheduleView, ShiftScheduleData, CreateShiftData } from './schedule/types';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
   const isMobile = useIsMobile();
@@ -120,7 +120,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     setSelectedShift(null);
   };
 
-  const handleCreateShift = async (shiftData: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>) => {
+  const handleCreateShift = async (shiftData: CreateShiftData) => {
     console.log('📝 Creating single shift:', shiftData);
     await createShift(shiftData);
   };

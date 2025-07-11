@@ -11,12 +11,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import type { ShiftScheduleData, Employee, Branch } from './types';
+import type { Employee, Branch, CreateShiftData } from './types';
 
 interface CreateShiftDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (shift: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>) => Promise<void>;
+  onSubmit: (shift: CreateShiftData) => Promise<void>;
   employees: Employee[];
   branches: Branch[];
 }
@@ -47,16 +47,16 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
 
     setIsSubmitting(true);
     try {
-      const shiftData: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'> = {
+      const shiftData: CreateShiftData = {
         shift_date: format(date, 'yyyy-MM-dd'),
         start_time: startTime,
         end_time: endTime,
-        employee_id: employeeId || undefined,
-        branch_id: branchId || undefined,
-        role: role || undefined,
-        notes: notes || undefined,
+        employee_id: employeeId || null,
+        branch_id: branchId || null,
+        role: role || null,
+        notes: notes || null,
         status: 'pending',
-        shift_template_id: undefined
+        shift_template_id: null
       };
 
       await onSubmit(shiftData);
