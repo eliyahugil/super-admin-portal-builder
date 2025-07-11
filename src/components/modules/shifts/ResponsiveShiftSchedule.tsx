@@ -48,7 +48,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     businessId
   } = useShiftSchedule();
 
-  // Use the integrated calendar hook
+  // Use the integrated calendar hook with correct parameters
   const {
     combinedEvents,
     googleEvents,

@@ -57,12 +57,15 @@ export interface CalendarEvent {
   description?: string;
 }
 
+// Updated Holiday interface to match IsraeliHoliday requirements
 export interface Holiday {
   id: string;
   name: string;
+  hebrewName: string; // Added to match IsraeliHoliday
   date: string;
-  type: 'national' | 'religious' | 'business';
+  type: 'national' | 'religious' | 'business' | 'חג' | 'מועד' | 'יום זיכרון' | 'יום עצמאות' | 'צום';
   description?: string;
+  isWorkingDay: boolean; // Added to match IsraeliHoliday
 }
 
 export interface ShabbatTimes {
@@ -70,6 +73,8 @@ export interface ShabbatTimes {
   candle_lighting: string;
   havdalah: string;
   torah_portion?: string;
+  parsha?: string; // Added for compatibility
+  candleLighting?: string; // Added for compatibility
 }
 
 export interface ShiftScheduleViewProps {

@@ -1,13 +1,24 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { CalendarEvent, Holiday, ShabbatTimes } from '../types';
+import type { CalendarEvent } from '../types';
+import type { IsraeliHoliday } from '@/hooks/useIsraeliHolidaysFromHebcal';
+import type { ShabbatTimes } from '@/hooks/useShabbatTimesFromHebcal';
+import type { ShiftScheduleData, Employee } from '../types';
 
-export const useCalendarIntegration = (businessId: string | null) => {
+interface UseCalendarIntegrationParams {
+  businessId: string;
+  shifts: ShiftScheduleData[];
+  employees: Employee[];
+}
+
+export const useCalendarIntegration = (params: UseCalendarIntegrationParams) => {
+  const { businessId } = params;
+
   // Mock holidays for now - you can integrate with actual API later
-  const { data: holidays = [] } = useQuery({
-    queryKey: ['holidays'],
-    queryFn: async (): Promise<Holiday[]> => {
+  const { data: holidays = [], isLoading: holidaysLoading } = useQuery({
+    queryKey: ['holidays', businessId],
+    queryFn: async (): Promise<IsraeliHoliday[]> => {
       // Return empty array for now, can be implemented later
       return [];
     },
@@ -16,8 +27,8 @@ export const useCalendarIntegration = (businessId: string | null) => {
   });
 
   // Mock Shabbat times for now
-  const { data: shabbatTimes = [] } = useQuery({
-    queryKey: ['shabbat-times'],
+  const { data: shabbatTimes = [], isLoading: shabbatLoading } = useQuery({
+    queryKey: ['shabbat-times', businessId],
     queryFn: async (): Promise<ShabbatTimes[]> => {
       // Return empty array for now, can be implemented later
       return [];
@@ -27,8 +38,8 @@ export const useCalendarIntegration = (businessId: string | null) => {
   });
 
   // Mock calendar events for now
-  const { data: calendarEvents = [] } = useQuery({
-    queryKey: ['calendar-events'],
+  const { data: calendarEvents = [], isLoading: calendarLoading } = useQuery({
+    queryKey: ['calendar-events', businessId],
     queryFn: async (): Promise<CalendarEvent[]> => {
       // Return empty array for now, can be implemented later
       return [];
@@ -37,9 +48,50 @@ export const useCalendarIntegration = (businessId: string | null) => {
     staleTime: 1000 * 60 * 60, // 1 hour
   });
 
+  // Mock Google events for now
+  const { data: googleEvents = [], isLoading: googleLoading } = useQuery({
+    queryKey: ['google-events', businessId],
+    queryFn: async (): Promise<CalendarEvent[]> => {
+      // Return empty array for now, can be implemented later
+      return [];
+    },
+    enabled: !!businessId,
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+
+  // Combine all events
+  const combinedEvents = [
+    ...calendarEvents,
+    ...googleEvents,
+    ...holidays.map(holiday => ({
+      id: `holiday-${holiday.date}`,
+      title: holiday.hebrewName || holiday.name || 'חג',
+      date: holiday.date,
+      type: 'holiday' as const,
+      description: holiday.type
+    })),
+    ...shabbatTimes.map(shabbat => ({
+      id: `shabbat-${shabbat.date}`,
+      title: `שבת${shabbat.parsha ? ` - פרשת ${shabbat.parsha}` : ''}`,
+      date: shabbat.date,
+      type: 'event' as const,
+      description: `הדלקת נרות: ${shabbat.candleLighting || 'לא זמין'}, הבדלה: ${shabbat.havdalah || 'לא זמין'}`
+    }))
+  ];
+
+  const loading = holidaysLoading || shabbatLoading || calendarLoading || googleLoading;
+
+  const getEventsForDate = (date: string) => {
+    return combinedEvents.filter(event => event.date === date);
+  };
+
   return {
     holidays,
     shabbatTimes,
-    calendarEvents
+    calendarEvents,
+    googleEvents,
+    combinedEvents,
+    loading,
+    getEventsForDate
   };
 };
