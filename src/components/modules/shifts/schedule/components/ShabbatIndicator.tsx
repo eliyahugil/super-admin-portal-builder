@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Candle } from 'lucide-react';
+import { Flame } from 'lucide-react';
 import type { ShabbatTimes } from '@/types/calendar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -27,7 +27,7 @@ export const ShabbatIndicator: React.FC<ShabbatIndicatorProps> = ({
   if (variant === 'icon') {
     return (
       <div className={`flex items-center ${className}`}>
-        <Candle className={`${isMobile ? 'h-2 w-2' : 'h-3 w-3'} text-purple-600`} />
+        <Flame className={`${isMobile ? 'h-2 w-2' : 'h-3 w-3'} text-purple-600`} />
       </div>
     );
   }
@@ -46,7 +46,7 @@ export const ShabbatIndicator: React.FC<ShabbatIndicatorProps> = ({
       variant="secondary"
       className={`${isMobile ? 'text-[10px] px-1 py-0.5' : 'text-xs'} border bg-purple-50 text-purple-800 border-purple-200 flex items-center gap-1 ${className}`}
     >
-      <Candle className={`${isMobile ? 'h-2 w-2' : 'h-3 w-3'}`} />
+      <Flame className={`${isMobile ? 'h-2 w-2' : 'h-3 w-3'}`} />
       <span className={isMobile ? 'truncate max-w-[40px]' : ''}>
         שבת {shabbatTimes.parsha && `- ${shabbatTimes.parsha}`}
       </span>

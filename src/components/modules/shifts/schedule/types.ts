@@ -52,6 +52,9 @@ export interface ScheduleFiltersType {
   role: 'all' | string;
 }
 
+// Import types from central location for proper typing
+import type { IsraeliHoliday, ShabbatTimes, CalendarEvent } from '@/types/calendar';
+
 // Backward compatibility alias
 export type Holiday = IsraeliHoliday;
 
