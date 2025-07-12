@@ -25,7 +25,7 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         branch_id: shiftData.branch_id,
         role: shiftData.role,
         notes: shiftData.notes,
-        status: shiftData.status || 'pending',
+        status: shiftData.status || (shiftData.employee_id ? 'approved' : 'pending'),
         is_assigned: !!shiftData.employee_id,
         is_archived: false,
         shift_template_id: shiftData.shift_template_id
