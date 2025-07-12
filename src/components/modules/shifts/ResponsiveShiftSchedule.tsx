@@ -400,6 +400,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           employees={employees}
           branches={branches}
           prefilledShift={quickMultipleShift}
+          onBranchCreated={handleBranchCreated}
         />
       )}
       

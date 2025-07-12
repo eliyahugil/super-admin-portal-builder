@@ -121,6 +121,7 @@ export const BranchManagement: React.FC = () => {
           onSubmit={handleCreateMultipleShifts}
           employees={employees}
           branches={branches}
+          onBranchCreated={refetch}
         />
       )}
     </div>
