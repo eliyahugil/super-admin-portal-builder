@@ -10,9 +10,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Building } from 'lucide-react';
 import { format, addDays, isAfter, isBefore } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useToast } from '@/hooks/use-toast';
+import { BranchDialog } from '../../branches/BranchDialog';
 import type { ShiftScheduleData, Employee, Branch } from './types';
 
 interface BulkShiftCreatorProps {
@@ -42,6 +42,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
   const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
   const [role, setRole] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showBranchDialog, setShowBranchDialog] = useState(false);
 
   const daysOfWeek = [
     { id: 0, name: 'ראשון' },
@@ -61,58 +62,14 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
     );
   };
 
-  const handleCreateBranch = async (branchName: string) => {
-    if (!businessId) {
-      toast({
-        title: "שגיאה",
-        description: "לא נמצא מזהה עסק",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleCreateBranch = () => {
+    setShowBranchDialog(true);
+  };
 
-    try {
-      const { data, error } = await supabase
-        .from('branches')
-        .insert([
-          {
-            name: branchName.trim(),
-            business_id: businessId,
-            is_active: true
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating branch:', error);
-        toast({
-          title: "שגיאה ביצירת סניף",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "סניף נוצר בהצלחה",
-        description: `הסניף "${branchName}" נוצר בהצלחה`,
-      });
-
-      // בחר את הסניף החדש אוטומטית
-      setSelectedBranches(prev => [...prev, data.id]);
-
-      // רענן את רשימת הסניפים
-      if (onBranchCreated) {
-        onBranchCreated();
-      }
-    } catch (error) {
-      console.error('Error creating branch:', error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה ביצירת הסניף",
-        variant: "destructive",
-      });
+  const handleBranchCreated = () => {
+    // רענן את רשימת הסניפים
+    if (onBranchCreated) {
+      onBranchCreated();
     }
   };
 
@@ -342,13 +299,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={async () => {
-                        // פתח דיאלוג ליצירת סניף חדש
-                        const branchName = prompt('הכנס שם סניף חדש:');
-                        if (branchName?.trim()) {
-                          await handleCreateBranch(branchName);
-                        }
-                      }}
+                      onClick={handleCreateBranch}
                     >
                       <Building className="h-4 w-4 mr-2" />
                       צור סניף חדש
@@ -409,6 +360,12 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
             </Button>
           </div>
         </form>
+
+        <BranchDialog
+          isOpen={showBranchDialog}
+          onClose={() => setShowBranchDialog(false)}
+          onSuccess={handleBranchCreated}
+        />
       </DialogContent>
     </Dialog>
   );

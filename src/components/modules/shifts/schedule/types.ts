@@ -18,6 +18,9 @@ export interface Branch {
   name: string;
   business_id: string;
   address?: string;
+  latitude?: number;
+  longitude?: number;
+  gps_radius?: number;
   is_active?: boolean;
 }
 

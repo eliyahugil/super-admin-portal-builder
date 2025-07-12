@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Building, MapPin, Users, Settings, Plus, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { BranchEditDialog } from './BranchEditDialog';
-import { Branch } from '@/types/branch';
+import { BranchDialog } from './BranchDialog';
+import type { Branch } from '../shifts/schedule/types';
 
 export const BranchManagement: React.FC = () => {
   const navigate = useNavigate();
@@ -41,8 +41,6 @@ export const BranchManagement: React.FC = () => {
       longitude: branch.longitude,
       gps_radius: branch.gps_radius,
       is_active: branch.is_active,
-      created_at: branch.created_at,
-      updated_at: branch.updated_at,
     };
     
     setSelectedBranch(normalizedBranch);
@@ -55,7 +53,8 @@ export const BranchManagement: React.FC = () => {
   };
 
   const handleCreateBranch = () => {
-    navigate('/modules/branches/create');
+    setSelectedBranch(null);
+    setEditBranchOpen(true);
   };
 
   const handleEditSuccess = () => {
@@ -159,9 +158,9 @@ export const BranchManagement: React.FC = () => {
         </div>
       )}
 
-      <BranchEditDialog
-        open={editBranchOpen}
-        onOpenChange={setEditBranchOpen}
+      <BranchDialog
+        isOpen={editBranchOpen}
+        onClose={() => setEditBranchOpen(false)}
         onSuccess={handleEditSuccess}
         branch={selectedBranch}
       />
