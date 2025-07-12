@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy } from 'lucide-react';
+import { Copy, FileText } from 'lucide-react';
 import { WeeklyScheduleView } from './schedule/WeeklyScheduleView';
 import { MonthlyScheduleView } from './schedule/MonthlyScheduleView';
 import { YearlyScheduleView } from './schedule/YearlyScheduleView';
@@ -11,6 +11,7 @@ import { ShiftDetailsDialog } from './schedule/ShiftDetailsDialog';
 import { BulkShiftCreator } from './schedule/BulkShiftCreator';
 import { QuickMultipleShiftsDialog } from './schedule/QuickMultipleShiftsDialog';
 import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
+import { ShiftTemplatesApplyDialog } from './schedule/components/ShiftTemplatesApplyDialog';
 import { ScheduleErrorBoundary } from './schedule/ScheduleErrorBoundary';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
 import { useCalendarIntegration } from './schedule/hooks/useCalendarIntegration';
@@ -35,6 +36,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const [assignmentShift, setAssignmentShift] = useState<ShiftScheduleData | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('schedule');
+  const [showTemplatesDialog, setShowTemplatesDialog] = useState(false);
+  const [templatesSelectedDate, setTemplatesSelectedDate] = useState<Date | undefined>();
 
   const {
     currentDate,
@@ -119,6 +122,11 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     setShowCreateDialog(true);
   };
 
+  const handleApplyTemplates = (date?: Date) => {
+    setTemplatesSelectedDate(date);
+    setShowTemplatesDialog(true);
+  };
+
   const handleShiftUpdate = async (shiftId: string, updates: Partial<ShiftScheduleData>) => {
     await updateShift(shiftId, updates);
     setSelectedShift(null);
@@ -196,15 +204,24 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             isMobile={isMobile}
           />
           
-          {/* Quick Multiple Button */}
-          <Button
-            onClick={() => setShowQuickMultiple(true)}
-            className="mr-2"
-            size={isMobile ? "sm" : "default"}
-          >
-            <Copy className="h-4 w-4 ml-1" />
-            יצירה מרובה
-          </Button>
+          {/* Templates and Quick Multiple Buttons */}
+          <div className="flex gap-2">
+            <Button
+              onClick={() => handleApplyTemplates()}
+              variant="outline"
+              size={isMobile ? "sm" : "default"}
+            >
+              <FileText className="h-4 w-4 ml-1" />
+              תבניות משמרות
+            </Button>
+            <Button
+              onClick={() => setShowQuickMultiple(true)}
+              size={isMobile ? "sm" : "default"}
+            >
+              <Copy className="h-4 w-4 ml-1" />
+              יצירה מרובה
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -396,6 +413,18 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           employees={employees}
           onAssign={handleAssignEmployee}
           onUnassign={handleUnassignEmployee}
+        />
+      )}
+
+      {showTemplatesDialog && (
+        <ShiftTemplatesApplyDialog
+          isOpen={showTemplatesDialog}
+          onClose={() => setShowTemplatesDialog(false)}
+          selectedDate={templatesSelectedDate}
+          onShiftsCreated={() => {
+            // רענון הנתונים לאחר יצירת משמרות
+            window.location.reload();
+          }}
         />
       )}
     </div>
