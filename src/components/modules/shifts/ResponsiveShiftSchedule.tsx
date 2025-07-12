@@ -109,6 +109,11 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     setSelectedShift(shift);
   };
 
+  const handleAddShift = (date: Date) => {
+    console.log('🔄 Opening create shift dialog for date:', date);
+    setShowCreateDialog(true);
+  };
+
   const handleShiftUpdate = async (shiftId: string, updates: Partial<ShiftScheduleData>) => {
     await updateShift(shiftId, updates);
     setSelectedShift(null);
@@ -214,7 +219,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                       <p className="mt-2 text-gray-600 text-sm">טוען נתוני משמרות ולוח שנה...</p>
                     </div>
                   </div>
-                ) : view === 'week' ? (
+                 ) : view === 'week' ? (
                   <WeeklyScheduleView
                     shifts={shifts}
                     employees={employees}
@@ -224,6 +229,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                     calendarEvents={combinedEvents}
                     onShiftClick={handleShiftClick}
                     onShiftUpdate={updateShift}
+                    onAddShift={handleAddShift}
                   />
                 ) : view === 'month' ? (
                   <MonthlyScheduleView
@@ -235,6 +241,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                     calendarEvents={combinedEvents}
                     onShiftClick={handleShiftClick}
                     onShiftUpdate={updateShift}
+                    onAddShift={handleAddShift}
                   />
                 ) : (
                   <YearlyScheduleView
@@ -246,6 +253,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                     calendarEvents={combinedEvents}
                     onShiftClick={handleShiftClick}
                     onShiftUpdate={updateShift}
+                    onAddShift={handleAddShift}
                   />
                 )}
               </CardContent>

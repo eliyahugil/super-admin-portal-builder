@@ -67,4 +67,5 @@ export interface ShiftScheduleViewProps {
   calendarEvents: CalendarEvent[];
   onShiftClick: (shift: ShiftScheduleData) => void;
   onShiftUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => Promise<void>;
+  onAddShift: (date: Date) => void;
 }

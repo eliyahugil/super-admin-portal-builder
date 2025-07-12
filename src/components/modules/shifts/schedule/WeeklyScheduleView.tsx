@@ -17,7 +17,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   shabbatTimes,
   calendarEvents,
   onShiftClick,
-  onShiftUpdate
+  onShiftUpdate,
+  onAddShift
 }) => {
   const isMobile = useIsMobile();
   
@@ -160,9 +161,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   variant="outline"
                   size="sm"
                   className="w-full"
-                  onClick={() => {
-                    console.log('Add shift for date:', date);
-                  }}
+                  onClick={() => onAddShift(date)}
                 >
                   <Plus className="h-4 w-4 ml-2" />
                   הוסף משמרת
@@ -262,9 +261,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   variant="outline"
                   size="sm"
                   className="w-full mt-2 text-xs"
-                  onClick={() => {
-                    console.log('Add shift for date:', date);
-                  }}
+                  onClick={() => onAddShift(date)}
                 >
                   <Plus className="h-3 w-3 mr-1" />
                   הוסף משמרת

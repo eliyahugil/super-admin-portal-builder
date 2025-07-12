@@ -15,7 +15,8 @@ export const YearlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   shabbatTimes,
   calendarEvents,
   onShiftClick,
-  onShiftUpdate
+  onShiftUpdate,
+  onAddShift
 }) => {
   const isMobile = useIsMobile();
 
