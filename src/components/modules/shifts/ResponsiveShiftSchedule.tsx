@@ -6,9 +6,8 @@ import { WeeklyScheduleView } from './schedule/WeeklyScheduleView';
 import { MonthlyScheduleView } from './schedule/MonthlyScheduleView';
 import { YearlyScheduleView } from './schedule/YearlyScheduleView';
 import { ShiftScheduleFilters } from './schedule/ShiftScheduleFilters';
-import { CreateShiftDialog } from './schedule/CreateShiftDialog';
+import { UnifiedShiftCreator } from './schedule/UnifiedShiftCreator';
 import { ShiftDetailsDialog } from './schedule/ShiftDetailsDialog';
-import { BulkShiftCreator } from './schedule/BulkShiftCreator';
 import { QuickMultipleShiftsDialog } from './schedule/QuickMultipleShiftsDialog';
 import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
 import { ShiftTemplatesApplyDialog } from './schedule/components/ShiftTemplatesApplyDialog';
@@ -30,7 +29,6 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const [view, setView] = useState<ScheduleView>('week');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showBulkCreator, setShowBulkCreator] = useState(false);
   const [showQuickMultiple, setShowQuickMultiple] = useState(false);
   const [quickMultipleShift, setQuickMultipleShift] = useState<Partial<CreateShiftData> | undefined>();
   const [selectedShift, setSelectedShift] = useState<ShiftScheduleData | null>(null);
@@ -206,7 +204,6 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             showFilters={showFilters}
             setShowFilters={setShowFilters}
             setShowCreateDialog={setShowCreateDialog}
-            setShowBulkCreator={setShowBulkCreator}
             mobileMenuOpen={mobileMenuOpen}
             setMobileMenuOpen={setMobileMenuOpen}
             isMobile={isMobile}
@@ -368,21 +365,11 @@ export const ResponsiveShiftSchedule: React.FC = () => {
 
       {/* Dialogs */}
       {showCreateDialog && (
-        <CreateShiftDialog
+        <UnifiedShiftCreator
           isOpen={showCreateDialog}
           onClose={() => setShowCreateDialog(false)}
           onSubmit={handleCreateShift}
-          employees={employees}
-          branches={branches}
-          onBranchCreated={handleBranchCreated}
-        />
-      )}
-
-      {showBulkCreator && (
-        <BulkShiftCreator
-          isOpen={showBulkCreator}
-          onClose={() => setShowBulkCreator(false)}
-          onSubmit={handleBulkCreate}
+          onBulkSubmit={handleBulkCreate}
           employees={employees}
           branches={branches}
           onBranchCreated={handleBranchCreated}

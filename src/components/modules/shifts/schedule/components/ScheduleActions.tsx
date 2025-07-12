@@ -13,7 +13,6 @@ interface ScheduleActionsProps {
   showFilters: boolean;
   setShowFilters: (show: boolean) => void;
   setShowCreateDialog: (show: boolean) => void;
-  setShowBulkCreator: (show: boolean) => void;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
   isMobile: boolean;
@@ -23,7 +22,6 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
   showFilters,
   setShowFilters,
   setShowCreateDialog,
-  setShowBulkCreator,
   mobileMenuOpen,
   setMobileMenuOpen,
   isMobile
@@ -48,11 +46,7 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem onClick={() => setShowCreateDialog(true)}>
               <Plus className="h-4 w-4 ml-2" />
-              משמרת חדשה
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setShowBulkCreator(true)}>
-              <Calendar className="h-4 w-4 ml-2" />
-              יצירה בכמות
+              יצירת משמרות
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -76,15 +70,7 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
         onClick={() => setShowCreateDialog(true)}
       >
         <Plus className="h-4 w-4 mr-2" />
-        משמרת חדשה
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setShowBulkCreator(true)}
-      >
-        <Users className="h-4 w-4 mr-2" />
-        יצירה בכמות
+        יצירת משמרות
       </Button>
     </div>
   );
