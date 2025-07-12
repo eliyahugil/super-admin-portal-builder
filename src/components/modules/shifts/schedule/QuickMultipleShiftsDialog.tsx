@@ -261,7 +261,18 @@ export const QuickMultipleShiftsDialog: React.FC<QuickMultipleShiftsDialogProps>
               </div>
               
               <div className="space-y-2">
-                <Label>סניפים</Label>
+                <div className="flex justify-between items-center">
+                  <Label>סניפים</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCreateBranch}
+                  >
+                    <Building className="h-4 w-4 mr-2" />
+                    צור סניף חדש
+                  </Button>
+                </div>
                 <div className="border rounded-md p-3 max-h-32 overflow-y-auto">
                   <div className="space-y-2">
                     {branches.map(branch => (
@@ -280,17 +291,8 @@ export const QuickMultipleShiftsDialog: React.FC<QuickMultipleShiftsDialogProps>
                       </div>
                     ))}
                     {branches.length === 0 && (
-                      <div className="text-center space-y-3">
+                      <div className="text-center">
                         <p className="text-sm text-muted-foreground">אין סניפים זמינים</p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleCreateBranch}
-                        >
-                          <Building className="h-4 w-4 mr-2" />
-                          צור סניף חדש
-                        </Button>
                       </div>
                     )}
                   </div>
