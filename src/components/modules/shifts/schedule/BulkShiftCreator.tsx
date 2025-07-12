@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useToast } from '@/hooks/use-toast';
 import { BranchDialog } from '../../branches/BranchDialog';
+import { useShiftRoles } from '../templates/useShiftRoles';
+import { AddRoleDialog } from '../templates/AddRoleDialog';
 import type { ShiftScheduleData, Employee, Branch } from './types';
 
 interface BulkShiftCreatorProps {
@@ -43,6 +45,9 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
   const [role, setRole] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBranchDialog, setShowBranchDialog] = useState(false);
+  const [showAddRoleDialog, setShowAddRoleDialog] = useState(false);
+  
+  const { roles, loading: rolesLoading, addRole } = useShiftRoles(businessId);
 
   const daysOfWeek = [
     { id: 0, name: 'ראשון' },
@@ -319,18 +324,29 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
 
           {/* Role Input */}
           <div className="space-y-2">
-            <Label>תפקיד</Label>
+            <div className="flex justify-between items-center">
+              <Label>תפקיד</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddRoleDialog(true)}
+                disabled={rolesLoading}
+              >
+                הוסף תפקיד חדש
+              </Button>
+            </div>
             <Select value={role} onValueChange={setRole}>
               <SelectTrigger>
                 <SelectValue placeholder="בחר תפקיד (אופציונלי)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">ללא תפקיד מוגדר</SelectItem>
-                <SelectItem value="cashier">קופאי</SelectItem>
-                <SelectItem value="sales">מכירות</SelectItem>
-                <SelectItem value="manager">מנהל</SelectItem>
-                <SelectItem value="security">אבטחה</SelectItem>
-                <SelectItem value="cleaner">ניקיון</SelectItem>
+                <SelectItem value="">ללא תפקיד מוגדר</SelectItem>
+                {roles.map((roleItem) => (
+                  <SelectItem key={roleItem.id} value={roleItem.name}>
+                    {roleItem.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -367,6 +383,13 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
           isOpen={showBranchDialog}
           onClose={() => setShowBranchDialog(false)}
           onSuccess={handleBranchCreated}
+        />
+
+        <AddRoleDialog
+          open={showAddRoleDialog}
+          onOpenChange={setShowAddRoleDialog}
+          onRoleCreated={addRole}
+          loading={rolesLoading}
         />
       </DialogContent>
     </Dialog>
