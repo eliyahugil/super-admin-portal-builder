@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import type { Employee, Branch, CreateShiftData } from './types';
 
 interface CreateShiftDialogProps {
@@ -32,6 +33,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
   branches
 }) => {
   const { toast } = useToast();
+  const { businessId } = useCurrentBusiness();
   
   // Basic shift data
   const [date, setDate] = useState<Date>();
@@ -72,24 +74,22 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
   const createNewBranch = async () => {
     if (!newBranchName.trim()) return;
     
+    if (!businessId) {
+      toast({
+        title: "שגיאה",
+        description: "לא נמצא מזהה עסק. אנא נסה שוב.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) throw new Error('משתמש לא מחובר');
-
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('business_id')
-        .eq('id', userData.user.id)
-        .single();
-
-      if (!profileData?.business_id) throw new Error('לא נמצא עסק');
-
       const { data: newBranch, error } = await supabase
         .from('branches')
         .insert({
           name: newBranchName,
           address: newBranchAddress || null,
-          business_id: profileData.business_id,
+          business_id: businessId,
           is_active: true
         })
         .select()
