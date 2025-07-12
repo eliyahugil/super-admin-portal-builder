@@ -3,22 +3,49 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, MapPin } from 'lucide-react';
+import { Plus, MapPin, Calendar, Copy } from 'lucide-react';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useBranchesData } from '@/hooks/useBranchesData';
 import { CreateBranchDialog } from './CreateBranchDialog';
 import { BranchesList } from './BranchesList';
+import { BulkShiftCreator } from '../shifts/schedule/BulkShiftCreator';
+import { QuickMultipleShiftsDialog } from '../shifts/schedule/QuickMultipleShiftsDialog';
+import { useShiftScheduleData } from '../shifts/schedule/hooks/useShiftScheduleData';
+import { useShiftScheduleMutations } from '../shifts/schedule/hooks/useShiftScheduleMutations';
+import type { CreateShiftData } from '../shifts/schedule/types';
 
 export const BranchManagement: React.FC = () => {
   const [createBranchOpen, setCreateBranchOpen] = useState(false);
+  const [showBulkCreator, setShowBulkCreator] = useState(false);
+  const [showQuickMultiple, setShowQuickMultiple] = useState(false);
   const { businessId } = useBusiness();
   const queryClient = useQueryClient();
 
   const { data: branches = [], isLoading, refetch } = useBranchesData(businessId);
+  
+  // Get shift data for the dialogs
+  const { employees } = useShiftScheduleData(businessId);
+  const { createShift } = useShiftScheduleMutations(businessId);
 
   const handleBranchCreated = () => {
     queryClient.invalidateQueries({ queryKey: ['branches'] });
     refetch();
+  };
+
+  const handleCreateShift = async (shiftData: CreateShiftData) => {
+    await createShift(shiftData);
+  };
+
+  const handleBulkCreate = async (shifts: any[]) => {
+    for (const shift of shifts) {
+      await createShift(shift);
+    }
+  };
+
+  const handleCreateMultipleShifts = async (shifts: CreateShiftData[]) => {
+    for (const shift of shifts) {
+      await createShift(shift);
+    }
   };
 
   if (isLoading) {
@@ -39,10 +66,26 @@ export const BranchManagement: React.FC = () => {
           </h2>
           <p className="text-gray-600">ניהול סניפי העסק ומיקומים גיאוגרפיים</p>
         </div>
-        <Button onClick={() => setCreateBranchOpen(true)}>
-          <Plus className="h-4 w-4 ml-2" />
-          הוסף סניף
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowBulkCreator(true)}
+          >
+            <Calendar className="h-4 w-4 ml-2" />
+            יצירה בכמות
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowQuickMultiple(true)}
+          >
+            <Copy className="h-4 w-4 ml-2" />
+            יצירה מרובה
+          </Button>
+          <Button onClick={() => setCreateBranchOpen(true)}>
+            <Plus className="h-4 w-4 ml-2" />
+            הוסף סניף
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -59,6 +102,26 @@ export const BranchManagement: React.FC = () => {
         onOpenChange={setCreateBranchOpen}
         onSuccess={handleBranchCreated}
       />
+
+      {showBulkCreator && (
+        <BulkShiftCreator
+          isOpen={showBulkCreator}
+          onClose={() => setShowBulkCreator(false)}
+          onSubmit={handleBulkCreate}
+          employees={employees}
+          branches={branches}
+        />
+      )}
+      
+      {showQuickMultiple && (
+        <QuickMultipleShiftsDialog
+          isOpen={showQuickMultiple}
+          onClose={() => setShowQuickMultiple(false)}
+          onSubmit={handleCreateMultipleShifts}
+          employees={employees}
+          branches={branches}
+        />
+      )}
     </div>
   );
 };
