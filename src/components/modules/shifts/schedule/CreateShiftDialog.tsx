@@ -54,9 +54,9 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
         shift_date: format(date, 'yyyy-MM-dd'),
         start_time: startTime,
         end_time: endTime,
-        employee_id: employeeId || null,
-        branch_id: branchId || null,
-        role: role || null,
+        employee_id: employeeId === 'no-employee' ? null : employeeId || null,
+        branch_id: branchId === 'no-branch' ? null : branchId || null,
+        role: role === 'no-role' ? null : role || null,
         notes: notes || null,
         status: 'pending',
         shift_template_id: null
@@ -180,7 +180,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
                 <SelectValue placeholder="בחר עובד (אופציונלי)" />
               </SelectTrigger>
               <SelectContent className="z-[1000] bg-popover border shadow-lg max-h-[200px] overflow-y-auto">
-                <SelectItem value="">ללא עובד מוקצה</SelectItem>
+                <SelectItem value="no-employee">ללא עובד מוקצה</SelectItem>
                 {employees.map(employee => (
                   <SelectItem key={employee.id} value={employee.id}>
                     {employee.first_name} {employee.last_name}
@@ -198,7 +198,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
                 <SelectValue placeholder="בחר סניף (אופציונלי)" />
               </SelectTrigger>
               <SelectContent className="z-[1000] bg-popover border shadow-lg max-h-[200px] overflow-y-auto">
-                <SelectItem value="">ללא סניף</SelectItem>
+                <SelectItem value="no-branch">ללא סניף</SelectItem>
                 {branches.map(branch => (
                   <SelectItem key={branch.id} value={branch.id}>
                     {branch.name}
@@ -216,7 +216,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
                 <SelectValue placeholder="בחר תפקיד (אופציונלי)" />
               </SelectTrigger>
               <SelectContent className="z-[1000] bg-popover border shadow-lg max-h-[200px] overflow-y-auto">
-                <SelectItem value="">ללא תפקיד מוגדר</SelectItem>
+                <SelectItem value="no-role">ללא תפקיד מוגדר</SelectItem>
                 <SelectItem value="cashier">קופאי</SelectItem>
                 <SelectItem value="sales">מכירות</SelectItem>
                 <SelectItem value="manager">מנהל</SelectItem>
