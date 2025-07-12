@@ -15,6 +15,7 @@ import { ShiftTemplatesApplyDialog } from './schedule/components/ShiftTemplatesA
 import { ScheduleErrorBoundary } from './schedule/ScheduleErrorBoundary';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
 import { useCalendarIntegration } from './schedule/hooks/useCalendarIntegration';
+import { useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScheduleHeader } from './schedule/components/ScheduleHeader';
 import { ScheduleActions } from './schedule/components/ScheduleActions';
@@ -54,6 +55,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     createShift,
     businessId
   } = useShiftSchedule();
+
+  const queryClient = useQueryClient();
 
   // Use the integrated calendar hook with correct parameters
   const {
@@ -180,6 +183,11 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const handleTabChange = (value: string) => {
     console.log('🔄 Tab changed to:', value);
     setActiveTab(value);
+  };
+
+  const handleBranchCreated = () => {
+    // Invalidate and refetch branches data
+    queryClient.invalidateQueries({ queryKey: ['schedule-branches', businessId] });
   };
 
   const isLoading = loading || calendarLoading;
@@ -366,6 +374,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           onSubmit={handleCreateShift}
           employees={employees}
           branches={branches}
+          onBranchCreated={handleBranchCreated}
         />
       )}
 

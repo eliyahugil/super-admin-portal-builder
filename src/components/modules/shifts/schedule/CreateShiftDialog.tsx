@@ -23,6 +23,7 @@ interface CreateShiftDialogProps {
   onSubmit: (shift: CreateShiftData) => Promise<void>;
   employees: Employee[];
   branches: Branch[];
+  onBranchCreated?: () => void;
 }
 
 export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
@@ -30,7 +31,8 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
   onClose,
   onSubmit,
   employees,
-  branches
+  branches,
+  onBranchCreated
 }) => {
   const { toast } = useToast();
   const { businessId } = useCurrentBusiness();
@@ -106,6 +108,11 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
         title: "סניף נוצר",
         description: `הסניף "${newBranchName}" נוצר בהצלחה`,
       });
+      
+      // Refresh branches list
+      if (onBranchCreated) {
+        onBranchCreated();
+      }
     } catch (error) {
       console.error('Error creating branch:', error);
       toast({
