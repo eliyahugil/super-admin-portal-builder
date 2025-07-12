@@ -42,8 +42,8 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
   const { businessId } = useCurrentBusiness();
   const { roles, loading: rolesLoading, addRole } = useShiftRoles(businessId);
   
-  // Shift creation mode
-  const [shiftMode, setShiftMode] = useState<'single' | 'multiple' | 'bulk'>('single');
+  // Unified mode - single switch for single vs multiple shifts
+  const [isMultipleShifts, setIsMultipleShifts] = useState(false);
   
   // Basic shift data
   const [date, setDate] = useState<Date>();
@@ -121,7 +121,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
     e.preventDefault();
     
     // Validation based on mode
-    if (shiftMode === 'bulk') {
+    if (isMultipleShifts) {
       if (!startDate || !endDate) {
         toast({
           title: "שגיאה",
@@ -135,15 +135,6 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
         toast({
           title: "שגיאה", 
           description: "אנא בחר לפחות יום אחד בשבוע",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (selectedBranches.length === 0) {
-        toast({
-          title: "שגיאה",
-          description: "אנא בחר לפחות סניף אחד",
           variant: "destructive"
         });
         return;
@@ -172,52 +163,66 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
     setShowSuccess(false);
     
     try {
-      if (shiftMode === 'bulk') {
-        const shifts = generateBulkShifts();
-        if (shifts.length === 0) {
-          toast({
-            title: "שגיאה",
-            description: "לא נוצרו משמרות. בדוק את ההגדרות",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        if (shifts.length > 50) {
-          if (!confirm(`זה יצור ${shifts.length} משמרות. האם להמשיך?`)) {
+      if (isMultipleShifts) {
+        // For multiple shifts, if branches are selected, use bulk logic
+        if (selectedBranches.length > 0) {
+          const shifts = generateBulkShifts();
+          if (shifts.length === 0) {
+            toast({
+              title: "שגיאה",
+              description: "לא נוצרו משמרות. בדוק את ההגדרות",
+              variant: "destructive"
+            });
             return;
           }
-        }
 
-        await onBulkSubmit(shifts);
-        
-        toast({
-          title: "הצלחה",
-          description: `${shifts.length} משמרות נוצרו בהצלחה`,
-        });
-      } else if (shiftMode === 'multiple') {
-        // Create multiple consecutive shifts
-        for (let i = 0; i < numberOfDays; i++) {
-          const shiftDate = addDays(date!, i);
-          const shiftData: CreateShiftData = {
-            shift_date: format(shiftDate, 'yyyy-MM-dd'),
-            start_time: startTime,
-            end_time: endTime,
-            employee_id: employeeId === 'no-employee' ? null : employeeId || null,
-            branch_id: branchId === 'no-branch' ? null : branchId || null,
-            role: role === 'no-role' ? null : role || null,
-            notes: notes || null,
-            status: 'pending',
-            shift_template_id: null
-          };
+          if (shifts.length > 50) {
+            if (!confirm(`זה יצור ${shifts.length} משמרות. האם להמשיך?`)) {
+              return;
+            }
+          }
 
-          await onSubmit(shiftData);
+          await onBulkSubmit(shifts);
+          
+          toast({
+            title: "הצלחה",
+            description: `${shifts.length} משמרות נוצרו בהצלחה`,
+          });
+        } else {
+          // Create shifts for each selected day in date range
+          const shifts: CreateShiftData[] = [];
+          let currentDate = new Date(startDate!);
+
+          while (!isAfter(currentDate, endDate!)) {
+            const dayOfWeek = currentDate.getDay();
+            
+            if (selectedDays.includes(dayOfWeek)) {
+              const shiftData: CreateShiftData = {
+                shift_date: format(currentDate, 'yyyy-MM-dd'),
+                start_time: startTime,
+                end_time: endTime,
+                employee_id: employeeId === 'no-employee' ? null : employeeId || null,
+                branch_id: branchId === 'no-branch' ? null : branchId || null,
+                role: role === 'no-role' ? null : role || null,
+                notes: notes || null,
+                status: 'pending',
+                shift_template_id: null
+              };
+              shifts.push(shiftData);
+            }
+            
+            currentDate = addDays(currentDate, 1);
+          }
+
+          for (const shift of shifts) {
+            await onSubmit(shift);
+          }
+          
+          toast({
+            title: "הצלחה",
+            description: `${shifts.length} משמרות נוצרו בהצלחה`,
+          });
         }
-        
-        toast({
-          title: "הצלחה",
-          description: `${numberOfDays} משמרות נוצרו בהצלחה`,
-        });
       } else {
         // Create single shift
         const shiftData: CreateShiftData = {
@@ -255,7 +260,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
       setNumberOfDays(1);
       setSelectedDays([]);
       setSelectedBranches([]);
-      setShiftMode('single');
+      setIsMultipleShifts(false);
       
       setTimeout(() => {
         setShowSuccess(false);
@@ -288,7 +293,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
     setNumberOfDays(1);
     setSelectedDays([]);
     setSelectedBranches([]);
-    setShiftMode('single');
+    setIsMultipleShifts(false);
     setShowSuccess(false);
     onClose();
   };
@@ -313,7 +318,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
     );
   }
 
-  const previewShifts = shiftMode === 'bulk' ? generateBulkShifts() : [];
+  const previewShifts = isMultipleShifts && selectedBranches.length > 0 ? generateBulkShifts() : [];
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -323,39 +328,22 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Shift Mode Selection */}
+          {/* Single/Multiple Switch */}
           <div className="space-y-3">
-            <Label className="text-base font-medium">סוג יצירת משמרת</Label>
-            <div className="grid grid-cols-3 gap-2">
-              <Button
-                type="button"
-                variant={shiftMode === 'single' ? 'default' : 'outline'}
-                onClick={() => setShiftMode('single')}
-                className="text-sm"
-              >
-                משמרת בודדת
-              </Button>
-              <Button
-                type="button"
-                variant={shiftMode === 'multiple' ? 'default' : 'outline'}
-                onClick={() => setShiftMode('multiple')}
-                className="text-sm"
-              >
-                משמרות רצופות
-              </Button>
-              <Button
-                type="button"
-                variant={shiftMode === 'bulk' ? 'default' : 'outline'}
-                onClick={() => setShiftMode('bulk')}
-                className="text-sm"
-              >
-                יצירה בכמות
-              </Button>
+            <Label className="text-base font-medium">יצירת משמרות</Label>
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={isMultipleShifts}
+                onCheckedChange={setIsMultipleShifts}
+              />
+              <Label className="text-sm">
+                {isMultipleShifts ? 'יצירת משמרות מרובות' : 'יצירת משמרת בודדת'}
+              </Label>
             </div>
           </div>
 
           {/* Date Selection */}
-          {shiftMode === 'bulk' ? (
+          {isMultipleShifts ? (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>תאריך התחלה *</Label>
@@ -413,9 +401,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
             </div>
           ) : (
             <div className="space-y-2">
-              <Label>
-                {shiftMode === 'multiple' ? 'תאריך התחלה *' : 'תאריך *'}
-              </Label>
+              <Label>תאריך *</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -442,28 +428,8 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
             </div>
           )}
 
-          {/* Number of Days for Multiple Shifts */}
-          {shiftMode === 'multiple' && (
-            <div className="space-y-2">
-              <Label>מספר ימים רצופים</Label>
-              <Input
-                type="number"
-                min="1"
-                max="14"
-                value={numberOfDays}
-                onChange={(e) => setNumberOfDays(Number(e.target.value))}
-                placeholder="מספר ימים רצופים"
-              />
-              {date && (
-                <p className="text-sm text-muted-foreground">
-                  משמרות יווצרו מ-{format(date, 'dd/MM/yyyy')} עד {format(addDays(date, numberOfDays - 1), 'dd/MM/yyyy')}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Days of Week for Bulk Creation */}
-          {shiftMode === 'bulk' && (
+          {/* Days of Week for Multiple Shifts */}
+          {isMultipleShifts && (
             <div className="space-y-2">
               <Label>ימים בשבוע *</Label>
               <div className="grid grid-cols-4 gap-2">
@@ -508,8 +474,8 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
             </div>
           </div>
 
-          {/* Employee Selection - Only for single/multiple, not bulk */}
-          {shiftMode !== 'bulk' && (
+          {/* Employee Selection - Only when not using multiple branches */}
+          {!(isMultipleShifts && selectedBranches.length > 0) && (
             <div className="space-y-2">
               <Label>עובד</Label>
               <Select value={employeeId} onValueChange={setEmployeeId}>
@@ -531,7 +497,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
           {/* Branch Selection */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>{shiftMode === 'bulk' ? 'סניפים *' : 'סניף'}</Label>
+              <Label>{isMultipleShifts ? 'סניפים (אופציונלי)' : 'סניף'}</Label>
               <Button
                 type="button"
                 variant="outline"
@@ -543,7 +509,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
               </Button>
             </div>
 
-            {shiftMode === 'bulk' ? (
+            {isMultipleShifts ? (
               <div className="border rounded-md p-3 max-h-32 overflow-y-auto">
                 <div className="space-y-2">
                   {branches.map(branch => (
@@ -584,7 +550,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
               </Select>
             )}
 
-            {shiftMode === 'bulk' && selectedBranches.length > 0 && (
+            {isMultipleShifts && selectedBranches.length > 0 && (
               <p className="text-xs text-muted-foreground">
                 נבחרו {selectedBranches.length} סניפים
               </p>
@@ -620,8 +586,8 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
             </Select>
           </div>
 
-          {/* Notes - Only for single/multiple, not bulk */}
-          {shiftMode !== 'bulk' && (
+          {/* Notes - Only when not using multiple branches */}
+          {!(isMultipleShifts && selectedBranches.length > 0) && (
             <div className="space-y-2">
               <Label>הערות</Label>
               <Textarea
@@ -633,8 +599,8 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
             </div>
           )}
 
-          {/* Preview for bulk creation */}
-          {shiftMode === 'bulk' && previewShifts.length > 0 && (
+          {/* Preview for multiple shifts with branches */}
+          {isMultipleShifts && selectedBranches.length > 0 && previewShifts.length > 0 && (
             <div className="p-3 bg-blue-50 rounded-lg">
               <Label className="text-sm font-medium">תצוגה מקדימה:</Label>
               <p className="text-sm text-blue-700 mt-1">
@@ -654,11 +620,11 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
           <div className="flex gap-2 pt-4">
             <Button 
               type="submit" 
-              disabled={isSubmitting || (shiftMode === 'bulk' && previewShifts.length === 0)}
+              disabled={isSubmitting}
             >
               {isSubmitting ? 'יוצר...' : 
-               shiftMode === 'bulk' ? `צור ${previewShifts.length} משמרות` :
-               shiftMode === 'multiple' ? `צור ${numberOfDays} משמרות` : 
+               isMultipleShifts && selectedBranches.length > 0 ? `צור ${previewShifts.length} משמרות` :
+               isMultipleShifts ? 'צור משמרות' : 
                'צור משמרת'}
             </Button>
             <Button type="button" variant="outline" onClick={handleClose}>
