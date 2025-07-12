@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BranchManagement } from '@/components/modules/employees/BranchManagement';
+import { BranchManagement } from '@/components/modules/branches/BranchManagement';
 
 const BranchManagementPage: React.FC = () => {
   return (
