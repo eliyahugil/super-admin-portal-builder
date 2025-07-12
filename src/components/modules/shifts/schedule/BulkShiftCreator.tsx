@@ -7,9 +7,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Building } from 'lucide-react';
 import { format, addDays, isAfter, isBefore } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { useToast } from '@/hooks/use-toast';
 import type { ShiftScheduleData, Employee, Branch } from './types';
 
 interface BulkShiftCreatorProps {
@@ -18,6 +21,7 @@ interface BulkShiftCreatorProps {
   onSubmit: (shifts: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>[]) => Promise<void>;
   employees: Employee[];
   branches: Branch[];
+  onBranchCreated?: () => void;
 }
 
 export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
@@ -25,8 +29,11 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
   onClose,
   onSubmit,
   employees,
-  branches
+  branches,
+  onBranchCreated
 }) => {
+  const { businessId } = useCurrentBusiness();
+  const { toast } = useToast();
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [startTime, setStartTime] = useState('09:00');
@@ -52,6 +59,61 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
         ? prev.filter(id => id !== dayId)
         : [...prev, dayId]
     );
+  };
+
+  const handleCreateBranch = async (branchName: string) => {
+    if (!businessId) {
+      toast({
+        title: "שגיאה",
+        description: "לא נמצא מזהה עסק",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .insert([
+          {
+            name: branchName.trim(),
+            business_id: businessId,
+            is_active: true
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating branch:', error);
+        toast({
+          title: "שגיאה ביצירת סניף",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "סניף נוצר בהצלחה",
+        description: `הסניף "${branchName}" נוצר בהצלחה`,
+      });
+
+      // בחר את הסניף החדש אוטומטית
+      setSelectedBranches(prev => [...prev, data.id]);
+
+      // רענן את רשימת הסניפים
+      if (onBranchCreated) {
+        onBranchCreated();
+      }
+    } catch (error) {
+      console.error('Error creating branch:', error);
+      toast({
+        title: "שגיאה",
+        description: "אירעה שגיאה ביצירת הסניף",
+        variant: "destructive",
+      });
+    }
   };
 
   const generateShifts = (): Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>[] => {
@@ -274,7 +336,24 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
                   </div>
                 ))}
                 {branches.length === 0 && (
-                  <p className="text-sm text-muted-foreground">אין סניפים זמינים</p>
+                  <div className="text-center space-y-3">
+                    <p className="text-sm text-muted-foreground">אין סניפים זמינים</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        // פתח דיאלוג ליצירת סניף חדש
+                        const branchName = prompt('הכנס שם סניף חדש:');
+                        if (branchName?.trim()) {
+                          await handleCreateBranch(branchName);
+                        }
+                      }}
+                    >
+                      <Building className="h-4 w-4 mr-2" />
+                      צור סניף חדש
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>

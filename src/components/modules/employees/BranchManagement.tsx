@@ -110,6 +110,7 @@ export const BranchManagement: React.FC = () => {
           onSubmit={handleBulkCreate}
           employees={employees}
           branches={branches}
+          onBranchCreated={refetch}
         />
       )}
       

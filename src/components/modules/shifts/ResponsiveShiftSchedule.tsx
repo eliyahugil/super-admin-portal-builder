@@ -385,6 +385,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           onSubmit={handleBulkCreate}
           employees={employees}
           branches={branches}
+          onBranchCreated={handleBranchCreated}
         />
       )}
       
