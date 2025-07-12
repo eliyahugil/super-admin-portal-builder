@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { Employee, Branch, CreateShiftData } from './types';
@@ -36,6 +36,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
   const [role, setRole] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +47,8 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
     }
 
     setIsSubmitting(true);
+    setShowSuccess(false);
+    
     try {
       const shiftData: CreateShiftData = {
         shift_date: format(date, 'yyyy-MM-dd'),
@@ -59,7 +62,11 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
         shift_template_id: null
       };
 
+      console.log('🔄 Creating shift with data:', shiftData);
       await onSubmit(shiftData);
+      
+      // Show success message
+      setShowSuccess(true);
       
       // Reset form
       setDate(undefined);
@@ -69,21 +76,50 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
       setBranchId('');
       setRole('');
       setNotes('');
-      onClose();
+      
+      console.log('✅ Shift created successfully');
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 3000);
+      
     } catch (error) {
-      console.error('Error creating shift:', error);
-      alert('שגיאה ביצירת המשמרת');
+      console.error('❌ Error creating shift:', error);
+      alert('שגיאה ביצירת המשמרת: ' + (error instanceof Error ? error.message : 'שגיאה לא ידועה'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleClose = () => {
+    setShowSuccess(false);
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]" dir="rtl">
         <DialogHeader>
-          <DialogTitle>יצירת משמרת חדשה</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {showSuccess ? (
+              <>
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                משמרת נוצרה בהצלחה!
+              </>
+            ) : (
+              'יצירת משמרת חדשה'
+            )}
+          </DialogTitle>
         </DialogHeader>
+        
+        {showSuccess && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+            <p className="text-green-800 text-sm">
+              המשמרת נוצרה בהצלחה! ניתן ליצור משמרת נוספת או לסגור את החלון.
+            </p>
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Date Picker */}
@@ -143,7 +179,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
               <SelectTrigger>
                 <SelectValue placeholder="בחר עובד (אופציונלי)" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50 bg-white border shadow-lg">
                 <SelectItem value="">ללא עובד מוקצה</SelectItem>
                 {employees.map(employee => (
                   <SelectItem key={employee.id} value={employee.id}>
@@ -161,7 +197,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
               <SelectTrigger>
                 <SelectValue placeholder="בחר סניף (אופציונלי)" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50 bg-white border shadow-lg">
                 <SelectItem value="">ללא סניף</SelectItem>
                 {branches.map(branch => (
                   <SelectItem key={branch.id} value={branch.id}>
@@ -179,7 +215,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
               <SelectTrigger>
                 <SelectValue placeholder="בחר תפקיד (אופציונלי)" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50 bg-white border shadow-lg">
                 <SelectItem value="">ללא תפקיד מוגדר</SelectItem>
                 <SelectItem value="cashier">קופאי</SelectItem>
                 <SelectItem value="sales">מכירות</SelectItem>
@@ -206,8 +242,8 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'יוצר...' : 'צור משמרת'}
             </Button>
-            <Button type="button" variant="outline" onClick={onClose}>
-              ביטול
+            <Button type="button" variant="outline" onClick={handleClose}>
+              {showSuccess ? 'סגור' : 'ביטול'}
             </Button>
           </div>
         </form>

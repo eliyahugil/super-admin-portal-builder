@@ -8,24 +8,34 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
 
   const createShift = useMutation({
     mutationFn: async (shiftData: CreateShiftData) => {
-      console.log('🔄 Creating shift:', shiftData);
+      console.log('🔄 Creating shift with business ID:', businessId);
+      console.log('🔄 Shift data:', shiftData);
       
       if (!businessId) {
+        console.error('❌ No business ID provided');
         throw new Error('Business ID is required');
       }
 
+      const insertData = {
+        business_id: businessId,
+        shift_date: shiftData.shift_date,
+        start_time: shiftData.start_time,
+        end_time: shiftData.end_time,
+        employee_id: shiftData.employee_id,
+        branch_id: shiftData.branch_id,
+        role: shiftData.role,
+        notes: shiftData.notes,
+        is_assigned: !!shiftData.employee_id,
+        is_archived: false,
+        status: shiftData.status || 'pending',
+        shift_template_id: shiftData.shift_template_id
+      };
+
+      console.log('🔄 Insert data:', insertData);
+
       const { data, error } = await supabase
         .from('scheduled_shifts')
-        .insert({
-          business_id: businessId,
-          shift_date: shiftData.shift_date,
-          employee_id: shiftData.employee_id,
-          branch_id: shiftData.branch_id,
-          notes: shiftData.notes,
-          is_assigned: !!shiftData.employee_id,
-          is_archived: false,
-          shift_template_id: shiftData.shift_template_id
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -37,8 +47,12 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       console.log('✅ Shift created successfully:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Mutation success callback:', data);
       queryClient.invalidateQueries({ queryKey: ['schedule-shifts', businessId] });
+    },
+    onError: (error) => {
+      console.error('❌ Mutation error callback:', error);
     }
   });
 
@@ -108,6 +122,7 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
 
   return {
     createShift: async (shiftData: CreateShiftData) => {
+      console.log('🚀 Starting shift creation process...');
       await createShift.mutateAsync(shiftData);
     },
     updateShift: async (shiftId: string, updates: Partial<ShiftScheduleData>) => {
