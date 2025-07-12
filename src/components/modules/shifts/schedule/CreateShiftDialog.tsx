@@ -8,9 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, CheckCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { CalendarIcon, CheckCircle, Plus, Building, UserPlus } from 'lucide-react';
+import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import type { Employee, Branch, CreateShiftData } from './types';
 
 interface CreateShiftDialogProps {
@@ -28,6 +31,9 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
   employees,
   branches
 }) => {
+  const { toast } = useToast();
+  
+  // Basic shift data
   const [date, setDate] = useState<Date>();
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
@@ -37,12 +43,88 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  
+  // Multiple shifts
+  const [isMultipleShifts, setIsMultipleShifts] = useState(false);
+  const [numberOfDays, setNumberOfDays] = useState(1);
+  
+  // Quick create states
+  const [isCreatingRole, setIsCreatingRole] = useState(false);
+  const [newRoleName, setNewRoleName] = useState('');
+  const [isCreatingBranch, setIsCreatingBranch] = useState(false);
+  const [newBranchName, setNewBranchName] = useState('');
+  const [newBranchAddress, setNewBranchAddress] = useState('');
+
+  // Quick create functions
+  const createNewRole = async () => {
+    if (!newRoleName.trim()) return;
+    
+    setRole(newRoleName);
+    setNewRoleName('');
+    setIsCreatingRole(false);
+    
+    toast({
+      title: "תפקיד נוצר",
+      description: `התפקיד "${newRoleName}" נוצר בהצלחה`,
+    });
+  };
+
+  const createNewBranch = async () => {
+    if (!newBranchName.trim()) return;
+    
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) throw new Error('משתמש לא מחובר');
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('business_id')
+        .eq('id', userData.user.id)
+        .single();
+
+      if (!profileData?.business_id) throw new Error('לא נמצא עסק');
+
+      const { data: newBranch, error } = await supabase
+        .from('branches')
+        .insert({
+          name: newBranchName,
+          address: newBranchAddress || null,
+          business_id: profileData.business_id,
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setBranchId(newBranch.id);
+      setNewBranchName('');
+      setNewBranchAddress('');
+      setIsCreatingBranch(false);
+      
+      toast({
+        title: "סניף נוצר",
+        description: `הסניף "${newBranchName}" נוצר בהצלחה`,
+      });
+    } catch (error) {
+      console.error('Error creating branch:', error);
+      toast({
+        title: "שגיאה",
+        description: "שגיאה ביצירת הסניף",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!date) {
-      alert('אנא בחר תאריך');
+      toast({
+        title: "שגיאה",
+        description: "אנא בחר תאריך",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -50,20 +132,50 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
     setShowSuccess(false);
     
     try {
-      const shiftData: CreateShiftData = {
-        shift_date: format(date, 'yyyy-MM-dd'),
-        start_time: startTime,
-        end_time: endTime,
-        employee_id: employeeId === 'no-employee' ? null : employeeId || null,
-        branch_id: branchId === 'no-branch' ? null : branchId || null,
-        role: role === 'no-role' ? null : role || null,
-        notes: notes || null,
-        status: 'pending',
-        shift_template_id: null
-      };
+      if (isMultipleShifts) {
+        // Create multiple shifts
+        for (let i = 0; i < numberOfDays; i++) {
+          const shiftDate = addDays(date, i);
+          const shiftData: CreateShiftData = {
+            shift_date: format(shiftDate, 'yyyy-MM-dd'),
+            start_time: startTime,
+            end_time: endTime,
+            employee_id: employeeId === 'no-employee' ? null : employeeId || null,
+            branch_id: branchId === 'no-branch' ? null : branchId || null,
+            role: role === 'no-role' ? null : role || null,
+            notes: notes || null,
+            status: 'pending',
+            shift_template_id: null
+          };
 
-      console.log('🔄 Creating shift with data:', shiftData);
-      await onSubmit(shiftData);
+          await onSubmit(shiftData);
+        }
+        
+        toast({
+          title: "הצלחה",
+          description: `${numberOfDays} משמרות נוצרו בהצלחה`,
+        });
+      } else {
+        // Create single shift
+        const shiftData: CreateShiftData = {
+          shift_date: format(date, 'yyyy-MM-dd'),
+          start_time: startTime,
+          end_time: endTime,
+          employee_id: employeeId === 'no-employee' ? null : employeeId || null,
+          branch_id: branchId === 'no-branch' ? null : branchId || null,
+          role: role === 'no-role' ? null : role || null,
+          notes: notes || null,
+          status: 'pending',
+          shift_template_id: null
+        };
+
+        await onSubmit(shiftData);
+        
+        toast({
+          title: "הצלחה",
+          description: "המשמרת נוצרה בהצלחה",
+        });
+      }
       
       // Show success message
       setShowSuccess(true);
@@ -76,8 +188,8 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
       setBranchId('');
       setRole('');
       setNotes('');
-      
-      console.log('✅ Shift created successfully');
+      setIsMultipleShifts(false);
+      setNumberOfDays(1);
       
       // Hide success message after 3 seconds
       setTimeout(() => {
@@ -86,7 +198,11 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
       
     } catch (error) {
       console.error('❌ Error creating shift:', error);
-      alert('שגיאה ביצירת המשמרת: ' + (error instanceof Error ? error.message : 'שגיאה לא ידועה'));
+      toast({
+        title: "שגיאה",
+        description: 'שגיאה ביצירת המשמרת: ' + (error instanceof Error ? error.message : 'שגיאה לא ידועה'),
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -122,9 +238,25 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
         )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Multiple Shifts Toggle */}
+          <div className="flex items-center justify-between space-x-2 p-3 border rounded-lg bg-muted/20">
+            <div className="space-y-0.5">
+              <Label className="text-base">יצירת משמרות מרובות</Label>
+              <p className="text-sm text-muted-foreground">
+                יצירת משמרות עוקבות במספר ימים
+              </p>
+            </div>
+            <Switch
+              checked={isMultipleShifts}
+              onCheckedChange={setIsMultipleShifts}
+            />
+          </div>
+
           {/* Date Picker */}
           <div className="space-y-2">
-            <Label>תאריך *</Label>
+            <Label>
+              {isMultipleShifts ? 'תאריך התחלה *' : 'תאריך *'}
+            </Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -149,6 +281,26 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
               </PopoverContent>
             </Popover>
           </div>
+
+          {/* Number of Days for Multiple Shifts */}
+          {isMultipleShifts && (
+            <div className="space-y-2">
+              <Label>מספר ימים</Label>
+              <Input
+                type="number"
+                min="1"
+                max="14"
+                value={numberOfDays}
+                onChange={(e) => setNumberOfDays(Number(e.target.value))}
+                placeholder="מספר ימים רצופים"
+              />
+              {date && (
+                <p className="text-sm text-muted-foreground">
+                  משמרות יווצרו מ-{format(date, 'dd/MM/yyyy')} עד {format(addDays(date, numberOfDays - 1), 'dd/MM/yyyy')}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Time Inputs */}
           <div className="grid grid-cols-2 gap-4">
@@ -190,40 +342,136 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
             </Select>
           </div>
 
-          {/* Branch Selection */}
+          {/* Branch Selection with Quick Create */}
           <div className="space-y-2">
-            <Label>סניף</Label>
-            <Select value={branchId} onValueChange={setBranchId}>
-              <SelectTrigger>
-                <SelectValue placeholder="בחר סניף (אופציונלי)" />
-              </SelectTrigger>
-              <SelectContent className="z-[1000] bg-popover border shadow-lg max-h-[200px] overflow-y-auto">
-                <SelectItem value="no-branch">ללא סניף</SelectItem>
-                {branches.map(branch => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center justify-between">
+              <Label>סניף</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCreatingBranch(true)}
+                className="h-auto p-1"
+              >
+                <Plus className="h-4 w-4" />
+                הוסף סניף
+              </Button>
+            </div>
+            
+            {isCreatingBranch ? (
+              <div className="space-y-2 p-3 border rounded-lg bg-muted/10">
+                <Input
+                  placeholder="שם הסניף"
+                  value={newBranchName}
+                  onChange={(e) => setNewBranchName(e.target.value)}
+                />
+                <Input
+                  placeholder="כתובת (אופציונלי)"
+                  value={newBranchAddress}
+                  onChange={(e) => setNewBranchAddress(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={createNewBranch}
+                    disabled={!newBranchName.trim()}
+                  >
+                    <Building className="h-4 w-4 ml-1" />
+                    צור סניף
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsCreatingBranch(false);
+                      setNewBranchName('');
+                      setNewBranchAddress('');
+                    }}
+                  >
+                    ביטול
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Select value={branchId} onValueChange={setBranchId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר סניף (אופציונלי)" />
+                </SelectTrigger>
+                <SelectContent className="z-[1000] bg-popover border shadow-lg max-h-[200px] overflow-y-auto">
+                  <SelectItem value="no-branch">ללא סניף</SelectItem>
+                  {branches.map(branch => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
-          {/* Role Input */}
+          {/* Role Input with Quick Create */}
           <div className="space-y-2">
-            <Label>תפקיד</Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger>
-                <SelectValue placeholder="בחר תפקיד (אופציונלי)" />
-              </SelectTrigger>
-              <SelectContent className="z-[1000] bg-popover border shadow-lg max-h-[200px] overflow-y-auto">
-                <SelectItem value="no-role">ללא תפקיד מוגדר</SelectItem>
-                <SelectItem value="cashier">קופאי</SelectItem>
-                <SelectItem value="sales">מכירות</SelectItem>
-                <SelectItem value="manager">מנהל</SelectItem>
-                <SelectItem value="security">אבטחה</SelectItem>
-                <SelectItem value="cleaner">ניקיון</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center justify-between">
+              <Label>תפקיד</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCreatingRole(true)}
+                className="h-auto p-1"
+              >
+                <Plus className="h-4 w-4" />
+                הוסף תפקיד
+              </Button>
+            </div>
+            
+            {isCreatingRole ? (
+              <div className="space-y-2 p-3 border rounded-lg bg-muted/10">
+                <Input
+                  placeholder="שם התפקיד"
+                  value={newRoleName}
+                  onChange={(e) => setNewRoleName(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={createNewRole}
+                    disabled={!newRoleName.trim()}
+                  >
+                    <UserPlus className="h-4 w-4 ml-1" />
+                    צור תפקיד
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsCreatingRole(false);
+                      setNewRoleName('');
+                    }}
+                  >
+                    ביטול
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר תפקיד (אופציונלי)" />
+                </SelectTrigger>
+                <SelectContent className="z-[1000] bg-popover border shadow-lg max-h-[200px] overflow-y-auto">
+                  <SelectItem value="no-role">ללא תפקיד מוגדר</SelectItem>
+                  <SelectItem value="cashier">קופאי</SelectItem>
+                  <SelectItem value="sales">מכירות</SelectItem>
+                  <SelectItem value="manager">מנהל</SelectItem>
+                  <SelectItem value="security">אבטחה</SelectItem>
+                  <SelectItem value="cleaner">ניקיון</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Notes */}
@@ -240,7 +488,8 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
           {/* Actions */}
           <div className="flex gap-2 pt-4">
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'יוצר...' : 'צור משמרת'}
+              {isSubmitting ? 'יוצר...' : 
+               isMultipleShifts ? `צור ${numberOfDays} משמרות` : 'צור משמרת'}
             </Button>
             <Button type="button" variant="outline" onClick={handleClose}>
               {showSuccess ? 'סגור' : 'ביטול'}
