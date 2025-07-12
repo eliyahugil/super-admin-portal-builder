@@ -151,21 +151,14 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-4 text-gray-500">
-                    <p className="text-sm">אין משמרות</p>
+                  <div 
+                    className="text-center py-4 text-gray-500 cursor-pointer hover:bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 hover:border-blue-300 transition-colors"
+                    onClick={() => onAddShift(date)}
+                  >
+                    <Plus className="h-6 w-6 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm">לחץ להוספת משמרת</p>
                   </div>
                 )}
-                
-                {/* Add shift button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => onAddShift(date)}
-                >
-                  <Plus className="h-4 w-4 ml-2" />
-                  הוסף משמרת
-                </Button>
               </CardContent>
             </Card>
           );
@@ -256,16 +249,16 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   ))}
                 </div>
                 
-                {/* Add shift button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full mt-2 text-xs"
-                  onClick={() => onAddShift(date)}
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  הוסף משמרת
-                </Button>
+                {/* Add shift area - only show when no shifts */}
+                {dayShifts.length === 0 && (
+                  <div 
+                    className="text-center py-2 text-gray-400 cursor-pointer hover:bg-gray-50 rounded border border-dashed border-gray-200 hover:border-blue-300 transition-colors"
+                    onClick={() => onAddShift(date)}
+                  >
+                    <Plus className="h-4 w-4 mx-auto mb-1" />
+                    <p className="text-xs">הוסף משמרת</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
