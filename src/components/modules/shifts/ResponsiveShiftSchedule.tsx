@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Copy } from 'lucide-react';
 import { WeeklyScheduleView } from './schedule/WeeklyScheduleView';
 import { MonthlyScheduleView } from './schedule/MonthlyScheduleView';
 import { YearlyScheduleView } from './schedule/YearlyScheduleView';
@@ -7,6 +9,7 @@ import { ShiftScheduleFilters } from './schedule/ShiftScheduleFilters';
 import { CreateShiftDialog } from './schedule/CreateShiftDialog';
 import { ShiftDetailsDialog } from './schedule/ShiftDetailsDialog';
 import { BulkShiftCreator } from './schedule/BulkShiftCreator';
+import { QuickMultipleShiftsDialog } from './schedule/QuickMultipleShiftsDialog';
 import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
 import { ScheduleErrorBoundary } from './schedule/ScheduleErrorBoundary';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
@@ -26,6 +29,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showBulkCreator, setShowBulkCreator] = useState(false);
+  const [showQuickMultiple, setShowQuickMultiple] = useState(false);
+  const [quickMultipleShift, setQuickMultipleShift] = useState<Partial<CreateShiftData> | undefined>();
   const [selectedShift, setSelectedShift] = useState<ShiftScheduleData | null>(null);
   const [assignmentShift, setAssignmentShift] = useState<ShiftScheduleData | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -129,11 +134,29 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     await createShift(shiftData);
   };
 
+  const handleCreateMultipleShifts = async (shifts: CreateShiftData[]) => {
+    console.log('📝 Creating multiple shifts:', shifts.length);
+    for (const shift of shifts) {
+      await createShift(shift);
+    }
+  };
+
   const handleBulkCreate = async (shifts: Omit<ShiftScheduleData, 'id' | 'created_at'>[]) => {
     console.log('📝 Creating bulk shifts:', shifts.length);
     for (const shift of shifts) {
       await createShift(shift);
     }
+  };
+
+  const handleDuplicateShift = (shift: ShiftScheduleData) => {
+    setQuickMultipleShift({
+      start_time: shift.start_time,
+      end_time: shift.end_time,
+      employee_id: shift.employee_id,
+      branch_id: shift.branch_id,
+      role: shift.role
+    });
+    setShowQuickMultiple(true);
   };
 
   const handleAssignEmployee = async (shiftId: string, employeeId: string) => {
@@ -172,6 +195,16 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             setMobileMenuOpen={setMobileMenuOpen}
             isMobile={isMobile}
           />
+          
+          {/* Quick Multiple Button */}
+          <Button
+            onClick={() => setShowQuickMultiple(true)}
+            className="mr-2"
+            size={isMobile ? "sm" : "default"}
+          >
+            <Copy className="h-4 w-4 ml-1" />
+            יצירה מרובה
+          </Button>
         </div>
       </div>
 
@@ -326,6 +359,20 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           onSubmit={handleBulkCreate}
           employees={employees}
           branches={branches}
+        />
+      )}
+      
+      {showQuickMultiple && (
+        <QuickMultipleShiftsDialog
+          isOpen={showQuickMultiple}
+          onClose={() => {
+            setShowQuickMultiple(false);
+            setQuickMultipleShift(undefined);
+          }}
+          onSubmit={handleCreateMultipleShifts}
+          employees={employees}
+          branches={branches}
+          prefilledShift={quickMultipleShift}
         />
       )}
       
