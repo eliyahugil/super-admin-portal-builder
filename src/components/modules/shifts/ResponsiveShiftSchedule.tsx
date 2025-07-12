@@ -152,7 +152,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     }
   };
 
-  const handleBulkCreate = async (shifts: Omit<ShiftScheduleData, 'id' | 'created_at'>[]) => {
+  const handleBulkCreate = async (shifts: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>[]) => {
     console.log('📝 Creating bulk shifts:', shifts.length);
     for (const shift of shifts) {
       await createShift(shift);
