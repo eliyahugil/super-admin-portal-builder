@@ -179,7 +179,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
               <SelectTrigger>
                 <SelectValue placeholder="בחר עובד (אופציונלי)" />
               </SelectTrigger>
-              <SelectContent className="z-50 bg-white border shadow-lg">
+              <SelectContent className="z-[1000] bg-popover border shadow-lg max-h-[200px] overflow-y-auto">
                 <SelectItem value="">ללא עובד מוקצה</SelectItem>
                 {employees.map(employee => (
                   <SelectItem key={employee.id} value={employee.id}>
@@ -197,7 +197,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
               <SelectTrigger>
                 <SelectValue placeholder="בחר סניף (אופציונלי)" />
               </SelectTrigger>
-              <SelectContent className="z-50 bg-white border shadow-lg">
+              <SelectContent className="z-[1000] bg-popover border shadow-lg max-h-[200px] overflow-y-auto">
                 <SelectItem value="">ללא סניף</SelectItem>
                 {branches.map(branch => (
                   <SelectItem key={branch.id} value={branch.id}>
@@ -215,7 +215,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
               <SelectTrigger>
                 <SelectValue placeholder="בחר תפקיד (אופציונלי)" />
               </SelectTrigger>
-              <SelectContent className="z-50 bg-white border shadow-lg">
+              <SelectContent className="z-[1000] bg-popover border shadow-lg max-h-[200px] overflow-y-auto">
                 <SelectItem value="">ללא תפקיד מוגדר</SelectItem>
                 <SelectItem value="cashier">קופאי</SelectItem>
                 <SelectItem value="sales">מכירות</SelectItem>

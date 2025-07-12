@@ -25,9 +25,9 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         branch_id: shiftData.branch_id,
         role: shiftData.role,
         notes: shiftData.notes,
+        status: shiftData.status || 'pending',
         is_assigned: !!shiftData.employee_id,
         is_archived: false,
-        status: shiftData.status || 'pending',
         shift_template_id: shiftData.shift_template_id
       };
 
@@ -73,6 +73,22 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       
       if (updates.notes !== undefined) {
         updateData.notes = updates.notes || null;
+      }
+
+      if (updates.role !== undefined) {
+        updateData.role = updates.role || null;
+      }
+
+      if (updates.start_time !== undefined) {
+        updateData.start_time = updates.start_time;
+      }
+
+      if (updates.end_time !== undefined) {
+        updateData.end_time = updates.end_time;
+      }
+
+      if (updates.status !== undefined) {
+        updateData.status = updates.status;
       }
 
       if (updates.shift_template_id !== undefined) {

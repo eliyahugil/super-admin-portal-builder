@@ -2546,12 +2546,16 @@ export type Database = {
           business_id: string | null
           created_at: string | null
           employee_id: string | null
+          end_time: string | null
           id: string
           is_archived: boolean
           is_assigned: boolean | null
           notes: string | null
+          role: string | null
           shift_date: string
           shift_template_id: string
+          start_time: string | null
+          status: string | null
           updated_at: string | null
         }
         Insert: {
@@ -2559,12 +2563,16 @@ export type Database = {
           business_id?: string | null
           created_at?: string | null
           employee_id?: string | null
+          end_time?: string | null
           id?: string
           is_archived?: boolean
           is_assigned?: boolean | null
           notes?: string | null
+          role?: string | null
           shift_date: string
           shift_template_id: string
+          start_time?: string | null
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -2572,12 +2580,16 @@ export type Database = {
           business_id?: string | null
           created_at?: string | null
           employee_id?: string | null
+          end_time?: string | null
           id?: string
           is_archived?: boolean
           is_assigned?: boolean | null
           notes?: string | null
+          role?: string | null
           shift_date?: string
           shift_template_id?: string
+          start_time?: string | null
+          status?: string | null
           updated_at?: string | null
         }
         Relationships: [

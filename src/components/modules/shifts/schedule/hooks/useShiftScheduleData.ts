@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { ShiftScheduleData, Employee, Branch } from '../types';
@@ -32,15 +33,19 @@ export const useShiftScheduleData = (businessId: string | null) => {
           .from('scheduled_shifts')
           .select(`
             id,
+            business_id,
             shift_date,
+            start_time,
+            end_time,
             employee_id,
             branch_id,
+            role,
             notes,
+            status,
             is_assigned,
             is_archived,
             created_at,
             updated_at,
-            business_id,
             shift_template_id,
             employee:employees(first_name, last_name, business_id),
             branch:branches(name, business_id)
@@ -57,18 +62,16 @@ export const useShiftScheduleData = (businessId: string | null) => {
         console.log('✅ Raw shifts data:', data);
 
         const transformedShifts: ShiftScheduleData[] = (data || []).map(shift => {
-          // Determine status based on is_assigned field
-          const rawStatus = shift.is_assigned ? 'approved' : 'pending';
-          const validatedStatus = parseStatus(rawStatus);
+          const validatedStatus = parseStatus(shift.status);
 
           return {
             id: shift.id,
             business_id: shift.business_id,
             employee_id: shift.employee_id || '',
             shift_date: shift.shift_date,
-            start_time: '09:00', // Default time - this should come from shift templates later
-            end_time: '17:00', // Default time - this should come from shift templates later
-            role: undefined,
+            start_time: shift.start_time || '09:00',
+            end_time: shift.end_time || '17:00',
+            role: shift.role || '',
             notes: shift.notes || '',
             status: validatedStatus,
             created_at: shift.created_at,
@@ -78,7 +81,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
             shift_template_id: shift.shift_template_id || undefined,
             branch_id: shift.branch_id || '',
             branch_name: shift.branch?.name || 'לא צוין',
-            role_preference: ''
+            role_preference: shift.role || ''
           };
         });
 
