@@ -37,7 +37,9 @@ export const QuickMultipleShiftsDialog: React.FC<QuickMultipleShiftsDialogProps>
   const [startTime, setStartTime] = useState(prefilledShift?.start_time || '09:00');
   const [endTime, setEndTime] = useState(prefilledShift?.end_time || '17:00');
   const [employeeId, setEmployeeId] = useState(prefilledShift?.employee_id || '');
-  const [branchId, setBranchId] = useState(prefilledShift?.branch_id || '');
+  const [selectedBranches, setSelectedBranches] = useState<string[]>(
+    prefilledShift?.branch_id ? [prefilledShift.branch_id] : []
+  );
   const [role, setRole] = useState(prefilledShift?.role || '');
   
   // Creation options
@@ -120,26 +122,42 @@ export const QuickMultipleShiftsDialog: React.FC<QuickMultipleShiftsDialogProps>
       return;
     }
 
+    if (selectedBranches.length === 0) {
+      toast({
+        title: "שגיאה",
+        description: "אנא בחר לפחות סניף אחד",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
-      const shifts: CreateShiftData[] = dates.map(date => ({
-        shift_date: format(date, 'yyyy-MM-dd'),
-        start_time: startTime,
-        end_time: endTime,
-        employee_id: employeeId === 'no-employee' ? null : employeeId || null,
-        branch_id: branchId === 'no-branch' ? null : branchId || null,
-        role: role === 'no-role' ? null : role || null,
-        notes: null,
-        status: 'pending',
-        shift_template_id: null
-      }));
+      const shifts: CreateShiftData[] = [];
+      
+      // Create shifts for each combination of date and branch
+      dates.forEach(date => {
+        selectedBranches.forEach(branchId => {
+          shifts.push({
+            shift_date: format(date, 'yyyy-MM-dd'),
+            start_time: startTime,
+            end_time: endTime,
+            employee_id: employeeId === 'no-employee' ? null : employeeId || null,
+            branch_id: branchId,
+            role: role === 'no-role' ? null : role || null,
+            notes: null,
+            status: 'pending',
+            shift_template_id: null
+          });
+        });
+      });
 
       await onSubmit(shifts);
       
       toast({
         title: "הצלחה",
-        description: `${shifts.length} משמרות נוצרו בהצלחה`,
+        description: `${shifts.length} משמרות נוצרו בהצלחה (${dates.length} תאריכים × ${selectedBranches.length} סניפים)`,
       });
       
       onClose();
@@ -226,20 +244,34 @@ export const QuickMultipleShiftsDialog: React.FC<QuickMultipleShiftsDialogProps>
               </div>
               
               <div className="space-y-2">
-                <Label>סניף</Label>
-                <Select value={branchId} onValueChange={setBranchId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="בחר סניף" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[1000]">
-                    <SelectItem value="no-branch">ללא סניף</SelectItem>
+                <Label>סניפים</Label>
+                <div className="border rounded-md p-3 max-h-32 overflow-y-auto">
+                  <div className="space-y-2">
                     {branches.map(branch => (
-                      <SelectItem key={branch.id} value={branch.id}>
-                        {branch.name}
-                      </SelectItem>
+                      <div key={branch.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={selectedBranches.includes(branch.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedBranches(prev => [...prev, branch.id]);
+                            } else {
+                              setSelectedBranches(prev => prev.filter(id => id !== branch.id));
+                            }
+                          }}
+                        />
+                        <Label className="text-sm">{branch.name}</Label>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
+                    {branches.length === 0 && (
+                      <p className="text-sm text-muted-foreground">אין סניפים זמינים</p>
+                    )}
+                  </div>
+                </div>
+                {selectedBranches.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    נבחרו {selectedBranches.length} סניפים
+                  </p>
+                )}
               </div>
             </div>
 

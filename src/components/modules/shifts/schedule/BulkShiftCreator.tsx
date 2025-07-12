@@ -32,7 +32,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
-  const [branchId, setBranchId] = useState<string>('');
+  const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
   const [role, setRole] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -55,7 +55,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
   };
 
   const generateShifts = (): Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>[] => {
-    if (!startDate || !endDate || selectedDays.length === 0) return [];
+    if (!startDate || !endDate || selectedDays.length === 0 || selectedBranches.length === 0) return [];
 
     const shifts: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>[] = [];
     let currentDate = new Date(startDate);
@@ -64,16 +64,19 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
       const dayOfWeek = currentDate.getDay();
       
       if (selectedDays.includes(dayOfWeek)) {
-        shifts.push({
-          shift_date: format(currentDate, 'yyyy-MM-dd'),
-          start_time: startTime,
-          end_time: endTime,
-          employee_id: undefined,
-          branch_id: branchId || undefined,
-          role: role || undefined,
-          notes: undefined,
-          status: 'pending',
-          shift_template_id: undefined
+        // Create a shift for each selected branch
+        selectedBranches.forEach(branchId => {
+          shifts.push({
+            shift_date: format(currentDate, 'yyyy-MM-dd'),
+            start_time: startTime,
+            end_time: endTime,
+            employee_id: undefined,
+            branch_id: branchId || undefined,
+            role: role || undefined,
+            notes: undefined,
+            status: 'pending',
+            shift_template_id: undefined
+          });
         });
       }
       
@@ -93,6 +96,11 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
 
     if (selectedDays.length === 0) {
       alert('אנא בחר לפחות יום אחד בשבוע');
+      return;
+    }
+
+    if (selectedBranches.length === 0) {
+      alert('אנא בחר לפחות סניף אחד');
       return;
     }
 
@@ -123,7 +131,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
       setStartTime('09:00');
       setEndTime('17:00');
       setSelectedDays([]);
-      setBranchId('');
+      setSelectedBranches([]);
       setRole('');
       onClose();
     } catch (error) {
@@ -247,20 +255,34 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
 
           {/* Branch Selection */}
           <div className="space-y-2">
-            <Label>סניף</Label>
-            <Select value={branchId} onValueChange={setBranchId}>
-              <SelectTrigger>
-                <SelectValue placeholder="בחר סניף (אופציונלי)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">ללא סניף</SelectItem>
+            <Label>סניפים *</Label>
+            <div className="border rounded-md p-3 max-h-32 overflow-y-auto">
+              <div className="space-y-2">
                 {branches.map(branch => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </SelectItem>
+                  <div key={branch.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={selectedBranches.includes(branch.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedBranches(prev => [...prev, branch.id]);
+                        } else {
+                          setSelectedBranches(prev => prev.filter(id => id !== branch.id));
+                        }
+                      }}
+                    />
+                    <Label className="text-sm">{branch.name}</Label>
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
+                {branches.length === 0 && (
+                  <p className="text-sm text-muted-foreground">אין סניפים זמינים</p>
+                )}
+              </div>
+            </div>
+            {selectedBranches.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                נבחרו {selectedBranches.length} סניפים
+              </p>
+            )}
           </div>
 
           {/* Role Input */}
