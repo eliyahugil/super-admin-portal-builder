@@ -72,7 +72,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
             end_time: endTime,
             employee_id: undefined,
             branch_id: branchId || undefined,
-            role: role || undefined,
+            role: role && role !== 'none' ? role : undefined,
             notes: undefined,
             status: 'pending',
             shift_template_id: undefined
@@ -293,7 +293,7 @@ export const BulkShiftCreator: React.FC<BulkShiftCreatorProps> = ({
                 <SelectValue placeholder="בחר תפקיד (אופציונלי)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">ללא תפקיד מוגדר</SelectItem>
+                <SelectItem value="none">ללא תפקיד מוגדר</SelectItem>
                 <SelectItem value="cashier">קופאי</SelectItem>
                 <SelectItem value="sales">מכירות</SelectItem>
                 <SelectItem value="manager">מנהל</SelectItem>
