@@ -2553,7 +2553,7 @@ export type Database = {
           notes: string | null
           role: string | null
           shift_date: string
-          shift_template_id: string
+          shift_template_id: string | null
           start_time: string | null
           status: string | null
           updated_at: string | null
@@ -2570,7 +2570,7 @@ export type Database = {
           notes?: string | null
           role?: string | null
           shift_date: string
-          shift_template_id: string
+          shift_template_id?: string | null
           start_time?: string | null
           status?: string | null
           updated_at?: string | null
@@ -2587,7 +2587,7 @@ export type Database = {
           notes?: string | null
           role?: string | null
           shift_date?: string
-          shift_template_id?: string
+          shift_template_id?: string | null
           start_time?: string | null
           status?: string | null
           updated_at?: string | null
