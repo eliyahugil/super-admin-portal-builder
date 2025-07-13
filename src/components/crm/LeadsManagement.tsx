@@ -174,11 +174,15 @@ export const LeadsManagement: React.FC = () => {
                         </p>
                       )}
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          עריכה
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.location.href = `/crm/leads/${lead.id}`}
+                        >
+                          צפה בפרטים
                         </Button>
                         <Button variant="outline" size="sm">
-                          פעילויות
+                          עריכה
                         </Button>
                       </div>
                     </div>

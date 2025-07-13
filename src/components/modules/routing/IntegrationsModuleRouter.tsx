@@ -2,6 +2,7 @@
 import React from 'react';
 import { IntegrationManagement } from '../integrations/IntegrationManagement';
 import { CRMDashboard } from '@/components/crm/CRMDashboard';
+import { WhatsAppDashboard } from '@/components/whatsapp/WhatsAppDashboard';
 
 interface Props {
   route: string;
@@ -13,7 +14,7 @@ export const IntegrationsModuleRouter: React.FC<Props> = ({ route }) => {
     case 'google-maps':
       return <div className="p-6 text-center">רכיב Google Maps בפיתוח</div>;
     case 'whatsapp':
-      return <div className="p-6 text-center">רכיב WhatsApp בפיתוח</div>;
+      return <WhatsAppDashboard />;
     case 'facebook':
       return <div className="p-6 text-center">רכיב Facebook בפיתוח</div>;
     case 'invoices':
