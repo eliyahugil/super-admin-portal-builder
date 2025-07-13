@@ -24,9 +24,9 @@ serve(async (req) => {
 
     const { businessId }: WhatsAppConnectRequest = await req.json();
 
-    console.log('🔗 Starting WhatsApp Business API connection for business:', businessId);
+    console.log('🔗 Starting WhatsApp Gateway connection for business:', businessId);
 
-    // Get WhatsApp Business API credentials from business integrations
+    // Get WhatsApp Gateway credentials from business integrations
     const { data: integration, error: integrationError } = await supabaseClient
       .from('business_integrations')
       .select('credentials, config')
@@ -38,7 +38,7 @@ serve(async (req) => {
     if (integrationError || !integration) {
       console.error('❌ WhatsApp integration not found:', integrationError);
       return new Response(
-        JSON.stringify({ error: 'WhatsApp Business API integration not configured. Please configure it first in Settings.' }),
+        JSON.stringify({ error: 'WhatsApp Gateway integration not configured. Please configure it first in Settings.' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -46,19 +46,9 @@ serve(async (req) => {
       );
     }
 
-    const { access_token, phone_number_id } = integration.credentials;
-    const { app_id, app_secret, api_version = 'v18.0' } = integration.config;
-
-    if (!access_token || !phone_number_id) {
-      console.error('❌ Missing WhatsApp credentials');
-      return new Response(
-        JSON.stringify({ error: 'Missing WhatsApp Business API credentials' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
+    // For Gateway we might need different credentials, but for now we'll use the session approach
+    // You can add gateway_url and other configs here if needed
+    const { gateway_url = 'http://localhost:3000' } = integration.config;
 
     // Update connection status to connecting
     const { error: updateError } = await supabaseClient
@@ -66,7 +56,7 @@ serve(async (req) => {
       .upsert({
         business_id: businessId,
         connection_status: 'connecting',
-        device_name: 'WhatsApp Business API',
+        device_name: 'WhatsApp Gateway',
         phone_number: ''
       });
 
@@ -75,33 +65,90 @@ serve(async (req) => {
       throw updateError;
     }
 
-    // Test the connection by getting phone number info
-    const phoneInfoResponse = await fetch(`https://graph.facebook.com/${api_version}/${phone_number_id}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${access_token}`,
-        'Content-Type': 'application/json',
+    // Generate unique session ID for this business
+    const sessionId = `business_${businessId.replace(/-/g, '_')}`;
+    
+    // Check if session already exists and try to delete it first
+    let sessionCreated = false;
+    let sessionResponse;
+    
+    try {
+      // Try to create session
+      console.log('🔗 Attempting to create WhatsApp session:', sessionId);
+      sessionResponse = await fetch(`${gateway_url}/session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId: sessionId
+        })
+      });
+
+      const sessionResult = await sessionResponse.json();
+      
+      if (!sessionResponse.ok) {
+        // If session already exists, try to delete it first
+        if (sessionResult.message && sessionResult.message.includes('already exist')) {
+          console.log('⚠️ Session already exists, attempting to delete and recreate...');
+          
+          // Delete existing session
+          const deleteResponse = await fetch(`${gateway_url}/session/${sessionId}`, {
+            method: 'DELETE'
+          });
+          
+          if (deleteResponse.ok) {
+            console.log('🗑️ Successfully deleted existing session');
+            
+            // Wait a moment for cleanup
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Try to create session again
+            const retryResponse = await fetch(`${gateway_url}/session`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                sessionId: sessionId
+              })
+            });
+
+            const retryResult = await retryResponse.json();
+            
+            if (retryResponse.ok) {
+              sessionCreated = true;
+              console.log('✅ Session recreated successfully');
+            } else {
+              throw new Error(`Failed to recreate session: ${retryResult.message}`);
+            }
+          } else {
+            throw new Error('Failed to delete existing session');
+          }
+        } else {
+          throw new Error(sessionResult.message || 'Failed to create session');
+        }
+      } else {
+        sessionCreated = true;
+        console.log('✅ Session created successfully');
       }
-    });
-
-    const phoneInfoResult = await phoneInfoResponse.json();
-
-    if (!phoneInfoResponse.ok) {
-      console.error('❌ WhatsApp API connection failed:', phoneInfoResult);
+      
+    } catch (error) {
+      console.error('❌ WhatsApp Gateway connection failed:', error);
       
       // Update connection status to disconnected
       await supabaseClient
         .from('whatsapp_business_connections')
         .update({
           connection_status: 'disconnected',
-          last_error: phoneInfoResult.error?.message || 'Connection failed'
+          last_error: error.message || 'Connection failed'
         })
         .eq('business_id', businessId);
 
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to connect to WhatsApp Business API',
-          details: phoneInfoResult 
+          error: 'Failed to connect to WhatsApp Gateway',
+          details: error.message 
         }),
         { 
           status: 400, 
@@ -110,14 +157,14 @@ serve(async (req) => {
       );
     }
 
-    console.log('✅ WhatsApp API connection successful:', phoneInfoResult);
+    console.log('✅ WhatsApp Gateway session created successfully');
 
-    // Update connection status to connected with real phone number
+    // Update connection status to connected
     const { error: finalUpdateError } = await supabaseClient
       .from('whatsapp_business_connections')
       .update({
         connection_status: 'connected',
-        phone_number: phoneInfoResult.display_phone_number || phoneInfoResult.id,
+        phone_number: sessionId,
         last_connected_at: new Date().toISOString(),
         last_error: null
       })
@@ -131,7 +178,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        phone_number: phoneInfoResult.display_phone_number || phoneInfoResult.id,
+        session_id: sessionId,
         status: 'connected'
       }),
       { 
