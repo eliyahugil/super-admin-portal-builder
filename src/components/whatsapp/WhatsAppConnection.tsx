@@ -68,14 +68,12 @@ export const WhatsAppConnection: React.FC = () => {
     mutationFn: async () => {
       if (!businessId) throw new Error('Business ID is required');
       
-      // Check if WhatsApp Gateway integration is configured
-      if (!integration) {
-        throw new Error('WhatsApp Gateway לא מוגדר. אנא הגדירו אותו תחילה בהגדרות API.');
-      }
-      
-      // Call the real WhatsApp connection API
-      const { data, error } = await supabase.functions.invoke('whatsapp-connect', {
-        body: { businessId }
+      // Call the new native WhatsApp connection
+      const { data, error } = await supabase.functions.invoke('whatsapp-native', {
+        body: { 
+          action: 'connect',
+          businessId 
+        }
       });
       
       if (error) throw error;
@@ -115,7 +113,12 @@ export const WhatsAppConnection: React.FC = () => {
 
   const syncMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('whatsapp-sync');
+      const { data, error } = await supabase.functions.invoke('whatsapp-native', {
+        body: { 
+          action: 'status',
+          businessId 
+        }
+      });
       
       if (error) throw error;
       if (data.error) throw new Error(data.error);
@@ -123,10 +126,11 @@ export const WhatsAppConnection: React.FC = () => {
       return data;
     },
     onSuccess: (data) => {
-      toast.success(`סונכרנו ${data.results?.length || 0} עסקים בהצלחה!`);
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-connection'] });
+      toast.success('סטטוס עודכן בהצלחה!');
     },
     onError: (error) => {
-      toast.error('שגיאה בסנכרון: ' + error.message);
+      toast.error('שגיאה בעדכון סטטוס: ' + error.message);
     }
   });
 
@@ -172,24 +176,15 @@ export const WhatsAppConnection: React.FC = () => {
           )}
           {!connection || connection.connection_status === 'disconnected' ? (
             <div className="space-y-4">
-              {!integration ? (
-                <Alert variant="destructive">
-                  <Smartphone className="h-4 w-4" />
-                  <AlertDescription>
-                    WhatsApp Gateway לא מוגדר. יש להגדיר תחילה את הגדרות ה-API בטאב "הגדרות API" כדי להתחבר ל-WhatsApp Gateway.
-                  </AlertDescription>
-                </Alert>
-              ) : (
                 <Alert>
                   <Smartphone className="h-4 w-4" />
                   <AlertDescription>
-                    לחצו על "התחבר" כדי להתחבר ל-WhatsApp Gateway וליצור QR קוד
+                    לחצו על "התחבר" כדי להתחבר ל-WhatsApp Web וליצור QR קוד לסריקה
                   </AlertDescription>
                 </Alert>
-              )}
               <Button 
                 onClick={() => connectMutation.mutate()}
-                disabled={connectMutation.isPending || !integration}
+                disabled={connectMutation.isPending}
                 className="w-full"
               >
                 {connectMutation.isPending ? (
@@ -284,12 +279,12 @@ export const WhatsAppConnection: React.FC = () => {
                   {syncMutation.isPending ? (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      מסנכרן...
+                      בודק סטטוס...
                     </>
                   ) : (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2" />
-                      סנכרן הודעות
+                      עדכן סטטוס
                     </>
                   )}
                 </Button>

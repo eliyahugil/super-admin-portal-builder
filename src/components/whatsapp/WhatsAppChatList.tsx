@@ -1,230 +1,179 @@
-import React from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MessageCircle, Phone } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useBusiness } from '@/hooks/useBusiness';
-import { cn } from '@/lib/utils';
-
-interface WhatsAppContact {
-  id: string;
-  phone_number: string;
-  name?: string;
-  profile_picture_url?: string;
-  last_seen?: string;
-  last_message?: {
-    content: string;
-    timestamp: string;
-    direction: 'incoming' | 'outgoing';
-  };
-  unread_count?: number;
-}
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { MessageCircle, Search, Plus, Phone, User } from 'lucide-react';
+import { useWhatsAppIntegration } from '@/hooks/useWhatsAppIntegration';
+import { formatDistanceToNow } from 'date-fns';
+import { he } from 'date-fns/locale';
 
 interface WhatsAppChatListProps {
-  selectedContactId: string | null;
-  onSelectContact: (contactId: string) => void;
+  onContactSelect?: (contactId: string) => void;
+  selectedContactId?: string;
 }
 
 export const WhatsAppChatList: React.FC<WhatsAppChatListProps> = ({
-  selectedContactId,
-  onSelectContact
+  onContactSelect,
+  selectedContactId
 }) => {
-  const { businessId } = useBusiness();
+  const { contacts, contactsLoading, isConnected } = useWhatsAppIntegration();
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: contacts = [], isLoading } = useQuery({
-    queryKey: ['whatsapp-contacts', businessId],
-    queryFn: async () => {
-      if (!businessId) return [];
-      
-      const { data, error } = await supabase
-        .from('whatsapp_contacts')
-        .select(`
-          *,
-          whatsapp_messages!inner(
-            content,
-            timestamp,
-            direction
-          )
-        `)
-        .eq('business_id', businessId)
-        .order('updated_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      // Process contacts to include last message info
-      return data.map(contact => ({
-        ...contact,
-        last_message: contact.whatsapp_messages?.[0] ? {
-          content: contact.whatsapp_messages[0].content,
-          timestamp: contact.whatsapp_messages[0].timestamp,
-          direction: contact.whatsapp_messages[0].direction
-        } : undefined,
-        unread_count: Math.floor(Math.random() * 5) // Mock unread count
-      })) as WhatsAppContact[];
-    },
-    enabled: !!businessId
-  });
+  const filteredContacts = contacts.filter(contact =>
+    contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    contact.phone_number.includes(searchTerm)
+  );
 
-  // Mock data for demonstration
-  const mockContacts: WhatsAppContact[] = [
-    {
-      id: '1',
-      phone_number: '+972501234567',
-      name: 'אחמד כהן',
-      profile_picture_url: '',
-      last_message: {
-        content: 'שלום, אני מעוניין במוצר שלכם',
-        timestamp: new Date().toISOString(),
-        direction: 'incoming'
-      },
-      unread_count: 2
-    },
-    {
-      id: '2',
-      phone_number: '+972507654321',
-      name: 'שרה לוי',
-      profile_picture_url: '',
-      last_message: {
-        content: 'תודה על השירות המצוין!',
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-        direction: 'incoming'
-      },
-      unread_count: 0
-    },
-    {
-      id: '3',
-      phone_number: '+972509876543',
-      name: 'דוד יוסף',
-      profile_picture_url: '',
-      last_message: {
-        content: 'מתי אפשר לקבל הצעת מחיר?',
-        timestamp: new Date(Date.now() - 7200000).toISOString(),
-        direction: 'incoming'
-      },
-      unread_count: 1
+  const formatPhoneNumber = (phone: string) => {
+    if (phone.startsWith('972')) {
+      return `+${phone.slice(0, 3)}-${phone.slice(3, 5)}-${phone.slice(5, 8)}-${phone.slice(8)}`;
+    } else if (phone.startsWith('0')) {
+      return `${phone.slice(0, 3)}-${phone.slice(3, 6)}-${phone.slice(6)}`;
     }
-  ];
-
-  const displayContacts = contacts.length > 0 ? contacts : mockContacts;
-
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
-    } else {
-      return date.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' });
-    }
+    return phone;
   };
 
-  const getInitials = (name?: string, phone?: string) => {
-    if (name) {
-      return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const getContactInitials = (contact: any) => {
+    if (contact.name) {
+      return contact.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
     }
-    return phone?.slice(-2) || '??';
+    return contact.phone_number.slice(-2);
   };
 
-  if (isLoading) {
+  if (!isConnected) {
     return (
-      <div className="p-4">
-        <div className="animate-pulse space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center space-x-3">
-              <div className="h-12 w-12 bg-muted rounded-full"></div>
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-muted rounded w-3/4"></div>
-                <div className="h-3 bg-muted rounded w-1/2"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5" />
+            רשימת צ'אטים
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>WhatsApp לא מחובר</p>
+            <p className="text-sm">התחברו ל-WhatsApp כדי לראות את רשימת הצ'אטים</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
+    <Card className="h-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <MessageCircle className="h-5 w-5" />
+          צ'אטים ({contacts.length})
+        </CardTitle>
+        <CardDescription>
+          רשימת אנשי הקשר וההודעות שלכם
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="חיפוש צ'אטים..."
+            placeholder="חפש איש קשר או מספר טלפון..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
-      </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {displayContacts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8">
-            <MessageCircle className="h-12 w-12 mb-4 opacity-50" />
-            <p className="text-center">אין צ'אטים עדיין</p>
-            <p className="text-sm text-center mt-2">כשתקבלו הודעות הן יופיעו כאן</p>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {displayContacts.map((contact) => (
+        {/* Contacts List */}
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {contactsLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="animate-pulse flex items-center space-x-3 p-3 border rounded-lg">
+                  <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredContacts.length > 0 ? (
+            filteredContacts.map(contact => (
               <div
                 key={contact.id}
-                className={cn(
-                  "flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors",
-                  selectedContactId === contact.id && "bg-muted"
-                )}
-                onClick={() => onSelectContact(contact.id)}
+                className={`
+                  flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-colors
+                  ${selectedContactId === contact.id 
+                    ? 'bg-primary/10 border-primary' 
+                    : 'hover:bg-muted/50'
+                  }
+                `}
+                onClick={() => onContactSelect?.(contact.id)}
               >
-                <Avatar className="h-12 w-12">
+                <Avatar>
                   <AvatarImage src={contact.profile_picture_url} />
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    {getInitials(contact.name, contact.phone_number)}
+                  <AvatarFallback>
+                    {getContactInitials(contact)}
                   </AvatarFallback>
                 </Avatar>
-
+                
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium truncate">
-                      {contact.name || contact.phone_number}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      {contact.last_message && (
-                        <span className="text-xs text-muted-foreground">
-                          {formatTime(contact.last_message.timestamp)}
-                        </span>
-                      )}
-                      {contact.unread_count && contact.unread_count > 0 && (
-                        <Badge variant="default" className="h-5 w-5 text-xs rounded-full p-0 flex items-center justify-center">
-                          {contact.unread_count}
-                        </Badge>
-                      )}
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium truncate">
+                      {contact.name || 'ללא שם'}
+                    </p>
+                    {contact.last_seen && (
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(contact.last_seen), { 
+                          addSuffix: true, 
+                          locale: he 
+                        })}
+                      </span>
+                    )}
                   </div>
                   
-                  {contact.last_message && (
-                    <div className="flex items-center gap-1">
-                      {contact.last_message.direction === 'outgoing' && (
-                        <span className="text-blue-500 text-xs">✓</span>
-                      )}
-                      <p className="text-sm text-muted-foreground truncate">
-                        {contact.last_message.content}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {!contact.name && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      <Phone className="h-3 w-3 inline mr-1" />
-                      {contact.phone_number}
+                  <div className="flex items-center gap-2 mt-1">
+                    <Phone className="h-3 w-3 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground" dir="ltr">
+                      {formatPhoneNumber(contact.phone_number)}
                     </p>
-                  )}
+                    {contact.is_blocked && (
+                      <Badge variant="destructive" className="text-xs">
+                        חסום
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              {searchTerm ? (
+                <>
+                  <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>לא נמצאו תוצאות עבור "{searchTerm}"</p>
+                </>
+              ) : (
+                <>
+                  <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>אין עדיין אנשי קשר</p>
+                  <p className="text-sm">אנשי קשר יופיעו כאן לאחר שליחת הודעות</p>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="border-t pt-4">
+          <Button variant="outline" size="sm" className="w-full">
+            <Plus className="h-4 w-4 mr-2" />
+            איש קשר חדש
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

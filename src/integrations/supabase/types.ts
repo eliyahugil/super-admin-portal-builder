@@ -3494,7 +3494,9 @@ export type Database = {
           phone_number: string
           qr_code: string | null
           session_data: Json | null
+          session_id: string | null
           updated_at: string
+          webhook_token: string | null
         }
         Insert: {
           business_id: string
@@ -3507,7 +3509,9 @@ export type Database = {
           phone_number: string
           qr_code?: string | null
           session_data?: Json | null
+          session_id?: string | null
           updated_at?: string
+          webhook_token?: string | null
         }
         Update: {
           business_id?: string
@@ -3520,7 +3524,9 @@ export type Database = {
           phone_number?: string
           qr_code?: string | null
           session_data?: Json | null
+          session_id?: string | null
           updated_at?: string
+          webhook_token?: string | null
         }
         Relationships: [
           {

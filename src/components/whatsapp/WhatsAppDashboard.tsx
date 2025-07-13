@@ -36,7 +36,7 @@ export const WhatsAppDashboard: React.FC = () => {
           <TabsContent value="chats" className="flex-1 p-0">
             <WhatsAppChatList 
               selectedContactId={selectedContactId}
-              onSelectContact={setSelectedContactId}
+              onContactSelect={setSelectedContactId}
             />
           </TabsContent>
           
