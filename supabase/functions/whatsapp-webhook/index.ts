@@ -158,7 +158,7 @@ async function handleGatewayStatusUpdate(payload: any, supabaseClient: any) {
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
-});
+}
 
 async function processMessages(value: any, supabaseClient: any) {
   const phoneNumberId = value.metadata?.phone_number_id;
