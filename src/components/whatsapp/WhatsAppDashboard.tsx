@@ -4,6 +4,7 @@ import { WhatsAppConnection } from './WhatsAppConnection';
 import { WhatsAppChatList } from './WhatsAppChatList';
 import { WhatsAppChat } from './WhatsAppChat';
 import { WhatsAppBusinessSettings } from './WhatsAppBusinessSettings';
+import { WhatsAppMessages } from './WhatsAppMessages';
 import { MessageSquare, Smartphone, Users, Settings } from 'lucide-react';
 
 export const WhatsAppDashboard: React.FC = () => {
@@ -39,9 +40,9 @@ export const WhatsAppDashboard: React.FC = () => {
             />
           </TabsContent>
           
-          <TabsContent value="contacts" className="flex-1 p-4">
-            <div className="text-center text-muted-foreground">
-              רשימת אנשי קשר תוצג כאן
+          <TabsContent value="contacts" className="flex-1 p-0">
+            <div className="h-full overflow-auto">
+              <WhatsAppMessages />
             </div>
           </TabsContent>
           

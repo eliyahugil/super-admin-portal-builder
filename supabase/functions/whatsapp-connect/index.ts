@@ -46,9 +46,10 @@ serve(async (req) => {
       );
     }
 
-    // For Gateway we might need different credentials, but for now we'll use the session approach
-    // You can add gateway_url and other configs here if needed
+    // Gateway configuration
     const { gateway_url = 'http://localhost:3000' } = integration.config;
+    
+    console.log('🌐 Connecting to Gateway:', gateway_url);
 
     // Update connection status to connecting
     const { error: updateError } = await supabaseClient

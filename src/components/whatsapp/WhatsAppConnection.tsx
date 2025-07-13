@@ -89,6 +89,23 @@ export const WhatsAppConnection: React.FC = () => {
     }
   });
 
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('whatsapp-sync');
+      
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(`סונכרנו ${data.results?.length || 0} עסקים בהצלחה!`);
+    },
+    onError: (error) => {
+      toast.error('שגיאה בסנכרון: ' + error.message);
+    }
+  });
+
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -224,14 +241,34 @@ export const WhatsAppConnection: React.FC = () => {
                   </p>
                 )}
               </div>
-              <Button 
-                variant="destructive" 
-                onClick={() => disconnectMutation.mutate()}
-                disabled={disconnectMutation.isPending}
-                className="w-full"
-              >
-                נתק חיבור
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => syncMutation.mutate()}
+                  disabled={syncMutation.isPending}
+                  className="flex-1"
+                >
+                  {syncMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      מסנכרן...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      סנכרן הודעות
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => disconnectMutation.mutate()}
+                  disabled={disconnectMutation.isPending}
+                  className="flex-1"
+                >
+                  נתק חיבור
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

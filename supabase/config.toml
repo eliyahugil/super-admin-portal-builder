@@ -138,3 +138,6 @@ verify_jwt = false
 
 [functions.whatsapp-webhook]
 verify_jwt = false
+
+[functions.whatsapp-sync]
+verify_jwt = false
