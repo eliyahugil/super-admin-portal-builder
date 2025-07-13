@@ -3,7 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WhatsAppConnection } from './WhatsAppConnection';
 import { WhatsAppChatList } from './WhatsAppChatList';
 import { WhatsAppChat } from './WhatsAppChat';
-import { MessageSquare, Smartphone, Users } from 'lucide-react';
+import { WhatsAppBusinessSettings } from './WhatsAppBusinessSettings';
+import { MessageSquare, Smartphone, Users, Settings } from 'lucide-react';
 
 export const WhatsAppDashboard: React.FC = () => {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -12,7 +13,7 @@ export const WhatsAppDashboard: React.FC = () => {
     <div className="flex h-full">
       <div className="w-80 border-r bg-card">
         <Tabs defaultValue="chats" className="h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="chats" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               צ'אטים
@@ -24,6 +25,10 @@ export const WhatsAppDashboard: React.FC = () => {
             <TabsTrigger value="connection" className="flex items-center gap-2">
               <Smartphone className="h-4 w-4" />
               חיבור
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              הגדרות API
             </TabsTrigger>
           </TabsList>
           
@@ -42,6 +47,10 @@ export const WhatsAppDashboard: React.FC = () => {
           
           <TabsContent value="connection" className="flex-1 p-0">
             <WhatsAppConnection />
+          </TabsContent>
+          
+          <TabsContent value="settings" className="flex-1 p-0">
+            <WhatsAppBusinessSettings />
           </TabsContent>
         </Tabs>
       </div>

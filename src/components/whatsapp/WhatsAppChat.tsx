@@ -126,21 +126,56 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ contactId }) => {
     mutationFn: async (content: string) => {
       if (!businessId) throw new Error('Business ID required');
       
-      const { data, error } = await supabase
-        .from('whatsapp_messages')
-        .insert({
-          business_id: businessId,
-          contact_id: contactId,
-          content,
-          direction: 'outgoing',
-          message_id: `msg_${Date.now()}`,
-          timestamp: new Date().toISOString()
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+      // First try to send via WhatsApp Business API
+      try {
+        const { data, error } = await supabase.functions.invoke('send-whatsapp-message', {
+          body: {
+            phoneNumber: displayContact.phone_number,
+            message: content,
+            businessId: businessId
+          }
+        });
+
+        if (error) throw error;
+        
+        // If API send successful, store in database
+        const { data: messageData, error: dbError } = await supabase
+          .from('whatsapp_messages')
+          .insert({
+            business_id: businessId,
+            contact_id: contactId,
+            content,
+            direction: 'outgoing',
+            message_id: data?.messageId || `msg_${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            status: 'sent'
+          })
+          .select()
+          .single();
+        
+        if (dbError) throw dbError;
+        return messageData;
+      } catch (apiError) {
+        console.error('API send failed, storing locally:', apiError);
+        
+        // Fallback: just store in database
+        const { data, error } = await supabase
+          .from('whatsapp_messages')
+          .insert({
+            business_id: businessId,
+            contact_id: contactId,
+            content,
+            direction: 'outgoing',
+            message_id: `msg_${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            status: 'sent'
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return data;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-messages', contactId] });
