@@ -16,6 +16,7 @@ interface WhatsAppConnection {
   connection_status: 'disconnected' | 'connecting' | 'connected';
   qr_code?: string;
   last_connected_at?: string;
+  last_error?: string;
 }
 
 export const WhatsAppConnection: React.FC = () => {
@@ -121,6 +122,13 @@ export const WhatsAppConnection: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {connection?.last_error && connection.connection_status === 'disconnected' && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                שגיאה אחרונה: {connection.last_error}
+              </AlertDescription>
+            </Alert>
+          )}
           {!connection || connection.connection_status === 'disconnected' ? (
             <div className="space-y-4">
               <Alert>
