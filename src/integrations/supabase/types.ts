@@ -513,6 +513,86 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_activities: {
+        Row: {
+          activity_date: string | null
+          activity_type: string
+          business_id: string
+          completed: boolean | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          lead_id: string | null
+          opportunity_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          activity_date?: string | null
+          activity_type: string
+          business_id: string
+          completed?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          lead_id?: string | null
+          opportunity_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          activity_date?: string | null
+          activity_type?: string
+          business_id?: string
+          completed?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          lead_id?: string | null
+          opportunity_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_activities_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_field_values: {
         Row: {
           created_at: string
@@ -2280,6 +2360,80 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          assigned_to: string | null
+          business_id: string
+          company: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          expected_close_date: string | null
+          id: string
+          last_contact_date: string | null
+          lead_value: number | null
+          name: string
+          next_follow_up_date: string | null
+          notes: string | null
+          phone: string | null
+          position: string | null
+          probability: number | null
+          source: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          business_id: string
+          company?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          expected_close_date?: string | null
+          id?: string
+          last_contact_date?: string | null
+          lead_value?: number | null
+          name: string
+          next_follow_up_date?: string | null
+          notes?: string | null
+          phone?: string | null
+          position?: string | null
+          probability?: number | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          business_id?: string
+          company?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          expected_close_date?: string | null
+          id?: string
+          last_contact_date?: string | null
+          lead_value?: number | null
+          name?: string
+          next_follow_up_date?: string | null
+          notes?: string | null
+          phone?: string | null
+          position?: string | null
+          probability?: number | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       module_data: {
         Row: {
           created_at: string
@@ -2463,6 +2617,85 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      opportunities: {
+        Row: {
+          actual_close_date: string | null
+          assigned_to: string | null
+          business_id: string
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          customer_id: string | null
+          description: string | null
+          expected_close_date: string | null
+          id: string
+          lead_id: string | null
+          probability: number | null
+          stage: string | null
+          title: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          actual_close_date?: string | null
+          assigned_to?: string | null
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lead_id?: string | null
+          probability?: number | null
+          stage?: string | null
+          title: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          actual_close_date?: string | null
+          assigned_to?: string | null
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lead_id?: string | null
+          probability?: number | null
+          stage?: string | null
+          title?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plan_module_permissions: {
         Row: {

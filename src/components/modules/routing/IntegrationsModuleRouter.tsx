@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { IntegrationManagement } from '../integrations/IntegrationManagement';
+import { CRMDashboard } from '@/components/crm/CRMDashboard';
 
 interface Props {
   route: string;
@@ -18,7 +19,7 @@ export const IntegrationsModuleRouter: React.FC<Props> = ({ route }) => {
     case 'invoices':
       return <div className="p-6 text-center">רכיב חשבוניות בפיתוח</div>;
     case 'crm':
-      return <div className="p-6 text-center">רכיב CRM בפיתוח</div>;
+      return <CRMDashboard />;
     case 'payments':
       return <div className="p-6 text-center">רכיב תשלומים בפיתוח</div>;
     default:

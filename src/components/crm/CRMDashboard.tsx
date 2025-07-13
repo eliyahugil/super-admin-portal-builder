@@ -17,6 +17,8 @@ import {
   Mail,
   MapPin
 } from 'lucide-react';
+import { LeadsManagement } from './LeadsManagement';
+import { OpportunitiesManagement } from './OpportunitiesManagement';
 
 export const CRMDashboard: React.FC = () => {
   const { crmModule } = useParams();
@@ -74,52 +76,10 @@ export const CRMDashboard: React.FC = () => {
   const renderModuleContent = () => {
     switch (crmModule) {
       case 'leads':
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>ניהול לידים</CardTitle>
-                <CardDescription>רשימת לידים ומעקב אחר הזדמנויות מכירה</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentLeads.map((lead) => (
-                    <div key={lead.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold">{lead.name}</h3>
-                            {getStatusBadge(lead.status)}
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
-                            <div className="flex items-center gap-1">
-                              <Mail className="h-4 w-4" />
-                              {lead.email}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Phone className="h-4 w-4" />
-                              {lead.phone}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Target className="h-4 w-4" />
-                              מקור: {lead.source}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-left">
-                          <p className="text-lg font-bold text-green-600">₪{lead.value.toLocaleString()}</p>
-                          <Button variant="outline" size="sm" className="mt-2">
-                            פרטים
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <LeadsManagement />;
+
+      case 'opportunities':
+        return <OpportunitiesManagement />;
 
       case 'franchisees':
         return (
@@ -262,11 +222,42 @@ export const CRMDashboard: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto p-6" dir="rtl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">מערכת CRM</h1>
-        <p className="text-gray-600 mt-2">ניהול לקוחות, לידים וזכיינים</p>
+        <h1 className="text-3xl font-bold">מערכת CRM</h1>
+        <p className="text-muted-foreground mt-2">ניהול לקוחות, לידים וזכיינים</p>
       </div>
 
-      {renderModuleContent()}
+      <Tabs defaultValue={crmModule || 'dashboard'} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="dashboard">לוח בקרה</TabsTrigger>
+          <TabsTrigger value="leads">לידים</TabsTrigger>
+          <TabsTrigger value="opportunities">הזדמנויות</TabsTrigger>
+          <TabsTrigger value="activities">פעילויות</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="dashboard">
+          {renderModuleContent()}
+        </TabsContent>
+        
+        <TabsContent value="leads">
+          <LeadsManagement />
+        </TabsContent>
+        
+        <TabsContent value="opportunities">
+          <OpportunitiesManagement />
+        </TabsContent>
+        
+        <TabsContent value="activities">
+          <Card>
+            <CardHeader>
+              <CardTitle>מעקב פעילויות</CardTitle>
+              <CardDescription>היסטוריית פעילויות ומשימות CRM</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">בקרוב - ממשק מעקב פעילויות מלא</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
