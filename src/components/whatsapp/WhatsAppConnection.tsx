@@ -157,20 +157,52 @@ export const WhatsAppConnection: React.FC = () => {
             </div>
           ) : connection.connection_status === 'connecting' ? (
             <div className="space-y-4">
-              <div className="bg-muted p-8 rounded-lg text-center">
-                <RefreshCw className="h-16 w-16 mx-auto mb-4 text-muted-foreground animate-spin" />
-                <p className="text-sm text-muted-foreground mb-2">
-                  מתחבר ל-WhatsApp Business API...
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  זה עלול לקחת כמה שניות
-                </p>
+              <Alert>
+                <QrCode className="h-4 w-4" />
+                <AlertDescription>
+                  סרקו את קוד ה-QR עם הטלפון שלכם כדי להתחבר
+                </AlertDescription>
+              </Alert>
+              {connection.qr_code ? (
+                <div className="flex justify-center p-6 bg-white rounded-lg border">
+                  <img 
+                    src={connection.qr_code} 
+                    alt="QR Code לחיבור WhatsApp" 
+                    className="w-64 h-64"
+                  />
+                </div>
+              ) : (
+                <div className="bg-muted p-8 rounded-lg text-center">
+                  <RefreshCw className="h-16 w-16 mx-auto mb-4 text-muted-foreground animate-spin" />
+                  <p className="text-sm text-muted-foreground mb-2">
+                    יוצר קוד QR...
+                  </p>
+                </div>
+              )}
+              <div className="text-center text-sm text-muted-foreground bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <div className="font-medium text-blue-800 mb-1">הוראות:</div>
+                <div className="text-blue-700">
+                  1. פתחו את WhatsApp בטלפון<br/>
+                  2. הגדרות ← מכשירים מקושרים<br/>
+                  3. לחצו על "קשר מכשיר"<br/>
+                  4. סרקו את הקוד
+                </div>
               </div>
-              <div className="text-center">
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => connectMutation.mutate()}
+                  disabled={connectMutation.isPending}
+                  className="flex-1"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  יצירת QR חדש
+                </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => disconnectMutation.mutate()}
                   disabled={disconnectMutation.isPending}
+                  className="flex-1"
                 >
                   ביטול
                 </Button>

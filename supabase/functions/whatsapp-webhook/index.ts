@@ -58,11 +58,16 @@ serve(async (req) => {
     return new Response('Not Found', { status: 404 });
   }
 
-  // Handle POST request for incoming messages
+  // Handle POST request for incoming messages or Gateway status updates
   if (req.method === 'POST') {
     try {
       const body = await req.json();
       console.log('📨 Incoming webhook:', JSON.stringify(body, null, 2));
+
+      // Check if this is a Gateway status update (has sessionId field)
+      if (body.sessionId) {
+        return await handleGatewayStatusUpdate(body, supabaseClient);
+      }
 
       // Verify webhook signature (recommended for production)
       // const signature = req.headers.get('x-hub-signature-256');
@@ -70,7 +75,7 @@ serve(async (req) => {
       //   return new Response('Unauthorized', { status: 401 });
       // }
 
-      // Process webhook entries
+      // Process WhatsApp Business API webhook entries
       if (body.entry && body.entry.length > 0) {
         for (const entry of body.entry) {
           if (entry.changes) {
@@ -91,6 +96,68 @@ serve(async (req) => {
   }
 
   return new Response('Method Not Allowed', { status: 405 });
+});
+
+async function handleGatewayStatusUpdate(payload: any, supabaseClient: any) {
+  try {
+    console.log('🔗 Gateway status update:', payload);
+
+    // Extract business ID from session ID (format: business_UUID)
+    const sessionIdMatch = payload.sessionId.match(/^business_(.+)$/);
+    if (!sessionIdMatch) {
+      console.error('❌ Invalid session ID format:', payload.sessionId);
+      return new Response(
+        JSON.stringify({ error: 'Invalid session ID format' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const businessId = sessionIdMatch[1].replace(/_/g, '-');
+    console.log('🏢 Business ID:', businessId);
+
+    // Update connection status based on webhook
+    const updateData: any = {
+      connection_status: payload.status,
+      last_error: payload.error || null,
+    };
+
+    if (payload.status === 'connected') {
+      updateData.phone_number = payload.phoneNumber || payload.sessionId;
+      updateData.last_connected_at = new Date().toISOString();
+      updateData.qr_code = null; // Clear QR code when connected
+      console.log('✅ Connection established for business:', businessId);
+    } else if (payload.status === 'connecting' && payload.qr) {
+      updateData.qr_code = payload.qr;
+      console.log('📱 QR Code updated for business:', businessId);
+    } else if (payload.status === 'disconnected') {
+      updateData.qr_code = null;
+      console.log('❌ Connection lost for business:', businessId);
+    }
+
+    const { error: updateError } = await supabaseClient
+      .from('whatsapp_business_connections')
+      .update(updateData)
+      .eq('business_id', businessId);
+
+    if (updateError) {
+      console.error('❌ Error updating connection status:', updateError);
+      throw updateError;
+    }
+
+    console.log('✅ Connection status updated successfully');
+
+    return new Response(
+      JSON.stringify({ success: true }),
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('💥 Gateway webhook error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
 });
 
 async function processMessages(value: any, supabaseClient: any) {

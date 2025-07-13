@@ -71,6 +71,7 @@ serve(async (req) => {
     // Check if session already exists and try to delete it first
     let sessionCreated = false;
     let sessionResponse;
+    let qrCode = null;
     
     try {
       // Try to create session
@@ -118,6 +119,7 @@ serve(async (req) => {
             
             if (retryResponse.ok) {
               sessionCreated = true;
+              qrCode = retryResult.qr;
               console.log('✅ Session recreated successfully');
             } else {
               throw new Error(`Failed to recreate session: ${retryResult.message}`);
@@ -130,7 +132,35 @@ serve(async (req) => {
         }
       } else {
         sessionCreated = true;
+        qrCode = sessionResult.qr;
         console.log('✅ Session created successfully');
+      }
+
+      // If we have a QR code, update the database with it
+      if (qrCode) {
+        await supabaseClient
+          .from('whatsapp_business_connections')
+          .update({
+            connection_status: 'connecting',
+            qr_code: qrCode,
+            last_error: null
+          })
+          .eq('business_id', businessId);
+
+        console.log('📱 QR Code generated and saved');
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            qr_code: qrCode,
+            session_id: sessionId,
+            status: 'connecting',
+            message: 'Scan QR code with your phone to connect'
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
       }
       
     } catch (error) {
