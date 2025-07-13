@@ -67,6 +67,7 @@ export const buildMainSidebarMenuItems = (isSuperAdmin: boolean, business?: { id
   ];
   
   const businessMenuItems: MenuItem[] = [
+    { path: '/crm', label: 'CRM', icon: Users, category: 'business' },
     { path: '/modules/finance', label: 'כספים', icon: Calculator, category: 'business' },
     { path: '/modules/inventory', label: 'מלאי', icon: Package, category: 'business' },
     { path: '/modules/orders', label: 'הזמנות', icon: ShoppingCart, category: 'business' },
