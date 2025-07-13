@@ -8,6 +8,7 @@ import LearnMore from '@/pages/LearnMore';
 import { GlobalIntegrationsPage } from '@/pages/GlobalIntegrationsPage';
 import { CRMDashboard } from '@/components/crm/CRMDashboard';
 import { LeadProfile } from '@/components/crm/LeadProfile';
+import { AdminIntegrationsPage } from '@/pages/AdminIntegrationsPage';
 
 export const MainRoutes = () => (
   <>
@@ -47,6 +48,14 @@ export const MainRoutes = () => (
       <ProtectedRoute>
         <AppLayout>
           <LeadProfile />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+
+    <Route path="/admin/integrations" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <AdminIntegrationsPage />
         </AppLayout>
       </ProtectedRoute>
     } />
