@@ -45,9 +45,33 @@ export const WhatsAppConnection: React.FC = () => {
     }
   });
 
+  // Check if WhatsApp Gateway integration exists
+  const { data: integration } = useQuery({
+    queryKey: ['whatsapp-gateway-integration', businessId],
+    queryFn: async () => {
+      if (!businessId) return null;
+      
+      const { data, error } = await supabase
+        .from('business_integrations')
+        .select('*')
+        .eq('business_id', businessId)
+        .eq('integration_name', 'whatsapp')
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!businessId
+  });
+
   const connectMutation = useMutation({
     mutationFn: async () => {
       if (!businessId) throw new Error('Business ID is required');
+      
+      // Check if WhatsApp Gateway integration is configured
+      if (!integration) {
+        throw new Error('WhatsApp Gateway לא מוגדר. אנא הגדירו אותו תחילה בהגדרות API.');
+      }
       
       // Call the real WhatsApp connection API
       const { data, error } = await supabase.functions.invoke('whatsapp-connect', {
@@ -148,15 +172,24 @@ export const WhatsAppConnection: React.FC = () => {
           )}
           {!connection || connection.connection_status === 'disconnected' ? (
             <div className="space-y-4">
-              <Alert>
-                <Smartphone className="h-4 w-4" />
-                <AlertDescription>
-                  לחצו על "התחבר" כדי להתחבר ל-WhatsApp Business API
-                </AlertDescription>
-              </Alert>
+              {!integration ? (
+                <Alert variant="destructive">
+                  <Smartphone className="h-4 w-4" />
+                  <AlertDescription>
+                    WhatsApp Gateway לא מוגדר. יש להגדיר תחילה את הגדרות ה-API בטאב "הגדרות API" כדי להתחבר ל-WhatsApp Gateway.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert>
+                  <Smartphone className="h-4 w-4" />
+                  <AlertDescription>
+                    לחצו על "התחבר" כדי להתחבר ל-WhatsApp Gateway וליצור QR קוד
+                  </AlertDescription>
+                </Alert>
+              )}
               <Button 
                 onClick={() => connectMutation.mutate()}
-                disabled={connectMutation.isPending}
+                disabled={connectMutation.isPending || !integration}
                 className="w-full"
               >
                 {connectMutation.isPending ? (

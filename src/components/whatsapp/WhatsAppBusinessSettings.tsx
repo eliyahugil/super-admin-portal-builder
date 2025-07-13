@@ -203,9 +203,9 @@ export const WhatsAppBusinessSettings: React.FC = () => {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">הגדרות WhatsApp Business API</h2>
+          <h2 className="text-2xl font-bold">הגדרות WhatsApp</h2>
           <p className="text-muted-foreground">
-            הגדרו את חיבור WhatsApp Business API לשליחת הודעות אוטומטיות
+            הגדרו את חיבור WhatsApp Gateway לחיבור QR או Business API לשליחת הודעות אוטומטיות
           </p>
         </div>
         {integration && (
@@ -225,12 +225,94 @@ export const WhatsAppBusinessSettings: React.FC = () => {
         )}
       </div>
 
-      <Tabs defaultValue="settings" className="space-y-6">
+      <Tabs defaultValue="gateway" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="settings">הגדרות</TabsTrigger>
+          <TabsTrigger value="gateway">WhatsApp Gateway</TabsTrigger>
+          <TabsTrigger value="settings">Business API</TabsTrigger>
           <TabsTrigger value="test">בדיקה</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="gateway" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                הגדרות WhatsApp Gateway
+              </CardTitle>
+              <CardDescription>
+                הגדירו את ה-Gateway להתחברות QR וסנכרון הודעות
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  WhatsApp Gateway מאפשר התחברות באמצעות QR קוד כמו WhatsApp Web. אידיאלי לעסקים קטנים שרוצים חיבור פשוט ללא הגדרות מורכבות.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="gateway_url">Gateway URL</Label>
+                  <Input
+                    id="gateway_url"
+                    value="http://localhost:3000"
+                    placeholder="http://localhost:3000"
+                    disabled
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    כתובת ה-Gateway המקומי (ברירת מחדל)
+                  </p>
+                </div>
+
+                <Button 
+                  onClick={async () => {
+                    try {
+                      // Save Gateway integration
+                      const gatewayIntegration = {
+                        business_id: businessId,
+                        integration_name: 'whatsapp',
+                        display_name: 'WhatsApp Gateway',
+                        credentials: {},
+                        config: {
+                          gateway_url: 'http://localhost:3000',
+                          type: 'gateway'
+                        },
+                        is_active: true
+                      };
+
+                      const { error } = await supabase
+                        .from('business_integrations')
+                        .upsert(gatewayIntegration);
+
+                      if (error) throw error;
+
+                      queryClient.invalidateQueries({ queryKey: ['whatsapp-integration'] });
+                      toast.success('WhatsApp Gateway הוגדר בהצלחה! עכשיו תוכלו להתחבר בטאב החיבור.');
+                    } catch (error: any) {
+                      toast.error('שגיאה בהגדרת Gateway: ' + error.message);
+                    }
+                  }}
+                  className="w-full"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  הגדר WhatsApp Gateway
+                </Button>
+
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h4 className="font-medium text-blue-800 mb-2">מה זה WhatsApp Gateway?</h4>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• התחברות פשוטה באמצעות QR קוד</li>
+                    <li>• אין צורך בהרשמה ל-Meta for Developers</li>
+                    <li>• מתאים לעסקים קטנים ובינוניים</li>
+                    <li>• סנכרון אוטומטי של הודעות ואנשי קשר</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
           <Card>
