@@ -37,35 +37,30 @@ export const WhatsAppConnection: React.FC = () => {
       if (error) throw error;
       return data as WhatsAppConnection | null;
     },
-    enabled: !!businessId
+    enabled: !!businessId,
+    refetchInterval: (query) => {
+      // Refetch more frequently if connecting
+      return query.state.data?.connection_status === 'connecting' ? 2000 : 30000;
+    }
   });
 
   const connectMutation = useMutation({
     mutationFn: async () => {
       if (!businessId) throw new Error('Business ID is required');
       
-      // Generate a mock QR code for demonstration
-      const mockQrCode = `whatsapp-qr-${Date.now()}`;
-      setQrCode(mockQrCode);
-      
-      const { data, error } = await supabase
-        .from('whatsapp_business_connections')
-        .upsert({
-          business_id: businessId,
-          connection_status: 'connecting',
-          qr_code: mockQrCode,
-          device_name: 'WhatsApp Web',
-          phone_number: ''
-        })
-        .select()
-        .single();
+      // Call the real WhatsApp connection API
+      const { data, error } = await supabase.functions.invoke('whatsapp-connect', {
+        body: { businessId }
+      });
       
       if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-connection'] });
-      toast.success('מתחיל תהליך חיבור...');
+      toast.success('WhatsApp מחובר בהצלחה!');
     },
     onError: (error) => {
       toast.error('שגיאה בחיבור: ' + error.message);
@@ -93,30 +88,6 @@ export const WhatsAppConnection: React.FC = () => {
     }
   });
 
-  // Simulate QR code scanning success after 10 seconds
-  useEffect(() => {
-    if (connection?.connection_status === 'connecting' && connection.qr_code) {
-      const timer = setTimeout(async () => {
-        try {
-          await supabase
-            .from('whatsapp_business_connections')
-            .update({
-              connection_status: 'connected',
-              last_connected_at: new Date().toISOString(),
-              phone_number: '+972501234567' // Mock phone number
-            })
-            .eq('id', connection.id);
-          
-          queryClient.invalidateQueries({ queryKey: ['whatsapp-connection'] });
-          toast.success('WhatsApp מחובר בהצלחה!');
-        } catch (error) {
-          console.error('Error updating connection:', error);
-        }
-      }, 10000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [connection, queryClient]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -155,7 +126,7 @@ export const WhatsAppConnection: React.FC = () => {
               <Alert>
                 <Smartphone className="h-4 w-4" />
                 <AlertDescription>
-                  לחצו על "התחבר" כדי לקבל קוד QR וסרקו אותו באפליקציית WhatsApp שלכם
+                  לחצו על "התחבר" כדי להתחבר ל-WhatsApp Business API
                 </AlertDescription>
               </Alert>
               <Button 
@@ -179,18 +150,15 @@ export const WhatsAppConnection: React.FC = () => {
           ) : connection.connection_status === 'connecting' ? (
             <div className="space-y-4">
               <div className="bg-muted p-8 rounded-lg text-center">
-                <QrCode className="h-32 w-32 mx-auto mb-4 text-muted-foreground" />
+                <RefreshCw className="h-16 w-16 mx-auto mb-4 text-muted-foreground animate-spin" />
                 <p className="text-sm text-muted-foreground mb-2">
-                  סרקו את קוד ה-QR באפליקציית WhatsApp
+                  מתחבר ל-WhatsApp Business API...
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  קוד: {connection.qr_code}
+                  זה עלול לקחת כמה שניות
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-4">
-                  ⏱️ הקוד יפוג תוך 60 שניות
-                </p>
                 <Button 
                   variant="outline" 
                   onClick={() => disconnectMutation.mutate()}
