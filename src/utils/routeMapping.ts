@@ -108,7 +108,7 @@ export const businessRoutes: Record<string, RouteConfig> = {
       'whatsapp': { name: 'WhatsApp', description: 'הגדרות WhatsApp', icon: '💬' },
       'facebook': { name: 'Facebook', description: 'הגדרות Facebook', icon: '📘' },
       'invoices': { name: 'חשבוניות', description: 'הגדרות חשבוניות', icon: '📄' },
-      'crm': { name: 'CRM', description: 'הגדרות CRM', icon: '👥' },
+      
       'payments': { name: 'תשלומים', description: 'הגדרות תשלומים', icon: '💳' },
       'custom': { name: 'מותאם אישית', description: 'אינטגרציות מותאמות', icon: '⚙️' },
     }
@@ -207,7 +207,7 @@ export const getModuleRoutes = (businessId?: string | number) => {
       whatsapp: `${prefix}/modules/integrations/whatsapp`,
       facebook: `${prefix}/modules/integrations/facebook`,
       invoices: `${prefix}/modules/integrations/invoices`,
-      crm: `${prefix}/modules/integrations/crm`,
+      
       payments: `${prefix}/modules/integrations/payments`,
       custom: `${prefix}/modules/integrations/custom`,
     },
@@ -216,6 +216,14 @@ export const getModuleRoutes = (businessId?: string | number) => {
       profile: `${prefix}/modules/settings/profile`,
       users: `${prefix}/modules/settings/users`,
       permissions: `${prefix}/modules/settings/permissions`,
+    },
+    crm: {
+      base: `${prefix}/modules/crm`,
+      leads: `${prefix}/modules/crm/leads`,
+      franchisees: `${prefix}/modules/crm/franchisees`,
+      wholesale: `${prefix}/modules/crm/wholesale`,
+      events: `${prefix}/modules/crm/events`,
+      clients: `${prefix}/modules/crm/clients`,
     }
   };
 };

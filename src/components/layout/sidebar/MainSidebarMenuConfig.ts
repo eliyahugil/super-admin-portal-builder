@@ -67,7 +67,7 @@ export const buildMainSidebarMenuItems = (isSuperAdmin: boolean, business?: { id
   ];
   
   const businessMenuItems: MenuItem[] = [
-    { path: '/crm', label: 'CRM', icon: Users, category: 'business' },
+    { path: moduleRoutes.crm.base, label: 'CRM', icon: Users, category: 'business' },
     { path: '/modules/finance', label: 'כספים', icon: Calculator, category: 'business' },
     { path: '/modules/inventory', label: 'מלאי', icon: Package, category: 'business' },
     { path: '/modules/orders', label: 'הזמנות', icon: ShoppingCart, category: 'business' },
@@ -85,7 +85,7 @@ export const buildMainSidebarMenuItems = (isSuperAdmin: boolean, business?: { id
         { path: moduleRoutes.integrations.whatsapp, label: 'WhatsApp', icon: Plug },
         { path: moduleRoutes.integrations.facebook, label: 'Facebook', icon: Plug },
         { path: moduleRoutes.integrations.invoices, label: 'חשבוניות', icon: Plug },
-        { path: moduleRoutes.integrations.crm, label: 'CRM', icon: Plug },
+        
         { path: moduleRoutes.integrations.payments, label: 'תשלומים', icon: Plug },
       ]
     },

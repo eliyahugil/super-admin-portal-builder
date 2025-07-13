@@ -40,7 +40,7 @@ export const DynamicSidebar: React.FC = () => {
   }
 
   const employeesMenuItems = createEmployeesMenuItems(business);
-  const businessMenuItems = createBusinessMenuItems();
+  const businessMenuItems = createBusinessMenuItems(business);
   const systemMenuItems = createSystemMenuItems(business);
   const adminMenuItems = createAdminMenuItems();
 

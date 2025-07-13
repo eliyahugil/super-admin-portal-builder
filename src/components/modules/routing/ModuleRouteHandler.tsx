@@ -11,6 +11,7 @@ import { IntegrationsModuleRouter } from './IntegrationsModuleRouter';
 import { BusinessModuleRouter } from './BusinessModuleRouter';
 import { OrdersModuleRouter } from './OrdersModuleRouter';
 import { DefaultModuleRouter } from './DefaultModuleRouter';
+import { CRMDashboard } from '@/components/crm/CRMDashboard';
 
 interface ModuleRouteHandlerProps {
   fullRoute: string;
@@ -42,6 +43,8 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
       return <CustomersModuleRouter route={route} />;
     case 'integrations':
       return <IntegrationsModuleRouter route={route} />;
+    case 'crm':
+      return <CRMDashboard />;
     case 'orders':
       return <OrdersModuleRouter route={route} />;
     case 'finance':

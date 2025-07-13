@@ -62,12 +62,17 @@ export const createEmployeesMenuItems = (business: { id: string } | undefined): 
   ];
 };
 
-export const createBusinessMenuItems = (): MenuItem[] => [
-  { path: '/modules/finance', label: 'כספים', icon: Calculator, category: 'business', moduleKey: 'finance_management' },
-  { path: '/modules/inventory', label: 'מלאי', icon: Package, category: 'business', moduleKey: 'inventory_management' },
-  { path: '/modules/orders', label: 'הזמנות', icon: ShoppingCart, category: 'business', moduleKey: 'orders_management' },
-  { path: '/modules/projects', label: 'פרויקטים', icon: Briefcase, category: 'business', moduleKey: 'projects_management' },
-];
+export const createBusinessMenuItems = (business: { id: string } | undefined): MenuItem[] => {
+  const moduleRoutes = getModuleRoutes(business?.id);
+  
+  return [
+    { path: moduleRoutes.crm.base, label: 'CRM', icon: Users, category: 'business', moduleKey: 'crm_management' },
+    { path: '/modules/finance', label: 'כספים', icon: Calculator, category: 'business', moduleKey: 'finance_management' },
+    { path: '/modules/inventory', label: 'מלאי', icon: Package, category: 'business', moduleKey: 'inventory_management' },
+    { path: '/modules/orders', label: 'הזמנות', icon: ShoppingCart, category: 'business', moduleKey: 'orders_management' },
+    { path: '/modules/projects', label: 'פרויקטים', icon: Briefcase, category: 'business', moduleKey: 'projects_management' },
+  ];
+};
 
 export const createSystemMenuItems = (business: { id: string } | undefined): MenuItem[] => {
   const moduleRoutes = getModuleRoutes(business?.id);
@@ -84,7 +89,7 @@ export const createSystemMenuItems = (business: { id: string } | undefined): Men
         { path: moduleRoutes.integrations.whatsapp, label: 'WhatsApp', icon: Plug, moduleKey: 'integrations' },
         { path: moduleRoutes.integrations.facebook, label: 'Facebook', icon: Plug, moduleKey: 'integrations' },
         { path: moduleRoutes.integrations.invoices, label: 'חשבוניות', icon: Plug, moduleKey: 'integrations' },
-        { path: moduleRoutes.integrations.crm, label: 'CRM', icon: Plug, moduleKey: 'integrations' },
+        
         { path: moduleRoutes.integrations.payments, label: 'תשלומים', icon: Plug, moduleKey: 'integrations' },
       ]
     },
