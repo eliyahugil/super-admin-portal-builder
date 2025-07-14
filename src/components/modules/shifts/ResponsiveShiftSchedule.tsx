@@ -279,6 +279,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                   <WeeklyScheduleView
                     shifts={shifts}
                     employees={employees}
+                    branches={branches}
                     currentDate={currentDate}
                     holidays={holidays}
                     shabbatTimes={shabbatTimes}
@@ -293,6 +294,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                   <MonthlyScheduleView
                     shifts={shifts}
                     employees={employees}
+                    branches={branches}
                     currentDate={currentDate}
                     holidays={holidays}
                     shabbatTimes={shabbatTimes}
@@ -305,6 +307,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                   <YearlyScheduleView
                     shifts={shifts}
                     employees={employees}
+                    branches={branches}
                     currentDate={currentDate}
                     holidays={holidays}
                     shabbatTimes={shabbatTimes}

@@ -64,6 +64,7 @@ export type Holiday = IsraeliHoliday;
 export interface ShiftScheduleViewProps {
   shifts: ShiftScheduleData[];
   employees: Employee[];
+  branches: Branch[];
   currentDate: Date;
   holidays: IsraeliHoliday[];
   shabbatTimes: ShabbatTimes[];

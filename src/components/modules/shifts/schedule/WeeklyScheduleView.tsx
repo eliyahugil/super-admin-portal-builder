@@ -23,6 +23,7 @@ import {
 export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   shifts,
   employees,
+  branches,
   currentDate,
   holidays,
   shabbatTimes,
@@ -705,7 +706,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
         <ShiftDetailsDialog
           shift={selectedShift}
           employees={employees}
-          branches={[]} // We'll need to pass branches from props
+          branches={branches}
           shifts={shifts} // Pass all shifts for conflict checking
           pendingSubmissions={pendingSubmissions}
           onClose={() => {
