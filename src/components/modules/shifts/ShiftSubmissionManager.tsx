@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Send, Users, Plus } from 'lucide-react';
+import { Calendar, Send, Users, Plus, LogIn } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -15,6 +15,7 @@ export const ShiftSubmissionManager: React.FC = () => {
   const [selectedWeek, setSelectedWeek] = useState('');
   const [notes, setNotes] = useState('');
   const [sendingToAll, setSendingToAll] = useState(false);
+  const [tokenToTest, setTokenToTest] = useState('');
   const { toast } = useToast();
   const { businessId, loading: isLoading } = useCurrentBusiness();
 
@@ -172,6 +173,22 @@ export const ShiftSubmissionManager: React.FC = () => {
     }
   };
 
+  // פונקציה לכניסה לטוקן
+  const goToToken = () => {
+    if (!tokenToTest.trim()) {
+      toast({
+        title: 'שגיאה',
+        description: 'יש להזין טוקן',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // פתיחת דף הגשת המשמרות בטאב חדש
+    const submissionUrl = `${window.location.origin}/weekly-shift-submission/${tokenToTest}`;
+    window.open(submissionUrl, '_blank');
+  };
+
   if (isLoading || employeesLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -298,6 +315,36 @@ export const ShiftSubmissionManager: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* בדיקת טוקן */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <LogIn className="h-5 w-5" />
+            בדיקת טוכן
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              הזן טוכן כדי לבדוק איך נראה מסך ההגשה לעובדים
+            </p>
+            
+            <div className="flex gap-2">
+              <Input
+                value={tokenToTest}
+                onChange={(e) => setTokenToTest(e.target.value)}
+                placeholder="הזן טוכן..."
+                className="flex-1"
+              />
+              <Button onClick={goToToken} disabled={!tokenToTest.trim()}>
+                <LogIn className="h-4 w-4 mr-2" />
+                כניסה לטוכן
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* רשימת עובדים עם סטטוס */}
       {employees.length > 0 && (
         <Card>
@@ -328,6 +375,25 @@ export const ShiftSubmissionManager: React.FC = () => {
                       </Badge>
                       {!employee.phone && (
                         <Badge variant="destructive">אין טלפון</Badge>
+                      )}
+                      {hasToken && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => {
+                            const token = existingTokens.find(t => t.employee_id === employee.id)?.token;
+                            if (token) {
+                              setTokenToTest(token);
+                              toast({
+                                title: 'הטוכן הועתק',
+                                description: 'כעת ניתן לבדוק את הטוכן בחלק "בדיקת טוכן" למעלה',
+                              });
+                            }
+                          }}
+                          className="text-xs"
+                        >
+                          העתק טוכן
+                        </Button>
                       )}
                     </div>
                   </div>
