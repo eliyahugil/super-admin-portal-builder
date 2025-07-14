@@ -20,11 +20,12 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
   const [tokenData, setTokenData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [shifts, setShifts] = useState<ShiftEntry[]>([]);
   const [notes, setNotes] = useState('');
 
   // Get available shifts from scheduled_shifts table for the token's week
   const [availableShifts, setAvailableShifts] = useState<any[]>([]);
+  // Selected shifts by employee (shift ID -> selected)
+  const [selectedShifts, setSelectedShifts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const validateToken = async () => {
@@ -116,7 +117,6 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
 
         if (shiftsError) {
           console.warn('⚠️ Error fetching available shifts:', shiftsError);
-          // Continue without available shifts - fallback to manual entry
           setAvailableShifts([]);
         } else {
           console.log('📋 Available shifts fetched:', {
@@ -125,16 +125,6 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           });
           setAvailableShifts(shiftsData || []);
         }
-        
-        // Initialize with one empty shift
-        setShifts([{
-          date: '',
-          start_time: '',
-          end_time: '',
-          branch_preference: '',
-          role_preference: '',
-          notes: '',
-        }]);
       } catch (error) {
         console.error('💥 Token validation error:', error);
         toast({
@@ -151,41 +141,12 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
     validateToken();
   }, [token, navigate, toast]);
 
-  const addShift = () => {
-    setShifts([...shifts, {
-      date: '',
-      start_time: '',
-      end_time: '',
-      branch_preference: '',
-      role_preference: '',
-      notes: '',
-      scheduled_shift_id: '', // Add this to track selected scheduled shift
-    }]);
-  };
-
-  const removeShift = (index: number) => {
-    if (shifts.length > 1) {
-      setShifts(shifts.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateShift = (index: number, field: keyof ShiftEntry, value: string) => {
-    const updatedShifts = [...shifts];
-    updatedShifts[index] = { ...updatedShifts[index], [field]: value };
-    setShifts(updatedShifts);
-  };
-
-  // Copy shift details from selected scheduled shift
-  const selectScheduledShift = (index: number, scheduledShiftId: string) => {
-    const selectedShift = availableShifts.find(s => s.id === scheduledShiftId);
-    if (selectedShift) {
-      updateShift(index, 'date', selectedShift.shift_date);
-      updateShift(index, 'start_time', selectedShift.start_time);
-      updateShift(index, 'end_time', selectedShift.end_time);
-      updateShift(index, 'branch_preference', selectedShift.branches?.name || '');
-      updateShift(index, 'role_preference', selectedShift.role || '');
-      updateShift(index, 'scheduled_shift_id', scheduledShiftId);
-    }
+  // Toggle shift selection
+  const toggleShiftSelection = (shiftId: string) => {
+    setSelectedShifts(prev => ({
+      ...prev,
+      [shiftId]: !prev[shiftId]
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -211,19 +172,33 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
       return;
     }
 
-    // Filter out empty shifts
-    const validShifts = shifts.filter(shift => 
-      shift.date && shift.start_time && shift.end_time && shift.branch_preference
-    );
+    // Get selected shifts
+    const selectedShiftIds = Object.entries(selectedShifts)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([shiftId, _]) => shiftId);
 
-    if (validShifts.length === 0) {
+    if (selectedShiftIds.length === 0) {
       toast({
         title: 'שגיאה',
-        description: 'יש להוסיף לפחות משמרת אחת תקינה',
+        description: 'יש לבחור לפחות משמרת אחת',
         variant: 'destructive',
       });
       return;
     }
+
+    // Convert selected shifts to the expected format
+    const validShifts = selectedShiftIds.map(shiftId => {
+      const shift = availableShifts.find(s => s.id === shiftId);
+      return {
+        date: shift.shift_date,
+        start_time: shift.start_time,
+        end_time: shift.end_time,
+        branch_preference: shift.branches?.name || '',
+        role_preference: shift.role || '',
+        notes: '',
+        scheduled_shift_id: shiftId
+      };
+    });
 
     console.log('📊 Submitting weekly shifts:', {
       shiftsCount: validShifts.length,
@@ -339,202 +314,119 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           </CardHeader>
           
           <CardContent>
-            {/* Show available shifts info */}
             {availableShifts.length > 0 ? (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm text-green-800 flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <strong>נמצאו {availableShifts.length} משמרות זמינות לשבוע זה!</strong>
-                </p>
-                <p className="text-xs text-green-700 mt-1">
-                  תוכל לבחור משמרות קיימות מהלוח או להזין פרטים ידנית
-                </p>
-              </div>
-            ) : (
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800 flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <strong>לא נמצאו משמרות פעילות בלוח לשבוע זה</strong>
-                </p>
-                <p className="text-xs text-blue-700 mt-1">
-                  תוכל להזין פרטי משמרות ידנית והן יועברו לאישור המנהל
-                </p>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">משמרות השבוע</h3>
-                  <Button
-                    type="button"
-                    onClick={addShift}
-                    className="flex items-center gap-2"
-                    size="sm"
-                  >
-                    <Plus className="h-4 w-4" />
-                    הוסף משמרת
-                  </Button>
+              <div className="space-y-6">
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800 flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <strong>נמצאו {availableShifts.length} משמרות זמינות לשבוע זה!</strong>
+                  </p>
+                  <p className="text-xs text-green-700 mt-1">
+                    בחר את המשמרות שאתה מעוניין לקחת. המשמרות מהלוח הזמנים של המנהל.
+                  </p>
                 </div>
 
-                {shifts.map((shift, index) => (
-                  <Card key={index} className="p-4 bg-gray-50">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-medium">משמרת {index + 1}</h4>
-                      {shifts.length > 1 && (
-                        <Button
-                          type="button"
-                          onClick={() => removeShift(index)}
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">בחר משמרות מהלוח הזמנים</h3>
+                    
+                    <div className="space-y-3">
+                      {availableShifts.map((shift) => (
+                        <Card key={shift.id} className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-4 mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-blue-600" />
+                                  <span className="font-medium">
+                                    {new Date(shift.shift_date).toLocaleDateString('he-IL', {
+                                      weekday: 'long',
+                                      day: 'numeric',
+                                      month: 'long'
+                                    })}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-green-600" />
+                                  <span className="font-medium">
+                                    {shift.start_time} - {shift.end_time}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-gray-600">
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  <span>{shift.branches?.name || 'סניף לא ידוע'}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <User className="h-3 w-3" />
+                                  <span>{shift.role || 'תפקיד כללי'}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id={`shift-${shift.id}`}
+                                checked={selectedShifts[shift.id] || false}
+                                onChange={() => toggleShiftSelection(shift.id)}
+                                className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                              />
+                              <label htmlFor={`shift-${shift.id}`} className="mr-2 text-sm font-medium text-gray-700">
+                                בחר
+                              </label>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
                     </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="general-notes">הערות כלליות (אופציונלי)</Label>
+                    <Textarea
+                      id="general-notes"
+                      placeholder="הערות כלליות לשבוע"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
 
-                    {/* Option to select from available shifts */}
-                    {availableShifts.length > 0 && (
-                      <div className="mb-4">
-                        <Label className="flex items-center gap-2 mb-2">
-                          <Copy className="h-4 w-4" />
-                          בחר משמרת מהלוח (אופציונלי)
-                        </Label>
-                        <Select onValueChange={(value) => selectScheduledShift(index, value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="בחר משמרת קיימת..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableShifts.map((availableShift) => (
-                              <SelectItem key={availableShift.id} value={availableShift.id}>
-                                {new Date(availableShift.shift_date).toLocaleDateString('he-IL')} | {' '}
-                                {availableShift.start_time}-{availableShift.end_time} | {' '}
-                                {availableShift.branches?.name || 'סניף לא ידוע'} | {' '}
-                                {availableShift.role || 'תפקיד כללי'}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p className="text-sm text-yellow-800">
+                      <strong>שימו לב:</strong> לאחר שליחת הבקשה לא ניתן יהיה לערוך אותה. 
+                      אנא ודאו שכל המשמרות שבחרת נכונות לפני השליחה.
+                    </p>
+                    {tokenData.employee && (
+                      <p className="text-xs text-yellow-700 mt-2">
+                        הבקשה תישלח עבור: {tokenData.employee.first_name} {tokenData.employee.last_name}
+                        {tokenData.employee.employee_id && ` (מס' עובד: ${tokenData.employee.employee_id})`}
+                      </p>
                     )}
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor={`date-${index}`} className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          תאריך
-                        </Label>
-                        <Input
-                          id={`date-${index}`}
-                          type="date"
-                          value={shift.date}
-                          onChange={(e) => updateShift(index, 'date', e.target.value)}
-                          min={tokenData.week_start_date}
-                          max={tokenData.week_end_date}
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor={`branch-${index}`} className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          סניף
-                        </Label>
-                        <Input
-                          id={`branch-${index}`}
-                          placeholder="שם הסניף"
-                          value={shift.branch_preference}
-                          onChange={(e) => updateShift(index, 'branch_preference', e.target.value)}
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor={`start-time-${index}`} className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          שעת התחלה
-                        </Label>
-                        <Input
-                          id={`start-time-${index}`}
-                          type="time"
-                          value={shift.start_time}
-                          onChange={(e) => updateShift(index, 'start_time', e.target.value)}
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor={`end-time-${index}`} className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          שעת סיום
-                        </Label>
-                        <Input
-                          id={`end-time-${index}`}
-                          type="time"
-                          value={shift.end_time}
-                          onChange={(e) => updateShift(index, 'end_time', e.target.value)}
-                          required
-                        />
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <Label htmlFor={`role-${index}`}>תפקיד</Label>
-                        <Input
-                          id={`role-${index}`}
-                          placeholder="התפקיד המבוקש"
-                          value={shift.role_preference || ''}
-                          onChange={(e) => updateShift(index, 'role_preference', e.target.value)}
-                        />
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <Label htmlFor={`shift-notes-${index}`}>הערות למשמרת (אופציונלי)</Label>
-                        <Textarea
-                          id={`shift-notes-${index}`}
-                          placeholder="הערות למשמרת זו"
-                          value={shift.notes || ''}
-                          onChange={(e) => updateShift(index, 'notes', e.target.value)}
-                          rows={2}
-                        />
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={submitting || Object.values(selectedShifts).every(s => !s)}
+                  >
+                    {submitting ? 'שולח...' : `שלח ${Object.values(selectedShifts).filter(s => s).length} משמרות נבחרות`}
+                  </Button>
+                </form>
               </div>
-
-              <div>
-                <Label htmlFor="general-notes">הערות כלליות (אופציונלי)</Label>
-                <Textarea
-                  id="general-notes"
-                  placeholder="הערות כלליות לשבוע"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                />
-              </div>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-sm text-yellow-800">
-                  <strong>שימו לב:</strong> לאחר שליחת הבקשה לא ניתן יהיה לערוך אותה. 
-                  אנא ודאו שכל הפרטים נכונים לפני השליחה.
-                </p>
-                {tokenData.employee && (
-                  <p className="text-xs text-yellow-700 mt-2">
-                    הבקשה תישלח עבור: {tokenData.employee.first_name} {tokenData.employee.last_name}
-                    {tokenData.employee.employee_id && ` (מס' עובד: ${tokenData.employee.employee_id})`}
+            ) : (
+              <div className="space-y-6">
+                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg text-center">
+                  <AlertTriangle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
+                  <p className="text-orange-800 font-medium mb-2">
+                    לא נמצאו משמרות זמינות לשבוע זה
                   </p>
-                )}
+                  <p className="text-sm text-orange-700">
+                    אנא פנה למנהל המערכת להוספת משמרות ללוח הזמנים
+                  </p>
+                </div>
               </div>
-
-              <Button 
-                type="submit" 
-                className="w-full"
-                disabled={submitting}
-              >
-                {submitting ? 'שולח...' : 'שלח משמרות השבוע'}
-              </Button>
-            </form>
+            )}
           </CardContent>
         </Card>
       </div>
