@@ -9,6 +9,12 @@ import { ShabbatIndicator } from './components/ShabbatIndicator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { ShiftScheduleViewProps } from './types';
 import { SubmissionApprovalDialog } from './components/SubmissionApprovalDialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   shifts,
@@ -80,6 +86,12 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
         : submission.shifts || [];
       return shifts.some((shift: any) => shift.date === dateStr);
     });
+  };
+
+  // Get employee names for submissions on a specific date
+  const getSubmissionEmployeeNames = (date: Date) => {
+    const submissions = getPendingSubmissionsForDate(date);
+    return submissions.map(submission => getEmployeeName(submission.employee_id));
   };
 
   const handleViewSubmissions = (date: Date) => {
@@ -278,14 +290,30 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 
                 {/* Pending submissions */}
                 {getPendingSubmissionsForDate(date).length > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full text-xs bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
-                    onClick={() => handleViewSubmissions(date)}
-                  >
-                    הגשות ממתינות ({getPendingSubmissionsForDate(date).length})
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full text-xs bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
+                          onClick={() => handleViewSubmissions(date)}
+                        >
+                          הגשות ממתינות ({getPendingSubmissionsForDate(date).length})
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <div className="text-right">
+                          <p className="font-medium mb-1">עובדים שהגישו:</p>
+                          <ul className="text-sm space-y-1">
+                            {getSubmissionEmployeeNames(date).map((name, index) => (
+                              <li key={index}>• {name}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
                 
                 {/* Add shift area */}
