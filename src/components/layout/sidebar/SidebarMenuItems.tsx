@@ -79,20 +79,20 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
               {hasSubItems ? (
                 <button
                   onClick={() => handleMenuItemClick(true, item.path)}
-                  className="flex items-center gap-2 text-right w-full"
+                  className="flex items-center justify-end gap-3 text-right w-full pr-2"
                 >
-                  <span className="flex-1 text-right">{item.label}</span>
-                  <item.icon className="h-4 w-4 flex-shrink-0" />
                   {!collapsed && (
-                    <span className={`text-xs transform transition-transform duration-200 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
+                    <span className={`text-xs transform transition-transform duration-200 ml-2 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
                       ▶
                     </span>
                   )}
+                  <span className="flex-1 text-right font-medium">{item.label}</span>
+                  <item.icon className="h-4 w-4 flex-shrink-0" />
                 </button>
               ) : (
                 <NavLink 
                   to={item.path} 
-                  className="flex items-center gap-2 text-right"
+                  className="flex items-center justify-end gap-3 text-right pr-2"
                   onClick={() => handleMenuItemClick(false, item.path)}
                 >
                   <span className="flex-1 text-right">{item.label}</span>
@@ -108,7 +108,7 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
                     <SidebarMenuSubButton asChild isActive={isActive(subItem.path)}>
                       <NavLink
                         to={subItem.path}
-                        className="flex items-center gap-2 text-right text-sm"
+                        className="flex items-center justify-end gap-3 text-right text-sm pr-4"
                         onClick={onMenuItemClick}
                       >
                         <span className="flex-1 text-right">{subItem.label}</span>
