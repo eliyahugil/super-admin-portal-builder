@@ -31,6 +31,33 @@ export const useBusiness = () => {
           return;
         }
 
+        // קודם נבדוק אם למשתמש יש business_id בפרופיל שלו
+        if (profile.business_id) {
+          const { data: profileBusiness, error: profileBusinessError } = await supabase
+            .from('businesses')
+            .select('*')
+            .eq('id', profile.business_id)
+            .eq('is_active', true)
+            .single();
+
+          if (!profileBusinessError && profileBusiness) {
+            setBusiness(profileBusiness);
+            setBusinessId(profileBusiness.id);
+            setIsBusinessOwner(profileBusiness.owner_id === profile.id);
+            
+            // נספור כמה עסקים המשתמש בעל
+            const { data: ownedBusinesses } = await supabase
+              .from('businesses')
+              .select('id')
+              .eq('owner_id', profile.id)
+              .eq('is_active', true);
+              
+            setTotalOwnedBusinesses(ownedBusinesses?.length || 0);
+            return;
+          }
+        }
+
+        // אם אין business_id בפרופיל, נבדוק אם הוא בעלים של עסק
         const { data, error } = await supabase
           .from('businesses')
           .select('*')
