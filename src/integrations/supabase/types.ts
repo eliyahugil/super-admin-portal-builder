@@ -3491,7 +3491,7 @@ export type Database = {
           id: string
           last_connected_at: string | null
           last_error: string | null
-          phone_number: string
+          phone_number: string | null
           qr_code: string | null
           session_data: Json | null
           session_id: string | null
@@ -3506,7 +3506,7 @@ export type Database = {
           id?: string
           last_connected_at?: string | null
           last_error?: string | null
-          phone_number: string
+          phone_number?: string | null
           qr_code?: string | null
           session_data?: Json | null
           session_id?: string | null
@@ -3521,7 +3521,7 @@ export type Database = {
           id?: string
           last_connected_at?: string | null
           last_error?: string | null
-          phone_number?: string
+          phone_number?: string | null
           qr_code?: string | null
           session_data?: Json | null
           session_id?: string | null

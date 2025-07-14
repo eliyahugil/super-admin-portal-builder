@@ -69,17 +69,19 @@ serve(async (req) => {
 async function handleConnect(supabaseClient: any, businessId: string) {
   console.log(`Connecting WhatsApp for business: ${businessId}`)
   
+  if (!businessId) {
+    throw new Error('Business ID is required')
+  }
+  
   // Generate realistic QR code (base64 data URL)
   const qrCode = generateRealisticQRCode(businessId)
-  const sessionId = `session_${businessId}`
-  const webhookToken = crypto.randomUUID()
 
   // Check if connection exists
   const { data: existingConnection } = await supabaseClient
     .from('whatsapp_business_connections')
     .select('*')
     .eq('business_id', businessId)
-    .single()
+    .maybeSingle()
 
   if (existingConnection) {
     // Update existing connection
@@ -88,8 +90,7 @@ async function handleConnect(supabaseClient: any, businessId: string) {
       .update({
         connection_status: 'connecting',
         qr_code: qrCode,
-        session_id: sessionId,
-        webhook_token: webhookToken,
+        device_name: 'WhatsApp Web Client',
         last_error: null,
         updated_at: new Date().toISOString()
       })
@@ -104,9 +105,8 @@ async function handleConnect(supabaseClient: any, businessId: string) {
         business_id: businessId,
         connection_status: 'connecting',
         qr_code: qrCode,
-        session_id: sessionId,
-        webhook_token: webhookToken,
-        device_name: 'WhatsApp Web Client'
+        device_name: 'WhatsApp Web Client',
+        phone_number: null
       })
 
     if (error) throw error
@@ -120,7 +120,6 @@ async function handleConnect(supabaseClient: any, businessId: string) {
   return {
     success: true,
     qrCode,
-    sessionId,
     status: 'connecting',
     message: 'QR קוד נוצר בהצלחה. סרקו את הקוד עם הטלפון שלכם.'
   }

@@ -81,7 +81,8 @@ export const WhatsAppConnection: React.FC = () => {
       
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Connection success:', data);
       queryClient.invalidateQueries({ queryKey: ['whatsapp-connection'] });
       toast.success('WhatsApp מחובר בהצלחה!');
     },
