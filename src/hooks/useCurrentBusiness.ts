@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useUserBusinesses } from './useUserBusinesses';
 import { useParams } from 'react-router-dom';
@@ -40,8 +40,10 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
   const loading = authLoading || businessesLoading;
 
   // פונקציה לעדכון בחירת העסק
-  const setSelectedBusinessId = (newBusinessId: string | null) => {
+  const setSelectedBusinessId = useCallback((newBusinessId: string | null) => {
     console.log('🔄 Setting selected business ID:', newBusinessId);
+    
+    // עדכון מיידי של הstate
     setBusinessId(newBusinessId);
     
     // שמירה ב-localStorage
@@ -51,16 +53,33 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
       localStorage.removeItem(SELECTED_BUSINESS_KEY);
     }
 
-    // עדכון שם העסק
+    // עדכון שם העסק מיידי
     if (newBusinessId && userBusinesses) {
       const selectedBusiness = userBusinesses.find(ub => ub.business_id === newBusinessId);
-      setBusinessName(selectedBusiness?.business.name || null);
+      if (selectedBusiness) {
+        console.log('✅ Setting business name to:', selectedBusiness.business.name);
+        setBusinessName(selectedBusiness.business.name);
+      } else {
+        console.warn('⚠️ Business not found for ID:', newBusinessId);
+        setBusinessName(null);
+      }
     } else if (isSuperAdmin && !newBusinessId) {
-      setBusinessName('מנהל ראשי');
+      console.log('👑 Setting super admin mode');
+      setBusinessName(null); // במצב super admin אין שם עסק ספציפי
     } else {
       setBusinessName(null);
     }
-  };
+    
+    console.log('✅ Business selection updated successfully - new state:', {
+      businessId: newBusinessId,
+      businessName: newBusinessId && userBusinesses ? 
+        userBusinesses.find(ub => ub.business_id === newBusinessId)?.business.name : 
+        (isSuperAdmin && !newBusinessId ? null : null)
+    });
+    
+    // כפוי רענון של כל הקומפוננטים המטמונים נתונים
+    window.dispatchEvent(new CustomEvent('businessChanged', { detail: { businessId: newBusinessId } }));
+  }, [userBusinesses, isSuperAdmin]);
 
   useEffect(() => {
     setError(null);
@@ -79,6 +98,32 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
     // Set role from profile
     setRole(profile.role);
 
+    // פונקציה פנימית לעדכון מיידי של state בלי רקורסיה
+    const updateBusinessState = (newBusinessId: string | null) => {
+      setBusinessId(newBusinessId);
+      
+      // שמירה ב-localStorage
+      if (newBusinessId) {
+        localStorage.setItem(SELECTED_BUSINESS_KEY, newBusinessId);
+      } else {
+        localStorage.removeItem(SELECTED_BUSINESS_KEY);
+      }
+
+      // עדכון שם העסק
+      if (newBusinessId && userBusinesses) {
+        const selectedBusiness = userBusinesses.find(ub => ub.business_id === newBusinessId);
+        if (selectedBusiness) {
+          setBusinessName(selectedBusiness.business.name);
+        } else {
+          setBusinessName(null);
+        }
+      } else if (isSuperAdmin && !newBusinessId) {
+        setBusinessName(null);
+      } else {
+        setBusinessName(null);
+      }
+    };
+
     // 1. אם יש business ID ב-URL, השתמש בו (עדיפות ראשונה)
     if (urlBusinessId && userBusinesses) {
       console.log('🎯 useCurrentBusiness: Using URL business:', urlBusinessId);
@@ -86,7 +131,7 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
       const urlBusiness = userBusinesses.find(ub => ub.business_id === urlBusinessId);
       if (urlBusiness) {
         console.log('✅ useCurrentBusiness: Found URL business:', urlBusiness.business.name);
-        setSelectedBusinessId(urlBusinessId);
+        updateBusinessState(urlBusinessId);
         return;
       } else {
         console.warn('⚠️ useCurrentBusiness: URL business not found in user businesses');
@@ -106,7 +151,7 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
         const savedBusiness = userBusinesses.find(ub => ub.business_id === savedBusinessId);
         if (savedBusiness) {
           console.log('✅ useCurrentBusiness: Using saved business:', savedBusiness.business.name);
-          setSelectedBusinessId(savedBusinessId);
+          updateBusinessState(savedBusinessId);
           return;
         } else {
           console.warn('⚠️ useCurrentBusiness: Saved business not found, clearing localStorage');
@@ -118,7 +163,7 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
     // 3. עבור super admin ללא בחירה ספציפית
     if (isSuperAdmin && !urlBusinessId) {
       console.log('👑 useCurrentBusiness: Super admin without specific business');
-      setSelectedBusinessId(null);
+      updateBusinessState(null);
       return;
     }
 
@@ -126,10 +171,10 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
     if (userBusinesses && userBusinesses.length > 0) {
       const firstBusiness = userBusinesses[0];
       console.log('🏢 useCurrentBusiness: Using first available business:', firstBusiness.business.name);
-      setSelectedBusinessId(firstBusiness.business_id);
+      updateBusinessState(firstBusiness.business_id);
     } else if (!isSuperAdmin) {
       console.warn('⚠️ useCurrentBusiness: No businesses available for regular user');
-      setSelectedBusinessId(null);
+      updateBusinessState(null);
       setError('לא נמצאו עסקים זמינים');
     }
   }, [user, profile, userBusinesses, urlBusinessId, isSuperAdmin, loading, businessesError]);
