@@ -28,15 +28,15 @@ export const EmployeeProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
+      <div className="min-h-screen bg-background p-3 sm:p-6" dir="rtl">
         <div className="max-w-7xl mx-auto">
           <Card>
-            <CardContent className="p-8">
-              <div className="flex items-center justify-center py-12">
+            <CardContent className="p-4 sm:p-8">
+              <div className="flex items-center justify-center py-8 sm:py-12">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                  <h3 className="text-lg font-medium text-gray-900 mt-4 mb-2">טוען פרטי עובד</h3>
-                  <p className="text-gray-600">אנא המתן...</p>
+                  <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto"></div>
+                  <h3 className="text-base sm:text-lg font-medium text-foreground mt-4 mb-2">טוען פרטי עובד</h3>
+                  <p className="text-sm sm:text-base text-muted-foreground">אנא המתן...</p>
                 </div>
               </div>
             </CardContent>
@@ -48,40 +48,41 @@ export const EmployeeProfilePage: React.FC = () => {
 
   if (!employee) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
+      <div className="min-h-screen bg-background p-3 sm:p-6" dir="rtl">
+        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-right">
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-3xl font-bold text-foreground">
                 פרופיל עובד
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">
                 העובד לא נמצא או שאין לך הרשאה לצפות בו
               </p>
             </div>
             <Button
               onClick={handleGoBack}
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
+              size="sm"
             >
               <ArrowLeft className="h-4 w-4" />
               חזרה לרשימת העובדים
             </Button>
           </div>
           <Card>
-            <CardContent className="p-6">
-              <div className="text-center py-8">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">העובד לא נמצא</h3>
-                <p className="text-gray-600 mb-4">
+            <CardContent className="p-4 sm:p-6">
+              <div className="text-center py-6 sm:py-8">
+                <h3 className="text-base sm:text-lg font-medium text-foreground mb-2">העובד לא נמצא</h3>
+                <p className="text-sm sm:text-base text-muted-foreground mb-4">
                   העובד המבוקש לא נמצא במערכת או שאין לך הרשאה לצפות בו.
                 </p>
-                <div className="text-sm text-gray-500 mb-4">
+                <div className="text-xs sm:text-sm text-muted-foreground mb-4">
                   <p>מזהה עובד: {employeeId || 'לא הוגדר'}</p>
                   <p>נתיב נוכחי: {window.location.pathname}</p>
                 </div>
                 <button
                   onClick={handleGoBack}
-                  className="text-blue-600 hover:text-blue-800 underline"
+                  className="text-primary hover:text-primary/80 underline text-sm"
                 >
                   חזרה לרשימת העובדים
                 </button>
@@ -94,22 +95,23 @@ export const EmployeeProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-6" dir="rtl">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header with navigation */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-right">
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-xl sm:text-3xl font-bold text-foreground">
               פרופיל עובד - {employee.first_name} {employee.last_name}
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">
               פרטי עובד מלאים עם כל הכרטיסיות והמידע
             </p>
           </div>
           <Button
             onClick={handleGoBack}
             variant="outline"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
+            size="sm"
           >
             <ArrowLeft className="h-4 w-4" />
             חזרה לרשימת העובדים
@@ -123,8 +125,8 @@ export const EmployeeProfilePage: React.FC = () => {
             onGoBack={handleGoBack}
             onEmployeeUpdated={refetchEmployee}
           />
-          <CardContent className="p-6">
-            <div className="md:flex gap-6" dir="rtl">
+          <CardContent className="p-3 sm:p-6">
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6" dir="rtl">
               <EmployeeProfileSidebar employee={employee} />
               <EmployeeProfileTabs employee={employee} employeeId={employeeId!} />
             </div>
