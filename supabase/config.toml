@@ -147,3 +147,6 @@ verify_jwt = false
 
 [functions.whatsapp-sync]
 verify_jwt = false
+
+[functions.publish-schedule]
+verify_jwt = true

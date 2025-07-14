@@ -3,7 +3,9 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Clock, User, MapPin } from 'lucide-react';
+import { Plus, Clock, User, MapPin, Send } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { HolidayIndicator } from './HolidayIndicator';
 import { ShabbatIndicator } from './components/ShabbatIndicator';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -34,6 +36,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   const [selectedDateForSubmissions, setSelectedDateForSubmissions] = useState<Date | null>(null);
   const [showShiftDetailsDialog, setShowShiftDetailsDialog] = useState(false);
   const [selectedShift, setSelectedShift] = useState<any>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
   
   // Generate week days starting from Sunday
   const weekDays = useMemo(() => {
@@ -146,6 +149,48 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     window.location.reload();
   };
 
+  const publishSchedule = async () => {
+    setIsPublishing(true);
+    try {
+      // Get all assigned shifts for the current week
+      const assignedShifts = shifts.filter(shift => 
+        shift.employee_id && 
+        shift.status !== 'approved' && 
+        !shift.is_archived
+      );
+      
+      if (assignedShifts.length === 0) {
+        toast.error('אין משמרות מוקצות לפרסום');
+        return;
+      }
+
+      // Call the edge function to publish the schedule
+      const { data, error } = await supabase.functions.invoke('publish-schedule', {
+        body: {
+          weekStart: weekDays[0].toISOString().split('T')[0],
+          weekEnd: weekDays[6].toISOString().split('T')[0],
+          shiftIds: assignedShifts.map(shift => shift.id)
+        }
+      });
+
+      if (error) {
+        console.error('Error publishing schedule:', error);
+        toast.error('שגיאה בפרסום הסידור');
+        return;
+      }
+
+      toast.success(`הסידור פורסם בהצלחה! נשלחו הודעות ל-${data.employeeCount} עובדים`);
+      
+      // Refresh the data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error publishing schedule:', error);
+      toast.error('שגיאה בפרסום הסידור');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   // Hebrew day names - ordered from Sunday to Saturday for RTL display
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -252,6 +297,26 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   // Desktop layout - grid view with RTL ordering (Sunday on right, Saturday on left)
   return (
     <div className="h-full flex flex-col" dir="rtl">
+      {/* Action Bar */}
+      <div className="flex justify-between items-center mb-4 p-4 bg-white rounded-lg shadow-sm border">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold">
+            סידור שבועי - {weekDays[0].getDate()}/{weekDays[0].getMonth() + 1} עד {weekDays[6].getDate()}/{weekDays[6].getMonth() + 1}
+          </h2>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          {/* Publish Schedule Button */}
+          <Button
+            onClick={publishSchedule}
+            disabled={isPublishing}
+            className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+          >
+            <Send className="h-4 w-4" />
+            {isPublishing ? 'מפרסם...' : 'פרסם סידור'}
+          </Button>
+        </div>
+      </div>
       <div className="grid grid-cols-7 gap-2 flex-1" style={{ direction: 'rtl' }}>
         {weekDays.map((date, index) => {
           const dayShifts = getShiftsForDate(date);
