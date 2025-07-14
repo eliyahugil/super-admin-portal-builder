@@ -80,6 +80,7 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
                 <button
                   onClick={() => handleMenuItemClick(true, item.path)}
                   className="flex items-center justify-end gap-3 text-right w-full pr-2"
+                  type="button"
                 >
                   {!collapsed && (
                     <span className={`text-xs transform transition-transform duration-200 ml-2 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
