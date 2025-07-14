@@ -57,6 +57,8 @@ export class WeeklyShiftService {
 
   // Validate weekly token and get token data
   static async validateWeeklyToken(token: string): Promise<any> {
+    console.log('🔍 Starting token validation for:', token);
+    
     const { data, error } = await supabase
       .from('employee_weekly_tokens')
       .select(`
@@ -68,7 +70,49 @@ export class WeeklyShiftService {
       .gt('expires_at', new Date().toISOString())
       .single();
 
-    if (error) return null;
+    if (error) {
+      console.error('❌ Token validation error:', error);
+      
+      // Let's also check if the token exists but is inactive or expired
+      const { data: inactiveToken, error: checkError } = await supabase
+        .from('employee_weekly_tokens')
+        .select(`
+          *,
+          employee:employees(first_name, last_name, employee_id, phone)
+        `)
+        .eq('token', token)
+        .single();
+      
+      if (!checkError && inactiveToken) {
+        const isExpired = new Date(inactiveToken.expires_at) <= new Date();
+        console.log('🔍 Token found but:', {
+          isActive: inactiveToken.is_active,
+          isExpired,
+          expiresAt: inactiveToken.expires_at,
+          currentTime: new Date().toISOString()
+        });
+        
+        if (!inactiveToken.is_active) {
+          console.log('❌ Token has been deactivated (already used)');
+        }
+        if (isExpired) {
+          console.log('❌ Token has expired');
+        }
+      } else {
+        console.log('❌ Token not found in database');
+      }
+      
+      return null;
+    }
+    
+    console.log('✅ Token validation successful:', {
+      employeeId: data.employee_id,
+      employeeName: `${data.employee.first_name} ${data.employee.last_name}`,
+      weekStart: data.week_start_date,
+      weekEnd: data.week_end_date,
+      expiresAt: data.expires_at
+    });
+    
     return data;
   }
 
