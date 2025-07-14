@@ -31,6 +31,9 @@ export const BusinessIntegrations: React.FC = () => {
   console.log('Final Business ID:', businessId);
   console.log('Available integrations:', integrations);
   console.log('Business integrations:', businessIntegrations);
+  console.log('Available integrations that are not configured yet:', integrations.filter(integration => 
+    !businessIntegrations.some(bi => bi.integration_name === integration.integration_name)
+  ));
 
   const handleIntegrationSave = (integrationKey: string, updatedFields: Record<string, any>) => {
     console.log('=== handleIntegrationSave START ===');
