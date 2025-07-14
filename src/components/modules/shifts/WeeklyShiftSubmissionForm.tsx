@@ -77,6 +77,7 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
         setTokenData(data);
         
         // Fetch available shifts for the token's week from scheduled_shifts
+        // Filter by employee's business and branch assignments
         const { data: shiftsData, error: shiftsError } = await supabase
           .from('scheduled_shifts')
           .select(`
@@ -96,6 +97,7 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           .lte('shift_date', data.week_end_date)
           .eq('status', 'pending')
           .eq('is_archived', false)
+          .eq('business_id', data.employee.business_id) // Filter by employee's business
           .order('shift_date')
           .order('start_time');
 
