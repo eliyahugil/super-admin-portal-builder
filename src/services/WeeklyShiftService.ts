@@ -76,7 +76,7 @@ export class WeeklyShiftService {
 
     // No existing token found, create a new one
     console.log('🆕 Creating new token for employee:', employeeId);
-    const token = crypto.randomUUID().replace(/-/g, '');
+    const token = crypto.randomUUID(); // Keep it as UUID, not converting to string
     const expiresAt = new Date(weekEndDate);
     expiresAt.setDate(expiresAt.getDate() + 7); // Expires one week after the week ends
 
