@@ -287,42 +287,185 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 
                 {/* Shifts */}
                 <div className="space-y-1">
-                  {dayShifts.map((shift) => (
-                    <div
-                      key={shift.id}
-                      className="p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => onShiftClick(shift)}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <Badge variant="secondary" className={`text-xs ${getStatusColor(shift.status || 'pending')}`}>
-                          {shift.status === 'approved' ? 'מאושר' : 
-                           shift.status === 'pending' ? 'ממתין' :
-                           shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
-                        </Badge>
-                      </div>
-                      
-                      <div className="space-y-1 text-xs">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-gray-500" />
-                          <span className="font-medium">{shift.start_time} - {shift.end_time}</span>
-                        </div>
-                        
-                        {shift.employee_id && (
-                          <div className="flex items-center gap-1">
-                            <User className="h-3 w-3 text-gray-500" />
-                            <span className="truncate">{getEmployeeName(shift.employee_id)}</span>
-                          </div>
-                        )}
-                        
-                        {shift.branch_name && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3 text-gray-500" />
-                            <span className="truncate">{shift.branch_name}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                  {dayShifts.map((shift) => {
+                    // Get submissions for this specific shift
+                    const getSubmissionsForShift = () => {
+                      const dateStr = date.toISOString().split('T')[0];
+                      return pendingSubmissions.filter(submission => {
+                        const shifts = typeof submission.shifts === 'string' 
+                          ? JSON.parse(submission.shifts) 
+                          : submission.shifts || [];
+                        return shifts.some((s: any) => 
+                          s.date === dateStr && 
+                          s.start_time === shift.start_time && 
+                          s.end_time === shift.end_time &&
+                          s.branch_preference === shift.branch_name
+                        );
+                      }).map(submission => {
+                        const shifts = typeof submission.shifts === 'string' 
+                          ? JSON.parse(submission.shifts) 
+                          : submission.shifts || [];
+                        const relevantShift = shifts.find((s: any) => 
+                          s.date === dateStr && 
+                          s.start_time === shift.start_time && 
+                          s.end_time === shift.end_time &&
+                          s.branch_preference === shift.branch_name
+                        );
+                        return {
+                          ...submission,
+                          employeeName: getEmployeeName(submission.employee_id),
+                          role: relevantShift?.role_preference || 'ללא תפקיד',
+                          isCurrentlyAssigned: shift.employee_id === submission.employee_id
+                        };
+                      });
+                    };
+
+                    const shiftSubmissions = getSubmissionsForShift();
+
+                    return (
+                      <TooltipProvider key={shift.id}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              className="p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                              onClick={() => onShiftClick(shift)}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <Badge variant="secondary" className={`text-xs ${getStatusColor(shift.status || 'pending')}`}>
+                                  {shift.status === 'approved' ? 'מאושר' : 
+                                   shift.status === 'pending' ? 'ממתין' :
+                                   shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
+                                </Badge>
+                                {shiftSubmissions.length > 0 && (
+                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                    {shiftSubmissions.length} בקשות
+                                  </Badge>
+                                )}
+                              </div>
+                              
+                              <div className="space-y-1 text-xs">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3 text-gray-500" />
+                                  <span className="font-medium">{shift.start_time} - {shift.end_time}</span>
+                                </div>
+                                
+                                {shift.employee_id && (
+                                  <div className="flex items-center gap-1">
+                                    <User className="h-3 w-3 text-gray-500" />
+                                    <span className="truncate">{getEmployeeName(shift.employee_id)}</span>
+                                  </div>
+                                )}
+                                
+                                {shift.branch_name && (
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3 text-gray-500" />
+                                    <span className="truncate">{shift.branch_name}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </TooltipTrigger>
+                          
+                          {shiftSubmissions.length > 0 && (
+                            <TooltipContent side="top" className="max-w-sm p-4">
+                              <div className="text-right space-y-3">
+                                <div className="border-b pb-2">
+                                  <h4 className="font-medium text-sm">בקשות למשמרת:</h4>
+                                  <p className="text-xs text-gray-600">
+                                    {shift.start_time} - {shift.end_time} | {shift.branch_name}
+                                  </p>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  {shiftSubmissions.map((submission, index) => (
+                                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs">
+                                      <div className="flex-1">
+                                        <div className="font-medium">
+                                          {submission.employeeName}
+                                          {submission.isCurrentlyAssigned && (
+                                            <span className="text-green-600 mr-1">✓</span>
+                                          )}
+                                        </div>
+                                        <div className="text-gray-600">{submission.role}</div>
+                                      </div>
+                                      
+                                      <div className="flex gap-1">
+                                        {!submission.isCurrentlyAssigned && (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-6 px-2 text-xs"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (onShiftUpdate) {
+                                                onShiftUpdate(shift.id, {
+                                                  ...shift,
+                                                  employee_id: submission.employee_id
+                                                });
+                                              }
+                                            }}
+                                          >
+                                            שייך
+                                          </Button>
+                                        )}
+                                        
+                                        <Button
+                                          size="sm"
+                                          variant="outline" 
+                                          className="h-6 px-2 text-xs"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            // Add functionality to move employee to different shift
+                                            console.log('Move employee to different shift:', submission.employee_id);
+                                          }}
+                                        >
+                                          העבר
+                                        </Button>
+                                        
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-6 px-2 text-xs"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            // Add functionality to change branch
+                                            console.log('Change branch for employee:', submission.employee_id);
+                                          }}
+                                        >
+                                          סניף
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                
+                                {shift.employee_id && (
+                                  <div className="border-t pt-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="w-full text-xs"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onShiftUpdate) {
+                                          onShiftUpdate(shift.id, {
+                                            ...shift,
+                                            employee_id: null
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      בטל שיוך נוכחי
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })}
                 </div>
                 
                 {/* Pending submissions */}
