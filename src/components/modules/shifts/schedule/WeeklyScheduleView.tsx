@@ -330,14 +330,11 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full text-xs bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
-                          onClick={() => handleViewSubmissions(date)}
+                        <div
+                          className="w-full text-xs bg-yellow-50 border border-yellow-200 text-yellow-800 hover:bg-yellow-100 px-3 py-2 rounded cursor-help transition-colors text-center"
                         >
                           הגשות ממתינות ({getPendingSubmissionsForDate(date).length})
-                        </Button>
+                        </div>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-md">
                         <div className="text-right space-y-3">
