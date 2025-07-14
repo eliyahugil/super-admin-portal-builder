@@ -123,34 +123,34 @@ export const useWhatsAppIntegration = () => {
     }
   });
 
-  // Send message
+  // Send message via Twilio
   const sendMessage = useMutation({
     mutationFn: async ({
       contactId,
+      phoneNumber,
       content,
       messageType = 'text'
     }: {
-      contactId: string;
+      contactId?: string;
+      phoneNumber: string;
       content: string;
       messageType?: WhatsAppMessage['message_type'];
     }) => {
       if (!businessId) throw new Error('Business ID required');
       
-      const { data, error } = await supabase
-        .from('whatsapp_messages')
-        .insert({
-          business_id: businessId,
-          contact_id: contactId,
-          content,
-          message_type: messageType,
-          direction: 'outgoing',
-          message_id: `msg_${Date.now()}`,
-          timestamp: new Date().toISOString()
-        })
-        .select()
-        .single();
-      
+      // Use the Twilio-powered edge function
+      const { data, error } = await supabase.functions.invoke('send-whatsapp-message', {
+        body: {
+          businessId,
+          to: phoneNumber,
+          message: content,
+          contactId
+        }
+      });
+
       if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      
       return data;
     },
     onSuccess: (_, variables) => {

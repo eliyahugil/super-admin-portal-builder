@@ -41,11 +41,12 @@ export const WhatsAppChatPanel: React.FC<WhatsAppChatPanelProps> = ({
   const { data: messages = [] } = getMessages(contactId || '');
 
   const handleSendMessage = async () => {
-    if (!message.trim() || !contactId) return;
+    if (!message.trim() || !contactId || !customerPhone) return;
     
     try {
       await sendMessage.mutateAsync({
         contactId,
+        phoneNumber: customerPhone,
         content: message.trim()
       });
       setMessage('');

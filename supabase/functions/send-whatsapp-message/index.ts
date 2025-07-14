@@ -6,176 +6,130 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface WhatsAppMessageRequest {
-  phoneNumber: string;
-  message: string;
-  businessId: string;
-  messageType?: 'text' | 'template';
-  templateName?: string;
-  templateParams?: string[];
-}
-
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    const { businessId, to, message, contactId } = await req.json()
+    console.log('Send WhatsApp message:', { businessId, to, message, contactId })
+
+    if (!businessId || !to || !message) {
+      throw new Error('Missing required parameters: businessId, to, message')
+    }
+
+    // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    )
 
-    const { phoneNumber, message, businessId, messageType = 'text', templateName, templateParams }: WhatsAppMessageRequest = await req.json();
+    // Get Twilio credentials
+    const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID')
+    const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN')
 
-    console.log('🚀 Sending WhatsApp message:', { phoneNumber, businessId, messageType });
-
-    // Get WhatsApp Business API credentials from business integrations
-    const { data: integration, error: integrationError } = await supabaseClient
-      .from('business_integrations')
-      .select('credentials, config')
-      .eq('business_id', businessId)
-      .eq('integration_name', 'whatsapp')
-      .eq('is_active', true)
-      .single();
-
-    if (integrationError || !integration) {
-      console.error('❌ WhatsApp integration not found:', integrationError);
-      return new Response(
-        JSON.stringify({ error: 'WhatsApp integration not configured' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    if (!twilioAccountSid || !twilioAuthToken) {
+      throw new Error('Twilio credentials not configured')
     }
 
-    const { access_token, phone_number_id } = integration.credentials;
-    const { api_version = 'v18.0' } = integration.config;
+    const twilioWhatsAppNumber = 'whatsapp:+14155238886' // Twilio sandbox number
 
-    if (!access_token || !phone_number_id) {
-      console.error('❌ Missing WhatsApp credentials');
-      return new Response(
-        JSON.stringify({ error: 'Missing WhatsApp Business API credentials' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
+    // Ensure contact exists
+    let finalContactId = contactId
+    if (!contactId) {
+      const { data: existingContact } = await supabaseClient
+        .from('whatsapp_contacts')
+        .select('id')
+        .eq('business_id', businessId)
+        .eq('phone_number', to)
+        .single()
 
-    // Format phone number (remove + and ensure it starts with country code)
-    const formattedPhone = phoneNumber.replace(/\D/g, '').replace(/^0/, '972');
+      if (existingContact) {
+        finalContactId = existingContact.id
+      } else {
+        // Create new contact
+        const { data: newContact, error: contactError } = await supabaseClient
+          .from('whatsapp_contacts')
+          .insert({
+            business_id: businessId,
+            phone_number: to,
+            contact_name: to
+          })
+          .select()
+          .single()
 
-    let messagePayload: any;
-
-    if (messageType === 'template' && templateName) {
-      // Send template message
-      messagePayload = {
-        messaging_product: "whatsapp",
-        to: formattedPhone,
-        type: "template",
-        template: {
-          name: templateName,
-          language: {
-            code: "he"
-          }
-        }
-      };
-
-      if (templateParams && templateParams.length > 0) {
-        messagePayload.template.components = [
-          {
-            type: "body",
-            parameters: templateParams.map(param => ({
-              type: "text",
-              text: param
-            }))
-          }
-        ];
+        if (contactError) throw contactError
+        finalContactId = newContact.id
       }
-    } else {
-      // Send text message
-      messagePayload = {
-        messaging_product: "whatsapp",
-        to: formattedPhone,
-        type: "text",
-        text: {
-          body: message
-        }
-      };
     }
 
-    // Send message via WhatsApp Business API
-    const whatsappResponse = await fetch(`https://graph.facebook.com/${api_version}/${phone_number_id}/messages`, {
+    // Send message via Twilio
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`
+    
+    const formData = new FormData()
+    formData.append('From', twilioWhatsAppNumber)
+    formData.append('To', `whatsapp:${to}`)
+    formData.append('Body', message)
+
+    const twilioResponse = await fetch(twilioUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${access_token}`,
-        'Content-Type': 'application/json',
+        'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`
       },
-      body: JSON.stringify(messagePayload)
-    });
+      body: formData
+    })
 
-    const whatsappResult = await whatsappResponse.json();
-
-    if (!whatsappResponse.ok) {
-      console.error('❌ WhatsApp API error:', whatsappResult);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to send WhatsApp message',
-          details: whatsappResult 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    const twilioData = await twilioResponse.json()
+    
+    if (!twilioResponse.ok) {
+      throw new Error(`Twilio error: ${twilioData.message}`)
     }
 
-    console.log('✅ WhatsApp message sent successfully:', whatsappResult);
-
     // Store message in database
-    const { error: dbError } = await supabaseClient
+    const { data: messageRecord, error: messageError } = await supabaseClient
       .from('whatsapp_messages')
       .insert({
         business_id: businessId,
-        contact_id: null, // We'll need to handle contact creation separately
-        message_id: whatsappResult.messages?.[0]?.id || `msg_${Date.now()}`,
-        content: messageType === 'template' ? `Template: ${templateName}` : message,
+        contact_id: finalContactId,
+        phone_number: to,
+        message_content: message,
         message_type: 'text',
         direction: 'outgoing',
-        status: 'sent',
+        message_status: 'sent',
+        whatsapp_message_id: twilioData.sid,
         timestamp: new Date().toISOString()
-      });
+      })
+      .select()
+      .single()
 
-    if (dbError) {
-      console.error('⚠️ Failed to store message in database:', dbError);
-      // Don't fail the request if we can't store in DB
+    if (messageError) {
+      console.error('Error storing message:', messageError)
+      // Don't throw error - message was sent successfully
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        messageId: whatsappResult.messages?.[0]?.id,
-        status: 'sent'
+        message: 'Message sent successfully',
+        twilioMessageId: twilioData.sid,
+        messageRecord,
+        contactId: finalContactId
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
 
   } catch (error) {
-    console.error('💥 Unexpected error:', error);
+    console.error('Send WhatsApp message error:', error)
     return new Response(
       JSON.stringify({ 
-        error: 'Internal server error',
-        details: error.message 
+        error: error.message,
+        success: false 
       }),
       { 
-        status: 500, 
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    );
+    )
   }
-});
+})
