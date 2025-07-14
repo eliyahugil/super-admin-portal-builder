@@ -43,40 +43,52 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
         </select>
       </div>
 
-      {/* Desktop: Tab buttons */}
-      <TabsList
+      {/* Desktop: Tab buttons - Multi-row layout */}
+      <div
         className="
-          hidden sm:flex w-full flex-wrap justify-start gap-1 px-1 mb-1 min-w-0
-          border-b border-muted bg-background max-h-20 overflow-y-auto
+          hidden sm:block w-full mb-4
+          border-b border-muted bg-background
         "
         dir="rtl"
-        style={{ direction: 'rtl' }}
       >
-        {availableTabs.map((tab) => (
-          <TabsTrigger
-            key={tab.id}
-            value={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className="
-              relative flex items-center
-              justify-end flex-row-reverse gap-2 whitespace-nowrap
-              px-3 py-2 text-sm rounded-md focus:z-10 min-w-[120px] max-w-xs
-              transition-colors shadow-sm
-              bg-background hover:bg-muted/50
-              data-[state=active]:bg-primary data-[state=active]:text-primary-foreground
-            "
-            title={tab.description}
-          >
-            <tab.icon className="h-4 w-4 shrink-0" />
-            <span className="truncate">{tab.label}</span>
-            {tab.badge && (
-              <Badge variant="secondary" className="h-4 min-w-4 text-xs shrink-0">
-                {tab.badge}
-              </Badge>
-            )}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+        <div className="flex flex-wrap gap-2 pb-3">
+          {availableTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  relative flex items-center justify-center gap-2 
+                  px-4 py-2.5 text-sm rounded-lg font-medium
+                  transition-all duration-200 whitespace-nowrap
+                  border border-border
+                  ${isActive 
+                    ? 'bg-primary text-primary-foreground shadow-md border-primary' 
+                    : 'bg-background hover:bg-muted/70 text-foreground hover:border-muted-foreground/30'
+                  }
+                `}
+                title={tab.description}
+              >
+                <tab.icon className="h-4 w-4 shrink-0" />
+                <span className="truncate">{tab.label}</span>
+                {tab.badge && (
+                  <span className={`
+                    inline-flex items-center justify-center
+                    h-5 min-w-5 px-1.5 text-xs font-medium rounded-full
+                    ${isActive 
+                      ? 'bg-primary-foreground/20 text-primary-foreground' 
+                      : 'bg-muted text-muted-foreground'
+                    }
+                  `}>
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 };
