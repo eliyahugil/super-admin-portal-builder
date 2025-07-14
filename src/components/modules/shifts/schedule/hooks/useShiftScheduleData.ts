@@ -174,19 +174,65 @@ export const useShiftScheduleData = (businessId: string | null) => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
+  // Fetch pending shift submissions
+  const { data: pendingSubmissions = [], isLoading: submissionsLoading, error: submissionsError } = useQuery({
+    queryKey: ['pending-submissions', businessId],
+    queryFn: async () => {
+      if (!businessId) {
+        console.log('❌ No business ID for submissions');
+        return [];
+      }
+
+      console.log('🔍 Fetching pending submissions for business:', businessId);
+
+      try {
+        const { data, error } = await supabase
+          .from('shift_submissions')
+          .select(`
+            id,
+            employee_id,
+            shifts,
+            status,
+            submitted_at,
+            week_start_date,
+            week_end_date,
+            employee:employees(first_name, last_name, business_id)
+          `)
+          .eq('status', 'pending')
+          .eq('employee.business_id', businessId);
+
+        if (error) {
+          console.error('❌ Error fetching pending submissions:', error);
+          throw error;
+        }
+
+        console.log('✅ Fetched pending submissions:', data?.length || 0);
+        return data || [];
+      } catch (error) {
+        console.error('💥 Exception in submissions fetch:', error);
+        throw error;
+      }
+    },
+    enabled: !!businessId,
+    retry: 1,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+
   // Log any errors
   if (shiftsError) console.error('Shifts Error:', shiftsError);
   if (employeesError) console.error('Employees Error:', employeesError);
   if (branchesError) console.error('Branches Error:', branchesError);
+  if (submissionsError) console.error('Submissions Error:', submissionsError);
 
-  const loading = shiftsLoading || employeesLoading || branchesLoading;
-  const hasError = shiftsError || employeesError || branchesError;
+  const loading = shiftsLoading || employeesLoading || branchesLoading || submissionsLoading;
+  const hasError = shiftsError || employeesError || branchesError || submissionsError;
 
   console.log('📊 useShiftScheduleData summary:', {
     businessId,
     shiftsCount: shifts.length,
     employeesCount: employees.length,
     branchesCount: branches.length,
+    pendingSubmissionsCount: pendingSubmissions.length,
     loading,
     hasError: !!hasError
   });
@@ -195,7 +241,8 @@ export const useShiftScheduleData = (businessId: string | null) => {
     shifts,
     employees,
     branches,
+    pendingSubmissions,
     loading,
-    error: hasError ? (shiftsError || employeesError || branchesError) : null
+    error: hasError ? (shiftsError || employeesError || branchesError || submissionsError) : null
   };
 };

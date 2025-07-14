@@ -43,6 +43,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     shifts,
     employees,
     branches,
+    pendingSubmissions,
     loading,
     error,
     filters,
@@ -282,6 +283,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                     holidays={holidays}
                     shabbatTimes={shabbatTimes}
                     calendarEvents={combinedEvents}
+                    pendingSubmissions={pendingSubmissions}
                     onShiftClick={handleShiftClick}
                     onShiftUpdate={updateShift}
                     onAddShift={handleAddShift}

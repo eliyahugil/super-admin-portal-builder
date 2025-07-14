@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { HolidayIndicator } from './HolidayIndicator';
 import { ShabbatIndicator } from './components/ShabbatIndicator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { ShiftScheduleViewProps } from './types';
+import { SubmissionApprovalDialog } from './components/SubmissionApprovalDialog';
 
 export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   shifts,
@@ -16,11 +17,14 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   holidays,
   shabbatTimes,
   calendarEvents,
+  pendingSubmissions = [],
   onShiftClick,
   onShiftUpdate,
   onAddShift
 }) => {
   const isMobile = useIsMobile();
+  const [showSubmissionDialog, setShowSubmissionDialog] = useState(false);
+  const [selectedDateForSubmissions, setSelectedDateForSubmissions] = useState<Date | null>(null);
   
   // Generate week days starting from Sunday
   const weekDays = useMemo(() => {
@@ -65,6 +69,29 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
       case 'completed': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Get pending submissions for a specific date
+  const getPendingSubmissionsForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return pendingSubmissions.filter(submission => {
+      const shifts = typeof submission.shifts === 'string' 
+        ? JSON.parse(submission.shifts) 
+        : submission.shifts || [];
+      return shifts.some((shift: any) => shift.date === dateStr);
+    });
+  };
+
+  const handleViewSubmissions = (date: Date) => {
+    setSelectedDateForSubmissions(date);
+    setShowSubmissionDialog(true);
+  };
+
+  const handleSubmissionApprovalComplete = () => {
+    setShowSubmissionDialog(false);
+    setSelectedDateForSubmissions(null);
+    // Refresh the data
+    window.location.reload();
   };
 
   // Hebrew day names - ordered from Sunday to Saturday for RTL display
@@ -249,7 +276,19 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   ))}
                 </div>
                 
-                {/* Add shift area - only show when no shifts */}
+                {/* Pending submissions */}
+                {getPendingSubmissionsForDate(date).length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full text-xs bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
+                    onClick={() => handleViewSubmissions(date)}
+                  >
+                    הגשות ממתינות ({getPendingSubmissionsForDate(date).length})
+                  </Button>
+                )}
+                
+                {/* Add shift area */}
                 {dayShifts.length === 0 && (
                   <div 
                     className="text-center py-2 text-gray-400 cursor-pointer hover:bg-gray-50 rounded border border-dashed border-gray-200 hover:border-blue-300 transition-colors"
@@ -264,6 +303,18 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
           );
         })}
       </div>
+      
+      {/* Submission Approval Dialog */}
+      {showSubmissionDialog && selectedDateForSubmissions && (
+        <SubmissionApprovalDialog
+          isOpen={showSubmissionDialog}
+          onClose={() => setShowSubmissionDialog(false)}
+          submissions={pendingSubmissions}
+          selectedDate={selectedDateForSubmissions}
+          employees={employees}
+          onApprovalComplete={handleSubmissionApprovalComplete}
+        />
+      )}
     </div>
   );
 };
