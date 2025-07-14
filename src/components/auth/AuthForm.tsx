@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,8 @@ export const AuthForm: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -132,6 +135,57 @@ export const AuthForm: React.FC = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email) {
+      toast({
+        title: 'שגיאה',
+        description: 'אנא הכנס כתובת מייל',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    console.log('🔄 Sending password reset email to:', email);
+    setResetLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?mode=reset`
+      });
+
+      if (error) {
+        console.error('❌ Password reset error:', error);
+        toast({
+          title: 'שגיאה',
+          description: 'שגיאה בשליחת המייל. נסה שוב מאוחר יותר.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      console.log('✅ Password reset email sent successfully');
+      toast({
+        title: 'מייל נשלח בהצלחה',
+        description: 'קישור לאיפוס סיסמה נשלח אליך במייל',
+      });
+      
+      // Reset form and go back to login
+      setForgotPasswordMode(false);
+      setEmail('');
+    } catch (error) {
+      console.error('💥 Exception in password reset:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'שגיאה בשליחת המייל. נסה שוב מאוחר יותר.',
+        variant: 'destructive'
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   // Show loading state while auth is loading
   if (authLoading) {
     console.log('AuthForm - Auth still loading...');
@@ -174,19 +228,22 @@ export const AuthForm: React.FC = () => {
         <Card className="shadow-lg">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-xl font-semibold">
-              {isLogin ? 'התחברות' : 'הרשמה'}
+              {forgotPasswordMode ? 'איפוס סיסמה' : (isLogin ? 'התחברות' : 'הרשמה')}
             </CardTitle>
             <CardDescription className="text-sm">
-              {isLogin 
-                ? 'הכנס את פרטי החשבון שלך' 
-                : 'מלא את הפרטים כדי ליצור חשבון חדש'
+              {forgotPasswordMode 
+                ? 'הכנס את כתובת המייל שלך כדי לקבל קישור לאיפוס סיסמה'
+                : (isLogin 
+                  ? 'הכנס את פרטי החשבון שלך' 
+                  : 'מלא את הפרטים כדי ליצור חשבון חדש'
+                )
               }
             </CardDescription>
           </CardHeader>
           
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
+            <form onSubmit={forgotPasswordMode ? handleForgotPassword : handleSubmit} className="space-y-4">
+              {!isLogin && !forgotPasswordMode && (
                 <div className="space-y-2">
                   <Label htmlFor="fullName" className="flex items-center gap-2 text-sm font-medium">
                     <User className="h-4 w-4" />
@@ -205,7 +262,7 @@ export const AuthForm: React.FC = () => {
                 </div>
               )}
 
-              {!isLogin && (
+              {!isLogin && !forgotPasswordMode && (
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium">
                     <Phone className="h-4 w-4" />
@@ -243,6 +300,7 @@ export const AuthForm: React.FC = () => {
                 />
               </div>
               
+              {!forgotPasswordMode && (
               <div className="space-y-2">
                 <Label htmlFor="password" className="flex items-center gap-2 text-sm font-medium">
                   <Lock className="h-4 w-4" />
@@ -277,40 +335,70 @@ export const AuthForm: React.FC = () => {
                   </p>
                 )}
               </div>
+              )}
               
               <Button 
                 type="submit" 
                 className="w-full mt-6" 
-                disabled={loading || authLoading}
+                disabled={(forgotPasswordMode ? resetLoading : loading) || authLoading}
                 size="lg"
               >
-                {loading ? (
+                {(forgotPasswordMode ? resetLoading : loading) ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     <span>מעבד...</span>
                   </div>
                 ) : (
-                  isLogin ? 'התחבר' : 'הירשם'
+                  forgotPasswordMode ? 'שלח קישור איפוס' : (isLogin ? 'התחבר' : 'הירשם')
                 )}
               </Button>
             </form>
             
-            {/* Switch Mode */}
-            <div className="mt-6 text-center">
-              <Button
-                variant="link"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setEmail('');
-                  setPassword('');
-                  setFullName('');
-                  setPhone('');
-                }}
-                className="text-sm text-blue-600 hover:text-blue-800"
-                disabled={loading || authLoading}
-              >
-                {isLogin ? 'אין לך חשבון? הירשם כאן' : 'יש לך חשבון? התחבר כאן'}
-              </Button>
+            {/* Switch Mode & Forgot Password */}
+            <div className="mt-6 text-center space-y-2">
+              {!forgotPasswordMode ? (
+                <>
+                  <Button
+                    variant="link"
+                    onClick={() => {
+                      setIsLogin(!isLogin);
+                      setEmail('');
+                      setPassword('');
+                      setFullName('');
+                      setPhone('');
+                    }}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                    disabled={loading || authLoading}
+                  >
+                    {isLogin ? 'אין לך חשבון? הירשם כאן' : 'יש לך חשבון? התחבר כאן'}
+                  </Button>
+                  
+                  {isLogin && (
+                    <div>
+                      <Button
+                        variant="link"
+                        onClick={() => setForgotPasswordMode(true)}
+                        className="text-sm text-gray-600 hover:text-gray-800"
+                        disabled={loading || authLoading}
+                      >
+                        שכחתי סיסמה
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setForgotPasswordMode(false);
+                    setEmail('');
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                  disabled={resetLoading}
+                >
+                  חזרה להתחברות
+                </Button>
+              )}
             </div>
 
             {/* Debug info in development */}
