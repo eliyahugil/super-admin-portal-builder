@@ -57,9 +57,20 @@ export class WeeklyShiftService {
       return existingToken.token;
     }
 
-    // If token exists but is inactive, return it too (it can be reused)
-    if (existingToken) {
-      console.log('✅ Found existing token (inactive):', existingToken.token);
+    // If token exists but is inactive, activate it and return it
+    if (existingToken && !existingToken.is_active) {
+      console.log('🔄 Found inactive token, reactivating:', existingToken.token);
+      const { error: updateError } = await supabase
+        .from('employee_weekly_tokens')
+        .update({ is_active: true })
+        .eq('token', existingToken.token);
+      
+      if (updateError) {
+        console.error('❌ Error reactivating token:', updateError);
+        throw updateError;
+      }
+      
+      console.log('✅ Token reactivated successfully');
       return existingToken.token;
     }
 
