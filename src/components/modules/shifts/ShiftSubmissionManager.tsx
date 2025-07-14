@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Send, Users, Plus } from 'lucide-react';
@@ -16,7 +16,7 @@ export const ShiftSubmissionManager: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [sendingToAll, setSendingToAll] = useState(false);
   const { toast } = useToast();
-  const { businessId, isLoading } = useBusiness();
+  const { businessId, loading: isLoading } = useCurrentBusiness();
 
   // קבלת רשימת עובדים
   const { data: employees = [], isLoading: employeesLoading } = useQuery({
