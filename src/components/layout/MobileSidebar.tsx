@@ -30,6 +30,8 @@ import {
   Calendar,
   User,
   LinkIcon,
+  ChevronDown,
+  ChevronLeft,
 } from 'lucide-react';
 import { useBusiness } from '@/hooks/useBusiness';
 import { useBusinessModules } from '@/hooks/useBusinessModules';
@@ -187,10 +189,19 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
   };
 
   const toggleExpanded = (path: string) => {
-    setExpandedItems(prev => ({
-      ...prev,
-      [path]: !prev[path]
-    }));
+    setExpandedItems(prev => {
+      // אם הפריט כבר פתוח, סגור אותו
+      if (prev[path]) {
+        return { ...prev, [path]: false };
+      }
+      // אחרת, סגור את כל האחרים ופתח את זה
+      const newState: Record<string, boolean> = {};
+      Object.keys(prev).forEach(key => {
+        newState[key] = false;
+      });
+      newState[path] = true;
+      return newState;
+    });
   };
 
   const handleMenuItemClick = (item: MenuItem, event?: React.MouseEvent) => {
@@ -219,17 +230,19 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
     if (visibleItems.length === 0) return null;
 
     return (
-      <div className="space-y-2">
-        <div className="px-4 py-2">
-          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+      <div className="space-y-3">
+        <div className="px-6 py-2">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">
             {title}
           </h3>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2 px-3">
           {visibleItems.map((item) => {
             const active = isActive(item.path);
+            const isExpanded = expandedItems[item.path];
+            
             return (
-              <div key={item.path}>
+              <div key={item.path} className="relative">
                 {item.subItems && item.subItems.length > 0 ? (
                   // פריט עם תת-פריטים - כפתור להרחבה/כיווץ
                   <>
@@ -237,21 +250,42 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
                       variant="ghost"
                       onClick={(event) => handleMenuItemClick(item, event)}
                       className={`
-                        w-full justify-start gap-3 px-4 py-3 text-sm font-medium rounded-lg mx-2 transition-colors h-auto
-                        ${active 
-                          ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700' 
-                          : 'text-gray-700 hover:bg-gray-100'
+                        w-full h-auto group relative overflow-hidden
+                        ${isExpanded 
+                          ? 'bg-gradient-to-r from-primary/10 to-primary/5 text-primary shadow-sm border border-primary/20' 
+                          : 'hover:bg-gradient-to-r hover:from-muted/50 hover:to-muted/30 text-foreground hover:text-primary'
                         }
+                        transition-all duration-300 ease-in-out rounded-xl
                       `}
                     >
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
-                      <span className="flex-1 text-right">{item.label}</span>
-                      {active && (
-                        <div className="w-2 h-2 bg-blue-700 rounded-full" />
-                      )}
+                      <div className="flex items-center gap-4 w-full py-4 px-4">
+                        <div className={`
+                          p-2 rounded-lg transition-all duration-300
+                          ${isExpanded 
+                            ? 'bg-primary/20 text-primary' 
+                            : 'bg-muted/80 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
+                          }
+                        `}>
+                          <item.icon className="h-5 w-5" />
+                        </div>
+                        <span className="flex-1 text-right font-medium text-sm">
+                          {item.label}
+                        </span>
+                        <div className={`
+                          transition-transform duration-300 ease-in-out
+                          ${isExpanded ? 'rotate-180' : 'rotate-0'}
+                        `}>
+                          <ChevronDown className={`h-4 w-4 ${isExpanded ? 'text-primary' : 'text-muted-foreground'}`} />
+                        </div>
+                      </div>
                     </Button>
-                    {expandedItems[item.path] && (
-                      <div className="mr-4 mt-2 space-y-1">
+                    
+                    {/* אנימציה לתת-פריטים */}
+                    <div className={`
+                      overflow-hidden transition-all duration-300 ease-in-out
+                      ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}
+                    `}>
+                      <div className="mt-2 mr-6 space-y-1 animate-fade-in">
                         {item.subItems
                           .filter(subItem => {
                             if (subItem.moduleKey && !isSuperAdmin && !modulesLoading) {
@@ -259,19 +293,41 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
                             }
                             return true;
                           })
-                          .map((subItem) => (
-                            <NavLink
-                              key={subItem.path}
-                              to={subItem.path}
-                              onClick={() => onOpenChange(false)}
-                              className="flex items-center gap-3 px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                            >
-                              <subItem.icon className="h-4 w-4" />
-                              <span>{subItem.label}</span>
-                            </NavLink>
-                          ))}
+                          .map((subItem, index) => {
+                            const subActive = isActive(subItem.path);
+                            return (
+                              <NavLink
+                                key={subItem.path}
+                                to={subItem.path}
+                                onClick={() => onOpenChange(false)}
+                                className={`
+                                  flex items-center gap-3 py-3 px-4 rounded-lg text-sm
+                                  transition-all duration-200 group hover-scale
+                                  ${subActive 
+                                    ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md' 
+                                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                                  }
+                                `}
+                                style={{
+                                  animationDelay: `${index * 50}ms`
+                                }}
+                              >
+                                <div className="w-8 flex justify-center">
+                                  <div className={`
+                                    w-1.5 h-1.5 rounded-full transition-all duration-200
+                                    ${subActive ? 'bg-primary-foreground' : 'bg-muted-foreground/50 group-hover:bg-primary'}
+                                  `} />
+                                </div>
+                                <subItem.icon className={`h-4 w-4 transition-colors duration-200 ${subActive ? 'text-primary-foreground' : ''}`} />
+                                <span className="flex-1 text-right font-medium">{subItem.label}</span>
+                                {subActive && (
+                                  <ChevronLeft className="h-3 w-3 text-primary-foreground" />
+                                )}
+                              </NavLink>
+                            );
+                          })}
                       </div>
-                    )}
+                    </div>
                   </>
                 ) : (
                   // פריט ללא תת-פריטים - קישור רגיל
@@ -279,17 +335,25 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
                     to={item.path}
                     onClick={() => onOpenChange(false)}
                     className={`
-                      flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg mx-2 transition-colors
+                      flex items-center gap-4 py-4 px-4 rounded-xl transition-all duration-300 group hover-scale
                       ${active 
-                        ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700' 
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg border border-primary/20' 
+                        : 'hover:bg-gradient-to-r hover:from-muted/50 hover:to-muted/30 text-foreground hover:text-primary'
                       }
                     `}
                   >
-                    <item.icon className="h-5 w-5 flex-shrink-0" />
-                    <span className="flex-1">{item.label}</span>
+                    <div className={`
+                      p-2 rounded-lg transition-all duration-300
+                      ${active 
+                        ? 'bg-primary-foreground/20 text-primary-foreground' 
+                        : 'bg-muted/80 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
+                      }
+                    `}>
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    <span className="flex-1 text-right font-medium text-sm">{item.label}</span>
                     {active && (
-                      <div className="w-2 h-2 bg-blue-700 rounded-full" />
+                      <ChevronLeft className="h-4 w-4 text-primary-foreground" />
                     )}
                   </NavLink>
                 )}
@@ -322,38 +386,39 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[280px] sm:w-[320px] p-0 flex flex-col">
-        <SheetHeader className="px-4 py-6 border-b flex-shrink-0">
+      <SheetContent side="right" className="w-[300px] sm:w-[350px] p-0 flex flex-col bg-gradient-to-b from-background to-muted/20">
+        <SheetHeader className="px-6 py-6 border-b border-border/50 flex-shrink-0 bg-gradient-to-r from-primary/5 to-primary/10">
           <div className="flex items-center justify-between">
             <div className="text-right">
-              <SheetTitle className="text-lg font-bold">
+              <SheetTitle className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                 {business?.name || 'ניהול מערכת'}
               </SheetTitle>
               {business && (
-                <SheetDescription className="text-sm text-gray-500">
+                <SheetDescription className="text-sm text-muted-foreground font-medium mt-1">
                   {isSuperAdmin ? 'מנהל על' : 'משתמש עסקי'}
                 </SheetDescription>
               )}
             </div>
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="secondary" className="text-xs font-semibold px-3 py-1 bg-primary/10 text-primary border-primary/20">
               v1.0.0
             </Badge>
           </div>
         </SheetHeader>
 
         <ScrollArea className="flex-1 h-0">
-          <div className="px-0 py-4 space-y-6">
+          <div className="px-0 py-6 space-y-8">
             {renderMenuSection('ראשי', coreMenuItems)}
-            <Separator className="mx-4" />
+            <Separator className="mx-6 opacity-50" />
             {renderMenuSection('עסקי', businessMenuItems)}
-            <Separator className="mx-4" />
+            <Separator className="mx-6 opacity-50" />
             {renderMenuSection('מערכת', systemMenuItems)}
             {isSuperAdmin && (
               <>
-                <Separator className="mx-4" />
+                <Separator className="mx-6 opacity-50" />
                 {renderMenuSection('ניהול', adminMenuItems)}
               </>
             )}
+            <div className="h-6" /> {/* מרווח תחתון */}
           </div>
         </ScrollArea>
       </SheetContent>
