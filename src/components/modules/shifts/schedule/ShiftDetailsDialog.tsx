@@ -35,6 +35,7 @@ interface ShiftDetailsDialogProps {
   shift: ShiftScheduleData;
   employees: Employee[];
   branches: Branch[];
+  shifts?: ShiftScheduleData[]; // Add shifts for conflict checking
   pendingSubmissions?: ShiftSubmission[];
   onClose: () => void;
   onUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => Promise<void>;
@@ -47,6 +48,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
   shift,
   employees,
   branches,
+  shifts = [],
   pendingSubmissions = [],
   onClose,
   onUpdate,
@@ -248,6 +250,23 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
   };
 
   const assignEmployee = async (submissionEmployeeId: string) => {
+    // Check for conflicts before assigning
+    const conflicts = checkShiftConflicts(submissionEmployeeId);
+    
+    if (conflicts.length > 0) {
+      const conflictTexts = conflicts.map(c => 
+        `${c.branch_name} (${c.start_time}-${c.end_time})`
+      ).join(', ');
+      
+      const shouldProceed = confirm(
+        `⚠️ אזהרה: לעובד יש התנגשות עם משמרות אחרות:\n${conflictTexts}\n\nהאם להמשיך בכל זאת?`
+      );
+      
+      if (!shouldProceed) {
+        return;
+      }
+    }
+
     try {
       await onUpdate(shift.id, {
         ...shift,
@@ -259,6 +278,24 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
       console.error('Error assigning employee:', error);
       toast.error('שגיאה בהקצאת העובד');
     }
+  };
+
+  // Check for conflicts when assigning an employee
+  const checkShiftConflicts = (employeeId: string) => {
+    return shifts.filter(otherShift => 
+      otherShift.employee_id === employeeId &&
+      otherShift.shift_date === shift.shift_date &&
+      otherShift.status === 'approved' &&
+      otherShift.id !== shift.id &&
+      // Check time overlap
+      (() => {
+        const shiftStart = new Date(`${shift.shift_date}T${shift.start_time}`);
+        const shiftEnd = new Date(`${shift.shift_date}T${shift.end_time}`);
+        const otherStart = new Date(`${otherShift.shift_date}T${otherShift.start_time}`);
+        const otherEnd = new Date(`${otherShift.shift_date}T${otherShift.end_time}`);
+        return (shiftStart < otherEnd && shiftEnd > otherStart);
+      })()
+    );
   };
 
   return (

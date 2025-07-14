@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Clock, User, MapPin, Send } from 'lucide-react';
+import { Plus, Clock, User, MapPin, Send, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { HolidayIndicator } from './HolidayIndicator';
@@ -149,6 +149,41 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     window.location.reload();
   };
 
+  // Check for shift conflicts for a specific employee
+  const checkShiftConflicts = (employeeId: string, shiftDate: string, startTime: string, endTime: string, excludeShiftId?: string) => {
+    const employeeShifts = shifts.filter(shift => 
+      shift.employee_id === employeeId &&
+      shift.shift_date === shiftDate &&
+      shift.status === 'approved' &&
+      shift.id !== excludeShiftId
+    );
+
+    return employeeShifts.filter(shift => {
+      const shiftStart = new Date(`${shiftDate}T${shift.start_time}`);
+      const shiftEnd = new Date(`${shiftDate}T${shift.end_time}`);
+      const newStart = new Date(`${shiftDate}T${startTime}`);
+      const newEnd = new Date(`${shiftDate}T${endTime}`);
+
+      // Check for time overlap
+      return (newStart < shiftEnd && newEnd > shiftStart);
+    });
+  };
+
+  // Check if a shift has conflicts with employee's other shifts
+  const hasShiftConflict = (shift: any) => {
+    if (!shift.employee_id) return false;
+    
+    const conflicts = checkShiftConflicts(
+      shift.employee_id, 
+      shift.shift_date, 
+      shift.start_time, 
+      shift.end_time, 
+      shift.id
+    );
+    
+    return conflicts.length > 0;
+  };
+
   const publishSchedule = async () => {
     setIsPublishing(true);
     try {
@@ -237,46 +272,57 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
               <CardContent className="space-y-3">
                 {dayShifts.length > 0 ? (
                   <div className="space-y-2">
-                    {dayShifts.map((shift) => (
-                      <div
-                        key={shift.id}
-                        className="p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                        onClick={() => {
-                          setSelectedShift(shift);
-                          setShowShiftDetailsDialog(true);
-                        }}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <Badge variant="secondary" className={`${getStatusColor(shift.status || 'pending')} text-xs`}>
-                            {shift.status === 'approved' ? 'מאושר' : 
-                             shift.status === 'pending' ? 'ממתין' :
-                             shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
-                          </Badge>
-                        </div>
-                        
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-gray-500" />
-                            <span className="font-medium">{shift.start_time} - {shift.end_time}</span>
+                     {dayShifts.map((shift) => {
+                       const hasConflict = hasShiftConflict(shift);
+                       
+                       return (
+                         <div
+                           key={shift.id}
+                           className={`p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                             hasConflict ? 'border-red-300 bg-red-50' : ''
+                           }`}
+                           onClick={() => {
+                             setSelectedShift(shift);
+                             setShowShiftDetailsDialog(true);
+                           }}
+                         >
+                           <div className="flex items-center justify-between mb-2">
+                             <div className="flex items-center gap-2">
+                               <Badge variant="secondary" className={`${getStatusColor(shift.status || 'pending')} text-xs`}>
+                                 {shift.status === 'approved' ? 'מאושר' : 
+                                  shift.status === 'pending' ? 'ממתין' :
+                                  shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
+                               </Badge>
+                               {hasConflict && (
+                                 <AlertTriangle className="h-3 w-3 text-red-500" />
+                               )}
+                             </div>
+                           </div>
+                           
+                            <div className={`space-y-2 text-sm ${hasConflict ? 'line-through opacity-60' : ''}`}>
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-gray-500" />
+                                <span className="font-medium">{shift.start_time} - {shift.end_time}</span>
+                              </div>
+                              
+                              {shift.employee_id && (
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-gray-500" />
+                                  <span>{getEmployeeName(shift.employee_id)}</span>
+                                </div>
+                              )}
+                              
+                              {shift.branch_name && (
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="h-4 w-4 text-gray-500" />
+                                  <span>{shift.branch_name}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          
-                          {shift.employee_id && (
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-gray-500" />
-                              <span>{getEmployeeName(shift.employee_id)}</span>
-                            </div>
-                          )}
-                          
-                          {shift.branch_name && (
-                            <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4 text-gray-500" />
-                              <span>{shift.branch_name}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                        );
+                      })}
+                   </div>
                 ) : (
                   <div 
                     className="text-center py-4 text-gray-500 cursor-pointer hover:bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 hover:border-blue-300 transition-colors"
@@ -392,32 +438,49 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                     };
 
                     const shiftSubmissions = getSubmissionsForShift();
+                    const hasConflict = hasShiftConflict(shift);
 
                     return (
                       <TooltipProvider key={shift.id}>
                         <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div
-                              className="p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                              onClick={() => {
-                                setSelectedShift(shift);
-                                setShowShiftDetailsDialog(true);
-                              }}
-                            >
-                              <div className="flex items-center justify-between mb-1">
-                                <Badge variant="secondary" className={`text-xs ${getStatusColor(shift.status || 'pending')}`}>
-                                  {shift.status === 'approved' ? 'מאושר' : 
-                                   shift.status === 'pending' ? 'ממתין' :
-                                   shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
-                                </Badge>
-                                {shiftSubmissions.length > 0 && (
-                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                    {shiftSubmissions.length} בקשות
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              <div className="space-y-1 text-xs">
+                           <TooltipTrigger asChild>
+                             <div
+                               className={`p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                                 hasConflict ? 'border-red-300 bg-red-50' : ''
+                               }`}
+                               onClick={() => {
+                                 setSelectedShift(shift);
+                                 setShowShiftDetailsDialog(true);
+                               }}
+                             >
+                               <div className="flex items-center justify-between mb-1">
+                                 <div className="flex items-center gap-1">
+                                   <Badge variant="secondary" className={`text-xs ${getStatusColor(shift.status || 'pending')}`}>
+                                     {shift.status === 'approved' ? 'מאושר' : 
+                                      shift.status === 'pending' ? 'ממתין' :
+                                      shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
+                                   </Badge>
+                                    {hasConflict && (
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <AlertTriangle className="h-3 w-3 text-red-500" />
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            התנגשות עם משמרת אחרת
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    )}
+                                 </div>
+                                 {shiftSubmissions.length > 0 && (
+                                   <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                     {shiftSubmissions.length} בקשות
+                                   </Badge>
+                                 )}
+                               </div>
+                               
+                               <div className={`space-y-1 text-xs ${hasConflict ? 'line-through opacity-60' : ''}`}>
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-3 w-3 text-gray-500" />
                                   <span className="font-medium">{shift.start_time} - {shift.end_time}</span>
@@ -641,6 +704,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
           shift={selectedShift}
           employees={employees}
           branches={[]} // We'll need to pass branches from props
+          shifts={shifts} // Pass all shifts for conflict checking
           pendingSubmissions={pendingSubmissions}
           onClose={() => {
             setShowShiftDetailsDialog(false);
