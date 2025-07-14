@@ -12,6 +12,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import type { ShiftScheduleViewProps } from './types';
 import { SubmissionApprovalDialog } from './components/SubmissionApprovalDialog';
 import { ShiftDetailsDialog } from './ShiftDetailsDialog';
+import { ActivityLogViewer } from './ActivityLogViewer';
 import {
   Tooltip,
   TooltipContent,
@@ -27,6 +28,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   shabbatTimes,
   calendarEvents,
   pendingSubmissions = [],
+  businessId,
   onShiftClick,
   onShiftUpdate,
   onAddShift
@@ -724,6 +726,13 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
             handleSubmissionApprovalComplete();
           }}
         />
+      )}
+
+      {/* Activity Log - Only show if businessId is available */}
+      {businessId && (
+        <div className="mt-6">
+          <ActivityLogViewer businessId={businessId} maxEntries={20} />
+        </div>
       )}
     </div>
   );

@@ -1,10 +1,36 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 import type { ShiftScheduleData, CreateShiftData } from '../types';
 
 export const useShiftScheduleMutations = (businessId: string | null) => {
   const queryClient = useQueryClient();
+  const { logActivity } = useActivityLogger();
+
+  // Check for duplicate shifts before creation
+  const checkForDuplicates = async (shiftData: CreateShiftData) => {
+    const { data: existingShifts, error } = await supabase
+      .from('scheduled_shifts')
+      .select('id, shift_date, start_time, end_time, employee_id, branch_id')
+      .eq('business_id', businessId)
+      .eq('shift_date', shiftData.shift_date)
+      .eq('start_time', shiftData.start_time)
+      .eq('end_time', shiftData.end_time);
+
+    if (error) {
+      console.error('Error checking for duplicates:', error);
+      return false;
+    }
+
+    // Check for exact duplicates
+    const exactDuplicates = existingShifts?.filter(shift => 
+      shift.employee_id === shiftData.employee_id &&
+      shift.branch_id === shiftData.branch_id
+    );
+
+    return exactDuplicates && exactDuplicates.length > 0;
+  };
 
   const createShift = useMutation({
     mutationFn: async (shiftData: CreateShiftData) => {
@@ -14,6 +40,30 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       if (!businessId) {
         console.error('❌ No business ID provided');
         throw new Error('Business ID is required');
+      }
+
+      // Check for duplicates
+      const isDuplicate = await checkForDuplicates(shiftData);
+      if (isDuplicate) {
+        const errorMsg = `Duplicate shift detected for ${shiftData.shift_date} ${shiftData.start_time}-${shiftData.end_time}`;
+        console.warn('⚠️', errorMsg);
+        
+        // Log the duplicate attempt
+        await logActivity({
+          action: 'duplicate_shift_prevented',
+          target_type: 'shift',
+          target_id: 'duplicate_prevention',
+          details: {
+            shift_date: shiftData.shift_date,
+            start_time: shiftData.start_time,
+            end_time: shiftData.end_time,
+            employee_id: shiftData.employee_id,
+            branch_id: shiftData.branch_id,
+            prevented_at: new Date().toISOString()
+          }
+        });
+        
+        throw new Error('משמרת זהה כבר קיימת עבור התאריך והשעות הנבחרים');
       }
 
       const insertData = {
@@ -45,6 +95,27 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       }
 
       console.log('✅ Shift created successfully:', data);
+      
+      // Log the successful creation with detailed information
+      await logActivity({
+        action: 'shift_created',
+        target_type: 'shift',
+        target_id: data.id,
+        details: {
+          shift_date: data.shift_date,
+          start_time: data.start_time,
+          end_time: data.end_time,
+          employee_id: data.employee_id,
+          branch_id: data.branch_id,
+          role: data.role,
+          status: data.status,
+          is_assigned: data.is_assigned,
+          business_id: businessId,
+          created_at: new Date().toISOString(),
+          creation_method: 'form_submission'
+        }
+      });
+      
       return data;
     },
     onSuccess: (data) => {
@@ -119,6 +190,13 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
     mutationFn: async (shiftId: string) => {
       console.log('🔄 Deleting shift:', shiftId);
 
+      // Get shift details before deletion for logging
+      const { data: shiftDetails } = await supabase
+        .from('scheduled_shifts')
+        .select('*')
+        .eq('id', shiftId)
+        .single();
+
       const { error } = await supabase
         .from('scheduled_shifts')
         .delete()
@@ -130,6 +208,20 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       }
 
       console.log('✅ Shift deleted successfully');
+
+      // Log the deletion
+      if (shiftDetails) {
+        await logActivity({
+          action: 'shift_deleted',
+          target_type: 'shift',
+          target_id: shiftId,
+          details: {
+            deleted_shift: shiftDetails,
+            deleted_at: new Date().toISOString(),
+            deletion_method: 'user_action'
+          }
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-shifts', businessId] });

@@ -69,6 +69,7 @@ export interface ShiftScheduleViewProps {
   shabbatTimes: ShabbatTimes[];
   calendarEvents: CalendarEvent[];
   pendingSubmissions?: any[];
+  businessId?: string | null;
   onShiftClick: (shift: ShiftScheduleData) => void;
   onShiftUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => Promise<void>;
   onAddShift: (date: Date) => void;

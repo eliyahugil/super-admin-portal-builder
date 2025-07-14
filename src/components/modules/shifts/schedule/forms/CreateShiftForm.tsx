@@ -46,6 +46,7 @@ export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   
   // Multiple shifts
   const [isMultipleShifts, setIsMultipleShifts] = useState(false);
@@ -58,6 +59,12 @@ export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Prevent double submission
+    if (isSubmitting || hasSubmitted) {
+      console.warn('⚠️ Form submission prevented - already submitting or submitted');
+      return;
+    }
+    
     if (!date) {
       toast({
         title: "שגיאה",
@@ -68,6 +75,7 @@ export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({
     }
 
     setIsSubmitting(true);
+    setHasSubmitted(true);
     setShowSuccess(false);
     
     try {
@@ -133,16 +141,25 @@ export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({
       // Hide success message after 3 seconds
       setTimeout(() => {
         setShowSuccess(false);
+        setHasSubmitted(false);
         onClose();
       }, 2000);
       
     } catch (error) {
       console.error('❌ Error creating shift:', error);
+      
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'שגיאה לא ידועה';
       toast({
         title: "שגיאה",
-        description: 'שגיאה ביצירת המשמרת: ' + (error instanceof Error ? error.message : 'שגיאה לא ידועה'),
+        description: errorMessage.includes('זהה כבר קיימת') 
+          ? errorMessage 
+          : 'שגיאה ביצירת המשמרת: ' + errorMessage,
         variant: "destructive"
       });
+      
+      // Reset hasSubmitted on error so user can try again
+      setHasSubmitted(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -341,11 +358,24 @@ export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({
 
       {/* Actions */}
       <div className="flex gap-2 pt-4">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button 
+          type="submit" 
+          disabled={isSubmitting || hasSubmitted}
+          className={cn(
+            isSubmitting && "animate-pulse",
+            hasSubmitted && "opacity-50"
+          )}
+        >
           {isSubmitting ? 'יוצר...' : 
+           hasSubmitted ? 'נוצר בהצלחה!' :
            isMultipleShifts ? `צור ${numberOfDays} משמרות` : 'צור משמרת'}
         </Button>
-        <Button type="button" variant="outline" onClick={onClose}>
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onClose}
+          disabled={isSubmitting}
+        >
           ביטול
         </Button>
       </div>
