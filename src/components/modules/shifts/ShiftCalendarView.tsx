@@ -90,7 +90,73 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-7 gap-2 mb-4">
+          {/* תצוגה למובייל - רשימה */}
+          <div className="block md:hidden">
+            <div className="space-y-3">
+              {shifts.map((shift) => {
+                const isSelected = isShiftSelected(shift.id);
+                const shiftDate = parseISO(shift.shift_date);
+                const dayName = dayNames[shiftDate.getDay()];
+                
+                return (
+                  <div
+                    key={shift.id}
+                    onClick={() => onToggleShift(shift.id)}
+                    className={`p-4 rounded-lg cursor-pointer border transition-all duration-200 hover:shadow-sm ${
+                      isSelected 
+                        ? 'bg-blue-50 border-blue-300 shadow-sm' 
+                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CalendarIcon className="h-4 w-4 text-blue-600" />
+                          <span className="font-medium text-sm">
+                            {dayName}, {format(shiftDate, 'd/M')}
+                          </span>
+                        </div>
+                        {isSelected && (
+                          <Badge variant="default" className="text-xs">
+                            נבחר ✓
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-green-600" />
+                        <span className="font-medium text-sm">
+                          {formatTime(shift.start_time)}-{formatTime(shift.end_time)}
+                        </span>
+                      </div>
+                      
+                      {shift.branches?.name && (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm">
+                            {shift.branches.name}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {shift.role && (
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-purple-600" />
+                          <span className="text-sm">
+                            {shift.role}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* תצוגה למחשב - לוח שנה */}
+          <div className="hidden md:block">
+            <div className="grid grid-cols-7 gap-2 mb-4">
             {weekDays.map((day, index) => {
               const dayShifts = getShiftsForDay(day);
               const isToday = isSameDay(day, new Date());
@@ -187,6 +253,7 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
                 </ul>
               </div>
             </div>
+          </div>
           </div>
         </CardContent>
       </Card>
