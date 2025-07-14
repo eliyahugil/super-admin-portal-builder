@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { WeeklyShiftService, ShiftEntry, WeeklySubmissionData } from '@/services/WeeklyShiftService';
-import { Clock, MapPin, User, Calendar, Plus, Trash2, AlertTriangle, Copy } from 'lucide-react';
+import { Clock, MapPin, User, Calendar, Plus, Trash2, AlertTriangle, Copy, LogIn } from 'lucide-react';
 
 export const WeeklyShiftSubmissionForm: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -279,9 +279,21 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
       <div className="container mx-auto px-4 max-w-4xl">
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              הגשת משמרות שבועיות
-            </CardTitle>
+            <div className="flex justify-between items-start mb-4">
+              <div></div> {/* Spacer for centering */}
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                הגשת משמרות שבועיות
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/auth')}
+                className="flex items-center gap-2 text-sm"
+              >
+                <LogIn className="h-4 w-4" />
+                התחבר למערכת
+              </Button>
+            </div>
             <div className="space-y-2 text-gray-600">
               <div className="flex items-center justify-center gap-2">
                 <User className="h-4 w-4" />
