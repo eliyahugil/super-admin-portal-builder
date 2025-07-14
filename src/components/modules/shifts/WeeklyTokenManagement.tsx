@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/useBusiness';
 import { WeeklyShiftService } from '@/services/WeeklyShiftService';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Link as LinkIcon, Clock, User, Search, Calendar } from 'lucide-react';
+import { Plus, Link as LinkIcon, Clock, User, Search, Calendar, ExternalLink } from 'lucide-react';
 
 export const WeeklyTokenManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -121,6 +121,15 @@ export const WeeklyTokenManagement: React.FC = () => {
     toast({
       title: 'הועתק',
       description: 'הקישור הועתק ללוח',
+    });
+  };
+
+  const openTokenLink = (token: string) => {
+    const link = `${window.location.origin}/weekly-shift-submission/${token}`;
+    window.open(link, '_blank');
+    toast({
+      title: 'הטוקן נפתח',
+      description: 'טופס הגשת המשמרות השבועיות נפתח בכרטיסייה חדשה',
     });
   };
 
@@ -246,15 +255,25 @@ export const WeeklyTokenManagement: React.FC = () => {
               </div>
               
               {token.is_active && new Date(token.expires_at) > new Date() && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full mt-4"
-                  onClick={() => copyTokenLink(token.token)}
-                >
-                  <LinkIcon className="h-4 w-4 ml-1" />
-                  העתק קישור
-                </Button>
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => openTokenLink(token.token)}
+                  >
+                    <ExternalLink className="h-4 w-4 ml-1" />
+                    פתח טוקן
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => copyTokenLink(token.token)}
+                  >
+                    <LinkIcon className="h-4 w-4 ml-1" />
+                    העתק קישור
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
