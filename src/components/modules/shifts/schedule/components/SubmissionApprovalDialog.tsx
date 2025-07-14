@@ -64,38 +64,56 @@ export const SubmissionApprovalDialog: React.FC<SubmissionApprovalDialogProps> =
     return employee ? `${employee.first_name} ${employee.last_name}` : 'לא ידוע';
   };
 
-  const approveShift = async (submission: ShiftSubmission, shiftIndex: number) => {
+  const approveShift = async (submission: ShiftSubmission, shift: any) => {
     setLoading(true);
     try {
-      const shifts = typeof submission.shifts === 'string' 
-        ? JSON.parse(submission.shifts) 
-        : submission.shifts || [];
-      const shift = shifts[shiftIndex];
+      console.log('🔄 Approving shift:', { submission, shift });
 
       // Get business_id from employee
-      const { data: employeeData } = await supabase
+      const { data: employeeData, error: employeeError } = await supabase
         .from('employees')
         .select('business_id')
         .eq('id', submission.employee_id)
         .single();
 
+      if (employeeError) {
+        console.error('Error fetching employee:', employeeError);
+        throw employeeError;
+      }
+
+      // Find branch_id by name
+      const { data: branchData, error: branchError } = await supabase
+        .from('branches')
+        .select('id')
+        .eq('name', shift.branch_preference)
+        .eq('business_id', employeeData.business_id)
+        .maybeSingle();
+
+      if (branchError) {
+        console.error('Error fetching branch:', branchError);
+        throw branchError;
+      }
+
       // Create approved shift in scheduled_shifts table
       const { error: createError } = await supabase
         .from('scheduled_shifts')
         .insert({
-          business_id: employeeData?.business_id,
+          business_id: employeeData.business_id,
           employee_id: submission.employee_id,
           shift_date: shift.date,
           start_time: shift.start_time,
           end_time: shift.end_time,
-          branch_id: shift.branch_preference, // Assuming this is branch ID
+          branch_id: branchData?.id || null,
           role: shift.role_preference || '',
           status: 'approved',
           is_assigned: true,
           is_archived: false,
         });
 
-      if (createError) throw createError;
+      if (createError) {
+        console.error('Error creating scheduled shift:', createError);
+        throw createError;
+      }
 
       // Update submission status to approved
       const { error: updateError } = await supabase
@@ -103,13 +121,17 @@ export const SubmissionApprovalDialog: React.FC<SubmissionApprovalDialogProps> =
         .update({ status: 'approved' })
         .eq('id', submission.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating submission:', updateError);
+        throw updateError;
+      }
 
+      console.log('✅ Shift approved successfully');
       toast.success('המשמרת אושרה בהצלחה');
       onApprovalComplete();
     } catch (error) {
       console.error('Error approving shift:', error);
-      toast.error('שגיאה באישור המשמרת');
+      toast.error('שגיאה באישור המשמרת: ' + (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -221,7 +243,7 @@ export const SubmissionApprovalDialog: React.FC<SubmissionApprovalDialogProps> =
                           </Button>
                           <Button
                             size="sm"
-                            onClick={() => approveShift(submission, shifts.indexOf(shift))}
+                            onClick={() => approveShift(submission, shift)}
                             disabled={loading}
                             className="bg-green-600 hover:bg-green-700"
                           >
