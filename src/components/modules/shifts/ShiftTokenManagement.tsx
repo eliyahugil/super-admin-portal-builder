@@ -14,13 +14,25 @@ export const ShiftTokenManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const { toast } = useToast();
-  const { businessId, isLoading } = useBusiness();
+  const { businessId, isLoading, isSuperAdmin } = useBusiness();
   const queryClient = useQueryClient();
 
   // Get employees for the business
   const { data: employees } = useQuery({
-    queryKey: ['employees', businessId],
+    queryKey: ['employees', businessId, isSuperAdmin],
     queryFn: async () => {
+      // אם זה super admin ואין businessId, נביא את כל העובדים
+      if (isSuperAdmin && !businessId) {
+        const { data, error } = await supabase
+          .from('employees')
+          .select('id, first_name, last_name, employee_id, business_id')
+          .eq('is_active', true)
+          .order('first_name');
+        
+        if (error) throw error;
+        return data || [];
+      }
+
       if (!businessId) return [];
 
       let query = supabase
@@ -37,7 +49,7 @@ export const ShiftTokenManagement: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!businessId && !isLoading,
+    enabled: (!!businessId || isSuperAdmin) && !isLoading,
   });
 
   // Get shift tokens
