@@ -125,6 +125,11 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
         
         // Show all shifts for now - we'll add filtering later if needed
         console.log('🏢 Showing all business shifts (branch filtering temporarily disabled)');
+        console.log('📅 Week dates:', { 
+          weekStart: data.week_start_date, 
+          weekEnd: data.week_end_date 
+        });
+        console.log('🏢 Business ID:', data.employee.business_id);
 
         const { data: shiftsData, error: shiftsError } = await shiftsQuery;
 
@@ -136,6 +141,15 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           isArchived: false,
           branchFilter: assignedBranchIds.length > 0 ? assignedBranchIds : 'all branches'
         });
+
+        // Let's also check what shifts exist in the database for this business
+        const { data: allBusinessShifts, error: allShiftsError } = await supabase
+          .from('scheduled_shifts')
+          .select('*')
+          .eq('business_id', data.employee.business_id);
+          
+        console.log('🔍 ALL shifts in business (any status, any date):', allBusinessShifts);
+        console.log('📊 Total business shifts found:', allBusinessShifts?.length || 0);
 
         if (shiftsError) {
           console.warn('⚠️ Error fetching available shifts:', shiftsError);
