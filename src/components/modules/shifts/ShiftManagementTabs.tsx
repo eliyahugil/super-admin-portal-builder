@@ -16,12 +16,12 @@ export const ShiftManagementTabs: React.FC = () => {
       </div>
 
       <Tabs defaultValue="templates" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="templates">תבניות משמרות</TabsTrigger>
-          <TabsTrigger value="submissions">הגשות משמרות</TabsTrigger>
-          <TabsTrigger value="weekly-tokens">טוקנים שבועיים</TabsTrigger>
-          <TabsTrigger value="single-tokens">טוקנים יחידים</TabsTrigger>
-          <TabsTrigger value="approvals">אישור בקשות</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+          <TabsTrigger value="templates" className="text-xs sm:text-sm">תבניות משמרות</TabsTrigger>
+          <TabsTrigger value="submissions" className="text-xs sm:text-sm">הגשות משמרות</TabsTrigger>
+          <TabsTrigger value="weekly-tokens" className="text-xs sm:text-sm">טוקנים שבועיים</TabsTrigger>
+          <TabsTrigger value="single-tokens" className="text-xs sm:text-sm">טוקנים יחידים</TabsTrigger>
+          <TabsTrigger value="approvals" className="text-xs sm:text-sm">אישור בקשות</TabsTrigger>
         </TabsList>
         
         <TabsContent value="templates" className="mt-6">
