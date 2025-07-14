@@ -198,7 +198,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
             week_end_date,
             employee:employees(first_name, last_name, business_id)
           `)
-          .eq('status', 'pending')
+          .in('status', ['pending', 'submitted'])
           .eq('employee.business_id', businessId);
 
         if (error) {
