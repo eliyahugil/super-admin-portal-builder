@@ -31,6 +31,7 @@ export const MainSidebar: React.FC = () => {
   };
 
   const handleMenuItemClick = () => {
+    console.log('🚪 MainSidebar.handleMenuItemClick called - closing mobile sidebar');
     // Only close mobile sidebar for actual navigation, not for expanding sub-items
     if (isMobile) setOpenMobile(false);
   };

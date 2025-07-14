@@ -56,13 +56,17 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
   };
 
   const handleMenuItemClick = (hasSubItems: boolean, path: string, event?: React.MouseEvent) => {
+    console.log('🔍 handleMenuItemClick called:', { hasSubItems, path, event });
+    
     if (hasSubItems) {
       // עצור את ההפצה של האירוע ורק הרחב/כווץ את הקבוצה
+      console.log('📂 פריט עם תת-פריטים - מרחיב/כווץ בלבד');
       event?.preventDefault();
       event?.stopPropagation();
       toggleExpanded(path);
     } else {
       // רק כשנבחר פריט תפריט ספציפי (לא קבוצה), נסגור את הסייד-בר במובייל
+      console.log('📄 פריט ללא תת-פריטים - סוגר סיידבר');
       onMenuItemClick();
     }
   };
