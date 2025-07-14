@@ -186,7 +186,7 @@ export const WhatsAppConnection: React.FC = () => {
                 <Alert>
                   <Smartphone className="h-4 w-4" />
                   <AlertDescription>
-                    לחצו על "התחבר" כדי להתחבר ל-WhatsApp Web וליצור QR קוד לסריקה
+                    לחצו על "התחבר מחדש" כדי להתחבר ל-WhatsApp Web וליצור QR קוד לסריקה
                   </AlertDescription>
                 </Alert>
               <Button 
@@ -205,7 +205,7 @@ export const WhatsAppConnection: React.FC = () => {
                 ) : (
                   <>
                     <QrCode className="h-4 w-4 mr-2" />
-                    התחבר ל-WhatsApp
+                    התחבר מחדש ל-WhatsApp
                   </>
                 )}
               </Button>
