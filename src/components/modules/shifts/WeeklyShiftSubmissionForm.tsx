@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { WeeklyShiftService, ShiftEntry, WeeklySubmissionData } from '@/services/WeeklyShiftService';
+import { ShiftCalendarView } from './ShiftCalendarView';
 import { Clock, MapPin, User, Calendar, Plus, Trash2, AlertTriangle, Copy, LogIn } from 'lucide-react';
 
 export const WeeklyShiftSubmissionForm: React.FC = () => {
@@ -123,8 +124,14 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
 
         const assignedBranchIds = branchAssignments?.map(ba => ba.branch_id) || [];
         
-        // Show all shifts for now - we'll add filtering later if needed
-        console.log('🏢 Showing all business shifts (branch filtering temporarily disabled)');
+        // Filter shifts by employee branch assignments
+        if (assignedBranchIds.length > 0) {
+          shiftsQuery = shiftsQuery.in('branch_id', assignedBranchIds);
+          console.log('🏢 Filtering shifts by employee branch assignments:', assignedBranchIds);
+        } else {
+          console.log('⚠️ No branch assignments found - showing all business shifts');
+        }
+        
         console.log('📅 Week dates:', { 
           weekStart: data.week_start_date, 
           weekEnd: data.week_end_date 
@@ -359,65 +366,18 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                     <strong>נמצאו {availableShifts.length} משמרות זמינות לשבוע זה!</strong>
                   </p>
                   <p className="text-xs text-green-700 mt-1">
-                    בחר את המשמרות שאתה מעוניין לקחת. המשמרות מהלוח הזמנים של המנהל.
+                    בחר את המשמרות שאתה מעוניין לקחת מלוח השנה למטה
                   </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">בחר משמרות מהלוח הזמנים</h3>
-                    
-                    <div className="space-y-3">
-                      {availableShifts.map((shift) => (
-                        <Card key={shift.id} className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-4 mb-2">
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4 text-blue-600" />
-                                  <span className="font-medium">
-                                    {new Date(shift.shift_date).toLocaleDateString('he-IL', {
-                                      weekday: 'long',
-                                      day: 'numeric',
-                                      month: 'long'
-                                    })}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Clock className="h-4 w-4 text-green-600" />
-                                  <span className="font-medium">
-                                    {shift.start_time} - {shift.end_time}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-4 text-sm text-gray-600">
-                                <div className="flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" />
-                                  <span>{shift.branches?.name || 'סניף לא ידוע'}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <User className="h-3 w-3" />
-                                  <span>{shift.role || 'תפקיד כללי'}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center">
-                              <input
-                                type="checkbox"
-                                id={`shift-${shift.id}`}
-                                checked={selectedShifts[shift.id] || false}
-                                onChange={() => toggleShiftSelection(shift.id)}
-                                className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                              />
-                              <label htmlFor={`shift-${shift.id}`} className="mr-2 text-sm font-medium text-gray-700">
-                                בחר
-                              </label>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
+                  <ShiftCalendarView
+                    shifts={availableShifts}
+                    selectedShifts={selectedShifts}
+                    onToggleShift={toggleShiftSelection}
+                    weekStartDate={tokenData.week_start_date}
+                    weekEndDate={tokenData.week_end_date}
+                  />
                   <div>
                     <Label htmlFor="general-notes">הערות כלליות (אופציונלי)</Label>
                     <Textarea
