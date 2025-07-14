@@ -384,9 +384,11 @@ export const ShiftSubmissionManager: React.FC = () => {
                             const token = existingTokens.find(t => t.employee_id === employee.id)?.token;
                             if (token) {
                               setTokenToTest(token);
+                              // גם להעתיק ללוח
+                              navigator.clipboard.writeText(token);
                               toast({
                                 title: 'הטוכן הועתק',
-                                description: 'כעת ניתן לבדוק את הטוכן בחלק "בדיקת טוכן" למעלה',
+                                description: `הטוכן הועתק ללוח והוכנס לשדה בדיקת הטוכן. טוכן: ${token.substring(0, 8)}...`,
                               });
                             }
                           }}

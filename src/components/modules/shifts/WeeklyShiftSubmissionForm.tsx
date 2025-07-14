@@ -92,7 +92,6 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
             shift_date,
             start_time,
             end_time,
-            role_name,
             required_employees,
             assigned_employees,
             status,
