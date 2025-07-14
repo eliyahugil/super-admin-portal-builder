@@ -34,7 +34,6 @@ export const createEmployeesMenuItems = (business: { id: string } | undefined): 
       moduleKey: 'employee_management',
       subItems: [
         { path: moduleRoutes.employees.base, label: 'רשימת עובדים', icon: Users, moduleKey: 'employee_management' },
-        { path: moduleRoutes.employees.profile, label: 'פרופיל עובד', icon: User, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.files, label: 'קבצי עובדים', icon: FileText, moduleKey: 'employee_documents' },
         { path: moduleRoutes.employees.attendance, label: 'דוח נוכחות', icon: UserCheck, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.requests, label: 'בקשות עובדים', icon: CheckSquare, moduleKey: 'employee_management' },
