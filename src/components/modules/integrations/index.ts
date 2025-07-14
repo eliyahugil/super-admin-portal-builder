@@ -1,5 +1,6 @@
 
 export { DynamicIntegrationForm } from './DynamicIntegrationForm';
+export { WhatsAppIntegrationForm } from './WhatsAppIntegrationForm';
 export { IntegrationFailureNotifications } from './IntegrationFailureNotifications';
 export { IntegrationViewModeToggle } from './IntegrationViewModeToggle';
 export { IntegrationAuditLog } from './IntegrationAuditLog';

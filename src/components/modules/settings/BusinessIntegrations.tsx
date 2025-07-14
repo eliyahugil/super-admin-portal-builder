@@ -80,10 +80,10 @@ export const BusinessIntegrations: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">ניהול אינטגרציות</h1>
-          <p className="text-gray-600">הגדר ונהל את האינטגרציות של העסק</p>
+          <h1 className="text-xl sm:text-2xl font-bold">ניהול אינטגרציות</h1>
+          <p className="text-sm sm:text-base text-gray-600">הגדר ונהל את האינטגרציות של העסק</p>
         </div>
         <IntegrationViewModeToggle
           viewMode={viewMode}
@@ -97,10 +97,10 @@ export const BusinessIntegrations: React.FC = () => {
 
       {/* Main Content */}
       <Tabs defaultValue="active" className="w-full">
-        <TabsList>
-          <TabsTrigger value="active">אינטגרציות פעילות</TabsTrigger>
-          <TabsTrigger value="available">אינטגרציות זמינות</TabsTrigger>
-          <TabsTrigger value="audit">יומן כללי</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="active" className="text-xs sm:text-sm">אינטגרציות פעילות</TabsTrigger>
+          <TabsTrigger value="available" className="text-xs sm:text-sm">אינטגרציות זמינות</TabsTrigger>
+          <TabsTrigger value="audit" className="text-xs sm:text-sm">יומן כללי</TabsTrigger>
         </TabsList>
 
         <TabsContent value="active" className="space-y-4">
@@ -147,7 +147,7 @@ export const BusinessIntegrations: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="available" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {integrations
               .filter(integration => 
                 !businessIntegrations.some(bi => bi.integration_name === integration.integration_name)

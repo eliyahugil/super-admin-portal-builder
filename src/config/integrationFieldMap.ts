@@ -6,11 +6,11 @@ export const integrationFieldMap: {
   }
 } = {
   whatsapp: {
-    label: 'WhatsApp Cloud API',
+    label: 'WhatsApp Business',
     fields: [
-      { key: 'token', label: 'Access Token', type: 'password', placeholder: 'הזן את ה-Access Token מ-Meta' },
-      { key: 'phone_number_id', label: 'Phone Number ID', placeholder: 'מזהה מספר הטלפון' },
-      { key: 'verify_token', label: 'Verify Token', placeholder: 'טוקן אימות לWebhook' },
+      { key: 'phone_number', label: 'מספר טלפון', placeholder: '+972-XX-XXXXXXX' },
+      { key: 'device_name', label: 'שם המכשיר', placeholder: 'WhatsApp Business' },
+      { key: 'webhook_url', label: 'Webhook URL', placeholder: 'https://yourdomain.com/webhook' },
     ],
   },
   facebook_leads: {

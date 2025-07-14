@@ -152,17 +152,17 @@ export const WhatsAppConnection: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <span className="flex items-center gap-2">
               <Smartphone className="h-5 w-5" />
-              חיבור WhatsApp Business
+              <span className="text-base sm:text-lg">חיבור WhatsApp Business</span>
             </span>
             {connection && getStatusBadge(connection.connection_status)}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm">
             חברו את WhatsApp Business לחשבון שלכם כדי לנהל הודעות ולקוחות
           </CardDescription>
         </CardHeader>
@@ -209,11 +209,11 @@ export const WhatsAppConnection: React.FC = () => {
                 </AlertDescription>
               </Alert>
               {connection.qr_code ? (
-                <div className="flex justify-center p-6 bg-white rounded-lg border">
+                <div className="flex justify-center p-4 sm:p-6 bg-white rounded-lg border">
                   <img 
                     src={connection.qr_code} 
                     alt="QR Code לחיבור WhatsApp" 
-                    className="w-64 h-64"
+                    className="w-48 h-48 sm:w-64 sm:h-64"
                   />
                 </div>
               ) : (
@@ -224,21 +224,21 @@ export const WhatsAppConnection: React.FC = () => {
                   </p>
                 </div>
               )}
-              <div className="text-center text-sm text-muted-foreground bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <div className="text-center text-xs sm:text-sm text-muted-foreground bg-blue-50 p-3 rounded-lg border border-blue-200">
                 <div className="font-medium text-blue-800 mb-1">הוראות:</div>
-                <div className="text-blue-700">
-                  1. פתחו את WhatsApp בטלפון<br/>
-                  2. הגדרות ← מכשירים מקושרים<br/>
-                  3. לחצו על "קשר מכשיר"<br/>
-                  4. סרקו את הקוד
+                <div className="text-blue-700 space-y-1">
+                  <div>1. פתחו את WhatsApp בטלפון</div>
+                  <div>2. הגדרות ← מכשירים מקושרים</div>
+                  <div>3. לחצו על "קשר מכשיר"</div>
+                  <div>4. סרקו את הקוד</div>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
                   variant="outline" 
                   onClick={() => connectMutation.mutate()}
                   disabled={connectMutation.isPending}
-                  className="flex-1"
+                  className="flex-1 text-sm"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   יצירת QR חדש
@@ -247,7 +247,7 @@ export const WhatsAppConnection: React.FC = () => {
                   variant="outline" 
                   onClick={() => disconnectMutation.mutate()}
                   disabled={disconnectMutation.isPending}
-                  className="flex-1"
+                  className="flex-1 text-sm"
                 >
                   ביטול
                 </Button>
@@ -269,12 +269,12 @@ export const WhatsAppConnection: React.FC = () => {
                   </p>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
                   variant="outline"
                   onClick={() => syncMutation.mutate()}
                   disabled={syncMutation.isPending}
-                  className="flex-1"
+                  className="flex-1 text-sm"
                 >
                   {syncMutation.isPending ? (
                     <>
@@ -292,7 +292,7 @@ export const WhatsAppConnection: React.FC = () => {
                   variant="destructive" 
                   onClick={() => disconnectMutation.mutate()}
                   disabled={disconnectMutation.isPending}
-                  className="flex-1"
+                  className="flex-1 text-sm"
                 >
                   נתק חיבור
                 </Button>

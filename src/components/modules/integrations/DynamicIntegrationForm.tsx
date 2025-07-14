@@ -11,6 +11,7 @@ import { integrationFieldMap } from '@/config/integrationFieldMap';
 import { IntegrationTestButton } from './IntegrationTestButton';
 import { IntegrationAuditLog } from './IntegrationAuditLog';
 import { IntegrationPermissionControl } from './IntegrationPermissionControl';
+import { WhatsAppIntegrationForm } from './WhatsAppIntegrationForm';
 import { useIntegrationAuditLog } from '@/hooks/useIntegrationAuditLog';
 
 interface DynamicIntegrationFormProps {
@@ -42,6 +43,17 @@ export const DynamicIntegrationForm: React.FC<DynamicIntegrationFormProps> = ({
   });
 
   const { logAction } = useIntegrationAuditLog(businessId);
+
+  // Special handling for WhatsApp
+  if (integrationKey === 'whatsapp') {
+    return (
+      <WhatsAppIntegrationForm
+        businessId={businessId}
+        viewMode={viewMode}
+        onSave={onSave}
+      />
+    );
+  }
 
   if (!config) {
     return (
