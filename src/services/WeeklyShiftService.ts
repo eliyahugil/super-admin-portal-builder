@@ -55,65 +55,38 @@ export class WeeklyShiftService {
     return data.token;
   }
 
-  // Validate weekly token and get token data
+  // Validate weekly token using edge function to bypass RLS
   static async validateWeeklyToken(token: string): Promise<any> {
     console.log('🔍 Starting token validation for:', token);
     
-    const { data, error } = await supabase
-      .from('employee_weekly_tokens')
-      .select(`
-        *,
-        employee:employees(first_name, last_name, employee_id, phone)
-      `)
-      .eq('token', token)
-      .eq('is_active', true)
-      .gt('expires_at', new Date().toISOString())
-      .single();
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-weekly-token', {
+        body: { token }
+      });
 
-    if (error) {
-      console.error('❌ Token validation error:', error);
-      
-      // Let's also check if the token exists but is inactive or expired
-      const { data: inactiveToken, error: checkError } = await supabase
-        .from('employee_weekly_tokens')
-        .select(`
-          *,
-          employee:employees(first_name, last_name, employee_id, phone)
-        `)
-        .eq('token', token)
-        .single();
-      
-      if (!checkError && inactiveToken) {
-        const isExpired = new Date(inactiveToken.expires_at) <= new Date();
-        console.log('🔍 Token found but:', {
-          isActive: inactiveToken.is_active,
-          isExpired,
-          expiresAt: inactiveToken.expires_at,
-          currentTime: new Date().toISOString()
-        });
-        
-        if (!inactiveToken.is_active) {
-          console.log('❌ Token has been deactivated (already used)');
-        }
-        if (isExpired) {
-          console.log('❌ Token has expired');
-        }
-      } else {
-        console.log('❌ Token not found in database');
+      if (error) {
+        console.error('❌ Token validation error:', error);
+        return null;
       }
-      
+
+      if (!data?.data) {
+        console.error('❌ No token data returned');
+        return null;
+      }
+
+      console.log('✅ Token validated successfully:', {
+        tokenId: data.data.id,
+        employeeId: data.data.employee_id,
+        weekStart: data.data.week_start_date,
+        weekEnd: data.data.week_end_date,
+        hasEmployeeData: !!data.data.employee
+      });
+
+      return data.data;
+    } catch (error) {
+      console.error('💥 Token validation failed:', error);
       return null;
     }
-    
-    console.log('✅ Token validation successful:', {
-      employeeId: data.employee_id,
-      employeeName: `${data.employee.first_name} ${data.employee.last_name}`,
-      weekStart: data.week_start_date,
-      weekEnd: data.week_end_date,
-      expiresAt: data.expires_at
-    });
-    
-    return data;
   }
 
   // Submit weekly shifts using token
