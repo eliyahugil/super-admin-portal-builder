@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { WeeklyShiftService, ShiftEntry, WeeklySubmissionData } from '@/services/WeeklyShiftService';
-import { Clock, MapPin, User, Calendar, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { Clock, MapPin, User, Calendar, Plus, Trash2, AlertTriangle, Copy } from 'lucide-react';
 
 export const WeeklyShiftSubmissionForm: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -20,6 +22,9 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [shifts, setShifts] = useState<ShiftEntry[]>([]);
   const [notes, setNotes] = useState('');
+
+  // Get available shifts from scheduled_shifts table for the token's week
+  const [availableShifts, setAvailableShifts] = useState<any[]>([]);
 
   useEffect(() => {
     const validateToken = async () => {
@@ -71,6 +76,38 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
 
         setTokenData(data);
         
+        // Fetch available shifts for the token's week from scheduled_shifts
+        const { data: shiftsData, error: shiftsError } = await supabase
+          .from('scheduled_shifts')
+          .select(`
+            id,
+            shift_date,
+            start_time,
+            end_time,
+            role_name,
+            required_employees,
+            assigned_employees,
+            status,
+            business_id,
+            branch_id,
+            branches(name, address)
+          `)
+          .gte('shift_date', data.week_start_date)
+          .lte('shift_date', data.week_end_date)
+          .eq('status', 'pending')
+          .eq('is_archived', false)
+          .order('shift_date')
+          .order('start_time');
+
+        if (shiftsError) {
+          console.warn('⚠️ Error fetching available shifts:', shiftsError);
+          // Continue without available shifts - fallback to manual entry
+          setAvailableShifts([]);
+        } else {
+          console.log('📋 Available shifts fetched:', shiftsData);
+          setAvailableShifts(shiftsData || []);
+        }
+        
         // Initialize with one empty shift
         setShifts([{
           date: '',
@@ -104,6 +141,7 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
       branch_preference: '',
       role_preference: '',
       notes: '',
+      scheduled_shift_id: '', // Add this to track selected scheduled shift
     }]);
   };
 
@@ -117,6 +155,19 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
     const updatedShifts = [...shifts];
     updatedShifts[index] = { ...updatedShifts[index], [field]: value };
     setShifts(updatedShifts);
+  };
+
+  // Copy shift details from selected scheduled shift
+  const selectScheduledShift = (index: number, scheduledShiftId: string) => {
+    const selectedShift = availableShifts.find(s => s.id === scheduledShiftId);
+    if (selectedShift) {
+      updateShift(index, 'date', selectedShift.shift_date);
+      updateShift(index, 'start_time', selectedShift.start_time);
+      updateShift(index, 'end_time', selectedShift.end_time);
+      updateShift(index, 'branch_preference', selectedShift.branches?.name || '');
+      updateShift(index, 'role_preference', selectedShift.role_name || '');
+      updateShift(index, 'scheduled_shift_id', scheduledShiftId);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -258,6 +309,29 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           </CardHeader>
           
           <CardContent>
+            {/* Show available shifts info */}
+            {availableShifts.length > 0 ? (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <strong>נמצאו {availableShifts.length} משמרות זמינות לשבוע זה!</strong>
+                </p>
+                <p className="text-xs text-green-700 mt-1">
+                  תוכל לבחור משמרות קיימות מהלוח או להזין פרטים ידנית
+                </p>
+              </div>
+            ) : (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <strong>לא נמצאו משמרות פעילות בלוח לשבוע זה</strong>
+                </p>
+                <p className="text-xs text-blue-700 mt-1">
+                  תוכל להזין פרטי משמרות ידנית והן יועברו לאישור המנהל
+                </p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -290,6 +364,31 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                       )}
                     </div>
 
+                    {/* Option to select from available shifts */}
+                    {availableShifts.length > 0 && (
+                      <div className="mb-4">
+                        <Label className="flex items-center gap-2 mb-2">
+                          <Copy className="h-4 w-4" />
+                          בחר משמרת מהלוח (אופציונלי)
+                        </Label>
+                        <Select onValueChange={(value) => selectScheduledShift(index, value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="בחר משמרת קיימת..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableShifts.map((availableShift) => (
+                              <SelectItem key={availableShift.id} value={availableShift.id}>
+                                {new Date(availableShift.shift_date).toLocaleDateString('he-IL')} | {' '}
+                                {availableShift.start_time}-{availableShift.end_time} | {' '}
+                                {availableShift.branches?.name || 'סניף לא ידוע'} | {' '}
+                                {availableShift.role_name || 'תפקיד כללי'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor={`date-${index}`} className="flex items-center gap-2">
@@ -310,7 +409,7 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                       <div>
                         <Label htmlFor={`branch-${index}`} className="flex items-center gap-2">
                           <MapPin className="h-4 w-4" />
-                          העדפת סניף
+                          סניף
                         </Label>
                         <Input
                           id={`branch-${index}`}
@@ -350,10 +449,10 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                       </div>
 
                       <div className="md:col-span-2">
-                        <Label htmlFor={`role-${index}`}>העדפת תפקיד (אופציונלי)</Label>
+                        <Label htmlFor={`role-${index}`}>תפקיד</Label>
                         <Input
                           id={`role-${index}`}
-                          placeholder="התפקיד המועדף"
+                          placeholder="התפקיד המבוקש"
                           value={shift.role_preference || ''}
                           onChange={(e) => updateShift(index, 'role_preference', e.target.value)}
                         />

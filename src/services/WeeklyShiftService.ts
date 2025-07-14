@@ -22,6 +22,7 @@ export interface ShiftEntry {
   branch_preference: string;
   role_preference?: string;
   notes?: string;
+  scheduled_shift_id?: string; // Add this to track selected scheduled shift
 }
 
 export interface WeeklySubmissionData {
