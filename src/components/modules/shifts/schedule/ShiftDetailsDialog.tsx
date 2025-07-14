@@ -61,11 +61,14 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
     start_time: shift.start_time,
     end_time: shift.end_time,
     notes: shift.notes || '',
-    status: shift.status || 'pending'
+    status: shift.status || 'pending',
+    role: shift.role || '',
+    branch_id: shift.branch_id || ''
   });
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showAvailableEmployees, setShowAvailableEmployees] = useState(false);
 
   const employee = employees.find(emp => emp.id === shift.employee_id);
   const branch = branches.find(br => br.id === shift.branch_id);
@@ -298,6 +301,80 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
     );
   };
 
+  // Get available employees from other branches without submissions
+  const getAvailableEmployeesFromOtherBranches = () => {
+    // Get all employees that are not currently assigned to this shift's branch
+    // or employees that don't have any branch assignment
+    const otherBranchEmployees = employees.filter(emp => {
+      // Check if employee has worked in other branches or is generally available
+      const hasWorkedInOtherBranches = shifts.some(s => 
+        s.employee_id === emp.id && 
+        s.branch_id !== shift.branch_id &&
+        s.branch_id !== null
+      );
+      
+      // Include employees who worked in other branches or have no specific branch tie
+      return hasWorkedInOtherBranches || !shift.branch_id;
+    });
+
+    // Filter out employees who have submissions for this date/time
+    const availableEmployees = otherBranchEmployees.filter(emp => {
+      const hasSubmission = pendingSubmissions.some(submission => {
+        if (submission.employee_id !== emp.id) return false;
+        
+        const shifts = typeof submission.shifts === 'string' 
+          ? JSON.parse(submission.shifts) 
+          : submission.shifts || [];
+        
+        return shifts.some((s: any) => 
+          s.date === shift.shift_date && 
+          s.start_time === shift.start_time && 
+          s.end_time === shift.end_time
+        );
+      });
+      
+      return !hasSubmission;
+    });
+
+    return availableEmployees;
+  };
+
+  // Get shifts from branches without submissions
+  const getShiftsFromBranchesWithoutSubmissions = () => {
+    const branchesWithSubmissions = new Set();
+    
+    // Find branches that have submissions for this shift time
+    pendingSubmissions.forEach(submission => {
+      const shifts = typeof submission.shifts === 'string' 
+        ? JSON.parse(submission.shifts) 
+        : submission.shifts || [];
+      
+      shifts.forEach((s: any) => {
+        if (s.date === shift.shift_date && 
+            s.start_time === shift.start_time && 
+            s.end_time === shift.end_time) {
+          const branchName = s.branch_preference;
+          const branch = branches.find(b => b.name === branchName);
+          if (branch) branchesWithSubmissions.add(branch.id);
+        }
+      });
+    });
+
+    // Find shifts from branches without submissions
+    return shifts.filter(s => 
+      s.shift_date === shift.shift_date &&
+      s.start_time === shift.start_time &&
+      s.end_time === shift.end_time &&
+      s.id !== shift.id &&
+      s.branch_id &&
+      !branchesWithSubmissions.has(s.branch_id) &&
+      !s.employee_id // Only unassigned shifts
+    );
+  };
+
+  const availableEmployees = getAvailableEmployeesFromOtherBranches();
+  const shiftsWithoutSubmissions = getShiftsFromBranchesWithoutSubmissions();
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]" dir="rtl">
@@ -346,6 +423,38 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                     onChange={(e) => setEditData(prev => ({ ...prev, end_time: e.target.value }))}
                   />
                 </div>
+              </div>
+
+              {/* Edit Role */}
+              <div className="space-y-2">
+                <Label>תפקיד</Label>
+                <Input
+                  value={editData.role}
+                  onChange={(e) => setEditData(prev => ({ ...prev, role: e.target.value }))}
+                  placeholder="הכנס תפקיד..."
+                />
+              </div>
+
+              {/* Edit Branch */}
+              <div className="space-y-2">
+                <Label>סניף</Label>
+                <Select 
+                  value={editData.branch_id} 
+                  onValueChange={(value) => 
+                    setEditData(prev => ({ ...prev, branch_id: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר סניף..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map(branch => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Edit Status */}
@@ -418,20 +527,33 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                 )}
               </div>
 
-              {/* Branch Display */}
-              {branch && (
+              {/* Branch Display - Enhanced with full information */}
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-gray-600" />
-                  <span>{branch.name}</span>
+                  <span>{branch ? branch.name : 'ללא סניף'}</span>
+                  {branch?.address && (
+                    <span className="text-sm text-gray-500">({branch.address})</span>
+                  )}
                 </div>
-              )}
+                {branch && (
+                  <Badge variant="outline" className="text-xs">
+                    {branch.is_active ? 'פעיל' : 'לא פעיל'}
+                  </Badge>
+                )}
+              </div>
 
-              {/* Role Display */}
-              {shift.role && (
+              {/* Role Display - Enhanced with editing capability */}
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{shift.role}</Badge>
+                  <span className="text-sm text-gray-600">תפקיד:</span>
+                  {shift.role ? (
+                    <Badge variant="secondary">{shift.role}</Badge>
+                  ) : (
+                    <span className="text-sm text-gray-500">ללא תפקיד מוגדר</span>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Notes Display */}
               {shift.notes && (
@@ -461,7 +583,87 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                 <Button variant="outline" onClick={onClose}>
                   סגור
                 </Button>
+                {/* Show Available Employees Button */}
+                {(availableEmployees.length > 0 || shiftsWithoutSubmissions.length > 0) && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => setShowAvailableEmployees(!showAvailableEmployees)}
+                  >
+                    {showAvailableEmployees ? 'הסתר' : 'הצג'} עובדים פנויים
+                  </Button>
+                )}
               </div>
+
+              {/* Available Employees from Other Branches */}
+              {showAvailableEmployees && availableEmployees.length > 0 && (
+                <Card className="mt-4">
+                  <CardHeader>
+                    <h4 className="font-medium text-sm">עובדים פנויים מסניפים אחרים ({availableEmployees.length})</h4>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {availableEmployees.map((emp) => {
+                      // Find the most recent branch this employee worked at
+                      const recentShift = shifts
+                        .filter(s => s.employee_id === emp.id && s.branch_id)
+                        .sort((a, b) => new Date(b.shift_date).getTime() - new Date(a.shift_date).getTime())[0];
+                      const empBranch = recentShift ? branches.find(b => b.id === recentShift.branch_id) : null;
+                      
+                      return (
+                        <div key={emp.id} className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-green-600" />
+                            <span className="font-medium">{emp.first_name} {emp.last_name}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {empBranch?.name || 'ללא סניף'}
+                            </Badge>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => assignEmployee(emp.id)}
+                            className="text-green-700 hover:bg-green-100"
+                          >
+                            הקצה
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Shifts from Branches Without Submissions */}
+              {showAvailableEmployees && shiftsWithoutSubmissions.length > 0 && (
+                <Card className="mt-4">
+                  <CardHeader>
+                    <h4 className="font-medium text-sm">משמרות זמינות מסניפים ללא הגשות ({shiftsWithoutSubmissions.length})</h4>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {shiftsWithoutSubmissions.map((shiftItem) => {
+                      const shiftBranch = branches.find(b => b.id === shiftItem.branch_id);
+                      return (
+                        <div key={shiftItem.id} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-blue-600" />
+                            <span>{shiftBranch?.name || 'ללא סניף'}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {shiftItem.start_time} - {shiftItem.end_time}
+                            </Badge>
+                            {shiftItem.role && (
+                              <Badge variant="secondary" className="text-xs">
+                                {shiftItem.role}
+                              </Badge>
+                            )}
+                          </div>
+                          <Badge className={getStatusColor(shiftItem.status || 'pending')}>
+                            {getStatusText(shiftItem.status || 'pending')}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
 
