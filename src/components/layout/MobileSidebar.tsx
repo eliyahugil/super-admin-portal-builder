@@ -86,6 +86,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
       category: 'main',
       moduleKey: 'employee_management',
       subItems: [
+        { path: moduleRoutes.employees.base, label: 'רשימת עובדים', icon: Users, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.files, label: 'קבצי עובדים', icon: FileText, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.attendance, label: 'נוכחות', icon: UserCheck, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.requests, label: 'בקשות עובדים', icon: CheckSquare, moduleKey: 'employee_management' },
