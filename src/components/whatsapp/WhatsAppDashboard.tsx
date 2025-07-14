@@ -10,10 +10,12 @@ import { MessageSquare, Smartphone, Users, Settings } from 'lucide-react';
 export const WhatsAppDashboard: React.FC = () => {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
 
+  console.log('WhatsAppDashboard loaded');
+
   return (
     <div className="flex h-full">
       <div className="w-80 border-r bg-card">
-        <Tabs defaultValue="chats" className="h-full flex flex-col">
+        <Tabs defaultValue="connection" className="h-full flex flex-col">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="chats" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
