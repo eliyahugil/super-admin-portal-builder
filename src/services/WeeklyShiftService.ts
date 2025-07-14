@@ -80,25 +80,47 @@ export class WeeklyShiftService {
     const expiresAt = new Date(weekEndDate);
     expiresAt.setDate(expiresAt.getDate() + 7); // Expires one week after the week ends
 
-    const { data, error } = await supabase
-      .from('employee_weekly_tokens')
-      .insert({
-        employee_id: employeeId,
-        token,
-        week_start_date: weekStartDate,
-        week_end_date: weekEndDate,
-        expires_at: expiresAt.toISOString(),
-      })
-      .select('token')
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('employee_weekly_tokens')
+        .insert({
+          employee_id: employeeId,
+          token,
+          week_start_date: weekStartDate,
+          week_end_date: weekEndDate,
+          expires_at: expiresAt.toISOString(),
+        })
+        .select('token')
+        .single();
 
-    if (error) {
-      console.error('❌ Error creating new token:', error);
-      throw error;
+      if (error) {
+        // If it's a unique constraint violation, fetch the existing token
+        if (error.code === '23505') {
+          console.log('🔄 Token already exists due to race condition, fetching existing...');
+          const { data: existingData } = await supabase
+            .from('employee_weekly_tokens')
+            .select('token')
+            .eq('employee_id', employeeId)
+            .eq('week_start_date', weekStartDate)
+            .eq('week_end_date', weekEndDate)
+            .single();
+          
+          if (existingData) {
+            console.log('✅ Found existing token after race condition:', existingData.token);
+            return existingData.token;
+          }
+        }
+        
+        console.error('❌ Error creating new token:', error);
+        throw error;
+      }
+      
+      console.log('✅ Created new token:', data.token);
+      return data.token;
+    } catch (err) {
+      console.error('❌ Unexpected error creating token:', err);
+      throw err;
     }
-    
-    console.log('✅ Created new token:', data.token);
-    return data.token;
   }
 
   // Validate weekly token using edge function to bypass RLS
