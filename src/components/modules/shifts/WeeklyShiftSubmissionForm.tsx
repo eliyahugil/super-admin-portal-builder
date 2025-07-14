@@ -92,11 +92,10 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
             shift_date,
             start_time,
             end_time,
-            required_employees,
-            assigned_employees,
             status,
             business_id,
             branch_id,
+            role,
             branches(name, address)
           `)
           .gte('shift_date', data.week_start_date)
@@ -184,7 +183,7 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
       updateShift(index, 'start_time', selectedShift.start_time);
       updateShift(index, 'end_time', selectedShift.end_time);
       updateShift(index, 'branch_preference', selectedShift.branches?.name || '');
-      updateShift(index, 'role_preference', selectedShift.role_name || '');
+      updateShift(index, 'role_preference', selectedShift.role || '');
       updateShift(index, 'scheduled_shift_id', scheduledShiftId);
     }
   };
@@ -412,7 +411,7 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                                 {new Date(availableShift.shift_date).toLocaleDateString('he-IL')} | {' '}
                                 {availableShift.start_time}-{availableShift.end_time} | {' '}
                                 {availableShift.branches?.name || 'סניף לא ידוע'} | {' '}
-                                {availableShift.role_name || 'תפקיד כללי'}
+                                {availableShift.role || 'תפקיד כללי'}
                               </SelectItem>
                             ))}
                           </SelectContent>
