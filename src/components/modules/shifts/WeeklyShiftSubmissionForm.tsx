@@ -76,6 +76,13 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
 
         setTokenData(data);
         
+        console.log('🔍 Token data:', {
+          employeeId: data.employee_id,
+          businessId: data.employee.business_id,
+          weekStart: data.week_start_date,
+          weekEnd: data.week_end_date
+        });
+        
         // Fetch available shifts for the token's week from scheduled_shifts
         // Filter by employee's business and branch assignments
         const { data: shiftsData, error: shiftsError } = await supabase
@@ -101,12 +108,23 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           .order('shift_date')
           .order('start_time');
 
+        console.log('🔍 Shifts query params:', {
+          weekStart: data.week_start_date,
+          weekEnd: data.week_end_date,
+          businessId: data.employee.business_id,
+          status: 'pending',
+          isArchived: false
+        });
+
         if (shiftsError) {
           console.warn('⚠️ Error fetching available shifts:', shiftsError);
           // Continue without available shifts - fallback to manual entry
           setAvailableShifts([]);
         } else {
-          console.log('📋 Available shifts fetched:', shiftsData);
+          console.log('📋 Available shifts fetched:', {
+            count: shiftsData?.length || 0,
+            shifts: shiftsData
+          });
           setAvailableShifts(shiftsData || []);
         }
         
