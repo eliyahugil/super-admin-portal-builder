@@ -68,8 +68,8 @@ export const WhatsAppConnection: React.FC = () => {
     mutationFn: async () => {
       if (!businessId) throw new Error('Business ID is required');
       
-      // Call the new native WhatsApp connection
-      const { data, error } = await supabase.functions.invoke('whatsapp-native', {
+      // Call the new WhatsApp Web client function
+      const { data, error } = await supabase.functions.invoke('whatsapp-web-client', {
         body: { 
           action: 'connect',
           businessId 
@@ -113,7 +113,7 @@ export const WhatsAppConnection: React.FC = () => {
 
   const syncMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('whatsapp-native', {
+      const { data, error } = await supabase.functions.invoke('whatsapp-web-client', {
         body: { 
           action: 'status',
           businessId 
