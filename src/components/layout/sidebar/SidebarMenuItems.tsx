@@ -77,7 +77,7 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
 
         return (
           <SidebarMenuItem key={item.path}>
-            <SidebarMenuButton asChild={!hasSubItems} isActive={itemIsActive || hasActiveSubItem}>
+            <SidebarMenuButton asChild isActive={itemIsActive || hasActiveSubItem}>
               {hasSubItems ? (
                 <button
                   onClick={(e) => handleMenuItemClick(true, item.path, e)}
