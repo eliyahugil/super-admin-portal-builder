@@ -33,8 +33,38 @@ export interface WeeklySubmissionData {
 }
 
 export class WeeklyShiftService {
-  // Generate a weekly token for an employee
+  // Generate a weekly token for an employee (or return existing one)
   static async generateWeeklyToken(employeeId: string, weekStartDate: string, weekEndDate: string): Promise<string> {
+    console.log('🔍 Checking for existing token for employee:', employeeId, 'week:', weekStartDate);
+    
+    // First, check if token already exists for this employee and week
+    const { data: existingToken, error: checkError } = await supabase
+      .from('employee_weekly_tokens')
+      .select('token, is_active')
+      .eq('employee_id', employeeId)
+      .eq('week_start_date', weekStartDate)
+      .eq('week_end_date', weekEndDate)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('❌ Error checking existing token:', checkError);
+      throw checkError;
+    }
+
+    // If token exists and is active, return it
+    if (existingToken && existingToken.is_active) {
+      console.log('✅ Found existing active token:', existingToken.token);
+      return existingToken.token;
+    }
+
+    // If token exists but is inactive, return it too (it can be reused)
+    if (existingToken) {
+      console.log('✅ Found existing token (inactive):', existingToken.token);
+      return existingToken.token;
+    }
+
+    // No existing token found, create a new one
+    console.log('🆕 Creating new token for employee:', employeeId);
     const token = crypto.randomUUID().replace(/-/g, '');
     const expiresAt = new Date(weekEndDate);
     expiresAt.setDate(expiresAt.getDate() + 7); // Expires one week after the week ends
@@ -51,7 +81,12 @@ export class WeeklyShiftService {
       .select('token')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error creating new token:', error);
+      throw error;
+    }
+    
+    console.log('✅ Created new token:', data.token);
     return data.token;
   }
 
