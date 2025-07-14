@@ -29,7 +29,8 @@ serve(async (req) => {
       throw new Error('Twilio credentials not configured')
     }
 
-    const twilioWhatsAppNumber = 'whatsapp:+14155238886' // Twilio sandbox number
+    // Get business phone number or use configured Twilio number
+    const twilioWhatsAppNumber = 'whatsapp:+1681312854' // Your actual Twilio WhatsApp number
 
     switch (action) {
       case 'connect':

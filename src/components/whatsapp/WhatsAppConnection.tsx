@@ -191,8 +191,10 @@ export const WhatsAppConnection: React.FC = () => {
             
             <div className="space-y-2 text-sm">
               <div className="flex justify-between items-center">
-                <span className="text-green-700">מספר Twilio:</span>
-                <span className="font-mono text-green-800">{connection.phone_number || 'לא זמין'}</span>
+                <span className="text-green-700">מספר WhatsApp:</span>
+                <span className="font-mono text-green-800">
+                  {connection.phone_number?.replace('whatsapp:', '') || 'לא זמין'}
+                </span>
               </div>
               
               <div className="flex justify-between items-center">
