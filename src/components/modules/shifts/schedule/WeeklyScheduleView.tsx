@@ -9,6 +9,7 @@ import { ShabbatIndicator } from './components/ShabbatIndicator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { ShiftScheduleViewProps } from './types';
 import { SubmissionApprovalDialog } from './components/SubmissionApprovalDialog';
+import { ShiftDetailsDialog } from './ShiftDetailsDialog';
 import {
   Tooltip,
   TooltipContent,
@@ -31,6 +32,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   const isMobile = useIsMobile();
   const [showSubmissionDialog, setShowSubmissionDialog] = useState(false);
   const [selectedDateForSubmissions, setSelectedDateForSubmissions] = useState<Date | null>(null);
+  const [showShiftDetailsDialog, setShowShiftDetailsDialog] = useState(false);
+  const [selectedShift, setSelectedShift] = useState<any>(null);
   
   // Generate week days starting from Sunday
   const weekDays = useMemo(() => {
@@ -193,7 +196,10 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                       <div
                         key={shift.id}
                         className="p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                        onClick={() => onShiftClick(shift)}
+                        onClick={() => {
+                          setSelectedShift(shift);
+                          setShowShiftDetailsDialog(true);
+                        }}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <Badge variant="secondary" className={`${getStatusColor(shift.status || 'pending')} text-xs`}>
@@ -328,7 +334,10 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                           <TooltipTrigger asChild>
                             <div
                               className="p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                              onClick={() => onShiftClick(shift)}
+                              onClick={() => {
+                                setSelectedShift(shift);
+                                setShowShiftDetailsDialog(true);
+                              }}
                             >
                               <div className="flex items-center justify-between mb-1">
                                 <Badge variant="secondary" className={`text-xs ${getStatusColor(shift.status || 'pending')}`}>
@@ -558,6 +567,33 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
           selectedDate={selectedDateForSubmissions}
           employees={employees}
           onApprovalComplete={handleSubmissionApprovalComplete}
+        />
+      )}
+
+      {/* Shift Details Dialog */}
+      {showShiftDetailsDialog && selectedShift && (
+        <ShiftDetailsDialog
+          shift={selectedShift}
+          employees={employees}
+          branches={[]} // We'll need to pass branches from props
+          pendingSubmissions={pendingSubmissions}
+          onClose={() => {
+            setShowShiftDetailsDialog(false);
+            setSelectedShift(null);
+          }}
+          onUpdate={onShiftUpdate}
+          onDelete={async (shiftId: string) => {
+            // This would need to be implemented in the parent component
+            console.log('Delete shift:', shiftId);
+          }}
+          onAssignEmployee={(shift) => {
+            // This would need to be implemented in the parent component
+            console.log('Assign employee to shift:', shift);
+          }}
+          onSubmissionUpdate={() => {
+            // Refresh submissions
+            handleSubmissionApprovalComplete();
+          }}
         />
       )}
     </div>

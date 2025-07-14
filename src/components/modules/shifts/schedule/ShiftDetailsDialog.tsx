@@ -7,27 +7,52 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, User, MapPin, Edit, Trash2, UserPlus } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Clock, User, MapPin, Edit, Trash2, UserPlus, CheckCircle, XCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { ShiftScheduleData, Employee, Branch } from './types';
+
+interface ShiftSubmission {
+  id: string;
+  employee_id: string;
+  shifts: Array<{
+    date: string;
+    start_time: string;
+    end_time: string;
+    branch_preference: string;
+    role_preference?: string;
+  }>;
+  status: string;
+  submitted_at: string;
+  employee?: {
+    first_name: string;
+    last_name: string;
+  };
+}
 
 interface ShiftDetailsDialogProps {
   shift: ShiftScheduleData;
   employees: Employee[];
   branches: Branch[];
+  pendingSubmissions?: ShiftSubmission[];
   onClose: () => void;
   onUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => Promise<void>;
   onDelete: (shiftId: string) => Promise<void>;
   onAssignEmployee: (shift: ShiftScheduleData) => void;
+  onSubmissionUpdate?: () => void;
 }
 
 export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
   shift,
   employees,
   branches,
+  pendingSubmissions = [],
   onClose,
   onUpdate,
   onDelete,
-  onAssignEmployee
+  onAssignEmployee,
+  onSubmissionUpdate
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -38,9 +63,49 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
   });
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const employee = employees.find(emp => emp.id === shift.employee_id);
   const branch = branches.find(br => br.id === shift.branch_id);
+
+  // Get submissions for this specific shift
+  const getSubmissionsForShift = () => {
+    const dateStr = shift.shift_date;
+    return pendingSubmissions.filter(submission => {
+      const shifts = typeof submission.shifts === 'string' 
+        ? JSON.parse(submission.shifts) 
+        : submission.shifts || [];
+      return shifts.some((s: any) => 
+        s.date === dateStr && 
+        s.start_time === shift.start_time && 
+        s.end_time === shift.end_time &&
+        s.branch_preference === (branch?.name || shift.branch_name)
+      );
+    }).map(submission => {
+      const shifts = typeof submission.shifts === 'string' 
+        ? JSON.parse(submission.shifts) 
+        : submission.shifts || [];
+      const relevantShift = shifts.find((s: any) => 
+        s.date === dateStr && 
+        s.start_time === shift.start_time && 
+        s.end_time === shift.end_time &&
+        s.branch_preference === (branch?.name || shift.branch_name)
+      );
+      return {
+        ...submission,
+        employeeName: getEmployeeName(submission.employee_id),
+        role: relevantShift?.role_preference || 'ללא תפקיד',
+        isCurrentlyAssigned: shift.employee_id === submission.employee_id
+      };
+    });
+  };
+
+  const getEmployeeName = (employeeId: string) => {
+    const employee = employees.find(emp => emp.id === employeeId);
+    return employee ? `${employee.first_name} ${employee.last_name}` : 'לא ידוע';
+  };
+
+  const shiftSubmissions = getSubmissionsForShift();
 
   const handleUpdate = async () => {
     setIsUpdating(true);
@@ -89,6 +154,110 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
       case 'rejected': return 'נדחה';
       case 'completed': return 'הושלם';
       default: return 'לא ידוע';
+    }
+  };
+
+  const approveShift = async (submission: ShiftSubmission, shiftData: any) => {
+    setLoading(true);
+    try {
+      // Get business_id from employee
+      const { data: employeeData, error: employeeError } = await supabase
+        .from('employees')
+        .select('business_id')
+        .eq('id', submission.employee_id)
+        .single();
+
+      if (employeeError) {
+        console.error('Error fetching employee:', employeeError);
+        throw employeeError;
+      }
+
+      // Find branch_id by name
+      const { data: branchData, error: branchError } = await supabase
+        .from('branches')
+        .select('id')
+        .eq('name', shiftData.branch_preference)
+        .eq('business_id', employeeData.business_id)
+        .maybeSingle();
+
+      if (branchError) {
+        console.error('Error fetching branch:', branchError);
+        throw branchError;
+      }
+
+      // Create approved shift in scheduled_shifts table
+      const { error: createError } = await supabase
+        .from('scheduled_shifts')
+        .insert({
+          business_id: employeeData.business_id,
+          employee_id: submission.employee_id,
+          shift_date: shiftData.date,
+          start_time: shiftData.start_time,
+          end_time: shiftData.end_time,
+          branch_id: branchData?.id || null,
+          role: shiftData.role_preference || '',
+          status: 'approved',
+          is_assigned: true,
+          is_archived: false,
+        });
+
+      if (createError) {
+        console.error('Error creating scheduled shift:', createError);
+        throw createError;
+      }
+
+      // Update submission status to approved
+      const { error: updateError } = await supabase
+        .from('employee_shift_requests')
+        .update({ status: 'approved' })
+        .eq('id', submission.id);
+
+      if (updateError) {
+        console.error('Error updating submission:', updateError);
+        throw updateError;
+      }
+
+      toast.success('המשמרת אושרה בהצלחה');
+      onSubmissionUpdate?.();
+    } catch (error) {
+      console.error('Error approving shift:', error);
+      toast.error('שגיאה באישור המשמרת: ' + (error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const rejectShift = async (submissionId: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('employee_shift_requests')
+        .update({ status: 'rejected' })
+        .eq('id', submissionId);
+
+      if (error) throw error;
+
+      toast.success('המשמרת נדחתה');
+      onSubmissionUpdate?.();
+    } catch (error) {
+      console.error('Error rejecting shift:', error);
+      toast.error('שגיאה בדחיית המשמרת');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const assignEmployee = async (submissionEmployeeId: string) => {
+    try {
+      await onUpdate(shift.id, {
+        ...shift,
+        employee_id: submissionEmployeeId
+      });
+      toast.success('העובד הוקצה בהצלחה');
+      onSubmissionUpdate?.();
+    } catch (error) {
+      console.error('Error assigning employee:', error);
+      toast.error('שגיאה בהקצאת העובד');
     }
   };
 
@@ -257,6 +426,87 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                 </Button>
               </div>
             </div>
+          )}
+
+          {/* Submissions Section */}
+          {shiftSubmissions.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm">בקשות למשמרת ({shiftSubmissions.length})</h4>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                    {shiftSubmissions.length} בקשות
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {shiftSubmissions.map((submission, index) => {
+                  const shifts = typeof submission.shifts === 'string' 
+                    ? JSON.parse(submission.shifts) 
+                    : submission.shifts || [];
+                  const relevantShift = shifts.find((s: any) => 
+                    s.date === shift.shift_date && 
+                    s.start_time === shift.start_time && 
+                    s.end_time === shift.end_time &&
+                    s.branch_preference === (branch?.name || shift.branch_name)
+                  );
+
+                  return (
+                    <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-gray-600" />
+                          <span className="font-medium">
+                            {submission.employeeName}
+                            {submission.isCurrentlyAssigned && (
+                              <span className="text-green-600 mr-1">✓ מוקצה</span>
+                            )}
+                          </span>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {submission.role}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex gap-2 mt-2">
+                        {!submission.isCurrentlyAssigned && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 px-3 text-xs"
+                            onClick={() => assignEmployee(submission.employee_id)}
+                            disabled={loading}
+                          >
+                            שייך למשמרת
+                          </Button>
+                        )}
+                        
+                        <Button
+                          size="sm"
+                          className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700"
+                          onClick={() => approveShift(submission, relevantShift)}
+                          disabled={loading}
+                        >
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          אושר
+                        </Button>
+                        
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-3 text-xs"
+                          onClick={() => rejectShift(submission.id)}
+                          disabled={loading}
+                        >
+                          <XCircle className="h-3 w-3 mr-1" />
+                          דחה
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
           )}
         </div>
       </DialogContent>
