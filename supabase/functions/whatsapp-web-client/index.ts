@@ -128,9 +128,66 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: true, 
-            message: 'Message sent successfully',
+            message: 'WhatsApp message sent successfully',
             twilioMessageId: twilioData.sid,
             messageRecord
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+
+      case 'send_sms':
+        if (!to || !message) {
+          throw new Error('Missing required parameters: to, message')
+        }
+
+        // Send SMS via Twilio SMS API
+        const smsUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`
+        
+        const smsFormData = new FormData()
+        smsFormData.append('From', '+1681312854') // Your Twilio phone number (without whatsapp: prefix)
+        smsFormData.append('To', to)
+        smsFormData.append('Body', message)
+
+        const smsResponse = await fetch(smsUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`
+          },
+          body: smsFormData
+        })
+
+        const smsData = await smsResponse.json()
+        
+        if (!smsResponse.ok) {
+          throw new Error(`Twilio SMS error: ${smsData.message}`)
+        }
+
+        // Store SMS in database (we can reuse the same table or create a new one)
+        const { data: smsRecord, error: smsError } = await supabaseClient
+          .from('whatsapp_messages')
+          .insert({
+            business_id: businessId,
+            phone_number: to,
+            message_content: message,
+            message_type: 'sms',
+            direction: 'outgoing',
+            message_status: 'sent',
+            whatsapp_message_id: smsData.sid,
+            timestamp: new Date().toISOString()
+          })
+          .select()
+          .single()
+
+        if (smsError) {
+          console.error('Error storing SMS:', smsError)
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'SMS sent successfully',
+            twilioMessageId: smsData.sid,
+            messageRecord: smsRecord
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )

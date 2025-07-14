@@ -129,18 +129,23 @@ export const useWhatsAppIntegration = () => {
       contactId,
       phoneNumber,
       content,
-      messageType = 'text'
+      messageType = 'text',
+      sendMethod = 'whatsapp'
     }: {
       contactId?: string;
       phoneNumber: string;
       content: string;
       messageType?: WhatsAppMessage['message_type'];
+      sendMethod?: 'whatsapp' | 'sms';
     }) => {
       if (!businessId) throw new Error('Business ID required');
       
-      // Use the Twilio-powered edge function
-      const { data, error } = await supabase.functions.invoke('send-whatsapp-message', {
+      // Use the updated edge function with SMS support
+      const action = sendMethod === 'sms' ? 'send_sms' : 'send_message';
+      
+      const { data, error } = await supabase.functions.invoke('whatsapp-web-client', {
         body: {
+          action,
           businessId,
           to: phoneNumber,
           message: content,
@@ -156,6 +161,12 @@ export const useWhatsAppIntegration = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-messages', variables.contactId] });
       queryClient.invalidateQueries({ queryKey: ['whatsapp-contacts'] });
+      
+      const methodText = variables.sendMethod === 'sms' ? 'SMS' : 'WhatsApp';
+      toast.success(`הודעת ${methodText} נשלחה בהצלחה!`);
+    },
+    onError: (error) => {
+      toast.error('שגיאה בשליחת ההודעה: ' + error.message);
     }
   });
 
