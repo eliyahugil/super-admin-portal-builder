@@ -55,9 +55,11 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
     }));
   };
 
-  const handleMenuItemClick = (hasSubItems: boolean, path: string) => {
+  const handleMenuItemClick = (hasSubItems: boolean, path: string, event?: React.MouseEvent) => {
     if (hasSubItems) {
-      // רק להרחיב/לכווץ את הקבוצה, לא לסגור את הסייד-בר
+      // עצור את ההפצה של האירוע ורק הרחב/כווץ את הקבוצה
+      event?.preventDefault();
+      event?.stopPropagation();
       toggleExpanded(path);
     } else {
       // רק כשנבחר פריט תפריט ספציפי (לא קבוצה), נסגור את הסייד-בר במובייל
@@ -78,7 +80,7 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
             <SidebarMenuButton asChild={!hasSubItems} isActive={itemIsActive || hasActiveSubItem}>
               {hasSubItems ? (
                 <button
-                  onClick={() => handleMenuItemClick(true, item.path)}
+                  onClick={(e) => handleMenuItemClick(true, item.path, e)}
                   className="flex items-center justify-end gap-3 text-right w-full pr-2"
                   type="button"
                 >
