@@ -42,13 +42,22 @@ export const MainSidebarMenuGroup: React.FC<MenuGroupProps> = ({
   };
 
   const handleMenuItemClick = (item: MenuItem, event: React.MouseEvent) => {
+    console.log('🔍 MainSidebarMenuGroups.handleMenuItemClick:', { 
+      hasSubItems: item.subItems && item.subItems.length > 0, 
+      path: item.path, 
+      itemLabel: item.label 
+    });
+    
     if (item.subItems && item.subItems.length > 0) {
-      // עבור פריטים עם תת-פריטים - רק נרחיב/נכווץ
+      // עבור פריטים עם תת-פריטים - רק נרחיב/נכווץ, לא נסגור סיידבר
+      console.log('📂 פריט עם תת-פריטים - מרחיב/כווץ בלבד, לא סוגר סיידבר');
       event.preventDefault();
       event.stopPropagation();
       toggleExpanded(item.path);
+      // לא קוראים ל-onMenuItemClick כדי לא לסגור את הסיידבר
     } else {
       // עבור פריטים ללא תת-פריטים - ננווט ונסגור את הסיידבר
+      console.log('📄 פריט ללא תת-פריטים - סוגר סיידבר');
       onMenuItemClick();
     }
   };
