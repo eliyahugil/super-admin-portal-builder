@@ -85,8 +85,8 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
         });
         
         // Fetch available shifts for the token's week from scheduled_shifts
-        // Filter by employee's business and branch assignments
-        const { data: shiftsData, error: shiftsError } = await supabase
+        // Filter by employee's business and potentially by their branch assignments
+        let shiftsQuery = supabase
           .from('scheduled_shifts')
           .select(`
             id,
@@ -107,12 +107,37 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           .order('shift_date')
           .order('start_time');
 
+        // If employee has branch assignments, filter by those branches
+        // First, check for branch assignments
+        const { data: branchAssignments, error: branchError } = await supabase
+          .from('employee_branch_assignments')
+          .select('branch_id')
+          .eq('employee_id', data.employee_id)
+          .eq('is_active', true);
+
+        if (branchError) {
+          console.warn('⚠️ Error fetching branch assignments:', branchError);
+        }
+
+        const assignedBranchIds = branchAssignments?.map(ba => ba.branch_id) || [];
+        
+        // If employee has specific branch assignments, filter shifts by those branches
+        if (assignedBranchIds.length > 0) {
+          shiftsQuery = shiftsQuery.in('branch_id', assignedBranchIds);
+          console.log('🏢 Filtering shifts by employee branch assignments:', assignedBranchIds);
+        } else {
+          console.log('🏢 No branch assignments found - showing all business shifts');
+        }
+
+        const { data: shiftsData, error: shiftsError } = await shiftsQuery;
+
         console.log('🔍 Shifts query params:', {
           weekStart: data.week_start_date,
           weekEnd: data.week_end_date,
           businessId: data.employee.business_id,
           status: 'pending',
-          isArchived: false
+          isArchived: false,
+          branchFilter: assignedBranchIds.length > 0 ? assignedBranchIds : 'all branches'
         });
 
         if (shiftsError) {
@@ -121,7 +146,8 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
         } else {
           console.log('📋 Available shifts fetched:', {
             count: shiftsData?.length || 0,
-            shifts: shiftsData
+            shifts: shiftsData,
+            filteredByBranches: assignedBranchIds.length > 0
           });
           setAvailableShifts(shiftsData || []);
         }
