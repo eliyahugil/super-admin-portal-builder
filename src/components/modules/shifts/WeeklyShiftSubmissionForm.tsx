@@ -119,15 +119,12 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           console.warn('⚠️ Error fetching branch assignments:', branchError);
         }
 
+        console.log('🔍 Branch assignments found:', branchAssignments);
+
         const assignedBranchIds = branchAssignments?.map(ba => ba.branch_id) || [];
         
-        // If employee has specific branch assignments, filter shifts by those branches
-        if (assignedBranchIds.length > 0) {
-          shiftsQuery = shiftsQuery.in('branch_id', assignedBranchIds);
-          console.log('🏢 Filtering shifts by employee branch assignments:', assignedBranchIds);
-        } else {
-          console.log('🏢 No branch assignments found - showing all business shifts');
-        }
+        // Show all shifts for now - we'll add filtering later if needed
+        console.log('🏢 Showing all business shifts (branch filtering temporarily disabled)');
 
         const { data: shiftsData, error: shiftsError } = await shiftsQuery;
 
