@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useUserBusinesses } from './useUserBusinesses';
 import { useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface UseCurrentBusinessResult {
   businessId: string | null;
@@ -31,6 +32,7 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
   const { user, profile, loading: authLoading } = useAuth();
   const { data: userBusinesses, isLoading: businessesLoading, error: businessesError } = useUserBusinesses();
   const { businessId: urlBusinessId } = useParams();
+  const queryClient = useQueryClient();
 
   const userEmail = user?.email?.toLowerCase();
   const isAuthorizedSuperUser = userEmail === AUTHORIZED_SUPER_USER;
@@ -80,9 +82,31 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
     // כפוי רענון של כל הקומפוננטים המטמונים נתונים
     window.dispatchEvent(new CustomEvent('businessChanged', { detail: { businessId: newBusinessId } }));
     
-    // רענון מיידי של הדף הנוכחי
-    window.location.reload();
-  }, [userBusinesses, isSuperAdmin]);
+    // רענון נתונים באמצעות React Query במקום רענון הדף
+    queryClient.invalidateQueries({
+      predicate: (query) => {
+        // רענון כל הqueries שתלויים בbusiness ID
+        const key = query.queryKey;
+        return Array.isArray(key) && (
+          key.includes('employees') ||
+          key.includes('branches') ||
+          key.includes('employee-stats') ||
+          key.includes('existing-employees-full') ||
+          key.includes('employees-data') ||
+          key.includes('secure-business-data') ||
+          key.some(item => typeof item === 'string' && item.includes('business'))
+        );
+      }
+    });
+    
+    // Force refetch of important queries immediately
+    queryClient.refetchQueries({
+      predicate: (query) => {
+        const key = query.queryKey;
+        return Array.isArray(key) && key.includes('employees');
+      }
+    });
+  }, [userBusinesses, isSuperAdmin, queryClient]);
 
   useEffect(() => {
     setError(null);
