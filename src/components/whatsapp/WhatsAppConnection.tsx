@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { QrCode, Smartphone, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { toast } from 'sonner';
 
 interface WhatsAppConnection {
@@ -20,7 +20,7 @@ interface WhatsAppConnection {
 }
 
 export const WhatsAppConnection: React.FC = () => {
-  const { businessId } = useBusiness();
+  const { businessId } = useCurrentBusiness();
   const queryClient = useQueryClient();
   const [qrCode, setQrCode] = useState<string>('');
 
