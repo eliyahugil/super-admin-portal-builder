@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 interface Business {
   id: string;
@@ -23,6 +24,7 @@ interface Stats {
 
 export const useDashboard = () => {
   const { isSuperAdmin } = useAuth();
+  const { businessId } = useCurrentBusiness();
   const navigate = useNavigate();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [stats, setStats] = useState<Stats>({ totalBusinesses: 0, activeBusinesses: 0, totalUsers: 0 });
@@ -31,10 +33,17 @@ export const useDashboard = () => {
 
   const fetchBusinesses = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('businesses')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // אם לא super admin, מציג רק את העסק הנבחר
+      if (!isSuperAdmin && businessId) {
+        query = query.eq('id', businessId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching businesses:', error);
@@ -54,26 +63,50 @@ export const useDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      // Fetch business stats
-      const { count: totalBusinesses } = await supabase
-        .from('businesses')
-        .select('*', { count: 'exact', head: true });
+      // עבור super admin - סטטיסטיקות כלליות
+      if (isSuperAdmin) {
+        const { count: totalBusinesses } = await supabase
+          .from('businesses')
+          .select('*', { count: 'exact', head: true });
 
-      const { count: activeBusinesses } = await supabase
-        .from('businesses')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_active', true);
+        const { count: activeBusinesses } = await supabase
+          .from('businesses')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', true);
 
-      // Fetch user stats
-      const { count: totalUsers } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+        const { count: totalUsers } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
 
-      setStats({
-        totalBusinesses: totalBusinesses || 0,
-        activeBusinesses: activeBusinesses || 0,
-        totalUsers: totalUsers || 0,
-      });
+        setStats({
+          totalBusinesses: totalBusinesses || 0,
+          activeBusinesses: activeBusinesses || 0,
+          totalUsers: totalUsers || 0,
+        });
+      } else if (businessId) {
+        // עבור עסק ספציפי - סטטיסטיקות של העסק
+        const { count: totalEmployees } = await supabase
+          .from('employees')
+          .select('*', { count: 'exact', head: true })
+          .eq('business_id', businessId);
+
+        const { count: activeEmployees } = await supabase
+          .from('employees')
+          .select('*', { count: 'exact', head: true })
+          .eq('business_id', businessId)
+          .eq('is_active', true);
+
+        const { count: totalBranches } = await supabase
+          .from('branches')
+          .select('*', { count: 'exact', head: true })
+          .eq('business_id', businessId);
+
+        setStats({
+          totalBusinesses: totalEmployees || 0,
+          activeBusinesses: activeEmployees || 0,
+          totalUsers: totalBranches || 0,
+        });
+      }
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
@@ -86,10 +119,28 @@ export const useDashboard = () => {
       setLoading(false);
     };
 
-    if (isSuperAdmin) {
+    if (isSuperAdmin || businessId) {
       loadData();
     }
-  }, [isSuperAdmin]);
+  }, [isSuperAdmin, businessId]);
+
+  // מאזין לשינויים בעסק הנבחר
+  useEffect(() => {
+    const handleBusinessChange = () => {
+      console.log('🔄 Dashboard: Business changed, refreshing data');
+      if (isSuperAdmin || businessId) {
+        const loadData = async () => {
+          setLoading(true);
+          await Promise.all([fetchBusinesses(), fetchStats()]);
+          setLoading(false);
+        };
+        loadData();
+      }
+    };
+
+    window.addEventListener('businessChanged', handleBusinessChange);
+    return () => window.removeEventListener('businessChanged', handleBusinessChange);
+  }, [isSuperAdmin, businessId]);
 
   const handleManageBusiness = (businessId: string) => {
     // Navigate to business-specific settings
