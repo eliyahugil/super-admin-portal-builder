@@ -6,7 +6,7 @@ import { ShoppingCart, Truck, MapPin, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
-import { BusinessSelector } from '@/components/shared/BusinessSelector';
+
 import { useOrdersData } from './hooks/useOrdersData';
 import { CreateOrderDialog } from './CreateOrderDialog';
 
@@ -71,25 +71,6 @@ export const OrdersManagement: React.FC = () => {
           )}
         </div>
         
-        {isSuperAdmin && (
-          <div className="mt-4">
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                בחר עסק לצפייה
-              </label>
-              <BusinessSelector
-                placeholder="בחר עסק לניהול הזמנות"
-                className="max-w-md"
-                showAllOption={false}
-              />
-            </div>
-            {businessId && (
-              <Badge variant="outline" className="text-xs">
-                מציג נתונים עבור עסק: {businessId}
-              </Badge>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Show content only if business is selected (for super admin) or user has business context */}

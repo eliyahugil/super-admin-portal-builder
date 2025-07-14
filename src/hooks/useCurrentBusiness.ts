@@ -79,6 +79,9 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
     
     // כפוי רענון של כל הקומפוננטים המטמונים נתונים
     window.dispatchEvent(new CustomEvent('businessChanged', { detail: { businessId: newBusinessId } }));
+    
+    // רענון מיידי של הדף הנוכחי
+    window.location.reload();
   }, [userBusinesses, isSuperAdmin]);
 
   useEffect(() => {

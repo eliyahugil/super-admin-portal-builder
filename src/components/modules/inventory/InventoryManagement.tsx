@@ -7,7 +7,7 @@ import { Package, Plus, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-r
 import { Link } from 'react-router-dom';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
-import { BusinessSelector } from '@/components/shared/BusinessSelector';
+
 import { useInventoryData } from './hooks/useInventoryData';
 
 export const InventoryManagement: React.FC = () => {
@@ -45,25 +45,6 @@ export const InventoryManagement: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900">ניהול מלאי</h1>
         <p className="text-gray-600 mt-2">מעקב ובקרה על מלאי המוצרים</p>
         
-        {isSuperAdmin && (
-          <div className="mt-4">
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                בחר עסק לצפייה
-              </label>
-              <BusinessSelector
-                placeholder="בחר עסק לניהול מלאי"
-                className="max-w-md"
-                showAllOption={false}
-              />
-            </div>
-            {businessId && (
-              <Badge variant="outline" className="text-xs">
-                מציג נתונים עבור עסק: {businessId}
-              </Badge>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Show content only if business is selected (for super admin) or user has business context */}

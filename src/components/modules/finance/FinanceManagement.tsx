@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { DollarSign, TrendingUp, TrendingDown, Plus, Eye } from 'lucide-react';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useAuth } from '@/components/auth/AuthContext';
-import { BusinessSelector } from '@/components/shared/BusinessSelector';
+
 import { useFinanceData } from './hooks/useFinanceData';
 
 export const FinanceManagement: React.FC = () => {
@@ -38,25 +38,6 @@ export const FinanceManagement: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900">ניהול כספים</h1>
         <p className="text-gray-600 mt-2">מעקב הכנסות, הוצאות ודוחות כספיים</p>
         
-        {isSuperAdmin && (
-          <div className="mt-4">
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                בחר עסק לצפייה
-              </label>
-              <BusinessSelector
-                placeholder="בחר עסק לניהול כספים"
-                className="max-w-md"
-                showAllOption={false}
-              />
-            </div>
-            {businessId && (
-              <Badge variant="outline" className="text-xs">
-                מציג נתונים עבור עסק: {businessId}
-              </Badge>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Show content only if business is selected (for super admin) or user has business context */}
