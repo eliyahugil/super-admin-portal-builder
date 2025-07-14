@@ -1,21 +1,16 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Building2, Plus, Edit, Trash2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { Employee } from '@/types/employee';
-
-interface BranchAssignment {
-  id: string;
-  employee_id: string;
-  branch_id: string;
-  role: string;
-  start_date: string;
-  end_date?: string;
-  is_active: boolean;
-  branch: {
-    name: string;
-  };
-}
 
 interface EmployeeBranchAssignmentsTabProps {
   employee: Employee;
@@ -26,30 +21,325 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
   employee,
   employeeId
 }) => {
-  const assignments = employee.branch_assignments || [];
+  const [assignments, setAssignments] = useState(employee.branch_assignments || []);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<any>(null);
+  const [newAssignment, setNewAssignment] = useState({
+    branch_id: '',
+    role_name: '',
+    priority_order: 1,
+    max_weekly_hours: '',
+    is_active: true
+  });
+
+  // Fetch branches for the business
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('branches')
+          .select('*')
+          .eq('business_id', employee.business_id)
+          .eq('is_active', true);
+
+        if (error) throw error;
+        setBranches(data || []);
+      } catch (error) {
+        console.error('Error fetching branches:', error);
+      }
+    };
+
+    fetchBranches();
+  }, [employee.business_id]);
+
+  const handleAddAssignment = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('employee_branch_assignments')
+        .insert({
+          employee_id: employeeId,
+          branch_id: newAssignment.branch_id,
+          role_name: newAssignment.role_name,
+          priority_order: newAssignment.priority_order,
+          max_weekly_hours: newAssignment.max_weekly_hours ? parseInt(newAssignment.max_weekly_hours) : null,
+          is_active: newAssignment.is_active
+        })
+        .select(`
+          *,
+          branch:branches(name)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      setAssignments([...assignments, data]);
+      setNewAssignment({
+        branch_id: '',
+        role_name: '',
+        priority_order: 1,
+        max_weekly_hours: '',
+        is_active: true
+      });
+      setIsAddDialogOpen(false);
+      toast.success('שיוך לסניף נוסף בהצלחה');
+    } catch (error) {
+      console.error('Error adding assignment:', error);
+      toast.error('שגיאה בהוספת שיוך לסניף');
+    }
+  };
+
+  const handleEditAssignment = async () => {
+    if (!editingAssignment) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('employee_branch_assignments')
+        .update({
+          role_name: editingAssignment.role_name,
+          priority_order: editingAssignment.priority_order,
+          max_weekly_hours: editingAssignment.max_weekly_hours ? parseInt(editingAssignment.max_weekly_hours) : null,
+          is_active: editingAssignment.is_active
+        })
+        .eq('id', editingAssignment.id)
+        .select(`
+          *,
+          branch:branches(name)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      setAssignments(assignments.map(a => a.id === editingAssignment.id ? data : a));
+      setEditingAssignment(null);
+      toast.success('שיוך עודכן בהצלחה');
+    } catch (error) {
+      console.error('Error updating assignment:', error);
+      toast.error('שגיאה בעדכון שיוך');
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('employee_branch_assignments')
+        .delete()
+        .eq('id', assignmentId);
+
+      if (error) throw error;
+
+      setAssignments(assignments.filter(a => a.id !== assignmentId));
+      toast.success('שיוך נמחק בהצלחה');
+    } catch (error) {
+      console.error('Error deleting assignment:', error);
+      toast.error('שגיאה במחיקת שיוך');
+    }
+  };
+
+  const availableBranches = branches.filter(branch => 
+    !assignments.some(assignment => assignment.branch_id === branch.id && assignment.is_active)
+  );
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>שיוך לסניפים</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            שיוך לסניפים
+          </CardTitle>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button disabled={availableBranches.length === 0}>
+                <Plus className="h-4 w-4 mr-2" />
+                הוסף שיוך
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>הוספת שיוך לסניף</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="branch">סניף</Label>
+                  <Select value={newAssignment.branch_id} onValueChange={(value) => setNewAssignment({...newAssignment, branch_id: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="בחר סניף" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableBranches.map(branch => (
+                        <SelectItem key={branch.id} value={branch.id}>
+                          {branch.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="role">תפקיד</Label>
+                  <Input
+                    id="role"
+                    value={newAssignment.role_name}
+                    onChange={(e) => setNewAssignment({...newAssignment, role_name: e.target.value})}
+                    placeholder="הכנס תפקיד..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="priority">סדר עדיפות</Label>
+                  <Input
+                    id="priority"
+                    type="number"
+                    min="1"
+                    value={newAssignment.priority_order}
+                    onChange={(e) => setNewAssignment({...newAssignment, priority_order: parseInt(e.target.value)})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="max-hours">מקסימום שעות שבועי (אופציונלי)</Label>
+                  <Input
+                    id="max-hours"
+                    type="number"
+                    min="1"
+                    value={newAssignment.max_weekly_hours}
+                    onChange={(e) => setNewAssignment({...newAssignment, max_weekly_hours: e.target.value})}
+                    placeholder="הכנס מספר שעות..."
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="is-active"
+                    checked={newAssignment.is_active}
+                    onChange={(e) => setNewAssignment({...newAssignment, is_active: e.target.checked})}
+                  />
+                  <Label htmlFor="is-active">שיוך פעיל</Label>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleAddAssignment} 
+                    disabled={!newAssignment.branch_id || !newAssignment.role_name.trim()}
+                  >
+                    הוסף שיוך
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    ביטול
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {assignments.map((assignment) => (
             <div key={assignment.id} className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <h4 className="font-medium">{assignment.branch?.name || 'סניף לא ידוע'}</h4>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-medium">{assignment.branch?.name || 'סניף לא ידוע'}</h4>
+                  <Badge variant={assignment.is_active ? "default" : "secondary"}>
+                    {assignment.is_active ? "פעיל" : "לא פעיל"}
+                  </Badge>
+                </div>
                 <p className="text-sm text-gray-500">תפקיד: {assignment.role_name}</p>
+                <p className="text-sm text-gray-500">עדיפות: {assignment.priority_order}</p>
+                {assignment.max_weekly_hours && (
+                  <p className="text-sm text-gray-500">מקסימום שעות: {assignment.max_weekly_hours}</p>
+                )}
               </div>
-              <Badge variant={assignment.is_active ? "default" : "secondary"}>
-                {assignment.is_active ? "פעיל" : "לא פעיל"}
-              </Badge>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditingAssignment({
+                    ...assignment,
+                    max_weekly_hours: assignment.max_weekly_hours?.toString() || ''
+                  })}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteAssignment(assignment.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           ))}
           {assignments.length === 0 && (
-            <p className="text-gray-500 text-center py-4">אין שיוכים לסניפים</p>
+            <div className="text-center py-8">
+              <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">אין שיוכים לסניפים</h3>
+              <p className="text-gray-500">לא נוספו שיוכים לסניפים עבור עובד זה</p>
+            </div>
           )}
         </div>
+
+        {/* Edit Assignment Dialog */}
+        <Dialog open={!!editingAssignment} onOpenChange={() => setEditingAssignment(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>עריכת שיוך לסניף</DialogTitle>
+            </DialogHeader>
+            {editingAssignment && (
+              <div className="space-y-4">
+                <div>
+                  <Label>סניף</Label>
+                  <p className="font-medium text-gray-900">
+                    {editingAssignment.branch?.name || 'סניף לא ידוע'}
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="edit-role">תפקיד</Label>
+                  <Input
+                    id="edit-role"
+                    value={editingAssignment.role_name}
+                    onChange={(e) => setEditingAssignment({...editingAssignment, role_name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-priority">סדר עדיפות</Label>
+                  <Input
+                    id="edit-priority"
+                    type="number"
+                    min="1"
+                    value={editingAssignment.priority_order}
+                    onChange={(e) => setEditingAssignment({...editingAssignment, priority_order: parseInt(e.target.value)})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-max-hours">מקסימום שעות שבועי (אופציונלי)</Label>
+                  <Input
+                    id="edit-max-hours"
+                    type="number"
+                    min="1"
+                    value={editingAssignment.max_weekly_hours}
+                    onChange={(e) => setEditingAssignment({...editingAssignment, max_weekly_hours: e.target.value})}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="edit-is-active"
+                    checked={editingAssignment.is_active}
+                    onChange={(e) => setEditingAssignment({...editingAssignment, is_active: e.target.checked})}
+                  />
+                  <Label htmlFor="edit-is-active">שיוך פעיל</Label>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleEditAssignment}>
+                    שמור שינויים
+                  </Button>
+                  <Button variant="outline" onClick={() => setEditingAssignment(null)}>
+                    ביטול
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

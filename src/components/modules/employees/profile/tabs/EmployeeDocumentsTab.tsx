@@ -26,7 +26,7 @@ export const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
         <EmployeeDocuments
           employeeId={employeeId}
           employeeName={employeeName}
-          canEdit={false}
+          canEdit={true}
         />
       </CardContent>
     </Card>

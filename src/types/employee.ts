@@ -15,11 +15,16 @@ export interface EmployeeNote {
 // Base branch assignment type
 export interface BranchAssignment {
   id: string;
-  branch: {
+  branch_id: string;
+  employee_id: string;
+  branch?: {
     name: string;
   };
   role_name: string;
+  priority_order: number;
+  max_weekly_hours?: number;
   is_active: boolean;
+  created_at: string;
 }
 
 // Base weekly token type
