@@ -32,7 +32,6 @@ export const buildMainSidebarMenuItems = (isSuperAdmin: boolean, business?: { id
       category: 'main',
       subItems: [
         { path: moduleRoutes.employees.files, label: 'קבצי עובדים', icon: FileText },
-        { path: moduleRoutes.employees.profile, label: 'פרופיל עובד', icon: User },
         { path: moduleRoutes.employees.attendance, label: 'נוכחות', icon: UserCheck },
         { path: moduleRoutes.employees.requests, label: 'בקשות עובדים', icon: CheckSquare },
         { path: moduleRoutes.employees.docs, label: 'מסמכים חתומים', icon: FileText },

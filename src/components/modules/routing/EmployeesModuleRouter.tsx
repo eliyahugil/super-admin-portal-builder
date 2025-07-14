@@ -18,8 +18,14 @@ interface Props {
 export const EmployeesModuleRouter: React.FC<Props> = ({ route, employeeId, businessId }) => {
   console.log('🔄 EmployeesModuleRouter - Route:', route, 'EmployeeId:', employeeId);
 
-  if (route === 'profile' || (!route && employeeId)) {
+  // Only show profile page if we have an employeeId
+  if (route === 'profile' && employeeId) {
     return <EmployeeProfilePage />;
+  }
+  
+  // If someone tries to access profile without employeeId, redirect to employee list
+  if (route === 'profile' && !employeeId) {
+    return <EmployeeManagement />;
   }
   
   switch (route) {
