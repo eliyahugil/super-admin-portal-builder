@@ -88,10 +88,47 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     });
   };
 
-  // Get employee names for submissions on a specific date
-  const getSubmissionEmployeeNames = (date: Date) => {
+  // Get detailed submission and assignment data for a specific date
+  const getDetailedDataForDate = (date: Date) => {
     const submissions = getPendingSubmissionsForDate(date);
-    return submissions.map(submission => getEmployeeName(submission.employee_id));
+    const dayShifts = getShiftsForDate(date);
+    
+    // Group submissions by branch and assignment status
+    const submissionsByBranch: Record<string, { assigned: any[], unassigned: any[] }> = {};
+    
+    submissions.forEach(submission => {
+      const shifts = typeof submission.shifts === 'string' 
+        ? JSON.parse(submission.shifts) 
+        : submission.shifts || [];
+      
+      const dateStr = date.toISOString().split('T')[0];
+      const relevantShifts = shifts.filter((shift: any) => shift.date === dateStr);
+      
+      relevantShifts.forEach((shift: any) => {
+        const branchName = shift.branch_preference || 'ללא סניף';
+        
+        if (!submissionsByBranch[branchName]) {
+          submissionsByBranch[branchName] = { assigned: [], unassigned: [] };
+        }
+        
+        const submissionData = {
+          employeeName: getEmployeeName(submission.employee_id),
+          role: shift.role_preference || 'ללא תפקיד',
+          startTime: shift.start_time,
+          endTime: shift.end_time,
+          isAssigned: dayShifts.some(s => s.employee_id === submission.employee_id && 
+                                          s.branch_name === shift.branch_preference)
+        };
+        
+        if (submissionData.isAssigned) {
+          submissionsByBranch[branchName].assigned.push(submissionData);
+        } else {
+          submissionsByBranch[branchName].unassigned.push(submissionData);
+        }
+      });
+    });
+    
+    return submissionsByBranch;
   };
 
   const handleViewSubmissions = (date: Date) => {
@@ -302,14 +339,54 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                           הגשות ממתינות ({getPendingSubmissionsForDate(date).length})
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <div className="text-right">
-                          <p className="font-medium mb-1">עובדים שהגישו:</p>
-                          <ul className="text-sm space-y-1">
-                            {getSubmissionEmployeeNames(date).map((name, index) => (
-                              <li key={index}>• {name}</li>
-                            ))}
-                          </ul>
+                      <TooltipContent side="top" className="max-w-md">
+                        <div className="text-right space-y-3">
+                          <p className="font-medium text-sm">סטטוס הגשות לתאריך {date.getDate()}/{date.getMonth() + 1}:</p>
+                          
+                          {(() => {
+                            const detailedData = getDetailedDataForDate(date);
+                            const branches = Object.keys(detailedData);
+                            
+                            return branches.length > 0 ? (
+                              branches.map((branchName, branchIndex) => (
+                                <div key={branchIndex} className="border-b border-gray-200 pb-2 last:border-b-0 last:pb-0">
+                                  <p className="font-medium text-xs text-blue-700 mb-1">
+                                    📍 {branchName}
+                                  </p>
+                                  
+                                  {/* Assigned shifts */}
+                                  {detailedData[branchName].assigned.length > 0 && (
+                                    <div className="mb-2">
+                                      <p className="text-xs text-green-700 font-medium mb-1">✅ הוקצו:</p>
+                                      <ul className="text-xs space-y-1 mr-4">
+                                        {detailedData[branchName].assigned.map((item, index) => (
+                                          <li key={index} className="text-green-600">
+                                            • {item.employeeName} - {item.role} ({item.startTime}-{item.endTime})
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Unassigned shifts */}
+                                  {detailedData[branchName].unassigned.length > 0 && (
+                                    <div>
+                                      <p className="text-xs text-orange-700 font-medium mb-1">⏳ לא הוקצו:</p>
+                                      <ul className="text-xs space-y-1 mr-4">
+                                        {detailedData[branchName].unassigned.map((item, index) => (
+                                          <li key={index} className="text-orange-600">
+                                            • {item.employeeName} - {item.role} ({item.startTime}-{item.endTime})
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-xs text-gray-500">אין נתונים להצגה</p>
+                            );
+                          })()}
                         </div>
                       </TooltipContent>
                     </Tooltip>
