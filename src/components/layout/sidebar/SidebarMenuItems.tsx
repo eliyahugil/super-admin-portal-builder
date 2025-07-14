@@ -57,9 +57,10 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
 
   const handleMenuItemClick = (hasSubItems: boolean, path: string) => {
     if (hasSubItems) {
+      // רק להרחיב/לכווץ את הקבוצה, לא לסגור את הסייד-בר
       toggleExpanded(path);
     } else {
-      // רק אם זה לא פריט עם תת-פריטים, נסגור את הסייד-בר במובייל
+      // רק כשנבחר פריט תפריט ספציפי (לא קבוצה), נסגור את הסייד-בר במובייל
       onMenuItemClick();
     }
   };
