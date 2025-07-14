@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Sheet,
@@ -11,6 +11,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, 
   Users, 
@@ -61,6 +62,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
   const { isModuleEnabled, isLoading: modulesLoading } = useBusinessModules(businessId);
   const location = useLocation();
   const currentPath = location.pathname;
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
   console.log('MobileSidebar - Current state:', {
     business: business?.name,
@@ -184,8 +186,32 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
     });
   };
 
-  const handleMenuItemClick = () => {
-    onOpenChange(false);
+  const toggleExpanded = (path: string) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [path]: !prev[path]
+    }));
+  };
+
+  const handleMenuItemClick = (item: MenuItem, event?: React.MouseEvent) => {
+    console.log('🔍 MobileSidebar.handleMenuItemClick:', { 
+      hasSubItems: item.subItems && item.subItems.length > 0, 
+      path: item.path, 
+      itemLabel: item.label 
+    });
+    
+    if (item.subItems && item.subItems.length > 0) {
+      // עבור פריטים עם תת-פריטים - רק נרחיב/נכווץ, לא נסגור סיידבר
+      console.log('📂 פריט עם תת-פריטים - מרחיב/כווץ בלבד, לא סוגר סיידבר');
+      event?.preventDefault();
+      event?.stopPropagation();
+      toggleExpanded(item.path);
+      // לא קוראים ל-onOpenChange כדי לא לסגור את הסיידבר
+    } else {
+      // עבור פריטים ללא תת-פריטים - ננווט ונסגור את הסיידבר
+      console.log('📄 פריט ללא תת-פריטים - סוגר סיידבר');
+      onOpenChange(false);
+    }
   };
 
   const renderMenuSection = (title: string, items: MenuItem[]) => {
@@ -204,46 +230,68 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
             const active = isActive(item.path);
             return (
               <div key={item.path}>
-                <NavLink
-                  to={item.path}
-                  onClick={handleMenuItemClick}
-                  className={`
-                    flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg mx-2 transition-colors
-                    ${active 
-                      ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                    }
-                  `}
-                >
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
-                  <span className="flex-1">{item.label}</span>
-                  {active && (
-                    <div className="w-2 h-2 bg-blue-700 rounded-full" />
-                  )}
-                </NavLink>
-                
-                {/* Sub-items */}
-                {item.subItems && active && (
-                  <div className="mr-4 mt-2 space-y-1">
-                    {item.subItems
-                      .filter(subItem => {
-                        if (subItem.moduleKey && !isSuperAdmin && !modulesLoading) {
-                          return isModuleEnabled(subItem.moduleKey);
+                {item.subItems && item.subItems.length > 0 ? (
+                  // פריט עם תת-פריטים - כפתור להרחבה/כיווץ
+                  <>
+                    <Button
+                      variant="ghost"
+                      onClick={(event) => handleMenuItemClick(item, event)}
+                      className={`
+                        w-full justify-start gap-3 px-4 py-3 text-sm font-medium rounded-lg mx-2 transition-colors h-auto
+                        ${active 
+                          ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700' 
+                          : 'text-gray-700 hover:bg-gray-100'
                         }
-                        return true;
-                      })
-                      .map((subItem) => (
-                        <NavLink
-                          key={subItem.path}
-                          to={subItem.path}
-                          onClick={handleMenuItemClick}
-                          className="flex items-center gap-3 px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                        >
-                          <subItem.icon className="h-4 w-4" />
-                          <span>{subItem.label}</span>
-                        </NavLink>
-                      ))}
-                  </div>
+                      `}
+                    >
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <span className="flex-1 text-right">{item.label}</span>
+                      {active && (
+                        <div className="w-2 h-2 bg-blue-700 rounded-full" />
+                      )}
+                    </Button>
+                    {expandedItems[item.path] && (
+                      <div className="mr-4 mt-2 space-y-1">
+                        {item.subItems
+                          .filter(subItem => {
+                            if (subItem.moduleKey && !isSuperAdmin && !modulesLoading) {
+                              return isModuleEnabled(subItem.moduleKey);
+                            }
+                            return true;
+                          })
+                          .map((subItem) => (
+                            <NavLink
+                              key={subItem.path}
+                              to={subItem.path}
+                              onClick={() => onOpenChange(false)}
+                              className="flex items-center gap-3 px-6 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                            >
+                              <subItem.icon className="h-4 w-4" />
+                              <span>{subItem.label}</span>
+                            </NavLink>
+                          ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  // פריט ללא תת-פריטים - קישור רגיל
+                  <NavLink
+                    to={item.path}
+                    onClick={() => onOpenChange(false)}
+                    className={`
+                      flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg mx-2 transition-colors
+                      ${active 
+                        ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                      }
+                    `}
+                  >
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                    <span className="flex-1">{item.label}</span>
+                    {active && (
+                      <div className="w-2 h-2 bg-blue-700 rounded-full" />
+                    )}
+                  </NavLink>
                 )}
               </div>
             );
