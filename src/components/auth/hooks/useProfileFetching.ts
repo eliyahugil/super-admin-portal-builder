@@ -20,56 +20,7 @@ export const useProfileFetching = (user: User | null) => {
 
       if (error) {
         console.error('❌ Profile fetch error:', error);
-        
-        // If profile doesn't exist, try to create one
-        console.log('🔧 Profile not found, creating new profile...');
-        try {
-          const { data: userData } = await supabase.auth.getUser();
-          if (userData.user) {
-            const newProfile = {
-              id: userId,
-              email: userData.user.email || '',
-              full_name: userData.user.user_metadata?.full_name || userData.user.email || '',
-              role: 'business_user' as const,
-              business_id: null // New users start without business assignment
-            };
-            
-            const { data: createdProfile, error: createError } = await supabase
-              .from('profiles')
-              .insert([newProfile])
-              .select()
-              .single();
-              
-            if (createError) {
-              console.error('❌ שגיאה ביצירת פרופיל:', createError);
-              // If creation fails, return a default profile
-              setProfile({
-                id: userId,
-                email: userData.user.email || '',
-                full_name: userData.user.email || '',
-                role: 'business_user' as const,
-                business_id: null
-              });
-              return;
-            }
-            
-            console.log('✅ פרופיל חדש נוצר:', createdProfile);
-            setProfile(createdProfile);
-            return;
-          }
-        } catch (createError) {
-          console.error('💥 Exception ביצירת פרופיל:', createError);
-        }
-        
-        // Return a default profile if everything fails
-        setProfile({
-          id: userId,
-          email: user?.email || '',
-          full_name: user?.email || '',
-          role: 'business_user' as const,
-          business_id: null
-        });
-        return;
+        throw error;
       }
 
       if (!data) {
@@ -97,15 +48,7 @@ export const useProfileFetching = (user: User | null) => {
               
             if (createError) {
               console.error('❌ שגיאה ביצירת פרופיל:', createError);
-              // Return default profile if creation fails
-              setProfile({
-                id: userId,
-                email: userData.user.email || '',
-                full_name: userData.user.email || '',
-                role: 'business_user' as const,
-                business_id: null
-              });
-              return;
+              throw createError;
             }
             
             console.log('✅ פרופיל חדש נוצר:', createdProfile);
@@ -114,16 +57,8 @@ export const useProfileFetching = (user: User | null) => {
           }
         } catch (createError) {
           console.error('💥 Exception ביצירת פרופיל:', createError);
+          throw createError;
         }
-        
-        // Return default profile
-        setProfile({
-          id: userId,
-          email: user?.email || '',
-          full_name: user?.email || '',
-          role: 'business_user' as const,
-          business_id: null
-        });
         return;
       }
 
