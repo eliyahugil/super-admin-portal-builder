@@ -21,7 +21,7 @@ import {
   MapPin,
   Eye
 } from 'lucide-react';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
@@ -45,43 +45,62 @@ export const ShiftRequests: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { businessId } = useBusiness();
+  const { businessId } = useCurrentBusiness();
 
-  // Fetch shift requests
+  // Fetch shift submissions (which are the actual weekly submissions)
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ['shift-requests', businessId, statusFilter],
+    queryKey: ['shift-submissions', businessId, statusFilter],
     queryFn: async (): Promise<ShiftRequest[]> => {
       if (!businessId) return [];
       
       let query = supabase
-        .from('employee_shift_requests')
+        .from('shift_submissions')
         .select(`
           *,
-          employee:employees(first_name, last_name)
+          employee:employees(first_name, last_name, business_id)
         `)
-        .order('created_at', { ascending: false });
-
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
+        .eq('employee.business_id', businessId)
+        .order('submitted_at', { ascending: false });
 
       const { data, error } = await query;
       if (error) throw error;
 
-      return (data || []).map(req => ({
-        id: req.id,
-        employee_id: req.employee_id,
-        employee_name: req.employee ? `${req.employee.first_name} ${req.employee.last_name}` : 'לא ידוע',
-        shift_date: req.shift_date,
-        start_time: req.start_time,
-        end_time: req.end_time,
-        branch_preference: req.branch_preference,
-        role_preference: req.role_preference,
-        status: req.status as 'pending' | 'approved' | 'rejected',
-        notes: req.notes,
-        created_at: req.created_at,
-        reviewed_at: req.reviewed_at
-      }));
+      // Convert shift submissions to display format
+      const expandedRequests: ShiftRequest[] = [];
+      
+      (data || []).forEach(submission => {
+        if (!submission.shifts) return;
+        
+        const shifts = typeof submission.shifts === 'string' 
+          ? JSON.parse(submission.shifts) 
+          : submission.shifts;
+          
+        shifts.forEach((shift: any) => {
+          expandedRequests.push({
+            id: `${submission.id}-${shift.date}`,
+            employee_id: submission.employee_id,
+            employee_name: submission.employee 
+              ? `${submission.employee.first_name} ${submission.employee.last_name}` 
+              : 'לא ידוע',
+            shift_date: shift.date,
+            start_time: shift.start_time,
+            end_time: shift.end_time,
+            branch_preference: shift.branch_preference || 'לא צוין',
+            role_preference: shift.role_preference,
+            status: submission.status as 'pending' | 'approved' | 'rejected',
+            notes: shift.notes,
+            created_at: submission.submitted_at,
+            reviewed_at: undefined
+          });
+        });
+      });
+
+      // Filter by status if needed
+      if (statusFilter !== 'all') {
+        return expandedRequests.filter(req => req.status === statusFilter);
+      }
+
+      return expandedRequests;
     },
     enabled: !!businessId
   });
