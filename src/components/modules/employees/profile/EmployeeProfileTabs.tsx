@@ -23,11 +23,12 @@ export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({ employ
   });
 
   return (
-    <div className="flex-1">
+    <div className="flex-1 w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <EmployeeTabsList 
           availableTabs={availableTabs}
           setActiveTab={setActiveTab}
+          activeTab={activeTab}
         />
 
         <EmployeeTabsContent

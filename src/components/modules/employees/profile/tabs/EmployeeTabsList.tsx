@@ -14,6 +14,7 @@ interface TabItem {
 interface EmployeeTabsListProps {
   availableTabs: TabItem[];
   setActiveTab: (tab: string) => void;
+  activeTab?: string;
 }
 
 /**
@@ -21,41 +22,61 @@ interface EmployeeTabsListProps {
  */
 export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   availableTabs,
-  setActiveTab
+  setActiveTab,
+  activeTab = 'overview'
 }) => {
   return (
-    <TabsList
-      className="
-        w-full flex flex-wrap justify-start gap-1 px-1 mb-1 min-w-0
-        border-b border-muted bg-background max-h-20 overflow-y-auto
-      "
-      dir="rtl"
-      style={{ direction: 'rtl' }}
-    >
-      {availableTabs.map((tab) => (
-        <TabsTrigger
-          key={tab.id}
-          value={tab.id}
-          onClick={() => setActiveTab(tab.id)}
-          // התאמות עיצוב לטאבים קומפקטיים
-          className="
-            relative flex items-center
-            justify-end flex-row-reverse gap-1 whitespace-nowrap
-            px-3 py-1.5 text-[14px] rounded-md focus:z-10 min-w-[100px] max-w-xs
-            transition-colors shadow-sm
-            bg-background
-          "
-          title={tab.description}
+    <div className="w-full">
+      {/* Mobile: Dropdown selector */}
+      <div className="block sm:hidden mb-4">
+        <select 
+          value={activeTab}
+          onChange={(e) => setActiveTab(e.target.value)}
+          className="w-full p-3 border border-border rounded-lg bg-background text-foreground text-sm"
+          dir="rtl"
         >
-          <tab.icon className="h-4 w-4 ml-1 shrink-0" />
-          <span className="hidden lg:inline truncate">{tab.label}</span>
-          {tab.badge && (
-            <Badge variant="secondary" className="h-4 min-w-4 text-xs ltr:ml-1 rtl:mr-1 shrink-0">
-              {tab.badge}
-            </Badge>
-          )}
-        </TabsTrigger>
-      ))}
-    </TabsList>
+          {availableTabs.map((tab) => (
+            <option key={tab.id} value={tab.id}>
+              {tab.label} {tab.badge ? `(${tab.badge})` : ''}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Desktop: Tab buttons */}
+      <TabsList
+        className="
+          hidden sm:flex w-full flex-wrap justify-start gap-1 px-1 mb-1 min-w-0
+          border-b border-muted bg-background max-h-20 overflow-y-auto
+        "
+        dir="rtl"
+        style={{ direction: 'rtl' }}
+      >
+        {availableTabs.map((tab) => (
+          <TabsTrigger
+            key={tab.id}
+            value={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className="
+              relative flex items-center
+              justify-end flex-row-reverse gap-2 whitespace-nowrap
+              px-3 py-2 text-sm rounded-md focus:z-10 min-w-[120px] max-w-xs
+              transition-colors shadow-sm
+              bg-background hover:bg-muted/50
+              data-[state=active]:bg-primary data-[state=active]:text-primary-foreground
+            "
+            title={tab.description}
+          >
+            <tab.icon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{tab.label}</span>
+            {tab.badge && (
+              <Badge variant="secondary" className="h-4 min-w-4 text-xs shrink-0">
+                {tab.badge}
+              </Badge>
+            )}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </div>
   );
 };
