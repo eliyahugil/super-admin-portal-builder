@@ -58,45 +58,10 @@ export const useOrdersData = (selectedBusinessId?: string | null) => {
         throw new Error('Business ID required');
       }
 
-      // For demo purposes, return mock data
-      // In real implementation, this would query the orders table
-      console.log('🛒 Returning mock orders data for business:', targetBusinessId);
+      // Real data will come from database
+      console.log('🛒 Returning empty orders data for business:', targetBusinessId);
       
-      const mockOrders: Order[] = [
-        {
-          id: '1',
-          business_id: targetBusinessId,
-          order_number: '1001',
-          customer_name: 'אבי כהן',
-          customer_phone: '052-1234567',
-          customer_email: 'avi@example.com',
-          total_amount: 150.00,
-          currency: 'ILS',
-          status: 'processing',
-          order_type: 'delivery',
-          delivery_address: 'רחוב הרצל 25, תל אביב',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          estimated_delivery: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-          notes: 'הזמנה דחופה'
-        },
-        {
-          id: '2',
-          business_id: targetBusinessId,
-          order_number: '1002',
-          customer_name: 'שרה לוי',
-          customer_phone: '053-7654321',
-          total_amount: 89.50,
-          currency: 'ILS',
-          status: 'delivered',
-          order_type: 'pickup',
-          pickup_location: 'סניף רמת גן',
-          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          updated_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-        }
-      ];
-
-      return mockOrders;
+      return [];
     },
     // CRITICAL FIX: Only enable query when we have a target business ID
     enabled: !!profile && !!targetBusinessId,

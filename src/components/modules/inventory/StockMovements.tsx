@@ -27,39 +27,8 @@ export const StockMovements: React.FC = () => {
   const [selectedType, setSelectedType] = useState('all');
   const [selectedDate, setSelectedDate] = useState<Date>();
 
-  // Mock data
-  const movements: StockMovement[] = [
-    {
-      id: '1',
-      productName: 'מוצר דוגמה 1',
-      sku: 'PRD001',
-      type: 'in',
-      quantity: 50,
-      reason: 'רכישה מספק',
-      date: new Date(),
-      user: 'יוסי כהן'
-    },
-    {
-      id: '2',
-      productName: 'מוצר דוגמה 2',
-      sku: 'PRD002',
-      type: 'out',
-      quantity: 10,
-      reason: 'מכירה ללקוח',
-      date: new Date(Date.now() - 86400000),
-      user: 'שרה לוי'
-    },
-    {
-      id: '3',
-      productName: 'מוצר דוגמה 3',
-      sku: 'PRD003',
-      type: 'out',
-      quantity: 5,
-      reason: 'פריט פגום',
-      date: new Date(Date.now() - 172800000),
-      user: 'דוד ישראלי'
-    }
-  ];
+  // Real data will come from database
+  const movements: StockMovement[] = [];
 
   const getMovementIcon = (type: StockMovement['type']) => {
     return type === 'in' ? (
@@ -98,7 +67,7 @@ export const StockMovements: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">הכנסות השבוע</p>
-                <p className="text-3xl font-bold text-green-600">145</p>
+                <p className="text-3xl font-bold text-green-600">0</p>
               </div>
               <TrendingUp className="h-8 w-8 text-green-600" />
             </div>
@@ -110,7 +79,7 @@ export const StockMovements: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">יציאות השבוע</p>
-                <p className="text-3xl font-bold text-red-600">89</p>
+                <p className="text-3xl font-bold text-red-600">0</p>
               </div>
               <TrendingDown className="h-8 w-8 text-red-600" />
             </div>
@@ -122,7 +91,7 @@ export const StockMovements: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">איזון נטו</p>
-                <p className="text-3xl font-bold text-blue-600">+56</p>
+                <p className="text-3xl font-bold text-blue-600">0</p>
               </div>
               <TrendingUp className="h-8 w-8 text-blue-600" />
             </div>

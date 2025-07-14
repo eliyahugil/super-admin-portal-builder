@@ -33,59 +33,9 @@ export const ShiftApprovalDashboard: React.FC = () => {
   const [managerNotes, setManagerNotes] = useState<{ [id: number]: string }>({});
   const { toast } = useToast();
 
-  // Mock data for demonstration
+  // Real data will come from database
   useEffect(() => {
-    const mockData: ShiftRequest[] = [
-      {
-        id: 1,
-        employee_id: '1',
-        business_id: 'business-1',
-        date: '2024-01-15',
-        start_time: '09:00',
-        end_time: '17:00',
-        status: 'pending',
-        submitted_at: '2024-01-10T10:00:00Z',
-        notes: 'בקשה רגילה למשמרת',
-        employee: {
-          full_name: 'יוסי כהן',
-          phone: '0501234567'
-        }
-      },
-      {
-        id: 2,
-        employee_id: '2',
-        business_id: 'business-1',
-        date: '2024-01-16',
-        start_time: '14:00',
-        end_time: '22:00',
-        status: 'approved',
-        submitted_at: '2024-01-09T15:30:00Z',
-        notes: 'משמרת ערב',
-        manager_notes: 'אושר - צריך עובד נוסף בערב',
-        employee: {
-          full_name: 'שרה לוי',
-          phone: '0507654321'
-        }
-      },
-      {
-        id: 3,
-        employee_id: '3',
-        business_id: 'business-1',
-        date: '2024-01-17',
-        start_time: '06:00',
-        end_time: '14:00',
-        status: 'rejected',
-        submitted_at: '2024-01-08T08:00:00Z',
-        notes: 'בקשה למשמרת בוקר',
-        manager_notes: 'נדחה - יש מספיק עובדים',
-        employee: {
-          full_name: 'מיכל גרין',
-          phone: '0523456789'
-        }
-      }
-    ];
-    
-    setRequests(mockData);
+    setRequests([]);
     setLoading(false);
   }, []);
 

@@ -35,20 +35,20 @@ import {
 } from 'lucide-react';
 
 const weeklyData = [
-  { day: 'א', attendance: 85, planned: 100 },
-  { day: 'ב', attendance: 92, planned: 100 },
-  { day: 'ג', attendance: 78, planned: 95 },
-  { day: 'ד', attendance: 88, planned: 105 },
-  { day: 'ה', attendance: 95, planned: 110 },
-  { day: 'ו', attendance: 65, planned: 80 },
-  { day: 'ש', attendance: 45, planned: 60 }
+  { day: 'א', attendance: 0, planned: 0 },
+  { day: 'ב', attendance: 0, planned: 0 },
+  { day: 'ג', attendance: 0, planned: 0 },
+  { day: 'ד', attendance: 0, planned: 0 },
+  { day: 'ה', attendance: 0, planned: 0 },
+  { day: 'ו', attendance: 0, planned: 0 },
+  { day: 'ש', attendance: 0, planned: 0 }
 ];
 
 const attendanceStatusData = [
-  { name: 'נוכח', value: 75, color: '#10B981' },
-  { name: 'איחור', value: 15, color: '#F59E0B' },
-  { name: 'נעדר', value: 8, color: '#EF4444' },
-  { name: 'חופש', value: 2, color: '#8B5CF6' }
+  { name: 'נוכח', value: 0, color: '#10B981' },
+  { name: 'איחור', value: 0, color: '#F59E0B' },
+  { name: 'נעדר', value: 0, color: '#EF4444' },
+  { name: 'חופש', value: 0, color: '#8B5CF6' }
 ];
 
 export const AttendanceReports: React.FC = () => {
@@ -56,24 +56,17 @@ export const AttendanceReports: React.FC = () => {
   const [selectedBranch, setSelectedBranch] = useState('all');
 
   const stats = {
-    totalEmployees: 45,
-    presentToday: 38,
-    lateToday: 4,
-    absentToday: 3,
-    attendanceRate: 84.4,
-    averageHours: 7.2
+    totalEmployees: 0,
+    presentToday: 0,
+    lateToday: 0,
+    absentToday: 0,
+    attendanceRate: 0,
+    averageHours: 0
   };
 
-  const topPerformers = [
-    { name: 'שרה כהן', attendance: 98, hours: 168 },
-    { name: 'דוד לוי', attendance: 96, hours: 162 },
-    { name: 'מירה רז', attendance: 94, hours: 158 }
-  ];
+  const topPerformers: any[] = [];
 
-  const concerningEmployees = [
-    { name: 'יוסי גמל', attendance: 65, absences: 8, reason: 'איחורים תכופים' },
-    { name: 'רחל דרור', attendance: 72, absences: 6, reason: 'היעדרויות' }
-  ];
+  const concerningEmployees: any[] = [];
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -247,22 +240,28 @@ export const AttendanceReports: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {topPerformers.map((employee, index) => (
-                <div key={employee.name} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center">
-                      {index + 1}
-                    </Badge>
-                    <div>
-                      <p className="font-medium">{employee.name}</p>
-                      <p className="text-sm text-gray-600">{employee.hours} שעות החודש</p>
-                    </div>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">
-                    {employee.attendance}% נוכחות
-                  </Badge>
+              {topPerformers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  אין נתונים להצגה
                 </div>
-              ))}
+              ) : (
+                topPerformers.map((employee, index) => (
+                  <div key={employee.name} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center">
+                        {index + 1}
+                      </Badge>
+                      <div>
+                        <p className="font-medium">{employee.name}</p>
+                        <p className="text-sm text-gray-600">{employee.hours} שעות החודש</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-green-100 text-green-800">
+                      {employee.attendance}% נוכחות
+                    </Badge>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -277,20 +276,26 @@ export const AttendanceReports: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {concerningEmployees.map((employee) => (
-                <div key={employee.name} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">{employee.name}</p>
-                    <p className="text-sm text-gray-600">{employee.reason}</p>
-                  </div>
-                  <div className="text-left">
-                    <Badge variant="outline" className="mb-1">
-                      {employee.attendance}% נוכחות
-                    </Badge>
-                    <p className="text-xs text-gray-600">{employee.absences} היעדרויות</p>
-                  </div>
+              {concerningEmployees.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  אין נתונים להצגה
                 </div>
-              ))}
+              ) : (
+                concerningEmployees.map((employee) => (
+                  <div key={employee.name} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">{employee.name}</p>
+                      <p className="text-sm text-gray-600">{employee.reason}</p>
+                    </div>
+                    <div className="text-left">
+                      <Badge variant="outline" className="mb-1">
+                        {employee.attendance}% נוכחות
+                      </Badge>
+                      <p className="text-xs text-gray-600">{employee.absences} היעדרויות</p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

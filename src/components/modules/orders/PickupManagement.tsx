@@ -20,37 +20,8 @@ interface Pickup {
 export const PickupManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Mock data
-  const pickups: Pickup[] = [
-    {
-      id: '1',
-      orderNumber: '1001',
-      customerName: 'אבי כהן',
-      phone: '052-1234567',
-      branch: 'סניף ראשי - תל אביב',
-      status: 'ready',
-      readyTime: '14:30',
-    },
-    {
-      id: '2',
-      orderNumber: '1002',
-      customerName: 'שרה לוי',
-      phone: '053-7654321',
-      branch: 'סניף רמת גן',
-      status: 'picked_up',
-      readyTime: '13:00',
-      pickupTime: '15:30',
-    },
-    {
-      id: '3',
-      orderNumber: '1003',
-      customerName: 'יוסי ישראלי',
-      phone: '054-9876543',
-      branch: 'סניף ראשי - תל אביב',
-      status: 'ready',
-      readyTime: '16:00',
-    },
-  ];
+  // Real data will come from database
+  const pickups: Pickup[] = [];
 
   const getStatusBadge = (status: Pickup['status']) => {
     switch (status) {
@@ -121,7 +92,7 @@ export const PickupManagement: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">זמן המתנה ממוצע</p>
-                <p className="text-3xl font-bold text-orange-600">25 דק'</p>
+                <p className="text-3xl font-bold text-orange-600">0 דק'</p>
               </div>
               <MapPin className="h-8 w-8 text-orange-600" />
             </div>

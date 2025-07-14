@@ -22,38 +22,8 @@ export const DeliveryManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAddress, setSelectedAddress] = useState(null);
 
-  // Mock data
-  const deliveries: Delivery[] = [
-    {
-      id: '1',
-      orderNumber: '1001',
-      customerName: 'אבי כהן',
-      address: 'רחוב הרצל 25, תל אביב',
-      phone: '052-1234567',
-      status: 'pending',
-      estimatedTime: '14:30',
-    },
-    {
-      id: '2',
-      orderNumber: '1002',
-      customerName: 'שרה לוי',
-      address: 'רחוב בן גוריון 15, רמת גן',
-      phone: '053-7654321',
-      status: 'in_transit',
-      estimatedTime: '15:00',
-      driverName: 'מוחמד עלי',
-    },
-    {
-      id: '3',
-      orderNumber: '1003',
-      customerName: 'יוסי ישראלי',
-      address: 'שדרות רוטשילד 100, תל אביב',
-      phone: '054-9876543',
-      status: 'delivered',
-      estimatedTime: '13:45',
-      driverName: 'דוד כהן',
-    },
-  ];
+  // Real data will come from database
+  const deliveries: Delivery[] = [];
 
   const getStatusBadge = (status: Delivery['status']) => {
     switch (status) {
