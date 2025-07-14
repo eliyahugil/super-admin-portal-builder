@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
 import { useWeeklyToken } from './weekly-token/useWeeklyToken';
 import { TokenActionDropdown } from './weekly-token/TokenActionDropdown';
 import { LinkActionsDropdown } from './weekly-token/LinkActionsDropdown';
@@ -7,6 +8,7 @@ import { RevokeTokenDialog } from './weekly-token/RevokeTokenDialog';
 import { TokenStatus } from './weekly-token/TokenStatus';
 import { TokenURLsDisplay } from './weekly-token/TokenURLsDisplay';
 import { WeeklyTokenButtonProps } from './weekly-token/types';
+import { ExternalLink } from 'lucide-react';
 
 export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
   phone,
@@ -49,6 +51,16 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
   if (compact) {
     return (
       <div className="flex gap-2">
+        <Button
+          onClick={() => handleOpenLink(false)}
+          size="sm"
+          className="flex items-center gap-2"
+          title="פתח טופס הגשת משמרות"
+        >
+          <ExternalLink className="h-4 w-4" />
+          פתח טופס
+        </Button>
+        
         <TokenActionDropdown
           loading={loading}
           phone={phone}
@@ -80,6 +92,16 @@ export const WeeklyTokenButton: React.FC<WeeklyTokenButtonProps> = ({
       <TokenStatus tokenData={tokenData} />
       
       <div className="flex gap-2">
+        <Button
+          onClick={() => handleOpenLink(false)}
+          size="sm"
+          className="flex items-center gap-2"
+          title="פתח טופס הגשת משמרות"
+        >
+          <ExternalLink className="h-4 w-4" />
+          פתח טופס
+        </Button>
+        
         <TokenActionDropdown
           loading={loading}
           phone={phone}
