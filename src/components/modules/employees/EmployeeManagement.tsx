@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { EmployeeManagementHeader } from './EmployeeManagementHeader';
-import { EmployeeStatsCards } from './EmployeeStatsCards';
+import { ModernEmployeeHeader } from './ModernEmployeeHeader';
+import { ModernEmployeeStatsCards } from './ModernEmployeeStatsCards';
 import { EmployeeManagementLoading } from './EmployeeManagementLoading';
 import { EmployeeManagementEmptyState } from './EmployeeManagementEmptyState';
-import { EnhancedEmployeesList } from './EnhancedEmployeesList';
+import { ModernEmployeesList } from './ModernEmployeesList';
 import { ArchivedEmployeesList } from './ArchivedEmployeesList';
 import { ManagementToolsSection } from './ManagementToolsSection/ManagementToolsSection';
 import { useEmployees } from '@/hooks/useEmployees';
@@ -89,8 +89,8 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
   }
 
   return (
-    <div className="space-y-6" key={refreshKey}>
-      <EmployeeManagementHeader 
+    <div className="container-mobile space-y-6 py-6" key={refreshKey}>
+      <ModernEmployeeHeader 
         businessId={effectiveBusinessId}
         showArchived={showArchived}
         onToggleArchived={setShowArchived}
@@ -98,7 +98,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
         totalArchivedEmployees={stats.archivedEmployees}
       />
 
-      <EmployeeStatsCards
+      <ModernEmployeeStatsCards
         totalEmployees={stats.totalEmployees}
         activeEmployees={stats.activeEmployees}
         inactiveEmployees={stats.inactiveEmployees}
@@ -124,7 +124,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
           onRefetch={handleRefetch}
         />
       ) : (
-        <EnhancedEmployeesList 
+        <ModernEmployeesList 
           businessId={effectiveBusinessId}
           employees={activeEmployees}
           onRefetch={handleRefetch}
