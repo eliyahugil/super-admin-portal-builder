@@ -6,8 +6,8 @@ import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 export const BusinessSwitcher: React.FC = () => {
   const { isSuperAdmin, hasMultipleBusinesses, loading } = useCurrentBusiness();
 
-  // הצג את בורר העסק רק אם:
-  // 1. המשתמש הוא super admin (תמיד)
+  // הצג את בורר העסק אם:
+  // 1. המשתמש הוא super admin (תמיד - כדי שיוכל לבחור בין מצב admin לעסק ספציפי)
   // 2. או שיש לו יותר מעסק אחד
   const shouldShowSelector = isSuperAdmin || hasMultipleBusinesses;
 
@@ -16,9 +16,9 @@ export const BusinessSwitcher: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-xs">
+    <div className="w-full max-w-md">
       <BusinessSelector
-        placeholder="בחר עסק..."
+        placeholder="בחר מצב עבודה..."
         showAllOption={isSuperAdmin}
         className="w-full"
       />
