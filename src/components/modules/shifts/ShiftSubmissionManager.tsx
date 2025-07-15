@@ -96,14 +96,18 @@ export const ShiftSubmissionManager: React.FC = () => {
     const now = new Date();
     const currentWeek = new Date(now);
     
-    // אם היום הוא יום ראשון (0), השאר אותו כמו שהוא
-    // אחרת, קדם ליום ראשון הבא
+    console.log('🗓️ getCurrentWeek - היום הוא:', now.getDay(), 'התאריך:', now.toISOString().split('T')[0]);
+    
+    // אם היום הוא יום ראשון - השאר אותו
+    // אחרת - קדם ליום ראשון הבא
     if (now.getDay() === 0) {
-      // כבר יום ראשון
+      console.log('📅 השבוע הנוכחי - היום הוא ראשון, לא משנה:', currentWeek.toISOString().split('T')[0]);
       return currentWeek.toISOString().split('T')[0];
     } else {
-      // קדם ליום ראשון הבא
-      currentWeek.setDate(now.getDate() + (7 - now.getDay()));
+      // קדם ליום ראשון הבא: (7 - מספר היום הנוכחי)
+      const daysToAdd = 7 - now.getDay();
+      currentWeek.setDate(now.getDate() + daysToAdd);
+      console.log('📅 השבוע הנוכחי - קודם ל:', daysToAdd, 'ימים, תוצאה:', currentWeek.toISOString().split('T')[0]);
       return currentWeek.toISOString().split('T')[0];
     }
   };
@@ -112,13 +116,14 @@ export const ShiftSubmissionManager: React.FC = () => {
     const now = new Date();
     const nextWeek = new Date(now);
     
-    // תמיד קדם ליום ראשון הבא + עוד שבוע
+    // תמיד קדם ליום ראשון הבא ועוד שבוע
     if (now.getDay() === 0) {
-      // אם היום הוא ראשון, השבוע הבא הוא בעוד 7 ימים
+      // אם היום ראשון, השבוע הבא הוא בעוד 7 ימים
       nextWeek.setDate(now.getDate() + 7);
     } else {
-      // אחרת, קדם ליום ראשון הבא + עוד שבוע
-      nextWeek.setDate(now.getDate() + (7 - now.getDay()) + 7);
+      // קדם ליום ראשון הבא ועוד שבוע
+      const daysToNextSunday = 7 - now.getDay();
+      nextWeek.setDate(now.getDate() + daysToNextSunday + 7);
     }
     return nextWeek.toISOString().split('T')[0];
   };
@@ -127,13 +132,14 @@ export const ShiftSubmissionManager: React.FC = () => {
     const now = new Date();
     const weekAfterNext = new Date(now);
     
-    // תמיד קדם ליום ראשון הבא + עוד שבועיים  
+    // תמיד קדם ליום ראשון הבא ועוד שבועיים
     if (now.getDay() === 0) {
-      // אם היום הוא ראשון, בעוד שבועיים הוא בעוד 14 ימים
+      // אם היום ראשון, בעוד שבועיים הוא בעוד 14 ימים
       weekAfterNext.setDate(now.getDate() + 14);
     } else {
-      // אחרת, קדם ליום ראשון הבא + עוד שבועיים
-      weekAfterNext.setDate(now.getDate() + (7 - now.getDay()) + 14);
+      // קדם ליום ראשון הבא ועוד שבועיים
+      const daysToNextSunday = 7 - now.getDay();
+      weekAfterNext.setDate(now.getDate() + daysToNextSunday + 14);
     }
     return weekAfterNext.toISOString().split('T')[0];
   };
