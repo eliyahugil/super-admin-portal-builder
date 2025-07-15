@@ -63,6 +63,39 @@ export const ShiftSubmissionManager: React.FC = () => {
     enabled: !!businessId && !!selectedWeek,
   });
 
+  // קבלת הגשות משמרות לשבוע הנבחר
+  const { data: submittedShifts = [] } = useQuery({
+    queryKey: ['submitted-shifts', businessId, selectedWeek],
+    queryFn: async () => {
+      if (!businessId || !selectedWeek) return [];
+
+      const weekStart = new Date(selectedWeek);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+
+      const { data, error } = await supabase
+        .from('employee_shift_requests')
+        .select(`
+          *,
+          employee:employees(first_name, last_name)
+        `)
+        .gte('shift_date', weekStart.toISOString().split('T')[0])
+        .lte('shift_date', weekEnd.toISOString().split('T')[0]);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!businessId && !!selectedWeek,
+  });
+
+  // חישוב מספר עובדים ייחודיים שהגישו משמרות
+  const uniqueSubmittedEmployees = submittedShifts.reduce((acc, shift) => {
+    if (shift.employee_id && !acc.includes(shift.employee_id)) {
+      acc.push(shift.employee_id);
+    }
+    return acc;
+  }, [] as string[]);
+
   // יצירת שבוע ברירת מחדל (השבוע הבא)
   const getNextWeek = () => {
     const now = new Date();
@@ -283,7 +316,7 @@ export const ShiftSubmissionManager: React.FC = () => {
             <div className="flex items-center gap-3">
               <Calendar className="h-8 w-8 text-orange-600" />
               <div>
-                <div className="text-2xl font-bold">0</div>
+                <div className="text-2xl font-bold">{uniqueSubmittedEmployees.length}</div>
                 <div className="text-sm text-gray-600">הגישו משמרות</div>
               </div>
             </div>
@@ -355,6 +388,7 @@ export const ShiftSubmissionManager: React.FC = () => {
             <div className="space-y-3">
               {employees.map((employee) => {
                 const hasToken = existingTokens.some(t => t.employee_id === employee.id);
+                const hasSubmitted = uniqueSubmittedEmployees.includes(employee.id);
                 
                 return (
                   <div key={employee.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -373,6 +407,11 @@ export const ShiftSubmissionManager: React.FC = () => {
                       <Badge variant={hasToken ? "default" : "secondary"}>
                         {hasToken ? 'נשלח טוכן' : 'טרם נשלח'}
                       </Badge>
+                      {hasSubmitted && (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                          הגיש משמרות ✓
+                        </Badge>
+                      )}
                       {!employee.phone && (
                         <Badge variant="destructive">אין טלפון</Badge>
                       )}
