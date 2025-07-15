@@ -51,6 +51,7 @@ interface FileData {
   folder_id: string | null;
   is_visible_to_employee: boolean;
   created_at: string;
+  uploaded_at: string | null;
   uploaded_by: string;
 }
 
@@ -137,6 +138,7 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
           folder_id,
           is_visible_to_employee,
           created_at,
+          uploaded_at,
           uploaded_by
         `)
         .eq('employee_id', employeeId);
