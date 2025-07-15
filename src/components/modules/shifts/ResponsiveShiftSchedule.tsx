@@ -250,11 +250,9 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       {/* Main Content with Mobile-Optimized Tabs */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className={`grid w-full ${isMobile ? 'grid-cols-4 mb-2 h-8 text-xs' : 'grid-cols-4 mb-4'}`}>
+          <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 mb-2 h-8 text-xs' : 'grid-cols-2 mb-4'}`}>
             <TabsTrigger value="schedule" className={isMobile ? 'text-xs px-2' : ''}>לוח משמרות</TabsTrigger>
             <TabsTrigger value="advanced" className={isMobile ? 'text-xs px-1' : ''}>סידור מתקדם</TabsTrigger>
-            <TabsTrigger value="holidays" className={isMobile ? 'text-xs px-2' : ''}>חגים ומועדים</TabsTrigger>
-            <TabsTrigger value="google-calendar" className={isMobile ? 'text-xs px-1' : ''}>Google</TabsTrigger>
           </TabsList>
           
           <TabsContent value="schedule" className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -325,40 +323,6 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           
           <TabsContent value="advanced" className="flex-1 overflow-hidden">
             <AdvancedSchedulingDashboard />
-          </TabsContent>
-          
-          <TabsContent value="holidays" className="flex-1 overflow-hidden">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-600 text-sm">טוען נתוני חגים ומועדים...</p>
-                </div>
-              </div>
-            ) : (
-              <HolidaysAndFestivalsTable 
-                holidays={holidays}
-                shabbatTimes={shabbatTimes}
-                className="h-full overflow-auto"
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="google-calendar" className="flex-1 overflow-hidden">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-600 text-sm">טוען אירועי Google Calendar...</p>
-                </div>
-              </div>
-            ) : (
-              <GoogleCalendarEventsTable 
-                events={googleEvents}
-                businessId={businessId}
-                className="h-full overflow-auto"
-              />
-            )}
           </TabsContent>
         </Tabs>
       </div>
