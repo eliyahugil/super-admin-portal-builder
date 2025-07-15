@@ -41,18 +41,18 @@ export const useDashboardLayout = (pageType: string) => {
     const loadLayout = async () => {
       try {
         const { data, error } = await supabase
-          .from('user_dashboard_layouts')
+          .from('user_dashboard_layouts' as any)
           .select('*')
           .eq('user_id', user.id)
           .eq('page_type', pageType)
-          .single();
+          .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+        if (error) {
           console.error('Error loading layout:', error);
         }
 
-        if (data) {
-          setLayout(data.layout_config);
+        if (data && (data as any).layout_config) {
+          setLayout((data as any).layout_config);
         } else {
           // No custom layout found, use default
           setLayout(defaultLayout);
@@ -66,7 +66,7 @@ export const useDashboardLayout = (pageType: string) => {
     };
 
     loadLayout();
-  }, [user, pageType]);
+  }, [user, pageType, defaultLayout]);
 
   // Save layout configuration
   const saveLayout = async (newLayout: DashboardLayout['layout_config']) => {
@@ -74,7 +74,7 @@ export const useDashboardLayout = (pageType: string) => {
 
     try {
       const { error } = await supabase
-        .from('user_dashboard_layouts')
+        .from('user_dashboard_layouts' as any)
         .upsert({
           user_id: user.id,
           page_type: pageType,

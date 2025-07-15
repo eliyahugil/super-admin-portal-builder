@@ -3829,6 +3829,33 @@ export type Database = {
           },
         ]
       }
+      user_dashboard_layouts: {
+        Row: {
+          created_at: string
+          id: string
+          layout_config: Json
+          page_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          layout_config?: Json
+          page_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          layout_config?: Json
+          page_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       whatsapp_business_connections: {
         Row: {
           business_id: string
