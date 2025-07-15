@@ -59,7 +59,7 @@ export const AttendanceList: React.FC = () => {
       action,
       is_valid_location,
       notes,
-      employee:employees!inner(first_name, last_name, employee_id),
+      employee:employees(first_name, last_name, employee_id),
       branch:branches(name)
     `
   });
