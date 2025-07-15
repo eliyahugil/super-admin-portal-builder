@@ -25,39 +25,66 @@ export interface ShiftSubmissionData {
 export class ShiftTokenService {
   // Generate a unique token for an employee
   static async generateToken(employeeId: string, expiresInHours: number = 168): Promise<string> {
-    const token = crypto.randomUUID().replace(/-/g, '');
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + expiresInHours);
+    try {
+      console.log('🔄 Generating token for employee:', employeeId);
+      
+      // Generate a simple string token (not UUID) for shift_tokens table
+      const token = crypto.randomUUID().replace(/-/g, '');
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + expiresInHours);
 
-    const { data, error } = await supabase
-      .from('shift_tokens')
-      .insert({
-        employee_id: employeeId,
-        token,
-        expires_at: expiresAt.toISOString(),
-      })
-      .select('token')
-      .single();
+      console.log('📝 Inserting into shift_tokens table with token:', token);
 
-    if (error) throw error;
-    return data.token;
+      const { data, error } = await supabase
+        .from('shift_tokens')
+        .insert({
+          employee_id: employeeId,
+          token,
+          expires_at: expiresAt.toISOString(),
+        })
+        .select('token')
+        .single();
+
+      if (error) {
+        console.error('❌ Error inserting shift token:', error);
+        throw new Error(`Failed to generate shift token: ${error.message}`);
+      }
+
+      console.log('✅ Shift token generated successfully:', data.token);
+      return data.token;
+    } catch (error) {
+      console.error('❌ ShiftTokenService.generateToken error:', error);
+      throw error;
+    }
   }
 
   // Validate token and get token data
   static async validateToken(token: string): Promise<ShiftToken | null> {
-    const { data, error } = await supabase
-      .from('shift_tokens')
-      .select(`
-        *,
-        employee:employees(first_name, last_name, employee_id)
-      `)
-      .eq('token', token)
-      .eq('is_used', false)
-      .gt('expires_at', new Date().toISOString())
-      .single();
+    try {
+      console.log('🔍 Validating token:', token);
+      
+      const { data, error } = await supabase
+        .from('shift_tokens')
+        .select(`
+          *,
+          employee:employees(first_name, last_name, employee_id)
+        `)
+        .eq('token', token)
+        .eq('is_used', false)
+        .gt('expires_at', new Date().toISOString())
+        .single();
 
-    if (error) return null;
-    return data;
+      if (error) {
+        console.log('⚠️ Token validation failed:', error.message);
+        return null;
+      }
+      
+      console.log('✅ Token validated successfully:', data.id);
+      return data;
+    } catch (error) {
+      console.error('❌ ShiftTokenService.validateToken error:', error);
+      return null;
+    }
   }
 
   // Submit shift data using token
@@ -96,16 +123,28 @@ export class ShiftTokenService {
 
   // Get all tokens for a business
   static async getTokensForBusiness(businessId: string) {
-    const { data, error } = await supabase
-      .from('shift_tokens')
-      .select(`
-        *,
-        employee:employees!inner(first_name, last_name, employee_id, business_id)
-      `)
-      .eq('employee.business_id', businessId)
-      .order('created_at', { ascending: false });
+    try {
+      console.log('📋 Fetching tokens for business:', businessId);
+      
+      const { data, error } = await supabase
+        .from('shift_tokens')
+        .select(`
+          *,
+          employee:employees!inner(first_name, last_name, employee_id, business_id)
+        `)
+        .eq('employee.business_id', businessId)
+        .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data;
+      if (error) {
+        console.error('❌ Error fetching business tokens:', error);
+        throw new Error(`Failed to fetch tokens: ${error.message}`);
+      }
+      
+      console.log('✅ Fetched tokens successfully:', data?.length || 0);
+      return data;
+    } catch (error) {
+      console.error('❌ ShiftTokenService.getTokensForBusiness error:', error);
+      throw error;
+    }
   }
 }

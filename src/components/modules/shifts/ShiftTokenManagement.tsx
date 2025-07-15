@@ -65,41 +65,44 @@ export const ShiftTokenManagement: React.FC = () => {
   // Generate token mutation
   const generateTokenMutation = useMutation({
     mutationFn: async (employeeId: string) => {
+      console.log('🚀 Starting token generation for employee:', employeeId);
       return await ShiftTokenService.generateToken(employeeId, 168); // 7 days
     },
     onSuccess: (token) => {
+      console.log('✅ Token generation successful:', token);
+      copyTokenLink(token);
       toast({
-        title: 'הצלחה',
-        description: 'טוקן נוצר בהצלחה',
+        title: "טוקן נוצר בהצלחה",
+        description: "הקישור הועתק ללוח. ניתן לשלוח אותו לעובד.",
       });
       queryClient.invalidateQueries({ queryKey: ['shift-tokens'] });
-      
-      // Copy token to clipboard
-      navigator.clipboard.writeText(`${window.location.origin}/shift-submission/${token}`);
-      toast({
-        title: 'הקישור הועתק',
-        description: 'קישור הגשת המשמרת הועתק ללוח',
-      });
+      setSelectedEmployee('');
     },
-    onError: (error) => {
-      console.error('Token generation error:', error);
+    onError: (error: any) => {
+      console.error('❌ Token generation failed:', error);
+      const errorMessage = error?.message || 'אירעה שגיאה לא צפויה';
       toast({
-        title: 'שגיאה',
-        description: 'שגיאה ביצירת הטוקן',
-        variant: 'destructive',
+        title: "שגיאה ביצירת טוקן",
+        description: `שגיאה: ${errorMessage}`,
+        variant: "destructive",
       });
     },
   });
 
   const handleGenerateToken = () => {
+    console.log('🎯 Token generation requested for employee:', selectedEmployee);
+    
     if (!selectedEmployee) {
+      console.warn('⚠️ No employee selected for token generation');
       toast({
-        title: 'שגיאה',
-        description: 'יש לבחור עובד',
-        variant: 'destructive',
+        title: "בחירת עובד נדרשת",
+        description: "אנא בחר עובד ליצירת טוקן",
+        variant: "destructive",
       });
       return;
     }
+
+    console.log('📤 Triggering token generation mutation');
     generateTokenMutation.mutate(selectedEmployee);
   };
 
