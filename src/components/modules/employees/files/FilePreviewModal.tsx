@@ -310,12 +310,18 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                     <FileText className="h-16 w-16 mb-4" />
                     <h3 className="text-lg font-medium mb-2">אין תצוגה מקדימה זמינה</h3>
                     <p className="text-sm text-center mb-4">
-                      לא ניתן להציג תצוגה מקדימה עבור סוג קובץ זה
+                      לא ניתן להציג תצוגה מקדימה עבור סוג קובץ זה ({file.file_type})
                     </p>
-                    <Button onClick={handleDownload} variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      הורד את הקובץ
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button onClick={handleDownload} variant="outline">
+                        <Download className="h-4 w-4 mr-2" />
+                        הורד את הקובץ
+                      </Button>
+                      <Button onClick={handleOpenInNewTab} variant="outline">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        פתח בכרטיסייה חדשה
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -324,7 +330,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                 <FileText className="h-16 w-16 mb-4" />
                 <h3 className="text-lg font-medium mb-2">לא ניתן לטעון את התצוגה</h3>
                 <p className="text-sm text-center mb-4">
-                  נסה להוריד את הקובץ או לפתוח אותו בכרטיסייה חדשה
+                  ייתכן שהקובץ לא נמצא או שאין הרשאה לגשת אליו
                 </p>
                 <div className="flex gap-2">
                   <Button onClick={handleDownload} variant="outline">
