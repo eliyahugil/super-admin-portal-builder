@@ -278,7 +278,9 @@ export const SchedulingRulesManager: React.FC = () => {
                 <Label>סוג משמרת (אופציונלי)</Label>
                 <Select
                   value={newRule.shift_type || ''}
-                  onValueChange={(value) => setNewRule(prev => ({ ...prev, shift_type: value || undefined }))}
+                  onValueChange={(value: 'morning' | 'evening' | 'night' | '') => 
+                    setNewRule(prev => ({ ...prev, shift_type: value || undefined }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="כל המשמרות" />

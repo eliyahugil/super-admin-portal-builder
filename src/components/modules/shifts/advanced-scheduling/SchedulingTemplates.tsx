@@ -365,7 +365,9 @@ export const SchedulingTemplates: React.FC = () => {
                     <Label>סוג תבנית</Label>
                     <Select
                       value={newTemplate.template_type}
-                      onValueChange={(value: any) => setNewTemplate(prev => ({ ...prev, template_type: value }))}
+                      onValueChange={(value: 'weekly' | 'monthly' | 'seasonal') => 
+                        setNewTemplate(prev => ({ ...prev, template_type: value }))
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -596,7 +598,7 @@ export const SchedulingTemplates: React.FC = () => {
                             {typeData.label}
                           </Badge>
                           <Badge variant="outline">
-                            {template.template_data.shifts?.length || 0} משמרות
+                            {(template.template_data as any)?.shifts?.length || 0} משמרות
                           </Badge>
                           {!template.is_active && (
                             <Badge variant="destructive">לא פעיל</Badge>
@@ -617,7 +619,11 @@ export const SchedulingTemplates: React.FC = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleDuplicateTemplate(template)}
+                        onClick={() => handleDuplicateTemplate({
+                          ...template,
+                          template_type: template.template_type as 'weekly' | 'monthly' | 'seasonal',
+                          template_data: template.template_data as any
+                        } as SchedulingTemplate)}
                         disabled={duplicateTemplateMutation.isPending}
                       >
                         <Copy className="h-4 w-4" />
@@ -641,7 +647,7 @@ export const SchedulingTemplates: React.FC = () => {
                   <div className="space-y-2">
                     <h5 className="font-medium">משמרות בתבנית:</h5>
                     <div className="grid gap-2">
-                      {template.template_data.shifts?.map((shift, index) => (
+                      {(template.template_data as any)?.shifts?.map((shift: any, index: number) => (
                         <div key={index} className="flex items-center justify-between text-sm bg-muted p-2 rounded">
                           <span>
                             {getDayLabel(shift.day)} - {shift.start_time} עד {shift.end_time}
@@ -654,17 +660,17 @@ export const SchedulingTemplates: React.FC = () => {
                     </div>
                   </div>
 
-                  {template.template_data.rules && (
+                  {(template.template_data as any)?.rules && (
                     <div className="mt-4 pt-4 border-t">
                       <h5 className="font-medium mb-2">כללי תבנית:</h5>
                       <div className="flex flex-wrap gap-2">
-                        {template.template_data.rules.auto_assign && (
+                        {(template.template_data as any)?.rules?.auto_assign && (
                           <Badge variant="outline">הקצאה אוטומטית</Badge>
                         )}
-                        {template.template_data.rules.respect_preferences && (
+                        {(template.template_data as any)?.rules?.respect_preferences && (
                           <Badge variant="outline">התחשבות בהעדפות</Badge>
                         )}
-                        {template.template_data.rules.balance_hours && (
+                        {(template.template_data as any)?.rules?.balance_hours && (
                           <Badge variant="outline">איזון שעות</Badge>
                         )}
                       </div>

@@ -262,7 +262,11 @@ export const ShiftSwapManager: React.FC = () => {
                             variant="outline" 
                             size="sm"
                             onClick={() => {
-                              setSelectedRequest(request);
+                              setSelectedRequest({
+                                ...request,
+                                request_type: request.request_type as 'swap' | 'cover' | 'release',
+                                status: request.status as 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled'
+                              });
                               setReviewNotes('');
                             }}
                           >

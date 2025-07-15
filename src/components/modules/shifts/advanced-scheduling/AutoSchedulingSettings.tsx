@@ -67,7 +67,11 @@ export const AutoSchedulingSettings: React.FC = () => {
   // עדכון הגדרות מקומיות כאשר נטענו הגדרות מהשרת
   React.useEffect(() => {
     if (currentSettings) {
-      setSettings(currentSettings as AutoSchedulingSettingsData);
+      setSettings({
+        ...currentSettings,
+        optimization_goals: currentSettings.optimization_goals as { priorities: string[] },
+        notification_preferences: currentSettings.notification_preferences as { notify_employees: boolean; notify_managers: boolean }
+      } as AutoSchedulingSettingsData);
     }
   }, [currentSettings]);
 
