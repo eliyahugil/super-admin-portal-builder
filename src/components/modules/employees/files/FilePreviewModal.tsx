@@ -64,25 +64,16 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     try {
       console.log('Loading preview for file:', file.file_name, 'Type:', file.file_type);
       
-      // For images, download and create blob URL (works with private bucket)
-      if (isImage) {
-        const { data, error } = await supabase.storage
-          .from('employee-files')
-          .download(file.file_path);
+      // Download file and create blob URL for direct viewing
+      const { data, error } = await supabase.storage
+        .from('employee-files')
+        .download(file.file_path);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        const url = URL.createObjectURL(data);
-        setPreviewUrl(url);
-      } else {
-        // For PDFs and other files, create signed URL (secure access)
-        const { data, error } = await supabase.storage
-          .from('employee-files')
-          .createSignedUrl(file.file_path, 3600); // 1 hour expiry
-        
-        if (error) throw error;
-        setPreviewUrl(data.signedUrl);
-      }
+      // Create blob URL for all file types
+      const url = URL.createObjectURL(data);
+      setPreviewUrl(url);
       
       console.log('Preview URL set successfully');
     } catch (error) {
@@ -134,14 +125,24 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     if (!file) return;
     
     try {
-      // Create signed URL for secure access
+      // Download file and open in new tab using blob URL
       const { data, error } = await supabase.storage
         .from('employee-files')
-        .createSignedUrl(file.file_path, 3600); // 1 hour expiry
+        .download(file.file_path);
       
       if (error) throw error;
       
-      window.open(data.signedUrl, '_blank');
+      const blob = new Blob([data], { type: file.file_type || 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      
+      const newWindow = window.open(url, '_blank');
+      
+      // Clean up URL after window is loaded
+      if (newWindow) {
+        newWindow.addEventListener('beforeunload', () => {
+          URL.revokeObjectURL(url);
+        });
+      }
     } catch (error) {
       console.error('Error opening file:', error);
       toast({
@@ -153,42 +154,28 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
   };
 
   const handleShare = async () => {
-    if (!file) return;
+    if (!file || !previewUrl) return;
     
     try {
       if (navigator.share) {
-        // Create signed URL for sharing
-        const { data, error } = await supabase.storage
-          .from('employee-files')
-          .createSignedUrl(file.file_path, 86400); // 24 hours expiry
-        
-        if (error) throw error;
-        
+        // For mobile devices that support native sharing
         await navigator.share({
           title: file.file_name,
           text: `קובץ: ${file.file_name}`,
-          url: data.signedUrl,
+          files: [new File([await fetch(previewUrl).then(r => r.blob())], file.file_name, { type: file.file_type || 'application/octet-stream' })]
         });
       } else {
-        // Fallback - copy signed URL to clipboard
-        const { data, error } = await supabase.storage
-          .from('employee-files')
-          .createSignedUrl(file.file_path, 86400); // 24 hours expiry
-        
-        if (error) throw error;
-        
-        await navigator.clipboard.writeText(data.signedUrl);
+        // Fallback - show message that sharing is not supported
         toast({
-          title: 'הקישור הועתק',
-          description: 'הקישור הזמני לקובץ הועתק ללוח (תוקף 24 שעות)',
+          title: 'שיתוף לא זמין',
+          description: 'השתמש בכפתור "פתח בכרטיסייה חדשה" ושתף מהדפדפן',
         });
       }
     } catch (error) {
       console.error('Share error:', error);
       toast({
         title: 'שגיאה בשיתוף',
-        description: 'לא ניתן לשתף את הקובץ',
-        variant: 'destructive',
+        description: 'השתמש בכפתור "פתח בכרטיסייה חדשה" ושתף מהדפדפן',
       });
     }
   };
@@ -284,10 +271,6 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
             <Button onClick={handleDownload} variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2" />
               הורדה
-            </Button>
-            <Button onClick={handleSave} variant="outline" size="sm">
-              <Save className="h-4 w-4 mr-2" />
-              שמירה
             </Button>
             <Button onClick={handleOpenInNewTab} variant="outline" size="sm">
               <ExternalLink className="h-4 w-4 mr-2" />
