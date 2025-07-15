@@ -9,6 +9,7 @@ import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { GenericArchiveButton } from './GenericArchiveButton';
 import { useGenericArchive } from '@/hooks/useGenericArchive';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 type AllowedTableNames = 'employees' | 'branches' | 'customers';
 
@@ -80,25 +81,55 @@ export const GenericArchivedList: React.FC<GenericArchivedListProps> = ({
 
     setIsRestoring(true);
     try {
-      const promises = selectedItems.map((itemId) => {
-        const item = archivedItems.find((item: any) => item.id === itemId);
-        return restoreEntity(item);
-      });
+      let successCount = 0;
+      let errorCount = 0;
 
-      await Promise.all(promises);
-      
-      toast({
-        title: "שחזור הושלם בהצלחה",
-        description: `${selectedItems.length} ${entityNamePlural} שוחזרו מהארכיון`,
-        variant: "default"
-      });
+      // Process each item individually
+      for (const itemId of selectedItems) {
+        try {
+          const item = archivedItems.find((item: any) => item.id === itemId);
+          if (item) {
+            // Use Supabase directly to avoid hook complications
+            const { error } = await supabase
+              .from(tableName)
+              .update({ is_archived: false })
+              .eq('id', item.id);
+
+            if (error) {
+              console.error('Error restoring item:', error);
+              errorCount++;
+            } else {
+              successCount++;
+            }
+          }
+        } catch (error) {
+          console.error('Error restoring item:', error);
+          errorCount++;
+        }
+      }
+
+      // Show appropriate message
+      if (successCount > 0) {
+        toast({
+          title: "שחזור הושלם",
+          description: `${successCount} ${entityNamePlural} שוחזרו בהצלחה${errorCount > 0 ? `, ${errorCount} נכשלו` : ''}`,
+          variant: errorCount === 0 ? "default" : "destructive"
+        });
+      } else {
+        toast({
+          title: "שגיאה בשחזור",
+          description: "לא ניתן היה לשחזר אף פריט",
+          variant: "destructive"
+        });
+      }
 
       setSelectedItems([]);
-      refetch();
+      await refetch();
     } catch (error) {
+      console.error('Error in bulk restore:', error);
       toast({
         title: "שגיאה בשחזור",
-        description: "אירעה שגיאה בשחזור חלק מהפריטים",
+        description: "אירעה שגיאה בשחזור הפריטים",
         variant: "destructive"
       });
     } finally {
