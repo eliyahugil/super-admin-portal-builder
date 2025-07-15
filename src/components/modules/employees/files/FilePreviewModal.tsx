@@ -64,26 +64,32 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     try {
       console.log('Loading preview for file:', file.file_name, 'Type:', file.file_type);
       
-      // Always try to get public URL first
-      const { data } = await supabase.storage
-        .from('employee-files')
-        .getPublicUrl(file.file_path);
-      
-      console.log('Public URL generated:', data.publicUrl);
-      
-      // Test if the URL is accessible
-      const response = await fetch(data.publicUrl, { method: 'HEAD' });
-      if (!response.ok) {
-        throw new Error(`File not accessible: ${response.status}`);
+      // For images, download and create blob URL (works with private bucket)
+      if (isImage) {
+        const { data, error } = await supabase.storage
+          .from('employee-files')
+          .download(file.file_path);
+
+        if (error) throw error;
+
+        const url = URL.createObjectURL(data);
+        setPreviewUrl(url);
+      } else {
+        // For PDFs and other files, create signed URL (secure access)
+        const { data, error } = await supabase.storage
+          .from('employee-files')
+          .createSignedUrl(file.file_path, 3600); // 1 hour expiry
+        
+        if (error) throw error;
+        setPreviewUrl(data.signedUrl);
       }
       
-      setPreviewUrl(data.publicUrl);
       console.log('Preview URL set successfully');
     } catch (error) {
       console.error('Error loading preview:', error);
       toast({
         title: 'שגיאה בטעינת התצוגה',
-        description: 'לא ניתן לטעון את התצוגה המקדימה',
+        description: 'לא ניתן לטעון את התצוגה המקדימה - ייתכן שאין הרשאה לגשת לקובץ',
         variant: 'destructive',
       });
     } finally {
@@ -128,13 +134,14 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     if (!file) return;
     
     try {
-      const { data } = await supabase.storage
+      // Create signed URL for secure access
+      const { data, error } = await supabase.storage
         .from('employee-files')
-        .getPublicUrl(file.file_path);
+        .createSignedUrl(file.file_path, 3600); // 1 hour expiry
       
-      // Add cache busting parameter to ensure fresh load
-      const urlWithCache = `${data.publicUrl}?t=${Date.now()}`;
-      window.open(urlWithCache, '_blank');
+      if (error) throw error;
+      
+      window.open(data.signedUrl, '_blank');
     } catch (error) {
       console.error('Error opening file:', error);
       toast({
@@ -150,21 +157,30 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     
     try {
       if (navigator.share) {
+        // Create signed URL for sharing
+        const { data, error } = await supabase.storage
+          .from('employee-files')
+          .createSignedUrl(file.file_path, 86400); // 24 hours expiry
+        
+        if (error) throw error;
+        
         await navigator.share({
           title: file.file_name,
           text: `קובץ: ${file.file_name}`,
-          url: previewUrl || undefined,
+          url: data.signedUrl,
         });
       } else {
-        // Fallback - copy to clipboard
-        const { data } = await supabase.storage
+        // Fallback - copy signed URL to clipboard
+        const { data, error } = await supabase.storage
           .from('employee-files')
-          .getPublicUrl(file.file_path);
+          .createSignedUrl(file.file_path, 86400); // 24 hours expiry
         
-        await navigator.clipboard.writeText(data.publicUrl);
+        if (error) throw error;
+        
+        await navigator.clipboard.writeText(data.signedUrl);
         toast({
           title: 'הקישור הועתק',
-          description: 'הקישור לקובץ הועתק ללוח',
+          description: 'הקישור הזמני לקובץ הועתק ללוח (תוקף 24 שעות)',
         });
       }
     } catch (error) {
@@ -181,15 +197,17 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     if (!file) return;
     
     try {
-      // Copy to clipboard - different from download
-      const { data } = await supabase.storage
+      // Create signed URL for copying
+      const { data, error } = await supabase.storage
         .from('employee-files')
-        .getPublicUrl(file.file_path);
+        .createSignedUrl(file.file_path, 3600); // 1 hour expiry
       
-      await navigator.clipboard.writeText(data.publicUrl);
+      if (error) throw error;
+      
+      await navigator.clipboard.writeText(data.signedUrl);
       toast({
         title: 'הקישור הועתק',
-        description: 'הקישור לקובץ הועתק ללוח',
+        description: 'הקישור הזמני לקובץ הועתק ללוח (תוקף שעה)',
       });
     } catch (error) {
       console.error('Save error:', error);
