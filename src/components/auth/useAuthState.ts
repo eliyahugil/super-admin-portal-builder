@@ -26,13 +26,13 @@ export const useAuthState = () => {
     
     let isMounted = true;
 
-    // Safety timeout reduced to 8 seconds
+    // Safety timeout extended for persistent sessions
     const safetyTimeout = setTimeout(() => {
       if (isMounted && loading) {
         console.error('⚠️ Safety timeout - forcing loading to false');
         setLoading(false);
       }
-    }, 8000);
+    }, 15000);
 
     const setupAuth = async () => {
       try {
