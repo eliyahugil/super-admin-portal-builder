@@ -2,7 +2,8 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { FileText } from 'lucide-react';
+import { FileText, FolderOpen } from 'lucide-react';
+import { EmployeeTemplateSelector } from '../../EmployeeTemplateSelector';
 import { EmployeeDocuments } from '../../EmployeeDocuments';
 import { EmployeeFilesManager } from '../../EmployeeFilesManager';
 import type { Employee } from '@/types/supabase';
@@ -21,31 +22,49 @@ export const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
 }) => {
   return (
     <div className="space-y-6" dir="rtl">
-      {/* Digital signatures and templates */}
+      {/* Template selector for employee */}
+      <EmployeeTemplateSelector
+        employeeId={employeeId}
+        employeeName={employeeName}
+      />
+
+      <Separator />
+
+      {/* Signed documents and signature status */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            מסמכים לחתימה ותבניות
+            מסמכים שנשלחו לחתימה
           </CardTitle>
         </CardHeader>
         <CardContent>
           <EmployeeDocuments
             employeeId={employeeId}
             employeeName={employeeName}
-            canEdit={true}
+            canEdit={false}
           />
         </CardContent>
       </Card>
 
       <Separator />
 
-      {/* Regular files with visibility control */}
-      <EmployeeFilesManager
-        employee={employee}
-        employeeId={employeeId}
-        employeeName={employeeName}
-      />
+      {/* File management with folders */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FolderOpen className="h-5 w-5" />
+            ניהול קבצים ותיקיות
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EmployeeFilesManager
+            employee={employee}
+            employeeId={employeeId}
+            employeeName={employeeName}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 };
