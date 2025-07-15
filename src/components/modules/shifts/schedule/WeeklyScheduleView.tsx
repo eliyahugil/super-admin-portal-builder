@@ -318,7 +318,17 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                               {shift.branch_name && (
                                 <div className="flex items-center gap-2">
                                   <MapPin className="h-4 w-4 text-gray-500" />
-                                  <span>{shift.branch_name}</span>
+                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                    סניף: {shift.branch_name}
+                                  </Badge>
+                                </div>
+                              )}
+                              
+                              {shift.role && (
+                                <div className="flex items-center gap-1">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {shift.role}
+                                  </Badge>
                                 </div>
                               )}
                             </div>
@@ -496,12 +506,14 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                   </div>
                                 )}
                                 
-                                {shift.branch_name && (
-                                  <div className="flex items-center gap-1">
-                                    <MapPin className="h-3 w-3 text-gray-500" />
-                                    <span className="truncate">{shift.branch_name}</span>
-                                  </div>
-                                )}
+                                 {shift.branch_name && (
+                                   <div className="flex items-center gap-1">
+                                     <MapPin className="h-3 w-3 text-blue-600" />
+                                     <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 truncate">
+                                       {shift.branch_name}
+                                     </Badge>
+                                   </div>
+                                 )}
                               </div>
                             </div>
                           </TooltipTrigger>
