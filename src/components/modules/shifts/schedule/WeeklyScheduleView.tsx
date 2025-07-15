@@ -289,52 +289,58 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                              setShowShiftDetailsDialog(true);
                            }}
                          >
-                           <div className="flex items-center justify-between mb-2">
-                             <div className="flex items-center gap-2">
+                           <div className="space-y-2">
+                             {/* סניף - ראשון ובולט */}
+                             {shift.branch_name && (
+                               <div className="flex items-center justify-center">
+                                 <Badge className="bg-blue-600 text-white font-medium px-3 py-1">
+                                   <MapPin className="h-3 w-3 ml-1" />
+                                   {shift.branch_name}
+                                 </Badge>
+                               </div>
+                             )}
+                             
+                             {/* שעות משמרת - שני */}
+                             <div className="flex items-center justify-center">
+                               <Badge variant="outline" className="bg-gray-50 border-2 font-medium px-3 py-1">
+                                 <Clock className="h-3 w-3 ml-1" />
+                                 {shift.start_time} - {shift.end_time}
+                               </Badge>
+                             </div>
+                             
+                             {/* עובד מוקצה או לא מוקצה - שלישי */}
+                             <div className="flex items-center justify-center">
+                               {shift.employee_id ? (
+                                 <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 px-3 py-1">
+                                   <User className="h-3 w-3 ml-1" />
+                                   {getEmployeeName(shift.employee_id)}
+                                 </Badge>
+                               ) : (
+                                 <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-3 py-1">
+                                   <User className="h-3 w-3 ml-1" />
+                                   לא מוקצה
+                                 </Badge>
+                               )}
+                             </div>
+                             
+                             {/* סטטוס וקונפליקטים */}
+                             <div className="flex items-center justify-between">
                                <Badge variant="secondary" className={`${getStatusColor(shift.status || 'pending')} text-xs`}>
                                  {shift.status === 'approved' ? 'מאושר' : 
                                   shift.status === 'pending' ? 'ממתין' :
                                   shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
                                </Badge>
                                {hasConflict && (
-                                 <AlertTriangle className="h-3 w-3 text-red-500" />
+                                 <div className="flex items-center gap-1">
+                                   <AlertTriangle className="h-3 w-3 text-red-500" />
+                                   <span className="text-xs text-red-500">התנגשות</span>
+                                 </div>
                                )}
                              </div>
                            </div>
-                           
-                            <div className={`space-y-2 text-sm ${hasConflict ? 'line-through opacity-60' : ''}`}>
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-gray-500" />
-                                <span className="font-medium">{shift.start_time} - {shift.end_time}</span>
-                              </div>
-                              
-                              {shift.employee_id && (
-                                <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-gray-500" />
-                                  <span>{getEmployeeName(shift.employee_id)}</span>
-                                </div>
-                              )}
-                              
-                              {shift.branch_name && (
-                                <div className="flex items-center gap-2">
-                                  <MapPin className="h-4 w-4 text-gray-500" />
-                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                    סניף: {shift.branch_name}
-                                  </Badge>
-                                </div>
-                              )}
-                              
-                              {shift.role && (
-                                <div className="flex items-center gap-1">
-                                  <Badge variant="secondary" className="text-xs">
-                                    {shift.role}
-                                  </Badge>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                         </div>
+                       );
+                     })}
                    </div>
                 ) : (
                   <div 
@@ -493,28 +499,43 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                  )}
                                </div>
                                
-                               <div className={`space-y-1 text-xs ${hasConflict ? 'line-through opacity-60' : ''}`}>
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3 text-gray-500" />
-                                  <span className="font-medium">{shift.start_time} - {shift.end_time}</span>
-                                </div>
-                                
-                                {shift.employee_id && (
-                                  <div className="flex items-center gap-1">
-                                    <User className="h-3 w-3 text-gray-500" />
-                                    <span className="truncate">{getEmployeeName(shift.employee_id)}</span>
-                                  </div>
-                                )}
-                                
+                                <div className={`space-y-1 text-xs ${hasConflict ? 'line-through opacity-60' : ''}`}>
+                                 {/* סניף - ראשון ובולט */}
                                  {shift.branch_name && (
-                                   <div className="flex items-center gap-1">
-                                     <MapPin className="h-3 w-3 text-blue-600" />
-                                     <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 truncate">
+                                   <div className="text-center">
+                                     <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5">
                                        {shift.branch_name}
                                      </Badge>
                                    </div>
                                  )}
-                              </div>
+                                 
+                                 {/* שעות משמרת - שני */}
+                                 <div className="text-center">
+                                   <Badge variant="outline" className="text-xs font-medium border-gray-300">
+                                     {shift.start_time}-{shift.end_time}
+                                   </Badge>
+                                 </div>
+                                 
+                                 {/* עובד מוקצה או לא מוקצה */}
+                                 <div className="text-center">
+                                   {shift.employee_id ? (
+                                     <Badge variant="secondary" className="bg-green-50 text-green-700 text-xs px-2 py-0.5">
+                                       {getEmployeeName(shift.employee_id).split(' ')[0]}
+                                     </Badge>
+                                   ) : (
+                                     <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs px-2 py-0.5">
+                                       לא מוקצה
+                                     </Badge>
+                                   )}
+                                 </div>
+                                 
+                                 {/* התראות */}
+                                 {hasConflict && (
+                                   <div className="text-center">
+                                     <AlertTriangle className="h-3 w-3 text-red-500 mx-auto" />
+                                   </div>
+                                 )}
+                               </div>
                             </div>
                           </TooltipTrigger>
                           
