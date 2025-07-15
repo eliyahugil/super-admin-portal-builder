@@ -309,15 +309,33 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                       console.log('📄 Rendering PDF preview with URL:', previewUrl);
                       return null;
                     })()}
-                    {/* Try iframe for PDF display */}
+                    {/* Use object tag for better PDF compatibility */}
                     <div className="h-full relative">
-                      <iframe 
-                        src={previewUrl}
-                        className="w-full h-full border-0"
+                      <object 
+                        data={previewUrl}
+                        type="application/pdf"
+                        className="w-full h-full"
                         title={file.file_name}
-                        onLoad={() => console.log('✅ PDF iframe loaded successfully')}
-                        onError={() => console.error('❌ PDF iframe failed to load')}
-                      />
+                      >
+                        {/* Fallback for browsers that don't support PDF viewing */}
+                        <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+                          <FileText className="h-12 w-12 mb-4 text-muted-foreground" />
+                          <h3 className="text-base font-medium mb-2">לא ניתן לצפות ב-PDF בדפדפן זה</h3>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            נסה להוריד את הקובץ או לפתוח אותו בדפדפן אחר
+                          </p>
+                          <div className="flex gap-2">
+                            <Button onClick={handleDownload} variant="default" size="sm">
+                              <Download className="h-4 w-4 mr-2" />
+                              הורד PDF
+                            </Button>
+                            <Button onClick={handleOpenInNewTab} variant="outline" size="sm">
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              פתח בטאב חדש
+                            </Button>
+                          </div>
+                        </div>
+                      </object>
                     </div>
                   </div>
                 ) : isText ? (
