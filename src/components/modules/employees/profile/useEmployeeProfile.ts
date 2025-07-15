@@ -106,6 +106,20 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
             effective_date,
             reason,
             created_at
+          ),
+          employee_documents:employee_documents(
+            id,
+            document_name,
+            document_type,
+            status,
+            is_template,
+            created_at
+          ),
+          employee_files:employee_files(
+            id,
+            file_name,
+            file_type,
+            created_at
           )
         `)
         .eq('id', employeeId);

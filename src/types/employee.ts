@@ -74,6 +74,12 @@ export interface Employee {
     file_url: string;
     created_at: string;
   }>;
+  employee_files?: Array<{
+    id: string;
+    file_name: string;
+    file_type: string;
+    created_at: string;
+  }>;
   branch_assignments?: BranchAssignment[];
   weekly_tokens?: WeeklyToken[];
 }
@@ -117,6 +123,7 @@ export const normalizeEmployee = (data: any): Employee => {
     main_branch: data.main_branch || null,
     employee_notes: data.employee_notes || [],
     employee_documents: data.employee_documents || [],
+    employee_files: data.employee_files || [],
     branch_assignments: data.employee_branch_assignments || data.branch_assignments || [],
     weekly_tokens: data.weekly_tokens || []
   };

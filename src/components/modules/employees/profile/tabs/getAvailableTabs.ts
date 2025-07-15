@@ -24,7 +24,7 @@ interface TabItem {
 export const getAvailableTabs = (employee: Employee): TabItem[] => {
   // Calculate badges for each tab
   const notesCount = employee.employee_notes?.length || 0;
-  const documentsCount = employee.employee_documents?.length || 0;
+  const documentsCount = (employee.employee_documents?.length || 0) + (employee.employee_files?.length || 0);
   const branchAssignments = employee.branch_assignments?.filter(ba => ba.is_active).length || 0;
   const activeTokens = employee.weekly_tokens?.filter(t => t.is_active).length || 0;
 

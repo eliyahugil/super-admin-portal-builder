@@ -140,7 +140,7 @@ export const EmployeeOverviewTab: React.FC<EmployeeOverviewTabProps> = ({
         <div className="bg-white border-r-4 border-green-500 p-6 rounded-lg shadow-sm">
           <div className="text-center">
             <div className="text-3xl font-bold text-green-600 mb-1">
-              {employee.employee_documents?.length || 0}
+              {(employee.employee_documents?.length || 0) + (employee.employee_files?.length || 0)}
             </div>
             <div className="text-sm font-medium text-green-600">מסמכים</div>
           </div>
