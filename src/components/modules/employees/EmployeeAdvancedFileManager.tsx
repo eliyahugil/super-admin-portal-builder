@@ -20,7 +20,8 @@ import {
   EyeOff,
   Calendar,
   User,
-  FolderIcon
+  FolderIcon,
+  Edit3
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,7 +74,11 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderColor, setNewFolderColor] = useState('#3b82f6');
   const [selectedFile, setSelectedFile] = useState<globalThis.File | null>(null);
+  const [customFileName, setCustomFileName] = useState('');
   const [isFileVisible, setIsFileVisible] = useState(true);
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [fileToRename, setFileToRename] = useState<FileData | null>(null);
+  const [newFileName, setNewFileName] = useState('');
 
   // שליפת תיקיות
   const { data: folders, isLoading: foldersLoading } = useQuery({
@@ -188,8 +193,9 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
 
   // העלאת קובץ
   const uploadFileMutation = useMutation({
-    mutationFn: async ({ file, visible }: { file: globalThis.File; visible: boolean }) => {
+    mutationFn: async ({ file, visible, customName }: { file: globalThis.File; visible: boolean; customName?: string }) => {
       // העלאה לאחסון
+      const displayName = customName || file.name;
       const fileName = `${Date.now()}-${file.name}`;
       const filePath = `employee-files/${employeeId}/${fileName}`;
       
@@ -205,7 +211,7 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
         .insert({
           employee_id: employeeId,
           business_id: employee.business_id,
-          file_name: file.name,
+          file_name: displayName,
           file_path: filePath,
           file_size: file.size,
           file_type: file.type,
@@ -223,6 +229,7 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
       queryClient.invalidateQueries({ queryKey: ['employee-files'] });
       setIsUploadDialogOpen(false);
       setSelectedFile(null);
+      setCustomFileName('');
       toast({
         title: 'קובץ הועלה בהצלחה',
         description: 'הקובץ נשמר בתיקייה הנוכחית',
@@ -233,6 +240,39 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
       toast({
         title: 'שגיאה בהעלאת קובץ',
         description: 'לא ניתן להעלות את הקובץ',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // שינוי שם קובץ
+  const renameFileMutation = useMutation({
+    mutationFn: async ({ fileId, newName }: { fileId: string; newName: string }) => {
+      const { data, error } = await supabase
+        .from('employee_files')
+        .update({ file_name: newName })
+        .eq('id', fileId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employee-files'] });
+      setIsRenameDialogOpen(false);
+      setFileToRename(null);
+      setNewFileName('');
+      toast({
+        title: 'שם הקובץ שונה בהצלחה',
+        description: 'השם החדש נשמר',
+      });
+    },
+    onError: (error) => {
+      console.error('Error renaming file:', error);
+      toast({
+        title: 'שגיאה בשינוי שם קובץ',
+        description: 'לא ניתן לשנות את שם הקובץ',
         variant: 'destructive',
       });
     },
@@ -282,6 +322,7 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
+      setCustomFileName(file.name); // הגדרת שם ברירת מחדל
       setIsUploadDialogOpen(true);
     }
   };
@@ -300,8 +341,24 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
       uploadFileMutation.mutate({
         file: selectedFile,
         visible: isFileVisible,
+        customName: customFileName.trim() || undefined,
       });
     }
+  };
+
+  const handleRenameFile = () => {
+    if (fileToRename && newFileName.trim()) {
+      renameFileMutation.mutate({
+        fileId: fileToRename.id,
+        newName: newFileName.trim(),
+      });
+    }
+  };
+
+  const openRenameDialog = (file: FileData) => {
+    setFileToRename(file);
+    setNewFileName(file.file_name);
+    setIsRenameDialogOpen(true);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -498,12 +555,29 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => openRenameDialog(file)}>
+                              <Edit3 className="h-4 w-4 mr-2" />
+                              שנה שם
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Download className="h-4 w-4 mr-2" />
+                              הורד קובץ
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              מחק קובץ
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   ))}
@@ -523,37 +597,110 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
           </div>
         )}
 
-        {/* Upload Dialog */}
+        {/* דיאלוג העלאת קובץ */}
         <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>העלאת קובץ</DialogTitle>
+              <DialogTitle>העלאת קובץ חדש</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {selectedFile && (
-                <div className="p-3 border rounded-lg">
-                  <p className="font-medium">{selectedFile.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {formatFileSize(selectedFile.size)} • {selectedFile.type}
+                <div className="p-4 bg-muted rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    <span className="font-medium">{selectedFile.name}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {formatFileSize(selectedFile.size)}
                   </p>
                 </div>
               )}
+              
+              <div>
+                <Label htmlFor="customFileName">שם הקובץ</Label>
+                <Input
+                  id="customFileName"
+                  value={customFileName}
+                  onChange={(e) => setCustomFileName(e.target.value)}
+                  placeholder="הכנס שם לקובץ"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  ניתן לשנות את שם הקובץ לפני ההעלאה
+                </p>
+              </div>
+              
               <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  id="fileVisible"
+                  id="visible"
                   checked={isFileVisible}
                   onChange={(e) => setIsFileVisible(e.target.checked)}
+                  className="rounded"
                 />
-                <Label htmlFor="fileVisible">נראה לעובד</Label>
+                <Label htmlFor="visible">נראה לעובד</Label>
               </div>
-              <Button 
-                onClick={handleUploadFile} 
-                disabled={!selectedFile || uploadFileMutation.isPending}
-                className="w-full"
-              >
-                {uploadFileMutation.isPending ? 'מעלה...' : 'העלה קובץ'}
-              </Button>
+
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleUploadFile}
+                  disabled={!selectedFile || !customFileName.trim() || uploadFileMutation.isPending}
+                  className="flex-1"
+                >
+                  {uploadFileMutation.isPending ? 'מעלה...' : 'העלה קובץ'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsUploadDialogOpen(false);
+                    setSelectedFile(null);
+                    setCustomFileName('');
+                  }}
+                  className="flex-1"
+                >
+                  ביטול
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* דיאלוג שינוי שם קובץ */}
+        <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>שינוי שם קובץ</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="newFileName">שם חדש לקובץ</Label>
+                <Input
+                  id="newFileName"
+                  value={newFileName}
+                  onChange={(e) => setNewFileName(e.target.value)}
+                  placeholder="הכנס שם חדש לקובץ"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleRenameFile}
+                  disabled={!newFileName.trim() || renameFileMutation.isPending}
+                  className="flex-1"
+                >
+                  {renameFileMutation.isPending ? 'משנה...' : 'שנה שם'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsRenameDialogOpen(false);
+                    setFileToRename(null);
+                    setNewFileName('');
+                  }}
+                  className="flex-1"
+                >
+                  ביטול
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
