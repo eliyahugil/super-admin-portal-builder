@@ -95,23 +95,46 @@ export const ShiftSubmissionManager: React.FC = () => {
   const getCurrentWeek = () => {
     const now = new Date();
     const currentWeek = new Date(now);
-    currentWeek.setDate(now.getDate() - now.getDay()); // חזרה לתחילת השבוע הנוכחי (יום ראשון)
-    return currentWeek.toISOString().split('T')[0];
+    
+    // אם היום הוא יום ראשון (0), השאר אותו כמו שהוא
+    // אחרת, קדם ליום ראשון הבא
+    if (now.getDay() === 0) {
+      // כבר יום ראשון
+      return currentWeek.toISOString().split('T')[0];
+    } else {
+      // קדם ליום ראשון הבא
+      currentWeek.setDate(now.getDate() + (7 - now.getDay()));
+      return currentWeek.toISOString().split('T')[0];
+    }
   };
 
   const getNextWeek = () => {
     const now = new Date();
     const nextWeek = new Date(now);
-    const daysUntilNextSunday = 7 - now.getDay(); // כמה ימים עד יום ראשון הבא
-    nextWeek.setDate(now.getDate() + daysUntilNextSunday);
+    
+    // תמיד קדם ליום ראשון הבא + עוד שבוע
+    if (now.getDay() === 0) {
+      // אם היום הוא ראשון, השבוע הבא הוא בעוד 7 ימים
+      nextWeek.setDate(now.getDate() + 7);
+    } else {
+      // אחרת, קדם ליום ראשון הבא + עוד שבוע
+      nextWeek.setDate(now.getDate() + (7 - now.getDay()) + 7);
+    }
     return nextWeek.toISOString().split('T')[0];
   };
 
   const getWeekAfterNext = () => {
     const now = new Date();
     const weekAfterNext = new Date(now);
-    const daysUntilNextSunday = 7 - now.getDay(); // כמה ימים עד יום ראשון הבא
-    weekAfterNext.setDate(now.getDate() + daysUntilNextSunday + 7); // פלוס עוד שבוע
+    
+    // תמיד קדם ליום ראשון הבא + עוד שבועיים  
+    if (now.getDay() === 0) {
+      // אם היום הוא ראשון, בעוד שבועיים הוא בעוד 14 ימים
+      weekAfterNext.setDate(now.getDate() + 14);
+    } else {
+      // אחרת, קדם ליום ראשון הבא + עוד שבועיים
+      weekAfterNext.setDate(now.getDate() + (7 - now.getDay()) + 14);
+    }
     return weekAfterNext.toISOString().split('T')[0];
   };
 
