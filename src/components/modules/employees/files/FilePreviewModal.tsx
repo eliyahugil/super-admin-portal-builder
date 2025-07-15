@@ -62,14 +62,24 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.storage
-        .from('employee-files')
-        .download(file.file_path);
+      // For images, we'll download and create blob URL
+      if (isImage) {
+        const { data, error } = await supabase.storage
+          .from('employee-files')
+          .download(file.file_path);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      const url = URL.createObjectURL(data);
-      setPreviewUrl(url);
+        const url = URL.createObjectURL(data);
+        setPreviewUrl(url);
+      } else {
+        // For PDFs and other files, use public URL
+        const { data } = await supabase.storage
+          .from('employee-files')
+          .getPublicUrl(file.file_path);
+        
+        setPreviewUrl(data.publicUrl);
+      }
     } catch (error) {
       console.error('Error loading preview:', error);
       toast({
@@ -123,7 +133,9 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
         .from('employee-files')
         .getPublicUrl(file.file_path);
       
-      window.open(data.publicUrl, '_blank');
+      // Add cache busting parameter to ensure fresh load
+      const urlWithCache = `${data.publicUrl}?t=${Date.now()}`;
+      window.open(urlWithCache, '_blank');
     } catch (error) {
       console.error('Error opening file:', error);
       toast({
@@ -276,17 +288,21 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                     />
                   </div>
                 ) : isPdf ? (
-                  <iframe 
-                    src={previewUrl}
-                    className="w-full h-full border-0"
-                    title={file.file_name}
-                  />
-                ) : isText ? (
-                  <div className="p-4 h-full overflow-auto">
+                  <div className="h-full">
                     <iframe 
-                      src={previewUrl}
+                      src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
                       className="w-full h-full border-0"
                       title={file.file_name}
+                      sandbox="allow-same-origin allow-scripts"
+                    />
+                  </div>
+                ) : isText ? (
+                  <div className="h-full">
+                    <iframe 
+                      src={previewUrl}
+                      className="w-full h-full border-0 bg-white"
+                      title={file.file_name}
+                      sandbox="allow-same-origin"
                     />
                   </div>
                 ) : (
