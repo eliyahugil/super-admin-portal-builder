@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Clock, Users, MapPin } from 'lucide-react';
+import { Plus, Trash2, Clock, Users, MapPin, Calendar } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -17,7 +17,7 @@ interface SchedulingRule {
   id?: string;
   business_id: string;
   branch_id?: string;
-  rule_type: 'opening_hours' | 'min_employees_per_shift' | 'max_employees_per_shift' | 'required_roles' | 'break_duration' | 'overtime_rules';
+  rule_type: 'opening_hours' | 'min_employees_per_shift' | 'max_employees_per_shift' | 'required_roles' | 'break_duration' | 'overtime_rules' | 'shift_spacing' | 'weekly_hours_limit' | 'consecutive_days_limit' | 'weekend_coverage';
   shift_type?: 'morning' | 'evening' | 'night';
   days_of_week?: number[];
   start_time?: string;
@@ -28,12 +28,16 @@ interface SchedulingRule {
 }
 
 const RULE_TYPES = [
-  { value: 'opening_hours', label: 'שעות פתיחה', icon: Clock },
-  { value: 'min_employees_per_shift', label: 'מינימום עובדים למשמרת', icon: Users },
-  { value: 'max_employees_per_shift', label: 'מקסימום עובדים למשמרת', icon: Users },
-  { value: 'required_roles', label: 'תפקידים נדרשים', icon: Users },
-  { value: 'break_duration', label: 'משך הפסקות', icon: Clock },
-  { value: 'overtime_rules', label: 'כללי שעות נוספות', icon: Clock }
+  { value: 'opening_hours', label: 'שעות פתיחה', icon: Clock, description: 'הגדרת שעות פעילות הסניף' },
+  { value: 'min_employees_per_shift', label: 'מינימום עובדים למשמרת', icon: Users, description: 'מספר מינימלי של עובדים הנדרש למשמרת' },
+  { value: 'max_employees_per_shift', label: 'מקסימום עובדים למשמרת', icon: Users, description: 'מספר מקסימלי של עובדים למשמרת' },
+  { value: 'required_roles', label: 'תפקידים נדרשים', icon: Users, description: 'תפקידים חובה שצריכים להיות במשמרת' },
+  { value: 'break_duration', label: 'משך הפסקות', icon: Clock, description: 'זמן הפסקה מינימלי לעובדים' },
+  { value: 'overtime_rules', label: 'כללי שעות נוספות', icon: Clock, description: 'כללים לעבודה מעבר לשעות הרגילות' },
+  { value: 'shift_spacing', label: 'מרווח בין משמרות', icon: Clock, description: 'זמן מינימלי בין משמרות לאותו עובד' },
+  { value: 'weekly_hours_limit', label: 'הגבלת שעות שבועיות', icon: Users, description: 'מקסימום שעות לעובד בשבוע' },
+  { value: 'consecutive_days_limit', label: 'הגבלת ימים רצופים', icon: Calendar, description: 'מקסימום ימי עבודה רצופים' },
+  { value: 'weekend_coverage', label: 'כיסוי סוף שבוע', icon: Calendar, description: 'דרישות מיוחדות לסוף שבוע' }
 ] as const;
 
 const SHIFT_TYPES = [
@@ -247,7 +251,10 @@ export const SchedulingRulesManager: React.FC = () => {
                   <SelectContent>
                     {RULE_TYPES.map(type => (
                       <SelectItem key={type.value} value={type.value}>
-                        {type.label}
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">{type.label}</span>
+                          <span className="text-xs text-muted-foreground">{type.description}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -335,17 +342,25 @@ export const SchedulingRulesManager: React.FC = () => {
 
               {(newRule.rule_type === 'min_employees_per_shift' || 
                 newRule.rule_type === 'max_employees_per_shift' ||
-                newRule.rule_type === 'break_duration') && (
+                newRule.rule_type === 'break_duration' ||
+                newRule.rule_type === 'shift_spacing' ||
+                newRule.rule_type === 'weekly_hours_limit' ||
+                newRule.rule_type === 'consecutive_days_limit') && (
                 <div className="space-y-2">
                   <Label>
                     {newRule.rule_type === 'min_employees_per_shift' && 'מספר מינימלי של עובדים'}
                     {newRule.rule_type === 'max_employees_per_shift' && 'מספר מקסימלי של עובדים'}
                     {newRule.rule_type === 'break_duration' && 'משך הפסקה (דקות)'}
+                    {newRule.rule_type === 'shift_spacing' && 'מרווח בין משמרות (שעות)'}
+                    {newRule.rule_type === 'weekly_hours_limit' && 'מקסימום שעות שבועיות'}
+                    {newRule.rule_type === 'consecutive_days_limit' && 'מקסימום ימים רצופים'}
                   </Label>
                   <Input
                     type="number"
                     value={newRule.value_numeric || ''}
                     onChange={(e) => setNewRule(prev => ({ ...prev, value_numeric: Number(e.target.value) }))}
+                    min="0"
+                    max={newRule.rule_type === 'break_duration' ? '480' : newRule.rule_type === 'shift_spacing' ? '24' : newRule.rule_type === 'weekly_hours_limit' ? '60' : '14'}
                   />
                 </div>
               )}
