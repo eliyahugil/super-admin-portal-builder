@@ -134,9 +134,9 @@ export const EmployeeNotesTab: React.FC<EmployeeNotesTabProps> = ({
                 הוסף הערה
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md" dir="rtl">
               <DialogHeader>
-                <DialogTitle>הוספת הערה חדשה</DialogTitle>
+                <DialogTitle className="text-right">הוספת הערה חדשה</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -162,6 +162,8 @@ export const EmployeeNotesTab: React.FC<EmployeeNotesTabProps> = ({
                     onChange={(e) => setNewNote({...newNote, content: e.target.value})}
                     placeholder="הכנס את תוכן ההערה..."
                     rows={4}
+                    className="text-right"
+                    dir="rtl"
                   />
                 </div>
                 <div className="flex items-center space-x-2">
@@ -232,9 +234,9 @@ export const EmployeeNotesTab: React.FC<EmployeeNotesTabProps> = ({
 
         {/* Edit Note Dialog */}
         <Dialog open={!!editingNote} onOpenChange={() => setEditingNote(null)}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md" dir="rtl">
             <DialogHeader>
-              <DialogTitle>עריכת הערה</DialogTitle>
+              <DialogTitle className="text-right">עריכת הערה</DialogTitle>
             </DialogHeader>
             {editingNote && (
               <div className="space-y-4">
@@ -263,6 +265,8 @@ export const EmployeeNotesTab: React.FC<EmployeeNotesTabProps> = ({
                     value={editingNote.content}
                     onChange={(e) => setEditingNote({...editingNote, content: e.target.value})}
                     rows={4}
+                    className="text-right"
+                    dir="rtl"
                   />
                 </div>
                 <div className="flex items-center space-x-2">
