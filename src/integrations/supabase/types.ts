@@ -111,6 +111,53 @@ export type Database = {
           },
         ]
       }
+      auto_scheduling_settings: {
+        Row: {
+          algorithm_type: string
+          auto_schedule_enabled: boolean
+          business_id: string
+          conflict_resolution: string
+          created_at: string
+          id: string
+          notification_preferences: Json
+          optimization_goals: Json
+          schedule_weeks_ahead: number
+          updated_at: string
+        }
+        Insert: {
+          algorithm_type?: string
+          auto_schedule_enabled?: boolean
+          business_id: string
+          conflict_resolution?: string
+          created_at?: string
+          id?: string
+          notification_preferences?: Json
+          optimization_goals?: Json
+          schedule_weeks_ahead?: number
+          updated_at?: string
+        }
+        Update: {
+          algorithm_type?: string
+          auto_schedule_enabled?: boolean
+          business_id?: string
+          conflict_resolution?: string
+          created_at?: string
+          id?: string
+          notification_preferences?: Json
+          optimization_goals?: Json
+          schedule_weeks_ahead?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_scheduling_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           address: string | null
@@ -354,6 +401,72 @@ export type Database = {
             columns: ["module_id"]
             isOneToOne: false
             referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_scheduling_rules: {
+        Row: {
+          branch_id: string | null
+          business_id: string
+          created_at: string
+          created_by: string | null
+          days_of_week: number[] | null
+          end_time: string | null
+          id: string
+          is_active: boolean
+          rule_type: string
+          shift_type: string | null
+          start_time: string | null
+          updated_at: string
+          value_json: Json | null
+          value_numeric: number | null
+        }
+        Insert: {
+          branch_id?: string | null
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          days_of_week?: number[] | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean
+          rule_type: string
+          shift_type?: string | null
+          start_time?: string | null
+          updated_at?: string
+          value_json?: Json | null
+          value_numeric?: number | null
+        }
+        Update: {
+          branch_id?: string | null
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          days_of_week?: number[] | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean
+          rule_type?: string
+          shift_type?: string | null
+          start_time?: string | null
+          updated_at?: string
+          value_json?: Json | null
+          value_numeric?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_scheduling_rules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_scheduling_rules_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -1703,6 +1816,78 @@ export type Database = {
           },
         ]
       }
+      employee_scheduling_constraints: {
+        Row: {
+          business_id: string
+          constraint_type: string
+          created_at: string
+          created_by: string | null
+          days_of_week: number[] | null
+          employee_id: string
+          end_date: string | null
+          end_time: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          priority: number | null
+          start_date: string | null
+          start_time: string | null
+          updated_at: string
+          value_numeric: number | null
+        }
+        Insert: {
+          business_id: string
+          constraint_type: string
+          created_at?: string
+          created_by?: string | null
+          days_of_week?: number[] | null
+          employee_id: string
+          end_date?: string | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          priority?: number | null
+          start_date?: string | null
+          start_time?: string | null
+          updated_at?: string
+          value_numeric?: number | null
+        }
+        Update: {
+          business_id?: string
+          constraint_type?: string
+          created_at?: string
+          created_by?: string | null
+          days_of_week?: number[] | null
+          employee_id?: string
+          end_date?: string | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          priority?: number | null
+          start_date?: string | null
+          start_time?: string | null
+          updated_at?: string
+          value_numeric?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_scheduling_constraints_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_scheduling_constraints_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_shift_preferences: {
         Row: {
           branch_id: string
@@ -2849,6 +3034,94 @@ export type Database = {
           },
         ]
       }
+      scheduling_events: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          description: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          severity: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          severity?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduling_events_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduling_templates: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          template_data: Json
+          template_name: string
+          template_type: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          template_data: Json
+          template_name: string
+          template_type: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          template_data?: Json
+          template_name?: string
+          template_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduling_templates_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_reminder_logs: {
         Row: {
           business_id: string | null
@@ -2979,6 +3252,80 @@ export type Database = {
           {
             foreignKeyName: "shift_submissions_employee_id_fkey"
             columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_swap_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          message: string | null
+          original_shift_id: string
+          proposed_shift_id: string | null
+          request_type: string
+          requester_employee_id: string
+          status: string
+          target_employee_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          original_shift_id: string
+          proposed_shift_id?: string | null
+          request_type?: string
+          requester_employee_id: string
+          status?: string
+          target_employee_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          original_shift_id?: string
+          proposed_shift_id?: string | null
+          request_type?: string
+          requester_employee_id?: string
+          status?: string
+          target_employee_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_swap_requests_original_shift_id_fkey"
+            columns: ["original_shift_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_swap_requests_proposed_shift_id_fkey"
+            columns: ["proposed_shift_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_swap_requests_requester_employee_id_fkey"
+            columns: ["requester_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_swap_requests_target_employee_id_fkey"
+            columns: ["target_employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
