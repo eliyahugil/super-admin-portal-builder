@@ -8,6 +8,9 @@ import { useEmployeeChatGroups } from '@/hooks/useEmployeeChatGroups';
 export const useChatPage = () => {
   const { profile } = useAuth();
   const { data: employees = [], isLoading: isLoadingEmployees, error: employeesError } = useEmployeesData();
+  
+  console.log('💬 useChatPage - Current profile business_id:', profile?.business_id);
+  console.log('💬 useChatPage - Employees business_ids:', employees.map(e => e.business_id));
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
