@@ -1541,6 +1541,7 @@ export type Database = {
           file_size: number | null
           file_type: string | null
           id: string
+          is_visible_to_employee: boolean
           uploaded_at: string | null
           uploaded_by: string
         }
@@ -1553,6 +1554,7 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           id?: string
+          is_visible_to_employee?: boolean
           uploaded_at?: string | null
           uploaded_by: string
         }
@@ -1565,6 +1567,7 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           id?: string
+          is_visible_to_employee?: boolean
           uploaded_at?: string | null
           uploaded_by?: string
         }

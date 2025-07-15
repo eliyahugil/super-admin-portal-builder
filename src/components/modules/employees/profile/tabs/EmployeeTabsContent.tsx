@@ -41,7 +41,7 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
       </TabsContent>
 
       <TabsContent value="documents">
-        <EmployeeDocumentsTab employeeId={employeeId} employeeName={employeeName} />
+        <EmployeeDocumentsTab employee={employee} employeeId={employeeId} employeeName={employeeName} />
       </TabsContent>
 
       <TabsContent value="branches">
