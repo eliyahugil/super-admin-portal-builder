@@ -5,7 +5,6 @@ import { EmployeeNotes } from '../../EmployeeNotes';
 import { EmployeeDocuments } from '../../EmployeeDocuments';
 import { EmployeeBranchAssignments } from '../../EmployeeBranchAssignments';
 import { SalaryHistory } from '../../SalaryHistory';
-import { RecentAttendance } from '../../RecentAttendance';
 import { ShiftSubmissionHistory } from '../../ShiftSubmissionHistory';
 import { EmployeeTokenManager } from '../../EmployeeTokenManager';
 import { EmployeeCustomFields } from '../../EmployeeCustomFields';
@@ -15,6 +14,7 @@ import { EmployeeNotesTab } from './EmployeeNotesTab';
 import { EmployeeDocumentsTab } from './EmployeeDocumentsTab';
 import { EmployeeBranchAssignmentsTab } from './EmployeeBranchAssignmentsTab';
 import { EmployeeSalaryTab } from './EmployeeSalaryTab';
+import { EmployeeAttendanceTab } from './EmployeeAttendanceTab';
 import type { Employee } from '@/types/employee';
 
 interface EmployeeTabsContentProps {
@@ -49,7 +49,7 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
       </TabsContent>
 
       <TabsContent value="attendance">
-        <RecentAttendance employeeId={employeeId} />
+        <EmployeeAttendanceTab employee={employee} employeeId={employeeId} employeeName={employeeName} />
       </TabsContent>
 
       <TabsContent value="shifts">
