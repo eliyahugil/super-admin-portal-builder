@@ -309,29 +309,43 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                       console.log('📄 Rendering PDF preview with URL:', previewUrl);
                       return null;
                     })()}
-                    {/* Use object tag for better PDF compatibility */}
+                    {/* PDF Viewer with automatic fallback */}
                     <div className="h-full relative">
+                      {/* Always show the action buttons for PDFs */}
+                      <div className="absolute top-4 right-4 z-10 flex gap-2">
+                        <Button onClick={handleDownload} variant="secondary" size="sm">
+                          <Download className="h-4 w-4 mr-1" />
+                          הורד
+                        </Button>
+                        <Button onClick={handleOpenInNewTab} variant="secondary" size="sm">
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          פתח בטאב חדש
+                        </Button>
+                      </div>
+                      
+                      {/* Try to embed PDF */}
                       <object 
                         data={previewUrl}
                         type="application/pdf"
                         className="w-full h-full"
                         title={file.file_name}
                       >
-                        {/* Fallback for browsers that don't support PDF viewing */}
-                        <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-                          <FileText className="h-12 w-12 mb-4 text-muted-foreground" />
-                          <h3 className="text-base font-medium mb-2">לא ניתן לצפות ב-PDF בדפדפן זה</h3>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            נסה להוריד את הקובץ או לפתוח אותו בדפדפן אחר
+                        {/* Fallback content for when PDF can't be displayed */}
+                        <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                          <FileText className="h-16 w-16 mb-4 text-muted-foreground" />
+                          <h3 className="text-lg font-medium mb-2">קובץ PDF</h3>
+                          <p className="text-sm text-muted-foreground mb-4 max-w-md">
+                            הדפדפן שלך לא תומך בצפייה ב-PDF במוקד זה. 
+                            לחץ על אחד הכפתורים למעלה כדי לצפות בקובץ.
                           </p>
-                          <div className="flex gap-2">
-                            <Button onClick={handleDownload} variant="default" size="sm">
-                              <Download className="h-4 w-4 mr-2" />
-                              הורד PDF
-                            </Button>
-                            <Button onClick={handleOpenInNewTab} variant="outline" size="sm">
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <Button onClick={handleOpenInNewTab} variant="default" size="lg">
                               <ExternalLink className="h-4 w-4 mr-2" />
                               פתח בטאב חדש
+                            </Button>
+                            <Button onClick={handleDownload} variant="outline" size="lg">
+                              <Download className="h-4 w-4 mr-2" />
+                              הורד קובץ
                             </Button>
                           </div>
                         </div>
