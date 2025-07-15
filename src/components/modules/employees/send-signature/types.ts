@@ -6,6 +6,7 @@ export interface Employee {
   employee_id: string;
   email?: string;
   phone?: string;
+  business_id: string;
 }
 
 export interface ExistingSignature {
