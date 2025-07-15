@@ -322,21 +322,21 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                  </Badge>
                                )}
                              </div>
-                             
-                             {/* סטטוס וקונפליקטים */}
-                             <div className="flex items-center justify-between">
-                               <Badge variant="secondary" className={`${getStatusColor(shift.status || 'pending')} text-xs`}>
-                                 {shift.status === 'approved' ? 'מאושר' : 
-                                  shift.status === 'pending' ? 'ממתין' :
-                                  shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
-                               </Badge>
-                               {hasConflict && (
-                                 <div className="flex items-center gap-1">
-                                   <AlertTriangle className="h-3 w-3 text-red-500" />
-                                   <span className="text-xs text-red-500">התנגשות</span>
-                                 </div>
-                               )}
-                             </div>
+                           </div>
+                           
+                           {/* סטטוס וקונפליקטים - רביעי במטה */}
+                           <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+                             <Badge variant="secondary" className={`${getStatusColor(shift.status || 'pending')} text-xs`}>
+                               {shift.status === 'approved' ? 'מאושר' : 
+                                shift.status === 'pending' ? 'ממתין' :
+                                shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
+                             </Badge>
+                             {hasConflict && (
+                               <div className="flex items-center gap-1">
+                                 <AlertTriangle className="h-3 w-3 text-red-500" />
+                                 <span className="text-xs text-red-500">התנגשות</span>
+                               </div>
+                             )}
                            </div>
                          </div>
                        );
@@ -472,34 +472,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                  setShowShiftDetailsDialog(true);
                                }}
                              >
-                               <div className="flex items-center justify-between mb-1">
-                                 <div className="flex items-center gap-1">
-                                   <Badge variant="secondary" className={`text-xs ${getStatusColor(shift.status || 'pending')}`}>
-                                     {shift.status === 'approved' ? 'מאושר' : 
-                                      shift.status === 'pending' ? 'ממתין' :
-                                      shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
-                                   </Badge>
-                                    {hasConflict && (
-                                      <TooltipProvider>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <AlertTriangle className="h-3 w-3 text-red-500" />
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            התנגשות עם משמרת אחרת
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-                                    )}
-                                 </div>
-                                 {shiftSubmissions.length > 0 && (
-                                   <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                     {shiftSubmissions.length} בקשות
-                                   </Badge>
-                                 )}
-                               </div>
-                               
-                                <div className={`space-y-1 text-xs ${hasConflict ? 'line-through opacity-60' : ''}`}>
+                               <div className={`space-y-1 text-xs ${hasConflict ? 'line-through opacity-60' : ''}`}>
                                  {/* סניף - ראשון ובולט */}
                                  {shift.branch_name && (
                                    <div className="text-center">
@@ -528,12 +501,33 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                      </Badge>
                                    )}
                                  </div>
-                                 
-                                 {/* התראות */}
-                                 {hasConflict && (
-                                   <div className="text-center">
-                                     <AlertTriangle className="h-3 w-3 text-red-500 mx-auto" />
-                                   </div>
+                               </div>
+                               
+                               {/* סטטוס וקונפליקטים ובקשות - במטה */}
+                               <div className="flex items-center justify-between mt-2 pt-1 border-t border-gray-100">
+                                 <div className="flex items-center gap-1">
+                                   <Badge variant="secondary" className={`text-xs ${getStatusColor(shift.status || 'pending')}`}>
+                                     {shift.status === 'approved' ? 'מאושר' : 
+                                      shift.status === 'pending' ? 'ממתין' :
+                                      shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
+                                   </Badge>
+                                    {hasConflict && (
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <AlertTriangle className="h-3 w-3 text-red-500" />
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            התנגשות עם משמרת אחרת
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    )}
+                                 </div>
+                                 {shiftSubmissions.length > 0 && (
+                                   <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                     {shiftSubmissions.length} בקשות
+                                   </Badge>
                                  )}
                                </div>
                             </div>
