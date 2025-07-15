@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { AlertTriangle, Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/components/auth/AuthContext';
 import type { Employee } from '@/types/supabase';
 
 interface EmployeeNotesTabProps {
@@ -24,6 +25,7 @@ export const EmployeeNotesTab: React.FC<EmployeeNotesTabProps> = ({
   employeeId,
   employeeName
 }) => {
+  const { user } = useAuth();
   const [notes, setNotes] = useState(employee.employee_notes || []);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<any>(null);
@@ -34,6 +36,11 @@ export const EmployeeNotesTab: React.FC<EmployeeNotesTabProps> = ({
   });
 
   const handleAddNote = async () => {
+    if (!user?.id) {
+      toast.error('חובה להיות מחובר למערכת');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('employee_notes')
@@ -43,7 +50,7 @@ export const EmployeeNotesTab: React.FC<EmployeeNotesTabProps> = ({
           content: newNote.content,
           note_type: newNote.note_type,
           is_warning: newNote.is_warning,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: user.id
         })
         .select()
         .single();
