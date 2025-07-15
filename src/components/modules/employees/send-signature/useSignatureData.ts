@@ -7,25 +7,38 @@ import type { Employee, ExistingSignature } from './types';
 export const useSignatureData = (documentId: string) => {
   const { profile } = useAuth();
 
-  // שליפת רשימת עובדים פעילים של העסק הנוכחי (או כל העובדים עבור super_admin)
+  // שליפת רשימת עובדים פעילים של העסק הנוכחי
   const { data: employees, isLoading: employeesLoading } = useQuery({
     queryKey: ['active-employees-for-signature', profile?.business_id, profile?.role],
     queryFn: async (): Promise<Employee[]> => {
-      let query = supabase
+      // עבור super_admin, נשתמש בעסק הראשון כברירת מחדל אם אין business_id
+      // עבור משתמשים רגילים, נשתמש ב-business_id שלהם
+      let targetBusinessId = profile?.business_id;
+      
+      if (profile?.role === 'super_admin' && !targetBusinessId) {
+        // אם super_admin ללא עסק מוקצה, נשתמש בעסק הראשון
+        const { data: businesses } = await supabase
+          .from('businesses')
+          .select('id')
+          .eq('is_active', true)
+          .limit(1);
+        
+        if (businesses && businesses.length > 0) {
+          targetBusinessId = businesses[0].id;
+        }
+      }
+
+      if (!targetBusinessId) {
+        console.log('❌ No business_id available, cannot fetch employees');
+        return [];
+      }
+
+      const query = supabase
         .from('employees')
         .select('id, first_name, last_name, employee_id, email, phone, business_id')
         .eq('is_active', true)
+        .eq('business_id', targetBusinessId)
         .order('first_name', { ascending: true });
-
-      // אם המשתמש הוא super_admin, הוא רואה את כל העובדים
-      // אחרת, הוא רואה רק עובדים של העסק שלו
-      if (profile?.role !== 'super_admin') {
-        if (!profile?.business_id) {
-          console.log('❌ No business_id in profile and not super_admin, cannot fetch employees');
-          return [];
-        }
-        query = query.eq('business_id', profile.business_id);
-      }
 
       const { data, error } = await query;
       
