@@ -307,6 +307,24 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
               {file.file_name}
             </DialogTitle>
             <div className="flex items-center gap-2">
+              {/* Share button for mobile */}
+              <Button 
+                onClick={() => {
+                  if (navigator.share && file) {
+                    navigator.share({
+                      title: file.file_name,
+                      text: `שיתוף קובץ: ${file.file_name}`,
+                      url: previewUrl
+                    }).catch(console.error);
+                  }
+                }}
+                variant="outline" 
+                size="sm"
+                className="md:hidden"
+              >
+                <Share2 className="h-4 w-4 mr-1" />
+                שתף
+              </Button>
               <Button onClick={handleDownload} variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-1" />
                 הורד
