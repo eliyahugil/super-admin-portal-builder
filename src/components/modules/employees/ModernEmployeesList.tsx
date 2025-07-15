@@ -211,10 +211,10 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <CardTitle className="text-sm sm:text-lg text-right truncate">
+                      <CardTitle className="text-sm sm:text-base text-right break-words whitespace-normal leading-tight font-semibold">
                         {employee.first_name} {employee.last_name}
                       </CardTitle>
-                      <Badge className={`${getStatusColor(employee.is_active || false)} text-xs`}>
+                      <Badge className={`${getStatusColor(employee.is_active || false)} text-xs mt-1`}>
                         {employee.is_active ? 'פעיל' : 'לא פעיל'}
                       </Badge>
                     </div>
