@@ -62,25 +62,37 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     
     setIsLoading(true);
     try {
-      console.log('Loading preview for file:', file.file_name, 'Type:', file.file_type);
+      console.log('🔍 Loading preview for file:', {
+        name: file.file_name,
+        type: file.file_type,
+        path: file.file_path,
+        isImage,
+        isPdf,
+        isText
+      });
       
-      // Download file and create blob URL for direct viewing
+      // Always download file and create blob URL for security
       const { data, error } = await supabase.storage
         .from('employee-files')
         .download(file.file_path);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Download error:', error);
+        throw error;
+      }
+
+      console.log('✅ File downloaded successfully, size:', data.size);
 
       // Create blob URL for all file types
       const url = URL.createObjectURL(data);
       setPreviewUrl(url);
       
-      console.log('Preview URL set successfully');
+      console.log('✅ Preview URL created:', url);
     } catch (error) {
-      console.error('Error loading preview:', error);
+      console.error('❌ Error loading preview:', error);
       toast({
         title: 'שגיאה בטעינת התצוגה',
-        description: 'לא ניתן לטעון את התצוגה המקדימה - ייתכן שאין הרשאה לגשת לקובץ',
+        description: `לא ניתן לטעון את התצוגה המקדימה: ${error.message}`,
         variant: 'destructive',
       });
     } finally {
@@ -305,15 +317,22 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                   </div>
                 ) : isPdf ? (
                   <div className="h-full">
-                    <embed 
-                      src={previewUrl}
+                    <object 
+                      data={previewUrl}
                       type="application/pdf"
                       className="w-full h-full"
                       title={file.file_name}
-                    />
+                    >
+                      <embed 
+                        src={previewUrl}
+                        type="application/pdf"
+                        className="w-full h-full"
+                        title={file.file_name}
+                      />
+                    </object>
                   </div>
                 ) : isText ? (
-                  <div className="h-full">
+                  <div className="h-full p-4">
                     <iframe 
                       src={previewUrl}
                       className="w-full h-full border-0 bg-white"
@@ -321,44 +340,44 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                       sandbox="allow-same-origin"
                     />
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                    <FileText className="h-16 w-16 mb-4" />
-                    <h3 className="text-lg font-medium mb-2">אין תצוגה מקדימה זמינה</h3>
-                    <p className="text-sm text-center mb-4">
-                      לא ניתן להציג תצוגה מקדימה עבור סוג קובץ זה ({file.file_type})
-                    </p>
-                    <div className="flex gap-2">
-                      <Button onClick={handleDownload} variant="outline">
-                        <Download className="h-4 w-4 mr-2" />
-                        הורד את הקובץ
-                      </Button>
-                      <Button onClick={handleOpenInNewTab} variant="outline">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        פתח בכרטיסייה חדשה
-                      </Button>
-                    </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                  <FileText className="h-16 w-16 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">אין תצוגה מקדימה זמינה</h3>
+                  <p className="text-sm text-center mb-4">
+                    לא ניתן להציג תצוגה מקדימה עבור סוג קובץ זה ({file.file_type})
+                  </p>
+                  <div className="flex gap-2">
+                    <Button onClick={handleDownload} variant="outline">
+                      <Download className="h-4 w-4 mr-2" />
+                      הורד את הקובץ
+                    </Button>
+                    <Button onClick={handleOpenInNewTab} variant="outline">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      פתח בכרטיסייה חדשה
+                    </Button>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <FileText className="h-16 w-16 mb-4" />
-                <h3 className="text-lg font-medium mb-2">לא ניתן לטעון את התצוגה</h3>
-                <p className="text-sm text-center mb-4">
-                  ייתכן שהקובץ לא נמצא או שאין הרשאה לגשת אליו
-                </p>
-                <div className="flex gap-2">
-                  <Button onClick={handleDownload} variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    הורדה
-                  </Button>
-                  <Button onClick={handleOpenInNewTab} variant="outline">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    פתח בכרטיסייה חדשה
-                  </Button>
                 </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <FileText className="h-16 w-16 mb-4" />
+              <h3 className="text-lg font-medium mb-2">לא ניתן לטעון את התצוגה</h3>
+              <p className="text-sm text-center mb-4">
+                ייתכן שהקובץ לא נמצא או שאין הרשאה לגשת אליו
+              </p>
+              <div className="flex gap-2">
+                <Button onClick={handleDownload} variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  הורדה
+                </Button>
+                <Button onClick={handleOpenInNewTab} variant="outline">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  פתח בכרטיסייה חדשה
+                </Button>
               </div>
+            </div>
             )}
           </div>
         </div>
