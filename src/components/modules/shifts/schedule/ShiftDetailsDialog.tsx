@@ -599,6 +599,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                 <Card className="mt-4">
                   <CardHeader>
                     <h4 className="font-medium text-sm">עובדים פנויים מסניפים אחרים ({availableEmployees.length})</h4>
+                    <p className="text-xs text-gray-600">העובדים יוקצו למשמרת בסניף: <span className="font-medium text-purple-700">{branch?.name || 'לא ידוע'}</span></p>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {availableEmployees.map((emp) => {
@@ -613,8 +614,11 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-green-600" />
                             <span className="font-medium">{emp.first_name} {emp.last_name}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {empBranch?.name || 'ללא סניף'}
+                            <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700">
+                              מסניף: {empBranch?.name || 'ללא סניף'}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs bg-purple-50 text-purple-700">
+                              יוקצה לסניף: {branch?.name || 'לא ידוע'}
                             </Badge>
                           </div>
                           <Button
@@ -701,6 +705,9 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                               <span className="text-green-600 mr-1">✓ מוקצה</span>
                             )}
                           </span>
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                            סניף: {relevantShift?.branch_preference || 'לא צוין'}
+                          </Badge>
                         </div>
                         <Badge variant="secondary" className="text-xs">
                           {submission.role}
