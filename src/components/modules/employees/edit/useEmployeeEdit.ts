@@ -66,16 +66,9 @@ export const useEmployeeEdit = (employee: Employee, onSuccess: () => void) => {
         password_hash = await hashPassword(formData.password);
       }
 
-      // Archive logic: if termination date is set and in past, set is_archived
-      let is_archived = employee.is_archived || false;
-      if (formData.termination_date) {
-        const term = new Date(formData.termination_date);
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        if (term < today) {
-          is_archived = true;
-        }
-      }
+      // ⚠️ הסרת הלוגיקה האוטומטית של העברה לארכיון
+      // העברה לארכיון תהיה רק באופן ידני
+      const is_archived = employee.is_archived || false;
 
       const updateData: any = {
         first_name: formData.first_name,

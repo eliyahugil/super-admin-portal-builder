@@ -43,7 +43,12 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
 
   // פונקציה לעדכון בחירת העסק
   const setSelectedBusinessId = useCallback((newBusinessId: string | null) => {
-    console.log('🔄 Setting selected business ID:', newBusinessId);
+    console.log('🔄 SETTING SELECTED BUSINESS ID:', {
+      newBusinessId,
+      userBusinesses: userBusinesses?.length,
+      isSuperAdmin,
+      currentBusinessId: businessId
+    });
     
     // עדכון מיידי של הstate
     setBusinessId(newBusinessId);
