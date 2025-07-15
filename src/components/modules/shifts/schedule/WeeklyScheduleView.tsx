@@ -44,12 +44,26 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   const [isPublishing, setIsPublishing] = useState(false);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   
-  // Filters state
-  const [filters, setFilters] = useState<ShiftFilters>({
-    type: 'all',
-    timeFilter: 'all',
-    branchId: undefined,
-    employeeId: undefined,
+  // Filters state - load from localStorage if available
+  const [filters, setFilters] = useState<ShiftFilters>(() => {
+    try {
+      const saved = localStorage.getItem('shift-schedule-filters');
+      return saved ? JSON.parse(saved) : {
+        type: 'all',
+        timeFilter: 'all',
+        branchId: undefined,
+        employeeId: undefined,
+        roleFilter: undefined,
+      };
+    } catch {
+      return {
+        type: 'all',
+        timeFilter: 'all',
+        branchId: undefined,
+        employeeId: undefined,
+        roleFilter: undefined,
+      };
+    }
   });
   
   // Generate week days starting from Sunday
@@ -80,6 +94,10 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
       filteredShifts = filteredShifts.filter(shift => shift.employee_id === filters.employeeId);
     }
     
+    if (filters.type === 'role' && filters.roleFilter) {
+      filteredShifts = filteredShifts.filter(shift => shift.role === filters.roleFilter);
+    }
+    
     if (filters.timeFilter !== 'all') {
       filteredShifts = filteredShifts.filter(shift => {
         const startHour = parseInt(shift.start_time?.split(':')[0] || '0');
@@ -101,6 +119,46 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
       // Then sort by start time
       return (a.start_time || '').localeCompare(b.start_time || '');
     });
+  };
+
+  // Group shifts by time period for visual separation
+  const groupShiftsByTimePeriod = (shifts: any[]) => {
+    const morning = shifts.filter(shift => {
+      const startHour = parseInt(shift.start_time?.split(':')[0] || '0');
+      return startHour >= 6 && startHour < 14;
+    });
+    
+    const evening = shifts.filter(shift => {
+      const startHour = parseInt(shift.start_time?.split(':')[0] || '0');
+      return startHour >= 14 && startHour < 22;
+    });
+    
+    const night = shifts.filter(shift => {
+      const startHour = parseInt(shift.start_time?.split(':')[0] || '0');
+      return startHour >= 22 || startHour < 6;
+    });
+    
+    return { morning, evening, night };
+  };
+
+  // Save filters to localStorage
+  const handleFiltersChange = (newFilters: ShiftFilters) => {
+    setFilters(newFilters);
+    try {
+      localStorage.setItem('shift-schedule-filters', JSON.stringify(newFilters));
+    } catch (error) {
+      console.error('Failed to save filters to localStorage:', error);
+    }
+  };
+
+  // Save preferences function
+  const handleSavePreferences = () => {
+    try {
+      localStorage.setItem('shift-schedule-filters', JSON.stringify(filters));
+      toast.success('העדפות התצוגה נשמרו בהצלחה');
+    } catch (error) {
+      toast.error('שגיאה בשמירת העדפות');
+    }
   };
 
   const getHolidaysForDate = (date: Date) => {
@@ -317,7 +375,24 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
               <CardContent className="space-y-3">
                 {dayShifts.length > 0 ? (
                   <div className="space-y-2">
-                     {dayShifts.map((shift) => {
+                    {/* Display shifts grouped by time period */}
+                    {(() => {
+                      const { morning, evening, night } = groupShiftsByTimePeriod(dayShifts);
+                      const showSeparators = dayShifts.length > 1;
+                      
+                      return (
+                        <>
+                          {/* Morning shifts */}
+                          {morning.length > 0 && (
+                            <div className="space-y-2">
+                              {showSeparators && morning.length > 0 && (evening.length > 0 || night.length > 0) && (
+                                <div className="flex items-center gap-2 my-2">
+                                  <div className="flex-1 h-px bg-amber-300"></div>
+                                  <span className="text-xs text-amber-600 font-medium px-2 bg-amber-50 rounded">בוקר</span>
+                                  <div className="flex-1 h-px bg-amber-300"></div>
+                                </div>
+                              )}
+                              {morning.map((shift) => {
                        const hasConflict = hasShiftConflict(shift);
                        
                        return (
@@ -381,9 +456,172 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                              )}
                            </div>
                          </div>
-                       );
-                     })}
-                   </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                          
+                          {/* Evening shifts */}
+                          {evening.length > 0 && (
+                            <div className="space-y-2">
+                              {showSeparators && evening.length > 0 && (morning.length > 0 || night.length > 0) && (
+                                <div className="flex items-center gap-2 my-2">
+                                  <div className="flex-1 h-px bg-orange-300"></div>
+                                  <span className="text-xs text-orange-600 font-medium px-2 bg-orange-50 rounded">ערב</span>
+                                  <div className="flex-1 h-px bg-orange-300"></div>
+                                </div>
+                              )}
+                              {evening.map((shift) => {
+                                const hasConflict = hasShiftConflict(shift);
+                        
+                                return (
+                                  <div
+                                    key={shift.id}
+                                    className={`p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                                      hasConflict ? 'border-red-300 bg-red-50' : ''
+                                    }`}
+                                    onClick={() => {
+                                      setSelectedShift(shift);
+                                      setShowShiftDetailsDialog(true);
+                                    }}
+                                  >
+                                    <div className="space-y-2">
+                                      {/* סניף - ראשון ובולט */}
+                                      {shift.branch_name && (
+                                        <div className="flex items-center justify-center">
+                                          <Badge className="bg-blue-600 text-white font-medium px-3 py-1">
+                                            <MapPin className="h-3 w-3 ml-1" />
+                                            {shift.branch_name}
+                                          </Badge>
+                                        </div>
+                                      )}
+                                      
+                                      {/* שעות משמרת - שני */}
+                                      <div className="flex items-center justify-center">
+                                        <Badge variant="outline" className="bg-gray-50 border-2 font-medium px-3 py-1">
+                                          <Clock className="h-3 w-3 ml-1" />
+                                          {shift.start_time} - {shift.end_time}
+                                        </Badge>
+                                      </div>
+                                      
+                                      {/* עובד מוקצה או לא מוקצה - שלישי */}
+                                      <div className="flex items-center justify-center">
+                                        {shift.employee_id ? (
+                                          <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 px-3 py-1">
+                                            <User className="h-3 w-3 ml-1" />
+                                            {getEmployeeName(shift.employee_id)}
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-3 py-1">
+                                            <User className="h-3 w-3 ml-1" />
+                                            לא מוקצה
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                    
+                                    {/* סטטוס וקונפליקטים - רביעי במטה */}
+                                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+                                      <Badge variant="secondary" className={`${getStatusColor(shift.status || 'pending')} text-xs`}>
+                                        {shift.status === 'approved' ? 'מאושר' : 
+                                         shift.status === 'pending' ? 'ממתין' :
+                                         shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
+                                      </Badge>
+                                      {hasConflict && (
+                                        <div className="flex items-center gap-1">
+                                          <AlertTriangle className="h-3 w-3 text-red-500" />
+                                          <span className="text-xs text-red-500">התנגשות</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                          
+                          {/* Night shifts */}
+                          {night.length > 0 && (
+                            <div className="space-y-2">
+                              {showSeparators && night.length > 0 && (morning.length > 0 || evening.length > 0) && (
+                                <div className="flex items-center gap-2 my-2">
+                                  <div className="flex-1 h-px bg-purple-300"></div>
+                                  <span className="text-xs text-purple-600 font-medium px-2 bg-purple-50 rounded">לילה</span>
+                                  <div className="flex-1 h-px bg-purple-300"></div>
+                                </div>
+                              )}
+                              {night.map((shift) => {
+                                const hasConflict = hasShiftConflict(shift);
+                        
+                                return (
+                                  <div
+                                    key={shift.id}
+                                    className={`p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                                      hasConflict ? 'border-red-300 bg-red-50' : ''
+                                    }`}
+                                    onClick={() => {
+                                      setSelectedShift(shift);
+                                      setShowShiftDetailsDialog(true);
+                                    }}
+                                  >
+                                    <div className="space-y-2">
+                                      {/* סניף - ראשון ובולט */}
+                                      {shift.branch_name && (
+                                        <div className="flex items-center justify-center">
+                                          <Badge className="bg-blue-600 text-white font-medium px-3 py-1">
+                                            <MapPin className="h-3 w-3 ml-1" />
+                                            {shift.branch_name}
+                                          </Badge>
+                                        </div>
+                                      )}
+                                      
+                                      {/* שעות משמרת - שני */}
+                                      <div className="flex items-center justify-center">
+                                        <Badge variant="outline" className="bg-gray-50 border-2 font-medium px-3 py-1">
+                                          <Clock className="h-3 w-3 ml-1" />
+                                          {shift.start_time} - {shift.end_time}
+                                        </Badge>
+                                      </div>
+                                      
+                                      {/* עובד מוקצה או לא מוקצה - שלישי */}
+                                      <div className="flex items-center justify-center">
+                                        {shift.employee_id ? (
+                                          <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 px-3 py-1">
+                                            <User className="h-3 w-3 ml-1" />
+                                            {getEmployeeName(shift.employee_id)}
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-3 py-1">
+                                            <User className="h-3 w-3 ml-1" />
+                                            לא מוקצה
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                    
+                                    {/* סטטוס וקונפליקטים - רביעי במטה */}
+                                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+                                      <Badge variant="secondary" className={`${getStatusColor(shift.status || 'pending')} text-xs`}>
+                                        {shift.status === 'approved' ? 'מאושר' : 
+                                         shift.status === 'pending' ? 'ממתין' :
+                                         shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
+                                      </Badge>
+                                      {hasConflict && (
+                                        <div className="flex items-center gap-1">
+                                          <AlertTriangle className="h-3 w-3 text-red-500" />
+                                          <span className="text-xs text-red-500">התנגשות</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
                 ) : (
                   <div 
                     className="text-center py-4 text-gray-500 cursor-pointer hover:bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 hover:border-blue-300 transition-colors"
@@ -407,10 +645,11 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
       {/* Filters Toolbar */}
       <ShiftFiltersToolbar
         filters={filters}
-        onFiltersChange={setFilters}
+        onFiltersChange={handleFiltersChange}
         employees={employees}
         branches={branches}
         className="mb-4"
+        onSavePreferences={handleSavePreferences}
       />
 
       {/* Action Bar */}
