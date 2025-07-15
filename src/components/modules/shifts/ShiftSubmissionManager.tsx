@@ -74,13 +74,13 @@ export const ShiftSubmissionManager: React.FC = () => {
       weekEnd.setDate(weekStart.getDate() + 6);
 
       const { data, error } = await supabase
-        .from('employee_shift_requests')
+        .from('shift_submissions')
         .select(`
           *,
           employee:employees(first_name, last_name)
         `)
-        .gte('shift_date', weekStart.toISOString().split('T')[0])
-        .lte('shift_date', weekEnd.toISOString().split('T')[0]);
+        .eq('week_start_date', weekStart.toISOString().split('T')[0])
+        .eq('status', 'submitted');
 
       if (error) throw error;
       return data || [];
@@ -89,12 +89,7 @@ export const ShiftSubmissionManager: React.FC = () => {
   });
 
   // חישוב מספר עובדים ייחודיים שהגישו משמרות
-  const uniqueSubmittedEmployees = submittedShifts.reduce((acc, shift) => {
-    if (shift.employee_id && !acc.includes(shift.employee_id)) {
-      acc.push(shift.employee_id);
-    }
-    return acc;
-  }, [] as string[]);
+  const uniqueSubmittedEmployees = submittedShifts.map(submission => submission.employee_id);
 
   // יצירת שבוע ברירת מחדל (השבוע הבא)
   const getNextWeek = () => {
