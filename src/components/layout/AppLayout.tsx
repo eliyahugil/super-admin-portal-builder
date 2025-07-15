@@ -25,8 +25,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         {!isMobile && <DynamicSidebar />}
         
         <SidebarInset className="flex-1">
-          {/* Header with mobile menu toggle */}
-          <Header onMobileMenuToggle={isMobile ? handleMobileMenuToggle : undefined} />
+          {/* Header with mobile menu toggle - Fixed height to prevent layout shift */}
+          <div className="h-16 w-full">
+            <Header onMobileMenuToggle={isMobile ? handleMobileMenuToggle : undefined} />
+          </div>
           
           {/* Mobile Sidebar - Always render when mobile */}
           {isMobile && (
@@ -36,9 +38,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             />
           )}
           
-          {/* Main Content */}
-          <main className="flex-1 p-4 sm:p-6 bg-gray-50 min-h-[calc(100vh-64px)]">
-            {children}
+          {/* Main Content - Fixed height calculation to prevent shifts */}
+          <main className="flex-1 p-4 sm:p-6 bg-gray-50 h-[calc(100vh-4rem)] overflow-auto">
+            <div className="w-full h-full">
+              {children}
+            </div>
           </main>
         </SidebarInset>
       </div>

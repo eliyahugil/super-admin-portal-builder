@@ -53,6 +53,8 @@ export const MultiColumnSelector: React.FC<MultiColumnSelectorProps> = ({
             variant="outline"
             role="combobox"
             aria-expanded={isOpen}
+            aria-label={`בחירת עמודות - ${displayText}`}
+            aria-describedby="column-selector-desc"
             className="w-full justify-between text-right"
           >
             {displayText}

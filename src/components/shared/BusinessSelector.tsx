@@ -58,6 +58,8 @@ export const BusinessSelector: React.FC<BusinessSelectorProps> = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-label="בחירת עסק"
+          aria-describedby="business-selector-desc"
           className={cn(
             "w-full justify-between border-2 hover:border-blue-300 transition-all duration-200",
             selectedBusiness ? "border-blue-200 bg-blue-50" : 

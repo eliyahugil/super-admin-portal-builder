@@ -1,16 +1,22 @@
 
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Route } from 'react-router-dom';
 import { SuperAdminRoute } from '@/components/SuperAdminRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
-import { BusinessManagement } from '@/components/admin/BusinessManagement';
-import { AccessRequestsManager } from '@/components/admin/AccessRequestsManager';
-import { CreateBusinessForm } from '@/components/admin/CreateBusinessForm';
-import { NewBusinessForm } from '@/components/admin/NewBusinessForm';
 
-// NEW - import archived businesses page
-import ArchivedBusinessesPage from '@/pages/ArchivedBusinessesPage';
+// Lazy load admin components for better performance
+const SuperAdminDashboard = lazy(() => import('@/components/admin/SuperAdminDashboard').then(m => ({ default: m.SuperAdminDashboard })));
+const BusinessManagement = lazy(() => import('@/components/admin/BusinessManagement').then(m => ({ default: m.BusinessManagement })));
+const AccessRequestsManager = lazy(() => import('@/components/admin/AccessRequestsManager').then(m => ({ default: m.AccessRequestsManager })));
+const CreateBusinessForm = lazy(() => import('@/components/admin/CreateBusinessForm').then(m => ({ default: m.CreateBusinessForm })));
+const NewBusinessForm = lazy(() => import('@/components/admin/NewBusinessForm').then(m => ({ default: m.NewBusinessForm })));
+const ArchivedBusinessesPage = lazy(() => import('@/pages/ArchivedBusinessesPage'));
+
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
 
 export const AdminRoutes = () => [
   <Route
@@ -19,7 +25,9 @@ export const AdminRoutes = () => [
     element={
       <SuperAdminRoute>
         <AppLayout>
-          <SuperAdminDashboard />
+          <Suspense fallback={<LoadingSpinner />}>
+            <SuperAdminDashboard />
+          </Suspense>
         </AppLayout>
       </SuperAdminRoute>
     }
@@ -30,7 +38,9 @@ export const AdminRoutes = () => [
     element={
       <SuperAdminRoute>
         <AppLayout>
-          <SuperAdminDashboard />
+          <Suspense fallback={<LoadingSpinner />}>
+            <SuperAdminDashboard />
+          </Suspense>
         </AppLayout>
       </SuperAdminRoute>
     }
@@ -41,7 +51,9 @@ export const AdminRoutes = () => [
     element={
       <SuperAdminRoute>
         <AppLayout>
-          <BusinessManagement />
+          <Suspense fallback={<LoadingSpinner />}>
+            <BusinessManagement />
+          </Suspense>
         </AppLayout>
       </SuperAdminRoute>
     }
@@ -52,7 +64,9 @@ export const AdminRoutes = () => [
     element={
       <SuperAdminRoute>
         <AppLayout>
-          <ArchivedBusinessesPage />
+          <Suspense fallback={<LoadingSpinner />}>
+            <ArchivedBusinessesPage />
+          </Suspense>
         </AppLayout>
       </SuperAdminRoute>
     }
@@ -63,7 +77,9 @@ export const AdminRoutes = () => [
     element={
       <SuperAdminRoute>
         <AppLayout>
-          <AccessRequestsManager />
+          <Suspense fallback={<LoadingSpinner />}>
+            <AccessRequestsManager />
+          </Suspense>
         </AppLayout>
       </SuperAdminRoute>
     }
@@ -74,7 +90,9 @@ export const AdminRoutes = () => [
     element={
       <SuperAdminRoute>
         <AppLayout>
-          <CreateBusinessForm />
+          <Suspense fallback={<LoadingSpinner />}>
+            <CreateBusinessForm />
+          </Suspense>
         </AppLayout>
       </SuperAdminRoute>
     }
@@ -85,7 +103,9 @@ export const AdminRoutes = () => [
     element={
       <SuperAdminRoute>
         <AppLayout>
-          <NewBusinessForm />
+          <Suspense fallback={<LoadingSpinner />}>
+            <NewBusinessForm />
+          </Suspense>
         </AppLayout>
       </SuperAdminRoute>
     }

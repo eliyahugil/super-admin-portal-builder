@@ -1,9 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" href="/lovable-uploads/fdfa8b6d-1587-4d8b-8162-f887f7b1c365.png" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Performance optimizations -->
+    <link rel="preconnect" href="https://xmhmztipuvzmwgbcovch.supabase.co">
+    <link rel="dns-prefetch" href="https://xmhmztipuvzmwgbcovch.supabase.co">
+    
+    <!-- Prevent layout shifts with CSS loading indicator -->
+    <style>
+      #root { min-height: 100vh; }
+      .loading-indicator { 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100vh; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        background: #f9fafb; 
+        z-index: 9999; 
+      }
+      .loading-spinner {
+        width: 32px;
+        height: 32px;
+        border: 2px solid #e5e7eb;
+        border-top: 2px solid #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+    
     <title>מערכת ניהול עסק</title>
     <meta name="description" content="מערכת ניהול משמרות מתקדמת לעובדים ומנהלים" />
     <meta name="author" content="AllForYou" />
@@ -19,7 +53,12 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Loading indicator to prevent layout shift -->
+      <div class="loading-indicator">
+        <div class="loading-spinner"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
