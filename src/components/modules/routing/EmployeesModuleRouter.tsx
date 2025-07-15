@@ -16,10 +16,12 @@ interface Props {
 }
 
 export const EmployeesModuleRouter: React.FC<Props> = ({ route, employeeId, businessId }) => {
-  console.log('🔄 EmployeesModuleRouter - Route:', route, 'EmployeeId:', employeeId);
+  console.log('🔄 EmployeesModuleRouter - Route:', route, 'EmployeeId:', employeeId, 'BusinessId:', businessId);
+  console.log('🔄 EmployeesModuleRouter - Current URL:', window.location.pathname);
 
   // Only show profile page if we have an employeeId
   if (route === 'profile' && employeeId) {
+    console.log('✅ EmployeesModuleRouter - Rendering EmployeeProfilePage');
     return <EmployeeProfilePage />;
   }
   
