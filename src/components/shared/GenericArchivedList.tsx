@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Archive } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Archive, ArchiveRestore, Check } from 'lucide-react';
 import { useBusinessData } from '@/hooks/useBusinessData';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { GenericArchiveButton } from './GenericArchiveButton';
+import { useGenericArchive } from '@/hooks/useGenericArchive';
+import { useToast } from '@/hooks/use-toast';
 
 type AllowedTableNames = 'employees' | 'branches' | 'customers';
 
@@ -30,13 +34,77 @@ export const GenericArchivedList: React.FC<GenericArchivedListProps> = ({
   select
 }) => {
   const { businessId } = useCurrentBusiness();
-  const { data: archivedItems = [], isLoading, error } = useBusinessData({
+  const { toast } = useToast();
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  const { data: archivedItems = [], isLoading, error, refetch } = useBusinessData({
     tableName,
     queryKey,
     filter: 'archived',
     selectedBusinessId: selectedBusinessId || businessId,
     select
   });
+
+  const { restoreEntity } = useGenericArchive({
+    tableName,
+    entityName,
+    queryKey,
+    getEntityDisplayName: () => '',
+    onSuccess: () => {
+      refetch();
+    }
+  });
+
+  // Toggle single item selection
+  const toggleItemSelection = (itemId: string) => {
+    setSelectedItems(prev => 
+      prev.includes(itemId) 
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  // Select/deselect all items
+  const toggleSelectAll = () => {
+    if (selectedItems.length === archivedItems.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(archivedItems.map((item: any) => item.id));
+    }
+  };
+
+  // Restore multiple selected items
+  const restoreMultipleItems = async () => {
+    if (selectedItems.length === 0) return;
+
+    setIsRestoring(true);
+    try {
+      const promises = selectedItems.map((itemId) => {
+        const item = archivedItems.find((item: any) => item.id === itemId);
+        return restoreEntity(item);
+      });
+
+      await Promise.all(promises);
+      
+      toast({
+        title: "שחזור הושלם בהצלחה",
+        description: `${selectedItems.length} ${entityNamePlural} שוחזרו מהארכיון`,
+        variant: "default"
+      });
+
+      setSelectedItems([]);
+      refetch();
+    } catch (error) {
+      toast({
+        title: "שגיאה בשחזור",
+        description: "אירעה שגיאה בשחזור חלק מהפריטים",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRestoring(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -75,23 +143,95 @@ export const GenericArchivedList: React.FC<GenericArchivedListProps> = ({
 
   return (
     <div className="space-y-4" dir="rtl">
-      <div className="flex items-center gap-2 mb-4">
-        <Archive className="h-5 w-5 text-gray-600" />
-        <h3 className="text-lg font-semibold text-gray-800">
-          {entityNamePlural} בארכיון ({archivedItems.length})
-        </h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Archive className="h-5 w-5 text-gray-600" />
+          <h3 className="text-lg font-semibold text-gray-800">
+            {entityNamePlural} בארכיון ({archivedItems.length})
+          </h3>
+        </div>
+
+        {/* Multi-select controls */}
+        {archivedItems.length > 0 && (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="select-all"
+                checked={selectedItems.length === archivedItems.length}
+                onCheckedChange={toggleSelectAll}
+              />
+              <label 
+                htmlFor="select-all" 
+                className="text-sm font-medium text-gray-700 cursor-pointer"
+              >
+                בחר הכל ({selectedItems.length}/{archivedItems.length})
+              </label>
+            </div>
+
+            {selectedItems.length > 0 && (
+              <Button
+                onClick={restoreMultipleItems}
+                disabled={isRestoring}
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <ArchiveRestore className="h-4 w-4" />
+                {isRestoring ? "משחזר..." : `שחזר נבחרים (${selectedItems.length})`}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Selected items summary */}
+      {selectedItems.length > 0 && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-blue-800">
+                <Check className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  נבחרו {selectedItems.length} פריטים לשחזור
+                </span>
+              </div>
+              <Button 
+                onClick={() => setSelectedItems([])}
+                variant="ghost" 
+                size="sm"
+                className="text-blue-700 hover:text-blue-900"
+              >
+                בטל בחירה
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4">
         {archivedItems.map((item: any) => (
-          <Card key={item.id} className="border-l-4 border-l-orange-400">
+          <Card 
+            key={item.id} 
+            className={`border-l-4 border-l-orange-400 transition-all ${
+              selectedItems.includes(item.id) 
+                ? 'ring-2 ring-blue-500 bg-blue-50' 
+                : 'hover:shadow-md'
+            }`}
+          >
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  {renderEntityCard(item)}
-                  <Badge variant="outline" className="bg-orange-50 text-orange-700 mt-2">
-                    בארכיון
-                  </Badge>
+                <div className="flex items-center gap-3 flex-1">
+                  {/* Selection checkbox */}
+                  <Checkbox
+                    checked={selectedItems.includes(item.id)}
+                    onCheckedChange={() => toggleItemSelection(item.id)}
+                  />
+                  
+                  <div className="flex-1">
+                    {renderEntityCard(item)}
+                    <Badge variant="outline" className="bg-orange-50 text-orange-700 mt-2">
+                      בארכיון
+                    </Badge>
+                  </div>
                 </div>
                 
                 <div className="flex items-center gap-2">
@@ -104,6 +244,10 @@ export const GenericArchivedList: React.FC<GenericArchivedListProps> = ({
                     isArchived={true}
                     variant="outline"
                     size="sm"
+                    onSuccess={() => {
+                      refetch();
+                      setSelectedItems(prev => prev.filter(id => id !== item.id));
+                    }}
                   />
                 </div>
               </div>
