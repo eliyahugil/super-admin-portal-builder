@@ -85,6 +85,12 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
       setPreviewUrl(url);
       
       console.log('✅ Preview URL created:', url);
+      console.log('✅ File type detected:', {
+        isImage,
+        isPdf,
+        isText,
+        fileType: file.file_type
+      });
     } catch (error: any) {
       console.error('❌ Error loading preview:', error);
       toast({
@@ -299,35 +305,18 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                   </div>
                 ) : isPdf ? (
                   <div className="h-full">
-                    {/* Mobile PDF viewer */}
-                    <div className="block md:hidden h-full">
-                      <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-                        <FileText className="h-12 w-12 mb-4 text-muted-foreground" />
-                        <h3 className="text-base font-medium mb-2">PDF - לא ניתן לצפות בנייד</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          לצפייה ב-PDF נדרש להוריד או לפתוח בדפדפן
-                        </p>
-                        <div className="flex flex-col gap-2 w-full">
-                          <Button onClick={handleDownload} variant="default" size="sm" className="w-full">
-                            <Download className="h-4 w-4 mr-2" />
-                            הורד PDF
-                          </Button>
-                          <Button onClick={handleOpenInNewTab} variant="outline" size="sm" className="w-full">
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            פתח בדפדפן
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Desktop PDF viewer */}
-                    <div className="hidden md:block h-full">
-                      <embed 
+                    {(() => {
+                      console.log('📄 Rendering PDF preview with URL:', previewUrl);
+                      return null;
+                    })()}
+                    {/* Try iframe for PDF display */}
+                    <div className="h-full relative">
+                      <iframe 
                         src={previewUrl}
-                        type="application/pdf"
-                        className="w-full h-full"
+                        className="w-full h-full border-0"
                         title={file.file_name}
-                        onLoad={() => console.log('✅ PDF embed loaded')}
-                        onError={() => console.error('❌ PDF embed failed')}
+                        onLoad={() => console.log('✅ PDF iframe loaded successfully')}
+                        onError={() => console.error('❌ PDF iframe failed to load')}
                       />
                     </div>
                   </div>
