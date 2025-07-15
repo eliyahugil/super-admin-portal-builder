@@ -79,7 +79,7 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
   const { data: folders, isLoading: foldersLoading } = useQuery({
     queryKey: ['employee-folders', employeeId, currentFolder],
     queryFn: async (): Promise<Folder[]> => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('employee_folders')
         .select(`
           id,
@@ -90,9 +90,18 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
           created_at
         `)
         .eq('employee_id', employeeId)
-        .eq('is_active', true)
-        .eq('parent_folder_id', currentFolder)
-        .order('folder_name');
+        .eq('is_active', true);
+
+      // סינון לפי תיקיית אב - אם זה null אז משתמשים ב-is(null), אחרת ב-eq
+      if (currentFolder === null) {
+        query = query.is('parent_folder_id', null);
+      } else {
+        query = query.eq('parent_folder_id', currentFolder);
+      }
+
+      query = query.order('folder_name');
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data || [];
@@ -103,7 +112,7 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
   const { data: files, isLoading: filesLoading } = useQuery({
     queryKey: ['employee-files', employeeId, currentFolder],
     queryFn: async (): Promise<FileData[]> => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('employee_files')
         .select(`
           id,
@@ -116,9 +125,18 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
           created_at,
           uploaded_by
         `)
-        .eq('employee_id', employeeId)
-        .eq('folder_id', currentFolder)
-        .order('file_name');
+        .eq('employee_id', employeeId);
+
+      // סינון לפי תיקייה - אם זה null אז משתמשים ב-is(null), אחרת ב-eq
+      if (currentFolder === null) {
+        query = query.is('folder_id', null);
+      } else {
+        query = query.eq('folder_id', currentFolder);
+      }
+
+      query = query.order('file_name');
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data || [];
