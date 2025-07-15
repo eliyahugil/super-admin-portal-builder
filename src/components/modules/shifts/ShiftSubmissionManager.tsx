@@ -91,7 +91,7 @@ export const ShiftSubmissionManager: React.FC = () => {
   // חישוב מספר עובדים ייחודיים שהגישו משמרות
   const uniqueSubmittedEmployees = submittedShifts.map(submission => submission.employee_id);
 
-  // פונקציות לחישוב שבועות שונים
+  // פונקציות לחישוב שבועות שונים - תמיד מתחיל ביום ראשון
   const getCurrentWeek = () => {
     const now = new Date();
     const currentWeek = new Date(now);
@@ -102,14 +102,16 @@ export const ShiftSubmissionManager: React.FC = () => {
   const getNextWeek = () => {
     const now = new Date();
     const nextWeek = new Date(now);
-    nextWeek.setDate(now.getDate() + (7 - now.getDay()));
+    const daysUntilNextSunday = 7 - now.getDay(); // כמה ימים עד יום ראשון הבא
+    nextWeek.setDate(now.getDate() + daysUntilNextSunday);
     return nextWeek.toISOString().split('T')[0];
   };
 
   const getWeekAfterNext = () => {
     const now = new Date();
     const weekAfterNext = new Date(now);
-    weekAfterNext.setDate(now.getDate() + (14 - now.getDay()));
+    const daysUntilNextSunday = 7 - now.getDay(); // כמה ימים עד יום ראשון הבא
+    weekAfterNext.setDate(now.getDate() + daysUntilNextSunday + 7); // פלוס עוד שבוע
     return weekAfterNext.toISOString().split('T')[0];
   };
 
