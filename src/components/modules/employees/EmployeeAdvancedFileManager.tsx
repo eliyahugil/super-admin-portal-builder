@@ -205,9 +205,14 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
   // העלאת קובץ
   const uploadFileMutation = useMutation({
     mutationFn: async ({ file, visible, customName }: { file: globalThis.File; visible: boolean; customName?: string }) => {
-      // העלאה לאחסון
+      // העלאה לאחסון - ניקוי שם הקובץ
       const displayName = customName || file.name;
-      const fileName = `${Date.now()}-${file.name}`;
+      const cleanFileName = file.name
+        .replace(/[^\x00-\x7F]/g, '') // הסרת תווים לא-ASCII (כולל עברית)
+        .replace(/[^a-zA-Z0-9._-]/g, '_') // החלפת תווים מיוחדים ב-_
+        .replace(/_{2,}/g, '_') // החלפת מספר _ ברצף ב-_ אחד
+        .replace(/^_|_$/g, ''); // הסרת _ מתחילת וסוף השם
+      const fileName = `${Date.now()}-${cleanFileName}`;
       const filePath = `employee-files/${employeeId}/${fileName}`;
       
       const { error: uploadError } = await supabase.storage

@@ -136,7 +136,14 @@ export const useEmployeeFilesManagement = () => {
 
       const fileExt = file.name.split('.').pop();
       const timestamp = Date.now();
-      const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+      // ניקוי שם הקובץ
+      const cleanBaseName = file.name
+        .replace(/\.[^/.]+$/, '') // הסרת סיומת
+        .replace(/[^\x00-\x7F]/g, '') // הסרת תווים לא-ASCII (כולל עברית)
+        .replace(/[^a-zA-Z0-9._-]/g, '_') // החלפת תווים מיוחדים ב-_
+        .replace(/_{2,}/g, '_') // החלפת מספר _ ברצף ב-_ אחד
+        .replace(/^_|_$/g, '') || 'file'; // הסרת _ מתחילת וסוף השם, ברירת מחדל 'file'
+      const fileName = `${timestamp}_${Math.random().toString(36).substr(2, 9)}_${cleanBaseName}.${fileExt}`;
       const filePath = `${businessId}/${employeeId}/${fileName}`;
 
       console.log('📁 Uploading to path:', filePath);
