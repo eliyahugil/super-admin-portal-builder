@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Clock, User, MapPin, Send, AlertTriangle } from 'lucide-react';
+import { Plus, Clock, User, MapPin, Send, AlertTriangle, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { HolidayIndicator } from './HolidayIndicator';
@@ -13,6 +13,8 @@ import type { ShiftScheduleViewProps } from './types';
 import { SubmissionApprovalDialog } from './components/SubmissionApprovalDialog';
 import { ShiftDetailsDialog } from './ShiftDetailsDialog';
 import { ActivityLogViewer } from './ActivityLogViewer';
+import { ShiftFiltersToolbar, type ShiftFilters } from './ShiftFiltersToolbar';
+import { EmployeeStatsPanel } from './EmployeeStatsPanel';
 import {
   Tooltip,
   TooltipContent,
@@ -40,6 +42,15 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   const [showShiftDetailsDialog, setShowShiftDetailsDialog] = useState(false);
   const [selectedShift, setSelectedShift] = useState<any>(null);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [showStatsPanel, setShowStatsPanel] = useState(false);
+  
+  // Filters state
+  const [filters, setFilters] = useState<ShiftFilters>({
+    type: 'all',
+    timeFilter: 'all',
+    branchId: undefined,
+    employeeId: undefined,
+  });
   
   // Generate week days starting from Sunday
   const weekDays = useMemo(() => {
@@ -58,7 +69,38 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
 
   const getShiftsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return shifts.filter(shift => shift.shift_date === dateStr);
+    let filteredShifts = shifts.filter(shift => shift.shift_date === dateStr);
+    
+    // Apply filters
+    if (filters.type === 'branch' && filters.branchId) {
+      filteredShifts = filteredShifts.filter(shift => shift.branch_id === filters.branchId);
+    }
+    
+    if (filters.type === 'employee' && filters.employeeId) {
+      filteredShifts = filteredShifts.filter(shift => shift.employee_id === filters.employeeId);
+    }
+    
+    if (filters.timeFilter !== 'all') {
+      filteredShifts = filteredShifts.filter(shift => {
+        const startHour = parseInt(shift.start_time?.split(':')[0] || '0');
+        switch (filters.timeFilter) {
+          case 'morning': return startHour >= 6 && startHour < 14;
+          case 'evening': return startHour >= 14 && startHour < 22;
+          case 'night': return startHour >= 22 || startHour < 6;
+          default: return true;
+        }
+      });
+    }
+    
+    // Sort by branch name first, then by start time
+    return filteredShifts.sort((a, b) => {
+      // First sort by branch name (Hebrew alphabetical)
+      const branchComparison = (a.branch_name || '').localeCompare(b.branch_name || '', 'he');
+      if (branchComparison !== 0) return branchComparison;
+      
+      // Then sort by start time
+      return (a.start_time || '').localeCompare(b.start_time || '');
+    });
   };
 
   const getHolidaysForDate = (date: Date) => {
@@ -362,6 +404,15 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   // Desktop layout - grid view with RTL ordering (Sunday on right, Saturday on left)
   return (
     <div className="h-full flex flex-col" dir="rtl">
+      {/* Filters Toolbar */}
+      <ShiftFiltersToolbar
+        filters={filters}
+        onFiltersChange={setFilters}
+        employees={employees}
+        branches={branches}
+        className="mb-4"
+      />
+
       {/* Action Bar */}
       <div className="flex justify-between items-center mb-4 p-4 bg-white rounded-lg shadow-sm border">
         <div className="flex items-center gap-2">
@@ -371,6 +422,16 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
         </div>
         
         <div className="flex items-center gap-3">
+          {/* Toggle Stats Panel */}
+          <Button
+            variant="outline"
+            onClick={() => setShowStatsPanel(!showStatsPanel)}
+            className="flex items-center gap-2"
+          >
+            <User className="h-4 w-4" />
+            {showStatsPanel ? 'הסתר סטטיסטיקות' : 'הצג סטטיסטיקות'}
+          </Button>
+          
           {/* Publish Schedule Button */}
           <Button
             onClick={publishSchedule}
@@ -382,6 +443,17 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
           </Button>
         </div>
       </div>
+      
+      {/* Stats Panel */}
+      {showStatsPanel && (
+        <EmployeeStatsPanel
+          shifts={shifts}
+          employees={employees}
+          weekRange={{ start: weekDays[0], end: weekDays[6] }}
+          className="mb-4"
+        />
+      )}
+      
       <div className="grid grid-cols-7 gap-2 flex-1" style={{ direction: 'rtl' }}>
         {weekDays.map((date, index) => {
           const dayShifts = getShiftsForDate(date);
