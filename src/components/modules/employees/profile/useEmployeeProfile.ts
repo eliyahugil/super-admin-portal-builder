@@ -107,7 +107,7 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
             reason,
             created_at
           ),
-          employee_documents:employee_documents(
+          employee_documents:employee_documents!employee_documents_employee_id_fkey(
             id,
             document_name,
             document_type,
