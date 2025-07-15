@@ -575,6 +575,7 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
             <input
               id="fileUpload"
               type="file"
+              accept="*"
               className="hidden"
               onChange={handleFileUpload}
             />
