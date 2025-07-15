@@ -200,7 +200,7 @@ export const EmployeeNotesTab: React.FC<EmployeeNotesTabProps> = ({
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500">
-                      {new Date(note.created_at).toLocaleDateString('he-IL')}
+                      {new Date(note.created_at).toLocaleDateString('he-IL')} {new Date(note.created_at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                     <Button
                       variant="ghost"
