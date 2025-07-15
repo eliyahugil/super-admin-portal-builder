@@ -135,7 +135,7 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
                   }
                 />
               </TableCell>
-              <TableCell className="font-medium">
+              <TableCell className="font-medium min-w-0 max-w-[200px]">
                 <EmployeeListProfileCell employee={employee} />
               </TableCell>
               <TableCell>
