@@ -181,8 +181,19 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
       
       if (savedBusinessId && userBusinesses) {
         const savedBusiness = userBusinesses.find(ub => ub.business_id === savedBusinessId);
+        console.log('🔍 Saved business lookup:', {
+          savedBusinessId,
+          availableBusinesses: userBusinesses.map(ub => ({ id: ub.business_id, name: ub.business.name })),
+          foundBusiness: savedBusiness ? savedBusiness.business.name : 'NOT FOUND'
+        });
+        
         if (savedBusiness) {
           console.log('✅ useCurrentBusiness: Using saved business:', savedBusiness.business.name);
+          updateBusinessState(savedBusinessId);
+          return;
+        } else if (isSuperAdmin) {
+          console.log('👑 Super admin: Using saved business ID even if not in user businesses list');
+          // עבור super admin, השתמש בעסק שנשמר גם אם הוא לא ברשימה
           updateBusinessState(savedBusinessId);
           return;
         } else {
