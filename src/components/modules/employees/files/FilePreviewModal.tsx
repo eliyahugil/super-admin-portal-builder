@@ -62,24 +62,23 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     
     setIsLoading(true);
     try {
-      // For images, we'll download and create blob URL
-      if (isImage) {
-        const { data, error } = await supabase.storage
-          .from('employee-files')
-          .download(file.file_path);
-
-        if (error) throw error;
-
-        const url = URL.createObjectURL(data);
-        setPreviewUrl(url);
-      } else {
-        // For PDFs and other files, use public URL
-        const { data } = await supabase.storage
-          .from('employee-files')
-          .getPublicUrl(file.file_path);
-        
-        setPreviewUrl(data.publicUrl);
+      console.log('Loading preview for file:', file.file_name, 'Type:', file.file_type);
+      
+      // Always try to get public URL first
+      const { data } = await supabase.storage
+        .from('employee-files')
+        .getPublicUrl(file.file_path);
+      
+      console.log('Public URL generated:', data.publicUrl);
+      
+      // Test if the URL is accessible
+      const response = await fetch(data.publicUrl, { method: 'HEAD' });
+      if (!response.ok) {
+        throw new Error(`File not accessible: ${response.status}`);
       }
+      
+      setPreviewUrl(data.publicUrl);
+      console.log('Preview URL set successfully');
     } catch (error) {
       console.error('Error loading preview:', error);
       toast({
@@ -179,11 +178,27 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
   };
 
   const handleSave = async () => {
-    // זו פונקציה לשמירה בענן או במערכת
-    toast({
-      title: 'תכונה בפיתוח',
-      description: 'תכונת השמירה תהיה זמינה בקרוב',
-    });
+    if (!file) return;
+    
+    try {
+      // Copy to clipboard - different from download
+      const { data } = await supabase.storage
+        .from('employee-files')
+        .getPublicUrl(file.file_path);
+      
+      await navigator.clipboard.writeText(data.publicUrl);
+      toast({
+        title: 'הקישור הועתק',
+        description: 'הקישור לקובץ הועתק ללוח',
+      });
+    } catch (error) {
+      console.error('Save error:', error);
+      toast({
+        title: 'שגיאה בשמירה',
+        description: 'לא ניתן לשמור את הקישור',
+        variant: 'destructive',
+      });
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -289,11 +304,11 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                   </div>
                 ) : isPdf ? (
                   <div className="h-full">
-                    <iframe 
-                      src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                      className="w-full h-full border-0"
+                    <embed 
+                      src={previewUrl}
+                      type="application/pdf"
+                      className="w-full h-full"
                       title={file.file_name}
-                      sandbox="allow-same-origin allow-scripts"
                     />
                   </div>
                 ) : isText ? (
