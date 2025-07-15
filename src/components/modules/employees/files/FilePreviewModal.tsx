@@ -6,13 +6,10 @@ import {
   Download, 
   ExternalLink, 
   Share2, 
-  Save, 
   Eye,
   EyeOff,
   Calendar,
-  User,
   FileText,
-  Image,
   X,
   Maximize2
 } from 'lucide-react';
@@ -88,7 +85,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
       setPreviewUrl(url);
       
       console.log('✅ Preview URL created:', url);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error loading preview:', error);
       toast({
         title: 'שגיאה בטעינת התצוגה',
@@ -192,32 +189,6 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     }
   };
 
-  const handleSave = async () => {
-    if (!file) return;
-    
-    try {
-      // Create signed URL for copying
-      const { data, error } = await supabase.storage
-        .from('employee-files')
-        .createSignedUrl(file.file_path, 3600); // 1 hour expiry
-      
-      if (error) throw error;
-      
-      await navigator.clipboard.writeText(data.signedUrl);
-      toast({
-        title: 'הקישור הועתק',
-        description: 'הקישור הזמני לקובץ הועתק ללוח (תוקף שעה)',
-      });
-    } catch (error) {
-      console.error('Save error:', error);
-      toast({
-        title: 'שגיאה בשמירה',
-        description: 'לא ניתן לשמור את הקישור',
-        variant: 'destructive',
-      });
-    }
-  };
-
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -234,34 +205,37 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-        <DialogHeader className="border-b pb-4">
-          <div className="flex items-start justify-between">
+      <DialogContent className="max-w-[95vw] w-full max-h-[95vh] h-full overflow-hidden p-0">
+        <DialogHeader className="border-b pb-4 px-4 pt-4">
+          <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <DialogTitle className="text-lg font-semibold truncate">
+              <DialogTitle className="text-base md:text-lg font-semibold truncate">
                 {file.file_name}
               </DialogTitle>
-              <div className="flex flex-wrap items-center gap-2 mt-2 text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-2 mt-2 text-xs md:text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <FileText className="h-4 w-4" />
+                  <FileText className="h-3 w-3 md:h-4 md:w-4" />
                   <span>{formatFileSize(file.file_size)}</span>
                 </div>
-                <Badge variant={file.is_visible_to_employee ? "default" : "secondary"}>
+                <Badge variant={file.is_visible_to_employee ? "default" : "secondary"} className="text-xs">
                   {file.is_visible_to_employee ? (
-                    <><Eye className="h-3 w-3 mr-1" />נראה לעובד</>
+                    <><Eye className="h-2 w-2 md:h-3 md:w-3 mr-1" />נראה לעובד</>
                   ) : (
-                    <><EyeOff className="h-3 w-3 mr-1" />מוסתר מהעובד</>
+                    <><EyeOff className="h-2 w-2 md:h-3 md:w-3 mr-1" />מוסתר מהעובד</>
                   )}
                 </Badge>
                 <div className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>
+                  <Calendar className="h-2 w-2 md:h-3 md:w-3" />
+                  <span className="hidden md:inline">
                     {new Date(file.created_at).toLocaleDateString('he-IL')} 
                     {' '}
                     {new Date(file.created_at).toLocaleTimeString('he-IL', {
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
+                  </span>
+                  <span className="md:hidden">
+                    {new Date(file.created_at).toLocaleDateString('he-IL')}
                   </span>
                 </div>
               </div>
@@ -277,107 +251,135 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden p-4">
           {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2 mb-4 p-4 bg-muted/50 rounded-lg">
-            <Button onClick={handleDownload} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              הורדה
+          <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 mb-4 p-3 md:p-4 bg-muted/50 rounded-lg">
+            <Button onClick={handleDownload} variant="outline" size="sm" className="text-xs md:text-sm">
+              <Download className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+              <span className="hidden md:inline">הורדה</span>
+              <span className="md:hidden">הורד</span>
             </Button>
-            <Button onClick={handleOpenInNewTab} variant="outline" size="sm">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              פתח בכרטיסייה חדשה
+            <Button onClick={handleOpenInNewTab} variant="outline" size="sm" className="text-xs md:text-sm">
+              <ExternalLink className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+              <span className="hidden md:inline">פתח בכרטיסייה חדשה</span>
+              <span className="md:hidden">פתח</span>
             </Button>
-            <Button onClick={handleShare} variant="outline" size="sm">
-              <Share2 className="h-4 w-4 mr-2" />
+            <Button onClick={handleShare} variant="outline" size="sm" className="text-xs md:text-sm">
+              <Share2 className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
               שיתוף
             </Button>
-            <Button onClick={loadPreviewUrl} variant="outline" size="sm">
-              <Maximize2 className="h-4 w-4 mr-2" />
-              רענן תצוגה
+            <Button onClick={loadPreviewUrl} variant="outline" size="sm" className="text-xs md:text-sm">
+              <Maximize2 className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+              <span className="hidden md:inline">רענן תצוגה</span>
+              <span className="md:hidden">רענן</span>
             </Button>
           </div>
 
           {/* Preview Area */}
-          <div className="h-[60vh] overflow-auto border rounded-lg bg-background">
+          <div className="h-[50vh] md:h-[60vh] overflow-auto border rounded-lg bg-background">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                <span className="mr-4">טוען תצוגה מקדימה...</span>
+                <div className="animate-spin rounded-full h-8 w-8 md:h-12 md:w-12 border-b-2 border-primary"></div>
+                <span className="mr-4 text-sm md:text-base">טוען תצוגה מקדימה...</span>
               </div>
             ) : previewUrl ? (
               <div className="h-full">
                 {isImage ? (
-                  <div className="flex items-center justify-center h-full p-4">
+                  <div className="flex items-center justify-center h-full p-2 md:p-4">
                     <img 
                       src={previewUrl} 
                       alt={file.file_name}
                       className="max-w-full max-h-full object-contain rounded"
+                      onError={(e) => {
+                        console.error('❌ Image failed to load');
+                        e.currentTarget.style.display = 'none';
+                      }}
+                      onLoad={() => console.log('✅ Image loaded successfully')}
                     />
                   </div>
                 ) : isPdf ? (
                   <div className="h-full">
-                    <object 
-                      data={previewUrl}
-                      type="application/pdf"
-                      className="w-full h-full"
-                      title={file.file_name}
-                    >
+                    {/* Mobile PDF viewer */}
+                    <div className="block md:hidden h-full">
+                      <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+                        <FileText className="h-12 w-12 mb-4 text-muted-foreground" />
+                        <h3 className="text-base font-medium mb-2">PDF - לא ניתן לצפות בנייד</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          לצפייה ב-PDF נדרש להוריד או לפתוח בדפדפן
+                        </p>
+                        <div className="flex flex-col gap-2 w-full">
+                          <Button onClick={handleDownload} variant="default" size="sm" className="w-full">
+                            <Download className="h-4 w-4 mr-2" />
+                            הורד PDF
+                          </Button>
+                          <Button onClick={handleOpenInNewTab} variant="outline" size="sm" className="w-full">
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            פתח בדפדפן
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Desktop PDF viewer */}
+                    <div className="hidden md:block h-full">
                       <embed 
                         src={previewUrl}
                         type="application/pdf"
                         className="w-full h-full"
                         title={file.file_name}
+                        onLoad={() => console.log('✅ PDF embed loaded')}
+                        onError={() => console.error('❌ PDF embed failed')}
                       />
-                    </object>
+                    </div>
                   </div>
                 ) : isText ? (
-                  <div className="h-full p-4">
+                  <div className="h-full p-2 md:p-4">
                     <iframe 
                       src={previewUrl}
-                      className="w-full h-full border-0 bg-white"
+                      className="w-full h-full border-0 bg-white rounded"
                       title={file.file_name}
                       sandbox="allow-same-origin"
+                      onLoad={() => console.log('✅ Text iframe loaded')}
+                      onError={() => console.error('❌ Text iframe failed')}
                     />
                   </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                  <FileText className="h-16 w-16 mb-4" />
-                  <h3 className="text-lg font-medium mb-2">אין תצוגה מקדימה זמינה</h3>
-                  <p className="text-sm text-center mb-4">
-                    לא ניתן להציג תצוגה מקדימה עבור סוג קובץ זה ({file.file_type})
-                  </p>
-                  <div className="flex gap-2">
-                    <Button onClick={handleDownload} variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      הורד את הקובץ
-                    </Button>
-                    <Button onClick={handleOpenInNewTab} variant="outline">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      פתח בכרטיסייה חדשה
-                    </Button>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
+                    <FileText className="h-12 w-12 md:h-16 md:w-16 mb-4" />
+                    <h3 className="text-base md:text-lg font-medium mb-2 text-center">אין תצוגה מקדימה זמינה</h3>
+                    <p className="text-sm text-center mb-4">
+                      לא ניתן להציג תצוגה מקדימה עבור סוג קובץ זה ({file.file_type})
+                    </p>
+                    <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                      <Button onClick={handleDownload} variant="default" size="sm" className="w-full md:w-auto">
+                        <Download className="h-4 w-4 mr-2" />
+                        הורד את הקובץ
+                      </Button>
+                      <Button onClick={handleOpenInNewTab} variant="outline" size="sm" className="w-full md:w-auto">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        פתח בכרטיסייה חדשה
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-              <FileText className="h-16 w-16 mb-4" />
-              <h3 className="text-lg font-medium mb-2">לא ניתן לטעון את התצוגה</h3>
-              <p className="text-sm text-center mb-4">
-                ייתכן שהקובץ לא נמצא או שאין הרשאה לגשת אליו
-              </p>
-              <div className="flex gap-2">
-                <Button onClick={handleDownload} variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  הורדה
-                </Button>
-                <Button onClick={handleOpenInNewTab} variant="outline">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  פתח בכרטיסייה חדשה
-                </Button>
+                )}
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
+                <FileText className="h-12 w-12 md:h-16 md:w-16 mb-4" />
+                <h3 className="text-base md:text-lg font-medium mb-2 text-center">לא ניתן לטעון את התצוגה</h3>
+                <p className="text-sm text-center mb-4">
+                  ייתכן שהקובץ לא נמצא או שאין הרשאה לגשת אליו
+                </p>
+                <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                  <Button onClick={handleDownload} variant="default" size="sm" className="w-full md:w-auto">
+                    <Download className="h-4 w-4 mr-2" />
+                    הורדה
+                  </Button>
+                  <Button onClick={handleOpenInNewTab} variant="outline" size="sm" className="w-full md:w-auto">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    פתח בכרטיסייה חדשה
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </div>
