@@ -3,29 +3,31 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthContext';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 export const useEmployeeNavigation = (currentEmployeeId: string | undefined) => {
   const { profile } = useAuth();
+  const { businessId } = useCurrentBusiness();
 
   // Get all employees for navigation
   const { data: employees } = useQuery({
-    queryKey: ['employees-navigation', profile?.business_id, profile?.role],
+    queryKey: ['employees-navigation', businessId],
     queryFn: async () => {
-      let query = supabase
-        .from('employees')
-        .select('id, first_name, last_name')
-        .order('first_name', { ascending: true });
-
-      // Apply business filter based on user type
-      if (profile?.role !== 'super_admin' && profile?.business_id) {
-        query = query.eq('business_id', profile.business_id);
+      if (!businessId) {
+        return [];
       }
 
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name')
+        .eq('business_id', businessId)
+        .eq('is_archived', false)
+        .order('first_name', { ascending: true });
+
       if (error) throw error;
       return data || [];
     },
-    enabled: !!profile,
+    enabled: !!businessId,
   });
 
   const navigation = useMemo(() => {
