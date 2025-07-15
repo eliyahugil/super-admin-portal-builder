@@ -1540,6 +1540,7 @@ export type Database = {
           file_path: string
           file_size: number | null
           file_type: string | null
+          folder_id: string | null
           id: string
           is_visible_to_employee: boolean
           uploaded_at: string | null
@@ -1553,6 +1554,7 @@ export type Database = {
           file_path: string
           file_size?: number | null
           file_type?: string | null
+          folder_id?: string | null
           id?: string
           is_visible_to_employee?: boolean
           uploaded_at?: string | null
@@ -1566,6 +1568,7 @@ export type Database = {
           file_path?: string
           file_size?: number | null
           file_type?: string | null
+          folder_id?: string | null
           id?: string
           is_visible_to_employee?: boolean
           uploaded_at?: string | null
@@ -1587,10 +1590,88 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "employee_files_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "employee_folders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "employee_files_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_folders: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          folder_color: string | null
+          folder_name: string
+          folder_path: string
+          id: string
+          is_active: boolean | null
+          parent_folder_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          folder_color?: string | null
+          folder_name: string
+          folder_path: string
+          id?: string
+          is_active?: boolean | null
+          parent_folder_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          folder_color?: string | null
+          folder_name?: string
+          folder_path?: string
+          id?: string
+          is_active?: boolean | null
+          parent_folder_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_folders_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_folders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_folders_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_folders_parent_folder_id_fkey"
+            columns: ["parent_folder_id"]
+            isOneToOne: false
+            referencedRelation: "employee_folders"
             referencedColumns: ["id"]
           },
         ]

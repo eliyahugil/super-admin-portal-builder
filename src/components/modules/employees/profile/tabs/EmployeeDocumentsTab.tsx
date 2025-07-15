@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { FileText, FolderOpen } from 'lucide-react';
 import { EmployeeTemplateSelector } from '../../EmployeeTemplateSelector';
 import { EmployeeDocuments } from '../../EmployeeDocuments';
-import { EmployeeFilesManager } from '../../EmployeeFilesManager';
+import { EmployeeAdvancedFileManager } from '../../EmployeeAdvancedFileManager';
 import type { Employee } from '@/types/supabase';
 
 interface EmployeeDocumentsTabProps {
@@ -58,7 +58,7 @@ export const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <EmployeeFilesManager
+          <EmployeeAdvancedFileManager
             employee={employee}
             employeeId={employeeId}
             employeeName={employeeName}
