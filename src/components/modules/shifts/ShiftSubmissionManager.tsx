@@ -91,12 +91,26 @@ export const ShiftSubmissionManager: React.FC = () => {
   // חישוב מספר עובדים ייחודיים שהגישו משמרות
   const uniqueSubmittedEmployees = submittedShifts.map(submission => submission.employee_id);
 
-  // יצירת שבוע ברירת מחדל (השבוע הבא)
+  // פונקציות לחישוב שבועות שונים
+  const getCurrentWeek = () => {
+    const now = new Date();
+    const currentWeek = new Date(now);
+    currentWeek.setDate(now.getDate() - now.getDay()); // חזרה לתחילת השבוע הנוכחי (יום ראשון)
+    return currentWeek.toISOString().split('T')[0];
+  };
+
   const getNextWeek = () => {
     const now = new Date();
     const nextWeek = new Date(now);
     nextWeek.setDate(now.getDate() + (7 - now.getDay()));
     return nextWeek.toISOString().split('T')[0];
+  };
+
+  const getWeekAfterNext = () => {
+    const now = new Date();
+    const weekAfterNext = new Date(now);
+    weekAfterNext.setDate(now.getDate() + (14 - now.getDay()));
+    return weekAfterNext.toISOString().split('T')[0];
   };
 
   React.useEffect(() => {
@@ -248,6 +262,39 @@ export const ShiftSubmissionManager: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* כפתורים מהירים לבחירת שבוע */}
+          <div>
+            <label className="block text-sm font-medium mb-3">
+              בחירה מהירה
+            </label>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedWeek(getCurrentWeek())}
+                className={selectedWeek === getCurrentWeek() ? 'bg-blue-50 border-blue-300' : ''}
+              >
+                השבוע הנוכחי
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedWeek(getNextWeek())}
+                className={selectedWeek === getNextWeek() ? 'bg-blue-50 border-blue-300' : ''}
+              >
+                השבוע הבא
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedWeek(getWeekAfterNext())}
+                className={selectedWeek === getWeekAfterNext() ? 'bg-blue-50 border-blue-300' : ''}
+              >
+                בעוד שבועיים
+              </Button>
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium mb-2">
               תאריך תחילת השבוע (יום ראשון)
