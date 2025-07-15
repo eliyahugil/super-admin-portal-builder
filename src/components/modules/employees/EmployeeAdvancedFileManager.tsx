@@ -512,29 +512,57 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
           </div>
         </CardTitle>
 
-        {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={navigateToRoot}
-            className="p-1 h-auto"
-          >
-            <FolderIcon className="h-4 w-4" />
-          </Button>
-          {breadcrumbs.length > 0 && <span>/</span>}
-          {breadcrumbs.map((folder, index) => (
-            <React.Fragment key={folder.id}>
-              <span className="cursor-pointer hover:text-foreground" onClick={() => {
-                const newBreadcrumbs = breadcrumbs.slice(0, index + 1);
-                setBreadcrumbs(newBreadcrumbs);
-                setCurrentFolder(folder.id);
-              }}>
-                {folder.folder_name}
-              </span>
-              {index < breadcrumbs.length - 1 && <span>/</span>}
-            </React.Fragment>
-          ))}
+        {/* Breadcrumbs & Navigation */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* כפתור חזרה */}
+            {breadcrumbs.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={navigateBack}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                חזור
+              </Button>
+            )}
+            
+            {/* Breadcrumbs */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={navigateToRoot}
+                className="p-2 h-auto hover:bg-muted"
+              >
+                <FolderIcon className="h-4 w-4 mr-1" />
+                תיקיית הבסיס
+              </Button>
+              {breadcrumbs.map((folder, index) => (
+                <React.Fragment key={folder.id}>
+                  <span className="text-muted-foreground">/</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2 h-auto hover:bg-muted font-medium"
+                    onClick={() => {
+                      const newBreadcrumbs = breadcrumbs.slice(0, index + 1);
+                      setBreadcrumbs(newBreadcrumbs);
+                      setCurrentFolder(folder.id);
+                    }}
+                  >
+                    {folder.folder_name}
+                  </Button>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+          
+          {/* מיקום נוכחי */}
+          <div className="text-sm text-muted-foreground">
+            {breadcrumbs.length === 0 ? 'תיקיית הבסיס' : breadcrumbs[breadcrumbs.length - 1].folder_name}
+          </div>
         </div>
       </CardHeader>
 
@@ -553,11 +581,11 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
                   <FolderIcon className="h-4 w-4" />
                   תיקיות
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {folders.map((folder) => (
                     <div
                       key={folder.id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 group relative ${
+                      className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 group relative min-h-[120px] ${
                         dropTarget === folder.id 
                           ? 'border-primary bg-primary/10 scale-105' 
                           : 'hover:bg-muted/50 hover:border-primary/50'
@@ -567,38 +595,60 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, folder.id)}
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <FolderIcon 
-                          className={`h-8 w-8 transition-transform duration-200 ${
-                            dropTarget === folder.id ? 'scale-110' : ''
-                          }`}
-                          style={{ color: folder.folder_color }}
-                        />
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => navigateToFolder(folder)}>
-                              <FolderOpen className="h-4 w-4 mr-2" />
-                              פתח תיקייה
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => deleteFolderMutation.mutate(folder.id)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              מחק תיקייה
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <div className="flex flex-col h-full">
+                        {/* Header with icon and menu */}
+                        <div className="flex items-start justify-between mb-3">
+                          <FolderIcon 
+                            className={`h-12 w-12 transition-transform duration-200 ${
+                              dropTarget === folder.id ? 'scale-110' : ''
+                            }`}
+                            style={{ color: folder.folder_color }}
+                          />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem onClick={() => navigateToFolder(folder)}>
+                                <FolderOpen className="h-4 w-4 mr-2" />
+                                פתח תיקייה
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => deleteFolderMutation.mutate(folder.id)}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                מחק תיקייה
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        
+                        {/* Folder name - full display */}
+                        <div className="flex-1 mb-2">
+                          <p className="text-sm font-medium leading-tight break-words" title={folder.folder_name}>
+                            {folder.folder_name}
+                          </p>
+                        </div>
+                        
+                        {/* Date and metadata */}
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>נוצרה: {new Date(folder.created_at).toLocaleDateString('he-IL', {
+                              day: '2-digit',
+                              month: '2-digit', 
+                              year: 'numeric'
+                            })}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            <span>תיקייה</span>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm font-medium truncate">{folder.folder_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(folder.created_at).toLocaleDateString('he-IL')}
-                      </p>
                       
                       {/* Drop zone indicator */}
                       {dropTarget === folder.id && (
@@ -612,7 +662,7 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
                   {/* Drop zone for root folder */}
                   {isDragging && currentFolder !== null && (
                     <div
-                      className={`p-4 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 ${
+                      className={`p-4 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 min-h-[120px] flex items-center justify-center ${
                         dropTarget === null 
                           ? 'border-primary bg-primary/10' 
                           : 'border-muted-foreground/30'
@@ -621,9 +671,10 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, null)}
                     >
-                      <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                        <FolderIcon className="h-8 w-8 mb-2" />
-                        <span className="text-sm">תיקיית הבסיס</span>
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <FolderIcon className="h-12 w-12 mb-2" />
+                        <span className="text-sm font-medium">תיקיית הבסיס</span>
+                        <span className="text-xs">שחרר כאן להעברה לבסיס</span>
                       </div>
                     </div>
                   )}
@@ -661,14 +712,27 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
                         <div>
                           <p className="font-medium">{file.file_name}</p>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>{formatFileSize(file.file_size)}</span>
-                            <Badge variant={file.is_visible_to_employee ? "default" : "secondary"}>
+                            <span className="flex items-center gap-1">
+                              <FileText className="h-3 w-3" />
+                              {formatFileSize(file.file_size)}
+                            </span>
+                            <Badge variant={file.is_visible_to_employee ? "default" : "secondary"} className="text-xs">
                               {file.is_visible_to_employee ? 
                                 <><Eye className="h-3 w-3 mr-1" />נראה לעובד</> : 
                                 <><EyeOff className="h-3 w-3 mr-1" />לא נראה לעובד</>
                               }
                             </Badge>
-                            <span>{new Date(file.created_at).toLocaleDateString('he-IL')}</span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(file.created_at).toLocaleDateString('he-IL', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              })} {new Date(file.created_at).toLocaleTimeString('he-IL', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
                           </div>
                         </div>
                       </div>
