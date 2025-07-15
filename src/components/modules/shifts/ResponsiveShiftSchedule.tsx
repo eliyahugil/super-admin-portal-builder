@@ -22,6 +22,7 @@ import { ScheduleStats } from './schedule/components/ScheduleStats';
 import { HolidaysAndFestivalsTable } from './schedule/components/HolidaysAndFestivalsTable';
 import { GoogleCalendarEventsTable } from './schedule/components/GoogleCalendarEventsTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AdvancedSchedulingDashboard } from './advanced-scheduling/AdvancedSchedulingDashboard';
 import type { ScheduleView, ShiftScheduleData, CreateShiftData } from './schedule/types';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
@@ -249,8 +250,9 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       {/* Main Content with Mobile-Optimized Tabs */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3 mb-2 h-8 text-xs' : 'grid-cols-3 mb-4'}`}>
+          <TabsList className={`grid w-full ${isMobile ? 'grid-cols-4 mb-2 h-8 text-xs' : 'grid-cols-4 mb-4'}`}>
             <TabsTrigger value="schedule" className={isMobile ? 'text-xs px-2' : ''}>לוח משמרות</TabsTrigger>
+            <TabsTrigger value="advanced" className={isMobile ? 'text-xs px-1' : ''}>סידור מתקדם</TabsTrigger>
             <TabsTrigger value="holidays" className={isMobile ? 'text-xs px-2' : ''}>חגים ומועדים</TabsTrigger>
             <TabsTrigger value="google-calendar" className={isMobile ? 'text-xs px-1' : ''}>Google</TabsTrigger>
           </TabsList>
@@ -319,6 +321,10 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="advanced" className="flex-1 overflow-hidden">
+            <AdvancedSchedulingDashboard />
           </TabsContent>
           
           <TabsContent value="holidays" className="flex-1 overflow-hidden">
