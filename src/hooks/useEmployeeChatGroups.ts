@@ -1,11 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthContext';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useToast } from '@/hooks/use-toast';
 import type { EmployeeChatGroup, EmployeeChatGroupMember } from '@/types/employee-chat';
 
 export const useEmployeeChatGroups = () => {
   const { profile } = useAuth();
+  const { businessId } = useCurrentBusiness();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -17,16 +19,16 @@ export const useEmployeeChatGroups = () => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['employee-chat-groups', profile?.business_id],
+    queryKey: ['employee-chat-groups', businessId],
     queryFn: async (): Promise<EmployeeChatGroup[]> => {
-      if (!profile?.business_id && profile?.role !== 'super_admin') {
+      if (!businessId) {
         console.log('❌ No business ID available');
         return [];
       }
       
-      console.log('🔄 Fetching chat groups...');
+      console.log('🔄 Fetching chat groups for business:', businessId);
       
-      let query = supabase
+      const { data, error } = await supabase
         .from('employee_chat_groups')
         .select(`
           *,
@@ -47,15 +49,9 @@ export const useEmployeeChatGroups = () => {
             )
           )
         `)
+        .eq('business_id', businessId)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
-
-      // For non-super admins, filter by business
-      if (profile?.role !== 'super_admin' && profile?.business_id) {
-        query = query.eq('business_id', profile.business_id);
-      }
-
-      const { data, error } = await query;
 
       if (error) {
         console.error('❌ Error fetching chat groups:', error);
