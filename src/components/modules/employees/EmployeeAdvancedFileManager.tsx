@@ -21,8 +21,11 @@ import {
   Calendar,
   User,
   FolderIcon,
-  Edit3
+  Edit3,
+  GripVertical,
+  Search
 } from 'lucide-react';
+import { FilePreviewModal } from './files/FilePreviewModal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -80,8 +83,11 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
   const [fileToRename, setFileToRename] = useState<FileData | null>(null);
   const [newFileName, setNewFileName] = useState('');
   const [draggedFile, setDraggedFile] = useState<FileData | null>(null);
+  const [draggedFolder, setDraggedFolder] = useState<Folder | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [previewFile, setPreviewFile] = useState<FileData | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // שליפת תיקיות
   const { data: folders, isLoading: foldersLoading } = useQuery({
@@ -311,6 +317,36 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
     },
   });
 
+  // העברת תיקייה לתיקייה אחרת
+  const moveFolderMutation = useMutation({
+    mutationFn: async ({ folderId, newParentId }: { folderId: string; newParentId: string | null }) => {
+      const { data, error } = await supabase
+        .from('employee_folders')
+        .update({ parent_folder_id: newParentId })
+        .eq('id', folderId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employee-folders'] });
+      toast({
+        title: 'תיקייה הועברה בהצלחה',
+        description: 'התיקייה הועברה למיקום החדש',
+      });
+    },
+    onError: (error) => {
+      console.error('Error moving folder:', error);
+      toast({
+        title: 'שגיאה בהעברת תיקייה',
+        description: 'לא ניתן להעביר את התיקייה',
+        variant: 'destructive',
+      });
+    },
+  });
+
   // מחיקת תיקייה
   const deleteFolderMutation = useMutation({
     mutationFn: async (folderId: string) => {
@@ -397,12 +433,21 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
   // פונקציות drag & drop
   const handleDragStart = (e: React.DragEvent, file: FileData) => {
     setDraggedFile(file);
+    setDraggedFolder(null);
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleFolderDragStart = (e: React.DragEvent, folder: Folder) => {
+    setDraggedFolder(folder);
+    setDraggedFile(null);
     setIsDragging(true);
     e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragEnd = () => {
     setDraggedFile(null);
+    setDraggedFolder(null);
     setDropTarget(null);
     setIsDragging(false);
   };
@@ -419,15 +464,37 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
 
   const handleDrop = (e: React.DragEvent, targetFolderId: string | null) => {
     e.preventDefault();
+    
+    // העברת קובץ
     if (draggedFile && draggedFile.folder_id !== targetFolderId) {
       moveFileMutation.mutate({
         fileId: draggedFile.id,
         newFolderId: targetFolderId,
       });
     }
+    
+    // העברת תיקייה
+    if (draggedFolder && draggedFolder.parent_folder_id !== targetFolderId && draggedFolder.id !== targetFolderId) {
+      moveFolderMutation.mutate({
+        folderId: draggedFolder.id,
+        newParentId: targetFolderId,
+      });
+    }
+    
     setDropTarget(null);
     setDraggedFile(null);
+    setDraggedFolder(null);
     setIsDragging(false);
+  };
+
+  const openPreview = (file: FileData) => {
+    setPreviewFile(file);
+    setIsPreviewOpen(true);
+  };
+
+  const closePreview = () => {
+    setPreviewFile(null);
+    setIsPreviewOpen(false);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -589,7 +656,12 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
                         dropTarget === folder.id 
                           ? 'border-primary bg-primary/10 scale-105' 
                           : 'hover:bg-muted/50 hover:border-primary/50'
-                      } ${isDragging ? 'border-dashed' : ''}`}
+                      } ${isDragging ? 'border-dashed' : ''} ${
+                        draggedFolder?.id === folder.id ? 'opacity-50 scale-95' : ''
+                      }`}
+                      draggable
+                      onDragStart={(e) => handleFolderDragStart(e, folder)}
+                      onDragEnd={handleDragEnd}
                       onDoubleClick={() => navigateToFolder(folder)}
                       onDragOver={(e) => handleDragOver(e, folder.id)}
                       onDragLeave={handleDragLeave}
@@ -598,12 +670,20 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
                       <div className="flex flex-col h-full">
                         {/* Header with icon and menu */}
                         <div className="flex items-start justify-between mb-3">
-                          <FolderIcon 
-                            className={`h-12 w-12 transition-transform duration-200 ${
-                              dropTarget === folder.id ? 'scale-110' : ''
-                            }`}
-                            style={{ color: folder.folder_color }}
-                          />
+                          <div className="relative">
+                            <FolderIcon 
+                              className={`h-12 w-12 transition-transform duration-200 ${
+                                dropTarget === folder.id ? 'scale-110' : ''
+                              }`}
+                              style={{ color: folder.folder_color }}
+                            />
+                            {/* Drag indicator */}
+                            {isDragging && draggedFolder?.id === folder.id && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <GripVertical className="h-6 w-6 text-primary animate-pulse" />
+                              </div>
+                            )}
+                          </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0">
@@ -706,7 +786,9 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
                         <div className="relative">
                           <FileText className="h-5 w-5 text-muted-foreground" />
                           {isDragging && draggedFile?.id === file.id && (
-                            <div className="absolute inset-0 bg-primary/20 rounded animate-pulse" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <GripVertical className="h-4 w-4 text-primary animate-pulse" />
+                            </div>
                           )}
                         </div>
                         <div>
@@ -744,6 +826,10 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => openPreview(file)}>
+                              <Search className="h-4 w-4 mr-2" />
+                              תצוגה מקדימה
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openRenameDialog(file)}>
                               <Edit3 className="h-4 w-4 mr-2" />
                               שנה שם
@@ -778,10 +864,13 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
             )}
             
             {/* הוראות drag & drop */}
-            {files && files.length > 0 && folders && folders.length > 0 && (
+            {(files && files.length > 0) || (folders && folders.length > 0) && (
               <div className="mt-4 p-3 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  💡 <strong>טיפ:</strong> ניתן לגרור קבצים ולשחרר אותם על תיקיות כדי להעביר אותם
+                  💡 <strong>טיפים:</strong> 
+                  {files && files.length > 0 && <span> ניתן לגרור קבצים ולשחרר אותם על תיקיות כדי להעביר אותם.</span>}
+                  {folders && folders.length > 0 && <span> ניתן לגרור תיקיות אחת לתוך השנייה.</span>}
+                  <span> לחץ פעמיים על קובץ או תיקייה לפתיחה מהירה.</span>
                 </p>
               </div>
             )}
@@ -895,6 +984,13 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* File Preview Modal */}
+        <FilePreviewModal
+          file={previewFile}
+          isOpen={isPreviewOpen}
+          onClose={closePreview}
+        />
       </CardContent>
     </Card>
   );
