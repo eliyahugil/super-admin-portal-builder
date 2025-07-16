@@ -3139,6 +3139,7 @@ export type Database = {
           is_assigned: boolean | null
           is_new: boolean | null
           notes: string | null
+          required_employees: number | null
           role: string | null
           shift_date: string
           shift_template_id: string | null
@@ -3157,6 +3158,7 @@ export type Database = {
           is_assigned?: boolean | null
           is_new?: boolean | null
           notes?: string | null
+          required_employees?: number | null
           role?: string | null
           shift_date: string
           shift_template_id?: string | null
@@ -3175,6 +3177,7 @@ export type Database = {
           is_assigned?: boolean | null
           is_new?: boolean | null
           notes?: string | null
+          required_employees?: number | null
           role?: string | null
           shift_date?: string
           shift_template_id?: string | null

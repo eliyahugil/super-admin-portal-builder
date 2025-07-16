@@ -39,6 +39,7 @@ export interface ShiftScheduleData {
   shift_template_id?: string | null;
   is_assigned: boolean;
   is_archived: boolean;
+  required_employees?: number;
   created_at: string;
   updated_at: string;
   branch_name?: string;
@@ -47,7 +48,7 @@ export interface ShiftScheduleData {
 
 export type ScheduleView = 'week' | 'month' | 'year';
 
-export type CreateShiftData = Pick<ShiftScheduleData, 'shift_date' | 'start_time' | 'end_time' | 'employee_id' | 'branch_id' | 'role' | 'notes' | 'status' | 'shift_template_id'>;
+export type CreateShiftData = Pick<ShiftScheduleData, 'shift_date' | 'start_time' | 'end_time' | 'employee_id' | 'branch_id' | 'role' | 'notes' | 'status' | 'shift_template_id' | 'required_employees'>;
 
 export interface ScheduleFiltersType {
   status: 'all' | 'pending' | 'approved' | 'rejected' | 'completed';

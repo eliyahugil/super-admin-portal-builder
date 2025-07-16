@@ -78,6 +78,7 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         status: shiftData.status || (shiftData.employee_id ? 'approved' : 'pending'),
         is_assigned: !!shiftData.employee_id,
         is_archived: false,
+        required_employees: shiftData.required_employees || 1,
         shift_template_id: shiftData.shift_template_id
       };
 
@@ -164,6 +165,10 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
 
       if (updates.shift_template_id !== undefined) {
         updateData.shift_template_id = updates.shift_template_id || null;
+      }
+
+      if (updates.required_employees !== undefined) {
+        updateData.required_employees = updates.required_employees || 1;
       }
 
       const { data, error } = await supabase

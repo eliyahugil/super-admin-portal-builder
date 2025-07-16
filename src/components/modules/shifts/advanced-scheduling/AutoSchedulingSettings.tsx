@@ -78,26 +78,54 @@ export const AutoSchedulingSettings: React.FC = () => {
   // שמירת הגדרות
   const saveSettingsMutation = useMutation({
     mutationFn: async (newSettings: AutoSchedulingSettingsData) => {
+      console.log('💾 Saving auto scheduling settings:', newSettings);
+      
       if (currentSettings?.id) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('auto_scheduling_settings')
-          .update(newSettings)
-          .eq('id', currentSettings.id);
+          .update({
+            algorithm_type: newSettings.algorithm_type,
+            optimization_goals: newSettings.optimization_goals,
+            auto_schedule_enabled: newSettings.auto_schedule_enabled,
+            schedule_weeks_ahead: newSettings.schedule_weeks_ahead,
+            notification_preferences: newSettings.notification_preferences,
+            conflict_resolution: newSettings.conflict_resolution,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentSettings.id)
+          .select()
+          .single();
         
         if (error) throw error;
+        console.log('✅ Settings updated:', data);
+        return data;
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('auto_scheduling_settings')
-          .insert([newSettings]);
+          .insert([{
+            business_id: newSettings.business_id,
+            algorithm_type: newSettings.algorithm_type,
+            optimization_goals: newSettings.optimization_goals,
+            auto_schedule_enabled: newSettings.auto_schedule_enabled,
+            schedule_weeks_ahead: newSettings.schedule_weeks_ahead,
+            notification_preferences: newSettings.notification_preferences,
+            conflict_resolution: newSettings.conflict_resolution
+          }])
+          .select()
+          .single();
         
         if (error) throw error;
+        console.log('✅ Settings created:', data);
+        return data;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Settings save successful, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['auto-scheduling-settings', businessId] });
+      queryClient.setQueryData(['auto-scheduling-settings', businessId], data);
       toast({
         title: "הגדרות נשמרו בהצלחה",
-        description: "הגדרות הסידור האוטומטי עודכנו."
+        description: "הגדרות הסידור האוטומטי עודכנו בהצלחה."
       });
     },
     onError: (error) => {

@@ -555,6 +555,12 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                 </div>
               </div>
 
+              {/* Required Employees Display */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">עובדים נדרשים:</span>
+                <Badge variant="outline">{shift.required_employees || 1}</Badge>
+              </div>
+
               {/* Notes Display */}
               {shift.notes && (
                 <div className="p-3 bg-gray-50 rounded-lg">

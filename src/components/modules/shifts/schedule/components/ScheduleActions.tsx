@@ -7,7 +7,8 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Plus, Filter, MoreVertical, Calendar, Users } from 'lucide-react';
+import { Plus, Filter, MoreVertical, Calendar, Users, Trash2 } from 'lucide-react';
+import { DeleteAllShiftsButton } from '../../DeleteAllShiftsButton';
 
 interface ScheduleActionsProps {
   showFilters: boolean;
@@ -16,6 +17,7 @@ interface ScheduleActionsProps {
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
   isMobile: boolean;
+  onBulkDelete?: () => void;
 }
 
 export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
@@ -24,7 +26,8 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
   setShowCreateDialog,
   mobileMenuOpen,
   setMobileMenuOpen,
-  isMobile
+  isMobile,
+  onBulkDelete
 }) => {
   if (isMobile) {
     return (
@@ -47,6 +50,9 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
             <DropdownMenuItem onClick={() => setShowCreateDialog(true)}>
               <Plus className="h-4 w-4 ml-2" />
               יצירת משמרות
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <DeleteAllShiftsButton />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -72,6 +78,7 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
         <Plus className="h-4 w-4 mr-2" />
         יצירת משמרות
       </Button>
+      <DeleteAllShiftsButton />
     </div>
   );
 };

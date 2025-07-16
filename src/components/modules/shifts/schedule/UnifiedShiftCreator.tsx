@@ -55,6 +55,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
   const [branchId, setBranchId] = useState<string>('');
   const [role, setRole] = useState<string>('');
   const [notes, setNotes] = useState('');
+  const [requiredEmployees, setRequiredEmployees] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   
@@ -106,7 +107,8 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
             branch_id: branchId || null,
             role: role && role !== 'none' && role !== '' ? role : null,
             notes: null,
-            status: 'pending'
+            status: 'pending',
+            required_employees: requiredEmployees
           });
         });
       }
@@ -206,7 +208,8 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
                 role: role === 'no-role' ? null : role || null,
                 notes: notes || null,
                 status: 'pending',
-                shift_template_id: null
+                shift_template_id: null,
+                required_employees: requiredEmployees
               };
               shifts.push(shiftData);
             }
@@ -234,7 +237,8 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
           role: role === 'no-role' ? null : role || null,
           notes: notes || null,
           status: 'pending',
-          shift_template_id: null
+          shift_template_id: null,
+          required_employees: requiredEmployees
         };
 
         await onSubmit(shiftData);
@@ -257,6 +261,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
       setBranchId('');
       setRole('');
       setNotes('');
+      setRequiredEmployees(1);
       setNumberOfDays(1);
       setSelectedDays([]);
       setSelectedBranches([]);
@@ -290,6 +295,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
     setBranchId('');
     setRole('');
     setNotes('');
+    setRequiredEmployees(1);
     setNumberOfDays(1);
     setSelectedDays([]);
     setSelectedBranches([]);
@@ -584,6 +590,22 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Required Employees */}
+          <div className="space-y-2">
+            <Label>מספר עובדים נדרש</Label>
+            <Input
+              type="number"
+              min="1"
+              max="50"
+              value={requiredEmployees}
+              onChange={(e) => setRequiredEmployees(Math.max(1, parseInt(e.target.value) || 1))}
+              placeholder="1"
+            />
+            <p className="text-xs text-muted-foreground">
+              כמה עובדים נדרשים לכיסוי המשמרת הזו
+            </p>
           </div>
 
           {/* Notes - Only when not using multiple branches */}
