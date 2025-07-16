@@ -101,7 +101,7 @@ export const useBusinessesData = () => {
           throw error;
         }
 
-        console.log('✅ Businesses fetched:', data?.length || 0);
+        console.log('✅ Businesses fetched for super admin:', data?.length || 0, data?.map(b => ({ id: b.id, name: b.name })));
         return data || [];
       }
 

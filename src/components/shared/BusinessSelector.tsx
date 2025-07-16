@@ -27,7 +27,20 @@ export const BusinessSelector: React.FC<BusinessSelectorProps> = ({
 
   const handleBusinessChange = (businessId: string | null) => {
     console.log('🔄 BusinessSelector: Changing business to:', businessId);
-    setSelectedBusinessId(businessId);
+    console.log('🔄 BusinessSelector: Current state before change:', {
+      currentSelectedBusinessId: selectedBusinessId,
+      isSuperAdmin,
+      availableBusinesses: businesses.length,
+      setSelectedBusinessIdExists: !!setSelectedBusinessId
+    });
+    
+    try {
+      setSelectedBusinessId(businessId);
+      console.log('✅ BusinessSelector: setSelectedBusinessId called successfully');
+    } catch (error) {
+      console.error('❌ BusinessSelector: Error calling setSelectedBusinessId:', error);
+    }
+    
     setOpen(false);
   };
 
