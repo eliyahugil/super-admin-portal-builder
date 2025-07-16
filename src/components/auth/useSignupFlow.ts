@@ -30,6 +30,17 @@ export const useSignupFlow = () => {
 
       if (error) {
         console.error('❌ Signup error:', error);
+        
+        // Handle rate limiting specifically
+        if (error.message?.includes('For security purposes') || error.message?.includes('rate limit')) {
+          toast({
+            title: 'יותר מדי ניסיונות',
+            description: 'נסה שוב בעוד מספר דקות. המערכת מגבילה ניסיונות רבים למניעת ספאם.',
+            variant: 'destructive',
+          });
+          return { data: null, error };
+        }
+        
         throw error;
       }
 
@@ -51,6 +62,8 @@ export const useSignupFlow = () => {
       let errorMessage = error.message;
       if (error.message?.includes('User already registered')) {
         errorMessage = 'משתמש עם מייל זה כבר קיים במערכת. נסה להתחבר.';
+      } else if (error.message?.includes('rate limit') || error.message?.includes('For security purposes')) {
+        errorMessage = 'יותר מדי ניסיונות הרשמה. נסה שוב בעוד מספר דקות.';
       }
       
       toast({
