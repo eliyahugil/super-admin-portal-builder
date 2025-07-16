@@ -8,9 +8,11 @@ import { PendingRequestsSection } from './PendingRequestsSection';
 import { MinimizedProcessedRequestsSection } from './MinimizedProcessedRequestsSection';
 
 export const AccessRequestsManagerContainer: React.FC = () => {
-  const { requests, isLoading, handleRequestMutation } = useAccessRequests();
-
+  const { requests, isLoading, handleRequestMutation, refetch } = useAccessRequests();
+  
+  const pendingRequests = requests.filter(req => req.status === 'pending');
   console.log('📋 AccessRequestsManagerContainer - All requests:', requests);
+  console.log('⏳ Pending requests:', pendingRequests.length);
 
   const handleApprove = (requestId: string, assignmentData: any) => {
     console.log('🔄 Approving request with assignment:', { requestId, assignmentData });
@@ -43,12 +45,15 @@ export const AccessRequestsManagerContainer: React.FC = () => {
     );
   }
 
-  const pendingRequests = requests.filter(r => r.status === 'pending');
   const processedRequests = requests.filter(r => r.status !== 'pending');
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
-      <AccessRequestsHeader />
+      <AccessRequestsHeader 
+        pendingCount={pendingRequests.length}
+        onRefresh={refetch}
+        isRefreshing={isLoading}
+      />
       
       <AccessRequestsDebugCard 
         totalRequests={requests.length}

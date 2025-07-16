@@ -44,10 +44,11 @@ export const SimpleAccessRequestForm: React.FC = () => {
       if (error) throw error;
 
       toast({
-        title: 'בקשה נשלחה בהצלחה',
-        description: 'הבקשה שלך נשלחה למנהל המערכת לאישור',
+        title: '✅ בקשה נשלחה בהצלחה',
+        description: 'הבקשה שלך נרשמה במערכת ונשלחה למנהל לאישור',
       });
 
+      console.log('✅ Access request submitted successfully for user:', user.id);
       setHasSubmitted(true);
     } catch (error: any) {
       console.error('Error submitting access request:', error);
@@ -70,32 +71,42 @@ export const SimpleAccessRequestForm: React.FC = () => {
               <Clock className="h-12 w-12 text-green-600" />
             </div>
             <CardTitle className="text-2xl font-bold text-green-700">
-              בקשה נשלחה בהצלחה
+              בקשה נשלחה בהצלחה ✓
             </CardTitle>
             <CardDescription>
               הבקשה שלך נמצאת בטיפול מנהל המערכת
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg mb-4">
               <h4 className="font-medium text-green-900 mb-2">מה קורה עכשיו?</h4>
               <ul className="text-sm text-green-800 space-y-1">
-                <li>• מנהל המערכת יקבל את הבקשה שלך</li>
+                <li>✓ הבקשה שלך נקלטה במערכת</li>
+                <li>• מנהל המערכת יבדוק את הבקשה</li>
                 <li>• הוא ישייך אותך לעסק המתאים</li>
-                <li>• תקבל הודעה כשהבקשה תאושר</li>
+                <li>• תקבל אישור באימייל כשהבקשה תאושר</li>
                 <li>• לאחר מכן תוכל להתחבר ולהשתמש במערכת</li>
               </ul>
             </div>
+
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+              <h4 className="font-medium text-blue-900 mb-2">🕐 זמן טיפול משוער</h4>
+              <p className="text-sm text-blue-800">
+                הבקשה בדרך כלל מטופלת תוך 24-48 שעות עבודה
+              </p>
+            </div>
             
-            <div className="mt-4 text-center text-sm text-gray-600">
-              אם אתה מעוניין לצאת מהמערכת,{' '}
+            <div className="text-center space-y-2">
               <Button 
-                variant="link" 
+                variant="outline" 
                 onClick={() => supabase.auth.signOut()}
-                className="p-0 h-auto text-blue-600"
+                className="w-full"
               >
-                לחץ כאן
+                יציאה מהמערכת
               </Button>
+              <p className="text-xs text-gray-500">
+                תוכל להתחבר שוב לאחר אישור הבקשה
+              </p>
             </div>
           </CardContent>
         </Card>

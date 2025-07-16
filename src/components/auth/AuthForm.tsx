@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './AuthContext';
 import { SimpleAccessRequestForm } from './SimpleAccessRequestForm';
+import { EmailVerificationHelp } from './EmailVerificationHelp';
+import { useSignupFlow } from './useSignupFlow';
 import { Building, User, Mail, Lock, Eye, EyeOff, Phone } from 'lucide-react';
 
 export const AuthForm: React.FC = () => {
@@ -25,6 +27,14 @@ export const AuthForm: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const { 
+    isSigningUp, 
+    needsEmailVerification, 
+    signupEmail, 
+    signUpWithBetterFlow, 
+    resendVerificationEmail,
+    setNeedsEmailVerification
+  } = useSignupFlow();
 
   // Get auth context with error handling
   let authContext;
@@ -103,23 +113,31 @@ export const AuthForm: React.FC = () => {
         console.log('AuthForm - Attempting login');
         result = await signIn(email, password);
       } else {
-        console.log('AuthForm - Attempting signup with phone:', phone);
-        result = await signUp(email, password, fullName, phone);
+        console.log('AuthForm - Attempting signup with improved flow');
+        result = await signUpWithBetterFlow(email, password, fullName, phone);
       }
 
       if (result.error) {
         console.error('AuthForm - Auth error:', result.error);
+        let errorMessage = result.error.message;
+        
+        // Improve error messages for users
+        if (result.error.message.includes('Invalid login credentials')) {
+          errorMessage = 'אימייל או סיסמה שגויים. אנא נסה שוב.';
+        } else if (result.error.message.includes('Email not confirmed')) {
+          errorMessage = 'החשבון לא אושר. אנא בדוק את המייל שלך לקישור אישור.';
+        } else if (result.error.message.includes('User already registered')) {
+          errorMessage = 'משתמש עם מייל זה כבר קיים במערכת. נסה להתחבר.';
+        }
+        
         toast({
           title: 'שגיאה',
-          description: result.error.message,
+          description: errorMessage,
           variant: 'destructive',
         });
-      } else if (!isLogin) {
-        console.log('AuthForm - Signup successful');
-        toast({
-          title: 'הרשמה בוצעה בהצלחה',
-          description: 'אנא בדוק את המייל שלך לאישור החשבון',
-        });
+      } else if (!isLogin && !result.error) {
+        console.log('AuthForm - Signup successful, showing verification helper');
+        // Don't show success toast here - it's handled by the signup flow
       } else {
         console.log('AuthForm - Login successful, waiting for redirect...');
       }
@@ -200,6 +218,18 @@ export const AuthForm: React.FC = () => {
     );
   }
 
+  // Show email verification help if needed
+  if (needsEmailVerification && signupEmail) {
+    console.log('AuthForm - Showing email verification help');
+    return (
+      <EmailVerificationHelp 
+        email={signupEmail}
+        onResendVerification={resendVerificationEmail}
+        isResending={isSigningUp}
+      />
+    );
+  }
+
   // If user is authenticated but has no business access, show simple access request form
   if (user && profile && profile.role !== 'super_admin' && !profile.business_id) {
     console.log('AuthForm - Showing simple access request form for user without business');
@@ -235,7 +265,7 @@ export const AuthForm: React.FC = () => {
                 ? 'הכנס את כתובת המייל שלך כדי לקבל קישור לאיפוס סיסמה'
                 : (isLogin 
                   ? 'הכנס את פרטי החשבון שלך' 
-                  : 'מלא את הפרטים כדי ליצור חשבון חדש'
+                  : 'מלא את הפרטים כדי ליצור חשבון חדש. לאחר ההרשמה תקבל מייל אישור.'
                 )
               }
             </CardDescription>
@@ -340,10 +370,10 @@ export const AuthForm: React.FC = () => {
               <Button 
                 type="submit" 
                 className="w-full mt-6" 
-                disabled={(forgotPasswordMode ? resetLoading : loading) || authLoading}
+                disabled={(forgotPasswordMode ? resetLoading : (loading || isSigningUp)) || authLoading}
                 size="lg"
               >
-                {(forgotPasswordMode ? resetLoading : loading) ? (
+                {(forgotPasswordMode ? resetLoading : (loading || isSigningUp)) ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     <span>מעבד...</span>

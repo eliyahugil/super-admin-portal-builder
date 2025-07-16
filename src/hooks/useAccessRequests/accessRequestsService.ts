@@ -21,7 +21,11 @@ export const fetchAccessRequests = async (): Promise<AccessRequestEnriched[]> =>
     return [];
   }
 
-  console.log('📊 Raw access requests data:', requestsData);
+  console.log(`📊 Found ${requestsData.length} access requests, including:`, {
+    pending: requestsData.filter(r => r.status === 'pending').length,
+    approved: requestsData.filter(r => r.status === 'approved').length,
+    rejected: requestsData.filter(r => r.status === 'rejected').length
+  });
 
   // Step 2: Get unique user IDs
   const userIds = [...new Set(requestsData.map(r => r.user_id))].filter(Boolean);
