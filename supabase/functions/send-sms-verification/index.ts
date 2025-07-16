@@ -16,6 +16,18 @@ serve(async (req) => {
 
     console.log('📱 Sending SMS verification to:', phone);
 
+    // Convert Israeli phone number to international format
+    let formattedPhone = phone;
+    if (phone.startsWith('0')) {
+      // Remove leading 0 and add +972
+      formattedPhone = '+972' + phone.substring(1);
+    } else if (!phone.startsWith('+')) {
+      // If no country code, assume Israeli and add +972
+      formattedPhone = '+972' + phone;
+    }
+
+    console.log('📱 Formatted phone number:', formattedPhone);
+
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
 
@@ -37,7 +49,7 @@ serve(async (req) => {
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
     
     const formData = new URLSearchParams();
-    formData.append('To', phone);
+    formData.append('To', formattedPhone);
     formData.append('From', '+12345678901'); // Replace with your actual Twilio phone number
     formData.append('Body', message);
 

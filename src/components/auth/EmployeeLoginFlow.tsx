@@ -279,6 +279,9 @@ export const EmployeeLoginFlow: React.FC = () => {
                   onChange={(e) => setPhone(e.target.value)}
                   dir="ltr"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  הכנס מספר בפורמט ישראלי (לדוגמה: 050-1234567)
+                </p>
               </div>
 
               <Button
