@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { ShiftManagement } from '../employees/ShiftManagement';
+import { ShiftManagementTabs } from '../shifts/ShiftManagementTabs';
 import { ShiftSchedule } from '../shifts/ShiftSchedule';
 import { AutoShiftAssignment } from '../shifts/AutoShiftAssignment';
 import { VacationRequestSystem } from '../shifts/VacationRequestSystem';
@@ -18,7 +19,7 @@ interface Props {
 export const ShiftsModuleRouter: React.FC<Props> = ({ route }) => {
   switch (route) {
     case '':
-      return <ShiftManagement />;
+      return <ShiftManagementTabs />;
     case 'schedule':
       return <ShiftSchedule />;
     case 'submission':
