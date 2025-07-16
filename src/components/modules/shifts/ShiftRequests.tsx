@@ -286,34 +286,34 @@ export const ShiftRequests: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 mobile:grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-4 mb-4">
-                    <div className="text-right">
-                      <p className="font-medium text-sm text-muted-foreground mb-1">תאריך</p>
-                      <p className="font-semibold">{format(new Date(request.shift_date), 'dd/MM/yyyy')}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-sm text-muted-foreground mb-1">שעות</p>
-                      <p className="font-semibold">{request.start_time} - {request.end_time}</p>
-                    </div>
-                    {request.branch_preference && (
-                      <div className="text-right">
-                        <p className="font-medium text-sm text-muted-foreground mb-1">סניף מועדף</p>
-                        <p className="flex items-center gap-1 justify-end" title={request.branch_preference}>
-                          <span className="truncate">
-                            {request.branch_preference.length > 20 
-                              ? `${request.branch_preference.substring(0, 20)}...` 
-                              : request.branch_preference}
-                          </span>
-                          <MapPin className="h-3 w-3 flex-shrink-0" />
-                        </p>
-                      </div>
-                    )}
-                    {request.role_preference && (
-                      <div className="text-right">
-                        <p className="font-medium text-sm text-muted-foreground mb-1">תפקיד מועדף</p>
-                        <p className="font-semibold">{request.role_preference}</p>
-                      </div>
-                    )}
+                   <div className="grid grid-cols-1 mobile:grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-4 mb-4">
+                     <div className="text-right" dir="rtl">
+                       <p className="font-medium text-sm text-muted-foreground mb-1">תאריך</p>
+                       <p className="font-semibold">{format(new Date(request.shift_date), 'dd/MM/yyyy')}</p>
+                     </div>
+                     <div className="text-left" dir="ltr">
+                       <p className="font-medium text-sm text-muted-foreground mb-1" dir="rtl" style={{ textAlign: 'right' }}>שעות</p>
+                       <p className="font-semibold">{request.start_time} - {request.end_time}</p>
+                     </div>
+                     {request.branch_preference && (
+                       <div className="text-right" dir="rtl">
+                         <p className="font-medium text-sm text-muted-foreground mb-1">סניף מועדף</p>
+                         <p className="flex items-center gap-1 justify-end" title={request.branch_preference}>
+                           <span className="truncate">
+                             {request.branch_preference.length > 20 
+                               ? `${request.branch_preference.substring(0, 20)}...` 
+                               : request.branch_preference}
+                           </span>
+                           <MapPin className="h-3 w-3 flex-shrink-0" />
+                         </p>
+                       </div>
+                     )}
+                     {request.role_preference && (
+                       <div className="text-right" dir="rtl">
+                         <p className="font-medium text-sm text-muted-foreground mb-1">תפקיד מועדף</p>
+                         <p className="font-semibold">{request.role_preference}</p>
+                       </div>
+                     )}
                   </div>
 
                   {request.notes && (
