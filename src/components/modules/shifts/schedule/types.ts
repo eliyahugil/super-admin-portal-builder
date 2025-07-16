@@ -76,4 +76,5 @@ export interface ShiftScheduleViewProps {
   onShiftClick: (shift: ShiftScheduleData) => void;
   onShiftUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => Promise<void>;
   onAddShift: (date: Date) => void;
+  onShiftDelete?: (shiftId: string) => Promise<void>;
 }

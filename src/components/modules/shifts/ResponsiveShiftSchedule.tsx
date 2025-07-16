@@ -275,47 +275,50 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                       <p className="mt-2 text-gray-600 text-sm">טוען נתוני משמרות ולוח שנה...</p>
                     </div>
                   </div>
-                 ) : view === 'week' ? (
-                  <WeeklyScheduleView
-                    shifts={shifts}
-                    employees={employees}
-                    branches={branches}
-                    currentDate={currentDate}
-                    holidays={holidays}
-                    shabbatTimes={shabbatTimes}
-                    calendarEvents={combinedEvents}
-                    pendingSubmissions={pendingSubmissions}
-                    businessId={businessId}
-                    onShiftClick={handleShiftClick}
-                    onShiftUpdate={updateShift}
-                    onAddShift={handleAddShift}
-                  />
-                ) : view === 'month' ? (
-                  <MonthlyScheduleView
-                    shifts={shifts}
-                    employees={employees}
-                    branches={branches}
-                    currentDate={currentDate}
-                    holidays={holidays}
-                    shabbatTimes={shabbatTimes}
-                    calendarEvents={combinedEvents}
-                    onShiftClick={handleShiftClick}
-                    onShiftUpdate={updateShift}
-                    onAddShift={handleAddShift}
-                  />
-                ) : (
-                  <YearlyScheduleView
-                    shifts={shifts}
-                    employees={employees}
-                    branches={branches}
-                    currentDate={currentDate}
-                    holidays={holidays}
-                    shabbatTimes={shabbatTimes}
-                    calendarEvents={combinedEvents}
-                    onShiftClick={handleShiftClick}
-                    onShiftUpdate={updateShift}
-                    onAddShift={handleAddShift}
-                  />
+                  ) : view === 'week' ? (
+                   <WeeklyScheduleView
+                     shifts={shifts}
+                     employees={employees}
+                     branches={branches}
+                     currentDate={currentDate}
+                     holidays={holidays}
+                     shabbatTimes={shabbatTimes}
+                     calendarEvents={combinedEvents}
+                     pendingSubmissions={pendingSubmissions}
+                     businessId={businessId}
+                     onShiftClick={handleShiftClick}
+                     onShiftUpdate={updateShift}
+                     onAddShift={handleAddShift}
+                     onShiftDelete={deleteShift}
+                   />
+                 ) : view === 'month' ? (
+                   <MonthlyScheduleView
+                     shifts={shifts}
+                     employees={employees}
+                     branches={branches}
+                     currentDate={currentDate}
+                     holidays={holidays}
+                     shabbatTimes={shabbatTimes}
+                     calendarEvents={combinedEvents}
+                     onShiftClick={handleShiftClick}
+                     onShiftUpdate={updateShift}
+                     onAddShift={handleAddShift}
+                     onShiftDelete={deleteShift}
+                   />
+                 ) : (
+                   <YearlyScheduleView
+                     shifts={shifts}
+                     employees={employees}
+                     branches={branches}
+                     currentDate={currentDate}
+                     holidays={holidays}
+                     shabbatTimes={shabbatTimes}
+                     calendarEvents={combinedEvents}
+                     onShiftClick={handleShiftClick}
+                     onShiftUpdate={updateShift}
+                     onAddShift={handleAddShift}
+                     onShiftDelete={deleteShift}
+                   />
                 )}
               </CardContent>
             </Card>

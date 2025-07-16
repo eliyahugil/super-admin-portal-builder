@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Clock, User, MapPin, Send, AlertTriangle, Filter } from 'lucide-react';
+import { Plus, Clock, User, MapPin, Send, AlertTriangle, Filter, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { HolidayIndicator } from './HolidayIndicator';
@@ -34,7 +34,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   businessId,
   onShiftClick,
   onShiftUpdate,
-  onAddShift
+  onAddShift,
+  onShiftDelete
 }) => {
   const isMobile = useIsMobile();
   const [showSubmissionDialog, setShowSubmissionDialog] = useState(false);
@@ -332,10 +333,43 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   // Hebrew day names - ordered from Sunday to Saturday for RTL display
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
+  // Check if current week is complete (has a full work schedule)
+  const isMainWeek = useMemo(() => {
+    // Check if any shifts exist for this week
+    const weekShifts = shifts.filter(shift => {
+      const shiftDate = new Date(shift.shift_date);
+      return weekDays.some(day => 
+        day.toISOString().split('T')[0] === shift.shift_date
+      );
+    });
+    
+    // Consider it incomplete if less than 70% of shifts have assigned employees
+    const assignedShifts = weekShifts.filter(shift => shift.employee_id);
+    return weekShifts.length === 0 || (assignedShifts.length / Math.max(weekShifts.length, 1)) < 0.7;
+  }, [shifts, weekDays]);
+
+  // Handle shift deletion
+  const handleDeleteShift = async (shiftId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (onShiftDelete) {
+      await onShiftDelete(shiftId);
+    }
+  };
+
   // Mobile layout - vertical scrolling list
   if (isMobile) {
     return (
       <div className="h-full flex flex-col space-y-3 p-2" dir="rtl">
+        {/* Main Week Indicator for Mobile */}
+        {isMainWeek && (
+          <Card className="border-2 border-blue-500 bg-blue-50">
+            <CardContent className="p-3 text-center">
+              <Badge className="bg-blue-600 text-white font-medium px-3 py-1">
+                שבוע ראשי - זקוק לסידור עבודה
+              </Badge>
+            </CardContent>
+          </Card>
+        )}
         {weekDays.map((date, index) => {
           const dayShifts = getShiftsForDate(date);
           const dayHolidays = getHolidaysForDate(date);
@@ -395,17 +429,26 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                               {morning.map((shift) => {
                        const hasConflict = hasShiftConflict(shift);
                        
-                       return (
-                         <div
-                           key={shift.id}
-                           className={`p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
-                             hasConflict ? 'border-red-300 bg-red-50' : ''
-                           }`}
-                           onClick={() => {
-                             setSelectedShift(shift);
-                             setShowShiftDetailsDialog(true);
-                           }}
-                         >
+                        return (
+                          <div
+                            key={shift.id}
+                            className={`relative group p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                              hasConflict ? 'border-red-300 bg-red-50' : ''
+                            }`}
+                            onClick={() => {
+                              setSelectedShift(shift);
+                              setShowShiftDetailsDialog(true);
+                            }}
+                          >
+                            {/* Delete button - appears on hover */}
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="absolute top-2 left-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                              onClick={(e) => handleDeleteShift(shift.id, e)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                            <div className="space-y-2">
                              {/* סניף - ראשון ובולט */}
                              {shift.branch_name && (
@@ -471,20 +514,29 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                   <div className="flex-1 h-px bg-orange-300"></div>
                                 </div>
                               )}
-                              {evening.map((shift) => {
-                                const hasConflict = hasShiftConflict(shift);
-                        
-                                return (
-                                  <div
-                                    key={shift.id}
-                                    className={`p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
-                                      hasConflict ? 'border-red-300 bg-red-50' : ''
-                                    }`}
-                                    onClick={() => {
-                                      setSelectedShift(shift);
-                                      setShowShiftDetailsDialog(true);
-                                    }}
-                                  >
+                               {evening.map((shift) => {
+                                 const hasConflict = hasShiftConflict(shift);
+                         
+                                 return (
+                                   <div
+                                     key={shift.id}
+                                     className={`relative group p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                                       hasConflict ? 'border-red-300 bg-red-50' : ''
+                                     }`}
+                                     onClick={() => {
+                                       setSelectedShift(shift);
+                                       setShowShiftDetailsDialog(true);
+                                     }}
+                                   >
+                                     {/* Delete button - appears on hover */}
+                                     <Button
+                                       size="sm"
+                                       variant="destructive"
+                                       className="absolute top-2 left-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                       onClick={(e) => handleDeleteShift(shift.id, e)}
+                                     >
+                                       <Trash2 className="h-3 w-3" />
+                                     </Button>
                                     <div className="space-y-2">
                                       {/* סניף - ראשון ובולט */}
                                       {shift.branch_name && (
@@ -550,20 +602,29 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                   <div className="flex-1 h-px bg-purple-300"></div>
                                 </div>
                               )}
-                              {night.map((shift) => {
-                                const hasConflict = hasShiftConflict(shift);
-                        
-                                return (
-                                  <div
-                                    key={shift.id}
-                                    className={`p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
-                                      hasConflict ? 'border-red-300 bg-red-50' : ''
-                                    }`}
-                                    onClick={() => {
-                                      setSelectedShift(shift);
-                                      setShowShiftDetailsDialog(true);
-                                    }}
-                                  >
+                               {night.map((shift) => {
+                                 const hasConflict = hasShiftConflict(shift);
+                         
+                                 return (
+                                   <div
+                                     key={shift.id}
+                                     className={`relative group p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                                       hasConflict ? 'border-red-300 bg-red-50' : ''
+                                     }`}
+                                     onClick={() => {
+                                       setSelectedShift(shift);
+                                       setShowShiftDetailsDialog(true);
+                                     }}
+                                   >
+                                     {/* Delete button - appears on hover */}
+                                     <Button
+                                       size="sm"
+                                       variant="destructive"
+                                       className="absolute top-2 left-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                       onClick={(e) => handleDeleteShift(shift.id, e)}
+                                     >
+                                       <Trash2 className="h-3 w-3" />
+                                     </Button>
                                     <div className="space-y-2">
                                       {/* סניף - ראשון ובולט */}
                                       {shift.branch_name && (
@@ -693,6 +754,22 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
         />
       )}
       
+      {/* Main Week Indicator for Desktop */}
+      {isMainWeek && (
+        <Card className="border-2 border-blue-500 bg-gradient-to-r from-blue-50 to-blue-100 mb-4">
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center space-x-2 space-x-reverse">
+              <Badge className="bg-blue-600 text-white font-medium px-4 py-2 text-base">
+                🏆 שבוע ראשי
+              </Badge>
+              <span className="text-blue-800 font-medium">
+                דורש השלמת סידור עבודה
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       <div className="grid grid-cols-7 gap-2 flex-1" style={{ direction: 'rtl' }}>
         {weekDays.map((date, index) => {
           const dayShifts = getShiftsForDate(date);
@@ -771,18 +848,24 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                     const hasConflict = hasShiftConflict(shift);
 
                     return (
-                      <TooltipProvider key={shift.id}>
-                        <Tooltip>
+                       <TooltipProvider key={shift.id}>
+                         <Tooltip>
                            <TooltipTrigger asChild>
                              <div
-                               className={`p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                               className={`relative group p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all ${
                                  hasConflict ? 'border-red-300 bg-red-50' : ''
                                }`}
-                               onClick={() => {
-                                 setSelectedShift(shift);
-                                 setShowShiftDetailsDialog(true);
-                               }}
+                               onClick={() => onShiftClick(shift)}
                              >
+                               {/* Delete button - appears on hover */}
+                               <Button
+                                 size="sm"
+                                 variant="destructive"
+                                 className="absolute top-1 left-1 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                 onClick={(e) => handleDeleteShift(shift.id, e)}
+                               >
+                                 <Trash2 className="h-2.5 w-2.5" />
+                               </Button>
                                <div className={`space-y-1 text-xs ${hasConflict ? 'line-through opacity-60' : ''}`}>
                                  {/* סניף - ראשון ובולט */}
                                  {shift.branch_name && (
