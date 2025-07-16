@@ -142,7 +142,7 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
     },
     // CRITICAL FIX: Only enable query when we have a target business ID
     enabled: !!profile && !!targetBusinessId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache
   });
 };

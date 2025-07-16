@@ -2,9 +2,9 @@
 import React from 'react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-import { BusinessSwitcher } from './BusinessSwitcher';
+import { UserProfileMenu } from './UserProfileMenu';
 import { Button } from '@/components/ui/button';
-import { LogOut, User, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface HeaderProps {
@@ -12,7 +12,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
-  const { user, signOut, loading } = useAuth();
+  const { loading } = useAuth();
   const { businessName, isSuperAdmin, businessId } = useCurrentBusiness();
   const isMobile = useIsMobile();
 
@@ -79,42 +79,11 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
           </div>
         </div>
 
-        {/* Business Switcher - Center (only on desktop) */}
-        {!isMobile && (
-          <div className="flex-1 flex justify-center max-w-sm mx-4">
-            <BusinessSwitcher />
-          </div>
-        )}
-
-        {/* User Actions */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {user && (
-            <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 px-3 py-2 rounded-lg">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">
-                {user.email}
-              </span>
-            </div>
-          )}
-          <Button
-            onClick={signOut}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">יציאה</span>
-          </Button>
+        {/* User Profile Menu - Right side */}
+        <div className="flex items-center">
+          <UserProfileMenu />
         </div>
       </div>
-      
-      {/* Business Switcher for Mobile - Below header */}
-      {isMobile && (
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <div className="mb-2 text-sm text-gray-600 font-medium">בחירת מצב עבודה:</div>
-          <BusinessSwitcher />
-        </div>
-      )}
     </header>
   );
 };
