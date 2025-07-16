@@ -166,6 +166,7 @@ export type Database = {
           gps_radius: number | null
           id: string
           is_active: boolean | null
+          is_archived: boolean
           latitude: number | null
           longitude: number | null
           name: string
@@ -178,6 +179,7 @@ export type Database = {
           gps_radius?: number | null
           id?: string
           is_active?: boolean | null
+          is_archived?: boolean
           latitude?: number | null
           longitude?: number | null
           name: string
@@ -190,6 +192,7 @@ export type Database = {
           gps_radius?: number | null
           id?: string
           is_active?: boolean | null
+          is_archived?: boolean
           latitude?: number | null
           longitude?: number | null
           name?: string
