@@ -56,16 +56,16 @@ export const ShiftRequests: React.FC = () => {
   const businessId = useBusinessId();
   const deviceInfo = useDeviceType();
   
-  console.log('📊 ShiftRequests: Current business ID:', businessId);
-  console.log('📱 ShiftRequests: Device info:', deviceInfo);
+  console.log('📊 בקשות משמרות: מזהה עסק נוכחי:', businessId);
+  console.log('📱 בקשות משמרות: נתוני מכשיר:', deviceInfo);
 
-  // Fetch shift submissions (which are the actual weekly submissions)
+  // שליפת הגשות משמרות (שהן ההגשות השבועיות האמיתיות)
   const { data: requests = [], isLoading, refetch } = useQuery({
     queryKey: ['shift-submissions', businessId, statusFilter],
     queryFn: async (): Promise<ShiftRequest[]> => {
       if (!businessId) return [];
       
-      console.log('🔒 Fetching shift submissions for business:', businessId);
+      console.log('🔒 שולף הגשות משמרות עבור עסק:', businessId);
       
       let query = supabase
         .from('shift_submissions')
@@ -79,7 +79,7 @@ export const ShiftRequests: React.FC = () => {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Convert shift submissions to display format
+      // המרת הגשות משמרות לפורמט תצוגה
       const expandedRequests: ShiftRequest[] = [];
       
       (data || []).forEach(submission => {
@@ -109,7 +109,7 @@ export const ShiftRequests: React.FC = () => {
         });
       });
 
-      // Filter by status if needed
+      // סינון לפי סטטוס במידת הצורך
       if (statusFilter !== 'all') {
         return expandedRequests.filter(req => req.status === statusFilter);
       }
@@ -117,9 +117,9 @@ export const ShiftRequests: React.FC = () => {
       return expandedRequests;
     },
     enabled: !!businessId,
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
-    refetchOnWindowFocus: true, // Refresh when window gets focus
-    refetchOnMount: true // Refresh on component mount
+    refetchInterval: 30000, // רענון אוטומטי כל 30 שניות
+    refetchOnWindowFocus: true, // רענון כאשר החלון מקבל פוקוס
+    refetchOnMount: true // רענון עם טעינת הרכיב
   });
 
   const getStatusColor = (status: string) => {
@@ -156,6 +156,7 @@ export const ShiftRequests: React.FC = () => {
       <div className="space-y-6" dir="rtl">
         <div className="flex items-center justify-center min-h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="mr-3">טוען נתונים...</span>
         </div>
       </div>
     );
@@ -163,7 +164,7 @@ export const ShiftRequests: React.FC = () => {
 
   return (
     <div className="space-y-6" dir="rtl" style={{ textAlign: 'right', direction: 'rtl' }}>
-      {/* Header with device indicator */}
+      {/* כותרת עם מחוון מכשיר */}
       <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
@@ -197,7 +198,7 @@ export const ShiftRequests: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="list" className="mt-6 space-y-6">
-          {/* Quick Stats - Responsive Grid */}
+          {/* סטטיסטיקות מהירות - רשת רספונסיבית */}
           <div className="grid grid-cols-1 mobile:grid-cols-1 tablet:grid-cols-3 desktop:grid-cols-3 gap-4">
             <Card className="card-modern hover-lift">
               <CardContent className="p-4">
@@ -242,7 +243,7 @@ export const ShiftRequests: React.FC = () => {
             </Card>
           </div>
 
-          {/* Filters - Enhanced for mobile */}
+          {/* מסננים - משופרים למובייל */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -267,7 +268,7 @@ export const ShiftRequests: React.FC = () => {
             </Select>
           </div>
 
-          {/* Requests List - Enhanced for all devices */}
+          {/* רשימת בקשות - משופרת לכל המכשירים */}
           <div className="space-y-4">
             {filteredRequests.map(request => (
               <Card key={request.id} className="card-modern hover-lift">
