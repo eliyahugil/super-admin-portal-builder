@@ -80,7 +80,7 @@ export const EmployeeLoginFlow: React.FC = () => {
         console.error('❌ SMS error:', error);
         toast({
           title: 'שגיאה בשליחת SMS',
-          description: 'לא הצלחנו לשלוח קוד אימות. נסה שוב.',
+          description: error.message || 'לא הצלחנו לשלוח קוד אימות. בדוק את המספר ונסה שוב.',
           variant: 'destructive',
         });
         return;
