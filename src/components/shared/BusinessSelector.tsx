@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Check, ChevronsUpDown, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useBusinessesData } from '@/hooks/useRealData';
+
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 interface BusinessSelectorProps {
@@ -20,8 +20,16 @@ export const BusinessSelector: React.FC<BusinessSelectorProps> = ({
   showAllOption = false
 }) => {
   const [open, setOpen] = useState(false);
-  const { data: businesses = [], isLoading } = useBusinessesData();
-  const { businessId: selectedBusinessId, setSelectedBusinessId, isSuperAdmin } = useCurrentBusiness();
+  const { businessId: selectedBusinessId, setSelectedBusinessId, isSuperAdmin, availableBusinesses } = useCurrentBusiness();
+  
+  // Transform availableBusinesses to match the expected format
+  const businesses = availableBusinesses?.map(ub => ({
+    id: ub.business_id || ub.id,
+    name: ub.business?.name,
+    description: ub.business?.description
+  })) || [];
+  
+  const isLoading = false; // useCurrentBusiness handles loading
 
   const selectedBusiness = businesses.find(b => b.id === selectedBusinessId);
 

@@ -4,12 +4,15 @@ import { useCurrentBusiness } from './useCurrentBusiness';
 /**
  * Hook to get the current business ID with proper security isolation
  * Returns null for super admins when no specific business is selected
+ * 
+ * ⚠️ IMPORTANT: All components that need business data MUST use this hook
+ * to ensure they automatically update when the business selection changes!
  */
 export function useBusinessId(): string | null {
-  const { businessId, isSuperAdmin } = useCurrentBusiness();
+  const { businessId } = useCurrentBusiness();
   
-  // For super admins, business ID might be null when viewing global data
-  // For regular users, business ID should always be present
+  console.log('🏢 useBusinessId: Current business ID:', businessId);
+  
   return businessId;
 }
 

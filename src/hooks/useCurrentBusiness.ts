@@ -62,10 +62,13 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
 
     // עדכון שם העסק מיידי
     if (newBusinessId && userBusinesses) {
-      const selectedBusiness = userBusinesses.find(ub => ub.business_id === newBusinessId);
+      const selectedBusiness = userBusinesses.find(ub => 
+        ub.business_id === newBusinessId || ub.id === newBusinessId
+      );
       if (selectedBusiness) {
-        console.log('✅ Setting business name to:', selectedBusiness.business.name);
-        setBusinessName(selectedBusiness.business.name);
+        const businessName = selectedBusiness.business?.name;
+        console.log('✅ Setting business name to:', businessName);
+        setBusinessName(businessName);
       } else {
         console.warn('⚠️ Business not found for ID:', newBusinessId);
         setBusinessName(null);
