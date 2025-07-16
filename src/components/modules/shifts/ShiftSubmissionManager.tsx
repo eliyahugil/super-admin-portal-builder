@@ -19,7 +19,7 @@ export const ShiftSubmissionManager: React.FC = () => {
   const { toast } = useToast();
   const { businessId, loading: isLoading } = useCurrentBusiness();
 
-  // קבלת רשימת עובדים - כולל כל העובדים (פעילים ולא פעילים)
+  // קבלת רשימת עובדים - רק עובדים פעילים
   const { data: employees = [], isLoading: employeesLoading, refetch: refetchEmployees } = useQuery({
     queryKey: ['employees', businessId],
     queryFn: async () => {
@@ -29,7 +29,8 @@ export const ShiftSubmissionManager: React.FC = () => {
         .from('employees')
         .select('*')
         .eq('business_id', businessId)
-        .eq('is_archived', false) // רק לא מארכיון, אבל כולל פעילים ולא פעילים
+        .eq('is_archived', false) // לא בארכיון
+        .eq('is_active', true) // רק עובדים פעילים
         .order('first_name');
 
       if (error) throw error;
@@ -406,10 +407,10 @@ export const ShiftSubmissionManager: React.FC = () => {
            <div className="space-y-4">
              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                <p className="text-blue-800 font-medium mb-2">
-                 📋 הרשימה כוללת את כל העובדים (פעילים ולא פעילים)
+                 📋 הרשימה כוללת רק עובדים פעילים
                </p>
                <p className="text-blue-700 text-sm">
-                 לחיצה על הכפתור תיצור טוכנים לכל העובדים ותפתח את WhatsApp עם הודעות מוכנות לשליחה
+                 לחיצה על הכפתור תיצור טוכנים לכל העובדים הפעילים ותפתח את WhatsApp עם הודעות מוכנות לשליחה
                </p>
              </div>
             
