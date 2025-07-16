@@ -41,8 +41,8 @@ file_size_limit = "50MiB"
 
 [auth]
 enabled = true
-site_url = "https://xmhmztipuvzmwgbcovch.supabase.co"
-additional_redirect_urls = ["https://xmhmztipuvzmwgbcovch.supabase.co", "http://localhost:3000"]
+site_url = "https://907c49ca-1b94-44e2-a55e-1208b82ad4c0.lovableproject.com"
+additional_redirect_urls = ["https://907c49ca-1b94-44e2-a55e-1208b82ad4c0.lovableproject.com", "http://localhost:3000"]
 jwt_expiry = 3600
 enable_signup = true
 enable_confirmations = true

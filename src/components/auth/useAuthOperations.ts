@@ -33,7 +33,7 @@ export const useAuthOperations = () => {
       email,
       password,
       options: {
-        emailRedirectTo: `https://xmhmztipuvzmwgbcovch.supabase.co/`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: metadata
       }
     });

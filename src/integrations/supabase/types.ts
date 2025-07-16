@@ -405,6 +405,47 @@ export type Database = {
           },
         ]
       }
+      business_registration_codes: {
+        Row: {
+          business_id: string
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          max_usage: number | null
+          usage_count: number
+        }
+        Insert: {
+          business_id: string
+          code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          max_usage?: number | null
+          usage_count?: number
+        }
+        Update: {
+          business_id?: string
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          max_usage?: number | null
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_registration_codes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_scheduling_rules: {
         Row: {
           branch_id: string | null
@@ -3789,6 +3830,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          registration_code: string | null
           request_reason: string | null
           requested_business_id: string | null
           requested_role: Database["public"]["Enums"]["user_role"]
@@ -3801,6 +3843,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          registration_code?: string | null
           request_reason?: string | null
           requested_business_id?: string | null
           requested_role?: Database["public"]["Enums"]["user_role"]
@@ -3813,6 +3856,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          registration_code?: string | null
           request_reason?: string | null
           requested_business_id?: string | null
           requested_role?: Database["public"]["Enums"]["user_role"]
@@ -3823,6 +3867,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_access_requests_registration_code_fkey"
+            columns: ["registration_code"]
+            isOneToOne: false
+            referencedRelation: "business_registration_codes"
+            referencedColumns: ["code"]
+          },
           {
             foreignKeyName: "user_access_requests_requested_business_id_fkey"
             columns: ["requested_business_id"]
@@ -4133,6 +4184,10 @@ export type Database = {
         Args: { table_name: string }
         Returns: boolean
       }
+      generate_business_registration_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       generate_module_route: {
         Args: { module_name: string }
         Returns: string
@@ -4140,6 +4195,15 @@ export type Database = {
       generate_table_name: {
         Args: { module_name: string }
         Returns: string
+      }
+      get_business_by_registration_code: {
+        Args: { code_param: string }
+        Returns: {
+          business_id: string
+          business_name: string
+          code_is_active: boolean
+          code_valid: boolean
+        }[]
       }
       get_business_modules: {
         Args: { business_id_param: string }

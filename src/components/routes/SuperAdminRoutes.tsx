@@ -7,6 +7,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
 import { CreateBusinessPage } from '@/components/admin/CreateBusinessPage';
 import { AccessRequestsManagerEnhanced } from '@/components/admin/AccessRequestsManagerEnhanced';
+import { BusinessRegistrationCodesManager } from '@/components/admin/BusinessRegistrationCodesManager';
 import { SubscriptionManagement } from '@/components/admin/SubscriptionManagement';
 
 export const SuperAdminRoutes: React.FC = () => {
@@ -75,6 +76,17 @@ export const SuperAdminRoutes: React.FC = () => {
             <AppLayout>
               {/* System config component */}
               <div>System Configuration Component</div>
+            </AppLayout>
+          </SuperAdminRoute>
+        </ProtectedRoute>
+      } />
+
+      {/* Registration Codes Management */}
+      <Route path="/admin/registration-codes" element={
+        <ProtectedRoute>
+          <SuperAdminRoute>
+            <AppLayout>
+              <BusinessRegistrationCodesManager />
             </AppLayout>
           </SuperAdminRoute>
         </ProtectedRoute>
