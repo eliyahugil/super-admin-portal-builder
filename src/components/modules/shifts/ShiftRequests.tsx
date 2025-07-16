@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -12,10 +13,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { 
   Clock, 
   User,
-  Calendar,
+  Calendar as CalendarIcon,
   CheckCircle,
   XCircle,
   Search,
@@ -24,14 +40,19 @@ import {
   CalendarDays,
   Smartphone,
   Tablet,
-  Monitor
+  Monitor,
+  Trash2,
+  Shield
 } from 'lucide-react';
 import { useBusinessId } from '@/hooks/useBusinessId';
 import { DeviceIndicator } from '@/components/shared/DeviceIndicator';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { he } from 'date-fns/locale';
 import { ShiftSubmissionCalendarView } from './ShiftSubmissionCalendarView';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface ShiftRequest {
   id: string;
@@ -52,6 +73,13 @@ interface ShiftRequest {
 export const ShiftRequests: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState<string>('');
+  const [managerCode, setManagerCode] = useState('');
+  const [calendarPopoverOpen, setCalendarPopoverOpen] = useState<string>('');
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const businessId = useBusinessId();
   const deviceInfo = useDeviceType();
@@ -121,6 +149,95 @@ export const ShiftRequests: React.FC = () => {
     refetchOnWindowFocus: true, // רענון כאשר החלון מקבל פוקוס
     refetchOnMount: true // רענון עם טעינת הרכיב
   });
+
+  // מוטציה למחיקת הגשה
+  const deleteSubmissionMutation = useMutation({
+    mutationFn: async (submissionId: string) => {
+      const { error } = await supabase
+        .from('shift_submissions')
+        .delete()
+        .eq('id', submissionId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shift-submissions'] });
+      toast({
+        title: 'הצלחה',
+        description: 'ההגשה נמחקה בהצלחה',
+      });
+      setDeleteDialogOpen(false);
+      setManagerCode('');
+    },
+    onError: (error) => {
+      toast({
+        title: 'שגיאה',
+        description: 'לא הצלחנו למחוק את ההגשה',
+        variant: 'destructive',
+      });
+    }
+  });
+
+  // פונקציה לטיפול במחיקה
+  const handleDeleteRequest = (requestId: string) => {
+    setSelectedRequestId(requestId);
+    setDeleteDialogOpen(true);
+  };
+
+  // פונקציה לאישור המחיקה עם קוד מנהל
+  const confirmDelete = () => {
+    if (!managerCode || managerCode !== '1234') { // קוד מנהל זמני
+      toast({
+        title: 'שגיאה',
+        description: 'קוד מנהל שגוי',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const submissionId = selectedRequestId.split('-')[0]; // מחילוץ מזהה ההגשה מהמזהה המורכב
+    deleteSubmissionMutation.mutate(submissionId);
+  };
+
+  // פונקציה לקבלת משמרות עובד לתצוגת לוח שנה
+  const getEmployeeShifts = (employeeId: string) => {
+    return requests.filter(req => req.employee_id === employeeId);
+  };
+
+  // רכיב תצוגת לוח שנה בריחוף
+  const EmployeeCalendarPreview: React.FC<{ employeeId: string; employeeName: string }> = ({ employeeId, employeeName }) => {
+    const employeeShifts = getEmployeeShifts(employeeId);
+    const shiftDates = employeeShifts.map(shift => parseISO(shift.shift_date));
+
+    return (
+      <div className="w-80 p-4" dir="rtl">
+        <h4 className="font-medium mb-3 text-right">
+          משמרות של {employeeName}
+        </h4>
+        <Calendar
+          mode="multiple"
+          selected={shiftDates}
+          className={cn("p-3 pointer-events-auto")}
+          locale={he}
+          modifiers={{
+            shift: shiftDates
+          }}
+          modifiersStyles={{
+            shift: { backgroundColor: 'hsl(var(--primary))', color: 'white' }
+          }}
+        />
+        <div className="mt-3 text-sm text-muted-foreground">
+          <p>סה"כ משמרות: {employeeShifts.length}</p>
+          <div className="flex gap-2 mt-2">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-primary rounded"></div>
+              <span>ימי משמרת</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -275,16 +392,37 @@ export const ShiftRequests: React.FC = () => {
                  <CardContent className="p-4 sm:p-6" dir="rtl">
                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4" style={{ direction: 'rtl' }}>
                      <div className="flex items-center gap-3" style={{ direction: 'rtl' }}>
-                      <User className="h-4 w-4 text-primary" />
-                      <span className="font-semibold text-lg">{request.employee_name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={`${getStatusColor(request.status)} badge-rtl`}>
-                        {getStatusLabel(request.status)}
-                      </Badge>
-                      <DeviceIndicator showIcon={true} showLabel={false} className="text-xs" />
-                    </div>
-                  </div>
+                       <User className="h-4 w-4 text-primary" />
+                       <Popover>
+                         <PopoverTrigger asChild>
+                           <span className="font-semibold text-lg cursor-pointer hover:text-primary transition-colors">
+                             {request.employee_name}
+                           </span>
+                         </PopoverTrigger>
+                         <PopoverContent className="w-auto p-0" align="end">
+                           <EmployeeCalendarPreview 
+                             employeeId={request.employee_id} 
+                             employeeName={request.employee_name || ''} 
+                           />
+                         </PopoverContent>
+                       </Popover>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={() => handleDeleteRequest(request.id)}
+                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                       >
+                         <Trash2 className="h-4 w-4 ml-1" />
+                         מחק
+                       </Button>
+                       <Badge className={`${getStatusColor(request.status)} badge-rtl`}>
+                         {getStatusLabel(request.status)}
+                       </Badge>
+                       <DeviceIndicator showIcon={true} showLabel={false} className="text-xs" />
+                     </div>
+                   </div>
 
                    <div className="grid grid-cols-1 mobile:grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-4 mb-4">
                      <div className="text-right" dir="rtl">
@@ -359,6 +497,55 @@ export const ShiftRequests: React.FC = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* דיאלוג קוד מנהל למחיקה */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-warning" />
+              אישור מחיקת הגשה
+            </DialogTitle>
+            <DialogDescription className="text-right">
+              למחיקת הגשה נדרש קוד מנהל. פעולה זו אינה ניתנת לביטול.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="manager-code" className="text-sm font-medium">
+                קוד מנהל
+              </label>
+              <Input
+                id="manager-code"
+                type="password"
+                value={managerCode}
+                onChange={(e) => setManagerCode(e.target.value)}
+                placeholder="הזן קוד מנהל..."
+                className="text-right"
+                dir="rtl"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setManagerCode('');
+              }}
+            >
+              ביטול
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+              disabled={!managerCode || deleteSubmissionMutation.isPending}
+            >
+              {deleteSubmissionMutation.isPending ? 'מוחק...' : 'מחק הגשה'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
