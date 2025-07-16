@@ -379,9 +379,9 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] sm:max-w-[500px] max-h-[95vh] overflow-y-auto" dir="rtl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
+      <DialogContent className="max-w-[95vw] sm:max-w-[600px] lg:max-w-[700px] max-h-[95vh] overflow-y-auto p-4 sm:p-6" dir="rtl">
+        <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
+          <DialogTitle className="flex items-center justify-between text-base sm:text-lg">
             <span>פרטי משמרת</span>
             <Badge className={getStatusColor(shift.status || 'pending')}>
               {getStatusText(shift.status || 'pending')}
@@ -418,21 +418,23 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               </div>
 
               {/* Edit Time */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>שעת התחלה</Label>
+                  <Label className="text-sm font-medium">שעת התחלה</Label>
                   <Input
                     type="time"
                     value={editData.start_time}
                     onChange={(e) => setEditData(prev => ({ ...prev, start_time: e.target.value }))}
+                    className="text-base"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>שעת סיום</Label>
+                  <Label className="text-sm font-medium">שעת סיום</Label>
                   <Input
                     type="time"
                     value={editData.end_time}
                     onChange={(e) => setEditData(prev => ({ ...prev, end_time: e.target.value }))}
+                    className="text-base"
                   />
                 </div>
               </div>
@@ -816,12 +818,12 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                         </Badge>
                       </div>
                       
-                      <div className="flex gap-2 mt-2">
+                       <div className="flex flex-col sm:flex-row gap-2 mt-2">
                         {!submission.isCurrentlyAssigned && (
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 px-3 text-xs"
+                            className="h-8 px-3 text-xs w-full sm:w-auto"
                             onClick={() => assignEmployee(submission.employee_id)}
                             disabled={loading}
                           >
@@ -831,7 +833,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                         
                         <Button
                           size="sm"
-                          className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700"
+                          className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                           onClick={() => approveShift(submission, relevantShift)}
                           disabled={loading}
                         >
@@ -842,7 +844,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-8 px-3 text-xs"
+                          className="h-8 px-3 text-xs w-full sm:w-auto"
                           onClick={() => rejectShift(submission.id)}
                           disabled={loading}
                         >

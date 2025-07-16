@@ -11,7 +11,6 @@ import { ShabbatIndicator } from './components/ShabbatIndicator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { ShiftScheduleViewProps } from './types';
 import { SubmissionApprovalDialog } from './components/SubmissionApprovalDialog';
-import { ShiftDetailsDialog } from './ShiftDetailsDialog';
 import { ActivityLogViewer } from './ActivityLogViewer';
 import { ShiftFiltersToolbar, type ShiftFilters } from './ShiftFiltersToolbar';
 import { EmployeeStatsPanel } from './EmployeeStatsPanel';
@@ -41,8 +40,6 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   const isMobile = useIsMobile();
   const [showSubmissionDialog, setShowSubmissionDialog] = useState(false);
   const [selectedDateForSubmissions, setSelectedDateForSubmissions] = useState<Date | null>(null);
-  const [showShiftDetailsDialog, setShowShiftDetailsDialog] = useState(false);
-  const [selectedShift, setSelectedShift] = useState<any>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [showPriorityManager, setShowPriorityManager] = useState(false);
@@ -437,10 +434,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             className={`relative group p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
                               hasConflict ? 'border-red-300 bg-red-50' : ''
                             }`}
-                            onClick={() => {
-                              setSelectedShift(shift);
-                              setShowShiftDetailsDialog(true);
-                            }}
+                            onClick={() => onShiftClick(shift)}
                           >
                             {/* Delete button - appears on hover */}
                             <Button
@@ -525,10 +519,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                      className={`relative group p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
                                        hasConflict ? 'border-red-300 bg-red-50' : ''
                                      }`}
-                                     onClick={() => {
-                                       setSelectedShift(shift);
-                                       setShowShiftDetailsDialog(true);
-                                     }}
+                                      onClick={() => onShiftClick(shift)}
                                    >
                                      {/* Delete button - appears on hover */}
                                      <Button
@@ -613,10 +604,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                      className={`relative group p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
                                        hasConflict ? 'border-red-300 bg-red-50' : ''
                                      }`}
-                                     onClick={() => {
-                                       setSelectedShift(shift);
-                                       setShowShiftDetailsDialog(true);
-                                     }}
+                                      onClick={() => onShiftClick(shift)}
                                    >
                                      {/* Delete button - appears on hover */}
                                      <Button
@@ -1142,33 +1130,6 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
         />
       )}
 
-      {/* Shift Details Dialog */}
-      {showShiftDetailsDialog && selectedShift && (
-        <ShiftDetailsDialog
-          shift={selectedShift}
-          employees={employees}
-          branches={branches}
-          shifts={shifts} // Pass all shifts for conflict checking
-          pendingSubmissions={pendingSubmissions}
-          onClose={() => {
-            setShowShiftDetailsDialog(false);
-            setSelectedShift(null);
-          }}
-          onUpdate={onShiftUpdate}
-          onDelete={async (shiftId: string) => {
-            // This would need to be implemented in the parent component
-            console.log('Delete shift:', shiftId);
-          }}
-          onAssignEmployee={(shift) => {
-            // This would need to be implemented in the parent component
-            console.log('Assign employee to shift:', shift);
-          }}
-          onSubmissionUpdate={() => {
-            // Refresh submissions
-            handleSubmissionApprovalComplete();
-          }}
-        />
-      )}
 
       {/* Activity Log - Only show if businessId is available */}
       {businessId && (
