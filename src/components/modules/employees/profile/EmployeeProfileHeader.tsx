@@ -3,6 +3,7 @@ import React from 'react';
 import { CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
 import { EmployeeEditButton } from '../edit/EmployeeEditButton';
+import { EmployeeToggleActiveButton } from '../EmployeeToggleActiveButton';
 import { EmployeeNavigationButtons } from './EmployeeNavigationButtons';
 import { useEmployeeNavigation } from './useEmployeeNavigation';
 import type { Employee } from '@/types/employee';
@@ -37,7 +38,13 @@ export const EmployeeProfileHeader: React.FC<EmployeeProfileHeaderProps> = ({
             />
           </div>
         </div>
-        <EmployeeEditButton employee={employee} onSuccess={onEmployeeUpdated} />
+        <div className="flex gap-2">
+          <EmployeeToggleActiveButton 
+            employee={employee} 
+            onSuccess={onEmployeeUpdated}
+          />
+          <EmployeeEditButton employee={employee} onSuccess={onEmployeeUpdated} />
+        </div>
       </div>
       {/* Mobile navigation */}
       <div className="block sm:hidden mt-3">
