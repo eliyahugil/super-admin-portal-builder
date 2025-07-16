@@ -32,6 +32,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { EmployeeArchiveButton } from './EmployeeArchiveButton';
 import { useNavigate } from 'react-router-dom';
 import type { Employee } from '@/types/employee';
 
@@ -367,10 +368,15 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
                         <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                         <span className="text-xs sm:text-sm">ערוך פרטים</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
-                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                        <span className="text-xs sm:text-sm">מחק עובד</span>
-                      </DropdownMenuItem>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <EmployeeArchiveButton
+                          employee={employee}
+                          isArchived={false}
+                          variant="ghost"
+                          size="sm"
+                          onSuccess={() => window.location.reload()}
+                        />
+                      </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
