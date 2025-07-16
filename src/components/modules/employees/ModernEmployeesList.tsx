@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { BackButton } from '@/components/ui/BackButton';
 import { 
   Search, 
   Filter, 
@@ -71,6 +72,11 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Back Button */}
+      <div className="mb-4">
+        <BackButton />
+      </div>
+      
       {/* Header Section */}
       <div className="flex flex-col gap-4 items-stretch sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1">
