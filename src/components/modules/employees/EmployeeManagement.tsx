@@ -19,7 +19,8 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
 }) => {
   // השתמש ב-useBusinessId לקבלת business ID עדכני
   const currentBusinessId = useBusinessId();
-  const effectiveBusinessId = selectedBusinessId || currentBusinessId;
+  // השתמש תמיד ב-business ID מהקונטקסט כדי להבטיח עדכון אוטומטי
+  const effectiveBusinessId = currentBusinessId;
   
   // עדכון רענון אוטומטי כשמשתנה business ID
   useEffect(() => {
