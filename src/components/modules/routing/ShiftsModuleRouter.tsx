@@ -40,7 +40,7 @@ export const ShiftsModuleRouter: React.FC<Props> = ({ route }) => {
     case 'weekly-tokens':
       return <WeeklyTokenManagement />;
     case 'admin':
-      return <div className="p-6 text-center">רכיב כלי מנהל בפיתוח</div>;
+      return <ShiftManagement />;
     default:
       return null;
   }
