@@ -38,7 +38,7 @@ serve(async (req) => {
     
     const formData = new URLSearchParams();
     formData.append('To', phone);
-    formData.append('From', '+1234567890'); // You'll need to use your Twilio phone number
+    formData.append('From', '+12345678901'); // Replace with your actual Twilio phone number
     formData.append('Body', message);
 
     const response = await fetch(twilioUrl, {

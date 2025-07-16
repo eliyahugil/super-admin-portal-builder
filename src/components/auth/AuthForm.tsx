@@ -11,7 +11,7 @@ import { useAuth } from './AuthContext';
 import { SimpleAccessRequestForm } from './SimpleAccessRequestForm';
 import { EmailVerificationHelp } from './EmailVerificationHelp';
 import { useSignupFlow } from './useSignupFlow';
-import { Building, User, Mail, Lock, Eye, EyeOff, Phone } from 'lucide-react';
+import { Building, User, Mail, Lock, Eye, EyeOff, Phone, Users } from 'lucide-react';
 
 export const AuthForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -445,6 +445,28 @@ export const AuthForm: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Employee Login Link */}
+        <div className="text-center">
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Users className="h-5 w-5 text-blue-600" />
+                <h3 className="font-medium text-blue-900">עובד בחברה?</h3>
+              </div>
+              <p className="text-sm text-blue-700 mb-3">
+                התחבר באמצעות אימייל או מספר טלפון
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/employee-login')}
+                className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
+              >
+                התחברות עובדים
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Additional Info */}
         <div className="text-center text-xs text-gray-500">
