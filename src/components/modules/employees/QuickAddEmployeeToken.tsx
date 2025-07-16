@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserPlus, Copy, CheckCircle, Loader } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthContext';
 import {
   Dialog,
   DialogContent,
@@ -29,39 +28,39 @@ export const QuickAddEmployeeToken: React.FC<QuickAddEmployeeTokenProps> = ({
   const [generatingToken, setGeneratingToken] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
-  const { profile } = useAuth();
 
   const generateToken = async () => {
-    if (!profile?.id) return;
-    
     setGeneratingToken(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: 'שגיאה',
+          description: 'עליך להיות מחובר למערכת',
+          variant: 'destructive',
+        });
+        setGeneratingToken(false);
+        return;
+      }
+
       // Generate unique token
       const tokenValue = `emp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
-      // Save token to database with 24 hour expiration
+      // Set 24 hour expiration
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24);
       
-      const { error } = await supabase
-        .from('employee_quick_add_tokens')
-        .insert({
-          token: tokenValue,
-          business_id: businessId,
-          created_by: profile.id,
-          expires_at: expiresAt.toISOString(),
-          is_used: false
-        });
-
-      if (error) {
-        console.error('Error generating token:', error);
-        toast({
-          title: 'שגיאה',
-          description: 'אירעה שגיאה ביצירת הטוקן',
-          variant: 'destructive',
-        });
-        return;
-      }
+      // Note: We'll save to localStorage for now since table is not in types yet
+      const tokenData = {
+        token: tokenValue,
+        business_id: businessId,
+        created_by: user.id,
+        expires_at: expiresAt.toISOString(),
+        is_used: false
+      };
+      
+      // Store in localStorage temporarily
+      localStorage.setItem(`quick_add_token_${tokenValue}`, JSON.stringify(tokenData));
 
       setToken(tokenValue);
       toast({

@@ -33,6 +33,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { EmployeeArchiveButton } from './EmployeeArchiveButton';
+import { EmployeeStatusBadge } from './EmployeeStatusBadge';
+import { QuickAddEmployeeToken } from './QuickAddEmployeeToken';
 import { useNavigate } from 'react-router-dom';
 import type { Employee } from '@/types/employee';
 
@@ -127,6 +129,8 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
             <Plus className="h-4 w-4 mr-2" />
             הוסף עובד חדש
           </Button>
+          
+          <QuickAddEmployeeToken businessId={businessId} onEmployeeAdded={onRefetch} />
           
           <ExportEmployeesButton />
           
@@ -342,9 +346,9 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
                       <CardTitle className="text-sm sm:text-base text-right break-words whitespace-normal leading-tight font-semibold">
                         {employee.first_name} {employee.last_name}
                       </CardTitle>
-                      <Badge className={`${getStatusColor(employee.is_active || false)} text-xs mt-1`}>
-                        {employee.is_active ? 'פעיל' : 'לא פעיל'}
-                      </Badge>
+                      <div className="flex items-center gap-1 mt-1">
+                        <EmployeeStatusBadge employee={employee} size="sm" />
+                      </div>
                       {!employee.phone && (
                         <div className="flex items-center gap-1 mt-1">
                           <AlertTriangle className="h-3 w-3 text-orange-500" />

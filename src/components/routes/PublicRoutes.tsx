@@ -5,6 +5,7 @@ import { AuthForm } from '@/components/auth/AuthForm';
 import { SubmitShiftPage } from '@/components/modules/shifts/SubmitShiftPage';
 import { SignDocumentPage } from '@/components/modules/employees/SignDocumentPage';
 import { TokenBasedShiftManager } from '@/components/modules/shifts/TokenBasedShiftManager';
+import { QuickAddEmployeePage } from '@/pages/QuickAddEmployeePage';
 
 const QuickRegistrationPage = lazy(() => import('@/pages/QuickRegistrationPage').then(m => ({ default: m.QuickRegistrationPage })));
 const EmployeeLoginPage = lazy(() => import('@/pages/auth/EmployeeLoginPage'));
@@ -51,6 +52,7 @@ export const PublicRoutes = () => (
         </Suspense>
       } 
     />
+    <Route path="/quick-add-employee" element={<QuickAddEmployeePage />} />
     <Route path="/quick-registration" element={
       <Suspense fallback={<div>טוען טופס הרשמה...</div>}>
         <QuickRegistrationPage />

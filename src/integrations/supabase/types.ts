@@ -1820,6 +1820,50 @@ export type Database = {
           },
         ]
       }
+      employee_quick_add_tokens: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          is_used: boolean
+          token: string
+          updated_at: string
+          used_at: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by: string
+          expires_at: string
+          id?: string
+          is_used?: boolean
+          token: string
+          updated_at?: string
+          used_at?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          is_used?: boolean
+          token?: string
+          updated_at?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_quick_add_tokens_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_requests: {
         Row: {
           created_at: string | null
