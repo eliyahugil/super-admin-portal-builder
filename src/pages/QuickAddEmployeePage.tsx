@@ -33,20 +33,43 @@ export const QuickAddEmployeePage: React.FC = () => {
     }
   }, [token]);
 
-  const validateToken = () => {
+  const validateToken = async () => {
     try {
-      // Get token from localStorage
-      const tokenDataStr = localStorage.getItem(`quick_add_token_${token}`);
-      if (!tokenDataStr) {
+      console.log('🔍 Validating token:', token);
+      
+      if (!token) {
+        console.log('❌ No token provided');
         setTokenValid(false);
         return;
       }
 
-      const data = JSON.parse(tokenDataStr);
-      
+      // Check token in database instead of localStorage
+      const { data: tokenRecord, error } = await supabase
+        .from('employee_quick_add_tokens')
+        .select('*')
+        .eq('token', token)
+        .eq('is_used', false)
+        .single();
+
+      if (error || !tokenRecord) {
+        console.log('❌ Token not found in database:', error);
+        setTokenValid(false);
+        toast({
+          title: 'טוקן לא תקין',
+          description: 'הטוקן אינו תקין או לא קיים',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      console.log('📄 Token record found:', tokenRecord);
+
       // Check if token is expired
-      const expiresAt = new Date(data.expires_at);
-      if (expiresAt < new Date()) {
+      const expiresAt = new Date(tokenRecord.expires_at);
+      const now = new Date();
+      console.log('⏰ Checking expiry:', { expiresAt, now, expired: expiresAt < now });
+      
+      if (expiresAt < now) {
         setTokenValid(false);
         toast({
           title: 'טוקן פג תוקף',
@@ -57,7 +80,8 @@ export const QuickAddEmployeePage: React.FC = () => {
       }
 
       // Check if token is already used
-      if (data.is_used) {
+      if (tokenRecord.is_used) {
+        console.log('❌ Token already used');
         setTokenValid(false);
         toast({
           title: 'טוקן נוצל',
@@ -67,11 +91,17 @@ export const QuickAddEmployeePage: React.FC = () => {
         return;
       }
 
-      setTokenData(data);
+      console.log('✅ Token is valid');
+      setTokenData(tokenRecord);
       setTokenValid(true);
     } catch (error) {
       console.error('Error validating token:', error);
       setTokenValid(false);
+      toast({
+        title: 'שגיאה',
+        description: 'אירעה שגיאה בבדיקת הטוקן',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -106,9 +136,18 @@ export const QuickAddEmployeePage: React.FC = () => {
         return;
       }
 
-      // Mark token as used
-      const updatedTokenData = { ...tokenData, is_used: true, used_at: new Date().toISOString() };
-      localStorage.setItem(`quick_add_token_${token}`, JSON.stringify(updatedTokenData));
+      // Mark token as used in database
+      const { error: updateError } = await supabase
+        .from('employee_quick_add_tokens')
+        .update({ 
+          is_used: true, 
+          used_at: new Date().toISOString() 
+        })
+        .eq('token', token);
+
+      if (updateError) {
+        console.error('Error updating token:', updateError);
+      }
 
       toast({
         title: 'הצלחה!',
