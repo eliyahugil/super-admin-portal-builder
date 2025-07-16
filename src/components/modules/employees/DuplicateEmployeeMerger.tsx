@@ -259,7 +259,7 @@ export const DuplicateEmployeeMerger: React.FC = () => {
                 <AlertDescription>
                   אתה עומד למזג {selectedGroups.size} קבוצות של עובדים כפולים.
                   <br />
-                  פעולה זו תעביר את העובדים הכפולים לארכיון ותמזג את הנתונים לעובד הראשי.
+                  פעולה זו תמזג את כל הנתונים לעובד הראשי ותמחק את העותקים הכפולים.
                   <br />
                   <strong>פעולה זו לא ניתנת לביטול!</strong>
                 </AlertDescription>

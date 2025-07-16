@@ -216,15 +216,15 @@ export const useDuplicateEmployees = () => {
           throw updateError;
         }
 
-        // Archive (soft delete) duplicate employees
-        const { error: archiveError } = await supabase
+        // Delete duplicate employees completely (they are merged into primary)
+        const { error: deleteError } = await supabase
           .from('employees')
-          .update({ is_archived: true })
+          .delete()
           .in('id', duplicateEmployeeIds);
 
-        if (archiveError) {
-          console.error('❌ Error archiving duplicate employees:', archiveError);
-          throw archiveError;
+        if (deleteError) {
+          console.error('❌ Error deleting duplicate employees:', deleteError);
+          throw deleteError;
         }
 
         console.log(`✅ Merged ${duplicateEmployeeIds.length} duplicates into primary employee ${primaryEmployeeId}`);
