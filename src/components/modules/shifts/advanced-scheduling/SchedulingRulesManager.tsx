@@ -264,14 +264,14 @@ export const SchedulingRulesManager: React.FC = () => {
               <div className="space-y-2">
                 <Label>סניף (אופציונלי)</Label>
                 <Select
-                  value={newRule.branch_id || ''}
-                  onValueChange={(value) => setNewRule(prev => ({ ...prev, branch_id: value || undefined }))}
+                  value={newRule.branch_id || 'all_branches'}
+                  onValueChange={(value) => setNewRule(prev => ({ ...prev, branch_id: value === 'all_branches' ? undefined : value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="כל הסניפים" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">כל הסניפים</SelectItem>
+                    <SelectItem value="all_branches">כל הסניפים</SelectItem>
                     {branches.map(branch => (
                       <SelectItem key={branch.id} value={branch.id}>
                         {branch.name}
@@ -284,16 +284,16 @@ export const SchedulingRulesManager: React.FC = () => {
               <div className="space-y-2">
                 <Label>סוג משמרת (אופציונלי)</Label>
                 <Select
-                  value={newRule.shift_type || ''}
-                  onValueChange={(value: 'morning' | 'evening' | 'night' | '') => 
-                    setNewRule(prev => ({ ...prev, shift_type: value || undefined }))
+                  value={newRule.shift_type || 'all_shifts'}
+                  onValueChange={(value: 'morning' | 'evening' | 'night' | 'all_shifts') => 
+                    setNewRule(prev => ({ ...prev, shift_type: value === 'all_shifts' ? undefined : value as any }))
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="כל המשמרות" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">כל המשמרות</SelectItem>
+                    <SelectItem value="all_shifts">כל המשמרות</SelectItem>
                     {SHIFT_TYPES.map(type => (
                       <SelectItem key={type.value} value={type.value}>
                         {type.label}

@@ -147,7 +147,7 @@ export const ShiftAssignmentDialog: React.FC<ShiftAssignmentDialogProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {filteredEmployees.length === 0 ? (
-                  <SelectItem value="" disabled>
+                  <SelectItem value="no_employees" disabled>
                     לא נמצאו עובדים
                   </SelectItem>
                 ) : (

@@ -488,16 +488,16 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               <div className="space-y-2">
                 <Label>עובד מוקצה</Label>
                 <Select 
-                  value={editData.employee_id} 
+                  value={editData.employee_id || 'no_employee'} 
                   onValueChange={(value) => 
-                    setEditData(prev => ({ ...prev, employee_id: value }))
+                    setEditData(prev => ({ ...prev, employee_id: value === 'no_employee' ? '' : value }))
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="בחר עובד..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">ללא עובד מוקצה</SelectItem>
+                    <SelectItem value="no_employee">ללא עובד מוקצה</SelectItem>
                     {employees.map(employee => (
                       <SelectItem key={employee.id} value={employee.id}>
                         {employee.first_name} {employee.last_name}
@@ -511,16 +511,16 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               <div className="space-y-2">
                 <Label>סניף</Label>
                 <Select 
-                  value={editData.branch_id} 
+                  value={editData.branch_id || 'no_branch'} 
                   onValueChange={(value) => 
-                    setEditData(prev => ({ ...prev, branch_id: value }))
+                    setEditData(prev => ({ ...prev, branch_id: value === 'no_branch' ? '' : value }))
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="בחר סניף..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">ללא סניף</SelectItem>
+                    <SelectItem value="no_branch">ללא סניף</SelectItem>
                     {branches.map(branch => (
                       <SelectItem key={branch.id} value={branch.id}>
                         {branch.name}
