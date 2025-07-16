@@ -4263,6 +4263,10 @@ export type Database = {
           route_pattern: string
         }[]
       }
+      get_current_business_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_next_customer_number: {
         Args: { business_id_param: string }
         Returns: number
