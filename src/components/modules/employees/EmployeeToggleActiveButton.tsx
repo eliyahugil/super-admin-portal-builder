@@ -33,6 +33,7 @@ export const EmployeeToggleActiveButton: React.FC<EmployeeToggleActiveButtonProp
   const { toast } = useToast();
 
   const isActive = employee.is_active;
+  const statusText = isActive ? 'פעיל' : 'לא פעיל';
   const action = isActive ? 'כיבוי' : 'הפעלה';
   const futureStatus = isActive ? 'לא פעיל' : 'פעיל';
 
@@ -91,7 +92,7 @@ export const EmployeeToggleActiveButton: React.FC<EmployeeToggleActiveButtonProp
           ) : (
             <UserCheck className="h-4 w-4 mr-2" />
           )}
-          {action} עובד
+          {statusText}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
