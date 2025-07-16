@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import {
@@ -11,13 +11,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { 
   User, 
   LogOut, 
   Building2, 
   Crown,
   ChevronDown,
-  Check 
+  Check,
+  Search
 } from 'lucide-react';
 
 export const UserProfileMenu: React.FC = () => {
@@ -30,14 +32,27 @@ export const UserProfileMenu: React.FC = () => {
     businessName 
   } = useCurrentBusiness();
   
+  const [searchQuery, setSearchQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   
-  // Transform availableBusinesses to match the expected format
-  const businesses = availableBusinesses?.map(ub => ({
-    id: ub.business_id || ub.id,
-    name: ub.business?.name || ub.name,
-    description: ub.business?.description
-  })) || [];
+  // Transform and filter businesses
+  const filteredBusinesses = useMemo(() => {
+    const allBusinesses = availableBusinesses?.map(ub => ({
+      id: ub.business_id || ub.id,
+      name: ub.business?.name || ub.name,
+      description: ub.business?.description
+    })) || [];
+
+    if (!searchQuery.trim()) {
+      return allBusinesses;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    return allBusinesses.filter(business => 
+      business.name?.toLowerCase().includes(query) ||
+      business.description?.toLowerCase().includes(query)
+    );
+  }, [availableBusinesses, searchQuery]);
 
   const handleBusinessChange = (businessId: string | null) => {
     console.log('🔄 UserProfileMenu: Changing business to:', businessId);
@@ -46,7 +61,8 @@ export const UserProfileMenu: React.FC = () => {
       setSelectedBusinessId(businessId);
       console.log('✅ UserProfileMenu: setSelectedBusinessId called successfully');
       
-      // Force close dropdown
+      // Clear search and close dropdown
+      setSearchQuery('');
       setIsOpen(false);
       
       // Force page refresh after a short delay to ensure state is updated
@@ -57,6 +73,14 @@ export const UserProfileMenu: React.FC = () => {
     } catch (error) {
       console.error('❌ UserProfileMenu: Error calling setSelectedBusinessId:', error);
     }
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    // Clear search when closing
+    if (!newOpen) {
+      setSearchQuery('');
+    }
+    setIsOpen(newOpen);
   };
 
   const getDisplayName = () => {
@@ -75,7 +99,7 @@ export const UserProfileMenu: React.FC = () => {
   };
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+    <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
@@ -106,7 +130,7 @@ export const UserProfileMenu: React.FC = () => {
         </Button>
       </DropdownMenuTrigger>
       
-      <DropdownMenuContent align="end" className="w-72" style={{ direction: 'rtl' }}>
+      <DropdownMenuContent align="end" className="w-80" style={{ direction: 'rtl' }}>
         <DropdownMenuLabel className="text-right">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{getDisplayName()}</p>
@@ -119,11 +143,32 @@ export const UserProfileMenu: React.FC = () => {
         <DropdownMenuSeparator />
         
         {/* Business Selection Section */}
-        {(isSuperAdmin || businesses.length > 1) && (
+        {(isSuperAdmin || filteredBusinesses.length > 0) && (
           <>
             <DropdownMenuLabel className="text-right text-xs text-muted-foreground">
               בחר מצב עבודה
             </DropdownMenuLabel>
+            
+            {/* Search Box */}
+            {(isSuperAdmin || availableBusinesses.length > 3) && (
+              <div className="px-2 pb-2">
+                <div className="relative">
+                  <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="חפש עסק..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pr-9 text-right"
+                    dir="rtl"
+                  />
+                </div>
+                {searchQuery && filteredBusinesses.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">
+                    לא נמצאו עסקים התואמים לחיפוש
+                  </p>
+                )}
+              </div>
+            )}
             
             {isSuperAdmin && (
               <DropdownMenuItem 
@@ -140,7 +185,8 @@ export const UserProfileMenu: React.FC = () => {
               </DropdownMenuItem>
             )}
             
-            {businesses.map((business) => (
+            {/* Show businesses - limit to 10 results for performance */}
+            {filteredBusinesses.slice(0, 10).map((business) => (
               <DropdownMenuItem
                 key={business.id}
                 onClick={() => handleBusinessChange(business.id)}
@@ -162,6 +208,13 @@ export const UserProfileMenu: React.FC = () => {
                 )}
               </DropdownMenuItem>
             ))}
+            
+            {/* Show if there are more results */}
+            {filteredBusinesses.length > 10 && (
+              <div className="px-2 py-1 text-xs text-muted-foreground text-center">
+                מוצגים 10 מתוך {filteredBusinesses.length} עסקים. שפר את החיפוש לתוצאות מדויקות יותר.
+              </div>
+            )}
             
             <DropdownMenuSeparator />
           </>
