@@ -49,11 +49,12 @@ export const DeleteAllShiftsButton: React.FC = () => {
         throw shiftsError;
       }
 
-      // Get employee IDs for this business first
+      // Get active employee IDs for this business first
       const { data: employees, error: employeesError } = await supabase
         .from('employees')
         .select('id')
-        .eq('business_id', businessId);
+        .eq('business_id', businessId)
+        .eq('is_active', true);
 
       if (employeesError) {
         console.error('❌ Error fetching employees:', employeesError);

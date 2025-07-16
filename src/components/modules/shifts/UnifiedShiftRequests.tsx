@@ -96,9 +96,10 @@ export const UnifiedShiftRequests: React.FC = () => {
         .from('employee_shift_requests')
         .select(`
           *,
-          employee:employees!inner(first_name, last_name, phone, business_id)
+          employee:employees!inner(first_name, last_name, phone, business_id, is_active)
         `)
         .eq('employee.business_id', businessId)
+        .eq('employee.is_active', true)
         .order('created_at', { ascending: false });
 
       if (shiftRequestsError) throw shiftRequestsError;
@@ -108,9 +109,10 @@ export const UnifiedShiftRequests: React.FC = () => {
         .from('shift_submissions')
         .select(`
           *,
-          employee:employees!inner(first_name, last_name, phone, business_id)
+          employee:employees!inner(first_name, last_name, phone, business_id, is_active)
         `)
         .eq('employee.business_id', businessId)
+        .eq('employee.is_active', true)
         .order('submitted_at', { ascending: false });
 
       if (submissionsError) throw submissionsError;
@@ -326,11 +328,12 @@ export const UnifiedShiftRequests: React.FC = () => {
       
       if (!businessId) throw new Error('No business ID');
       
-      // שליפת מזהי עובדים
+      // שליפת מזהי עובדים פעילים בלבד
       const { data: employees, error: employeesError } = await supabase
         .from('employees')
         .select('id')
-        .eq('business_id', businessId);
+        .eq('business_id', businessId)
+        .eq('is_active', true);
         
       if (employeesError) throw employeesError;
       
