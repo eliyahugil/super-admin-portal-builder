@@ -43,6 +43,24 @@ export const QuickAddEmployeeToken: React.FC<QuickAddEmployeeTokenProps> = ({
         return;
       }
 
+      console.log('🔧 Current user:', user.id);
+      console.log('🔧 Business ID:', businessId);
+
+      // בדיקה אם המשתמש הוא בעל העסק
+      const { data: businessData, error: businessError } = await supabase
+        .from('businesses')
+        .select('owner_id')
+        .eq('id', businessId)
+        .single();
+
+      if (businessError) {
+        console.error('❌ Error checking business ownership:', businessError);
+        throw businessError;
+      }
+
+      console.log('🔧 Business owner:', businessData?.owner_id);
+      console.log('🔧 Is owner?', businessData?.owner_id === user.id);
+
       // Generate unique token
       const tokenValue = `emp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
@@ -58,7 +76,7 @@ export const QuickAddEmployeeToken: React.FC<QuickAddEmployeeTokenProps> = ({
       });
 
       // Save token to database
-      const { error: insertError } = await supabase
+      const { data: insertData, error: insertError } = await supabase
         .from('employee_quick_add_tokens')
         .insert({
           token: tokenValue,
@@ -66,14 +84,15 @@ export const QuickAddEmployeeToken: React.FC<QuickAddEmployeeTokenProps> = ({
           created_by: user.id,
           expires_at: expiresAt.toISOString(),
           is_used: false
-        });
+        })
+        .select();
 
       if (insertError) {
         console.error('❌ Error saving token to database:', insertError);
         throw insertError;
       }
 
-      console.log('✅ Token saved to database successfully');
+      console.log('✅ Token saved to database successfully:', insertData);
       setToken(tokenValue);
       toast({
         title: 'הצלחה',
@@ -83,7 +102,7 @@ export const QuickAddEmployeeToken: React.FC<QuickAddEmployeeTokenProps> = ({
       console.error('Error in generateToken:', error);
       toast({
         title: 'שגיאה',
-        description: 'אירעה שגיאה ביצירת הטוקן',
+        description: `אירעה שגיאה ביצירת הטוקן: ${error.message || error}`,
         variant: 'destructive',
       });
     } finally {
