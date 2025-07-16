@@ -280,4 +280,143 @@
   .hover-glow {
     @apply transition-shadow duration-300 hover:shadow-[0_8px_30px_-4px_hsl(var(--primary)/0.2)];
   }
+
+  /* Device type indicators for employee modules */
+  .device-indicator {
+    @apply inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full;
+  }
+
+  .device-mobile {
+    @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200;
+  }
+
+  .device-tablet {
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+  }
+
+  .device-desktop {
+    @apply bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200;
+  }
+
+  /* Enhanced RTL form controls */
+  .form-rtl input,
+  .form-rtl textarea,
+  .form-rtl select {
+    @apply text-right direction-rtl;
+  }
+
+  .form-rtl .form-label {
+    @apply text-right;
+  }
+
+  /* RTL Table improvements */
+  .table-rtl {
+    direction: rtl;
+  }
+
+  .table-rtl th,
+  .table-rtl td {
+    text-align: right;
+  }
+
+  .table-rtl th:first-child,
+  .table-rtl td:first-child {
+    padding-right: 1rem;
+    padding-left: 0.5rem;
+  }
+
+  .table-rtl th:last-child,
+  .table-rtl td:last-child {
+    padding-left: 1rem;
+    padding-right: 0.5rem;
+  }
+
+  /* RTL Dialog and Modal improvements */
+  .dialog-rtl .dialog-content {
+    direction: rtl;
+    text-align: right;
+  }
+
+  .dialog-rtl .dialog-header {
+    text-align: right;
+  }
+
+  .dialog-rtl .dialog-footer {
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+
+  /* Mobile-first responsive design */
+  .mobile-first {
+    @apply block sm:hidden;
+  }
+
+  .tablet-up {
+    @apply hidden sm:block lg:hidden;
+  }
+
+  .desktop-up {
+    @apply hidden lg:block;
+  }
+
+  /* RTL Navigation improvements */
+  .nav-rtl {
+    direction: rtl;
+  }
+
+  .nav-rtl .nav-item {
+    text-align: right;
+  }
+
+  .nav-rtl .nav-icon {
+    margin-left: 0.5rem;
+    margin-right: 0;
+  }
+
+  /* Enhanced touch targets for mobile */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+
+  /* Improved focus styles for accessibility */
+  .focus-enhanced:focus-visible {
+    @apply outline-2 outline-primary outline-offset-2;
+  }
+
+  /* RTL Badge positioning */
+  .badge-rtl {
+    @apply flex items-center gap-1;
+    direction: rtl;
+  }
+
+  /* Loading states */
+  .loading-skeleton {
+    @apply bg-muted animate-pulse rounded;
+  }
+
+  /* Status indicators with better visibility */
+  .status-dot {
+    @apply w-2 h-2 rounded-full inline-block ml-2;
+  }
+
+  .status-online {
+    @apply bg-green-500;
+  }
+
+  .status-offline {
+    @apply bg-gray-400;
+  }
+
+  .status-busy {
+    @apply bg-yellow-500;
+  }
+
+  /* Enhanced error states */
+  .error-field {
+    @apply border-destructive focus:ring-destructive;
+  }
+
+  .error-message {
+    @apply text-destructive text-sm mt-1;
+  }
 }

@@ -21,9 +21,14 @@ import {
   Search,
   MapPin,
   Eye,
-  CalendarDays
+  CalendarDays,
+  Smartphone,
+  Tablet,
+  Monitor
 } from 'lucide-react';
 import { useBusinessId } from '@/hooks/useBusinessId';
+import { DeviceIndicator } from '@/components/shared/DeviceIndicator';
+import { useDeviceType } from '@/hooks/useDeviceType';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ShiftSubmissionCalendarView } from './ShiftSubmissionCalendarView';
@@ -49,8 +54,10 @@ export const ShiftRequests: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const businessId = useBusinessId();
+  const deviceInfo = useDeviceType();
   
   console.log('📊 ShiftRequests: Current business ID:', businessId);
+  console.log('📱 ShiftRequests: Device info:', deviceInfo);
 
   // Fetch shift submissions (which are the actual weekly submissions)
   const { data: requests = [], isLoading } = useQuery({
@@ -152,26 +159,33 @@ export const ShiftRequests: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Eye className="h-6 w-6 text-blue-600" />
-            צפייה בבקשות משמרות
-          </h2>
-          <p className="text-gray-600">סקירה וצפייה בכל בקשות המשמרות מעובדים</p>
+    <div className="space-y-6 form-rtl" dir="rtl">
+      {/* Header with device indicator */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <Eye className="h-6 w-6 text-primary" />
+            <h2 className="text-2xl font-bold">
+              צפייה בבקשות משמרות
+            </h2>
+            <DeviceIndicator className="mr-auto" />
+          </div>
+          <p className="text-muted-foreground">
+            סקירה וצפייה בכל בקשות המשמרות מעובדים • 
+            נצפה מ{deviceInfo.label} ({deviceInfo.width}×{deviceInfo.height})
+          </p>
         </div>
       </div>
 
       <Tabs defaultValue="list" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="list" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-2 rtl-grid">
+          <TabsTrigger value="list" className="flex items-center gap-2 rtl-flex">
             <Eye className="h-4 w-4" />
-            תצוגת רשימה
+            <span>תצוגת רשימה</span>
           </TabsTrigger>
-          <TabsTrigger value="calendar" className="flex items-center gap-2">
+          <TabsTrigger value="calendar" className="flex items-center gap-2 rtl-flex">
             <CalendarDays className="h-4 w-4" />
-            תצוגת לוח שנה
+            <span>תצוגת לוח שנה</span>
           </TabsTrigger>
         </TabsList>
 
@@ -180,44 +194,44 @@ export const ShiftRequests: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="list" className="mt-6 space-y-6">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
+          {/* Quick Stats - Responsive Grid */}
+          <div className="grid grid-cols-1 mobile:grid-cols-1 tablet:grid-cols-3 desktop:grid-cols-3 gap-4">
+            <Card className="card-modern hover-lift">
               <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-100 rounded-lg">
-                    <Clock className="h-5 w-5 text-yellow-600" />
+                <div className="flex items-center gap-3 rtl-flex">
+                  <div className="p-3 bg-warning/10 rounded-lg touch-target">
+                    <Clock className="h-5 w-5 text-warning" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">בקשות ממתינות</p>
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">בקשות ממתינות</p>
                     <p className="text-2xl font-bold">{pendingRequests}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="card-modern hover-lift">
               <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+                <div className="flex items-center gap-3 rtl-flex">
+                  <div className="p-3 bg-success/10 rounded-lg touch-target">
+                    <CheckCircle className="h-5 w-5 text-success" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">בקשות מאושרות</p>
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">בקשות מאושרות</p>
                     <p className="text-2xl font-bold">{approvedRequests}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="card-modern hover-lift">
               <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <XCircle className="h-5 w-5 text-red-600" />
+                <div className="flex items-center gap-3 rtl-flex">
+                  <div className="p-3 bg-destructive/10 rounded-lg touch-target">
+                    <XCircle className="h-5 w-5 text-destructive" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">בקשות נדחות</p>
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">בקשות נדחות</p>
                     <p className="text-2xl font-bold">{rejectedRequests}</p>
                   </div>
                 </div>
@@ -225,23 +239,23 @@ export const ShiftRequests: React.FC = () => {
             </Card>
           </div>
 
-          {/* Filters */}
-          <div className="flex gap-4 items-center">
+          {/* Filters - Enhanced for mobile */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="חפש לפי עובד..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
+                className="pr-10 text-right focus-enhanced"
               />
             </div>
             
             <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48 touch-target">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50">
                 <SelectItem value="all">כל הסטטוסים</SelectItem>
                 <SelectItem value="pending">ממתין</SelectItem>
                 <SelectItem value="approved">מאושר</SelectItem>
@@ -250,64 +264,73 @@ export const ShiftRequests: React.FC = () => {
             </Select>
           </div>
 
-          {/* Requests List */}
+          {/* Requests List - Enhanced for all devices */}
           <div className="space-y-4">
             {filteredRequests.map(request => (
-              <Card key={request.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
+              <Card key={request.id} className="card-modern hover-lift">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <User className="h-4 w-4 text-blue-600" />
-                      <span className="font-semibold">{request.employee_name}</span>
+                      <User className="h-4 w-4 text-primary" />
+                      <span className="font-semibold text-lg">{request.employee_name}</span>
                     </div>
-                    <Badge className={getStatusColor(request.status)}>
-                      {getStatusLabel(request.status)}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`${getStatusColor(request.status)} badge-rtl`}>
+                        {getStatusLabel(request.status)}
+                      </Badge>
+                      <DeviceIndicator showIcon={true} showLabel={false} className="text-xs" />
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <div>
-                      <strong>תאריך:</strong>
-                      <p>{format(new Date(request.shift_date), 'dd/MM/yyyy')}</p>
+                  <div className="grid grid-cols-1 mobile:grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-4 mb-4">
+                    <div className="text-right">
+                      <p className="font-medium text-sm text-muted-foreground mb-1">תאריך</p>
+                      <p className="font-semibold">{format(new Date(request.shift_date), 'dd/MM/yyyy')}</p>
                     </div>
-                    <div>
-                      <strong>שעות:</strong>
-                      <p>{request.start_time} - {request.end_time}</p>
+                    <div className="text-right">
+                      <p className="font-medium text-sm text-muted-foreground mb-1">שעות</p>
+                      <p className="font-semibold">{request.start_time} - {request.end_time}</p>
                     </div>
                     {request.branch_preference && (
-                      <div>
-                        <strong>סניף מועדף:</strong>
-                        <p className="flex items-center gap-1" title={request.branch_preference}>
-                          <MapPin className="h-3 w-3" />
-                          {request.branch_preference.length > 15 
-                            ? `${request.branch_preference.substring(0, 15)}...` 
-                            : request.branch_preference}
+                      <div className="text-right">
+                        <p className="font-medium text-sm text-muted-foreground mb-1">סניף מועדף</p>
+                        <p className="flex items-center gap-1 justify-end" title={request.branch_preference}>
+                          <span className="truncate">
+                            {request.branch_preference.length > 20 
+                              ? `${request.branch_preference.substring(0, 20)}...` 
+                              : request.branch_preference}
+                          </span>
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
                         </p>
                       </div>
                     )}
                     {request.role_preference && (
-                      <div>
-                        <strong>תפקיד מועדף:</strong>
-                        <p>{request.role_preference}</p>
+                      <div className="text-right">
+                        <p className="font-medium text-sm text-muted-foreground mb-1">תפקיד מועדף</p>
+                        <p className="font-semibold">{request.role_preference}</p>
                       </div>
                     )}
                   </div>
 
                   {request.notes && (
-                    <div className="mb-4">
-                      <strong>הערות:</strong>
-                      <p className="text-gray-700">{request.notes}</p>
+                    <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+                      <p className="font-medium text-sm text-muted-foreground mb-1">הערות</p>
+                      <p className="text-sm">{request.notes}</p>
                     </div>
                   )}
 
-                  <div className="text-sm text-gray-500">
-                    <Calendar className="inline h-4 w-4 mr-1" />
-                    נוצר: {format(new Date(request.created_at), 'dd/MM/yyyy HH:mm')}
-                    {request.reviewed_at && (
-                      <span className="mr-4">
-                        | נבדק: {format(new Date(request.reviewed_at), 'dd/MM/yyyy HH:mm')}
-                      </span>
-                    )}
+                  <div className="text-sm text-muted-foreground border-t pt-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>נוצר: {format(new Date(request.created_at), 'dd/MM/yyyy HH:mm')}</span>
+                      </div>
+                      {request.reviewed_at && (
+                        <span className="text-xs">
+                          נבדק: {format(new Date(request.reviewed_at), 'dd/MM/yyyy HH:mm')}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -315,10 +338,19 @@ export const ShiftRequests: React.FC = () => {
           </div>
 
           {filteredRequests.length === 0 && (
-            <div className="text-center py-12">
-              <Eye className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">אין בקשות משמרות</h3>
-              <p className="text-gray-600">לא נמצאו בקשות במערכת</p>
+            <div className="text-center py-12 card-modern">
+              <div className="flex flex-col items-center gap-4">
+                <Eye className="h-16 w-16 text-muted-foreground/50" />
+                <div>
+                  <h3 className="text-lg font-medium mb-2">אין בקשות משמרות</h3>
+                  <p className="text-muted-foreground text-sm">
+                    לא נמצאו בקשות במערכת עבור העסק הנוכחי
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    מכשיר: {deviceInfo.label} • רזולוציה: {deviceInfo.width}×{deviceInfo.height}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </TabsContent>

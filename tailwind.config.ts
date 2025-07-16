@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -19,6 +18,18 @@ export default {
 			}
 		},
 		extend: {
+			// RTL Direction utilities
+			direction: {
+				rtl: 'rtl',
+				ltr: 'ltr',
+			},
+			// Enhanced breakpoints for device-specific layouts
+			screens: {
+				'xs': '475px',
+				'mobile': { 'max': '767px' },
+				'tablet': { 'min': '768px', 'max': '1023px' },
+				'desktop': { 'min': '1024px' },
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -27,7 +38,8 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					glow: 'hsl(var(--primary-glow))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -44,6 +56,14 @@ export default {
 				accent: {
 					DEFAULT: 'hsl(var(--accent))',
 					foreground: 'hsl(var(--accent-foreground))'
+				},
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-foreground))'
+				},
+				warning: {
+					DEFAULT: 'hsl(var(--warning))',
+					foreground: 'hsl(var(--warning-foreground))'
 				},
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
@@ -71,30 +91,57 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
+					from: { height: '0' },
+					to: { height: 'var(--radix-accordion-content-height)' }
 				},
 				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
+					from: { height: 'var(--radix-accordion-content-height)' },
+					to: { height: '0' }
+				},
+				'fade-in': {
+					'0%': { opacity: '0', transform: 'translateY(10px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
+				},
+				'slide-in-right': {
+					'0%': { transform: 'translateX(100%)' },
+					'100%': { transform: 'translateX(0)' }
+				},
+				'slide-in-left': {
+					'0%': { transform: 'translateX(-100%)' },
+					'100%': { transform: 'translateX(0)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out',
+				'slide-in-right': 'slide-in-right 0.3s ease-out',
+				'slide-in-left': 'slide-in-left 0.3s ease-out'
 			},
 			spacing: {
 				'rtl-2': '0.5rem',
 				'rtl-4': '1rem',
 				'rtl-6': '1.5rem',
+				'rtl-8': '2rem',
+				'touch': '44px', // מינימום למגע בנייד
+			},
+			// RTL-aware margins and padding
+			margin: {
+				'rtl-auto': 'auto',
+			},
+			padding: {
+				'safe': 'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
+			},
+			// Enhanced shadows for cards and modals
+			boxShadow: {
+				'soft': '0 4px 20px -2px hsl(var(--primary) / 0.1)',
+				'medium': '0 8px 30px -4px hsl(var(--primary) / 0.15)',
+				'card': '0 2px 10px -2px hsl(215 25% 27% / 0.1)',
+				'glow': '0 0 40px hsl(var(--primary-glow) / 0.4)',
+			},
+			// Typography improvements for RTL
+			fontFamily: {
+				'rtl': ['system-ui', '-apple-system', 'sans-serif'],
 			}
 		}
 	},
