@@ -188,11 +188,17 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
                     key={filter}
                     variant={selectedFilter === filter ? 'default' : 'outline'}
                     onClick={() => setSelectedFilter(filter)}
-                    className="whitespace-nowrap text-xs sm:text-sm"
+                    className={`whitespace-nowrap text-xs sm:text-sm ${
+                      filter === 'inactive' ? 'text-orange-600 border-orange-300 hover:bg-orange-50' : ''
+                    }`}
                     size="sm"
                   >
-                    <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                    {filter === 'all' ? 'הכל' : filter === 'active' ? 'פעילים' : 'לא פעילים'}
+                    {filter === 'inactive' ? (
+                      <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    ) : (
+                      <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    )}
+                    {filter === 'all' ? 'הכל' : filter === 'active' ? 'פעילים' : 'נדרש טיפול'}
                   </Button>
                 ))}
               </div>
