@@ -145,9 +145,9 @@ export const UnifiedShiftRequests: React.FC = () => {
           ? JSON.parse(submission.shifts) 
           : submission.shifts;
           
-        shifts.forEach((shift: any) => {
+        shifts.forEach((shift: any, shiftIndex: number) => {
           allRequests.push({
-            id: `submission-${submission.id}-${shift.date}`,
+            id: `submission-${submission.id}-${shift.date}-${shiftIndex}`,
             employee_id: submission.employee_id,
             employee_name: submission.employee 
               ? `${submission.employee.first_name} ${submission.employee.last_name}` 
@@ -234,21 +234,40 @@ export const UnifiedShiftRequests: React.FC = () => {
   // מוטציה למחיקת בקשה
   const deleteRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
+      console.log('🗑️ מוחק בקשה:', requestId);
+      
       if (requestId.startsWith('submission-')) {
-        const submissionId = requestId.split('-')[1];
+        // חילוץ מזהה ההגשה הנכון
+        const parts = requestId.split('-');
+        const submissionId = parts[1]; // submission-[ID]-[DATE]-[INDEX]
+        
+        console.log('🗑️ מוחק הגשה מ shift_submissions:', submissionId);
+        
         const { error } = await supabase
           .from('shift_submissions')
           .delete()
           .eq('id', submissionId);
         
-        if (error) throw error;
+        if (error) {
+          console.error('❌ שגיאה במחיקת הגשה:', error);
+          throw error;
+        }
+        
+        console.log('✅ הגשה נמחקה בהצלחה');
       } else {
+        console.log('🗑️ מוחק בקשה מ employee_shift_requests:', requestId);
+        
         const { error } = await supabase
           .from('employee_shift_requests')
           .delete()
           .eq('id', requestId);
         
-        if (error) throw error;
+        if (error) {
+          console.error('❌ שגיאה במחיקת בקשה:', error);
+          throw error;
+        }
+        
+        console.log('✅ בקשה נמחקה בהצלחה');
       }
     },
     onSuccess: () => {
@@ -258,6 +277,7 @@ export const UnifiedShiftRequests: React.FC = () => {
         description: 'הבקשה נמחקה בהצלחה',
       });
       setDeleteDialogOpen(false);
+      setSelectedRequestId('');
       setManagerCode('');
     },
     onError: (error) => {
@@ -283,7 +303,7 @@ export const UnifiedShiftRequests: React.FC = () => {
   };
 
   const confirmDelete = () => {
-    if (!managerCode || managerCode !== '1234') {
+    if (!managerCode || managerCode !== '130898') {
       toast({
         title: 'שגיאה',
         description: 'קוד מנהל שגוי',
