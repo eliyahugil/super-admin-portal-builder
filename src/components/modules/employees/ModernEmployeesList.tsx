@@ -22,7 +22,8 @@ import {
   Calendar,
   Download,
   ArrowUpDown,
-  ChevronDown
+  ChevronDown,
+  AlertTriangle
 } from 'lucide-react';
 import { ExportEmployeesButton } from './ExportEmployeesButton';
 import {
@@ -343,6 +344,12 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
                       <Badge className={`${getStatusColor(employee.is_active || false)} text-xs mt-1`}>
                         {employee.is_active ? 'פעיל' : 'לא פעיל'}
                       </Badge>
+                      {!employee.phone && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <AlertTriangle className="h-3 w-3 text-orange-500" />
+                          <span className="text-xs text-orange-600">חסר טלפון</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <DropdownMenu>
