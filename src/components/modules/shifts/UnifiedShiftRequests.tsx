@@ -74,6 +74,8 @@ export const UnifiedShiftRequests: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string>('');
   const [managerCode, setManagerCode] = useState('');
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const [managerCodeAll, setManagerCodeAll] = useState('');
 
   const businessId = useBusinessId();
   const { user } = useAuth();
@@ -317,6 +319,70 @@ export const UnifiedShiftRequests: React.FC = () => {
     }
   });
 
+  // מוטציה למחיקת כל הבקשות
+  const deleteAllRequestsMutation = useMutation({
+    mutationFn: async () => {
+      console.log('🗑️ מוחק את כל הבקשות');
+      
+      if (!businessId) throw new Error('No business ID');
+      
+      // שליפת מזהי עובדים
+      const { data: employees, error: employeesError } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('business_id', businessId);
+        
+      if (employeesError) throw employeesError;
+      
+      const employeeIds = employees?.map(emp => emp.id) || [];
+      
+      if (employeeIds.length === 0) {
+        console.log('❌ לא נמצאו עובדים לעסק זה');
+        return;
+      }
+      
+      // מחיקת כל הבקשות מ employee_shift_requests
+      const { error: shiftRequestsError } = await supabase
+        .from('employee_shift_requests')
+        .delete()
+        .in('employee_id', employeeIds);
+      
+      if (shiftRequestsError) {
+        console.error('❌ שגיאה במחיקת employee_shift_requests:', shiftRequestsError);
+        throw shiftRequestsError;
+      }
+      
+      // מחיקת כל הבקשות מ shift_submissions
+      const { error: submissionsError } = await supabase
+        .from('shift_submissions')
+        .delete()
+        .in('employee_id', employeeIds);
+      
+      if (submissionsError) {
+        console.error('❌ שגיאה במחיקת shift_submissions:', submissionsError);
+        throw submissionsError;
+      }
+      
+      console.log('✅ כל הבקשות נמחקו בהצלחה');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['unified-shift-requests'] });
+      toast({
+        title: 'הצלחה',
+        description: 'כל הבקשות נמחקו בהצלחה',
+      });
+      setDeleteAllDialogOpen(false);
+      setManagerCodeAll('');
+    },
+    onError: (error) => {
+      toast({
+        title: 'שגיאה',
+        description: 'לא הצלחנו למחוק את הבקשות',
+        variant: 'destructive',
+      });
+    }
+  });
+
   const handleUpdateStatus = (requestId: string, status: 'approved' | 'rejected', notes?: string) => {
     updateStatusMutation.mutate({ requestId, status, notes });
   };
@@ -346,6 +412,23 @@ export const UnifiedShiftRequests: React.FC = () => {
 
     console.log('✅ קוד מנהל נכון, מתחיל מחיקה...');
     deleteRequestMutation.mutate(selectedRequestId);
+  };
+
+  const confirmDeleteAll = () => {
+    console.log('🔍 confirmDeleteAll called - קוד שהוזן:', managerCodeAll);
+    
+    if (!managerCodeAll || managerCodeAll !== '130898') {
+      console.log('❌ קוד מנהל שגוי:', managerCodeAll);
+      toast({
+        title: 'שגיאה',
+        description: 'קוד מנהל שגוי',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    console.log('✅ קוד מנהל נכון, מתחיל מחיקת הכל...');
+    deleteAllRequestsMutation.mutate();
   };
 
   const sendWhatsApp = (phone: string, employeeName: string, status: string, date: string, notes?: string) => {
@@ -489,7 +572,7 @@ export const UnifiedShiftRequests: React.FC = () => {
             </Card>
           </div>
 
-          {/* מסננים */}
+          {/* מסננים וכפתורי פעולות */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -512,6 +595,16 @@ export const UnifiedShiftRequests: React.FC = () => {
                 <SelectItem value="rejected">נדחה</SelectItem>
               </SelectContent>
             </Select>
+
+            <Button
+              variant="destructive"
+              onClick={() => setDeleteAllDialogOpen(true)}
+              className="flex items-center gap-2"
+              disabled={filteredRequests.length === 0}
+            >
+              <Trash2 className="h-4 w-4" />
+              מחק הכל
+            </Button>
           </div>
 
           {/* תוכן ראשי - מימין לשמאל */}
@@ -763,6 +856,50 @@ export const UnifiedShiftRequests: React.FC = () => {
               disabled={deleteRequestMutation.isPending}
             >
               {deleteRequestMutation.isPending ? 'מוחק...' : 'מחק'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* דיאלוג מחיקה מרובה */}
+      <Dialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-destructive" />
+              אישור מחיקת כל הבקשות
+            </DialogTitle>
+            <DialogDescription>
+              פעולה זו תמחק את כל הבקשות לצמיתות ({filteredRequests.length} בקשות). הזן קוד מנהל לאישור המחיקה.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <Input
+              type="password"
+              placeholder="הזן קוד מנהל..."
+              value={managerCodeAll}
+              onChange={(e) => setManagerCodeAll(e.target.value)}
+              className="text-center"
+            />
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteAllDialogOpen(false);
+                setManagerCodeAll('');
+              }}
+            >
+              ביטול
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteAll}
+              disabled={deleteAllRequestsMutation.isPending}
+            >
+              {deleteAllRequestsMutation.isPending ? 'מוחק הכל...' : 'מחק הכל'}
             </Button>
           </DialogFooter>
         </DialogContent>
