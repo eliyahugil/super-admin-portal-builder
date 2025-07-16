@@ -57,10 +57,10 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigateDate(-1)}
+            onClick={() => navigateDate(1)}
           >
             <ChevronRight className="h-4 w-4" />
-            {view === 'week' ? 'שבוע קודם' : view === 'month' ? 'חודש קודם' : 'שנה קודמת'}
+            {view === 'week' ? 'שבוע הבא' : view === 'month' ? 'חודש הבא' : 'שנה הבאה'}
           </Button>
           <Button
             variant="outline"
@@ -73,10 +73,10 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigateDate(1)}
+            onClick={() => navigateDate(-1)}
           >
             <ChevronLeft className="h-4 w-4" />
-            {view === 'week' ? 'שבוע הבא' : view === 'month' ? 'חודש הבא' : 'שנה הבאה'}
+            {view === 'week' ? 'שבוע קודם' : view === 'month' ? 'חודש קודם' : 'שנה קודמת'}
           </Button>
         </div>
       </div>
