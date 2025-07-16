@@ -42,7 +42,8 @@ import {
   Tablet,
   Monitor,
   Trash2,
-  Shield
+  Shield,
+  Edit
 } from 'lucide-react';
 import { useBusinessId } from '@/hooks/useBusinessId';
 import { DeviceIndicator } from '@/components/shared/DeviceIndicator';
@@ -74,15 +75,15 @@ export const ShiftRequests: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string>('');
+  const [selectedRequest, setSelectedRequest] = useState<ShiftRequest | null>(null);
   const [managerCode, setManagerCode] = useState('');
-  const [calendarPopoverOpen, setCalendarPopoverOpen] = useState<string>('');
-
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const businessId = useBusinessId();
   const deviceInfo = useDeviceType();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   console.log('📊 בקשות משמרות: מזהה עסק נוכחי:', businessId);
   console.log('📱 בקשות משמרות: נתוני מכשיר:', deviceInfo);
@@ -184,6 +185,12 @@ export const ShiftRequests: React.FC = () => {
     setDeleteDialogOpen(true);
   };
 
+  // פונקציה לטיפול בעריכה
+  const handleEditRequest = (request: ShiftRequest) => {
+    setSelectedRequest(request);
+    setEditDialogOpen(true);
+  };
+
   // פונקציה לאישור המחיקה עם קוד מנהל
   const confirmDelete = () => {
     if (!managerCode || managerCode !== '1234') { // קוד מנהל זמני
@@ -199,45 +206,6 @@ export const ShiftRequests: React.FC = () => {
     deleteSubmissionMutation.mutate(submissionId);
   };
 
-  // פונקציה לקבלת משמרות עובד לתצוגת לוח שנה
-  const getEmployeeShifts = (employeeId: string) => {
-    return requests.filter(req => req.employee_id === employeeId);
-  };
-
-  // רכיב תצוגת לוח שנה בריחוף
-  const EmployeeCalendarPreview: React.FC<{ employeeId: string; employeeName: string }> = ({ employeeId, employeeName }) => {
-    const employeeShifts = getEmployeeShifts(employeeId);
-    const shiftDates = employeeShifts.map(shift => parseISO(shift.shift_date));
-
-    return (
-      <div className="w-80 p-4" dir="rtl">
-        <h4 className="font-medium mb-3 text-right">
-          משמרות של {employeeName}
-        </h4>
-        <Calendar
-          mode="multiple"
-          selected={shiftDates}
-          className={cn("p-3 pointer-events-auto")}
-          locale={he}
-          modifiers={{
-            shift: shiftDates
-          }}
-          modifiersStyles={{
-            shift: { backgroundColor: 'hsl(var(--primary))', color: 'white' }
-          }}
-        />
-        <div className="mt-3 text-sm text-muted-foreground">
-          <p>סה"כ משמרות: {employeeShifts.length}</p>
-          <div className="flex gap-2 mt-2">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-primary rounded"></div>
-              <span>ימי משמרת</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -393,21 +361,18 @@ export const ShiftRequests: React.FC = () => {
                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4" style={{ direction: 'rtl' }}>
                      <div className="flex items-center gap-3" style={{ direction: 'rtl' }}>
                        <User className="h-4 w-4 text-primary" />
-                       <Popover>
-                         <PopoverTrigger asChild>
-                           <span className="font-semibold text-lg cursor-pointer hover:text-primary transition-colors">
-                             {request.employee_name}
-                           </span>
-                         </PopoverTrigger>
-                         <PopoverContent className="w-auto p-0" align="end">
-                           <EmployeeCalendarPreview 
-                             employeeId={request.employee_id} 
-                             employeeName={request.employee_name || ''} 
-                           />
-                         </PopoverContent>
-                       </Popover>
+                       <span className="font-semibold text-lg">{request.employee_name}</span>
                      </div>
                      <div className="flex items-center gap-2">
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={() => handleEditRequest(request)}
+                         className="text-primary hover:text-primary hover:bg-primary/10"
+                       >
+                         <Edit className="h-4 w-4 ml-1" />
+                         ערוך
+                       </Button>
                        <Button
                          variant="outline"
                          size="sm"
@@ -542,6 +507,112 @@ export const ShiftRequests: React.FC = () => {
               disabled={!managerCode || deleteSubmissionMutation.isPending}
             >
               {deleteSubmissionMutation.isPending ? 'מוחק...' : 'מחק הגשה'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* דיאלוג עריכת הגשה */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5 text-primary" />
+              עריכת הגשת משמרת
+            </DialogTitle>
+            <DialogDescription className="text-right">
+              עריכת פרטי הגשת משמרת עבור {selectedRequest?.employee_name}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">תאריך משמרת</label>
+                  <Input
+                    type="date"
+                    defaultValue={selectedRequest.shift_date}
+                    className="text-right"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">סטטוס</label>
+                  <Select defaultValue={selectedRequest.status}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">ממתין</SelectItem>
+                      <SelectItem value="approved">מאושר</SelectItem>
+                      <SelectItem value="rejected">נדחה</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">שעת התחלה</label>
+                  <Input
+                    type="time"
+                    defaultValue={selectedRequest.start_time}
+                    className="text-left"
+                    dir="ltr"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">שעת סיום</label>
+                  <Input
+                    type="time"
+                    defaultValue={selectedRequest.end_time}
+                    className="text-left"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">סניף מועדף</label>
+                <Input
+                  defaultValue={selectedRequest.branch_preference}
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">תפקיד מועדף</label>
+                <Input
+                  defaultValue={selectedRequest.role_preference || ''}
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">הערות</label>
+                <Input
+                  defaultValue={selectedRequest.notes || ''}
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setEditDialogOpen(false)}
+            >
+              ביטול
+            </Button>
+            <Button 
+              onClick={() => {
+                toast({
+                  title: 'הצלחה',
+                  description: 'ההגשה עודכנה בהצלחה',
+                });
+                setEditDialogOpen(false);
+              }}
+            >
+              שמור שינויים
             </Button>
           </DialogFooter>
         </DialogContent>

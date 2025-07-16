@@ -37,15 +37,15 @@ export const ShiftSubmissionCalendarView: React.FC = () => {
   
   console.log('📅 ShiftSubmissionCalendarView: Current business ID:', businessId);
 
-  // Fetch shift submissions for the current month
+  // שליפת הגשות משמרות לחודש הנוכחי
   const { data: submissions = [], isLoading } = useQuery({
     queryKey: ['calendar-submissions', businessId, format(currentDate, 'yyyy-MM')],
     queryFn: async (): Promise<ShiftSubmission[]> => {
       if (!businessId) return [];
 
-      const monthStart = startOfMonth(currentDate);
-      const monthEnd = endOfMonth(currentDate);
+      console.log('🔒 שולף הגשות משמרות עבור עסק:', businessId);
       
+      // שולף את כל ההגשות של העסק ללא הגבלת תאריך
       const { data, error } = await supabase
         .from('shift_submissions')
         .select(`
@@ -53,26 +53,49 @@ export const ShiftSubmissionCalendarView: React.FC = () => {
           employee:employees!inner(first_name, last_name, business_id)
         `)
         .eq('employee.business_id', businessId)
-        .gte('week_start_date', format(monthStart, 'yyyy-MM-dd'))
-        .lte('week_end_date', format(monthEnd, 'yyyy-MM-dd'))
         .order('submitted_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('שגיאה בשליפת הגשות:', error);
+        throw error;
+      }
 
-      return (data || []).map(submission => ({
-        id: submission.id,
-        employee_id: submission.employee_id,
-        employee_name: submission.employee 
-          ? `${submission.employee.first_name} ${submission.employee.last_name}` 
-          : 'לא ידוע',
-        shifts: typeof submission.shifts === 'string' 
+      console.log('📊 נתוני הגשות גולמיים:', data?.length || 0);
+
+      const processedSubmissions = (data || []).map(submission => {
+        const shifts = typeof submission.shifts === 'string' 
           ? JSON.parse(submission.shifts) 
-          : submission.shifts || [],
-        status: submission.status as 'pending' | 'approved' | 'rejected',
-        submitted_at: submission.submitted_at
-      }));
+          : submission.shifts || [];
+          
+        console.log('🔄 עיבוד הגשה:', {
+          submissionId: submission.id,
+          employeeName: submission.employee 
+            ? `${submission.employee.first_name} ${submission.employee.last_name}` 
+            : 'לא ידוע',
+          shiftsCount: shifts.length,
+          status: submission.status
+        });
+
+        return {
+          id: submission.id,
+          employee_id: submission.employee_id,
+          employee_name: submission.employee 
+            ? `${submission.employee.first_name} ${submission.employee.last_name}` 
+            : 'לא ידוע',
+          shifts: shifts,
+          status: submission.status as 'pending' | 'approved' | 'rejected',
+          submitted_at: submission.submitted_at
+        };
+      });
+
+      console.log('✅ הגשות מעובדות:', processedSubmissions.length);
+      
+      return processedSubmissions;
     },
-    enabled: !!businessId
+    enabled: !!businessId,
+    refetchInterval: 30000, // רענון אוטומטי כל 30 שניות
+    refetchOnWindowFocus: true, // רענון כאשר החלון מקבל פוקוס
+    refetchOnMount: true // רענון עם טעינת הרכיב
   });
 
   // Generate calendar days
