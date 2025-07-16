@@ -50,18 +50,30 @@ export const QuickAddEmployeeToken: React.FC<QuickAddEmployeeTokenProps> = ({
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24);
       
-      // Note: We'll save to localStorage for now since table is not in types yet
-      const tokenData = {
+      console.log('🔧 Creating token in database:', {
         token: tokenValue,
         business_id: businessId,
         created_by: user.id,
-        expires_at: expiresAt.toISOString(),
-        is_used: false
-      };
-      
-      // Store in localStorage temporarily
-      localStorage.setItem(`quick_add_token_${tokenValue}`, JSON.stringify(tokenData));
+        expires_at: expiresAt.toISOString()
+      });
 
+      // Save token to database
+      const { error: insertError } = await supabase
+        .from('employee_quick_add_tokens')
+        .insert({
+          token: tokenValue,
+          business_id: businessId,
+          created_by: user.id,
+          expires_at: expiresAt.toISOString(),
+          is_used: false
+        });
+
+      if (insertError) {
+        console.error('❌ Error saving token to database:', insertError);
+        throw insertError;
+      }
+
+      console.log('✅ Token saved to database successfully');
       setToken(tokenValue);
       toast({
         title: 'הצלחה',
