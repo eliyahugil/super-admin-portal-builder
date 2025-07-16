@@ -87,33 +87,32 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
         (isSuperAdmin && !newBusinessId ? null : null)
     });
     
-    // כפוי רענון של כל הקומפוננטים המטמונים נתונים
-    window.dispatchEvent(new CustomEvent('businessChanged', { detail: { businessId: newBusinessId } }));
+    // אילוץ רענון מיידי של כל הנתונים תלויי העסק
+    console.log('🔄 Forcing invalidation of all business-related queries...');
     
-    // רענון נתונים באמצעות React Query במקום רענון הדף
-    queryClient.invalidateQueries({
-      predicate: (query) => {
-        // רענון כל הqueries שתלויים בbusiness ID
-        const key = query.queryKey;
-        return Array.isArray(key) && (
-          key.includes('employees') ||
-          key.includes('branches') ||
-          key.includes('employee-stats') ||
-          key.includes('existing-employees-full') ||
-          key.includes('employees-data') ||
-          key.includes('secure-business-data') ||
-          key.some(item => typeof item === 'string' && item.includes('business'))
-        );
-      }
-    });
+    // ביטול כל ה-queries הקודמים
+    queryClient.cancelQueries();
     
-    // Force refetch of important queries immediately
-    queryClient.refetchQueries({
-      predicate: (query) => {
-        const key = query.queryKey;
-        return Array.isArray(key) && key.includes('employees');
-      }
-    });
+    // רענון כל הqueries שתלויים בbusiness ID
+    queryClient.invalidateQueries();
+    
+    // כפוי רענון מיידי של queries חשובים
+    setTimeout(() => {
+      queryClient.refetchQueries({
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && (
+            key.includes('employees') ||
+            key.includes('branches') ||
+            key.includes('employee-stats') ||
+            key.includes('existing-employees-full') ||
+            key.includes('employees-data') ||
+            key.includes('secure-business-data') ||
+            key.some(item => typeof item === 'string' && item.includes('business'))
+          );
+        }
+      });
+    }, 100);
   }, [userBusinesses, isSuperAdmin, queryClient]);
 
   useEffect(() => {

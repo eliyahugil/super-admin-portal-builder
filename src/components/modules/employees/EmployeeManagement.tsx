@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ModernEmployeeHeader } from './ModernEmployeeHeader';
 import { ModernEmployeeStatsCards } from './ModernEmployeeStatsCards';
 import { EmployeeManagementLoading } from './EmployeeManagementLoading';
@@ -8,7 +8,7 @@ import { ArchivedEmployeesList } from './ArchivedEmployeesList';
 import { ManagementToolsSection } from './ManagementToolsSection/ManagementToolsSection';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useEmployeeStats } from '@/hooks/useEmployeeStats';
-import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { useBusinessId } from '@/hooks/useBusinessId';
 
 interface EmployeeManagementProps {
   selectedBusinessId?: string | null;
@@ -17,8 +17,15 @@ interface EmployeeManagementProps {
 export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ 
   selectedBusinessId 
 }) => {
-  const { businessId: contextBusinessId } = useCurrentBusiness();
-  const effectiveBusinessId = selectedBusinessId || contextBusinessId;
+  // השתמש ב-useBusinessId לקבלת business ID עדכני
+  const currentBusinessId = useBusinessId();
+  const effectiveBusinessId = selectedBusinessId || currentBusinessId;
+  
+  // עדכון רענון אוטומטי כשמשתנה business ID
+  useEffect(() => {
+    console.log('🔄 EmployeeManagement: Business ID changed to:', effectiveBusinessId);
+    setRefreshKey(prev => prev + 1);
+  }, [effectiveBusinessId]);
   
   const [showArchived, setShowArchived] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);

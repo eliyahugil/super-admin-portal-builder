@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { useBusinessId } from '@/hooks/useBusinessId';
 
 export interface Employee {
   id: string;
@@ -27,7 +27,7 @@ export interface Employee {
 }
 
 export const useEmployees = (selectedBusinessId?: string | null) => {
-  const { businessId: contextBusinessId } = useCurrentBusiness();
+  const contextBusinessId = useBusinessId();
   const effectiveBusinessId = selectedBusinessId || contextBusinessId;
 
   return useQuery({
