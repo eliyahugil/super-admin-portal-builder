@@ -60,7 +60,7 @@ export const ShiftRequests: React.FC = () => {
   console.log('📱 ShiftRequests: Device info:', deviceInfo);
 
   // Fetch shift submissions (which are the actual weekly submissions)
-  const { data: requests = [], isLoading } = useQuery({
+  const { data: requests = [], isLoading, refetch } = useQuery({
     queryKey: ['shift-submissions', businessId, statusFilter],
     queryFn: async (): Promise<ShiftRequest[]> => {
       if (!businessId) return [];
@@ -116,7 +116,10 @@ export const ShiftRequests: React.FC = () => {
 
       return expandedRequests;
     },
-    enabled: !!businessId
+    enabled: !!businessId,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    refetchOnWindowFocus: true, // Refresh when window gets focus
+    refetchOnMount: true // Refresh on component mount
   });
 
   const getStatusColor = (status: string) => {
@@ -159,7 +162,7 @@ export const ShiftRequests: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 form-rtl" dir="rtl">
+    <div className="space-y-6" dir="rtl" style={{ textAlign: 'right', direction: 'rtl' }}>
       {/* Header with device indicator */}
       <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
         <div className="flex-1">
@@ -268,9 +271,9 @@ export const ShiftRequests: React.FC = () => {
           <div className="space-y-4">
             {filteredRequests.map(request => (
               <Card key={request.id} className="card-modern hover-lift">
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-                    <div className="flex items-center gap-3">
+                 <CardContent className="p-4 sm:p-6" dir="rtl">
+                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4" style={{ direction: 'rtl' }}>
+                     <div className="flex items-center gap-3" style={{ direction: 'rtl' }}>
                       <User className="h-4 w-4 text-primary" />
                       <span className="font-semibold text-lg">{request.employee_name}</span>
                     </div>
