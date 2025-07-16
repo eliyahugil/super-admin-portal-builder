@@ -20,7 +20,9 @@ import {
   Settings,
   FileText,
   Calendar,
-  Download
+  Download,
+  ArrowUpDown,
+  ChevronDown
 } from 'lucide-react';
 import { ExportEmployeesButton } from './ExportEmployeesButton';
 import {
@@ -46,22 +48,46 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [sortBy, setSortBy] = useState<'name_asc' | 'name_desc' | 'created_asc' | 'created_desc' | 'hire_asc' | 'hire_desc'>('name_asc');
 
-  // Filter employees based on search and status
-  const filteredEmployees = employees.filter(employee => {
-    const matchesSearch = 
-      employee.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.phone?.includes(searchTerm);
+  // Filter and sort employees based on search, status and sort order
+  const filteredAndSortedEmployees = React.useMemo(() => {
+    // First filter
+    const filtered = employees.filter(employee => {
+      const matchesSearch = 
+        employee.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.phone?.includes(searchTerm);
 
-    const matchesFilter = 
-      selectedFilter === 'all' ||
-      (selectedFilter === 'active' && employee.is_active) ||
-      (selectedFilter === 'inactive' && !employee.is_active);
+      const matchesFilter = 
+        selectedFilter === 'all' ||
+        (selectedFilter === 'active' && employee.is_active) ||
+        (selectedFilter === 'inactive' && !employee.is_active);
 
-    return matchesSearch && matchesFilter;
-  });
+      return matchesSearch && matchesFilter;
+    });
+
+    // Then sort
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name_asc':
+          return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, 'he');
+        case 'name_desc':
+          return `${b.first_name} ${b.last_name}`.localeCompare(`${a.first_name} ${a.last_name}`, 'he');
+        case 'created_asc':
+          return new Date(a.created_at || '').getTime() - new Date(b.created_at || '').getTime();
+        case 'created_desc':
+          return new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime();
+        case 'hire_asc':
+          return new Date(a.hire_date || '').getTime() - new Date(b.hire_date || '').getTime();
+        case 'hire_desc':
+          return new Date(b.hire_date || '').getTime() - new Date(a.hire_date || '').getTime();
+        default:
+          return 0;
+      }
+    });
+  }, [employees, searchTerm, selectedFilter, sortBy]);
 
   const handleViewProfile = (employeeId: string) => {
     navigate(`/modules/employees/profile/${employeeId}`);
@@ -87,7 +113,7 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
         <div className="flex-1">
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">רשימת עובדים</h2>
           <p className="text-sm sm:text-base text-muted-foreground">
-            ניהול ומעקב אחר {filteredEmployees.length} עובדים
+            ניהול ומעקב אחר {filteredAndSortedEmployees.length} עובדים
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -138,29 +164,83 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
       {/* Search and Filters */}
       <Card className="card-modern">
         <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="חיפוש לפי שם, מייל או טלפון..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
-              />
+          <div className="space-y-4">
+            {/* First Row: Search and Status Filters */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="חיפוש לפי שם, מייל או טלפון..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-10"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(['all', 'active', 'inactive'] as const).map((filter) => (
+                  <Button
+                    key={filter}
+                    variant={selectedFilter === filter ? 'default' : 'outline'}
+                    onClick={() => setSelectedFilter(filter)}
+                    className="whitespace-nowrap text-xs sm:text-sm"
+                    size="sm"
+                  >
+                    <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    {filter === 'all' ? 'הכל' : filter === 'active' ? 'פעילים' : 'לא פעילים'}
+                  </Button>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {(['all', 'active', 'inactive'] as const).map((filter) => (
-                <Button
-                  key={filter}
-                  variant={selectedFilter === filter ? 'default' : 'outline'}
-                  onClick={() => setSelectedFilter(filter)}
-                  className="whitespace-nowrap text-xs sm:text-sm"
-                  size="sm"
-                >
-                  <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  {filter === 'all' ? 'הכל' : filter === 'active' ? 'פעילים' : 'לא פעילים'}
-                </Button>
-              ))}
+
+            {/* Second Row: Sort Options */}
+            <div className="flex items-center gap-2 pt-2 border-t">
+              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground font-medium">סדר תצוגה:</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2 text-xs sm:text-sm">
+                    {sortBy === 'name_asc' && 'שם (א-ת)'}
+                    {sortBy === 'name_desc' && 'שם (ת-א)'}
+                    {sortBy === 'created_asc' && 'תאריך יצירה (ישן-חדש)'}
+                    {sortBy === 'created_desc' && 'תאריך יצירה (חדש-ישן)'}
+                    {sortBy === 'hire_asc' && 'תאריך תחילת עבודה (ישן-חדש)'}
+                    {sortBy === 'hire_desc' && 'תאריך תחילת עבודה (חדש-ישן)'}
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64">
+                  <DropdownMenuItem onClick={() => setSortBy('name_asc')}>
+                    <span className={sortBy === 'name_asc' ? 'font-semibold' : ''}>
+                      שם (א-ת)
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy('name_desc')}>
+                    <span className={sortBy === 'name_desc' ? 'font-semibold' : ''}>
+                      שם (ת-א)
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy('created_desc')}>
+                    <span className={sortBy === 'created_desc' ? 'font-semibold' : ''}>
+                      תאריך יצירה (חדש-ישן)
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy('created_asc')}>
+                    <span className={sortBy === 'created_asc' ? 'font-semibold' : ''}>
+                      תאריך יצירה (ישן-חדש)
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy('hire_desc')}>
+                    <span className={sortBy === 'hire_desc' ? 'font-semibold' : ''}>
+                      תאריך תחילת עבודה (חדש-ישן)
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy('hire_asc')}>
+                    <span className={sortBy === 'hire_asc' ? 'font-semibold' : ''}>
+                      תאריך תחילת עבודה (ישן-חדש)
+                    </span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </CardContent>
@@ -206,7 +286,7 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
               </div>
               <div>
                 <p className="text-xs sm:text-sm text-muted-foreground">תוצאות חיפוש</p>
-                <p className="text-lg sm:text-2xl font-bold text-foreground">{filteredEmployees.length}</p>
+                <p className="text-lg sm:text-2xl font-bold text-foreground">{filteredAndSortedEmployees.length}</p>
               </div>
             </div>
           </CardContent>
@@ -214,7 +294,7 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
       </div>
 
       {/* Employees Grid */}
-      {filteredEmployees.length === 0 ? (
+      {filteredAndSortedEmployees.length === 0 ? (
         <Card className="card-modern">
           <CardContent className="p-12 text-center">
             <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -240,7 +320,7 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-          {filteredEmployees.map((employee, index) => (
+          {filteredAndSortedEmployees.map((employee, index) => (
             <Card 
               key={employee.id} 
               className="card-modern hover-lift cursor-pointer"
