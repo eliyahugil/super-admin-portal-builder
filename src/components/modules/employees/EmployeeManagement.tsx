@@ -122,11 +122,6 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
         businessId={effectiveBusinessId}
       />
 
-      <ManagementToolsSection 
-        selectedBusinessId={effectiveBusinessId} 
-        onRefetch={handleRefetch}
-      />
-
       {!showArchived && activeEmployees.length === 0 ? (
         <EmployeeManagementEmptyState 
           businessId={effectiveBusinessId} 

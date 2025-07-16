@@ -16,7 +16,10 @@ import {
   Edit,
   Trash2,
   Eye,
-  Plus
+  Plus,
+  Settings,
+  FileText,
+  Calendar
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -77,7 +80,7 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
         <BackButton />
       </div>
       
-      {/* Header Section */}
+      {/* Header Section with Management Tools */}
       <div className="flex flex-col gap-4 items-stretch sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1">
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">רשימת עובדים</h2>
@@ -85,14 +88,40 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
             ניהול ומעקב אחר {filteredEmployees.length} עובדים
           </p>
         </div>
-        <Button 
-          onClick={() => navigate('/modules/employees/create')}
-          className="btn-primary hover-lift w-full sm:w-auto"
-          size="sm"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          הוסף עובד חדש
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            onClick={() => navigate('/modules/employees/create')}
+            className="btn-primary hover-lift"
+            size="sm"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            הוסף עובד חדש
+          </Button>
+          
+          {/* Management Tools - Compact */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                כלי ניהול
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => navigate('/modules/employees/import')}>
+                <FileText className="h-4 w-4 mr-2" />
+                ייבוא עובדים
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/modules/employees/duplicate-manager')}>
+                <Users className="h-4 w-4 mr-2" />
+                ניהול עובדים כפולים
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/modules/employees/shifts')}>
+                <Calendar className="h-4 w-4 mr-2" />
+                ניהול משמרות
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Search and Filters */}
