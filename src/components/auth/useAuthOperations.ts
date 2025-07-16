@@ -33,7 +33,7 @@ export const useAuthOperations = () => {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `https://xmhmztipuvzmwgbcovch.supabase.co/`,
         data: metadata
       }
     });
