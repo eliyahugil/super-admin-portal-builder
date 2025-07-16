@@ -45,7 +45,7 @@ site_url = "http://127.0.0.1:3000"
 additional_redirect_urls = ["https://127.0.0.1:3000"]
 jwt_expiry = 3600
 enable_signup = true
-enable_confirmations = false
+enable_confirmations = true
 
 [auth.external.apple]
 enabled = false
@@ -150,3 +150,6 @@ verify_jwt = false
 
 [functions.publish-schedule]
 verify_jwt = true
+
+[functions.send-verification-email]
+verify_jwt = false
