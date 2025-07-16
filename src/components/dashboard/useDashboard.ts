@@ -94,7 +94,8 @@ export const useDashboard = () => {
           .from('employees')
           .select('*', { count: 'exact', head: true })
           .eq('business_id', businessId)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .eq('is_archived', false);
 
         const { count: totalBranches } = await supabase
           .from('branches')

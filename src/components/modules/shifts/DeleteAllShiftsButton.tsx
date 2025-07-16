@@ -18,6 +18,8 @@ export const DeleteAllShiftsButton: React.FC = () => {
   const [error, setError] = useState('');
   const { toast } = useToast();
   const { businessId } = useCurrentBusiness();
+  
+  console.log('🗑️ DeleteAllShiftsButton rendered with businessId:', businessId);
 
   const handleDelete = async () => {
     if (password !== ADMIN_PASSWORD) {

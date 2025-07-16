@@ -10,7 +10,8 @@ export function useEmployeesOptions() {
       const { data, error } = await supabase
         .from('employees')
         .select('id, first_name, last_name')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .eq('is_archived', false);
 
       if (error) throw error;
       return data || [];

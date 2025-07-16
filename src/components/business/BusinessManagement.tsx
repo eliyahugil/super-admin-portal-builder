@@ -63,7 +63,8 @@ export const BusinessManagement: React.FC = () => {
               .from('employees')
               .select('*', { count: 'exact', head: true })
               .eq('business_id', business.id)
-              .eq('is_active', true);
+              .eq('is_active', true)
+              .eq('is_archived', false);
 
             if (error) {
               console.error(`Error counting employees for business ${business.id}:`, error);

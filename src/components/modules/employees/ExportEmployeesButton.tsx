@@ -42,6 +42,7 @@ export const ExportEmployeesButton: React.FC = () => {
           notes
         `)
         .eq('business_id', businessId)
+        .eq('is_archived', false)
         .order('created_at', { ascending: false });
 
       if (error) {

@@ -126,6 +126,7 @@ export const EmployeeLoginFlow: React.FC = () => {
         .select('*')
         .eq('phone', phone)
         .eq('is_active', true)
+        .eq('is_archived', false)
         .single();
 
       if (searchError || !employees) {
