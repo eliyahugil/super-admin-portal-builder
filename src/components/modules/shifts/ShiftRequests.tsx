@@ -56,11 +56,13 @@ export const ShiftRequests: React.FC = () => {
     queryFn: async (): Promise<ShiftRequest[]> => {
       if (!businessId) return [];
       
+      console.log('🔒 Fetching shift submissions for business:', businessId);
+      
       let query = supabase
         .from('shift_submissions')
         .select(`
           *,
-          employee:employees(first_name, last_name, business_id)
+          employee:employees!inner(first_name, last_name, business_id)
         `)
         .eq('employee.business_id', businessId)
         .order('submitted_at', { ascending: false });
