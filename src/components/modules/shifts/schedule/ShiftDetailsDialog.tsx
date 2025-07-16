@@ -407,6 +407,16 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
 
           {isEditing ? (
             <div className="space-y-4">
+              {/* Edit Shift Name/Title */}
+              <div className="space-y-2">
+                <Label>שם המשמרת</Label>
+                <Input
+                  value={editData.role}
+                  onChange={(e) => setEditData(prev => ({ ...prev, role: e.target.value }))}
+                  placeholder="הכנס שם למשמרת..."
+                />
+              </div>
+
               {/* Edit Time */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -427,14 +437,51 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                 </div>
               </div>
 
-              {/* Edit Role */}
+              {/* Display Date (Read Only) */}
               <div className="space-y-2">
-                <Label>תפקיד</Label>
-                <Input
-                  value={editData.role}
-                  onChange={(e) => setEditData(prev => ({ ...prev, role: e.target.value }))}
-                  placeholder="הכנס תפקיד..."
-                />
+                <Label>תאריך</Label>
+                <div className="p-2 bg-gray-50 rounded border text-sm">
+                  {new Date(shift.shift_date).toLocaleDateString('he-IL', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </div>
+              </div>
+
+              {/* Edit Required Employees with + / - buttons */}
+              <div className="space-y-2">
+                <Label>עובדים נדרשים</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditData(prev => ({ 
+                      ...prev, 
+                      required_employees: Math.max(1, prev.required_employees - 1) 
+                    }))}
+                    disabled={editData.required_employees <= 1}
+                  >
+                    -
+                  </Button>
+                  <div className="px-4 py-2 border rounded text-center min-w-[60px]">
+                    {editData.required_employees}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditData(prev => ({ 
+                      ...prev, 
+                      required_employees: Math.min(20, prev.required_employees + 1) 
+                    }))}
+                    disabled={editData.required_employees >= 20}
+                  >
+                    +
+                  </Button>
+                </div>
               </div>
 
               {/* Edit Employee Assignment */}
@@ -483,19 +530,6 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                 </Select>
               </div>
 
-              {/* Edit Required Employees */}
-              <div className="space-y-2">
-                <Label>כמות עובדים נדרשים</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="20"
-                  value={editData.required_employees}
-                  onChange={(e) => setEditData(prev => ({ ...prev, required_employees: Number(e.target.value) }))}
-                  placeholder="מספר עובדים נדרשים"
-                />
-              </div>
-
               {/* Edit Status */}
               <div className="space-y-2">
                 <Label>סטטוס</Label>
@@ -540,10 +574,48 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
+              {/* Shift Name Display */}
+              {shift.role && (
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-semibold text-gray-800">{shift.role}</span>
+                </div>
+              )}
+
               {/* Time Display */}
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-gray-600" />
-                <span>{shift.start_time} - {shift.end_time}</span>
+                <span className="font-medium">{shift.start_time} - {shift.end_time}</span>
+              </div>
+
+              {/* Date Display - moved to third position */}
+              <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+                <Clock className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">
+                  {new Date(shift.shift_date).toLocaleDateString('he-IL', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+
+              {/* Required Employees Display - with ability to edit inline */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">עובדים נדרשים:</span>
+                  <Badge variant="outline" className="text-lg px-3 py-1">
+                    {shift.required_employees || 1}
+                  </Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                  className="text-xs text-blue-600 hover:text-blue-800"
+                >
+                  ערוך כמות
+                </Button>
               </div>
 
               {/* Employee Display */}
@@ -580,24 +652,6 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                     {branch.is_active ? 'פעיל' : 'לא פעיל'}
                   </Badge>
                 )}
-              </div>
-
-              {/* Role Display - Enhanced with editing capability */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">תפקיד:</span>
-                  {shift.role ? (
-                    <Badge variant="secondary">{shift.role}</Badge>
-                  ) : (
-                    <span className="text-sm text-gray-500">ללא תפקיד מוגדר</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Required Employees Display */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">עובדים נדרשים:</span>
-                <Badge variant="outline">{shift.required_employees || 1}</Badge>
               </div>
 
               {/* Notes Display */}
