@@ -70,7 +70,7 @@ export const UnifiedShiftRequests: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [reviewNotes, setReviewNotes] = useState<{ [id: string]: string }>({});
-  const [activeTab, setActiveTab] = useState('approval');
+  const [activeTab, setActiveTab] = useState('view');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string>('');
   const [managerCode, setManagerCode] = useState('');
@@ -375,11 +375,7 @@ export const UnifiedShiftRequests: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="approval" className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            אישור בקשות
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="view" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             צפייה כללית
@@ -394,7 +390,7 @@ export const UnifiedShiftRequests: React.FC = () => {
           <ShiftSubmissionCalendarView />
         </TabsContent>
 
-        <TabsContent value="approval" className="mt-6 space-y-6">
+        <TabsContent value="view" className="mt-6 space-y-6">
           {/* סטטיסטיקות */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="border border-warning/20 bg-warning/5">
@@ -451,143 +447,6 @@ export const UnifiedShiftRequests: React.FC = () => {
                 className="pr-10 text-right"
               />
             </div>
-          </div>
-
-          {/* רשימת בקשות לאישור */}
-          <div className="space-y-4">
-            {pendingRequests.map(request => (
-              <Card key={request.id} className="border-l-4 border-l-warning">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <User className="h-4 w-4 text-primary" />
-                      <span className="font-semibold text-lg">{request.employee_name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteRequest(request.id)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4 ml-1" />
-                        מחק
-                      </Button>
-                      <Badge className={getStatusColor(request.status)}>
-                        {getStatusLabel(request.status)}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div className="text-right">
-                      <p className="font-medium text-sm text-muted-foreground mb-1">תאריך</p>
-                      <p className="font-semibold">{format(new Date(request.shift_date), 'dd/MM/yyyy')}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-sm text-muted-foreground mb-1">שעות</p>
-                      <p className="font-semibold">{request.start_time} - {request.end_time}</p>
-                    </div>
-                    {request.branch_preference && (
-                      <div className="text-right">
-                        <p className="font-medium text-sm text-muted-foreground mb-1">סניף מועדף</p>
-                        <p className="flex items-center gap-1 justify-end">
-                          <span>{request.branch_preference}</span>
-                          <MapPin className="h-3 w-3" />
-                        </p>
-                      </div>
-                    )}
-                    {request.role_preference && (
-                      <div className="text-right">
-                        <p className="font-medium text-sm text-muted-foreground mb-1">תפקיד מועדף</p>
-                        <p className="font-semibold">{request.role_preference}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {request.notes && (
-                    <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-                      <p className="font-medium text-sm text-muted-foreground mb-1">הערות העובד</p>
-                      <p className="text-sm">{request.notes}</p>
-                    </div>
-                  )}
-
-                  <div className="border-t pt-4 space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">הערת מנהל:</label>
-                      <Textarea
-                        placeholder="הוסף הערה (אופציונלי)..."
-                        value={reviewNotes[request.id] || ''}
-                        onChange={(e) => handleReviewNotesChange(request.id, e.target.value)}
-                        rows={2}
-                      />
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleUpdateStatus(request.id, 'approved', reviewNotes[request.id])}
-                        disabled={updateStatusMutation.isPending}
-                        className="bg-success hover:bg-success/90"
-                      >
-                        <CheckCircle className="h-4 w-4 ml-1" />
-                        אשר
-                      </Button>
-                      
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleUpdateStatus(request.id, 'rejected', reviewNotes[request.id])}
-                        disabled={updateStatusMutation.isPending}
-                      >
-                        <XCircle className="h-4 w-4 ml-1" />
-                        דחה
-                      </Button>
-                      
-                      {request.employee?.phone && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => sendWhatsApp(
-                            request.employee!.phone!,
-                            request.employee_name!,
-                            request.status,
-                            format(new Date(request.shift_date), 'dd/MM/yyyy'),
-                            reviewNotes[request.id]
-                          )}
-                        >
-                          <MessageSquare className="h-4 w-4 ml-1" />
-                          וואטסאפ
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-
-            {pendingRequests.length === 0 && (
-              <div className="text-center py-12">
-                <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">אין בקשות לאישור</h3>
-                <p className="text-muted-foreground">כל הבקשות כבר נבדקו ואושרו או נדחו</p>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="view" className="mt-6 space-y-6">
-          {/* מסננים */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="חפש לפי שם עובד..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10 text-right"
-              />
-            </div>
             
             <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
               <SelectTrigger className="w-full sm:w-48">
@@ -602,113 +461,210 @@ export const UnifiedShiftRequests: React.FC = () => {
             </Select>
           </div>
 
-          {/* רשימת כל הבקשות */}
-          <div className="space-y-4">
-            {filteredRequests.map(request => (
-              <Card key={request.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <User className="h-4 w-4 text-primary" />
-                      <span className="font-semibold text-lg">{request.employee_name}</span>
+          {/* תוכן ראשי - מימין לשמאל */}
+          <div className="flex gap-6" dir="rtl">
+            {/* רשימת בקשות - צד שמאל */}
+            <div className="flex-1 space-y-4">
+              {filteredRequests.map(request => (
+                <Card key={request.id} className="hover-scale animate-fade-in">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <User className="h-4 w-4 text-primary" />
+                        <span className="font-semibold text-lg">{request.employee_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteRequest(request.id)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4 ml-1" />
+                          מחק
+                        </Button>
+                        <Badge className={getStatusColor(request.status)}>
+                          {getStatusLabel(request.status)}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteRequest(request.id)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4 ml-1" />
-                        מחק
-                      </Button>
-                      <Badge className={getStatusColor(request.status)}>
-                        {getStatusLabel(request.status)}
-                      </Badge>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div className="text-right">
-                      <p className="font-medium text-sm text-muted-foreground mb-1">תאריך</p>
-                      <p className="font-semibold">{format(new Date(request.shift_date), 'dd/MM/yyyy')}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-sm text-muted-foreground mb-1">שעות</p>
-                      <p className="font-semibold">{request.start_time} - {request.end_time}</p>
-                    </div>
-                    {request.branch_preference && (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                       <div className="text-right">
-                        <p className="font-medium text-sm text-muted-foreground mb-1">סניף מועדף</p>
-                        <p className="flex items-center gap-1 justify-end">
-                          <span>{request.branch_preference}</span>
-                          <MapPin className="h-3 w-3" />
-                        </p>
+                        <p className="font-medium text-sm text-muted-foreground mb-1">תאריך</p>
+                        <p className="font-semibold">{format(new Date(request.shift_date), 'dd/MM/yyyy')}</p>
                       </div>
-                    )}
-                    {request.role_preference && (
                       <div className="text-right">
-                        <p className="font-medium text-sm text-muted-foreground mb-1">תפקיד מועדף</p>
-                        <p className="font-semibold">{request.role_preference}</p>
+                        <p className="font-medium text-sm text-muted-foreground mb-1">שעות</p>
+                        <p className="font-semibold">{request.start_time} - {request.end_time}</p>
                       </div>
-                    )}
-                  </div>
-
-                  {request.notes && (
-                    <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-                      <p className="font-medium text-sm text-muted-foreground mb-1">הערות העובד</p>
-                      <p className="text-sm">{request.notes}</p>
-                    </div>
-                  )}
-
-                  {request.review_notes && (
-                    <div className="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                      <p className="font-medium text-sm text-muted-foreground mb-1">הערת מנהל</p>
-                      <p className="text-sm">{request.review_notes}</p>
-                    </div>
-                  )}
-
-                  <div className="text-sm text-muted-foreground border-t pt-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <CalendarIcon className="h-4 w-4" />
-                        <span>נוצר: {format(new Date(request.created_at), 'dd/MM/yyyy HH:mm')}</span>
-                      </div>
-                      {request.reviewed_at && (
-                        <div className="flex items-center gap-1">
-                          <span>נבדק: {format(new Date(request.reviewed_at), 'dd/MM/yyyy HH:mm')}</span>
+                      {request.branch_preference && (
+                        <div className="text-right">
+                          <p className="font-medium text-sm text-muted-foreground mb-1">סניף מועדף</p>
+                          <p className="flex items-center gap-1 justify-end">
+                            <span>{request.branch_preference}</span>
+                            <MapPin className="h-3 w-3" />
+                          </p>
+                        </div>
+                      )}
+                      {request.role_preference && (
+                        <div className="text-right">
+                          <p className="font-medium text-sm text-muted-foreground mb-1">תפקיד מועדף</p>
+                          <p className="font-semibold">{request.role_preference}</p>
                         </div>
                       )}
                     </div>
-                  </div>
 
-                  {request.status !== 'pending' && request.employee?.phone && (
-                    <div className="border-t pt-3 mt-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => sendWhatsApp(
-                          request.employee!.phone!,
-                          request.employee_name!,
-                          request.status,
-                          format(new Date(request.shift_date), 'dd/MM/yyyy'),
-                          request.review_notes
+                    {request.notes && (
+                      <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+                        <p className="font-medium text-sm text-muted-foreground mb-1">הערות העובד</p>
+                        <p className="text-sm">{request.notes}</p>
+                      </div>
+                    )}
+
+                    {request.review_notes && (
+                      <div className="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                        <p className="font-medium text-sm text-muted-foreground mb-1">הערת מנהל</p>
+                        <p className="text-sm">{request.review_notes}</p>
+                      </div>
+                    )}
+
+                    <div className="text-sm text-muted-foreground border-t pt-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <CalendarIcon className="h-4 w-4" />
+                          <span>נוצר: {format(new Date(request.created_at), 'dd/MM/yyyy HH:mm')}</span>
+                        </div>
+                        {request.reviewed_at && (
+                          <div className="flex items-center gap-1">
+                            <span>נבדק: {format(new Date(request.reviewed_at), 'dd/MM/yyyy HH:mm')}</span>
+                          </div>
                         )}
-                      >
-                        <MessageSquare className="h-4 w-4 ml-1" />
-                        שלח עדכון בוואטסאפ
-                      </Button>
+                      </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
 
-            {filteredRequests.length === 0 && (
-              <div className="text-center py-12">
-                <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">אין בקשות משמרות</h3>
-                <p className="text-muted-foreground">לא נמצאו בקשות במערכת</p>
+                    {request.status !== 'pending' && request.employee?.phone && (
+                      <div className="border-t pt-3 mt-3">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => sendWhatsApp(
+                            request.employee!.phone!,
+                            request.employee_name!,
+                            request.status,
+                            format(new Date(request.shift_date), 'dd/MM/yyyy'),
+                            request.review_notes
+                          )}
+                        >
+                          <MessageSquare className="h-4 w-4 ml-1" />
+                          שלח עדכון בוואטסאפ
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+
+              {filteredRequests.length === 0 && (
+                <div className="text-center py-12 animate-fade-in">
+                  <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">אין בקשות משמרות</h3>
+                  <p className="text-muted-foreground">לא נמצאו בקשות במערכת</p>
+                </div>
+              )}
+            </div>
+
+            {/* פאנל אישור - צד ימין */}
+            {pendingRequests.length > 0 && (
+              <div className="w-80 space-y-4 animate-slide-in-right">
+                <Card className="sticky top-4 border-warning/20 bg-warning/5">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <CheckCircle className="h-5 w-5 text-warning" />
+                      <h3 className="text-lg font-semibold">אישור בקשות</h3>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {pendingRequests.slice(0, 3).map(request => (
+                        <Card key={`approval-${request.id}`} className="border-warning/30">
+                          <CardContent className="p-4">
+                            <div className="text-right mb-3">
+                              <p className="font-medium">{request.employee_name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {format(new Date(request.shift_date), 'dd/MM/yyyy')} • 
+                                {request.start_time} - {request.end_time}
+                              </p>
+                            </div>
+
+                            <div className="space-y-3">
+                              <Textarea
+                                placeholder="הערת מנהל (אופציונלי)..."
+                                value={reviewNotes[request.id] || ''}
+                                onChange={(e) => handleReviewNotesChange(request.id, e.target.value)}
+                                rows={2}
+                                className="text-right text-sm"
+                              />
+                              
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(request.id, 'approved', reviewNotes[request.id])}
+                                  disabled={updateStatusMutation.isPending}
+                                  className="flex-1 bg-success hover:bg-success/90 text-white"
+                                >
+                                  <CheckCircle className="h-4 w-4 ml-1" />
+                                  אשר
+                                </Button>
+                                
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleUpdateStatus(request.id, 'rejected', reviewNotes[request.id])}
+                                  disabled={updateStatusMutation.isPending}
+                                  className="flex-1"
+                                >
+                                  <XCircle className="h-4 w-4 ml-1" />
+                                  דחה
+                                </Button>
+                              </div>
+
+                              {request.employee?.phone && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => sendWhatsApp(
+                                    request.employee!.phone!,
+                                    request.employee_name!,
+                                    request.status,
+                                    format(new Date(request.shift_date), 'dd/MM/yyyy'),
+                                    reviewNotes[request.id]
+                                  )}
+                                  className="w-full"
+                                >
+                                  <MessageSquare className="h-4 w-4 ml-1" />
+                                  וואטסאפ
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+
+                      {pendingRequests.length > 3 && (
+                        <p className="text-sm text-muted-foreground text-center">
+                          ועוד {pendingRequests.length - 3} בקשות...
+                        </p>
+                      )}
+
+                      {pendingRequests.length === 0 && (
+                        <div className="text-center py-8">
+                          <CheckCircle className="h-8 w-8 text-success mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground">אין בקשות לאישור</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </div>
