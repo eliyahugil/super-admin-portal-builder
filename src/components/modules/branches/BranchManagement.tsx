@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building, MapPin, Users, Settings, Plus, Edit } from 'lucide-react';
+import { Building, MapPin, Users, Settings, Plus, Edit, Archive } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { BranchDialog } from './BranchDialog';
 import { BranchRoles } from './BranchRoles';
+import { BranchArchiveButton } from './BranchArchiveButton';
+import { GenericArchivedList } from '@/components/shared/GenericArchivedList';
 import type { Branch } from '../shifts/schedule/types';
 
 export const BranchManagement: React.FC = () => {
@@ -72,7 +74,7 @@ export const BranchManagement: React.FC = () => {
       </div>
 
       <Tabs defaultValue="branches" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
+        <TabsList className="grid w-full grid-cols-3 max-w-lg mb-6">
           <TabsTrigger value="branches" className="flex items-center gap-2">
             <Building className="h-4 w-4" />
             סניפים
@@ -80,6 +82,10 @@ export const BranchManagement: React.FC = () => {
           <TabsTrigger value="roles" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             תפקידים
+          </TabsTrigger>
+          <TabsTrigger value="archive" className="flex items-center gap-2">
+            <Archive className="h-4 w-4" />
+            ארכיון
           </TabsTrigger>
         </TabsList>
 
@@ -155,6 +161,10 @@ export const BranchManagement: React.FC = () => {
                     >
                       צפה בעובדים
                     </Button>
+                    <BranchArchiveButton 
+                      branch={branch}
+                      onSuccess={refetch}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -176,6 +186,30 @@ export const BranchManagement: React.FC = () => {
 
         <TabsContent value="roles">
           <BranchRoles />
+        </TabsContent>
+
+        <TabsContent value="archive">
+          <GenericArchivedList
+            tableName="branches"
+            entityName="סניף"
+            entityNamePlural="סניפים"
+            queryKey={['branches-archived']}
+            getEntityDisplayName={(branch) => branch.name}
+            renderEntityCard={(branch) => (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Building className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">{branch.name}</span>
+                </div>
+                {branch.address && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <MapPin className="h-3 w-3" />
+                    <span>{branch.address}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          />
         </TabsContent>
       </Tabs>
 

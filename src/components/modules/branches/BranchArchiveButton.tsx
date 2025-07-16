@@ -8,13 +8,15 @@ interface BranchArchiveButtonProps {
   isArchived?: boolean;
   variant?: 'default' | 'ghost' | 'outline';
   size?: 'sm' | 'default' | 'lg';
+  onSuccess?: () => void;
 }
 
 export const BranchArchiveButton: React.FC<BranchArchiveButtonProps> = ({
   branch,
   isArchived = false,
   variant = 'outline',
-  size = 'sm'
+  size = 'sm',
+  onSuccess
 }) => {
   return (
     <GenericArchiveButton
@@ -26,6 +28,7 @@ export const BranchArchiveButton: React.FC<BranchArchiveButtonProps> = ({
       isArchived={isArchived}
       variant={variant}
       size={size}
+      onSuccess={onSuccess}
     />
   );
 };
