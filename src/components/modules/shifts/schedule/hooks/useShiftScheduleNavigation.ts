@@ -2,7 +2,14 @@
 import { useState, useCallback } from 'react';
 
 export const useShiftScheduleNavigation = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // Start with next week instead of current week
+  const getNextWeek = () => {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    return nextWeek;
+  };
+  
+  const [currentDate, setCurrentDate] = useState(getNextWeek());
 
   const navigateDate = useCallback((direction: -1 | 0 | 1) => {
     const newDate = new Date(currentDate);
