@@ -302,7 +302,8 @@
   .form-rtl input,
   .form-rtl textarea,
   .form-rtl select {
-    @apply text-right direction-rtl;
+    @apply text-right;
+    direction: rtl;
   }
 
   .form-rtl .form-label {
