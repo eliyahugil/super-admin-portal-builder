@@ -33,7 +33,10 @@ export const ShiftManagementTable: React.FC<ShiftManagementTableProps> = ({ busi
     handlePageChange,
     handlePageSizeChange,
     handleStatusUpdate,
-    refetch
+    refetch,
+    newShiftsCount,
+    markAllAsSeen,
+    isMarking
   } = useShiftTableLogic(businessId);
 
   console.log('🗓️ ShiftManagementTable rendering with:', {
@@ -60,6 +63,8 @@ export const ShiftManagementTable: React.FC<ShiftManagementTableProps> = ({ busi
         <ShiftTableHeader 
           totalShifts={shifts.length}
           filteredCount={filteredShifts.length}
+          newShiftsCount={newShiftsCount}
+          onMarkAllAsSeen={markAllAsSeen}
         />
         
         <ShiftTableFilters

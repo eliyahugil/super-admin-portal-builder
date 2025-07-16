@@ -26,16 +26,30 @@ export const useShiftTableData = (businessId?: string) => {
       console.log('📊 Fetching shifts for business:', businessId);
       
       let query = supabase
-        .from('employee_shift_requests')
+        .from('scheduled_shifts')
         .select(`
-          *,
-          employee:employees(first_name, last_name, business_id)
+          id,
+          business_id,
+          shift_date,
+          start_time,
+          end_time,
+          employee_id,
+          branch_id,
+          role,
+          notes,
+          status,
+          is_assigned,
+          is_archived,
+          created_at,
+          updated_at,
+          is_new,
+          employee:employees(first_name, last_name, business_id),
+          branch:branches(name)
         `)
+        .eq('business_id', businessId || '')
         .order('shift_date', { ascending: false });
 
-      if (businessId) {
-        query = query.eq('employee.business_id', businessId);
-      }
+      // Business ID is already filtered in the main query
 
       const { data, error } = await query;
       if (error) {
@@ -45,19 +59,22 @@ export const useShiftTableData = (businessId?: string) => {
 
       const formattedData: ShiftData[] = (data || []).map(shift => ({
         id: shift.id,
-        employee_id: shift.employee_id,
-        employee_name: `${shift.employee?.first_name || ''} ${shift.employee?.last_name || ''}`.trim(),
+        employee_id: shift.employee_id || '',
+        employee_name: shift.employee 
+          ? `${shift.employee.first_name || ''} ${shift.employee.last_name || ''}`.trim() 
+          : 'לא משוייך',
         shift_date: shift.shift_date,
         start_time: shift.start_time,
         end_time: shift.end_time,
         status: mapStatusToUnion(shift.status),
-        branch_name: shift.branch_preference,
-        branch_preference: shift.branch_preference,
-        role_preference: shift.role_preference,
+        branch_name: shift.branch?.name || '',
+        branch_preference: shift.branch?.name || '',
+        role_preference: shift.role || '',
         notes: shift.notes,
         created_at: shift.created_at,
-        reviewed_at: shift.reviewed_at,
-        reviewed_by: shift.reviewed_by,
+        reviewed_at: shift.updated_at,
+        reviewed_by: '',
+        is_new: shift.is_new || false,
       }));
 
       console.log('✅ Fetched shifts:', formattedData.length);

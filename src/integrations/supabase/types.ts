@@ -3093,6 +3093,7 @@ export type Database = {
           id: string
           is_archived: boolean
           is_assigned: boolean | null
+          is_new: boolean | null
           notes: string | null
           role: string | null
           shift_date: string
@@ -3110,6 +3111,7 @@ export type Database = {
           id?: string
           is_archived?: boolean
           is_assigned?: boolean | null
+          is_new?: boolean | null
           notes?: string | null
           role?: string | null
           shift_date: string
@@ -3127,6 +3129,7 @@ export type Database = {
           id?: string
           is_archived?: boolean
           is_assigned?: boolean | null
+          is_new?: boolean | null
           notes?: string | null
           role?: string | null
           shift_date?: string
@@ -4235,6 +4238,10 @@ export type Database = {
       is_super_admin: {
         Args: { user_id: string }
         Returns: boolean
+      }
+      mark_all_shifts_as_seen: {
+        Args: { business_id_param: string }
+        Returns: number
       }
       select_from_table: {
         Args: {

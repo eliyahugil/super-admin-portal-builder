@@ -5,7 +5,8 @@ import {
   useShiftTableFilters,
   useShiftTableSorting,
   useShiftTablePagination,
-  useShiftTableActions
+  useShiftTableActions,
+  useMarkAllShiftsAsSeen
 } from './hooks';
 
 export const useShiftTableLogic = (businessId?: string) => {
@@ -47,6 +48,10 @@ export const useShiftTableLogic = (businessId?: string) => {
 
   // Actions
   const { handleStatusUpdate } = useShiftTableActions(refetch);
+  const { markAllAsSeen, isMarking } = useMarkAllShiftsAsSeen(businessId);
+
+  // Calculate new shifts count
+  const newShiftsCount = shifts.filter(shift => shift.is_new).length;
 
   // Reset page when filters change
   useEffect(() => {
@@ -74,6 +79,9 @@ export const useShiftTableLogic = (businessId?: string) => {
     handlePageChange,
     handlePageSizeChange,
     handleStatusUpdate,
-    refetch
+    refetch,
+    newShiftsCount,
+    markAllAsSeen,
+    isMarking
   };
 };

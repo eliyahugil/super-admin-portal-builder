@@ -96,8 +96,7 @@ export const ShiftTableContent: React.FC<ShiftTableContentProps> = ({
               תאריך משמרת
               {getSortIcon('shift_date')}
             </TableHead>
-            <TableHead>זמן התחלה</TableHead>
-            <TableHead>זמן סיום</TableHead>
+            <TableHead>שעות המשמרת</TableHead>
             <TableHead>סניף</TableHead>
             <TableHead>תפקיד</TableHead>
             <TableHead 
@@ -125,8 +124,16 @@ export const ShiftTableContent: React.FC<ShiftTableContentProps> = ({
                 {shift.employee_name || 'לא משוייך'}
               </TableCell>
               <TableCell>{formatDate(shift.shift_date)}</TableCell>
-              <TableCell>{formatTime(shift.start_time)}</TableCell>
-              <TableCell>{formatTime(shift.end_time)}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">{formatTime(shift.start_time)}</span>
+                  <span className="text-gray-400">-</span>
+                  <span className="font-medium">{formatTime(shift.end_time)}</span>
+                  {shift.is_new && (
+                    <span className="bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded mr-2">חדש</span>
+                  )}
+                </div>
+              </TableCell>
               <TableCell>{shift.branch_name || '-'}</TableCell>
               <TableCell>{shift.role_preference || '-'}</TableCell>
               <TableCell>{getStatusBadge(shift.status)}</TableCell>

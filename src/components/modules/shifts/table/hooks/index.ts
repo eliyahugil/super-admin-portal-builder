@@ -4,3 +4,4 @@ export { useShiftTableFilters } from './useShiftTableFilters';
 export { useShiftTableSorting } from './useShiftTableSorting';
 export { useShiftTablePagination } from './useShiftTablePagination';
 export { useShiftTableActions } from './useShiftTableActions';
+export { useMarkAllShiftsAsSeen } from './useMarkAllShiftsAsSeen';

@@ -14,6 +14,7 @@ export interface ShiftData {
   created_at: string;
   reviewed_at?: string;
   reviewed_by?: string;
+  is_new?: boolean;
 }
 
 export type ShiftSortBy = 'employee_name' | 'shift_date' | 'status' | 'created_at';
