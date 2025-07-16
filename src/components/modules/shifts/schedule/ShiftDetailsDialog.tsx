@@ -379,7 +379,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]" dir="rtl">
+      <DialogContent className="max-w-[95vw] sm:max-w-[500px] max-h-[95vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>פרטי משמרת</span>
@@ -418,7 +418,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               </div>
 
               {/* Edit Time */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>שעת התחלה</Label>
                   <Input
@@ -563,11 +563,11 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               </div>
 
               {/* Edit Actions */}
-              <div className="flex gap-2">
-                <Button onClick={handleUpdate} disabled={isUpdating}>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button onClick={handleUpdate} disabled={isUpdating} className="w-full sm:w-auto">
                   {isUpdating ? 'שומר...' : 'שמור שינויים'}
                 </Button>
-                <Button variant="outline" onClick={() => setIsEditing(false)}>
+                <Button variant="outline" onClick={() => setIsEditing(false)} className="w-full sm:w-auto">
                   ביטול
                 </Button>
               </div>
@@ -663,10 +663,11 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               )}
 
               {/* Actions */}
-              <div className="flex gap-2 pt-4">
+              <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <Button
                   variant="outline"
                   onClick={() => setIsEditing(true)}
+                  className="w-full sm:w-auto"
                 >
                   <Edit className="h-3 w-3 mr-1" />
                   ערוך
@@ -675,11 +676,12 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                   variant="destructive"
                   onClick={handleDelete}
                   disabled={isDeleting}
+                  className="w-full sm:w-auto"
                 >
                   <Trash2 className="h-3 w-3 mr-1" />
                   {isDeleting ? 'מוחק...' : 'מחק'}
                 </Button>
-                <Button variant="outline" onClick={onClose}>
+                <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
                   סגור
                 </Button>
                 {/* Show Available Employees Button */}
@@ -687,6 +689,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                   <Button 
                     variant="outline"
                     onClick={() => setShowAvailableEmployees(!showAvailableEmployees)}
+                    className="w-full sm:w-auto"
                   >
                     {showAvailableEmployees ? 'הסתר' : 'הצג'} עובדים פנויים
                   </Button>
