@@ -331,7 +331,11 @@ export const UnifiedShiftRequests: React.FC = () => {
   };
 
   const confirmDelete = () => {
+    console.log('🔍 confirmDelete called - קוד שהוזן:', managerCode);
+    console.log('🔍 selectedRequestId:', selectedRequestId);
+    
     if (!managerCode || managerCode !== '130898') {
+      console.log('❌ קוד מנהל שגוי:', managerCode);
       toast({
         title: 'שגיאה',
         description: 'קוד מנהל שגוי',
@@ -340,6 +344,7 @@ export const UnifiedShiftRequests: React.FC = () => {
       return;
     }
 
+    console.log('✅ קוד מנהל נכון, מתחיל מחיקה...');
     deleteRequestMutation.mutate(selectedRequestId);
   };
 
