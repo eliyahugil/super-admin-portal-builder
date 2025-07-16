@@ -22,9 +22,11 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
   // השתמש תמיד ב-business ID מהקונטקסט כדי להבטיח עדכון אוטומטי
   const effectiveBusinessId = currentBusinessId;
   
-  console.log('📊 EmployeeManagement: Business ID from useBusinessId:', {
+  console.log('📊 EmployeeManagement: Business ID comparison:', {
+    selectedBusinessId,
     currentBusinessId,
-    effectiveBusinessId
+    effectiveBusinessId,
+    timestamp: new Date().toISOString()
   });
   
   // עדכון רענון אוטומטי כשמשתנה business ID

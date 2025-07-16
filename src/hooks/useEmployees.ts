@@ -31,7 +31,7 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
   const effectiveBusinessId = selectedBusinessId || contextBusinessId;
 
   return useQuery({
-    queryKey: ['employees', effectiveBusinessId],
+    queryKey: ['employees', effectiveBusinessId, 'active-only'],
     queryFn: async (): Promise<Employee[]> => {
       if (!effectiveBusinessId) {
         console.log('❌ No business ID available for employees');

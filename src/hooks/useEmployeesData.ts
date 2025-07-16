@@ -20,7 +20,7 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
   });
 
   return useQuery({
-    queryKey: ['employees', targetBusinessId, profile?.role],
+    queryKey: ['employees', targetBusinessId, profile?.role, profile?.id],
     queryFn: async (): Promise<Employee[]> => {
       console.log('📊 useEmployeesData - Starting query...');
       

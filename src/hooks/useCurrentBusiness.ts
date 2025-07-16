@@ -50,8 +50,12 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
       currentBusinessId: businessId
     });
     
-    // עדכון מיידי של הstate
+    // עדכון מיידי של הstate עם כפיית רינדור
     setBusinessId(newBusinessId);
+    
+    // **מיידי** - אילוץ רענון כל ה-queries לפני שמירה ב-localStorage
+    queryClient.cancelQueries();
+    queryClient.clear();
     
     // שמירה ב-localStorage
     if (newBusinessId) {
@@ -90,30 +94,31 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
     // אילוץ רענון מיידי של כל הנתונים תלויי העסק
     console.log('🔄 Forcing invalidation of all business-related queries...');
     
-    // ביטול כל ה-queries הקודמים
+    // ביטול כל ה-queries הקודמים וכפיית רענון מיידי
     queryClient.cancelQueries();
+    queryClient.clear(); // זה יכלול את כל הקאש
     
-    // רענון כל הqueries שתלויים בbusiness ID
-    queryClient.invalidateQueries();
+    // כפוי רענון מיידי של queries חשובים - ללא timeout
+    queryClient.invalidateQueries({
+      predicate: (query) => {
+        const key = query.queryKey;
+        return Array.isArray(key) && (
+          key.includes('employees') ||
+          key.includes('branches') ||
+          key.includes('employee-stats') ||
+          key.includes('existing-employees-full') ||
+          key.includes('employees-data') ||
+          key.includes('secure-business-data') ||
+          key.some(item => typeof item === 'string' && item.includes('business'))
+        );
+      }
+    });
     
-    // כפוי רענון מיידי של queries חשובים
+    // רענון מיידי נוסף
     setTimeout(() => {
-      queryClient.refetchQueries({
-        predicate: (query) => {
-          const key = query.queryKey;
-          return Array.isArray(key) && (
-            key.includes('employees') ||
-            key.includes('branches') ||
-            key.includes('employee-stats') ||
-            key.includes('existing-employees-full') ||
-            key.includes('employees-data') ||
-            key.includes('secure-business-data') ||
-            key.some(item => typeof item === 'string' && item.includes('business'))
-          );
-        }
-      });
-    }, 100);
-  }, [userBusinesses, isSuperAdmin, queryClient]);
+      queryClient.refetchQueries();
+    }, 50);
+  }, [userBusinesses, isSuperAdmin, queryClient, businessId]);
 
   useEffect(() => {
     setError(null);

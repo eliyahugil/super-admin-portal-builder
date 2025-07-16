@@ -8,7 +8,7 @@ export const useEmployeeStats = (selectedBusinessId?: string | null) => {
   const effectiveBusinessId = selectedBusinessId || contextBusinessId;
 
   return useQuery({
-    queryKey: ['employee-stats', effectiveBusinessId],
+    queryKey: ['employee-stats', effectiveBusinessId, 'all-stats'],
     queryFn: async () => {
       if (!effectiveBusinessId) {
         return {
