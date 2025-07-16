@@ -23,7 +23,7 @@ import {
   Eye,
   CalendarDays
 } from 'lucide-react';
-import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { useBusinessId } from '@/hooks/useBusinessId';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ShiftSubmissionCalendarView } from './ShiftSubmissionCalendarView';
@@ -48,7 +48,9 @@ export const ShiftRequests: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { businessId } = useCurrentBusiness();
+  const businessId = useBusinessId();
+  
+  console.log('📊 ShiftRequests: Current business ID:', businessId);
 
   // Fetch shift submissions (which are the actual weekly submissions)
   const { data: requests = [], isLoading } = useQuery({

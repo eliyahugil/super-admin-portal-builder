@@ -11,7 +11,7 @@ import {
   Clock,
   MapPin
 } from 'lucide-react';
-import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { useBusinessId } from '@/hooks/useBusinessId';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -33,7 +33,9 @@ interface ShiftSubmission {
 
 export const ShiftSubmissionCalendarView: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { businessId } = useCurrentBusiness();
+  const businessId = useBusinessId();
+  
+  console.log('📅 ShiftSubmissionCalendarView: Current business ID:', businessId);
 
   // Fetch shift submissions for the current month
   const { data: submissions = [], isLoading } = useQuery({
@@ -48,7 +50,7 @@ export const ShiftSubmissionCalendarView: React.FC = () => {
         .from('shift_submissions')
         .select(`
           *,
-          employee:employees(first_name, last_name, business_id)
+          employee:employees!inner(first_name, last_name, business_id)
         `)
         .eq('employee.business_id', businessId)
         .gte('week_start_date', format(monthStart, 'yyyy-MM-dd'))
