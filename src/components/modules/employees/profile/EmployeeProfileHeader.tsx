@@ -4,6 +4,7 @@ import { CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
 import { EmployeeEditButton } from '../edit/EmployeeEditButton';
 import { EmployeeToggleActiveButton } from '../EmployeeToggleActiveButton';
+import { EmployeeArchiveButton } from '../EmployeeArchiveButton';
 import { EmployeeNavigationButtons } from './EmployeeNavigationButtons';
 import { useEmployeeNavigation } from './useEmployeeNavigation';
 import type { Employee } from '@/types/employee';
@@ -39,6 +40,11 @@ export const EmployeeProfileHeader: React.FC<EmployeeProfileHeaderProps> = ({
           </div>
         </div>
         <div className="flex gap-2">
+          <EmployeeArchiveButton 
+            employee={employee} 
+            isArchived={employee.is_archived}
+            onSuccess={onEmployeeUpdated}
+          />
           <EmployeeToggleActiveButton 
             employee={employee} 
             onSuccess={onEmployeeUpdated}
