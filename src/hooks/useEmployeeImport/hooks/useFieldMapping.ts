@@ -40,8 +40,10 @@ export const useFieldMapping = ({
 }: UseFieldMappingProps) => {
   
   const findExistingEmployee = (importedEmployee: any) => {
-    // Enhanced duplicate detection with better matching
+    // Enhanced duplicate detection with better matching and priority scoring
     let existingEmployee = null;
+    let matchScore = 0;
+    let matchReason = '';
     
     console.log('🔍 Searching for existing employee:', {
       email: importedEmployee.email,
@@ -51,55 +53,105 @@ export const useFieldMapping = ({
       name: `${importedEmployee.first_name || ''} ${importedEmployee.last_name || ''}`.trim()
     });
     
-    // 1. Email matching (most reliable)
-    if (importedEmployee.email && importedEmployee.email.trim() !== '') {
-      const email = importedEmployee.email.toLowerCase().trim();
-      existingEmployee = existingEmployees.find(emp => 
-        emp.email && emp.email.toLowerCase().trim() === email
-      );
-      if (existingEmployee) {
-        console.log(`✅ Found existing employee by email: ${existingEmployee.email} (ID: ${existingEmployee.id})`);
-        return existingEmployee;
-      }
-    }
+    // Track all potential matches for better reporting
+    const potentialMatches: { employee: any; score: number; reason: string }[] = [];
     
-    // 2. ID number matching
-    if (importedEmployee.id_number && importedEmployee.id_number.trim() !== '') {
-      const idNumber = importedEmployee.id_number.trim();
-      existingEmployee = existingEmployees.find(emp => 
-        emp.id_number && emp.id_number.trim() === idNumber
-      );
-      if (existingEmployee) {
-        console.log(`✅ Found existing employee by ID number: ${existingEmployee.id_number} (ID: ${existingEmployee.id})`);
-        return existingEmployee;
+    existingEmployees.forEach(emp => {
+      let currentScore = 0;
+      const matchReasons: string[] = [];
+      
+      // 1. Email matching (highest priority - score 100)
+      if (importedEmployee.email && importedEmployee.email.trim() !== '' && 
+          emp.email && emp.email.toLowerCase().trim() === importedEmployee.email.toLowerCase().trim()) {
+        currentScore += 100;
+        matchReasons.push('אימייל זהה');
       }
-    }
-    
-    // 3. Employee ID matching  
-    if (importedEmployee.employee_id && importedEmployee.employee_id.trim() !== '') {
-      const employeeId = importedEmployee.employee_id.trim();
-      existingEmployee = existingEmployees.find(emp => 
-        emp.employee_id && emp.employee_id.trim() === employeeId
-      );
-      if (existingEmployee) {
-        console.log(`✅ Found existing employee by employee ID: ${existingEmployee.employee_id} (ID: ${existingEmployee.id})`);
-        return existingEmployee;
+      
+      // 2. ID number matching (very high priority - score 95)
+      if (importedEmployee.id_number && importedEmployee.id_number.trim() !== '' &&
+          emp.id_number && emp.id_number.trim() === importedEmployee.id_number.trim()) {
+        currentScore += 95;
+        matchReasons.push('תעודת זהות זהה');
       }
-    }
-    
-    // 4. Phone matching (if available)
-    if (importedEmployee.phone && importedEmployee.phone.trim() !== '') {
-      const phone = importedEmployee.phone.trim().replace(/\D/g, ''); // Remove non-digits
-      if (phone.length >= 9) { // Israeli phone numbers
-        existingEmployee = existingEmployees.find(emp => {
-          if (!emp.phone) return false;
-          const existingPhone = emp.phone.trim().replace(/\D/g, '');
-          return existingPhone === phone;
-        });
-        if (existingEmployee) {
-          console.log(`✅ Found existing employee by phone: ${existingEmployee.phone} (ID: ${existingEmployee.id})`);
-          return existingEmployee;
+      
+      // 3. Employee ID matching (high priority - score 90)
+      if (importedEmployee.employee_id && importedEmployee.employee_id.trim() !== '' &&
+          emp.employee_id && emp.employee_id.trim() === importedEmployee.employee_id.trim()) {
+        currentScore += 90;
+        matchReasons.push('מספר עובד זהה');
+      }
+      
+      // 4. Phone matching (medium-high priority - score 80)
+      if (importedEmployee.phone && importedEmployee.phone.trim() !== '' && emp.phone) {
+        const importedPhone = importedEmployee.phone.trim().replace(/\D/g, '');
+        const existingPhone = emp.phone.trim().replace(/\D/g, '');
+        if (importedPhone.length >= 9 && existingPhone === importedPhone) {
+          currentScore += 80;
+          matchReasons.push('מספר טלפון זהה');
         }
+      }
+      
+      // 5. Full name matching (medium priority - score 70)
+      if (importedEmployee.first_name && importedEmployee.last_name && 
+          emp.first_name && emp.last_name) {
+        const importedFullName = `${importedEmployee.first_name} ${importedEmployee.last_name}`.toLowerCase().trim();
+        const existingFullName = `${emp.first_name} ${emp.last_name}`.toLowerCase().trim();
+        if (importedFullName === existingFullName) {
+          currentScore += 70;
+          matchReasons.push('שם מלא זהה');
+        }
+      }
+      
+      // 6. Similar names (lower priority - score 40)
+      if (importedEmployee.first_name && importedEmployee.last_name && 
+          emp.first_name && emp.last_name && currentScore === 0) {
+        const firstNameSimilar = 
+          importedEmployee.first_name.toLowerCase().includes(emp.first_name.toLowerCase()) ||
+          emp.first_name.toLowerCase().includes(importedEmployee.first_name.toLowerCase());
+        const lastNameSimilar = 
+          importedEmployee.last_name.toLowerCase().includes(emp.last_name.toLowerCase()) ||
+          emp.last_name.toLowerCase().includes(importedEmployee.last_name.toLowerCase());
+        
+        if (firstNameSimilar && lastNameSimilar) {
+          currentScore += 40;
+          matchReasons.push('שמות דומים');
+        }
+      }
+      
+      // Store potential match if score is significant
+      if (currentScore >= 40) {
+        potentialMatches.push({
+          employee: emp,
+          score: currentScore,
+          reason: matchReasons.join(', ')
+        });
+      }
+    });
+    
+    // Sort by score and pick the best match
+    potentialMatches.sort((a, b) => b.score - a.score);
+    
+    if (potentialMatches.length > 0) {
+      const bestMatch = potentialMatches[0];
+      
+      // Only consider it a definitive match if score is high enough
+      if (bestMatch.score >= 80) {
+        console.log(`✅ Found existing employee (score: ${bestMatch.score}): ${bestMatch.reason} - ${bestMatch.employee.first_name} ${bestMatch.employee.last_name} (ID: ${bestMatch.employee.id})`);
+        
+        // Log if there are multiple strong matches (potential data quality issue)
+        if (potentialMatches.length > 1 && potentialMatches[1].score >= 70) {
+          console.warn(`⚠️ Multiple potential matches found for employee - this might indicate data quality issues:`, 
+            potentialMatches.map(m => ({ 
+              name: `${m.employee.first_name} ${m.employee.last_name}`, 
+              score: m.score, 
+              reason: m.reason 
+            }))
+          );
+        }
+        
+        return bestMatch.employee;
+      } else {
+        console.log(`⚠️ Potential match found but score too low (${bestMatch.score}): ${bestMatch.reason}`);
       }
     }
     
