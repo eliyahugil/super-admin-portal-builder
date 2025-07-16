@@ -7,7 +7,8 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Plus, Filter, MoreVertical, Calendar, Users, Trash2 } from 'lucide-react';
+import { Plus, Filter, MoreVertical, Calendar, Users, Trash2, Edit, CheckSquare } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { DeleteAllShiftsButton } from '../../DeleteAllShiftsButton';
 
 interface ScheduleActionsProps {
@@ -17,7 +18,14 @@ interface ScheduleActionsProps {
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
   isMobile: boolean;
+  // Bulk edit props
+  isSelectionMode?: boolean;
+  setIsSelectionMode?: (mode: boolean) => void;
+  selectedShifts?: any[];
+  onBulkEdit?: () => void;
   onBulkDelete?: () => void;
+  onSelectAll?: () => void;
+  onClearSelection?: () => void;
 }
 
 export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
@@ -27,8 +35,64 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
   mobileMenuOpen,
   setMobileMenuOpen,
   isMobile,
-  onBulkDelete
+  isSelectionMode = false,
+  setIsSelectionMode,
+  selectedShifts = [],
+  onBulkEdit,
+  onBulkDelete,
+  onSelectAll,
+  onClearSelection
 }) => {
+  
+  if (isSelectionMode) {
+    return (
+      <div className="flex items-center gap-2">
+        <Badge variant="secondary" className="px-3 py-1">
+          {selectedShifts.length} נבחרו
+        </Badge>
+        
+        {selectedShifts.length > 0 && (
+          <>
+            <Button 
+              onClick={onBulkEdit} 
+              size="sm" 
+              variant="outline"
+              className="flex items-center gap-1"
+            >
+              <Edit className="h-3 w-3" />
+              ערוך
+            </Button>
+            <Button 
+              onClick={onBulkDelete} 
+              size="sm" 
+              variant="destructive"
+              className="flex items-center gap-1"
+            >
+              <Trash2 className="h-3 w-3" />
+              מחק
+            </Button>
+          </>
+        )}
+        
+        <Button 
+          onClick={onSelectAll} 
+          size="sm" 
+          variant="ghost"
+        >
+          בחר הכל
+        </Button>
+        
+        <Button 
+          onClick={onClearSelection} 
+          size="sm" 
+          variant="ghost"
+        >
+          בטל בחירה
+        </Button>
+      </div>
+    );
+  }
+
   if (isMobile) {
     return (
       <div className="flex items-center gap-2">
@@ -50,6 +114,10 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
             <DropdownMenuItem onClick={() => setShowCreateDialog(true)}>
               <Plus className="h-4 w-4 ml-2" />
               יצירת משמרות
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsSelectionMode?.(true)}>
+              <CheckSquare className="h-4 w-4 ml-2" />
+              עריכה מרובה
             </DropdownMenuItem>
             <DropdownMenuItem>
               <DeleteAllShiftsButton />
@@ -77,6 +145,14 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
       >
         <Plus className="h-4 w-4 mr-2" />
         יצירת משמרות
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setIsSelectionMode?.(true)}
+      >
+        <CheckSquare className="h-4 w-4 mr-2" />
+        עריכה מרובה
       </Button>
       <DeleteAllShiftsButton />
     </div>

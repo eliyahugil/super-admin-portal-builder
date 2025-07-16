@@ -77,4 +77,8 @@ export interface ShiftScheduleViewProps {
   onShiftUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => Promise<void>;
   onAddShift: (date: Date) => void;
   onShiftDelete?: (shiftId: string) => Promise<void>;
+  // Bulk edit props
+  isSelectionMode?: boolean;
+  selectedShifts?: ShiftScheduleData[];
+  onShiftSelection?: (shift: ShiftScheduleData, selected: boolean) => void;
 }

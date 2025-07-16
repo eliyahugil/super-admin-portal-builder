@@ -11,6 +11,7 @@ import { ShiftDetailsDialog } from './schedule/ShiftDetailsDialog';
 import { QuickMultipleShiftsDialog } from './schedule/QuickMultipleShiftsDialog';
 import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
 import { ShiftTemplatesApplyDialog } from './schedule/components/ShiftTemplatesApplyDialog';
+import { BulkEditShiftsDialog } from './schedule/BulkEditShiftsDialog';
 import { ScheduleErrorBoundary } from './schedule/ScheduleErrorBoundary';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
 import { useCalendarIntegration } from './schedule/hooks/useCalendarIntegration';
@@ -38,6 +39,11 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const [activeTab, setActiveTab] = useState('schedule');
   const [showTemplatesDialog, setShowTemplatesDialog] = useState(false);
   const [templatesSelectedDate, setTemplatesSelectedDate] = useState<Date | undefined>();
+  
+  // Bulk edit states
+  const [selectedShifts, setSelectedShifts] = useState<ShiftScheduleData[]>([]);
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   const {
     currentDate,
@@ -190,6 +196,39 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ['schedule-branches', businessId] });
   };
 
+  const handleShiftSelection = (shift: ShiftScheduleData, selected: boolean) => {
+    if (selected) {
+      setSelectedShifts(prev => [...prev, shift]);
+    } else {
+      setSelectedShifts(prev => prev.filter(s => s.id !== shift.id));
+    }
+  };
+
+  const handleSelectAllShifts = () => {
+    setSelectedShifts(shifts);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedShifts([]);
+    setIsSelectionMode(false);
+  };
+
+  const handleBulkUpdate = async (updates: Partial<ShiftScheduleData>) => {
+    for (const shift of selectedShifts) {
+      await updateShift(shift.id, updates);
+    }
+    handleClearSelection();
+  };
+
+  const handleBulkDelete = async () => {
+    if (confirm(`האם אתה בטוח שברצונך למחוק ${selectedShifts.length} משמרות?`)) {
+      for (const shift of selectedShifts) {
+        await deleteShift(shift.id);
+      }
+      handleClearSelection();
+    }
+  };
+
   const isLoading = loading || calendarLoading;
 
   return (
@@ -209,6 +248,13 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             mobileMenuOpen={mobileMenuOpen}
             setMobileMenuOpen={setMobileMenuOpen}
             isMobile={isMobile}
+            isSelectionMode={isSelectionMode}
+            setIsSelectionMode={setIsSelectionMode}
+            selectedShifts={selectedShifts}
+            onBulkEdit={() => setShowBulkEditDialog(true)}
+            onBulkDelete={handleBulkDelete}
+            onSelectAll={handleSelectAllShifts}
+            onClearSelection={handleClearSelection}
           />
           
           {/* Templates and Quick Multiple Buttons */}
@@ -402,6 +448,17 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             // רענון הנתונים לאחר יצירת משמרות
             window.location.reload();
           }}
+        />
+      )}
+
+      {showBulkEditDialog && selectedShifts.length > 0 && (
+        <BulkEditShiftsDialog
+          isOpen={showBulkEditDialog}
+          onClose={() => setShowBulkEditDialog(false)}
+          selectedShifts={selectedShifts}
+          employees={employees}
+          branches={branches}
+          onUpdate={handleBulkUpdate}
         />
       )}
     </div>
