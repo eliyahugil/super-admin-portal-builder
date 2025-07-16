@@ -15,6 +15,8 @@ import EmployeeTasksPage from '@/pages/business/employees/EmployeeTasksPage';
 import { BusinessSettings } from '@/components/modules/settings/BusinessSettings';
 import { ShiftTokenSchedulePage } from '@/components/modules/settings/ShiftTokenSchedulePage';
 import { BusinessMultiManagement } from '@/components/modules/settings/BusinessMultiManagement';
+import EmployeeImportPage from '@/pages/business/employees/EmployeeImportPage';
+import EmployeeDuplicateManagerPage from '@/pages/business/employees/EmployeeDuplicateManagerPage';
 
 export const ModuleRoutes = () => (
   <>
@@ -75,6 +77,20 @@ export const ModuleRoutes = () => (
       <ProtectedRoute>
         <AppLayout>
           <EmployeeTasksPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/modules/employees/import" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <EmployeeImportPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/modules/employees/duplicate-manager" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <EmployeeDuplicateManagerPage />
         </AppLayout>
       </ProtectedRoute>
     } />

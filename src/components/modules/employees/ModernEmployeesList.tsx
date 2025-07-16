@@ -19,8 +19,10 @@ import {
   Plus,
   Settings,
   FileText,
-  Calendar
+  Calendar,
+  Download
 } from 'lucide-react';
+import { ExportEmployeesButton } from './ExportEmployeesButton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,6 +100,8 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
             הוסף עובד חדש
           </Button>
           
+          <ExportEmployeesButton />
+          
           {/* Management Tools - Compact */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -118,6 +122,13 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
               <DropdownMenuItem onClick={() => navigate('/modules/employees/shifts')}>
                 <Calendar className="h-4 w-4 mr-2" />
                 ניהול משמרות
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                const exportBtn = document.querySelector('[data-export-employees]') as HTMLButtonElement;
+                exportBtn?.click();
+              }}>
+                <Download className="h-4 w-4 mr-2" />
+                ייצא לאקסל
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

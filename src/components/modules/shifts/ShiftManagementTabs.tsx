@@ -6,13 +6,19 @@ import { WeeklyTokenManagement } from './WeeklyTokenManagement';
 import { ShiftSubmissionsDashboard } from './ShiftSubmissionsDashboard';
 import { ShiftApprovalDashboard } from './ShiftApprovalDashboard';
 import { ShiftTemplatesManagement } from './ShiftTemplatesManagement';
+import { DeleteAllShiftsButton } from './DeleteAllShiftsButton';
 
 export const ShiftManagementTabs: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">ניהול משמרות מתקדם</h1>
-        <p className="text-gray-600">ניהול טוקנים, הגשות ואישורי משמרות</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">ניהול משמרות מתקדם</h1>
+            <p className="text-gray-600">ניהול טוקנים, הגשות ואישורי משמרות</p>
+          </div>
+          <DeleteAllShiftsButton />
+        </div>
       </div>
 
       <Tabs defaultValue="templates" className="w-full">
