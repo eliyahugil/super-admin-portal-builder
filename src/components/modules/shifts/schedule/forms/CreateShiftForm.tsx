@@ -44,6 +44,7 @@ export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({
   const [branchId, setBranchId] = useState<string>('');
   const [role, setRole] = useState<string>('');
   const [notes, setNotes] = useState('');
+  const [requiredEmployees, setRequiredEmployees] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -92,7 +93,8 @@ export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({
             role: role === 'no-role' ? null : role || null,
             notes: notes || null,
             status: 'pending',
-            shift_template_id: null
+            shift_template_id: null,
+            required_employees: requiredEmployees
           };
 
           await onSubmit(shiftData);
@@ -113,7 +115,8 @@ export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({
           role: role === 'no-role' ? null : role || null,
           notes: notes || null,
           status: 'pending',
-          shift_template_id: null
+          shift_template_id: null,
+          required_employees: requiredEmployees
         };
 
         await onSubmit(shiftData);
@@ -135,6 +138,7 @@ export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({
       setBranchId('');
       setRole('');
       setNotes('');
+      setRequiredEmployees(1);
       setIsMultipleShifts(false);
       setNumberOfDays(1);
       
@@ -343,6 +347,22 @@ export const CreateShiftForm: React.FC<CreateShiftFormProps> = ({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Required Employees */}
+      <div className="space-y-2">
+        <Label>כמות עובדים נדרשים</Label>
+        <Input
+          type="number"
+          min="1"
+          max="20"
+          value={requiredEmployees}
+          onChange={(e) => setRequiredEmployees(Number(e.target.value))}
+          placeholder="מספר עובדים נדרשים"
+        />
+        <p className="text-sm text-muted-foreground">
+          המערכת תתן עדיפות למילוי המשרה הבסיסית לפני הוספת תגבורים
+        </p>
       </div>
 
       {/* Notes */}

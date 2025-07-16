@@ -15,6 +15,7 @@ import { ShiftDetailsDialog } from './ShiftDetailsDialog';
 import { ActivityLogViewer } from './ActivityLogViewer';
 import { ShiftFiltersToolbar, type ShiftFilters } from './ShiftFiltersToolbar';
 import { EmployeeStatsPanel } from './EmployeeStatsPanel';
+import { ShiftPriorityManager } from './components/ShiftPriorityManager';
 import {
   Tooltip,
   TooltipContent,
@@ -44,6 +45,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   const [selectedShift, setSelectedShift] = useState<any>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
+  const [showPriorityManager, setShowPriorityManager] = useState(false);
   
   // Filters state - load from localStorage if available
   const [filters, setFilters] = useState<ShiftFilters>(() => {
@@ -731,6 +733,15 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
             <User className="h-4 w-4" />
             {showStatsPanel ? 'הסתר סטטיסטיקות' : 'הצג סטטיסטיקות'}
           </Button>
+
+          {/* Toggle Priority Manager */}
+          <Button
+            variant="outline"
+            onClick={() => setShowPriorityManager(!showPriorityManager)}
+            className="flex items-center gap-2"
+          >
+            🎯 {showPriorityManager ? 'הסתר עדיפויות' : 'עדיפויות איוש'}
+          </Button>
           
           {/* Publish Schedule Button */}
           <Button
@@ -751,6 +762,15 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
           employees={employees}
           weekRange={{ start: weekDays[0], end: weekDays[6] }}
           className="mb-4"
+        />
+      )}
+
+      {/* Priority Manager */}
+      {showPriorityManager && (
+        <ShiftPriorityManager
+          shifts={shifts}
+          branches={branches}
+          selectedDate={currentDate}
         />
       )}
       

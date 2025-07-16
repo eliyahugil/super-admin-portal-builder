@@ -63,7 +63,9 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
     notes: shift.notes || '',
     status: shift.status || 'pending',
     role: shift.role || '',
-    branch_id: shift.branch_id || ''
+    branch_id: shift.branch_id || '',
+    employee_id: shift.employee_id || '',
+    required_employees: shift.required_employees || 1
   });
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -435,6 +437,29 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                 />
               </div>
 
+              {/* Edit Employee Assignment */}
+              <div className="space-y-2">
+                <Label>עובד מוקצה</Label>
+                <Select 
+                  value={editData.employee_id} 
+                  onValueChange={(value) => 
+                    setEditData(prev => ({ ...prev, employee_id: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר עובד..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">ללא עובד מוקצה</SelectItem>
+                    {employees.map(employee => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.first_name} {employee.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Edit Branch */}
               <div className="space-y-2">
                 <Label>סניף</Label>
@@ -448,6 +473,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                     <SelectValue placeholder="בחר סניף..." />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">ללא סניף</SelectItem>
                     {branches.map(branch => (
                       <SelectItem key={branch.id} value={branch.id}>
                         {branch.name}
@@ -455,6 +481,19 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Edit Required Employees */}
+              <div className="space-y-2">
+                <Label>כמות עובדים נדרשים</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={editData.required_employees}
+                  onChange={(e) => setEditData(prev => ({ ...prev, required_employees: Number(e.target.value) }))}
+                  placeholder="מספר עובדים נדרשים"
+                />
               </div>
 
               {/* Edit Status */}
