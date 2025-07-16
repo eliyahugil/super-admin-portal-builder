@@ -242,6 +242,14 @@ export const UnifiedShiftRequests: React.FC = () => {
         const submissionId = parts[1]; // submission-[ID]-[DATE]-[INDEX]
         
         console.log('🗑️ מוחק הגשה מ shift_submissions:', submissionId);
+        console.log('🔍 מבצע שאילתת מחיקה עבור submission ID:', submissionId);
+        
+        const { data: beforeDelete, error: beforeError } = await supabase
+          .from('shift_submissions')
+          .select('*')
+          .eq('id', submissionId);
+          
+        console.log('📊 נתונים לפני מחיקה:', beforeDelete);
         
         const { error } = await supabase
           .from('shift_submissions')
@@ -253,9 +261,23 @@ export const UnifiedShiftRequests: React.FC = () => {
           throw error;
         }
         
+        const { data: afterDelete, error: afterError } = await supabase
+          .from('shift_submissions')
+          .select('*')
+          .eq('id', submissionId);
+          
+        console.log('📊 נתונים אחרי מחיקה:', afterDelete);
         console.log('✅ הגשה נמחקה בהצלחה');
       } else {
         console.log('🗑️ מוחק בקשה מ employee_shift_requests:', requestId);
+        console.log('🔍 מבצע שאילתת מחיקה עבור request ID:', requestId);
+        
+        const { data: beforeDelete, error: beforeError } = await supabase
+          .from('employee_shift_requests')
+          .select('*')
+          .eq('id', requestId);
+          
+        console.log('📊 נתונים לפני מחיקה:', beforeDelete);
         
         const { error } = await supabase
           .from('employee_shift_requests')
@@ -267,6 +289,12 @@ export const UnifiedShiftRequests: React.FC = () => {
           throw error;
         }
         
+        const { data: afterDelete, error: afterError } = await supabase
+          .from('employee_shift_requests')
+          .select('*')
+          .eq('id', requestId);
+          
+        console.log('📊 נתונים אחרי מחיקה:', afterDelete);
         console.log('✅ בקשה נמחקה בהצלחה');
       }
     },
