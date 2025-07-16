@@ -136,7 +136,7 @@ export const QuickRegistration: React.FC = () => {
 
         // עדכון מונה השימושים של הקוד
         const { error: updateError } = await supabase
-          .rpc('sql_increment_usage_count', {
+          .rpc('increment_registration_code_usage', {
             code_param: registrationCode.trim().toUpperCase()
           });
 

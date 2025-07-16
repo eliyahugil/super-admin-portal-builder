@@ -4224,6 +4224,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string[]
       }
+      increment_registration_code_usage: {
+        Args: { code_param: string }
+        Returns: undefined
+      }
       insert_into_table: {
         Args: { table_name: string; columns_list: string; values_list: string }
         Returns: Json
