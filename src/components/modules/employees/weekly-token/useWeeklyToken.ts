@@ -7,6 +7,7 @@ import { sendShiftTokenWhatsapp } from '@/utils/sendWhatsappReminder';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { useBusiness } from '@/hooks/useBusiness';
 import { TokenData, LogReminderData } from './types';
+import { getUpcomingWeekDates } from '@/lib/dateUtils';
 
 export const useWeeklyToken = (employeeId: string, employeeName: string, phone: string) => {
   const [loading, setLoading] = useState(false);
@@ -20,16 +21,10 @@ export const useWeeklyToken = (employeeId: string, employeeName: string, phone: 
   const { data: tokenData, isLoading } = useQuery({
     queryKey: ['weekly-token', employeeId],
     queryFn: async (): Promise<TokenData> => {
-      // Calculate next week dates
-      const now = new Date();
-      const currentDay = now.getDay();
-      const startOfNextWeek = new Date(now);
-      startOfNextWeek.setDate(now.getDate() - currentDay + 7);
-      const endOfNextWeek = new Date(startOfNextWeek);
-      endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
-
-      const weekStart = startOfNextWeek.toISOString().split('T')[0];
-      const weekEnd = endOfNextWeek.toISOString().split('T')[0];
+      // Use the upcoming week dates function for consistent calculation
+      const upcomingWeek = getUpcomingWeekDates();
+      const weekStart = upcomingWeek.start;
+      const weekEnd = upcomingWeek.end;
 
       // Check if token exists for next week
       const { data: existingToken, error } = await supabase
@@ -53,7 +48,7 @@ export const useWeeklyToken = (employeeId: string, employeeName: string, phone: 
 
       // Create new token with open context (shows available shifts before publishing)
       const newToken = crypto.randomUUID().replace(/-/g, '');
-      const expiresAt = new Date(endOfNextWeek);
+      const expiresAt = new Date(upcomingWeek.endDate);
       expiresAt.setDate(expiresAt.getDate() + 7);
 
       const { data: newTokenData, error: insertError } = await supabase
