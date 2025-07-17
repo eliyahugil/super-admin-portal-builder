@@ -1,183 +1,192 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface ShiftChoice {
+  shiftId: string;
+  weekStartDate: string;
+  choiceType: 'regular' | 'unassigned_request';
+  preferenceLevel: number;
+  notes?: string;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('🚀 Function started');
-    console.log(`🔍 Headers: ${JSON.stringify(Object.fromEntries(req.headers.entries()), null, 2)}`);
+    console.log('🚀 Submit shift choices function started');
     
-    // Initialize Supabase client with service role
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const body = await req.json();
+    console.log('📦 Request body:', JSON.stringify(body, null, 2));
+    
+    const { token, choices } = body;
 
-    console.log('🔑 Supabase URL:', supabaseUrl ? 'Set' : 'Missing');
-    console.log('🔑 Service role key:', supabaseServiceRoleKey ? 'Set' : 'Missing');
-
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      throw new Error('Missing Supabase configuration');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-    const requestBody = await req.json();
-    console.log(`📦 Request body: ${JSON.stringify(requestBody, null, 2)}`);
-
-    const { token, choices } = requestBody;
-
-    if (!token || !choices || !Array.isArray(choices)) {
+    if (!token) {
+      console.log('❌ No token provided');
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Missing required fields: token and choices array' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'Token is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`🔍 Validating token: ${token}`);
+    if (!choices || !Array.isArray(choices) || choices.length === 0) {
+      console.log('❌ No choices provided');
+      return new Response(
+        JSON.stringify({ error: 'Choices array is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // Validate token and get employee info
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('employee_shift_preferences')
-      .select(`
-        id,
-        employee_id,
-        submission_deadline,
-        employees!inner(
-          id,
-          first_name,
-          last_name,
-          business_id,
-          shift_submission_quota
-        )
-      `)
-      .eq('submission_token', token)
-      .single();
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    console.log('🔑 Supabase URL:', supabaseUrl ? 'Set' : 'Not set');
+    console.log('🔑 Service role key:', supabaseKey ? 'Set' : 'Not set');
+
+    const supabaseAdmin = createClient(
+      supabaseUrl ?? '',
+      supabaseKey ?? ''
+    );
+
+    // Validate token
+    const { data: tokenData, error: tokenError } = await supabaseAdmin
+      .from('employee_weekly_tokens')
+      .select('*')
+      .eq('token', token)
+      .eq('is_active', true)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle();
 
     if (tokenError || !tokenData) {
-      console.log('❌ Token validation error:', tokenError);
+      console.error('❌ Token validation error:', tokenError);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Invalid or expired token' 
-        }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`✅ Token validated for employee: ${tokenData.employee_id}`);
+    console.log('✅ Token validated for employee:', tokenData.employee_id);
 
-    // Check submission deadline
-    if (tokenData.submission_deadline && new Date() > new Date(tokenData.submission_deadline)) {
-      console.log('❌ Submission deadline passed');
+    // Get employee data with quota info
+    const { data: employee, error: employeeError } = await supabaseAdmin
+      .from('employees')
+      .select('id, shift_submission_quota, business_id')
+      .eq('id', tokenData.employee_id)
+      .maybeSingle();
+
+    if (employeeError || !employee) {
+      console.error('❌ Employee fetch error:', employeeError);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Submission deadline has passed' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'Employee not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Check if employee has already exceeded their quota
-    const { data: existingChoices, error: existingError } = await supabase
+    const quota = employee.shift_submission_quota || 3;
+    
+    // Check if employee has exceeded their quota
+    if (choices.length > quota) {
+      console.log('❌ Quota exceeded:', choices.length, 'choices vs', quota, 'quota');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Shift submission quota exceeded',
+          message: `You can select a maximum of ${quota} shifts, but ${choices.length} were submitted` 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check for existing submissions for this week
+    const { data: existingChoices, error: existingError } = await supabaseAdmin
       .from('employee_shift_choices')
       .select('id')
-      .eq('employee_id', tokenData.employee_id);
+      .eq('employee_id', tokenData.employee_id)
+      .eq('week_start_date', tokenData.week_start_date);
 
     if (existingError) {
-      console.log('❌ Error checking existing choices:', existingError);
+      console.error('❌ Error checking existing choices:', existingError);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Error checking existing choices' 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'Error checking existing submissions' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const currentChoicesCount = existingChoices?.length || 0;
-    const newChoicesCount = choices.length;
-    const quota = tokenData.employees.shift_submission_quota || 3;
+    // If there are existing choices, delete them first
+    if (existingChoices && existingChoices.length > 0) {
+      console.log('🗑️ Deleting existing choices:', existingChoices.length);
+      const { error: deleteError } = await supabaseAdmin
+        .from('employee_shift_choices')
+        .delete()
+        .eq('employee_id', tokenData.employee_id)
+        .eq('week_start_date', tokenData.week_start_date);
 
-    if (currentChoicesCount + newChoicesCount > quota) {
-      console.log(`❌ Quota exceeded: current ${currentChoicesCount} + new ${newChoicesCount} > quota ${quota}`);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: `Cannot exceed quota of ${quota} shift choices. You currently have ${currentChoicesCount} choices.` 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      if (deleteError) {
+        console.error('❌ Error deleting existing choices:', deleteError);
+        return new Response(
+          JSON.stringify({ error: 'Error updating existing submissions' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
-    console.log(`📊 Quota check passed: ${currentChoicesCount + newChoicesCount}/${quota}`);
-
-    // Prepare shift choices for insertion
-    const shiftChoicesToInsert = choices.map((choice: any) => ({
+    // Prepare choices for insertion
+    const choicesForInsertion = choices.map((choice: ShiftChoice) => ({
       employee_id: tokenData.employee_id,
       available_shift_id: choice.shiftId,
       week_start_date: choice.weekStartDate,
-      choice_type: choice.choiceType || 'regular',
-      preference_level: choice.preferenceLevel || 1,
+      choice_type: choice.choiceType,
+      preference_level: choice.preferenceLevel,
       notes: choice.notes || null,
+      is_approved: null // Will be set by manager later
     }));
 
-    console.log(`💾 Inserting ${shiftChoicesToInsert.length} shift choices`);
+    console.log('💾 Inserting shift choices:', choicesForInsertion.length);
 
-    // Insert shift choices
-    const { data: insertedChoices, error: insertError } = await supabase
+    // Insert the choices
+    const { data: insertedChoices, error: insertError } = await supabaseAdmin
       .from('employee_shift_choices')
-      .insert(shiftChoicesToInsert)
+      .insert(choicesForInsertion)
       .select();
 
     if (insertError) {
-      console.log('❌ Error inserting choices:', insertError);
+      console.error('❌ Error inserting choices:', insertError);
       return new Response(
         JSON.stringify({ 
-          success: false, 
-          error: 'Failed to submit shift choices' 
+          error: 'Error saving shift choices',
+          message: insertError.message 
         }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`✅ Successfully inserted ${insertedChoices?.length || 0} shift choices`);
+    console.log('✅ Successfully inserted', insertedChoices.length, 'shift choices');
+
+    // Mark token as used (optional - you might want to keep it active for viewing)
+    await supabaseAdmin
+      .from('employee_weekly_tokens')
+      .update({ 
+        last_used_at: new Date().toISOString(),
+        choices_submitted: true
+      })
+      .eq('id', tokenData.id);
+
+    const response = {
+      success: true,
+      choicesCount: insertedChoices.length,
+      message: `Successfully submitted ${insertedChoices.length} shift choices`,
+      choices: insertedChoices
+    };
+
+    console.log('🎉 Successfully processed shift choices submission');
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Shift choices submitted successfully',
-        choicesCount: insertedChoices?.length || 0
-      }),
+      JSON.stringify(response),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
