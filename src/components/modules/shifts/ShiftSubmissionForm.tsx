@@ -164,10 +164,12 @@ export const ShiftSubmissionForm: React.FC = () => {
     ];
 
     // If employee has a preferred shift type, show ONLY that type
-    if (preferredType) {
+    if (preferredType && preferredType !== 'undefined' && preferredType !== null) {
+      console.log('Employee preferred shift type:', preferredType);
       return allTypes.filter(type => type.value === preferredType);
     }
     
+    console.log('No preferred shift type found, showing all options');
     // If no preference, show all options (for flexibility)
     return allTypes;
   };
@@ -175,6 +177,14 @@ export const ShiftSubmissionForm: React.FC = () => {
   // Get additional shift types (for special checkboxes)
   const getAdditionalShiftTypes = () => {
     const preferredType = tokenData?.employee?.preferred_shift_type;
+    
+    // Only show additional options if there is a valid preferred type
+    if (!preferredType || preferredType === 'undefined' || preferredType === null) {
+      console.log('No preferred type, not showing additional options');
+      return [];
+    }
+    
+    console.log('Generating additional shift types for:', preferredType);
     
     // Handler for morning checkbox with validation
     const handleMorningCheckbox = (checked: boolean) => {
