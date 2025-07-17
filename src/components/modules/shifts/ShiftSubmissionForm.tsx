@@ -140,12 +140,12 @@ export const ShiftSubmissionForm: React.FC = () => {
       { value: 'night', label: 'משמרת לילה (23:00-07:00)', time: '23:00-07:00' }
     ];
 
-    // If employee has a preferred shift type, show only that as primary option
+    // If employee has a preferred shift type, show ONLY that type
     if (preferredType) {
       return allTypes.filter(type => type.value === preferredType);
     }
     
-    // If no preference, show all options
+    // If no preference, show all options (for flexibility)
     return allTypes;
   };
 
