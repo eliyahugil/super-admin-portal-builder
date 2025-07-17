@@ -113,11 +113,16 @@ export const ShiftSubmissionForm: React.FC = () => {
   const handleShiftTypeChange = (shiftType: string) => {
     const preferredType = tokenData?.employee?.preferred_shift_type;
     
+    console.log('Trying to select shift type:', shiftType);
+    console.log('Employee preferred shift type:', preferredType);
+    console.log('Full employee data:', tokenData?.employee);
+    
     // Check if employee is trying to select a shift type they're not supposed to
-    if (preferredType && shiftType !== preferredType) {
+    if (preferredType && preferredType !== 'undefined' && preferredType !== null && shiftType !== preferredType) {
+      console.log('Blocked shift type selection - not matching preference');
       toast({
         title: 'לא ניתן לבחור משמרת זו',
-        description: `אתה מוגדר כעובד ${getShiftTypeLabel(preferredType)}. לבחירת משמרות נוספות, השתמש בתיבות הסימון למטה.`,
+        description: `אתה מוגדר כעובד ${getShiftTypeLabel(preferredType)}. משמרות ${getShiftTypeLabel(shiftType)} זמינות רק על בסיס צורך ניתן לבחור בתיבות הסימון למטה.`,
         variant: 'destructive',
       });
       return;
