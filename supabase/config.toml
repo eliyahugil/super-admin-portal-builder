@@ -159,3 +159,6 @@ verify_jwt = false
 
 [functions.validate-weekly-token]
 verify_jwt = false
+
+[functions.get-weekly-shifts-context]
+verify_jwt = false
