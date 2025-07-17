@@ -131,140 +131,48 @@ serve(async (req) => {
     let shifts = [];
     let context = {};
 
-    // Get employee preferences to filter relevant shifts
-    console.log('📋 Getting employee preferences and branch assignments for:', employeeId);
+    // Get scheduled shifts for this employee in the specified week
+    console.log('📋 Getting scheduled shifts for employee:', employeeId, 'in week:', weekStart, 'to', weekEnd);
     
-    const { data: employeeData, error: employeeError } = await supabaseAdmin
-      .from('employees')
-      .select(`
-        *,
-        employee_branch_assignments(
-          branch_id,
-          shift_types,
-          available_days,
-          max_weekly_hours,
-          is_active
-        ),
-        employee_default_preferences(
-          shift_types,
-          available_days,
-          max_weekly_hours
-        )
-      `)
-      .eq('id', employeeId)
-      .eq('business_id', businessId)
-      .single();
-
-    if (employeeError) {
-      console.error('❌ Error fetching employee data:', employeeError);
-      throw employeeError;
-    }
-
-    console.log('👤 Employee data retrieved:', {
-      employeeId,
-      branchAssignments: employeeData.employee_branch_assignments?.length || 0,
-      defaultPreferences: employeeData.employee_default_preferences?.length || 0,
-      shiftTypes: employeeData.preferred_shift_time
-    });
-
-    // Get available shifts filtered by employee's branches and preferences
-    console.log('📋 Getting available shifts for week submission');
-    console.log('🔍 Searching for available shifts with criteria:', {
-      businessId,
-      weekStart,
-      weekEnd,
-      employeeId
-    });
-
-    // Build branch filter based on employee assignments
-    let branchFilter = null;
-    const activeBranchAssignments = employeeData.employee_branch_assignments?.filter(ba => ba.is_active) || [];
-    
-    if (activeBranchAssignments.length > 0) {
-      const branchIds = activeBranchAssignments.map(ba => ba.branch_id);
-      branchFilter = branchIds;
-      console.log('🏢 Filtering by employee branches:', branchIds);
-    }
-
-    // Build shift type filter
-    let allowedShiftTypes = [];
-    
-    // First check employee's current preference
-    if (employeeData.preferred_shift_time && employeeData.preferred_shift_time !== 'any') {
-      allowedShiftTypes.push(employeeData.preferred_shift_time);
-    } else {
-      // Check branch assignments for shift types
-      activeBranchAssignments.forEach(ba => {
-        if (ba.shift_types && ba.shift_types.length > 0) {
-          allowedShiftTypes = [...allowedShiftTypes, ...ba.shift_types];
-        }
-      });
-      
-      // Fallback to default preferences
-      if (allowedShiftTypes.length === 0 && employeeData.employee_default_preferences?.length > 0) {
-        const defaultPrefs = employeeData.employee_default_preferences[0];
-        if (defaultPrefs.shift_types && defaultPrefs.shift_types.length > 0) {
-          allowedShiftTypes = defaultPrefs.shift_types;
-        }
-      }
-      
-      // Final fallback - if still no types, allow morning and evening
-      if (allowedShiftTypes.length === 0) {
-        allowedShiftTypes = ['morning', 'evening'];
-      }
-    }
-
-    // Remove duplicates
-    allowedShiftTypes = [...new Set(allowedShiftTypes)];
-    console.log('⏰ Allowed shift types for employee:', allowedShiftTypes);
-
-    // Query available shifts with filters
-    let shiftsQuery = supabaseAdmin
-      .from('available_shifts')
+    const { data: scheduledShifts, error: scheduledError } = await supabaseAdmin
+      .from('scheduled_shifts')
       .select(`
         *,
         branch:branches(id, name, address),
         business:businesses(id, name)
       `)
+      .eq('employee_id', employeeId)
       .eq('business_id', businessId)
-      .eq('week_start_date', weekStart)
-      .eq('week_end_date', weekEnd)
-      .in('shift_type', allowedShiftTypes);
-
-    // Apply branch filter if employee has specific branch assignments
-    if (branchFilter && branchFilter.length > 0) {
-      shiftsQuery = shiftsQuery.in('branch_id', branchFilter);
-    }
-
-    shiftsQuery = shiftsQuery
-      .order('day_of_week', { ascending: true })
+      .gte('shift_date', weekStart)
+      .lte('shift_date', weekEnd)
+      .eq('is_assigned', true)
+      .eq('is_archived', false)
+      .order('shift_date', { ascending: true })
       .order('start_time', { ascending: true });
 
-    const { data: availableShifts, error: availableError } = await shiftsQuery;
-
-    if (availableError) {
-      console.error('❌ Error fetching available shifts:', availableError);
-      throw availableError;
+    if (scheduledError) {
+      console.error('❌ Error fetching scheduled shifts:', scheduledError);
+      throw scheduledError;
     }
 
-    console.log('🔍 Available shifts query result:', {
-      shiftsFound: availableShifts?.length || 0,
-      shifts: availableShifts
+    console.log('🔍 Scheduled shifts query result:', {
+      shiftsFound: scheduledShifts?.length || 0,
+      shifts: scheduledShifts
     });
 
-    shifts = availableShifts || [];
+    shifts = scheduledShifts || [];
     
-    // Context for shift submission
+    // Context for showing scheduled shifts
     context = {
-      type: 'available_shifts',
-      title: 'הגשת משמרות לשבוע הקרוב',
+      type: shiftsPublished ? 'assigned_shifts' : 'available_shifts',
+      title: shiftsPublished ? 'המשמרות שלך לשבוע הקרוב' : 'הגשת משמרות לשבוע הקרוב',
       description: shifts.length > 0 
-        ? 'בחר את המשמרות שברצונך לעבד השבוע והגש את בקשתך' 
-        : 'טרם הוגדרו משמרות זמינות לשבוע זה. אנא פנה למנהל העבודה.',
-      shiftsPublished: false
+        ? (shiftsPublished ? 'אלו המשמרות שהוקצו לך השבוע' : 'בחר את המשמרות שברצונך לעבוד השבוע והגש את בקשתך')
+        : 'טרם הוגדרו משמרות לשבוע זה. אנא פנה למנהל העבודה.',
+      shiftsPublished: shiftsPublished
     };
 
-    console.log('✅ Found', shifts.length, 'available shifts for submission');
+    console.log('✅ Found', shifts.length, 'scheduled shifts for employee');
     console.log('📝 Context type:', context.type);
 
     const response = {
