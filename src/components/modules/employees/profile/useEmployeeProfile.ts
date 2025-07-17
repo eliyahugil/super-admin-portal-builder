@@ -74,6 +74,8 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
             is_active,
             max_weekly_hours,
             priority_order,
+            shift_types,
+            available_days,
             created_at,
             branch:branches!employee_branch_assignments_branch_id_fkey(
               id,
