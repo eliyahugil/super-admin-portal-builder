@@ -78,7 +78,7 @@ serve(async (req) => {
       weekDates: { start: weekStart, end: weekEnd }
     });
 
-    // Get available shifts for this week
+    // Get available shifts for this week - search by date range instead of exact week match
     console.log('📋 Getting available shifts for week:', weekStart, 'to', weekEnd);
     
     const { data: availableShifts, error: availableError } = await supabaseAdmin
@@ -89,8 +89,7 @@ serve(async (req) => {
         business:businesses(id, name)
       `)
       .eq('business_id', businessId)
-      .eq('week_start_date', weekStart)
-      .eq('week_end_date', weekEnd)
+      .or(`and(week_start_date.lte.${weekStart},week_end_date.gte.${weekEnd}),and(week_start_date.gte.${weekStart},week_start_date.lte.${weekEnd})`)
       .order('day_of_week', { ascending: true })
       .order('start_time', { ascending: true });
 
@@ -101,7 +100,8 @@ serve(async (req) => {
 
     console.log('🔍 Available shifts query result:', {
       shiftsFound: availableShifts?.length || 0,
-      shifts: availableShifts
+      shifts: availableShifts,
+      queryParams: { businessId, weekStart, weekEnd }
     });
 
     const shifts = availableShifts || [];
