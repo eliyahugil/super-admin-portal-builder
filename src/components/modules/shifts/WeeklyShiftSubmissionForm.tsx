@@ -168,18 +168,38 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           const shifts = shiftsData || [];
           setAvailableShifts(shifts);
           
-          // Get employee's shift type permissions and store them
-          const { data: employeeShiftTypes } = await supabase
-            .from('employee_branch_assignments')
-            .select('shift_types')
-            .eq('employee_id', data.employee_id)
-            .eq('is_active', true)
-            .maybeSingle();
-
-          console.log('🕐 Employee shift types permissions:', employeeShiftTypes);
+          // Get employee's shift type permissions using new hierarchy function
+          // First try to get shift preferences for specific branches if employee is assigned
+          let allowedShiftTypes = ['morning', 'evening']; // Default fallback
           
-          // Store employee's allowed shift types for UI logic - אם אין הקצאת סניף, נאפשר כל סוגי המשמרות
-          const allowedShiftTypes = employeeShiftTypes?.shift_types || ['morning', 'evening', 'night'];
+          if (assignedBranchIds.length > 0) {
+            // If employee is assigned to specific branches, check each one
+            for (const branchId of assignedBranchIds) {
+              const { data: branchPreferences } = await supabase
+                .rpc('get_employee_shift_preferences', {
+                  employee_id_param: data.employee_id,
+                  branch_id_param: branchId
+                });
+              
+              if (branchPreferences && branchPreferences.length > 0) {
+                allowedShiftTypes = branchPreferences[0].shift_types || ['morning', 'evening'];
+                break; // Use first branch's preferences for now
+              }
+            }
+          } else {
+            // If not assigned to specific branches, get default preferences
+            const { data: defaultPreferences } = await supabase
+              .rpc('get_employee_shift_preferences', {
+                employee_id_param: data.employee_id
+              });
+            
+            if (defaultPreferences && defaultPreferences.length > 0) {
+              allowedShiftTypes = defaultPreferences[0].shift_types || ['morning', 'evening'];
+            }
+          }
+
+          console.log('🕐 Employee shift types permissions (hierarchical):', allowedShiftTypes);
+          
           setTokenData(prev => ({
             ...prev,
             employeeShiftTypes: allowedShiftTypes

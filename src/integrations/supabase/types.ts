@@ -1419,6 +1419,50 @@ export type Database = {
           },
         ]
       }
+      employee_default_preferences: {
+        Row: {
+          available_days: number[] | null
+          business_id: string
+          created_at: string
+          employee_id: string
+          id: string
+          max_weekly_hours: number | null
+          notes: string | null
+          shift_types: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          available_days?: number[] | null
+          business_id: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          max_weekly_hours?: number | null
+          notes?: string | null
+          shift_types?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          available_days?: number[] | null
+          business_id?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          max_weekly_hours?: number | null
+          notes?: string | null
+          shift_types?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_default_preferences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_document_reminders: {
         Row: {
           document_id: string
@@ -4479,6 +4523,14 @@ export type Database = {
       get_current_business_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_employee_shift_preferences: {
+        Args: { employee_id_param: string; branch_id_param?: string }
+        Returns: {
+          available_days: number[]
+          shift_types: string[]
+          max_weekly_hours: number
+        }[]
       }
       get_next_customer_number: {
         Args: { business_id_param: string }
