@@ -36,9 +36,9 @@ serve(async (req) => {
       .eq('token', token)
       .eq('is_active', true)
       .gt('expires_at', new Date().toISOString())
-      .single();
+      .maybeSingle();
 
-    if (tokenError) {
+    if (tokenError || !tokenData) {
       console.error('❌ Token validation error:', tokenError);
       return new Response(
         JSON.stringify({ error: 'Invalid or expired token' }),
@@ -51,9 +51,9 @@ serve(async (req) => {
       .from('employees')
       .select('id, first_name, last_name, employee_id, phone, business_id')
       .eq('id', tokenData.employee_id)
-      .single();
+      .maybeSingle();
 
-    if (employeeError) {
+    if (employeeError || !employee) {
       console.error('❌ Employee fetch error:', employeeError);
       return new Response(
         JSON.stringify({ error: 'Employee not found' }),
@@ -66,9 +66,9 @@ serve(async (req) => {
       .from('businesses')
       .select('id, name')
       .eq('id', employee.business_id)
-      .single();
+      .maybeSingle();
 
-    if (businessError) {
+    if (businessError || !business) {
       console.error('❌ Business fetch error:', businessError);
       return new Response(
         JSON.stringify({ error: 'Business not found' }),
