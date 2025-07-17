@@ -27,6 +27,8 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
   const [availableShifts, setAvailableShifts] = useState<any[]>([]);
   // Selected shifts by employee (shift ID -> selected)
   const [selectedShifts, setSelectedShifts] = useState<Record<string, boolean>>({});
+  // Optional morning shifts preference
+  const [optionalMorningShifts, setOptionalMorningShifts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const validateToken = async () => {
@@ -98,6 +100,7 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
             business_id,
             branch_id,
             role,
+            shift_type,
             branches(name, address)
           `)
           .gte('shift_date', data.week_start_date)
@@ -132,12 +135,6 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           console.log('⚠️ No branch assignments found - showing all business shifts');
         }
         
-        console.log('📅 Week dates:', { 
-          weekStart: data.week_start_date, 
-          weekEnd: data.week_end_date 
-        });
-        console.log('🏢 Business ID:', data.employee.business_id);
-
         const { data: shiftsData, error: shiftsError } = await shiftsQuery;
 
         console.log('🔍 Shifts query params:', {
@@ -167,7 +164,28 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
             shifts: shiftsData,
             filteredByBranches: assignedBranchIds.length > 0
           });
-          setAvailableShifts(shiftsData || []);
+          
+          // Separate shifts by type for display
+          const shifts = shiftsData || [];
+          setAvailableShifts(shifts);
+          
+          // Get employee's shift type permissions and store them
+          const { data: employeeShiftTypes } = await supabase
+            .from('employee_branch_assignments')
+            .select('shift_types')
+            .eq('employee_id', data.employee_id)
+            .eq('is_active', true)
+            .single();
+
+          console.log('🕐 Employee shift types permissions:', employeeShiftTypes?.shift_types);
+          
+          // Store employee's allowed shift types for UI logic
+          if (employeeShiftTypes?.shift_types) {
+            setTokenData(prev => ({
+              ...prev,
+              employeeShiftTypes: employeeShiftTypes.shift_types
+            }));
+          }
         }
       } catch (error) {
         console.error('💥 Token validation error:', error);
@@ -439,16 +457,65 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                     weekStartDate={tokenData.week_start_date}
                     weekEndDate={tokenData.week_end_date}
                   />
-                  <div>
-                    <Label htmlFor="general-notes">הערות כלליות (אופציונלי)</Label>
-                    <Textarea
-                      id="general-notes"
-                      placeholder="הערות כלליות לשבוע"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={3}
-                    />
-                  </div>
+                   {/* אופציה למשמרות בוקר נוספות */}
+                   {tokenData.employeeShiftTypes?.includes('morning') && (
+                     <Card className="bg-blue-50 border-blue-200">
+                       <CardHeader className="pb-3">
+                         <CardTitle className="text-lg flex items-center gap-2">
+                           <Clock className="h-5 w-5 text-blue-600" />
+                           זמינות למשמרות בוקר (אופציונלי)
+                         </CardTitle>
+                       </CardHeader>
+                       <CardContent className="space-y-4">
+                         <div className="bg-blue-100 border border-blue-300 rounded-lg p-3">
+                           <p className="text-sm text-blue-800 font-medium mb-1">
+                             💡 מיועד לחופשים ומקרים מיוחדים
+                           </p>
+                           <p className="text-xs text-blue-700">
+                             בנוסף למשמרות הערב הקבועות שלך, תוכל לציין זמינות למשמרות בוקר במידת הצורך.
+                             <br />
+                             <strong>שימו לב:</strong> משמרות הבוקר אינן מובטחות ותוענקנה רק לפי צורך ובהתאם לזמינות.
+                           </p>
+                         </div>
+                         
+                         <div className="space-y-3">
+                           <Label className="text-sm font-medium">ימים בהם אני זמין גם למשמרות בוקר:</Label>
+                           <div className="grid grid-cols-2 gap-2">
+                             {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'].map((day, index) => (
+                               <label key={day} className="flex items-center gap-2 p-2 bg-white rounded border hover:bg-blue-50 cursor-pointer">
+                                 <input
+                                   type="checkbox"
+                                   checked={optionalMorningShifts[index.toString()] || false}
+                                   onChange={(e) => setOptionalMorningShifts(prev => ({
+                                     ...prev,
+                                     [index.toString()]: e.target.checked
+                                   }))}
+                                   className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                                 />
+                                 <span className="text-sm">{day}</span>
+                               </label>
+                             ))}
+                           </div>
+                         </div>
+                         
+                         <div className="text-xs text-blue-600 bg-white rounded p-2 border border-blue-200">
+                           <strong>הסבר:</strong> סימון ימים כאן מאפשר למנהל לדעת שאתה זמין למשמרות בוקר באותם ימים במידת הצורך. 
+                           זה לא מחייב אותך ולא מבטיח שתקבל משמרות בוקר.
+                         </div>
+                       </CardContent>
+                     </Card>
+                   )}
+
+                   <div>
+                     <Label htmlFor="general-notes">הערות כלליות (אופציונלי)</Label>
+                     <Textarea
+                       id="general-notes"
+                       placeholder="הערות כלליות לשבוע"
+                       value={notes}
+                       onChange={(e) => setNotes(e.target.value)}
+                       rows={3}
+                     />
+                   </div>
 
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <p className="text-sm text-yellow-800">

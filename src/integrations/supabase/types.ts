@@ -1071,6 +1071,7 @@ export type Database = {
       }
       employee_branch_assignments: {
         Row: {
+          available_days: number[] | null
           branch_id: string | null
           created_at: string
           employee_id: string | null
@@ -1079,8 +1080,10 @@ export type Database = {
           max_weekly_hours: number | null
           priority_order: number
           role_name: string
+          shift_types: string[] | null
         }
         Insert: {
+          available_days?: number[] | null
           branch_id?: string | null
           created_at?: string
           employee_id?: string | null
@@ -1089,8 +1092,10 @@ export type Database = {
           max_weekly_hours?: number | null
           priority_order?: number
           role_name: string
+          shift_types?: string[] | null
         }
         Update: {
+          available_days?: number[] | null
           branch_id?: string | null
           created_at?: string
           employee_id?: string | null
@@ -1099,6 +1104,7 @@ export type Database = {
           max_weekly_hours?: number | null
           priority_order?: number
           role_name?: string
+          shift_types?: string[] | null
         }
         Relationships: [
           {
