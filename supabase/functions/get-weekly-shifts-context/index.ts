@@ -132,8 +132,7 @@ serve(async (req) => {
         .from('scheduled_shifts')
         .select(`
           *,
-          branch:branches(id, name, address),
-          business:businesses(id, name)
+          branch:branches(id, name, address)
         `)
         .eq('employee_id', employeeId)
         .eq('business_id', businessId)
