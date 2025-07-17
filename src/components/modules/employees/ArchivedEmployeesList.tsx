@@ -8,14 +8,14 @@ import type { Branch } from '@/types/branch';
 
 interface ArchivedEmployeesListProps {
   businessId: string;
-  employees: Employee[];
+  employees?: Employee[]; // Make this optional
   onRefetch?: () => void;
   branches?: Branch[];
 }
 
 export const ArchivedEmployeesList: React.FC<ArchivedEmployeesListProps> = ({ 
   businessId,
-  employees, 
+  employees, // This is now optional
   onRefetch = () => {}, 
   branches = [] 
 }) => {

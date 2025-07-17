@@ -10,13 +10,13 @@ import type { Employee } from '@/hooks/useEmployees';
 
 interface InactiveEmployeesListProps {
   businessId: string;
-  employees?: Employee[];
+  employees?: Employee[]; // Make this optional
   onRefetch: () => void;
 }
 
 export const InactiveEmployeesList: React.FC<InactiveEmployeesListProps> = ({
   businessId,
-  employees: propEmployees,
+  employees: propEmployees, // Rename to be clearer
   onRefetch,
 }) => {
   const { 
