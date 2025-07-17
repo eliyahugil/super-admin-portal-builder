@@ -78,98 +78,42 @@ serve(async (req) => {
       weekDates: { start: weekStart, end: weekEnd }
     });
 
-    // Check if shifts have been published for this specific employee
-    console.log('📅 Checking if shifts have been published for this employee...');
-    const { data: employeeScheduledShifts, error: employeeShiftsError } = await supabaseAdmin
-      .from('scheduled_shifts')
-      .select('id')
-      .eq('employee_id', employeeId)
-      .eq('business_id', businessId)
-      .gte('shift_date', weekStart)
-      .lte('shift_date', weekEnd)
-      .limit(1);
-
-    if (employeeShiftsError) {
-      console.error('❌ Error checking employee scheduled shifts:', employeeShiftsError);
-      throw employeeShiftsError;
-    }
-
-    const employeeHasShifts = employeeScheduledShifts && employeeScheduledShifts.length > 0;
-    console.log('📅 Employee has scheduled shifts for this week:', employeeHasShifts);
-    console.log('🔍 Employee scheduled shifts query result:', {
-      shiftsFound: employeeScheduledShifts?.length || 0,
-      queryParams: { employeeId, businessId, weekStart, weekEnd }
-    });
-
-    // Also check if ANY shifts have been published for this business this week
-    const { data: businessScheduledShifts, error: businessShiftsError } = await supabaseAdmin
-      .from('scheduled_shifts')
-      .select('id')
-      .eq('business_id', businessId)
-      .gte('shift_date', weekStart)
-      .lte('shift_date', weekEnd)
-      .limit(1);
-
-    if (businessShiftsError) {
-      console.error('❌ Error checking business scheduled shifts:', businessShiftsError);
-      throw businessShiftsError;
-    }
-
-    const businessHasShifts = businessScheduledShifts && businessScheduledShifts.length > 0;
-    console.log('📅 Business has any scheduled shifts for this week:', businessHasShifts);
-
-    // Update token with current publication status
-    const shiftsPublished = employeeHasShifts;
-    await supabaseAdmin
-      .from('employee_weekly_tokens')
-      .update({
-        shifts_published: shiftsPublished,
-        context_type: shiftsPublished ? 'assigned_shifts' : 'available_shifts'
-      })
-      .eq('id', tokenData.id);
-
-    let shifts = [];
-    let context = {};
-
-    // Get scheduled shifts for this employee in the specified week
-    console.log('📋 Getting scheduled shifts for employee:', employeeId, 'in week:', weekStart, 'to', weekEnd);
+    // Get available shifts for this week
+    console.log('📋 Getting available shifts for week:', weekStart, 'to', weekEnd);
     
-    const { data: scheduledShifts, error: scheduledError } = await supabaseAdmin
-      .from('scheduled_shifts')
+    const { data: availableShifts, error: availableError } = await supabaseAdmin
+      .from('available_shifts')
       .select(`
         *,
         branch:branches(id, name, address),
         business:businesses(id, name)
       `)
-      .eq('employee_id', employeeId)
       .eq('business_id', businessId)
-      .gte('shift_date', weekStart)
-      .lte('shift_date', weekEnd)
-      .eq('is_assigned', true)
-      .eq('is_archived', false)
-      .order('shift_date', { ascending: true })
+      .eq('week_start_date', weekStart)
+      .eq('week_end_date', weekEnd)
+      .order('day_of_week', { ascending: true })
       .order('start_time', { ascending: true });
 
-    if (scheduledError) {
-      console.error('❌ Error fetching scheduled shifts:', scheduledError);
-      throw scheduledError;
+    if (availableError) {
+      console.error('❌ Error fetching available shifts:', availableError);
+      throw availableError;
     }
 
-    console.log('🔍 Scheduled shifts query result:', {
-      shiftsFound: scheduledShifts?.length || 0,
-      shifts: scheduledShifts
+    console.log('🔍 Available shifts query result:', {
+      shiftsFound: availableShifts?.length || 0,
+      shifts: availableShifts
     });
 
-    shifts = scheduledShifts || [];
+    const shifts = availableShifts || [];
     
-    // Context for showing scheduled shifts
-    context = {
-      type: shiftsPublished ? 'assigned_shifts' : 'available_shifts',
-      title: shiftsPublished ? 'המשמרות שלך לשבוע הקרוב' : 'הגשת משמרות לשבוע הקרוב',
+    // Context for showing available shifts
+    const context = {
+      type: 'available_shifts',
+      title: 'הגשת משמרות לשבוע הקרוב',
       description: shifts.length > 0 
-        ? (shiftsPublished ? 'אלו המשמרות שהוקצו לך השבוע' : 'בחר את המשמרות שברצונך לעבוד השבוע והגש את בקשתך')
-        : 'טרם הוגדרו משמרות לשבוע זה. אנא פנה למנהל העבודה.',
-      shiftsPublished: shiftsPublished
+        ? 'בחר את המשמרות שברצונך לעבוד השבוע והגש את בקשתך'
+        : 'טרם הוגדרו משמרות זמינות לשבוע זה. אנא פנה למנהל העבודה.',
+      shiftsPublished: false
     };
 
     console.log('✅ Found', shifts.length, 'scheduled shifts for employee');
