@@ -153,7 +153,7 @@ export const UnifiedShiftRequests: React.FC = () => {
     return true;
   });
 
-  // קיבוץ בקשות לפי עובדים ואז לפי משמרות זהות
+  // קיבוץ בקשות לפי עובדים ואן לפי משמרות זהות + ספירה נכונה
   const groupedRequests = filteredRequests.reduce((acc, request) => {
     const employeeKey = request.employee_id;
     if (!acc[employeeKey]) {
@@ -161,12 +161,14 @@ export const UnifiedShiftRequests: React.FC = () => {
         employee_name: request.employee_name || 'לא ידוע',
         employee_id: request.employee_id,
         employee: request.employee,
-        shiftGroups: {}
+        shiftGroups: {},
+        morning_availability: request.optional_morning_availability // שמירת זמינות בוקר ברמת העובד
       };
     }
     
     // קיבוץ משמרות לפי שעות + סניף + תפקיד
-    const shiftKey = `${request.start_time}-${request.end_time}-${request.branch_preference || 'none'}-${request.role_preference || 'none'}`;
+    const shiftKey = `${request.start_time}-${request.end_time}-${request.branch_preference || 'ללא'}-${request.role_preference || 'ללא'}`;
+    
     if (!acc[employeeKey].shiftGroups[shiftKey]) {
       acc[employeeKey].shiftGroups[shiftKey] = {
         start_time: request.start_time,
@@ -183,6 +185,7 @@ export const UnifiedShiftRequests: React.FC = () => {
     employee_name: string;
     employee_id: string;
     employee: any;
+    morning_availability?: number[];
     shiftGroups: Record<string, {
       start_time: string;
       end_time: string;
@@ -197,11 +200,11 @@ export const UnifiedShiftRequests: React.FC = () => {
     a.employee_name.localeCompare(b.employee_name, 'he')
   );
 
-  // חישוב סטטיסטיקות מעודכן
-  const allEmployeeRequests = sortedEmployees.flatMap(emp => Object.values(emp.shiftGroups).flatMap(group => group.requests));
-  const pendingRequests = allEmployeeRequests.filter(req => req.status === 'pending');
-  const approvedRequests = allEmployeeRequests.filter(req => req.status === 'approved');
-  const rejectedRequests = allEmployeeRequests.filter(req => req.status === 'rejected');
+  // חישוב סטטיסטיקות מעודכן - ספירה נכונה של בקשות בודדות
+  const allRequests = filteredRequests;
+  const pendingCount = allRequests.filter(req => req.status === 'pending').length;
+  const approvedCount = allRequests.filter(req => req.status === 'approved').length;
+  const rejectedCount = allRequests.filter(req => req.status === 'rejected').length;
 
   if (isLoading) {
     return (
@@ -250,17 +253,17 @@ export const UnifiedShiftRequests: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="view" className="mt-6 space-y-6">
-          {/* סטטיסטיקות */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* סטטיסטיקות עם כיווניות נכונה */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4" dir="ltr">
             <Card className="border border-warning/20 bg-warning/5">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-warning/10 rounded-lg">
                     <Clock className="h-5 w-5 text-warning" />
                   </div>
-                  <div className="text-right">
+                  <div className="text-left">
                     <p className="text-sm text-muted-foreground">ממתינות לאישור</p>
-                    <p className="text-2xl font-bold text-warning">{pendingRequests.length}</p>
+                    <p className="text-2xl font-bold text-warning">{pendingCount}</p>
                   </div>
                 </div>
               </CardContent>
@@ -272,9 +275,9 @@ export const UnifiedShiftRequests: React.FC = () => {
                   <div className="p-3 bg-success/10 rounded-lg">
                     <CheckCircle className="h-5 w-5 text-success" />
                   </div>
-                  <div className="text-right">
+                  <div className="text-left">
                     <p className="text-sm text-muted-foreground">מאושרות</p>
-                    <p className="text-2xl font-bold text-success">{approvedRequests.length}</p>
+                    <p className="text-2xl font-bold text-success">{approvedCount}</p>
                   </div>
                 </div>
               </CardContent>
@@ -286,9 +289,9 @@ export const UnifiedShiftRequests: React.FC = () => {
                   <div className="p-3 bg-destructive/10 rounded-lg">
                     <XCircle className="h-5 w-5 text-destructive" />
                   </div>
-                  <div className="text-right">
+                  <div className="text-left">
                     <p className="text-sm text-muted-foreground">נדחות</p>
-                    <p className="text-2xl font-bold text-destructive">{rejectedRequests.length}</p>
+                    <p className="text-2xl font-bold text-destructive">{rejectedCount}</p>
                   </div>
                 </div>
               </CardContent>
@@ -347,24 +350,25 @@ export const UnifiedShiftRequests: React.FC = () => {
                           {Object.values(employee.shiftGroups).reduce((total, group) => total + group.requests.length, 0)} בקשות
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {employee.employee?.phone && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => sendWhatsApp(
-                              employee.employee.phone,
-                              employee.employee_name,
-                              'general',
-                              'כללי',
-                              ''
-                            )}
-                          >
-                            <MessageSquare className="h-4 w-4 ml-1" />
-                            וואטסאפ
-                          </Button>
-                        )}
-                      </div>
+                      
+                      {/* זמינות בוקר ברמת העובד - פעם אחת בלבד */}
+                      {employee.morning_availability?.length && (
+                        <div className="flex items-center gap-2 text-sm bg-blue-50 px-3 py-1 rounded-lg border border-blue-200">
+                          <Clock className="h-3 w-3 text-blue-600" />
+                          <span className="text-blue-800 font-medium">זמינות בוקר:</span>
+                          <div className="flex gap-1">
+                            {employee.morning_availability.map(day => (
+                              <Badge 
+                                key={day} 
+                                variant="outline" 
+                                className="text-xs bg-blue-100 text-blue-800 border-blue-300"
+                              >
+                                {['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'][day]}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* רשימת קבוצות משמרות העובד */}
@@ -465,26 +469,7 @@ export const UnifiedShiftRequests: React.FC = () => {
                               </div>
                             )}
 
-                            {/* זמינות בוקר אופציונלית */}
-                            {shiftGroup.requests.some(req => req.optional_morning_availability?.length) && (
-                              <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200 text-sm">
-                                <p className="text-blue-800 mb-1 flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  זמינות בוקר (אופציונלי)
-                                </p>
-                                <div className="flex flex-wrap gap-1">
-                                  {Array.from(new Set(shiftGroup.requests.flatMap(req => req.optional_morning_availability || []))).map(day => (
-                                    <Badge 
-                                      key={day} 
-                                      variant="outline" 
-                                      className="text-xs bg-blue-100 text-blue-800 border-blue-300"
-                                    >
-                                      {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][day]}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                            {/* הסרת זמינות בוקר מכאן כי זה עבר לרמת העובד */}
 
                             {/* כפתורי פעולה קבוצתיים */}
                             {shiftGroup.requests.some(req => req.status === 'pending') && (
@@ -558,99 +543,6 @@ export const UnifiedShiftRequests: React.FC = () => {
               )}
             </div>
 
-            {/* פאנל אישור - צד ימין */}
-            {pendingRequests.length > 0 && (
-              <div className="w-80 space-y-4 animate-slide-in-right">
-                <Card className="sticky top-4 border-warning/20 bg-warning/5">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <CheckCircle className="h-5 w-5 text-warning" />
-                      <h3 className="text-lg font-semibold">אישור בקשות</h3>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      {pendingRequests.slice(0, 3).map(request => (
-                        <Card key={`approval-${request.id}`} className="border-warning/30">
-                          <CardContent className="p-4">
-                            <div className="text-right mb-3">
-                              <p className="font-medium">{request.employee_name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {format(new Date(request.shift_date), 'dd/MM/yyyy')} • 
-                                {request.start_time} - {request.end_time}
-                              </p>
-                            </div>
-
-                            <div className="space-y-3">
-                              <Textarea
-                                placeholder="הערת מנהל (אופציונלי)..."
-                                value={reviewNotes[request.id] || ''}
-                                onChange={(e) => handleReviewNotesChange(request.id, e.target.value)}
-                                rows={2}
-                                className="text-right text-sm"
-                              />
-                              
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleUpdateStatus(request.id, 'approved', reviewNotes[request.id])}
-                                  disabled={updateStatusMutation.isPending}
-                                  className="flex-1 bg-success hover:bg-success/90 text-white"
-                                >
-                                  <CheckCircle className="h-4 w-4 ml-1" />
-                                  אשר
-                                </Button>
-                                
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleUpdateStatus(request.id, 'rejected', reviewNotes[request.id])}
-                                  disabled={updateStatusMutation.isPending}
-                                  className="flex-1"
-                                >
-                                  <XCircle className="h-4 w-4 ml-1" />
-                                  דחה
-                                </Button>
-                              </div>
-
-                              {request.employee?.phone && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => sendWhatsApp(
-                                    request.employee!.phone!,
-                                    request.employee_name!,
-                                    request.status,
-                                    format(new Date(request.shift_date), 'dd/MM/yyyy'),
-                                    reviewNotes[request.id]
-                                  )}
-                                  className="w-full"
-                                >
-                                  <MessageSquare className="h-4 w-4 ml-1" />
-                                  וואטסאפ
-                                </Button>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-
-                      {pendingRequests.length > 3 && (
-                        <p className="text-sm text-muted-foreground text-center">
-                          ועוד {pendingRequests.length - 3} בקשות...
-                        </p>
-                      )}
-
-                      {pendingRequests.length === 0 && (
-                        <div className="text-center py-8">
-                          <CheckCircle className="h-8 w-8 text-success mx-auto mb-2" />
-                          <p className="text-sm text-muted-foreground">אין בקשות לאישור</p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
           </div>
         </TabsContent>
       </Tabs>
