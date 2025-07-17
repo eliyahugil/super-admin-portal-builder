@@ -62,8 +62,15 @@ serve(async (req) => {
     const weekEnd = tokenData.week_end_date;
 
     console.log('✅ Token validated for employee:', employeeId, 'business:', businessId, 'week:', weekStart, 'to', weekEnd);
+    console.log('🔍 Token data details:', {
+      tokenId: tokenData.id,
+      employeeName: `${tokenData.employee.first_name} ${tokenData.employee.last_name}`,
+      businessName: tokenData.employee.business.name,
+      weekDates: { start: weekStart, end: weekEnd }
+    });
 
     // Check if shifts have been published for this week
+    console.log('📅 Checking if shifts have been published for this week...');
     const { data: publishedShifts, error: publishedError } = await supabaseAdmin
       .from('scheduled_shifts')
       .select('id')
@@ -79,6 +86,10 @@ serve(async (req) => {
 
     const shiftsPublished = publishedShifts && publishedShifts.length > 0;
     console.log('📅 Shifts published status for this week:', shiftsPublished);
+    console.log('🔍 Published shifts query result:', {
+      shiftsFound: publishedShifts?.length || 0,
+      queryParams: { businessId, weekStart, weekEnd }
+    });
 
     // Update token with current publication status
     await supabaseAdmin
@@ -125,6 +136,12 @@ serve(async (req) => {
     } else {
       // Get available shifts that haven't been assigned yet
       console.log('📋 Getting available shifts for next week');
+      console.log('🔍 Searching for available shifts with criteria:', {
+        businessId,
+        weekStart,
+        weekEnd
+      });
+      
       const { data: availableShifts, error: availableError } = await supabaseAdmin
         .from('available_shifts')
         .select(`
@@ -142,6 +159,22 @@ serve(async (req) => {
         console.error('❌ Error fetching available shifts:', availableError);
         throw availableError;
       }
+
+      console.log('🔍 Available shifts query result:', {
+        shiftsFound: availableShifts?.length || 0,
+        shifts: availableShifts
+      });
+
+      // Also check if there are ANY available shifts for this business
+      const { data: allAvailableShifts, error: allShiftsError } = await supabaseAdmin
+        .from('available_shifts')
+        .select('id, week_start_date, week_end_date, business_id')
+        .eq('business_id', businessId);
+      
+      console.log('🔍 All available shifts for business:', {
+        totalShifts: allAvailableShifts?.length || 0,
+        allShifts: allAvailableShifts
+      });
 
       shifts = availableShifts || [];
       context = {
