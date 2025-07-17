@@ -66,7 +66,7 @@ const daysOfWeek = [
   'ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'
 ];
 
-export const WeeklyShiftView: React.FC = () => {
+const WeeklyShiftView: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const [isValidating, setIsValidating] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('view');
@@ -655,3 +655,5 @@ const ShiftCard: React.FC<ShiftCardProps> = ({
     </Card>
   );
 };
+
+export default WeeklyShiftView;

@@ -11,7 +11,7 @@ const QuickRegistrationPage = lazy(() => import('@/pages/QuickRegistrationPage')
 const EmployeeLoginPage = lazy(() => import('@/pages/auth/EmployeeLoginPage'));
 
 const WeeklyShiftSubmissionForm = lazy(() => import('@/components/modules/shifts/WeeklyShiftSubmissionForm').then(m => ({ default: m.WeeklyShiftSubmissionForm })));
-const WeeklyShiftView = lazy(() => import('@/pages/WeeklyShiftView').then(m => ({ default: m.WeeklyShiftView })));
+const WeeklyShiftView = lazy(() => import('@/pages/WeeklyShiftView'));
 const ShiftSubmissionSuccess = lazy(() => import('@/components/modules/shifts/ShiftSubmissionSuccess').then(m => ({ default: m.ShiftSubmissionSuccess })));
 
 export const PublicRoutes = () => (
