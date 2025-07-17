@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import { WeeklyShiftService } from '@/services/WeeklyShiftService';
 
 export interface ShiftRequest {
   id: string;
@@ -156,35 +155,12 @@ export const deleteRequest = async (requestId: string) => {
   
   if (requestId.startsWith('submission-')) {
     const submissionId = requestId.split('-')[1];
-    
-    // Get the submission data before deleting to find the token
-    const { data: submission, error: getError } = await supabase
-      .from('shift_submissions')
-      .select('token')
-      .eq('id', submissionId)
-      .single();
-
-    if (getError) {
-      console.warn('⚠️ Could not find submission token:', getError);
-    }
-
     const { error } = await supabase
       .from('shift_submissions')
       .delete()
       .eq('id', submissionId);
     
     if (error) throw error;
-
-    // Reset the token if we found it
-    if (submission?.token) {
-      try {
-        await WeeklyShiftService.resetTokenAfterDeletion(submission.token);
-        console.log('✅ Token reset after submission deletion');
-      } catch (tokenError) {
-        console.error('❌ Error resetting token:', tokenError);
-        // Don't throw here - the deletion succeeded
-      }
-    }
   } else {
     const { error } = await supabase
       .from('employee_shift_requests')
@@ -210,18 +186,6 @@ export const deleteAllRequests = async (businessId: string | null) => {
   
   if (employeeIds.length === 0) return;
   
-  // Get tokens before deleting submissions
-  const { data: submissions, error: submissionsError } = await supabase
-    .from('shift_submissions')
-    .select('token')
-    .in('employee_id', employeeIds);
-
-  if (submissionsError) {
-    console.warn('⚠️ Could not fetch submission tokens:', submissionsError);
-  }
-
-  const tokens = submissions?.map(s => s.token).filter(Boolean) || [];
-  
   // מחיקת כל הבקשות
   const [shiftRequestsResult, submissionsResult] = await Promise.all([
     supabase.from('employee_shift_requests').delete().in('employee_id', employeeIds),
@@ -230,22 +194,6 @@ export const deleteAllRequests = async (businessId: string | null) => {
   
   if (shiftRequestsResult.error) throw shiftRequestsResult.error;
   if (submissionsResult.error) throw submissionsResult.error;
-
-  // Reset all tokens
-  if (tokens.length > 0) {
-    console.log(`🔄 Resetting ${tokens.length} tokens after bulk deletion`);
-    
-    for (const token of tokens) {
-      try {
-        await WeeklyShiftService.resetTokenAfterDeletion(token);
-      } catch (tokenError) {
-        console.error('❌ Error resetting token:', token, tokenError);
-        // Continue with other tokens
-      }
-    }
-    
-    console.log('✅ All tokens reset after bulk deletion');
-  }
 };
 
 export const sendWhatsApp = (phone: string, employeeName: string, status: string, date: string, notes?: string) => {

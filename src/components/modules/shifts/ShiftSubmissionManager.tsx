@@ -225,67 +225,6 @@ export const ShiftSubmissionManager: React.FC = () => {
     }
   };
 
-  // שליחת טוקן לעובד בודד
-  const sendToIndividualEmployee = async (employee: any) => {
-    if (!selectedWeek || !businessId) {
-      toast({
-        title: 'שגיאה',
-        description: 'יש לבחור שבוע תחילה',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      console.log(`🚀 שולח טוקן לעובד: ${employee.first_name} ${employee.last_name}`);
-      
-      // יצירת תאריכי שבוע
-      const weekStart = new Date(selectedWeek);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekEnd.getDate() + 6);
-
-      const { WeeklyShiftService } = await import('@/services/WeeklyShiftService');
-      
-      // יצירת טוקן
-      const token = await WeeklyShiftService.generateWeeklyToken(
-        employee.id,
-        weekStart.toISOString().split('T')[0],
-        weekEnd.toISOString().split('T')[0]
-      );
-
-      console.log(`✅ טוקן נוצר בהצלחה עבור ${employee.first_name}: ${token}`);
-
-      // יצירת קישור WhatsApp אם יש טלפון
-      if (employee.phone && token) {
-        const submissionUrl = `${window.location.origin}/weekly-shift-submission/${token}`;
-        const message = `שלום ${employee.first_name}! 👋\n\nזהו הקישור להגשת המשמרות שלך לשבוע ${weekStart.toLocaleDateString('he-IL')} - ${weekEnd.toLocaleDateString('he-IL')}:\n\n${submissionUrl}\n\n⏰ אנא הגש את המשמרות עד יום רביעי\n💼 מערכת ניהול העובדים`;
-        
-        const cleanPhone = employee.phone.replace(/[^\d]/g, '');
-        const whatsappPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.slice(1) : cleanPhone;
-        const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
-        
-        // פתיחת WhatsApp
-        window.open(whatsappUrl, '_blank');
-      }
-
-      toast({
-        title: 'הצלחה!',
-        description: `טוקן נשלח בהצלחה ל-${employee.first_name} ${employee.last_name}${employee.phone ? ' ו-WhatsApp נפתח' : ''}`,
-      });
-
-      // רענון הטוקנים
-      refetchTokens();
-      
-    } catch (error) {
-      console.error(`❌ שגיאה בשליחת טוקן לעובד ${employee.first_name}:`, error);
-      toast({
-        title: 'שגיאה',
-        description: `שגיאה בשליחת טוקן ל-${employee.first_name} ${employee.last_name}`,
-        variant: 'destructive',
-      });
-    }
-  };
-
   // שליחת טוקנים לכל העובדים
   const sendToAllEmployees = async () => {
     if (!selectedWeek || !businessId) {
@@ -663,19 +602,6 @@ export const ShiftSubmissionManager: React.FC = () => {
                       {!employee.phone && (
                         <Badge variant="destructive">אין טלפון</Badge>
                       )}
-                      
-                      {/* כפתור שליחה אישי */}
-                      <Button 
-                        size="sm" 
-                        variant={hasToken ? "outline" : "default"}
-                        onClick={() => sendToIndividualEmployee(employee)}
-                        disabled={!selectedWeek}
-                        className="text-xs"
-                      >
-                        <Send className="h-3 w-3 mr-1" />
-                        {hasToken ? 'שלח שוב' : 'שלח טוקן'}
-                      </Button>
-                      
                       {hasToken && (
                         <Button 
                           size="sm" 

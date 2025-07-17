@@ -12,16 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Function started');
-    console.log('🔍 Headers:', Object.fromEntries(req.headers.entries()));
-    
-    const body = await req.json();
-    console.log('📦 Request body:', JSON.stringify(body, null, 2));
-    
-    const { token } = body;
+    const { token } = await req.json();
 
     if (!token) {
-      console.log('❌ No token provided');
       return new Response(
         JSON.stringify({ error: 'Token is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -29,29 +22,33 @@ serve(async (req) => {
     }
 
     console.log('🔍 Getting weekly shifts context for token:', token);
-    console.log('🕐 Current time:', new Date().toISOString());
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    console.log('🔑 Supabase URL:', supabaseUrl ? 'Set' : 'Not set');
-    console.log('🔑 Service role key:', supabaseKey ? 'Set' : 'Not set');
 
     const supabaseAdmin = createClient(
-      supabaseUrl ?? '',
-      supabaseKey ?? ''
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get token data first
+    // Get token data with employee and business information
     const { data: tokenData, error: tokenError } = await supabaseAdmin
       .from('employee_weekly_tokens')
-      .select('*')
+      .select(`
+        *,
+        employee:employees(
+          id,
+          first_name,
+          last_name,
+          employee_id,
+          phone,
+          business_id,
+          business:businesses(id, name)
+        )
+      `)
       .eq('token', token)
       .eq('is_active', true)
       .gt('expires_at', new Date().toISOString())
-      .maybeSingle();
+      .single();
 
-    if (tokenError || !tokenData) {
+    if (tokenError) {
       console.error('❌ Token validation error:', tokenError);
       return new Response(
         JSON.stringify({ error: 'Invalid or expired token' }),
@@ -59,90 +56,51 @@ serve(async (req) => {
       );
     }
 
-    // Get employee data with additional fields
-    const { data: employee, error: employeeError } = await supabaseAdmin
-      .from('employees')
-      .select('id, first_name, last_name, employee_id, phone, business_id, shift_submission_quota, preferred_shift_time, can_choose_unassigned_shifts')
-      .eq('id', tokenData.employee_id)
-      .maybeSingle();
-
-    if (employeeError || !employee) {
-      console.error('❌ Employee fetch error:', employeeError);
-      return new Response(
-        JSON.stringify({ error: 'Employee not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get business data separately
-    const { data: business, error: businessError } = await supabaseAdmin
-      .from('businesses')
-      .select('id, name')
-      .eq('id', employee.business_id)
-      .maybeSingle();
-
-    if (businessError || !business) {
-      console.error('❌ Business fetch error:', businessError);
-      return new Response(
-        JSON.stringify({ error: 'Business not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get employee preferences
-    const { data: employeePreferences } = await supabaseAdmin
-      .from('employee_default_preferences')
-      .select('available_days, shift_types, max_weekly_hours')
-      .eq('employee_id', tokenData.employee_id)
-      .single();
-
-    console.log('🎯 Employee preferences:', employeePreferences);
-
-    const businessId = employee.business_id;
+    const businessId = tokenData.employee.business_id;
     const employeeId = tokenData.employee_id;
     const weekStart = tokenData.week_start_date;
     const weekEnd = tokenData.week_end_date;
 
     console.log('✅ Token validated for employee:', employeeId, 'business:', businessId, 'week:', weekStart, 'to', weekEnd);
 
-    // Check if this employee has any assigned shifts for this week
-    const { data: assignedShiftsCheck, error: assignedCheckError } = await supabaseAdmin
+    // Check if shifts have been published for this week
+    const { data: publishedShifts, error: publishedError } = await supabaseAdmin
       .from('scheduled_shifts')
       .select('id')
-      .eq('employee_id', employeeId)
       .eq('business_id', businessId)
       .gte('shift_date', weekStart)
       .lte('shift_date', weekEnd)
       .limit(1);
 
-    if (assignedCheckError) {
-      console.error('❌ Error checking assigned shifts:', assignedCheckError);
-      throw assignedCheckError;
+    if (publishedError) {
+      console.error('❌ Error checking published shifts:', publishedError);
+      throw publishedError;
     }
 
-    const hasAssignedShifts = assignedShiftsCheck && assignedShiftsCheck.length > 0;
-    console.log('📅 Employee has assigned shifts for this week:', hasAssignedShifts);
+    const shiftsPublished = publishedShifts && publishedShifts.length > 0;
+    console.log('📅 Shifts published status for this week:', shiftsPublished);
 
-    // Update token with current status
+    // Update token with current publication status
     await supabaseAdmin
       .from('employee_weekly_tokens')
       .update({
-        shifts_published: hasAssignedShifts,
-        context_type: hasAssignedShifts ? 'assigned_shifts' : 'available_shifts'
+        shifts_published: shiftsPublished,
+        context_type: shiftsPublished ? 'assigned_shifts' : 'available_shifts'
       })
       .eq('id', tokenData.id);
 
     let shifts = [];
     let context = {};
 
-    if (hasAssignedShifts) {
+    if (shiftsPublished) {
       // Get assigned shifts for this employee
       console.log('🎯 Getting assigned shifts for employee');
       const { data: assignedShifts, error: assignedError } = await supabaseAdmin
         .from('scheduled_shifts')
         .select(`
           *,
-          branch:branches(id, name, address)
+          branch:branches(id, name, address),
+          business:businesses(id, name)
         `)
         .eq('employee_id', employeeId)
         .eq('business_id', businessId)
@@ -165,35 +123,35 @@ serve(async (req) => {
 
       console.log('✅ Found', shifts.length, 'assigned shifts');
     } else {
-      // Get unassigned scheduled shifts for this week
-      console.log('📋 Getting unassigned scheduled shifts for next week');
-      const { data: unassignedShifts, error: unassignedError } = await supabaseAdmin
-        .from('scheduled_shifts')
+      // Get available shifts that haven't been assigned yet
+      console.log('📋 Getting available shifts for next week');
+      const { data: availableShifts, error: availableError } = await supabaseAdmin
+        .from('available_shifts')
         .select(`
           *,
-          branch:branches(id, name, address)
+          branch:branches(id, name, address),
+          business:businesses(id, name)
         `)
         .eq('business_id', businessId)
-        .is('employee_id', null)
-        .gte('shift_date', weekStart)
-        .lte('shift_date', weekEnd)
-        .order('shift_date', { ascending: true })
+        .eq('week_start_date', weekStart)
+        .eq('week_end_date', weekEnd)
+        .order('day_of_week', { ascending: true })
         .order('start_time', { ascending: true });
 
-      if (unassignedError) {
-        console.error('❌ Error fetching unassigned shifts:', unassignedError);
-        throw unassignedError;
+      if (availableError) {
+        console.error('❌ Error fetching available shifts:', availableError);
+        throw availableError;
       }
 
-      shifts = unassignedShifts || [];
+      shifts = availableShifts || [];
       context = {
         type: 'available_shifts',
         title: 'משמרות זמינות לשבוע הקרוב',
-        description: 'אלו המשמרות שטרם הוקצו ומחכות לעובדים',
+        description: 'אלו המשמרות הזמינות להרשמה לשבוע זה',
         shiftsPublished: false
       };
 
-      console.log('✅ Found', shifts.length, 'unassigned scheduled shifts');
+      console.log('✅ Found', shifts.length, 'available shifts');
     }
 
     const response = {
@@ -205,26 +163,11 @@ serve(async (req) => {
         weekStart: tokenData.week_start_date,
         weekEnd: tokenData.week_end_date,
         expiresAt: tokenData.expires_at,
-        employee: {
-          id: employee.id,
-          first_name: employee.first_name,
-          last_name: employee.last_name,
-          employee_id: employee.employee_id,
-          phone: employee.phone,
-          business_id: employee.business_id,
-          shift_submission_quota: employee.shift_submission_quota,
-          preferred_shift_time: employee.preferred_shift_time,
-          can_choose_unassigned_shifts: employee.can_choose_unassigned_shifts,
-          business: {
-            id: business.id,
-            name: business.name
-          }
-        }
+        employee: tokenData.employee
       },
       context,
       shifts,
-      shiftsCount: shifts.length,
-      employeePreferences: employeePreferences || null
+      shiftsCount: shifts.length
     };
 
     console.log('🎉 Successfully prepared weekly shifts context');

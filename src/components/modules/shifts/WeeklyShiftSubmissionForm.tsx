@@ -18,9 +18,6 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  console.log('🔍 WeeklyShiftSubmissionForm mounted with token:', token);
-  console.log('🔍 Current URL:', window.location.href);
-  
   const [tokenData, setTokenData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -34,7 +31,7 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
   const [optionalMorningShifts, setOptionalMorningShifts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const fetchWeeklyShiftsContext = async () => {
+    const validateToken = async () => {
       if (!token) {
         console.error('❌ No token provided');
         toast({
@@ -47,15 +44,11 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
       }
 
       try {
-        console.log('🔍 Fetching weekly shifts context for token:', token);
+        console.log('🔍 Validating weekly token:', token);
         
-        // Use the public edge function to get shifts context
-        const { data, error } = await supabase.functions.invoke('get-weekly-shifts-context', {
-          body: { token }
-        });
-
-        if (error || !data?.success) {
-          console.error('❌ Failed to get shifts context:', error || data?.error);
+        const data = await WeeklyShiftService.validateWeeklyToken(token);
+        if (!data) {
+          console.error('❌ Token validation failed - invalid or expired');
           toast({
             title: 'טוקן לא תקף',
             description: 'הטוקן פג תוקף או כבר נוצל',
@@ -65,11 +58,9 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           return;
         }
 
-        const { tokenData: validatedTokenData, shifts, context } = data;
-
         // Validate that we have all required employee data
-        if (!validatedTokenData.employee || !validatedTokenData.employee.first_name || !validatedTokenData.employee.last_name) {
-          console.error('❌ Missing employee data:', validatedTokenData.employee);
+        if (!data.employee || !data.employee.first_name || !data.employee.last_name) {
+          console.error('❌ Missing employee data:', data.employee);
           toast({
             title: 'שגיאה בנתוני המשתמש',
             description: 'חסרים פרטי עובד. אנא פנה למנהל המערכת.',
@@ -79,59 +70,173 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           return;
         }
 
-        console.log('✅ Shifts context loaded successfully:', {
-          employeeId: validatedTokenData.employeeId,
-          employeeName: `${validatedTokenData.employee.first_name} ${validatedTokenData.employee.last_name}`,
-          shiftsCount: shifts.length,
-          contextType: context.type
+        console.log('✅ Token validated successfully:', {
+          employeeId: data.employee_id,
+          employeeName: `${data.employee.first_name} ${data.employee.last_name}`,
+          employeeIdNumber: data.employee.employee_id,
+          weekStart: data.week_start_date,
+          weekEnd: data.week_end_date
         });
 
-        // Convert the data to match the expected format
-        const formattedTokenData = {
-          id: validatedTokenData.id,
-          employee_id: validatedTokenData.employeeId,
-          week_start_date: validatedTokenData.weekStart,
-          week_end_date: validatedTokenData.weekEnd,
-          expires_at: validatedTokenData.expiresAt,
-          employee: validatedTokenData.employee
-        };
+        setTokenData(data);
+        
+        console.log('🔍 Token data:', {
+          employeeId: data.employee_id,
+          businessId: data.employee.business_id,
+          weekStart: data.week_start_date,
+          weekEnd: data.week_end_date
+        });
+        
+        // Fetch available shifts for the token's week from scheduled_shifts
+        // Filter by employee's business and potentially by their branch assignments
+        let shiftsQuery = supabase
+          .from('scheduled_shifts')
+          .select(`
+            id,
+            shift_date,
+            start_time,
+            end_time,
+            status,
+            business_id,
+            branch_id,
+            role,
+            branches(name, address)
+          `)
+          .gte('shift_date', data.week_start_date)
+          .lte('shift_date', data.week_end_date)
+          .eq('status', 'pending')
+          .eq('is_archived', false)
+          .eq('business_id', data.employee.business_id) // Filter by employee's business
+          .order('shift_date')
+          .order('start_time');
 
-        setTokenData(formattedTokenData);
+        // If employee has branch assignments, filter by those branches
+        // First, check for branch assignments
+        const { data: branchAssignments, error: branchError } = await supabase
+          .from('employee_branch_assignments')
+          .select('branch_id')
+          .eq('employee_id', data.employee_id)
+          .eq('is_active', true);
+
+        if (branchError) {
+          console.warn('⚠️ Error fetching branch assignments:', branchError);
+        }
+
+        console.log('🔍 Branch assignments found:', branchAssignments);
+
+        const assignedBranchIds = branchAssignments?.map(ba => ba.branch_id) || [];
         
-        // Transform shifts based on context type
-        let transformedShifts = [];
-        
-        if (context.type === 'assigned_shifts') {
-          // For assigned shifts from scheduled_shifts table
-          transformedShifts = shifts;
+        // Filter shifts by employee branch assignments
+        if (assignedBranchIds.length > 0) {
+          shiftsQuery = shiftsQuery.in('branch_id', assignedBranchIds);
+          console.log('🏢 Filtering shifts by employee branch assignments:', assignedBranchIds);
         } else {
-          // For available shifts from available_shifts table - convert to scheduled_shifts format
-          transformedShifts = shifts.map(shift => ({
-            id: shift.id,
-            shift_date: getDateFromDayOfWeek(shift.day_of_week, validatedTokenData.weekStart),
-            start_time: shift.start_time,
-            end_time: shift.end_time,
-            status: 'pending',
-            business_id: shift.business_id,
-            branch_id: shift.branch_id,
-            role: shift.shift_name,
-            branches: shift.branch
-          }));
+          console.log('⚠️ No branch assignments found - showing all business shifts');
         }
         
-        console.log('📋 Transformed shifts:', {
-          originalCount: shifts.length,
-          transformedCount: transformedShifts.length,
-          contextType: context.type
-        });
-        
-        setAvailableShifts(transformedShifts);
+        const { data: shiftsData, error: shiftsError } = await shiftsQuery;
 
+        console.log('🔍 Shifts query params:', {
+          weekStart: data.week_start_date,
+          weekEnd: data.week_end_date,
+          businessId: data.employee.business_id,
+          status: 'pending',
+          isArchived: false,
+          branchFilter: assignedBranchIds.length > 0 ? assignedBranchIds : 'all branches'
+        });
+
+        // Let's also check what shifts exist in the database for this business
+        const { data: allBusinessShifts, error: allShiftsError } = await supabase
+          .from('scheduled_shifts')
+          .select('*')
+          .eq('business_id', data.employee.business_id);
+          
+        console.log('🔍 ALL shifts in business (any status, any date):', allBusinessShifts);
+        console.log('📊 Total business shifts found:', allBusinessShifts?.length || 0);
+
+        if (shiftsError) {
+          console.warn('⚠️ Error fetching available shifts:', shiftsError);
+          setAvailableShifts([]);
+        } else {
+          console.log('📋 Available shifts fetched:', {
+            count: shiftsData?.length || 0,
+            shifts: shiftsData,
+            filteredByBranches: assignedBranchIds.length > 0
+          });
+          
+          // Get employee's shift type permissions using new hierarchy function
+          // First try to get shift preferences for specific branches if employee is assigned
+          let allowedShiftTypes = ['morning', 'evening']; // Default fallback
+          
+          if (assignedBranchIds.length > 0) {
+            // If employee is assigned to specific branches, check each one
+            for (const branchId of assignedBranchIds) {
+              const { data: branchPreferences } = await supabase
+                .rpc('get_employee_shift_preferences', {
+                  employee_id_param: data.employee_id,
+                  branch_id_param: branchId
+                });
+              
+              if (branchPreferences && branchPreferences.length > 0) {
+                allowedShiftTypes = branchPreferences[0].shift_types || ['morning', 'evening'];
+                break; // Use first branch's preferences for now
+              }
+            }
+          } else {
+            // If not assigned to specific branches, get default preferences
+            const { data: defaultPreferences } = await supabase
+              .rpc('get_employee_shift_preferences', {
+                employee_id_param: data.employee_id
+              });
+            
+            if (defaultPreferences && defaultPreferences.length > 0) {
+              allowedShiftTypes = defaultPreferences[0].shift_types || ['morning', 'evening'];
+            }
+          }
+
+          console.log('🕐 Employee shift types permissions (hierarchical):', allowedShiftTypes);
+          
+          // Filter shifts by employee's allowed shift types AFTER getting the permissions
+          const shifts = shiftsData || [];
+          
+          // Function to determine shift type based on start time
+          const getShiftType = (startTime: string) => {
+            const hour = parseInt(startTime.split(':')[0]);
+            // Updated time ranges to match actual shift definitions
+            if (hour >= 6 && hour <= 14) return 'morning';     // 06:00-14:59 
+            if (hour >= 16 || hour <= 1) return 'evening';     // 16:00-01:59 (כולל 16:00)
+            if (hour >= 15 && hour < 16) return 'afternoon';   // 15:00-15:59
+            return 'night';                                     // 02:00-05:59
+          };
+          
+          const filteredShifts = shifts.filter(shift => {
+            const shiftType = getShiftType(shift.start_time);
+            return allowedShiftTypes.includes(shiftType);
+          });
+          
+          console.log('📋 Shifts filtered by employee permissions:', {
+            originalCount: shifts.length,
+            filteredCount: filteredShifts.length,
+            allowedTypes: allowedShiftTypes,
+            filteredShifts: filteredShifts.map(s => ({
+              id: s.id,
+              start_time: s.start_time,
+              type: getShiftType(s.start_time)
+            }))
+          });
+          
+          setAvailableShifts(filteredShifts);
+          
+          setTokenData(prev => ({
+            ...prev,
+            employeeShiftTypes: allowedShiftTypes
+          }));
+        }
       } catch (error) {
-        console.error('💥 Error fetching shifts context:', error);
+        console.error('💥 Token validation error:', error);
         toast({
           title: 'שגיאה',
-          description: 'שגיאה בטעינת נתוני המשמרות',
+          description: 'שגיאה בבדיקת הטוקן',
           variant: 'destructive',
         });
         navigate('/');
@@ -140,16 +245,8 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
       }
     };
 
-    fetchWeeklyShiftsContext();
+    validateToken();
   }, [token, navigate, toast]);
-
-  // Helper function to convert day of week to actual date
-  const getDateFromDayOfWeek = (dayOfWeek: number, weekStart: string) => {
-    const startDate = new Date(weekStart);
-    const targetDate = new Date(startDate);
-    targetDate.setDate(startDate.getDate() + dayOfWeek);
-    return targetDate.toISOString().split('T')[0];
-  };
 
   // Toggle shift selection with automatic additional shifts
   const toggleShiftSelection = (shiftId: string) => {

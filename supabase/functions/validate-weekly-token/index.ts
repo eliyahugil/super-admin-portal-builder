@@ -32,7 +32,6 @@ serve(async (req) => {
     }
 
     console.log('🔍 Validating weekly token:', token)
-    console.log('🕐 Current time:', new Date().toISOString())
 
     // Query with service role to bypass RLS
     const { data, error } = await supabaseAdmin
@@ -45,8 +44,6 @@ serve(async (req) => {
       .eq('is_active', true)
       .gt('expires_at', new Date().toISOString())
       .single()
-
-    console.log('🔍 Query result:', { data: !!data, error: !!error, errorMessage: error?.message })
 
     if (error) {
       console.error('❌ Token validation error:', error)

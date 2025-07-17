@@ -24,9 +24,6 @@ const queryClient = new QueryClient({
 
 function App() {
   console.log('🚀 App component rendering');
-  console.log('🌐 Current URL:', window.location.href);
-  console.log('📍 Current pathname:', window.location.pathname);
-  console.log('🔍 Checking if URL matches weekly-shift-view pattern:', window.location.pathname.includes('/weekly-shift-view/'));
   
   return (
     <ErrorBoundary>

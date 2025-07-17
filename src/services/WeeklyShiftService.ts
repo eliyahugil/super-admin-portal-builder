@@ -199,42 +199,6 @@ export class WeeklyShiftService {
     return true;
   }
 
-  // Reset token when submissions are deleted
-  static async resetTokenAfterDeletion(token: string): Promise<boolean> {
-    try {
-      console.log('🔄 Resetting token after submission deletion:', token);
-      
-      // Check if token exists
-      const { data: tokenData, error: tokenError } = await supabase
-        .from('employee_weekly_tokens')
-        .select('id, is_active')
-        .eq('token', token)
-        .single();
-
-      if (tokenError || !tokenData) {
-        console.error('❌ Token not found:', tokenError);
-        return false;
-      }
-
-      // Reactivate the token
-      const { error: updateError } = await supabase
-        .from('employee_weekly_tokens')
-        .update({ is_active: true })
-        .eq('token', token);
-
-      if (updateError) {
-        console.error('❌ Error reactivating token:', updateError);
-        throw updateError;
-      }
-
-      console.log('✅ Token reactivated successfully');
-      return true;
-    } catch (error) {
-      console.error('💥 Error resetting token:', error);
-      throw error;
-    }
-  }
-
   // Get all weekly tokens for a business
   static async getWeeklyTokensForBusiness(businessId: string) {
     const { data, error } = await supabase
