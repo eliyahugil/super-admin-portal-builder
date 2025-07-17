@@ -43,7 +43,7 @@ serve(async (req) => {
       .eq('token', token)
       .eq('is_active', true)
       .gt('expires_at', new Date().toISOString())
-      .maybeSingle()  // Use maybeSingle instead of single to avoid error when no data found
+      .single()
 
     if (error) {
       console.error('❌ Token validation error:', error)
