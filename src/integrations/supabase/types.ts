@@ -277,6 +277,47 @@ export type Database = {
           },
         ]
       }
+      business_general_settings: {
+        Row: {
+          business_id: string
+          created_at: string
+          description: string | null
+          id: string
+          setting_key: string
+          setting_type: string
+          setting_value: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_type: string
+          setting_value: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_type?: string
+          setting_value?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_general_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_integrations: {
         Row: {
           business_id: string
@@ -3548,6 +3589,59 @@ export type Database = {
           },
         ]
       }
+      shift_definitions: {
+        Row: {
+          business_id: string
+          color: string
+          created_at: string
+          display_order: number | null
+          end_time: string
+          id: string
+          is_active: boolean
+          min_submission_hours: number
+          name: string
+          shift_type: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          color?: string
+          created_at?: string
+          display_order?: number | null
+          end_time: string
+          id?: string
+          is_active?: boolean
+          min_submission_hours?: number
+          name: string
+          shift_type: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          color?: string
+          created_at?: string
+          display_order?: number | null
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          min_submission_hours?: number
+          name?: string
+          shift_type?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_definitions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_reminder_logs: {
         Row: {
           business_id: string | null
@@ -4049,6 +4143,53 @@ export type Database = {
           },
         ]
       }
+      submission_rules: {
+        Row: {
+          business_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          rule_type: string
+          updated_at: string
+          value_numeric: number | null
+          value_text: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          rule_type: string
+          updated_at?: string
+          value_numeric?: number | null
+          value_text?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          rule_type?: string
+          updated_at?: string
+          value_numeric?: number | null
+          value_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submission_rules_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           billing_cycle: string
@@ -4129,6 +4270,50 @@ export type Database = {
           requires_global_key?: boolean
         }
         Relationships: []
+      }
+      system_messages: {
+        Row: {
+          business_id: string
+          content: string
+          created_at: string
+          id: string
+          is_active: boolean
+          message_key: string
+          message_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message_key: string
+          message_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message_key?: string
+          message_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_messages_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_access_requests: {
         Row: {
