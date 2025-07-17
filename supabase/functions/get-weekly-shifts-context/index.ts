@@ -12,9 +12,16 @@ serve(async (req) => {
   }
 
   try {
-    const { token } = await req.json();
+    console.log('📥 Request received, method:', req.method);
+    console.log('📥 Request headers:', Object.fromEntries(req.headers.entries()));
+    
+    const body = await req.json();
+    console.log('📥 Request body:', body);
+    
+    const { token } = body;
 
     if (!token) {
+      console.log('❌ No token provided in request');
       return new Response(
         JSON.stringify({ error: 'Token is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -22,6 +29,8 @@ serve(async (req) => {
     }
 
     console.log('🔍 Getting weekly shifts context for token:', token);
+    console.log('🔍 Using SUPABASE_URL:', Deno.env.get('SUPABASE_URL'));
+    console.log('🔍 Using SERVICE_ROLE_KEY:', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ? 'Present' : 'Missing');
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
