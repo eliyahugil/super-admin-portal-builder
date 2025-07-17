@@ -117,9 +117,12 @@ export const QuickMultipleShiftsDialog: React.FC<QuickMultipleShiftsDialogProps>
   const previewDates = generateShiftDates();
 
   const handleSubmit = async () => {
+    console.log('🎯 QuickMultipleShiftsDialog: handleSubmit called');
     const dates = generateShiftDates();
+    console.log('🎯 Generated dates:', dates);
     
     if (dates.length === 0) {
+      console.log('❌ No dates generated');
       toast({
         title: "שגיאה",
         description: "אנא בחר לפחות תאריך אחד",
@@ -161,7 +164,9 @@ export const QuickMultipleShiftsDialog: React.FC<QuickMultipleShiftsDialogProps>
         });
       });
 
+      console.log('🎯 About to call onSubmit with shifts:', shifts);
       await onSubmit(shifts);
+      console.log('✅ onSubmit completed successfully');
       
       toast({
         title: "הצלחה",
