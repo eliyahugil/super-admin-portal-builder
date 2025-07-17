@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useBusinessId } from '@/hooks/useBusinessId';
@@ -55,7 +56,13 @@ export const useInactiveEmployees = (selectedBusinessId?: string | null) => {
 
       console.log('✅ Inactive employees fetched:', {
         total: inactiveEmployees.length,
-        businessId: effectiveBusinessId
+        businessId: effectiveBusinessId,
+        employees: inactiveEmployees.map(emp => ({
+          id: emp.id,
+          name: `${emp.first_name} ${emp.last_name}`,
+          is_active: emp.is_active,
+          is_archived: emp.is_archived
+        }))
       });
 
       return inactiveEmployees;

@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -25,9 +26,20 @@ export const InactiveEmployeesList: React.FC<InactiveEmployeesListProps> = ({
     refetch 
   } = useInactiveEmployees(businessId);
 
-  const employees = propEmployees || inactiveEmployees;
+  // תמיד השתמש בנתונים מה-hook ולא ב-propEmployees
+  const employees = inactiveEmployees;
+
+  console.log('🔍 InactiveEmployeesList - Debug info:', {
+    businessId,
+    propEmployees: propEmployees?.length,
+    inactiveEmployees: inactiveEmployees.length,
+    employees: employees.length,
+    isLoading,
+    hasError: !!error
+  });
 
   const handleRefetch = async () => {
+    console.log('🔄 InactiveEmployeesList - Refetching...');
     await refetch();
     onRefetch();
   };
@@ -60,7 +72,9 @@ export const InactiveEmployeesList: React.FC<InactiveEmployeesListProps> = ({
     );
   }
 
-  if (employees.length === 0) {
+  // בדיקה אם באמת אין עובדים לא פעילים
+  if (!employees || employees.length === 0) {
+    console.log('⚠️ InactiveEmployeesList - No inactive employees found');
     return (
       <Card>
         <CardHeader>
@@ -81,6 +95,8 @@ export const InactiveEmployeesList: React.FC<InactiveEmployeesListProps> = ({
       </Card>
     );
   }
+
+  console.log('✅ InactiveEmployeesList - Displaying inactive employees:', employees.length);
 
   return (
     <div className="space-y-4">

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ModernEmployeeHeader } from './ModernEmployeeHeader';
 import { ModernEmployeeStatsCards } from './ModernEmployeeStatsCards';
@@ -132,13 +133,11 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
       ) : currentView === 'archived' ? (
         <ArchivedEmployeesList 
           businessId={effectiveBusinessId}
-          employees={[]}
           onRefetch={handleRefetch}
         />
       ) : currentView === 'inactive' ? (
         <InactiveEmployeesList 
           businessId={effectiveBusinessId}
-          employees={[]}
           onRefetch={handleRefetch}
         />
       ) : (
