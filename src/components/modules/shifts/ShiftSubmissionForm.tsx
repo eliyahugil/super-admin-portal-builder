@@ -56,6 +56,14 @@ export const ShiftSubmissionForm: React.FC = () => {
           return;
         }
         setTokenData(data);
+        
+        // Set default date to today instead of week start
+        const today = new Date().toISOString().split('T')[0];
+        setFormData(prev => ({
+          ...prev,
+          shift_date: today
+        }));
+        
       } catch (error) {
         console.error('Token validation error:', error);
         toast({
