@@ -152,7 +152,9 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
             role: role === 'no-role' ? null : role || null,
             notes: notes || null,
             status: 'pending',
-            shift_template_id: null
+            shift_template_id: null,
+            required_employees: 1,
+            priority: 'normal'
           };
 
           await onSubmit(shiftData);
@@ -173,7 +175,9 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({
           role: role === 'no-role' ? null : role || null,
           notes: notes || null,
           status: 'pending',
-          shift_template_id: null
+          shift_template_id: null,
+          required_employees: 1,
+          priority: 'normal'
         };
 
         await onSubmit(shiftData);

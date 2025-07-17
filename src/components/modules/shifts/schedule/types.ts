@@ -40,6 +40,7 @@ export interface ShiftScheduleData {
   is_assigned: boolean;
   is_archived: boolean;
   required_employees?: number;
+  priority?: 'critical' | 'normal' | 'backup';
   created_at: string;
   updated_at: string;
   branch_name?: string;
@@ -48,7 +49,7 @@ export interface ShiftScheduleData {
 
 export type ScheduleView = 'week' | 'month' | 'year';
 
-export type CreateShiftData = Pick<ShiftScheduleData, 'shift_date' | 'start_time' | 'end_time' | 'employee_id' | 'branch_id' | 'role' | 'notes' | 'status' | 'shift_template_id' | 'required_employees'>;
+export type CreateShiftData = Pick<ShiftScheduleData, 'shift_date' | 'start_time' | 'end_time' | 'employee_id' | 'branch_id' | 'role' | 'notes' | 'status' | 'shift_template_id' | 'required_employees' | 'priority'>;
 
 export interface ScheduleFiltersType {
   status: 'all' | 'pending' | 'approved' | 'rejected' | 'completed';
@@ -81,4 +82,18 @@ export interface ShiftScheduleViewProps {
   isSelectionMode?: boolean;
   selectedShifts?: ShiftScheduleData[];
   onShiftSelection?: (shift: ShiftScheduleData, selected: boolean) => void;
+}
+
+// Employee preferences types
+export interface EmployeeShiftPreference {
+  id: string;
+  employee_id: string;
+  business_id: string;
+  preference_type: 'shift_type' | 'day_preference' | 'time_preference' | 'branch_preference';
+  preference_value: any; // JSONB field - flexible storage
+  priority_score: number; // 1-10 scale
+  is_active: boolean;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
 }

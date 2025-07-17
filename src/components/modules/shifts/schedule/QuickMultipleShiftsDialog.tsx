@@ -154,7 +154,9 @@ export const QuickMultipleShiftsDialog: React.FC<QuickMultipleShiftsDialogProps>
             role: role === 'no-role' ? null : role || null,
             notes: null,
             status: 'pending',
-            shift_template_id: null
+            shift_template_id: null,
+            required_employees: 1,
+            priority: 'normal'
           });
         });
       });

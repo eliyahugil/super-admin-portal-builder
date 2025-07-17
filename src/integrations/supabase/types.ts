@@ -2117,6 +2117,60 @@ export type Database = {
           },
         ]
       }
+      employee_shift_preferences_v2: {
+        Row: {
+          business_id: string
+          created_at: string
+          employee_id: string
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          preference_type: string
+          preference_value: Json
+          priority_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          preference_type: string
+          preference_value: Json
+          priority_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          preference_type?: string
+          preference_value?: Json
+          priority_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_employee_shift_preferences_v2_business"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_employee_shift_preferences_v2_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_shift_requests: {
         Row: {
           branch_preference: string | null
@@ -3142,6 +3196,7 @@ export type Database = {
           is_assigned: boolean | null
           is_new: boolean | null
           notes: string | null
+          priority: string | null
           required_employees: number | null
           role: string | null
           shift_date: string
@@ -3161,6 +3216,7 @@ export type Database = {
           is_assigned?: boolean | null
           is_new?: boolean | null
           notes?: string | null
+          priority?: string | null
           required_employees?: number | null
           role?: string | null
           shift_date: string
@@ -3180,6 +3236,7 @@ export type Database = {
           is_assigned?: boolean | null
           is_new?: boolean | null
           notes?: string | null
+          priority?: string | null
           required_employees?: number | null
           role?: string | null
           shift_date?: string

@@ -79,6 +79,7 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         is_assigned: !!shiftData.employee_id,
         is_archived: false,
         required_employees: shiftData.required_employees || 1,
+        priority: shiftData.priority || 'normal',
         shift_template_id: shiftData.shift_template_id
       };
 
@@ -170,6 +171,11 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       if (updates.required_employees !== undefined) {
         updateData.required_employees = updates.required_employees || 1;
         console.log('🔢 Setting required_employees to:', updateData.required_employees);
+      }
+
+      if (updates.priority !== undefined) {
+        updateData.priority = updates.priority || 'normal';
+        console.log('🔥 Setting priority to:', updateData.priority);
       }
 
       const { data, error } = await supabase

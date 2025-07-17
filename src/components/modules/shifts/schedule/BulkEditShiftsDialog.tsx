@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Clock, Users, MapPin, User, X } from 'lucide-react';
+import { Clock, Users, MapPin, User, AlertTriangle } from 'lucide-react';
 import type { ShiftScheduleData, Employee, Branch } from './types';
 
 interface BulkEditShiftsDialogProps {
@@ -28,6 +28,7 @@ interface BulkUpdateFields {
   notes?: string;
   status?: string;
   required_employees?: number;
+  priority?: 'critical' | 'normal' | 'backup';
 }
 
 export const BulkEditShiftsDialog: React.FC<BulkEditShiftsDialogProps> = ({
@@ -331,6 +332,39 @@ export const BulkEditShiftsDialog: React.FC<BulkEditShiftsDialogProps> = ({
                       +
                     </Button>
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Priority Field */}
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <Checkbox
+                  id="priority"
+                  checked={fieldsToUpdate.has('priority')}
+                  onCheckedChange={(checked) => handleFieldToggle('priority', !!checked)}
+                />
+                <Label htmlFor="priority" className="text-sm font-medium">
+                  <AlertTriangle className="inline h-4 w-4 ml-1" />
+                  דחיפות משמרת
+                </Label>
+              </div>
+              
+              {fieldsToUpdate.has('priority') && (
+                <div className="mr-6">
+                  <Select 
+                    value={updates.priority || 'normal'} 
+                    onValueChange={(value) => handleUpdateChange('priority', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="בחר דחיפות..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="critical">🔴 חובה - משמרת קריטית</SelectItem>
+                      <SelectItem value="normal">🟡 רגיל - משמרת סטנדרטית</SelectItem>
+                      <SelectItem value="backup">🟢 תגבור - לא הכרחי</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </div>

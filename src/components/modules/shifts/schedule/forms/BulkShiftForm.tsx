@@ -87,7 +87,9 @@ export const BulkShiftForm: React.FC<BulkShiftFormProps> = ({
             branch_id: branchId || null,
             role: role && role !== 'none' && role !== '' ? role : null,
             notes: null,
-            status: 'pending'
+            status: 'pending',
+            required_employees: 1,
+            priority: 'normal'
           });
         });
       }
