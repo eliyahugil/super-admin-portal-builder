@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -17,11 +18,13 @@ import {
   UserX,
   Building2,
   DollarSign,
-  Clock
+  Clock,
+  Calendar
 } from 'lucide-react';
 import { BulkEditEmployeesDialog } from './BulkEditEmployeesDialog';
 import { BulkAssignBranchDialog } from './BulkAssignBranchDialog';
 import { BulkSendMessageDialog } from './BulkSendMessageDialog';
+import { BulkShiftTypesDialog } from './BulkShiftTypesDialog';
 import type { Employee } from '@/types/employee';
 import type { Branch } from '@/types/branch';
 
@@ -49,6 +52,7 @@ export const BulkEmployeeActions: React.FC<BulkEmployeeActionsProps> = ({
   const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [showBranchAssign, setShowBranchAssign] = useState(false);
   const [showSendMessage, setShowSendMessage] = useState(false);
+  const [showShiftTypes, setShowShiftTypes] = useState(false);
 
   const selectedCount = selectedEmployees.size;
   const selectedEmployeesList = employees.filter(emp => selectedEmployees.has(emp.id));
@@ -78,6 +82,17 @@ export const BulkEmployeeActions: React.FC<BulkEmployeeActionsProps> = ({
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setShowShiftTypes(true)}
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            <Calendar className="h-4 w-4" />
+            סוגי משמרות
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setShowSendMessage(true)}
             disabled={loading}
             className="flex items-center gap-2"
@@ -94,7 +109,7 @@ export const BulkEmployeeActions: React.FC<BulkEmployeeActionsProps> = ({
                 <ChevronDown className="h-4 w-4 mr-2" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">{/* removed dir prop */}
+            <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setShowBranchAssign(true)}>
                 <Building2 className="h-4 w-4 ml-2" />
                 שיוך לסניף
@@ -160,6 +175,18 @@ export const BulkEmployeeActions: React.FC<BulkEmployeeActionsProps> = ({
           onOpenChange={setShowSendMessage}
           onSuccess={() => {
             setShowSendMessage(false);
+          }}
+        />
+      )}
+
+      {showShiftTypes && (
+        <BulkShiftTypesDialog
+          employees={selectedEmployeesList}
+          open={showShiftTypes}
+          onOpenChange={setShowShiftTypes}
+          onSuccess={() => {
+            setShowShiftTypes(false);
+            onRefetch();
           }}
         />
       )}
