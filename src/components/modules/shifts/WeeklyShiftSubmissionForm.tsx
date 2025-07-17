@@ -313,8 +313,8 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8" dir="rtl">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <Card>
+      <div className="container mx-auto px-4 max-w-full">
+        <Card className="w-full">{/* הסרתי את max-w-4xl והוספתי max-w-full */}
           <CardHeader className="text-center">
             <div className="flex justify-between items-start mb-4">
               <div></div> {/* Spacer for centering */}
