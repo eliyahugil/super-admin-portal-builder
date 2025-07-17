@@ -78,15 +78,21 @@ export const WeeklyShiftView: React.FC = () => {
   const { data: shiftsData, error, isLoading } = useQuery({
     queryKey: ['weekly-shifts-context', token],
     queryFn: async (): Promise<WeeklyShiftsData> => {
+      console.log('🔄 Fetching shifts data for token:', token);
       const { data, error } = await supabase.functions.invoke('get-weekly-shifts-context', {
         body: { token }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching shifts:', error);
+        throw error;
+      }
+      console.log('✅ Shifts data received:', data);
       return data;
     },
     enabled: !!token,
-    refetchInterval: 30000, // Refresh every 30 seconds to check for updates
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   const submitChoicesMutation = useMutation({
@@ -115,10 +121,11 @@ export const WeeklyShiftView: React.FC = () => {
   });
 
   useEffect(() => {
+    console.log('🔍 WeeklyShiftView state:', { isLoading, hasData: !!shiftsData, hasError: !!error });
     if (!isLoading) {
       setIsValidating(false);
     }
-  }, [isLoading]);
+  }, [isLoading, shiftsData, error]);
 
   const handleShiftSelection = (shiftId: string, checked: boolean) => {
     const newSelected = new Set(selectedShifts);
@@ -181,7 +188,8 @@ export const WeeklyShiftView: React.FC = () => {
     );
   }
 
-  if (isLoading || isValidating) {
+  if (isLoading) {
+    console.log('⏳ Still loading...');
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
         <div className="max-w-4xl mx-auto">
