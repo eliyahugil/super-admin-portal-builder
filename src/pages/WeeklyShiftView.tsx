@@ -31,7 +31,7 @@ interface WeeklyShiftsData {
     };
   };
   context: {
-    type: 'available_shifts' | 'assigned_shifts';
+    type: 'available_shifts' | 'assigned_shifts' | 'no_shifts_assigned';
     title: string;
     description: string;
     shiftsPublished: boolean;
@@ -109,6 +109,7 @@ export const WeeklyShiftView: React.FC = () => {
 
   const { tokenData, context, shifts } = shiftsData;
   const isAvailableShifts = context.type === 'available_shifts';
+  const isNoShiftsAssigned = context.type === 'no_shifts_assigned';
 
   const formatShiftTime = (startTime: string, endTime: string) => {
     return `${startTime} - ${endTime}`;
@@ -193,7 +194,9 @@ export const WeeklyShiftView: React.FC = () => {
             variant={isAvailableShifts ? "outline" : "default"}
             className={`text-sm px-4 py-2 ${
               isAvailableShifts 
-                ? 'border-orange-200 bg-orange-50 text-orange-700' 
+                ? 'border-orange-200 bg-orange-50 text-orange-700'
+                : isNoShiftsAssigned
+                ? 'border-red-200 bg-red-50 text-red-700'
                 : 'border-green-200 bg-green-50 text-green-700'
             }`}
           >
@@ -201,6 +204,11 @@ export const WeeklyShiftView: React.FC = () => {
               <>
                 <Clock4 className="h-4 w-4 mr-2" />
                 ממתין לפרסום המשמרות
+              </>
+            ) : isNoShiftsAssigned ? (
+              <>
+                <Calendar className="h-4 w-4 mr-2" />
+                לא הוקצו משמרות
               </>
             ) : (
               <>
@@ -275,10 +283,17 @@ export const WeeklyShiftView: React.FC = () => {
             <CardContent className="text-center py-12">
               <Calendar className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {isAvailableShifts ? 'אין משמרות זמינות' : 'אין משמרות מוקצות'}
+                {isNoShiftsAssigned 
+                  ? 'לא הוקצו לך משמרות השבוע'
+                  : isAvailableShifts 
+                  ? 'אין משמרות זמינות' 
+                  : 'אין משמרות מוקצות'
+                }
               </h3>
               <p className="text-muted-foreground">
-                {isAvailableShifts 
+                {isNoShiftsAssigned
+                  ? context.description
+                  : isAvailableShifts 
                   ? 'טרם הוגדרו משמרות זמינות לשבוע זה'
                   : 'לא הוקצו לך משמרות לשבוע זה'
                 }
