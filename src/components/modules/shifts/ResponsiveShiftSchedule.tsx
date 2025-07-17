@@ -171,6 +171,13 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     }
     
     console.log(`📊 Creation summary: ${successCount} successful, ${errorCount} failed`);
+    
+    // רענן את הנתונים בכוח
+    console.log('🔄 Forcing data refresh...');
+    queryClient.invalidateQueries({ queryKey: ['schedule-shifts'] });
+    queryClient.invalidateQueries({ queryKey: ['schedule-shifts', businessId] });
+    await queryClient.refetchQueries({ queryKey: ['schedule-shifts', businessId] });
+    console.log('✅ Data refresh completed');
   };
 
   const handleBulkCreate = async (shifts: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>[]) => {
@@ -278,6 +285,17 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           
           {/* Templates and Quick Multiple Buttons */}
           <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                console.log('🔄 Manual refresh triggered');
+                queryClient.invalidateQueries({ queryKey: ['schedule-shifts'] });
+                queryClient.refetchQueries({ queryKey: ['schedule-shifts', businessId] });
+              }}
+              variant="outline"
+              size={isMobile ? "sm" : "default"}
+            >
+              🔄 רענן
+            </Button>
             <Button
               onClick={() => handleApplyTemplates()}
               variant="outline"

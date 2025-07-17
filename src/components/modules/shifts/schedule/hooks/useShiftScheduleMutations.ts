@@ -122,7 +122,10 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
     },
     onSuccess: (data) => {
       console.log('✅ Mutation success callback:', data);
+      // רענן את כל ה-queries הקשורים למשמרות
+      queryClient.invalidateQueries({ queryKey: ['schedule-shifts'] });
       queryClient.invalidateQueries({ queryKey: ['schedule-shifts', businessId] });
+      queryClient.refetchQueries({ queryKey: ['schedule-shifts', businessId] });
     },
     onError: (error) => {
       console.error('❌ Mutation error callback:', error);
