@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 interface BusinessDetails {
   id: string;
@@ -19,9 +20,11 @@ interface BusinessDetails {
 export const useBusinessForm = () => {
   const { businessId: urlBusinessId } = useParams();
   const { business, businessId: hookBusinessId } = useBusiness();
+  const { businessId: currentBusinessId } = useCurrentBusiness();
   const { toast } = useToast();
   
-  const effectiveBusinessId = urlBusinessId || hookBusinessId;
+  // עדיפויות: URL -> currentBusiness -> hookBusiness
+  const effectiveBusinessId = urlBusinessId || currentBusinessId || hookBusinessId;
   
   const [details, setDetails] = useState<BusinessDetails>({
     id: '',

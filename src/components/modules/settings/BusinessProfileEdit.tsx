@@ -5,8 +5,10 @@ import { Building } from 'lucide-react';
 import { useBusinessForm } from '@/hooks/useBusinessForm';
 import { BasicInfoCard } from './BasicInfoCard';
 import { ContactInfoCard } from './ContactInfoCard';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 export const BusinessProfileEdit: React.FC = () => {
+  const { isSuperAdmin } = useCurrentBusiness();
   const {
     details,
     setDetails,
@@ -33,7 +35,16 @@ export const BusinessProfileEdit: React.FC = () => {
   if (!effectiveBusinessId) {
     return (
       <div className="max-w-4xl mx-auto p-6">
-        <div className="text-center text-red-600">לא נמצא מזהה עסק</div>
+        <div className="text-center text-amber-600">
+          {isSuperAdmin ? (
+            <div>
+              <h2 className="text-xl font-semibold mb-2">בחר עסק לעריכה</h2>
+              <p>כסופר אדמין, יש לבחור עסק ספציפי לעריכת פרטיו</p>
+            </div>
+          ) : (
+            <div className="text-red-600">לא נמצא מזהה עסק</div>
+          )}
+        </div>
       </div>
     );
   }
