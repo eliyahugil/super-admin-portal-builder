@@ -11,6 +11,7 @@ interface EmployeesListProps {
   employees: Employee[];
   onRefetch?: () => void;
   branches?: Branch[];
+  forceStatusFilter?: 'all' | 'active' | 'inactive';
 }
 
 export const EmployeesList: React.FC<EmployeesListProps> = ({
@@ -18,6 +19,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
   employees,
   onRefetch = () => {},
   branches = [],
+  forceStatusFilter,
 }) => {
   const {
     preferences,
@@ -39,7 +41,7 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
     pageSize,
     handlePageSizeChange,
     handlePageChange,
-  } = useEmployeeListLogic(employees, onRefetch, businessId);
+  } = useEmployeeListLogic(employees, onRefetch, businessId, forceStatusFilter);
 
   console.log('📋 EmployeesList rendering with:', {
     businessId,

@@ -9,7 +9,7 @@ import {
   useEmployeeActions 
 } from './hooks';
 
-export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => void, businessId?: string | null) => {
+export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => void, businessId?: string | null, forceStatusFilter?: 'all' | 'active' | 'inactive') => {
   // השתמש ב-hook החדש לניהול העדפות
   const {
     preferences,
@@ -19,6 +19,11 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     resetFilters,
   } = useEmployeeListPreferences(businessId);
 
+  // דרוס את סטטוס הפילטר אם נדרש
+  const effectiveFilters = forceStatusFilter 
+    ? { ...preferences.filters, status: forceStatusFilter }
+    : preferences.filters;
+
   console.log('🔍 useEmployeeListLogic - filters applied:', {
     sortBy: preferences.filters.sortBy,
     sortOrder: preferences.filters.sortOrder,
@@ -26,14 +31,17 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
   });
 
   // פילטור העובדים
-  const filteredEmployees = useEmployeeFiltering(employees, preferences.filters);
+  const filteredEmployees = useEmployeeFiltering(employees, effectiveFilters);
 
   // מיון העובדים
-  const sortedEmployees = useEmployeeSorting(filteredEmployees, preferences.filters.sortBy, preferences.filters.sortOrder);
+  const sortedEmployees = useEmployeeSorting(filteredEmployees, effectiveFilters.sortBy, effectiveFilters.sortOrder);
 
   console.log('📊 useEmployeeListLogic - after sorting:', {
-    sortBy: preferences.filters.sortBy,
-    sortOrder: preferences.filters.sortOrder,
+    sortBy: effectiveFilters.sortBy,
+    sortOrder: effectiveFilters.sortOrder,
+    forceStatusFilter,
+    effectiveStatus: effectiveFilters.status,
+    filteredCount: sortedEmployees.length,
     firstEmployee: sortedEmployees[0] ? `${sortedEmployees[0].first_name} ${sortedEmployees[0].last_name}` : 'none',
     lastEmployee: sortedEmployees[sortedEmployees.length - 1] ? `${sortedEmployees[sortedEmployees.length - 1].first_name} ${sortedEmployees[sortedEmployees.length - 1].last_name}` : 'none'
   });
@@ -71,13 +79,13 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
   } = useEmployeeActions(onRefetch, selectedEmployees, clearSelectedEmployees);
 
   // פונקציה לטיפול במיון
-  const handleSort = (sortBy: typeof preferences.filters.sortBy) => {
+  const handleSort = (sortBy: typeof effectiveFilters.sortBy) => {
     const newSortOrder = 
-      preferences.filters.sortBy === sortBy && preferences.filters.sortOrder === 'asc' 
+      effectiveFilters.sortBy === sortBy && effectiveFilters.sortOrder === 'asc' 
         ? 'desc' 
         : 'asc';
     
-    console.log('🔄 handleSort in useEmployeeListLogic:', { sortBy, newSortOrder, currentSortBy: preferences.filters.sortBy });
+    console.log('🔄 handleSort in useEmployeeListLogic:', { sortBy, newSortOrder, currentSortBy: effectiveFilters.sortBy });
     updateFilters({ sortBy, sortOrder: newSortOrder });
   };
 
@@ -90,7 +98,7 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     filteredCount,
     
     // העדפות ופילטרים
-    preferences,
+    preferences: { ...preferences, filters: effectiveFilters },
     updateFilters,
     updatePageSize,
     toggleAdvancedFilters,

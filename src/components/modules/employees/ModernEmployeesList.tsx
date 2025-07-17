@@ -70,6 +70,7 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
             businessId={businessId}
             employees={employees}
             onRefetch={onRefetch}
+            forceStatusFilter="all"
           />
         </CardContent>
       </Card>
