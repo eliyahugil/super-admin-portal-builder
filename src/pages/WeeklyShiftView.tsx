@@ -47,15 +47,27 @@ const daysOfWeek = [
 export const WeeklyShiftView: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const [isValidating, setIsValidating] = useState(true);
+  
+  console.log('🚀 WeeklyShiftView component loaded with token:', token);
+  console.log('📍 Current URL path:', window.location.pathname);
 
   const { data: shiftsData, error, isLoading } = useQuery({
     queryKey: ['weekly-shifts-context', token],
     queryFn: async (): Promise<WeeklyShiftsData> => {
+      console.log('📞 Calling get-weekly-shifts-context with token:', token);
+      
       const { data, error } = await supabase.functions.invoke('get-weekly-shifts-context', {
         body: { token }
       });
 
-      if (error) throw error;
+      console.log('🔍 Function response:', { data, error });
+      
+      if (error) {
+        console.error('❌ Function error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Function success, returning data:', data);
       return data;
     },
     enabled: !!token,
