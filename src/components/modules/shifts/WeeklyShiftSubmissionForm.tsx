@@ -164,10 +164,6 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
             filteredByBranches: assignedBranchIds.length > 0
           });
           
-          // Separate shifts by type for display
-          const shifts = shiftsData || [];
-          setAvailableShifts(shifts);
-          
           // Get employee's shift type permissions using new hierarchy function
           // First try to get shift preferences for specific branches if employee is assigned
           let allowedShiftTypes = ['morning', 'evening']; // Default fallback
@@ -199,6 +195,36 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           }
 
           console.log('🕐 Employee shift types permissions (hierarchical):', allowedShiftTypes);
+          
+          // Filter shifts by employee's allowed shift types AFTER getting the permissions
+          const shifts = shiftsData || [];
+          
+          // Function to determine shift type based on start time
+          const getShiftType = (startTime: string) => {
+            const hour = parseInt(startTime.split(':')[0]);
+            if (hour >= 6 && hour < 15) return 'morning';
+            if (hour >= 15 && hour < 23) return 'afternoon';
+            if (hour >= 17 && hour < 2) return 'evening';
+            return 'night';
+          };
+          
+          const filteredShifts = shifts.filter(shift => {
+            const shiftType = getShiftType(shift.start_time);
+            return allowedShiftTypes.includes(shiftType);
+          });
+          
+          console.log('📋 Shifts filtered by employee permissions:', {
+            originalCount: shifts.length,
+            filteredCount: filteredShifts.length,
+            allowedTypes: allowedShiftTypes,
+            filteredShifts: filteredShifts.map(s => ({
+              id: s.id,
+              start_time: s.start_time,
+              type: getShiftType(s.start_time)
+            }))
+          });
+          
+          setAvailableShifts(filteredShifts);
           
           setTokenData(prev => ({
             ...prev,
@@ -478,8 +504,8 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                     weekStartDate={tokenData.week_start_date}
                     weekEndDate={tokenData.week_end_date}
                   />
-                   {/* אופציה למשמרות בוקר נוספות */}
-                   {tokenData.employeeShiftTypes?.includes('morning') && (
+                   {/* אופציה למשמרות בוקר נוספות - רק לעובדי ערב */}
+                   {tokenData.employeeShiftTypes?.includes('evening') && !tokenData.employeeShiftTypes?.includes('morning') && (
                      <Card className="bg-blue-50 border-blue-200">
                        <CardHeader className="pb-3">
                          <CardTitle className="text-lg flex items-center gap-2">
