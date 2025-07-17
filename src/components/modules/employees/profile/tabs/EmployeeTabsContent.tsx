@@ -8,6 +8,7 @@ import { SalaryHistory } from '../../SalaryHistory';
 import { ShiftSubmissionHistory } from '../../ShiftSubmissionHistory';
 import { EmployeeTokenManager } from '../../EmployeeTokenManager';
 import { EmployeeCustomFields } from '../../EmployeeCustomFields';
+import { EmployeeShiftSettings } from '../../EmployeeShiftSettings';
 import { EmployeeOverviewTab } from './EmployeeOverviewTab';
 import { EmployeeAnalyticsTab } from './EmployeeAnalyticsTab';
 import { EmployeeNotesTab } from './EmployeeNotesTab';
@@ -22,13 +23,15 @@ interface EmployeeTabsContentProps {
   employeeId: string;
   employeeName: string;
   businessId: string;
+  onUpdate?: () => void;
 }
 
 export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
   employee,
   employeeId,
   employeeName,
-  businessId
+  businessId,
+  onUpdate = () => {}
 }) => {
   return (
     <div dir="rtl">
@@ -62,6 +65,10 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
           employeeName={employeeName}
           phone={employee.phone}
         />
+      </TabsContent>
+
+      <TabsContent value="shift-settings">
+        <EmployeeShiftSettings employee={employee} onUpdate={onUpdate} />
       </TabsContent>
 
       <TabsContent value="salary">

@@ -64,6 +64,12 @@ export interface Employee {
   password_hash?: string | null;
   is_system_user?: boolean;
 
+  // --- שדות הגשת משמרות ---
+  shift_submission_quota?: number | null;
+  preferred_shift_time?: 'morning' | 'evening' | 'night' | 'any' | null;
+  can_choose_unassigned_shifts?: boolean | null;
+  submission_notes?: string | null;
+
   // Extended properties from joins - Updated to include id
   main_branch?: { id: string; name: string; address?: string } | null;
   employee_notes?: EmployeeNote[];

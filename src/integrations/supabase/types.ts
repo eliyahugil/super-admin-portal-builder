@@ -158,6 +158,75 @@ export type Database = {
           },
         ]
       }
+      available_shifts: {
+        Row: {
+          branch_id: string | null
+          business_id: string
+          created_at: string
+          current_assignments: number | null
+          day_of_week: number
+          end_time: string
+          id: string
+          is_open_for_unassigned: boolean | null
+          required_employees: number | null
+          shift_name: string
+          shift_type: string
+          start_time: string
+          updated_at: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          branch_id?: string | null
+          business_id: string
+          created_at?: string
+          current_assignments?: number | null
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_open_for_unassigned?: boolean | null
+          required_employees?: number | null
+          shift_name: string
+          shift_type: string
+          start_time: string
+          updated_at?: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          branch_id?: string | null
+          business_id?: string
+          created_at?: string
+          current_assignments?: number | null
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_open_for_unassigned?: boolean | null
+          required_employees?: number | null
+          shift_name?: string
+          shift_type?: string
+          start_time?: string
+          updated_at?: string
+          week_end_date?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "available_shifts_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "available_shifts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           address: string | null
@@ -2060,6 +2129,60 @@ export type Database = {
           },
         ]
       }
+      employee_shift_choices: {
+        Row: {
+          available_shift_id: string
+          choice_type: string
+          created_at: string
+          employee_id: string
+          id: string
+          is_approved: boolean | null
+          notes: string | null
+          preference_level: number | null
+          updated_at: string
+          week_start_date: string
+        }
+        Insert: {
+          available_shift_id: string
+          choice_type?: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          is_approved?: boolean | null
+          notes?: string | null
+          preference_level?: number | null
+          updated_at?: string
+          week_start_date: string
+        }
+        Update: {
+          available_shift_id?: string
+          choice_type?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          is_approved?: boolean | null
+          notes?: string | null
+          preference_level?: number | null
+          updated_at?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_shift_choices_available_shift_id_fkey"
+            columns: ["available_shift_id"]
+            isOneToOne: false
+            referencedRelation: "available_shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_shift_choices_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_shift_preferences: {
         Row: {
           branch_id: string
@@ -2285,6 +2408,7 @@ export type Database = {
         Row: {
           address: string | null
           business_id: string
+          can_choose_unassigned_shifts: boolean | null
           created_at: string | null
           email: string | null
           employee_id: string | null
@@ -2301,7 +2425,10 @@ export type Database = {
           notes: string | null
           password_hash: string | null
           phone: string | null
+          preferred_shift_time: string | null
           preferred_shift_type: Database["public"]["Enums"]["shift_type"] | null
+          shift_submission_quota: number | null
+          submission_notes: string | null
           termination_date: string | null
           updated_at: string | null
           username: string | null
@@ -2310,6 +2437,7 @@ export type Database = {
         Insert: {
           address?: string | null
           business_id: string
+          can_choose_unassigned_shifts?: boolean | null
           created_at?: string | null
           email?: string | null
           employee_id?: string | null
@@ -2326,9 +2454,12 @@ export type Database = {
           notes?: string | null
           password_hash?: string | null
           phone?: string | null
+          preferred_shift_time?: string | null
           preferred_shift_type?:
             | Database["public"]["Enums"]["shift_type"]
             | null
+          shift_submission_quota?: number | null
+          submission_notes?: string | null
           termination_date?: string | null
           updated_at?: string | null
           username?: string | null
@@ -2337,6 +2468,7 @@ export type Database = {
         Update: {
           address?: string | null
           business_id?: string
+          can_choose_unassigned_shifts?: boolean | null
           created_at?: string | null
           email?: string | null
           employee_id?: string | null
@@ -2353,9 +2485,12 @@ export type Database = {
           notes?: string | null
           password_hash?: string | null
           phone?: string | null
+          preferred_shift_time?: string | null
           preferred_shift_type?:
             | Database["public"]["Enums"]["shift_type"]
             | null
+          shift_submission_quota?: number | null
+          submission_notes?: string | null
           termination_date?: string | null
           updated_at?: string | null
           username?: string | null
