@@ -67,7 +67,7 @@ export class ShiftTokenService {
         .from('shift_tokens')
         .select(`
           *,
-          employee:employees(first_name, last_name, employee_id)
+          employee:employees(first_name, last_name, employee_id, preferred_shift_type)
         `)
         .eq('token', token)
         .eq('is_used', false)

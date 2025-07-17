@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { ShiftTokenService, ShiftSubmissionData } from '@/services/ShiftTokenService';
 import { Clock, MapPin, User, Calendar } from 'lucide-react';
@@ -18,6 +20,9 @@ export const ShiftSubmissionForm: React.FC = () => {
   const [tokenData, setTokenData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedShiftType, setSelectedShiftType] = useState<string>('');
+  const [canWorkMorning, setCanWorkMorning] = useState(false);
+  const [canWorkEvening, setCanWorkEvening] = useState(false);
   const [formData, setFormData] = useState<ShiftSubmissionData>({
     shift_date: '',
     start_time: '',
@@ -71,6 +76,16 @@ export const ShiftSubmissionForm: React.FC = () => {
     e.preventDefault();
     if (!token) return;
 
+    // Validate that a shift type is selected
+    if (!selectedShiftType) {
+      toast({
+        title: 'שגיאה',
+        description: 'יש לבחור סוג משמרת',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
       await ShiftTokenService.submitShift(token, formData);
@@ -93,6 +108,66 @@ export const ShiftSubmissionForm: React.FC = () => {
 
   const handleInputChange = (field: keyof ShiftSubmissionData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleShiftTypeChange = (shiftType: string) => {
+    setSelectedShiftType(shiftType);
+    
+    // Set predefined times based on shift type
+    switch(shiftType) {
+      case 'morning':
+        setFormData(prev => ({ ...prev, start_time: '07:00', end_time: '15:00' }));
+        break;
+      case 'afternoon':
+        setFormData(prev => ({ ...prev, start_time: '15:00', end_time: '23:00' }));
+        break;
+      case 'evening':
+        setFormData(prev => ({ ...prev, start_time: '17:00', end_time: '01:00' }));
+        break;
+      case 'night':
+        setFormData(prev => ({ ...prev, start_time: '23:00', end_time: '07:00' }));
+        break;
+    }
+  };
+
+  // Get available shift types based on employee preference
+  const getAvailableShiftTypes = () => {
+    const preferredType = tokenData?.employee?.preferred_shift_type;
+    const allTypes = [
+      { value: 'morning', label: 'משמרת בוקר (07:00-15:00)', time: '07:00-15:00' },
+      { value: 'afternoon', label: 'משמרת צהריים (15:00-23:00)', time: '15:00-23:00' },
+      { value: 'evening', label: 'משמרת ערב (17:00-01:00)', time: '17:00-01:00' },
+      { value: 'night', label: 'משמרת לילה (23:00-07:00)', time: '23:00-07:00' }
+    ];
+
+    // If employee has a preferred shift type, show only that as primary option
+    if (preferredType) {
+      return allTypes.filter(type => type.value === preferredType);
+    }
+    
+    // If no preference, show all options
+    return allTypes;
+  };
+
+  // Get additional shift types (for special checkboxes)
+  const getAdditionalShiftTypes = () => {
+    const preferredType = tokenData?.employee?.preferred_shift_type;
+    const allTypes = [
+      { value: 'morning', label: 'יכול לעבוד גם בבוקר', enabled: canWorkMorning, setter: setCanWorkMorning },
+      { value: 'evening', label: 'יכול לעבוד גם בערב', enabled: canWorkEvening, setter: setCanWorkEvening }
+    ];
+
+    // If employee is evening worker, show morning as additional option
+    if (preferredType === 'evening') {
+      return allTypes.filter(type => type.value === 'morning');
+    }
+    
+    // If employee is morning worker, show evening as additional option  
+    if (preferredType === 'morning') {
+      return allTypes.filter(type => type.value === 'evening');
+    }
+    
+    return [];
   };
 
   if (loading) {
@@ -128,6 +203,54 @@ export const ShiftSubmissionForm: React.FC = () => {
           
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Shift Type Selection */}
+              <div>
+                <Label className="text-base font-medium mb-3 block">בחירת סוג משמרת</Label>
+                <div className="space-y-3">
+                  {getAvailableShiftTypes().map((shiftType) => (
+                    <div key={shiftType.value} className="border rounded-lg p-3">
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <input
+                          type="radio"
+                          id={shiftType.value}
+                          name="shiftType"
+                          value={shiftType.value}
+                          checked={selectedShiftType === shiftType.value}
+                          onChange={(e) => handleShiftTypeChange(e.target.value)}
+                          className="h-4 w-4"
+                        />
+                        <Label htmlFor={shiftType.value} className="flex-1 cursor-pointer">
+                          {shiftType.label}
+                        </Label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Additional shift options for special days */}
+                {getAdditionalShiftTypes().length > 0 && (
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <Label className="text-sm font-medium mb-2 block text-blue-800">
+                      אופציות נוספות לימים מיוחדים
+                    </Label>
+                    <div className="space-y-2">
+                      {getAdditionalShiftTypes().map((option) => (
+                        <div key={option.value} className="flex items-center space-x-2 space-x-reverse">
+                          <Checkbox
+                            id={`additional-${option.value}`}
+                            checked={option.enabled}
+                            onCheckedChange={(checked) => option.setter(!!checked)}
+                          />
+                          <Label htmlFor={`additional-${option.value}`} className="text-sm cursor-pointer">
+                            {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="shift_date" className="flex items-center gap-2">
