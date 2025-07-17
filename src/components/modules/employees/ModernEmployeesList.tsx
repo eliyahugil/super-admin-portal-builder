@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, Users } from 'lucide-react';
 import { EmployeesList } from './EmployeesList';
+import { useBranchesData } from '@/hooks/useBranchesData';
 import type { Employee } from '@/hooks/useEmployees';
 
 interface ModernEmployeesListProps {
@@ -17,9 +18,13 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
   employees,
   onRefetch,
 }) => {
+  // Fetch branches for bulk actions
+  const { data: branches = [] } = useBranchesData(businessId);
+  
   console.log('📋 ModernEmployeesList - Debug info:', {
     businessId,
     employees: employees.length,
+    branches: branches.length,
   });
 
   if (!employees || employees.length === 0) {
@@ -70,6 +75,7 @@ export const ModernEmployeesList: React.FC<ModernEmployeesListProps> = ({
             businessId={businessId}
             employees={employees}
             onRefetch={onRefetch}
+            branches={branches}
             forceStatusFilter="all"
           />
         </CardContent>

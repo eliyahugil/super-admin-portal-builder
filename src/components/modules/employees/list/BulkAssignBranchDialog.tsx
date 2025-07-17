@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,39 @@ export const BulkAssignBranchDialog: React.FC<BulkAssignBranchDialogProps> = ({
   const [priorityOrder, setPriorityOrder] = useState<number>(1);
   const [shiftTypes, setShiftTypes] = useState<string[]>(['morning', 'evening']);
   const [availableDays, setAvailableDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
+  const [existingRoles, setExistingRoles] = useState<string[]>([]);
+
+  // Fetch existing roles from the system
+  useEffect(() => {
+    const fetchExistingRoles = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('employee_branch_assignments')
+          .select('role_name')
+          .not('role_name', 'is', null);
+
+        if (error) throw error;
+
+        // Extract unique role names and filter out empty/null values
+        const uniqueRoles = [...new Set(
+          data
+            .map(item => item.role_name?.trim())
+            .filter(role => role && role.length > 0)
+        )];
+
+        console.log('📋 Existing roles found:', uniqueRoles);
+        setExistingRoles(uniqueRoles);
+      } catch (error) {
+        console.error('Error fetching existing roles:', error);
+        // Fall back to default roles if fetch fails
+        setExistingRoles(['קופאי', 'מכירות', 'מנהל', 'אבטחה', 'ניקיון', 'טבח', 'מלצר', 'נהג']);
+      }
+    };
+
+    if (open) {
+      fetchExistingRoles();
+    }
+  }, [open]);
 
   const handleSubmit = async () => {
     if (!selectedBranchId || !roleName) {
@@ -146,14 +179,25 @@ export const BulkAssignBranchDialog: React.FC<BulkAssignBranchDialogProps> = ({
                 <SelectValue placeholder="בחר תפקיד" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="cashier">קופאי</SelectItem>
-                <SelectItem value="sales">מכירות</SelectItem>
-                <SelectItem value="manager">מנהל</SelectItem>
-                <SelectItem value="security">אבטחה</SelectItem>
-                <SelectItem value="cleaner">ניקיון</SelectItem>
-                <SelectItem value="cook">טבח</SelectItem>
-                <SelectItem value="waiter">מלצר</SelectItem>
-                <SelectItem value="driver">נהג</SelectItem>
+                {existingRoles.length > 0 ? (
+                  existingRoles.map(role => (
+                    <SelectItem key={role} value={role}>
+                      {role}
+                    </SelectItem>
+                  ))
+                ) : (
+                  // Fallback roles if no existing roles found
+                  <>
+                    <SelectItem value="קופאי">קופאי</SelectItem>
+                    <SelectItem value="מכירות">מכירות</SelectItem>
+                    <SelectItem value="מנהל">מנהל</SelectItem>
+                    <SelectItem value="אבטחה">אבטחה</SelectItem>
+                    <SelectItem value="ניקיון">ניקיון</SelectItem>
+                    <SelectItem value="טבח">טבח</SelectItem>
+                    <SelectItem value="מלצר">מלצר</SelectItem>
+                    <SelectItem value="נהג">נהג</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
