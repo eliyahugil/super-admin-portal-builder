@@ -158,7 +158,10 @@ export const ShiftSubmissionManager: React.FC = () => {
 
   // פונקציה לאיפוס טוקנים
   const resetTokens = async () => {
+    console.log('🔄 resetTokens נקראה - התחלה', { selectedWeek });
+    
     if (!selectedWeek) {
+      console.log('❌ אין שבוע נבחר');
       toast({
         title: 'שגיאה',
         description: 'יש לבחור שבוע תחילה',
@@ -167,13 +170,16 @@ export const ShiftSubmissionManager: React.FC = () => {
       return;
     }
 
+    console.log('🔄 מתחיל איפוס טוקנים לשבוע:', selectedWeek);
     setIsResetting(true);
     
     try {
-      console.log('🔄 מאפס טוכנים לשבוע:', selectedWeek);
+      console.log('📞 קורא ל-Edge Function cleanup-duplicate-tokens');
       
       // קרא ל-Edge Function לניקוי הטוכנים
-      const { error } = await supabase.functions.invoke('cleanup-duplicate-tokens');
+      const { data, error } = await supabase.functions.invoke('cleanup-duplicate-tokens');
+      
+      console.log('📊 תגובה מ-Edge Function:', { data, error });
       
       if (error) {
         console.error('❌ שגיאה באיפוס טוכנים:', error);
@@ -183,20 +189,23 @@ export const ShiftSubmissionManager: React.FC = () => {
       console.log('✅ טוכנים אופסו בהצלחה');
       
       // רענן את הנתונים
-      refetchTokens();
+      console.log('🔄 מרענן נתונים...');
+      await refetchTokens();
+      console.log('✅ נתונים רוענו');
       
       toast({
         title: 'הטוכנים אופסו בהצלחה',
         description: 'כעת ניתן ליצור טוכנים חדשים לכל העובדים',
       });
     } catch (error) {
-      console.error('Error resetting tokens:', error);
+      console.error('💥 Error resetting tokens:', error);
       toast({
         title: 'שגיאה',
-        description: 'שגיאה באיפוס הטוכנים',
+        description: `שגיאה באיפוס הטוכנים: ${error.message}`,
         variant: 'destructive',
       });
     } finally {
+      console.log('🏁 resetTokens הסתיים');
       setIsResetting(false);
     }
   };
