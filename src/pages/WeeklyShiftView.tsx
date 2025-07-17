@@ -78,21 +78,15 @@ export const WeeklyShiftView: React.FC = () => {
   const { data: shiftsData, error, isLoading } = useQuery({
     queryKey: ['weekly-shifts-context', token],
     queryFn: async (): Promise<WeeklyShiftsData> => {
-      console.log('🔄 Fetching shifts data for token:', token);
       const { data, error } = await supabase.functions.invoke('get-weekly-shifts-context', {
         body: { token }
       });
 
-      if (error) {
-        console.error('❌ Error fetching shifts:', error);
-        throw error;
-      }
-      console.log('✅ Shifts data received:', data);
+      if (error) throw error;
       return data;
     },
     enabled: !!token,
-    retry: 1,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchInterval: 30000, // Refresh every 30 seconds to check for updates
   });
 
   const submitChoicesMutation = useMutation({
@@ -121,16 +115,10 @@ export const WeeklyShiftView: React.FC = () => {
   });
 
   useEffect(() => {
-    console.log('🔍 WeeklyShiftView - Token:', token);
-    console.log('🔍 WeeklyShiftView state:', { isLoading, hasData: !!shiftsData, hasError: !!error });
-    console.log('🔍 WeeklyShiftView - Error details:', error);
-    console.log('🔍 WeeklyShiftView - Data received:', shiftsData);
-    
     if (!isLoading) {
-      console.log('✅ Loading completed, hiding validation spinner');
       setIsValidating(false);
     }
-  }, [isLoading, shiftsData, error, token]);
+  }, [isLoading]);
 
   const handleShiftSelection = (shiftId: string, checked: boolean) => {
     const newSelected = new Set(selectedShifts);
@@ -160,12 +148,12 @@ export const WeeklyShiftView: React.FC = () => {
     }
 
     const choices: ShiftChoice[] = Array.from(selectedShifts).map(shiftId => {
-      const shift = regularShifts.find(s => s.id === shiftId) || additionalShifts.find(s => s.id === shiftId);
+      const shift = shifts.find(s => s.id === shiftId);
       const isAdditionalShift = additionalShifts.find(s => s.id === shiftId);
       
       return {
         shiftId,
-        weekStartDate: shiftsData?.tokenData.weekStart || '',
+        weekStartDate: shift?.week_start_date || shiftsData?.tokenData.weekStart || '',
         choiceType: isAdditionalShift ? 'unassigned_request' : 'regular',
         preferenceLevel: shiftPreferences[shiftId] || 1,
         notes: shiftNotes[shiftId] || undefined,
@@ -177,24 +165,10 @@ export const WeeklyShiftView: React.FC = () => {
   };
 
   if (!token) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
-        <div className="max-w-4xl mx-auto">
-          <Card className="border-destructive">
-            <CardHeader>
-              <CardTitle className="text-destructive">טוקן חסר</CardTitle>
-              <CardDescription>
-                לא ניתן לגשת לדף זה ללא טוקן תקין. אנא בדוק את הקישור או פנה למנהל העבודה.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-      </div>
-    );
+    return <Navigate to="/" replace />;
   }
 
-  if (isLoading) {
-    console.log('⏳ Still loading...');
+  if (isLoading || isValidating) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
         <div className="max-w-4xl mx-auto">
