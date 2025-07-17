@@ -148,12 +148,12 @@ export const WeeklyShiftView: React.FC = () => {
     }
 
     const choices: ShiftChoice[] = Array.from(selectedShifts).map(shiftId => {
-      const shift = shifts.find(s => s.id === shiftId);
+      const shift = regularShifts.find(s => s.id === shiftId) || additionalShifts.find(s => s.id === shiftId);
       const isAdditionalShift = additionalShifts.find(s => s.id === shiftId);
       
       return {
         shiftId,
-        weekStartDate: shift?.week_start_date || shiftsData?.tokenData.weekStart || '',
+        weekStartDate: shiftsData?.tokenData.weekStart || '',
         choiceType: isAdditionalShift ? 'unassigned_request' : 'regular',
         preferenceLevel: shiftPreferences[shiftId] || 1,
         notes: shiftNotes[shiftId] || undefined,

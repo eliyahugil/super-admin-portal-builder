@@ -2456,36 +2456,42 @@ export type Database = {
       }
       employee_weekly_tokens: {
         Row: {
+          choices_submitted: boolean | null
           context_type: string | null
           created_at: string
           employee_id: string | null
           expires_at: string
           id: string
           is_active: boolean
+          last_used_at: string | null
           shifts_published: boolean | null
           token: string
           week_end_date: string
           week_start_date: string
         }
         Insert: {
+          choices_submitted?: boolean | null
           context_type?: string | null
           created_at?: string
           employee_id?: string | null
           expires_at: string
           id?: string
           is_active?: boolean
+          last_used_at?: string | null
           shifts_published?: boolean | null
           token?: string
           week_end_date: string
           week_start_date: string
         }
         Update: {
+          choices_submitted?: boolean | null
           context_type?: string | null
           created_at?: string
           employee_id?: string | null
           expires_at?: string
           id?: string
           is_active?: boolean
+          last_used_at?: string | null
           shifts_published?: boolean | null
           token?: string
           week_end_date?: string
