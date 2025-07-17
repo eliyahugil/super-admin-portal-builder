@@ -29,21 +29,10 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get token data with employee and business information
+    // Get token data first
     const { data: tokenData, error: tokenError } = await supabaseAdmin
       .from('employee_weekly_tokens')
-      .select(`
-        *,
-        employee:employees(
-          id,
-          first_name,
-          last_name,
-          employee_id,
-          phone,
-          business_id,
-          business:businesses(id, name)
-        )
-      `)
+      .select('*')
       .eq('token', token)
       .eq('is_active', true)
       .gt('expires_at', new Date().toISOString())
@@ -57,7 +46,37 @@ serve(async (req) => {
       );
     }
 
-    const businessId = tokenData.employee.business_id;
+    // Get employee data separately
+    const { data: employee, error: employeeError } = await supabaseAdmin
+      .from('employees')
+      .select('id, first_name, last_name, employee_id, phone, business_id')
+      .eq('id', tokenData.employee_id)
+      .single();
+
+    if (employeeError) {
+      console.error('❌ Employee fetch error:', employeeError);
+      return new Response(
+        JSON.stringify({ error: 'Employee not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get business data separately
+    const { data: business, error: businessError } = await supabaseAdmin
+      .from('businesses')
+      .select('id, name')
+      .eq('id', employee.business_id)
+      .single();
+
+    if (businessError) {
+      console.error('❌ Business fetch error:', businessError);
+      return new Response(
+        JSON.stringify({ error: 'Business not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const businessId = employee.business_id;
     const employeeId = tokenData.employee_id;
     const weekStart = tokenData.week_start_date;
     const weekEnd = tokenData.week_end_date;
@@ -164,7 +183,10 @@ serve(async (req) => {
         weekStart: tokenData.week_start_date,
         weekEnd: tokenData.week_end_date,
         expiresAt: tokenData.expires_at,
-        employee: tokenData.employee
+        employee: {
+          ...employee,
+          business
+        }
       },
       context,
       shifts,
