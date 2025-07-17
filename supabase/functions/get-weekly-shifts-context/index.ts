@@ -65,6 +65,14 @@ serve(async (req) => {
       );
     }
 
+    if (!tokenData) {
+      console.error('❌ Token not found or expired');
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired token', success: false }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const businessId = tokenData.employee.business_id;
     const employeeId = tokenData.employee_id;
     const weekStart = tokenData.week_start_date;
@@ -83,7 +91,8 @@ serve(async (req) => {
 
     if (publishedError) {
       console.error('❌ Error checking published shifts:', publishedError);
-      throw publishedError;
+      // Don't throw, just log and continue with available shifts
+      console.log('Continuing with available shifts mode...');
     }
 
     const shiftsPublished = publishedShifts && publishedShifts.length > 0;
@@ -119,16 +128,23 @@ serve(async (req) => {
 
       if (assignedError) {
         console.error('❌ Error fetching assigned shifts:', assignedError);
-        throw assignedError;
+        // Don't throw, return empty shifts instead
+        shifts = [];
+        context = {
+          type: 'assigned_shifts',
+          title: 'המשמרות שלך לשבוע הקרוב',
+          description: 'לא נמצאו משמרות מוקצות לשבוע זה',
+          shiftsPublished: true
+        };
+      } else {
+        shifts = assignedShifts || [];
+        context = {
+          type: 'assigned_shifts',
+          title: 'המשמרות שלך לשבוע הקרוב',
+          description: 'אלו המשמרות שהוקצו לך לשבוע זה',
+          shiftsPublished: true
+        };
       }
-
-      shifts = assignedShifts || [];
-      context = {
-        type: 'assigned_shifts',
-        title: 'המשמרות שלך לשבוע הקרוב',
-        description: 'אלו המשמרות שהוקצו לך לשבוע זה',
-        shiftsPublished: true
-      };
 
       console.log('✅ Found', shifts.length, 'assigned shifts');
     } else {
@@ -149,16 +165,23 @@ serve(async (req) => {
 
       if (availableError) {
         console.error('❌ Error fetching available shifts:', availableError);
-        throw availableError;
+        // Don't throw, return empty shifts instead
+        shifts = [];
+        context = {
+          type: 'available_shifts',
+          title: 'משמרות זמינות לשבוע הקרוב',
+          description: 'לא נמצאו משמרות זמינות לשבוע זה',
+          shiftsPublished: false
+        };
+      } else {
+        shifts = availableShifts || [];
+        context = {
+          type: 'available_shifts',
+          title: 'משמרות זמינות לשבוע הקרוב',
+          description: 'אלו המשמרות הזמינות להרשמה לשבוע זה',
+          shiftsPublished: false
+        };
       }
-
-      shifts = availableShifts || [];
-      context = {
-        type: 'available_shifts',
-        title: 'משמרות זמינות לשבוע הקרוב',
-        description: 'אלו המשמרות הזמינות להרשמה לשבוע זה',
-        shiftsPublished: false
-      };
 
       console.log('✅ Found', shifts.length, 'available shifts');
     }
