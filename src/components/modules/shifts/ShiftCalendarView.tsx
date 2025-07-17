@@ -156,27 +156,27 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
 
           {/* תצוגה למחשב - לוח שנה */}
           <div className="hidden md:block">
-            <div className="grid grid-cols-7 gap-2 mb-4">
+            <div className="grid grid-cols-7 gap-3 mb-4">
             {weekDays.map((day, index) => {
               const dayShifts = getShiftsForDay(day);
               const isToday = isSameDay(day, new Date());
               
               return (
-                <div key={index} className="min-h-[200px]">
-                  <div className={`text-center p-2 rounded-t-lg ${
+                <div key={index} className="min-h-[300px]">
+                  <div className={`text-center p-3 rounded-t-lg ${
                     isToday 
                       ? 'bg-blue-500 text-white' 
                       : 'bg-gray-100 text-gray-700'
                   }`}>
-                    <div className="text-xs font-medium">
+                    <div className="text-sm font-medium">
                       {dayNames[index]}
                     </div>
-                    <div className="text-lg font-bold">
+                    <div className="text-xl font-bold">
                       {format(day, 'd')}
                     </div>
                   </div>
                   
-                  <div className="border border-t-0 rounded-b-lg min-h-[160px] p-2 bg-white space-y-1">
+                  <div className="border border-t-0 rounded-b-lg min-h-[260px] p-3 bg-white space-y-2">
                     {dayShifts.length > 0 ? (
                       dayShifts.map((shift) => {
                         const isSelected = isShiftSelected(shift.id);
@@ -184,41 +184,41 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
                           <div
                             key={shift.id}
                             onClick={() => onToggleShift(shift.id)}
-                            className={`p-2 rounded cursor-pointer border transition-all duration-200 hover:shadow-sm ${
+                            className={`p-3 rounded-lg cursor-pointer border transition-all duration-200 hover:shadow-md ${
                               isSelected 
-                                ? 'bg-blue-50 border-blue-300 shadow-sm' 
-                                : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                ? 'bg-blue-50 border-blue-300 shadow-md ring-2 ring-blue-200' 
+                                : 'bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
                             }`}
                           >
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3 text-green-600" />
-                                <span className="text-xs font-medium">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                <span className="text-sm font-semibold text-gray-900">
                                   {formatTime(shift.start_time)}-{formatTime(shift.end_time)}
                                 </span>
                               </div>
                               
                               {shift.branches?.name && (
-                                <div className="flex items-center gap-1">
-                                  <MapPin className="h-3 w-3 text-blue-600" />
-                                  <span className="text-xs truncate">
+                                <div className="flex items-start gap-2">
+                                  <MapPin className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                                  <span className="text-xs text-gray-700 leading-relaxed break-words" title={shift.branches.name}>
                                     {shift.branches.name}
                                   </span>
                                 </div>
                               )}
                               
                               {shift.role && (
-                                <div className="flex items-center gap-1">
-                                  <User className="h-3 w-3 text-purple-600" />
-                                  <span className="text-xs truncate">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-purple-600 flex-shrink-0" />
+                                  <span className="text-xs text-gray-700 break-words" title={shift.role}>
                                     {shift.role}
                                   </span>
                                 </div>
                               )}
                               
                               {isSelected && (
-                                <div className="text-center">
-                                  <Badge variant="default" className="text-xs">
+                                <div className="text-center pt-1">
+                                  <Badge variant="default" className="text-xs font-medium">
                                     נבחר ✓
                                   </Badge>
                                 </div>
@@ -230,7 +230,7 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
                     ) : (
                       <div className="flex items-center justify-center h-full text-gray-400">
                         <div className="text-center">
-                          <div className="text-xs">אין משמרות</div>
+                          <div className="text-sm">אין משמרות</div>
                         </div>
                       </div>
                     )}
