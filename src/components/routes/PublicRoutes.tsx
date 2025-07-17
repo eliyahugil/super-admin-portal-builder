@@ -37,6 +37,14 @@ export const PublicRoutes = () => (
       } 
     />
     <Route 
+      path="/shifts/weekly/:token" 
+      element={
+        <Suspense fallback={<div>טוען תצוגת משמרות...</div>}>
+          <WeeklyShiftView />
+        </Suspense>
+      } 
+    />
+    <Route 
       path="/advanced-shift-submission/:token" 
       element={<TokenBasedShiftManager />} 
     />
