@@ -167,6 +167,12 @@ export const ShiftSubmissionForm: React.FC = () => {
     const branchAssignments = tokenData?.employee?.branch_assignments;
     const preferredType = branchAssignments?.[0]?.shift_types?.[0] || tokenData?.employee?.preferred_shift_type;
     
+    // Debug logs
+    console.log('🔍 Full tokenData:', tokenData);
+    console.log('🔍 Employee data:', tokenData?.employee);
+    console.log('🔍 Branch assignments:', branchAssignments);
+    console.log('🔍 Extracted preferred type:', preferredType);
+    
     const allTypes = [
       { value: 'morning', label: 'משמרת בוקר (07:00-15:00)', time: '07:00-15:00' },
       { value: 'afternoon', label: 'משמרת צהריים (15:00-23:00)', time: '15:00-23:00' },
@@ -176,11 +182,13 @@ export const ShiftSubmissionForm: React.FC = () => {
 
     // If employee has a preferred shift type, show ONLY that type
     if (preferredType && preferredType !== 'undefined' && preferredType !== null) {
-      console.log('Employee preferred shift type:', preferredType);
-      return allTypes.filter(type => type.value === preferredType);
+      console.log('✅ Found preferred shift type, filtering to:', preferredType);
+      const filteredTypes = allTypes.filter(type => type.value === preferredType);
+      console.log('✅ Returning filtered types:', filteredTypes);
+      return filteredTypes;
     }
     
-    console.log('No preferred shift type found, showing all options');
+    console.log('⚠️ No preferred shift type found, showing all options - THIS SHOULD NOT HAPPEN');
     // If no preference, show all options (for flexibility)
     return allTypes;
   };
