@@ -531,6 +531,20 @@ export const ShiftSubmissionManager: React.FC = () => {
                 const hasToken = existingTokens.some(t => t.employee_id === employee.id);
                 const hasSubmitted = uniqueSubmittedEmployees.includes(employee.id);
                 
+                // לוג נוסף לבדיקה
+                if (employee.first_name === 'איוה') {
+                  console.log('🔍 בדיקת איוה:', {
+                    employeeId: employee.id,
+                    hasToken,
+                    existingTokensForEmployee: existingTokens.filter(t => t.employee_id === employee.id),
+                    allTokens: existingTokens.map(t => ({
+                      employeeId: t.employee_id,
+                      week: t.week_start_date,
+                      token: t.token.substring(0, 8) + '...'
+                    }))
+                  });
+                }
+                
                 return (
                   <div key={employee.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
@@ -541,6 +555,14 @@ export const ShiftSubmissionManager: React.FC = () => {
                         <div className="text-sm text-gray-600">
                           {employee.phone || 'אין טלפון'}
                         </div>
+                        {/* לוג לבדיקה */}
+                        {employee.first_name === 'איוה' && (
+                          <div className="text-xs text-red-600 mt-1">
+                            DEBUG: hasToken={hasToken ? 'כן' : 'לא'}, 
+                            existingTokens.length={existingTokens.length},
+                            selectedWeek={selectedWeek}
+                          </div>
+                        )}
                       </div>
                     </div>
                     
