@@ -165,7 +165,20 @@ export const WeeklyShiftView: React.FC = () => {
   };
 
   if (!token) {
-    return <Navigate to="/" replace />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
+        <div className="max-w-4xl mx-auto">
+          <Card className="border-destructive">
+            <CardHeader>
+              <CardTitle className="text-destructive">טוקן חסר</CardTitle>
+              <CardDescription>
+                לא ניתן לגשת לדף זה ללא טוקן תקין. אנא בדוק את הקישור או פנה למנהל העבודה.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   if (isLoading || isValidating) {
