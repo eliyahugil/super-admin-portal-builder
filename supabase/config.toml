@@ -156,3 +156,6 @@ verify_jwt = false
 
 [functions.send-sms-verification]
 verify_jwt = false
+
+[functions.validate-weekly-token]
+verify_jwt = false
