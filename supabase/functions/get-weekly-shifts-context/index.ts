@@ -169,7 +169,14 @@ serve(async (req) => {
       const { data: unassignedShifts, error: unassignedError } = await supabaseAdmin
         .from('scheduled_shifts')
         .select(`
-          *,
+          id,
+          shift_date,
+          start_time,
+          end_time,
+          role,
+          status,
+          priority,
+          required_employees,
           branch:branches(id, name, address),
           business:businesses(id, name)
         `)
@@ -183,16 +190,22 @@ serve(async (req) => {
 
       if (unassignedError) {
         console.error('❌ Error fetching unassigned shifts:', unassignedError);
-        // Don't throw, return empty shifts instead
         shifts = [];
         context = {
           type: 'available_shifts',
           title: 'משמרות זמינות לשבוע הקרוב',
-          description: 'לא נמצאו משמרות זמינות לשבוע זה',
+          description: 'לא נמצאו משמרות זמינות לשבוع זה',
           shiftsPublished: false
         };
       } else {
-        shifts = unassignedShifts || [];
+        // Transform scheduled_shifts to match expected format
+        shifts = (unassignedShifts || []).map(shift => ({
+          ...shift,
+          shift_name: shift.role || 'משמרת',
+          shift_type: shift.start_time < '12:00:00' ? 'morning' : 'evening',
+          day_of_week: new Date(shift.shift_date).getDay()
+        }));
+        
         context = {
           type: 'available_shifts',
           title: 'משמרות זמינות לשבוע הקרוב',
