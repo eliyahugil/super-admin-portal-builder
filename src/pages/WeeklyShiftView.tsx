@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, User, Building, CheckCircle, Clock4 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { Calendar, Clock, MapPin, User, Building, CheckCircle, Clock4, Star, Send } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -24,6 +29,7 @@ interface WeeklyShiftsData {
       employee_id: string;
       phone: string;
       business_id: string;
+      shift_submission_quota?: number;
       business: {
         id: string;
         name: string;
@@ -40,6 +46,16 @@ interface WeeklyShiftsData {
   shiftsCount: number;
 }
 
+interface ShiftChoice {
+  shiftId: string;
+  weekStartDate: string;
+  choiceType: 'regular' | 'unassigned_request';
+  preferenceLevel: number;
+  notes?: string;
+}
+
+type ViewMode = 'view' | 'select' | 'submitting' | 'submitted';
+
 const daysOfWeek = [
   'ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'
 ];
@@ -47,6 +63,11 @@ const daysOfWeek = [
 export const WeeklyShiftView: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const [isValidating, setIsValidating] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('view');
+  const [selectedShifts, setSelectedShifts] = useState<Set<string>>(new Set());
+  const [shiftPreferences, setShiftPreferences] = useState<Record<string, number>>({});
+  const [shiftNotes, setShiftNotes] = useState<Record<string, string>>({});
+  const { toast } = useToast();
 
   const { data: shiftsData, error, isLoading } = useQuery({
     queryKey: ['weekly-shifts-context', token],
@@ -62,11 +83,78 @@ export const WeeklyShiftView: React.FC = () => {
     refetchInterval: 30000, // Refresh every 30 seconds to check for updates
   });
 
+  const submitChoicesMutation = useMutation({
+    mutationFn: async (choices: ShiftChoice[]) => {
+      const { data, error } = await supabase.functions.invoke('submit-shift-choices', {
+        body: { token, choices }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      setViewMode('submitted');
+      toast({
+        title: "המשמרות נשלחו בהצלחה!",
+        description: `נשלחו ${data.choicesCount} בחירות משמרות`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "שגיאה בשליחת המשמרות",
+        description: error?.message || "אירעה שגיאה לא צפויה",
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     if (!isLoading) {
       setIsValidating(false);
     }
   }, [isLoading]);
+
+  const handleShiftSelection = (shiftId: string, checked: boolean) => {
+    const newSelected = new Set(selectedShifts);
+    if (checked) {
+      newSelected.add(shiftId);
+      setShiftPreferences(prev => ({ ...prev, [shiftId]: 1 }));
+    } else {
+      newSelected.delete(shiftId);
+      const newPrefs = { ...shiftPreferences };
+      const newNotes = { ...shiftNotes };
+      delete newPrefs[shiftId];
+      delete newNotes[shiftId];
+      setShiftPreferences(newPrefs);
+      setShiftNotes(newNotes);
+    }
+    setSelectedShifts(newSelected);
+  };
+
+  const handleSubmitChoices = () => {
+    if (selectedShifts.size === 0) {
+      toast({
+        title: "לא נבחרו משמרות",
+        description: "אנא בחר לפחות משמרת אחת לפני השליחה",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const choices: ShiftChoice[] = Array.from(selectedShifts).map(shiftId => {
+      const shift = shifts.find(s => s.id === shiftId);
+      return {
+        shiftId,
+        weekStartDate: shift?.week_start_date || shiftsData?.tokenData.weekStart || '',
+        choiceType: 'regular' as const,
+        preferenceLevel: shiftPreferences[shiftId] || 1,
+        notes: shiftNotes[shiftId] || undefined,
+      };
+    });
+
+    setViewMode('submitting');
+    submitChoicesMutation.mutate(choices);
+  };
 
   if (!token) {
     return <Navigate to="/" replace />;
@@ -109,6 +197,7 @@ export const WeeklyShiftView: React.FC = () => {
 
   const { tokenData, context, shifts } = shiftsData;
   const isAvailableShifts = context.type === 'available_shifts';
+  const quota = tokenData.employee.shift_submission_quota || 3;
 
   const formatShiftTime = (startTime: string, endTime: string) => {
     return `${startTime} - ${endTime}`;
@@ -187,8 +276,8 @@ export const WeeklyShiftView: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Status Badge */}
-        <div className="flex justify-center">
+        {/* Status Badge and Actions */}
+        <div className="flex flex-col items-center gap-4">
           <Badge 
             variant={isAvailableShifts ? "outline" : "default"}
             className={`text-sm px-4 py-2 ${
@@ -209,21 +298,87 @@ export const WeeklyShiftView: React.FC = () => {
               </>
             )}
           </Badge>
+
+          {/* Action buttons for available shifts */}
+          {isAvailableShifts && shifts.length > 0 && viewMode === 'view' && (
+            <Button 
+              onClick={() => setViewMode('select')}
+              className="bg-primary hover:bg-primary/90"
+            >
+              בחירת משמרות
+            </Button>
+          )}
+
+          {viewMode === 'select' && (
+            <div className="flex gap-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setViewMode('view')}
+              >
+                ביטול
+              </Button>
+              <Button 
+                onClick={handleSubmitChoices}
+                disabled={selectedShifts.size === 0}
+                className="bg-primary hover:bg-primary/90"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                שליחת בחירות ({selectedShifts.size}/{quota})
+              </Button>
+            </div>
+          )}
+
+          {viewMode === 'submitting' && (
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              <span>שולח...</span>
+            </div>
+          )}
+
+          {viewMode === 'submitted' && (
+            <Card className="max-w-md">
+              <CardContent className="text-center py-6">
+                <CheckCircle className="h-16 w-16 mx-auto text-green-500 mb-4" />
+                <h3 className="text-lg font-semibold mb-2">המשמרות נשלחו בהצלחה!</h3>
+                <p className="text-muted-foreground">
+                  בחירות המשמרות שלך נשלחו למערכת ויטופלו על ידי המנהל.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Shifts Grid */}
-        {shifts.length > 0 ? (
+        {shifts.length > 0 && viewMode !== 'submitted' ? (
           <div className="grid gap-4 md:grid-cols-2">
             {shifts.map((shift, index) => (
-              <Card key={shift.id || index} className="hover:shadow-lg transition-shadow">
+              <Card 
+                key={shift.id || index} 
+                className={`hover:shadow-lg transition-all ${
+                  viewMode === 'select' && selectedShifts.has(shift.id) 
+                    ? 'ring-2 ring-primary bg-primary/5' 
+                    : ''
+                }`}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">
-                      {isAvailableShifts 
-                        ? formatShiftDate(shift.week_start_date, shift.day_of_week)
-                        : formatShiftDate(shift.shift_date)
-                      }
-                    </CardTitle>
+                    <div className="flex items-center gap-3">
+                      {viewMode === 'select' && isAvailableShifts && (
+                        <Checkbox
+                          checked={selectedShifts.has(shift.id)}
+                          onCheckedChange={(checked) => 
+                            handleShiftSelection(shift.id, checked as boolean)
+                          }
+                          disabled={!selectedShifts.has(shift.id) && selectedShifts.size >= quota}
+                        />
+                      )}
+                      <CardTitle className="text-lg">
+                        {isAvailableShifts 
+                          ? formatShiftDate(shift.week_start_date, shift.day_of_week)
+                          : formatShiftDate(shift.shift_date)
+                        }
+                      </CardTitle>
+                    </div>
                     <Badge 
                       variant="outline" 
                       className={getShiftTypeColor(shift.shift_type)}
@@ -264,6 +419,51 @@ export const WeeklyShiftView: React.FC = () => {
                     <div className="text-sm bg-muted p-2 rounded">
                       <span className="font-medium">הערות: </span>
                       {shift.notes}
+                    </div>
+                  )}
+
+                  {/* Selection Controls */}
+                  {viewMode === 'select' && selectedShifts.has(shift.id) && (
+                    <div className="border-t pt-3 space-y-3">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Star className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">רמת עדיפות:</span>
+                        </div>
+                        <Select
+                          value={shiftPreferences[shift.id]?.toString() || "1"}
+                          onValueChange={(value) => 
+                            setShiftPreferences(prev => ({ 
+                              ...prev, 
+                              [shift.id]: parseInt(value) 
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1 - עדיפות גבוהה</SelectItem>
+                            <SelectItem value="2">2 - עדיפות בינונית</SelectItem>
+                            <SelectItem value="3">3 - עדיפות נמוכה</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <span className="text-sm font-medium">הערות (אופציונלי):</span>
+                        <Textarea
+                          placeholder="הוסף הערות למשמרת זו..."
+                          value={shiftNotes[shift.id] || ''}
+                          onChange={(e) => 
+                            setShiftNotes(prev => ({ 
+                              ...prev, 
+                              [shift.id]: e.target.value 
+                            }))
+                          }
+                          className="min-h-[60px]"
+                        />
+                      </div>
                     </div>
                   )}
                 </CardContent>
