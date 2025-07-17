@@ -481,6 +481,31 @@ export const UnifiedShiftRequests: React.FC = () => {
     return true;
   });
 
+  // קיבוץ בקשות לפי עובדים
+  const groupedRequests = filteredRequests.reduce((acc, request) => {
+    const employeeKey = request.employee_id;
+    if (!acc[employeeKey]) {
+      acc[employeeKey] = {
+        employee_name: request.employee_name || 'לא ידוע',
+        employee_id: request.employee_id,
+        employee: request.employee,
+        requests: []
+      };
+    }
+    acc[employeeKey].requests.push(request);
+    return acc;
+  }, {} as Record<string, {
+    employee_name: string;
+    employee_id: string;
+    employee: any;
+    requests: ShiftRequest[];
+  }>);
+
+  // מיון העובדים לפי שם
+  const sortedEmployees = Object.values(groupedRequests).sort((a, b) => 
+    a.employee_name.localeCompare(b.employee_name, 'he')
+  );
+
   const pendingRequests = filteredRequests.filter(req => req.status === 'pending');
   const approvedRequests = filteredRequests.filter(req => req.status === 'approved');
   const rejectedRequests = filteredRequests.filter(req => req.status === 'rejected');
@@ -614,133 +639,176 @@ export const UnifiedShiftRequests: React.FC = () => {
 
           {/* תוכן ראשי - מימין לשמאל */}
           <div className="flex gap-6" dir="rtl">
-            {/* רשימת בקשות - צד שמאל */}
+            {/* רשימת בקשות מקובצת לפי עובדים - צד שמאל */}
             <div className="flex-1 space-y-4">
-              {filteredRequests.map(request => (
-                <Card key={request.id} className="hover-scale animate-fade-in">
+              {sortedEmployees.map(employee => (
+                <Card key={employee.employee_id} className="hover-scale animate-fade-in">
                   <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
+                    {/* כותרת עובד */}
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b">
                       <div className="flex items-center gap-3">
-                        <User className="h-4 w-4 text-primary" />
-                        <span className="font-semibold text-lg">{request.employee_name}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteRequest(request.id)}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4 ml-1" />
-                          מחק
-                        </Button>
-                        <Badge className={getStatusColor(request.status)}>
-                          {getStatusLabel(request.status)}
+                        <User className="h-5 w-5 text-primary" />
+                        <span className="font-bold text-xl">{employee.employee_name}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {employee.requests.length} בקשות
                         </Badge>
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                      <div className="text-right">
-                        <p className="font-medium text-sm text-muted-foreground mb-1">תאריך</p>
-                        <p className="font-semibold">{format(new Date(request.shift_date), 'dd/MM/yyyy')}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-sm text-muted-foreground mb-1">שעות</p>
-                        <p className="font-semibold">{request.start_time} - {request.end_time}</p>
-                      </div>
-                      {request.branch_preference && (
-                        <div className="text-right">
-                          <p className="font-medium text-sm text-muted-foreground mb-1">סניף מועדף</p>
-                          <p className="flex items-center gap-1 justify-end">
-                            <span>{request.branch_preference}</span>
-                            <MapPin className="h-3 w-3" />
-                          </p>
-                        </div>
-                      )}
-                      {request.role_preference && (
-                        <div className="text-right">
-                          <p className="font-medium text-sm text-muted-foreground mb-1">תפקיד מועדף</p>
-                          <p className="font-semibold">{request.role_preference}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {request.notes && (
-                      <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-                        <p className="font-medium text-sm text-muted-foreground mb-1">הערות העובד</p>
-                        <p className="text-sm">{request.notes}</p>
-                      </div>
-                    )}
-
-                    {request.review_notes && (
-                      <div className="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                        <p className="font-medium text-sm text-muted-foreground mb-1">הערת מנהל</p>
-                        <p className="text-sm">{request.review_notes}</p>
-                      </div>
-                     )}
-
-                     {/* זמינות למשמרות בוקר אופציונליות */}
-                     {request.optional_morning_availability && request.optional_morning_availability.length > 0 && (
-                       <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                         <p className="font-medium text-sm text-blue-800 mb-2 flex items-center gap-1">
-                           <Clock className="h-4 w-4" />
-                           זמינות למשמרות בוקר (אופציונלי)
-                         </p>
-                         <p className="text-xs text-blue-700 mb-2">
-                           העובד ציין שהוא זמין גם למשמרות בוקר בימים הבאים (לא מובטח):
-                         </p>
-                         <div className="flex flex-wrap gap-1">
-                           {request.optional_morning_availability.map(day => (
-                             <Badge 
-                               key={day} 
-                               variant="outline" 
-                               className="text-xs bg-blue-100 text-blue-800 border-blue-300"
-                             >
-                               {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][day]}
-                             </Badge>
-                           ))}
-                         </div>
-                       </div>
-                     )}
-
-                     <div className="text-sm text-muted-foreground border-t pt-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          <CalendarIcon className="h-4 w-4" />
-                          <span>נוצר: {format(new Date(request.created_at), 'dd/MM/yyyy HH:mm')}</span>
-                        </div>
-                        {request.reviewed_at && (
-                          <div className="flex items-center gap-1">
-                            <span>נבדק: {format(new Date(request.reviewed_at), 'dd/MM/yyyy HH:mm')}</span>
-                          </div>
+                      <div className="flex items-center gap-2">
+                        {employee.employee?.phone && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => sendWhatsApp(
+                              employee.employee.phone,
+                              employee.employee_name,
+                              'general',
+                              'כללי',
+                              ''
+                            )}
+                          >
+                            <MessageSquare className="h-4 w-4 ml-1" />
+                            וואטסאפ
+                          </Button>
                         )}
                       </div>
                     </div>
 
-                    {request.status !== 'pending' && request.employee?.phone && (
-                      <div className="border-t pt-3 mt-3">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => sendWhatsApp(
-                            request.employee!.phone!,
-                            request.employee_name!,
-                            request.status,
-                            format(new Date(request.shift_date), 'dd/MM/yyyy'),
-                            request.review_notes
+                    {/* רשימת בקשות העובד */}
+                    <div className="space-y-3">
+                      {employee.requests.map(request => (
+                        <div key={request.id} className="bg-muted/30 rounded-lg p-4 border border-muted">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-semibold">
+                                {format(new Date(request.shift_date), 'dd/MM/yyyy')}
+                              </span>
+                              <span className="text-muted-foreground">•</span>
+                              <span className="font-medium">
+                                {request.start_time} - {request.end_time}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteRequest(request.id)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                              <Badge className={getStatusColor(request.status)}>
+                                {getStatusLabel(request.status)}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* פרטי המשמרת */}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-sm">
+                            {request.branch_preference && (
+                              <div className="text-right">
+                                <p className="text-muted-foreground mb-1">סניף</p>
+                                <p className="flex items-center gap-1 justify-end">
+                                  <span>{request.branch_preference}</span>
+                                  <MapPin className="h-3 w-3" />
+                                </p>
+                              </div>
+                            )}
+                            {request.role_preference && (
+                              <div className="text-right">
+                                <p className="text-muted-foreground mb-1">תפקיד</p>
+                                <p>{request.role_preference}</p>
+                              </div>
+                            )}
+                            <div className="text-right">
+                              <p className="text-muted-foreground mb-1">נוצר</p>
+                              <p>{format(new Date(request.created_at), 'dd/MM HH:mm')}</p>
+                            </div>
+                            {request.reviewed_at && (
+                              <div className="text-right">
+                                <p className="text-muted-foreground mb-1">נבדק</p>
+                                <p>{format(new Date(request.reviewed_at), 'dd/MM HH:mm')}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* הערות */}
+                          {request.notes && (
+                            <div className="mb-3 p-2 bg-background rounded text-sm">
+                              <p className="text-muted-foreground mb-1">הערות עובד:</p>
+                              <p>{request.notes}</p>
+                            </div>
                           )}
-                        >
-                          <MessageSquare className="h-4 w-4 ml-1" />
-                          שלח עדכון בוואטסאפ
-                        </Button>
-                      </div>
-                    )}
+
+                          {request.review_notes && (
+                            <div className="mb-3 p-2 bg-primary/5 rounded border border-primary/20 text-sm">
+                              <p className="text-muted-foreground mb-1">הערת מנהל:</p>
+                              <p>{request.review_notes}</p>
+                            </div>
+                          )}
+
+                          {/* זמינות בוקר אופציונלית */}
+                          {request.optional_morning_availability && request.optional_morning_availability.length > 0 && (
+                            <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200 text-sm">
+                              <p className="text-blue-800 mb-1 flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                זמינות בוקר (אופציונלי)
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {request.optional_morning_availability.map(day => (
+                                  <Badge 
+                                    key={day} 
+                                    variant="outline" 
+                                    className="text-xs bg-blue-100 text-blue-800 border-blue-300"
+                                  >
+                                    {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][day]}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* כפתורי פעולה למשמרת */}
+                          {request.status === 'pending' && (
+                            <div className="flex gap-2 mt-3 pt-2 border-t border-muted">
+                              <Button
+                                size="sm"
+                                onClick={() => handleUpdateStatus(request.id, 'approved', reviewNotes[request.id])}
+                                disabled={updateStatusMutation.isPending}
+                                className="bg-success hover:bg-success/90 text-white text-xs h-7"
+                              >
+                                <CheckCircle className="h-3 w-3 ml-1" />
+                                אשר
+                              </Button>
+                              
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleUpdateStatus(request.id, 'rejected', reviewNotes[request.id])}
+                                disabled={updateStatusMutation.isPending}
+                                className="text-xs h-7"
+                              >
+                                <XCircle className="h-3 w-3 ml-1" />
+                                דחה
+                              </Button>
+
+                              <Textarea
+                                placeholder="הערה..."
+                                value={reviewNotes[request.id] || ''}
+                                onChange={(e) => handleReviewNotesChange(request.id, e.target.value)}
+                                rows={1}
+                                className="text-xs h-7 flex-1"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
 
-              {filteredRequests.length === 0 && (
+              {sortedEmployees.length === 0 && (
                 <div className="text-center py-12 animate-fade-in">
                   <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">אין בקשות משמרות</h3>
