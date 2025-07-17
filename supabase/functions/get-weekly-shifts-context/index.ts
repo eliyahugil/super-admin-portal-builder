@@ -122,101 +122,51 @@ serve(async (req) => {
     let shifts = [];
     let context = {};
 
-    if (employeeHasShifts) {
-      // Get assigned shifts for this employee
-      console.log('🎯 Getting assigned shifts for employee');
-      const { data: assignedShifts, error: assignedError } = await supabaseAdmin
-        .from('scheduled_shifts')
-        .select(`
-          *,
-          branch:branches(id, name, address),
-          business:businesses(id, name)
-        `)
-        .eq('employee_id', employeeId)
-        .eq('business_id', businessId)
-        .gte('shift_date', weekStart)
-        .lte('shift_date', weekEnd)
-        .order('shift_date', { ascending: true });
+    // Always show available shifts for selection, not assigned shifts
+    console.log('📋 Getting available shifts for week submission');
+    console.log('🔍 Searching for available shifts with criteria:', {
+      businessId,
+      weekStart,
+      weekEnd
+    });
+    
+    const { data: availableShifts, error: availableError } = await supabaseAdmin
+      .from('available_shifts')
+      .select(`
+        *,
+        branch:branches(id, name, address),
+        business:businesses(id, name)
+      `)
+      .eq('business_id', businessId)
+      .eq('week_start_date', weekStart)
+      .eq('week_end_date', weekEnd)
+      .order('day_of_week', { ascending: true })
+      .order('start_time', { ascending: true });
 
-      if (assignedError) {
-        console.error('❌ Error fetching assigned shifts:', assignedError);
-        throw assignedError;
-      }
-
-      shifts = assignedShifts || [];
-      context = {
-        type: 'assigned_shifts',
-        title: 'המשמרות שלך לשבוע הקרוב',
-        description: 'אלו המשמרות שהוקצו לך לשבוע זה',
-        shiftsPublished: true
-      };
-
-      console.log('✅ Found', shifts.length, 'assigned shifts');
-    } else {
-      // Employee doesn't have assigned shifts, check available shifts
-      console.log('📋 Getting available shifts for next week');
-      console.log('🔍 Searching for available shifts with criteria:', {
-        businessId,
-        weekStart,
-        weekEnd
-      });
-      
-      const { data: availableShifts, error: availableError } = await supabaseAdmin
-        .from('available_shifts')
-        .select(`
-          *,
-          branch:branches(id, name, address),
-          business:businesses(id, name)
-        `)
-        .eq('business_id', businessId)
-        .eq('week_start_date', weekStart)
-        .eq('week_end_date', weekEnd)
-        .order('day_of_week', { ascending: true })
-        .order('start_time', { ascending: true });
-
-      if (availableError) {
-        console.error('❌ Error fetching available shifts:', availableError);
-        throw availableError;
-      }
-
-      console.log('🔍 Available shifts query result:', {
-        shiftsFound: availableShifts?.length || 0,
-        shifts: availableShifts
-      });
-
-      // Also check if there are ANY available shifts for this business
-      const { data: allAvailableShifts, error: allShiftsError } = await supabaseAdmin
-        .from('available_shifts')
-        .select('id, week_start_date, week_end_date, business_id')
-        .eq('business_id', businessId);
-      
-      console.log('🔍 All available shifts for business:', {
-        totalShifts: allAvailableShifts?.length || 0,
-        allShifts: allAvailableShifts
-      });
-
-      shifts = availableShifts || [];
-      
-      // Determine context based on whether business has any scheduled shifts
-      if (businessHasShifts) {
-        context = {
-          type: 'no_shifts_assigned',
-          title: 'לא הוקצו לך משמרות השבוע',
-          description: 'המשמרות לשבוע זה פורסמו אבל לא הוקצו לך משמרות. אנא פנה למנהל העבודה.',
-          shiftsPublished: true
-        };
-      } else {
-        context = {
-          type: 'available_shifts',
-          title: 'משמרות זמינות לשבוע הקרוב',
-          description: shifts.length > 0 ? 'אלו המשמרות הזמינות להרשמה לשבוע זה' : 'טרם הוגדרו משמרות זמינות לשבוע זה. אנא פנה למנהל העבודה.',
-          shiftsPublished: false
-        };
-      }
-
-      console.log('✅ Found', shifts.length, 'available shifts');
-      console.log('📝 Context type determined:', context.type);
+    if (availableError) {
+      console.error('❌ Error fetching available shifts:', availableError);
+      throw availableError;
     }
+
+    console.log('🔍 Available shifts query result:', {
+      shiftsFound: availableShifts?.length || 0,
+      shifts: availableShifts
+    });
+
+    shifts = availableShifts || [];
+    
+    // Context for shift submission
+    context = {
+      type: 'available_shifts',
+      title: 'הגשת משמרות לשבוע הקרוב',
+      description: shifts.length > 0 
+        ? 'בחר את המשמרות שברצונך לעבד השבוע והגש את בקשתך' 
+        : 'טרם הוגדרו משמרות זמינות לשבוע זה. אנא פנה למנהל העבודה.',
+      shiftsPublished: false
+    };
+
+    console.log('✅ Found', shifts.length, 'available shifts for submission');
+    console.log('📝 Context type:', context.type);
 
     const response = {
       success: true,
