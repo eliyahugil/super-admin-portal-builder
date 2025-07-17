@@ -160,12 +160,12 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
                                       </div>
                                     )}
                                     
-                                    {/* שעות */}
-                                    <div className="text-center">
-                                      <span className="text-sm font-semibold text-yellow-800 bg-yellow-100 px-3 py-1 rounded-full">
-                                        {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                      </span>
-                                    </div>
+                                     {/* שעות */}
+                                     <div className="text-center">
+                                       <span className="text-sm font-semibold text-yellow-800 bg-yellow-100 px-3 py-1 rounded-full" dir="ltr">
+                                         {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                       </span>
+                                     </div>
                                     
                                     {/* תפקיד */}
                                     {shift.role && (
@@ -221,12 +221,12 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
                                       </div>
                                     )}
                                     
-                                    {/* שעות */}
-                                    <div className="text-center">
-                                      <span className="text-sm font-semibold text-purple-800 bg-purple-100 px-3 py-1 rounded-full">
-                                        {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                      </span>
-                                    </div>
+                                     {/* שעות */}
+                                     <div className="text-center">
+                                       <span className="text-sm font-semibold text-purple-800 bg-purple-100 px-3 py-1 rounded-full" dir="ltr">
+                                         {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                       </span>
+                                     </div>
                                     
                                     {/* תפקיד */}
                                     {shift.role && (
@@ -300,7 +300,7 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
                             
                             {/* שעות - קטנות יותר */}
                             <div className="text-center mb-2">
-                              <span className="text-xs font-semibold text-gray-700 bg-white px-2 py-1 rounded border">
+                              <span className="text-xs font-semibold text-gray-700 bg-white px-2 py-1 rounded border" dir="ltr">
                                 {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
                               </span>
                             </div>
