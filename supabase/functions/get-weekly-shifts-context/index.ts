@@ -195,8 +195,16 @@ serve(async (req) => {
         weekEnd: tokenData.week_end_date,
         expiresAt: tokenData.expires_at,
         employee: {
-          ...employee,
-          business
+          id: employee.id,
+          first_name: employee.first_name,
+          last_name: employee.last_name,
+          employee_id: employee.employee_id,
+          phone: employee.phone,
+          business_id: employee.business_id,
+          business: {
+            id: business.id,
+            name: business.name
+          }
         }
       },
       context,
