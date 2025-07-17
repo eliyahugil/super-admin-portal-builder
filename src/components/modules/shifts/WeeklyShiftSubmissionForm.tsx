@@ -202,10 +202,11 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
           // Function to determine shift type based on start time
           const getShiftType = (startTime: string) => {
             const hour = parseInt(startTime.split(':')[0]);
-            if (hour >= 6 && hour < 15) return 'morning';
-            if (hour >= 15 && hour < 23) return 'afternoon';
-            if (hour >= 17 && hour < 2) return 'evening';
-            return 'night';
+            // Updated time ranges to match actual shift definitions
+            if (hour >= 6 && hour <= 14) return 'morning';     // 06:00-14:59 
+            if (hour >= 15 && hour <= 16) return 'afternoon';  // 15:00-16:59
+            if (hour >= 17 || hour <= 1) return 'evening';     // 17:00-01:59
+            return 'night';                                     // 02:00-05:59
           };
           
           const filteredShifts = shifts.filter(shift => {
