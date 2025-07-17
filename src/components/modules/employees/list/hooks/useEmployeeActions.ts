@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useGenericArchive } from '@/hooks/useGenericArchive';
+import { supabase } from '@/integrations/supabase/client';
 import type { Employee } from '@/types/employee';
 
 export const useEmployeeActions = (onRefetch: () => void, selectedEmployees: Set<string>, clearSelectedEmployees: () => void) => {
@@ -73,9 +74,77 @@ export const useEmployeeActions = (onRefetch: () => void, selectedEmployees: Set
     }
   };
 
+  const handleBulkActivate = async () => {
+    if (selectedEmployees.size === 0) return;
+    
+    const employeeIds = Array.from(selectedEmployees);
+    
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('employees')
+        .update({ is_active: true })
+        .in('id', employeeIds);
+
+      if (error) throw error;
+      
+      toast({
+        title: 'הצלחה',
+        description: `הופעלו ${selectedEmployees.size} עובדים`,
+      });
+      
+      onRefetch();
+      clearSelectedEmployees();
+    } catch (error) {
+      console.error('Error activating employees:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'אירעה שגיאה בהפעלת העובדים',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkDeactivate = async () => {
+    if (selectedEmployees.size === 0) return;
+    
+    const employeeIds = Array.from(selectedEmployees);
+    
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('employees')
+        .update({ is_active: false })
+        .in('id', employeeIds);
+
+      if (error) throw error;
+      
+      toast({
+        title: 'הצלחה',
+        description: `הושבתו ${selectedEmployees.size} עובדים`,
+      });
+      
+      onRefetch();
+      clearSelectedEmployees();
+    } catch (error) {
+      console.error('Error deactivating employees:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'אירעה שגיאה בהשבתת העובדים',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     handleDeleteEmployee,
     handleBulkDelete,
+    handleBulkActivate,
+    handleBulkDeactivate,
     loading: loading || isArchiving,
   };
 };

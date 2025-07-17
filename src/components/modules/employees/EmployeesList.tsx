@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { EmployeeListHeader } from './list/EmployeeListHeader';
 import { EmployeeListContent } from './list/EmployeeListContent';
+import { BulkEmployeeActions } from './list/BulkEmployeeActions';
 import { useEmployeeListLogic } from './list/useEmployeeListLogic';
 import type { Employee } from '@/types/employee';
 import type { Branch } from '@/types/branch';
@@ -29,6 +29,8 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
     handleSelectAll,
     handleDeleteEmployee,
     handleBulkDelete,
+    handleBulkActivate,
+    handleBulkDeactivate,
     handleSort,
     // Pagination props
     currentPage,
@@ -52,14 +54,33 @@ export const EmployeesList: React.FC<EmployeesListProps> = ({
 
   return (
     <div className="space-y-4" dir="rtl">
-      <EmployeeListHeader
-        searchTerm={preferences.filters.searchTerm}
-        onSearchChange={(term) => updateFilters({ searchTerm: term })}
-        selectedCount={selectedEmployees.size}
+      {/* Search Bar */}
+      <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-lg">
+        <div className="flex-1 relative max-w-md">
+          <input
+            type="text"
+            placeholder="חיפוש עובדים..."
+            value={preferences.filters.searchTerm}
+            onChange={(e) => updateFilters({ searchTerm: e.target.value })}
+            className="w-full p-2 pr-10 border rounded-md"
+            dir="rtl"
+          />
+        </div>
+      </div>
+
+      {/* Bulk Actions */}
+      <BulkEmployeeActions
+        selectedEmployees={selectedEmployees}
+        employees={employees}
+        branches={branches}
         onBulkDelete={handleBulkDelete}
+        onBulkActivate={handleBulkActivate}
+        onBulkDeactivate={handleBulkDeactivate}
+        onRefetch={onRefetch}
         loading={loading}
       />
 
+      {/* Employee List Content */}
       <EmployeeListContent
         employees={paginatedEmployees}
         searchTerm={preferences.filters.searchTerm}

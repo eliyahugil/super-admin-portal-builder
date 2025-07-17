@@ -65,6 +65,8 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
   const {
     handleDeleteEmployee,
     handleBulkDelete,
+    handleBulkActivate,
+    handleBulkDeactivate,
     loading,
   } = useEmployeeActions(onRefetch, selectedEmployees, clearSelectedEmployees);
 
@@ -107,6 +109,8 @@ export const useEmployeeListLogic = (employees: Employee[], onRefetch: () => voi
     handleSelectAll: (checked: boolean) => handleSelectAll(paginatedEmployees, checked),
     handleDeleteEmployee,
     handleBulkDelete: () => handleBulkDelete(sortedEmployees),
+    handleBulkActivate,
+    handleBulkDeactivate,
     clearSelectedEmployees,
     
     // מיון
