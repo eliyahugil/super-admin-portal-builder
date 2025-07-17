@@ -59,10 +59,10 @@ serve(async (req) => {
       );
     }
 
-    // Get employee data separately
+    // Get employee data with additional fields
     const { data: employee, error: employeeError } = await supabaseAdmin
       .from('employees')
-      .select('id, first_name, last_name, employee_id, phone, business_id')
+      .select('id, first_name, last_name, employee_id, phone, business_id, shift_submission_quota, preferred_shift_time, can_choose_unassigned_shifts')
       .eq('id', tokenData.employee_id)
       .maybeSingle();
 
@@ -88,6 +88,15 @@ serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Get employee preferences
+    const { data: employeePreferences } = await supabaseAdmin
+      .from('employee_default_preferences')
+      .select('available_days, shift_types, max_weekly_hours')
+      .eq('employee_id', tokenData.employee_id)
+      .single();
+
+    console.log('🎯 Employee preferences:', employeePreferences);
 
     const businessId = employee.business_id;
     const employeeId = tokenData.employee_id;
@@ -203,6 +212,9 @@ serve(async (req) => {
           employee_id: employee.employee_id,
           phone: employee.phone,
           business_id: employee.business_id,
+          shift_submission_quota: employee.shift_submission_quota,
+          preferred_shift_time: employee.preferred_shift_time,
+          can_choose_unassigned_shifts: employee.can_choose_unassigned_shifts,
           business: {
             id: business.id,
             name: business.name
@@ -211,7 +223,8 @@ serve(async (req) => {
       },
       context,
       shifts,
-      shiftsCount: shifts.length
+      shiftsCount: shifts.length,
+      employeePreferences: employeePreferences || null
     };
 
     console.log('🎉 Successfully prepared weekly shifts context');

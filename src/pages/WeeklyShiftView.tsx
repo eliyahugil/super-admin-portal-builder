@@ -30,6 +30,8 @@ interface WeeklyShiftsData {
       phone: string;
       business_id: string;
       shift_submission_quota?: number;
+      preferred_shift_time?: string;
+      can_choose_unassigned_shifts?: boolean;
       business: {
         id: string;
         name: string;
@@ -44,6 +46,10 @@ interface WeeklyShiftsData {
   };
   shifts: any[];
   shiftsCount: number;
+  employeePreferences?: {
+    shift_types: string[];
+    available_days: number[];
+  };
 }
 
 interface ShiftChoice {
@@ -143,10 +149,12 @@ export const WeeklyShiftView: React.FC = () => {
 
     const choices: ShiftChoice[] = Array.from(selectedShifts).map(shiftId => {
       const shift = shifts.find(s => s.id === shiftId);
+      const isAdditionalShift = additionalShifts.find(s => s.id === shiftId);
+      
       return {
         shiftId,
         weekStartDate: shift?.week_start_date || shiftsData?.tokenData.weekStart || '',
-        choiceType: 'regular' as const,
+        choiceType: isAdditionalShift ? 'unassigned_request' : 'regular',
         preferenceLevel: shiftPreferences[shiftId] || 1,
         notes: shiftNotes[shiftId] || undefined,
       };
@@ -195,9 +203,30 @@ export const WeeklyShiftView: React.FC = () => {
     );
   }
 
-  const { tokenData, context, shifts } = shiftsData;
+  const { tokenData, context, shifts, employeePreferences } = shiftsData;
   const isAvailableShifts = context.type === 'available_shifts';
   const quota = tokenData.employee.shift_submission_quota || 3;
+  const canChooseUnassigned = tokenData.employee.can_choose_unassigned_shifts !== false;
+
+  // סינון משמרות לפי העדפות העובד
+  const preferredShiftTypes = employeePreferences?.shift_types || [];
+  const preferredDays = employeePreferences?.available_days || [];
+  
+  const regularShifts = shifts.filter(shift => {
+    const shiftDayOfWeek = shift.day_of_week;
+    const shiftType = shift.shift_type?.toLowerCase();
+    return preferredDays.includes(shiftDayOfWeek) && 
+           (preferredShiftTypes.length === 0 || preferredShiftTypes.some(type => 
+             type.toLowerCase() === shiftType || 
+             (type === 'morning' && shiftType === 'בוקר') ||
+             (type === 'evening' && shiftType === 'ערב') ||
+             (type === 'night' && shiftType === 'לילה')
+           ));
+  });
+
+  const additionalShifts = canChooseUnassigned ? 
+    shifts.filter(shift => !regularShifts.find(rs => rs.id === shift.id)) : 
+    [];
 
   const formatShiftTime = (startTime: string, endTime: string) => {
     return `${startTime} - ${endTime}`;
@@ -349,126 +378,79 @@ export const WeeklyShiftView: React.FC = () => {
         </div>
 
         {/* Shifts Grid */}
-        {shifts.length > 0 && viewMode !== 'submitted' ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {shifts.map((shift, index) => (
-              <Card 
-                key={shift.id || index} 
-                className={`hover:shadow-lg transition-all ${
-                  viewMode === 'select' && selectedShifts.has(shift.id) 
-                    ? 'ring-2 ring-primary bg-primary/5' 
-                    : ''
-                }`}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {viewMode === 'select' && isAvailableShifts && (
-                        <Checkbox
-                          checked={selectedShifts.has(shift.id)}
-                          onCheckedChange={(checked) => 
-                            handleShiftSelection(shift.id, checked as boolean)
-                          }
-                          disabled={!selectedShifts.has(shift.id) && selectedShifts.size >= quota}
-                        />
-                      )}
-                      <CardTitle className="text-lg">
-                        {isAvailableShifts 
-                          ? formatShiftDate(shift.week_start_date, shift.day_of_week)
-                          : formatShiftDate(shift.shift_date)
-                        }
-                      </CardTitle>
-                    </div>
-                    <Badge 
-                      variant="outline" 
-                      className={getShiftTypeColor(shift.shift_type)}
-                    >
-                      {shift.shift_type || shift.shift_name}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {formatShiftTime(shift.start_time, shift.end_time)}
-                    </span>
-                  </div>
-                  
-                  {shift.branch && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <div className="font-medium">{shift.branch.name}</div>
-                        {shift.branch.address && (
-                          <div className="text-muted-foreground text-xs">
-                            {shift.branch.address}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {isAvailableShifts && shift.required_employees && (
-                    <div className="text-sm text-muted-foreground">
-                      דרושים: {shift.required_employees} עובדים
-                    </div>
-                  )}
-                  
-                  {!isAvailableShifts && shift.notes && (
-                    <div className="text-sm bg-muted p-2 rounded">
-                      <span className="font-medium">הערות: </span>
-                      {shift.notes}
-                    </div>
-                  )}
+        {(regularShifts.length > 0 || additionalShifts.length > 0) && viewMode !== 'submitted' ? (
+          <div className="space-y-8">
+            {/* Regular Shifts Section */}
+            {regularShifts.length > 0 && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <h3 className="text-xl font-semibold text-foreground">
+                    המשמרות המועדפות שלך
+                  </h3>
+                  <p className="text-muted-foreground">
+                    משמרות שמתאימות להעדפות שהוגדרו בכרטיס העובד שלך
+                  </p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {regularShifts.map((shift, index) => (
+                    <ShiftCard 
+                      key={shift.id || `regular-${index}`}
+                      shift={shift}
+                      isSelected={selectedShifts.has(shift.id)}
+                      onSelectionChange={handleShiftSelection}
+                      viewMode={viewMode}
+                      isAvailableShifts={isAvailableShifts}
+                      selectedShifts={selectedShifts}
+                      quota={quota}
+                      shiftPreferences={shiftPreferences}
+                      setShiftPreferences={setShiftPreferences}
+                      shiftNotes={shiftNotes}
+                      setShiftNotes={setShiftNotes}
+                      formatShiftDate={formatShiftDate}
+                      formatShiftTime={formatShiftTime}
+                      getShiftTypeColor={getShiftTypeColor}
+                      choiceType="regular"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
-                  {/* Selection Controls */}
-                  {viewMode === 'select' && selectedShifts.has(shift.id) && (
-                    <div className="border-t pt-3 space-y-3">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Star className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">רמת עדיפות:</span>
-                        </div>
-                        <Select
-                          value={shiftPreferences[shift.id]?.toString() || "1"}
-                          onValueChange={(value) => 
-                            setShiftPreferences(prev => ({ 
-                              ...prev, 
-                              [shift.id]: parseInt(value) 
-                            }))
-                          }
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1">1 - עדיפות גבוהה</SelectItem>
-                            <SelectItem value="2">2 - עדיפות בינונית</SelectItem>
-                            <SelectItem value="3">3 - עדיפות נמוכה</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <span className="text-sm font-medium">הערות (אופציונלי):</span>
-                        <Textarea
-                          placeholder="הוסף הערות למשמרת זו..."
-                          value={shiftNotes[shift.id] || ''}
-                          onChange={(e) => 
-                            setShiftNotes(prev => ({ 
-                              ...prev, 
-                              [shift.id]: e.target.value 
-                            }))
-                          }
-                          className="min-h-[60px]"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+            {/* Additional Shifts Section */}
+            {additionalShifts.length > 0 && canChooseUnassigned && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <h3 className="text-xl font-semibold text-foreground">
+                    משמרות נוספות זמינות
+                  </h3>
+                  <p className="text-muted-foreground">
+                    משמרות שאינן בהעדפות הרגילות שלך - ניתן לבחור כבקשה נוספת
+                  </p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {additionalShifts.map((shift, index) => (
+                    <ShiftCard 
+                      key={shift.id || `additional-${index}`}
+                      shift={shift}
+                      isSelected={selectedShifts.has(shift.id)}
+                      onSelectionChange={handleShiftSelection}
+                      viewMode={viewMode}
+                      isAvailableShifts={isAvailableShifts}
+                      selectedShifts={selectedShifts}
+                      quota={quota}
+                      shiftPreferences={shiftPreferences}
+                      setShiftPreferences={setShiftPreferences}
+                      shiftNotes={shiftNotes}
+                      setShiftNotes={setShiftNotes}
+                      formatShiftDate={formatShiftDate}
+                      formatShiftTime={formatShiftTime}
+                      getShiftTypeColor={getShiftTypeColor}
+                      choiceType="unassigned_request"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <Card>
@@ -494,5 +476,171 @@ export const WeeklyShiftView: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+// Component for individual shift card
+interface ShiftCardProps {
+  shift: any;
+  isSelected: boolean;
+  onSelectionChange: (shiftId: string, checked: boolean) => void;
+  viewMode: ViewMode;
+  isAvailableShifts: boolean;
+  selectedShifts: Set<string>;
+  quota: number;
+  shiftPreferences: Record<string, number>;
+  setShiftPreferences: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  shiftNotes: Record<string, string>;
+  setShiftNotes: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  formatShiftDate: (dateStr: string, dayOfWeek?: number) => string;
+  formatShiftTime: (startTime: string, endTime: string) => string;
+  getShiftTypeColor: (shiftType: string) => string;
+  choiceType: 'regular' | 'unassigned_request';
+}
+
+const ShiftCard: React.FC<ShiftCardProps> = ({
+  shift,
+  isSelected,
+  onSelectionChange,
+  viewMode,
+  isAvailableShifts,
+  selectedShifts,
+  quota,
+  shiftPreferences,
+  setShiftPreferences,
+  shiftNotes,
+  setShiftNotes,
+  formatShiftDate,
+  formatShiftTime,
+  getShiftTypeColor,
+  choiceType
+}) => {
+  return (
+    <Card 
+      className={`hover:shadow-lg transition-all ${
+        viewMode === 'select' && isSelected 
+          ? 'ring-2 ring-primary bg-primary/5' 
+          : ''
+      } ${
+        choiceType === 'unassigned_request' 
+          ? 'border-dashed border-orange-200 bg-orange-50/30' 
+          : ''
+      }`}
+    >
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {viewMode === 'select' && isAvailableShifts && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={(checked) => 
+                  onSelectionChange(shift.id, checked as boolean)
+                }
+                disabled={!isSelected && selectedShifts.size >= quota}
+              />
+            )}
+            <CardTitle className="text-lg">
+              {isAvailableShifts 
+                ? formatShiftDate(shift.week_start_date, shift.day_of_week)
+                : formatShiftDate(shift.shift_date)
+              }
+            </CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            {choiceType === 'unassigned_request' && (
+              <Badge variant="outline" className="text-xs bg-orange-100 text-orange-700 border-orange-200">
+                בקשה נוספת
+              </Badge>
+            )}
+            <Badge 
+              variant="outline" 
+              className={getShiftTypeColor(shift.shift_type)}
+            >
+              {shift.shift_type || shift.shift_name}
+            </Badge>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-center gap-2 text-sm">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <span>
+            {formatShiftTime(shift.start_time, shift.end_time)}
+          </span>
+        </div>
+        
+        {shift.branch && (
+          <div className="flex items-center gap-2 text-sm">
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <div className="font-medium">{shift.branch.name}</div>
+              {shift.branch.address && (
+                <div className="text-muted-foreground text-xs">
+                  {shift.branch.address}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {isAvailableShifts && shift.required_employees && (
+          <div className="text-sm text-muted-foreground">
+            דרושים: {shift.required_employees} עובדים
+          </div>
+        )}
+        
+        {!isAvailableShifts && shift.notes && (
+          <div className="text-sm bg-muted p-2 rounded">
+            <span className="font-medium">הערות: </span>
+            {shift.notes}
+          </div>
+        )}
+
+        {/* Selection Controls */}
+        {viewMode === 'select' && isSelected && (
+          <div className="border-t pt-3 space-y-3">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">רמת עדיפות:</span>
+              </div>
+              <Select
+                value={shiftPreferences[shift.id]?.toString() || "1"}
+                onValueChange={(value) => 
+                  setShiftPreferences(prev => ({ 
+                    ...prev, 
+                    [shift.id]: parseInt(value) 
+                  }))
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 - עדיפות גבוהה</SelectItem>
+                  <SelectItem value="2">2 - עדיפות בינונית</SelectItem>
+                  <SelectItem value="3">3 - עדיפות נמוכה</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <span className="text-sm font-medium">הערות (אופציונלי):</span>
+              <Textarea
+                placeholder="הוסף הערות למשמרת זו..."
+                value={shiftNotes[shift.id] || ''}
+                onChange={(e) => 
+                  setShiftNotes(prev => ({ 
+                    ...prev, 
+                    [shift.id]: e.target.value 
+                  }))
+                }
+                className="min-h-[60px]"
+              />
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
