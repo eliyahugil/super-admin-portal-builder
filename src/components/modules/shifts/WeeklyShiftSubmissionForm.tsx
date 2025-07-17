@@ -100,7 +100,6 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
             business_id,
             branch_id,
             role,
-            shift_type,
             branches(name, address)
           `)
           .gte('shift_date', data.week_start_date)
