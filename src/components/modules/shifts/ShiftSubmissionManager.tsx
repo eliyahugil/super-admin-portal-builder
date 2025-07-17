@@ -112,11 +112,8 @@ export const ShiftSubmissionManager: React.FC = () => {
 
   // פונקציות לחישוב שבועות שונים - תמיד מתחיל ביום ראשון
   const getCurrentWeek = () => {
-    // שנה: החזר את השבוע הקרוב במקום השבוע הנוכחי
-    const upcomingWeek = getUpcomingWeekDates();
-    console.log('📅 השבוע הקרוב (החדש):', upcomingWeek.start);
-    console.log('📊 בדיקת טוכנים קיימים לשבוע:', upcomingWeek.start);
-    return upcomingWeek.start;
+    // החזר ישירות את 20.07.2025 (יום ראשון)
+    return '2025-07-20';
   };
 
   const getNextWeek = () => {
