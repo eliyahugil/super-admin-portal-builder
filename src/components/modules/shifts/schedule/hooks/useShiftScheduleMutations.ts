@@ -10,25 +10,32 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
 
   // Check for duplicate shifts before creation
   const checkForDuplicates = async (shiftData: CreateShiftData) => {
+    console.log('🔍 Checking for duplicates:', shiftData);
+    
     const { data: existingShifts, error } = await supabase
       .from('scheduled_shifts')
-      .select('id, shift_date, start_time, end_time, employee_id, branch_id')
+      .select('id, shift_date, start_time, end_time, employee_id, branch_id, is_archived')
       .eq('business_id', businessId)
       .eq('shift_date', shiftData.shift_date)
       .eq('start_time', shiftData.start_time)
-      .eq('end_time', shiftData.end_time);
+      .eq('end_time', shiftData.end_time)
+      .eq('is_archived', false); // רק משמרות לא מוקפאות
 
     if (error) {
       console.error('Error checking for duplicates:', error);
       return false;
     }
 
-    // Check for exact duplicates
+    console.log('🔍 Found existing shifts:', existingShifts);
+
+    // Check for exact duplicates - only if employee AND branch are the same
     const exactDuplicates = existingShifts?.filter(shift => 
       shift.employee_id === shiftData.employee_id &&
-      shift.branch_id === shiftData.branch_id
+      shift.branch_id === shiftData.branch_id &&
+      shift.employee_id !== null // רק אם יש עובד מוקצה
     );
 
+    console.log('🔍 Exact duplicates found:', exactDuplicates);
     return exactDuplicates && exactDuplicates.length > 0;
   };
 
@@ -123,7 +130,7 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
     onSuccess: (data) => {
       console.log('✅ Mutation success callback:', data);
       // רענן את כל ה-queries הקשורים למשמרות
-      queryClient.invalidateQueries({ queryKey: ['schedule-shifts'] });
+      queryClient.removeQueries({ queryKey: ['schedule-shifts'] });
       queryClient.invalidateQueries({ queryKey: ['schedule-shifts', businessId] });
       queryClient.refetchQueries({ queryKey: ['schedule-shifts', businessId] });
     },
