@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Send, Users, Plus, LogIn } from 'lucide-react';
+import { Calendar, Send, Users, Plus, LogIn, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { getUpcomingWeekDates } from '@/lib/dateUtils';
@@ -16,6 +16,7 @@ export const ShiftSubmissionManager: React.FC = () => {
   const [selectedWeek, setSelectedWeek] = useState('');
   const [notes, setNotes] = useState('');
   const [sendingToAll, setSendingToAll] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [tokenToTest, setTokenToTest] = useState('');
   const { toast } = useToast();
   const { businessId, loading: isLoading } = useCurrentBusiness();
@@ -152,11 +153,56 @@ export const ShiftSubmissionManager: React.FC = () => {
 
   React.useEffect(() => {
     if (!selectedWeek) {
-      const defaultWeek = getNextWeek();
+      const defaultWeek = getCurrentWeek(); // שנוי לשבוע הנוכחי כפי שבקש המשתמש
       console.log('🎯 הגדרת שבוע ברירת מחדל:', defaultWeek);
       setSelectedWeek(defaultWeek);
     }
   }, [selectedWeek]);
+
+  // פונקציה לאיפוס טוקנים
+  const resetTokens = async () => {
+    if (!selectedWeek) {
+      toast({
+        title: 'שגיאה',
+        description: 'יש לבחור שבוע תחילה',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsResetting(true);
+    
+    try {
+      console.log('🔄 מאפס טוכנים לשבוע:', selectedWeek);
+      
+      // קרא ל-Edge Function לניקוי הטוכנים
+      const { error } = await supabase.functions.invoke('cleanup-duplicate-tokens');
+      
+      if (error) {
+        console.error('❌ שגיאה באיפוס טוכנים:', error);
+        throw error;
+      }
+      
+      console.log('✅ טוכנים אופסו בהצלחה');
+      
+      // רענן את הנתונים
+      refetchTokens();
+      
+      toast({
+        title: 'הטוכנים אופסו בהצלחה',
+        description: 'כעת ניתן ליצור טוכנים חדשים לכל העובדים',
+      });
+    } catch (error) {
+      console.error('Error resetting tokens:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'שגיאה באיפוס הטוכנים',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   // שליחת טוקנים לכל העובדים
   const sendToAllEmployees = async () => {
@@ -421,15 +467,27 @@ export const ShiftSubmissionManager: React.FC = () => {
                </p>
              </div>
             
-            <Button
-              onClick={sendToAllEmployees}
-              disabled={!selectedWeek || sendingToAll || employees.length === 0}
-              size="lg"
-              className="w-full"
-            >
-              <Send className="h-5 w-5 mr-2" />
-              {sendingToAll ? 'שולח...' : `שלח לכל ${employees.length} העובדים`}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={resetTokens}
+                disabled={!selectedWeek || isResetting}
+                variant="destructive"
+                className="flex-1"
+              >
+                <RefreshCw className="h-5 w-5 mr-2" />
+                {isResetting ? 'מאפס טוכנים...' : 'אפס טוכנים ויצר חדשים'}
+              </Button>
+              
+              <Button
+                onClick={sendToAllEmployees}
+                disabled={!selectedWeek || sendingToAll || employees.length === 0}
+                size="lg"
+                className="flex-1"
+              >
+                <Send className="h-5 w-5 mr-2" />
+                {sendingToAll ? 'שולח...' : `שלח לכל ${employees.length} העובדים`}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
