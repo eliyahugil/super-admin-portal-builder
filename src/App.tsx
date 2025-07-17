@@ -24,6 +24,8 @@ const queryClient = new QueryClient({
 
 function App() {
   console.log('🚀 App component rendering');
+  console.log('🌐 Current URL:', window.location.href);
+  console.log('📍 Current pathname:', window.location.pathname);
   
   return (
     <ErrorBoundary>
