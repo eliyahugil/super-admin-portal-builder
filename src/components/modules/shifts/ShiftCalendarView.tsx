@@ -70,6 +70,7 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
     return Object.values(selectedShifts).filter(Boolean).length;
   };
 
+
   return (
     <div className="space-y-6">
       <Card>
@@ -340,6 +341,7 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
                 <h4 className="font-medium text-blue-900 mb-2">איך להשתמש בלוח השנה:</h4>
                 <ul className="text-sm text-blue-800 space-y-1">
                   <li>• לחץ על משמרת כדי לבחור אותה או לבטל את הבחירה</li>
+                  <li>• 🎯 המערכת תבחר אוטומטית משמרות נוספות באותו יום שאתה יכול לעבוד</li>
                   <li>• משמרות נבחרות יופיעו עם רקע כחול וסימון ✓</li>
                   <li>• אתה יכול לבחור מספר משמרות מימים שונים</li>
                   <li>• המשמרות מוצגות לפי הסניפים שאתה משויך אליהם</li>

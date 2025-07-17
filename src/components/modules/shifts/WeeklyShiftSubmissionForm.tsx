@@ -185,12 +185,64 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
     validateToken();
   }, [token, navigate, toast]);
 
-  // Toggle shift selection
+  // Toggle shift selection with automatic additional shifts
   const toggleShiftSelection = (shiftId: string) => {
-    setSelectedShifts(prev => ({
-      ...prev,
-      [shiftId]: !prev[shiftId]
-    }));
+    const isCurrentlySelected = selectedShifts[shiftId];
+    
+    if (!isCurrentlySelected) {
+      // אם בוחרים משמרת - לבחור גם משמרות נוספות אוטומטית
+      const selectedShift = availableShifts.find(s => s.id === shiftId);
+      if (selectedShift) {
+        const additionalShifts = findAdditionalShifts(selectedShift);
+        
+        setSelectedShifts(prev => {
+          const newSelection = { ...prev, [shiftId]: true };
+          
+          // הוספת משמרות נוספות
+          additionalShifts.forEach(shift => {
+            newSelection[shift.id] = true;
+          });
+          
+          return newSelection;
+        });
+        
+        // הודעה למשתמש על משמרות נוספות שנבחרו
+        if (additionalShifts.length > 0) {
+          toast({
+            title: 'משמרות נוספות נבחרו אוטומטית! 🎯',
+            description: `נבחרו ${additionalShifts.length} משמרות נוספות באותו יום שאתה יכול לעבוד`,
+          });
+        }
+      }
+    } else {
+      // אם מבטלים בחירת משמרת - רק לבטל את המשמרת הזו
+      setSelectedShifts(prev => ({
+        ...prev,
+        [shiftId]: false
+      }));
+    }
+  };
+
+  // פונקציה לחיפוש משמרות נוספות באותו יום
+  const findAdditionalShifts = (selectedShift: any) => {
+    const sameDate = selectedShift.shift_date;
+    const selectedEndTime = selectedShift.end_time;
+    
+    // המרת זמן לדקות לצורך השוואה
+    const timeToMinutes = (timeStr: string) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+    
+    const selectedEndMinutes = timeToMinutes(selectedEndTime);
+    
+    // חיפוש משמרות נוספות באותו יום שמתחילות אחרי שהמשמרת הנוכחית מסתיימת
+    return availableShifts.filter(shift => 
+      shift.shift_date === sameDate && 
+      shift.id !== selectedShift.id &&
+      timeToMinutes(shift.start_time) >= selectedEndMinutes && // מתחיל אחרי או בדיוק כשהמשמרת מסתיימת
+      timeToMinutes(shift.start_time) <= selectedEndMinutes + 60 // עד שעה אחרי סיום המשמרת
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
