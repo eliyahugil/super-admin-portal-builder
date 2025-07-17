@@ -161,8 +161,7 @@ serve(async (req) => {
         .from('available_shifts')
         .select(`
           *,
-          branch:branches(id, name, address),
-          business:businesses(id, name)
+          branch:branches(id, name, address)
         `)
         .eq('business_id', businessId)
         .eq('week_start_date', weekStart)
