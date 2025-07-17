@@ -3,6 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EmployeeEditForm } from './edit/EmployeeEditForm';
 import { EmployeeEditActions } from './edit/EmployeeEditActions';
+import { EmployeeBranchAssignmentEditor } from './edit/EmployeeBranchAssignmentEditor';
 import { useEmployeeEdit } from './edit/useEmployeeEdit';
 import type { Employee } from '@/types/supabase';
 
@@ -34,20 +35,30 @@ export const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>עריכת פרטי העובד</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleFormSubmit} className="space-y-4">
-          <EmployeeEditForm 
-            formData={formData} 
-            setFormData={setFormData} 
+        
+        <div className="space-y-6">
+          {/* Basic employee form */}
+          <form onSubmit={handleFormSubmit}>
+            <EmployeeEditForm 
+              formData={formData} 
+              setFormData={setFormData} 
+            />
+            <EmployeeEditActions 
+              loading={loading} 
+              onCancel={() => onOpenChange(false)} 
+            />
+          </form>
+          
+          {/* Branch assignments editor */}
+          <EmployeeBranchAssignmentEditor 
+            employeeId={employee.id}
+            businessId={employee.business_id}
           />
-          <EmployeeEditActions 
-            loading={loading} 
-            onCancel={() => onOpenChange(false)} 
-          />
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

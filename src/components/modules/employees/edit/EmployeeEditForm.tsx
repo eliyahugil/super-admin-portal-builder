@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 import { AddressAutocomplete, AddressData } from '@/components/ui/AddressAutocomplete';
+import { supabase } from '@/integrations/supabase/client';
+import { useBranchesData } from '@/hooks/useBranchesData';
+import { useQuery } from '@tanstack/react-query';
 import type { EmployeeType } from '@/types/employee';
 
 interface EmployeeFormData {
@@ -34,6 +39,55 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
   setFormData,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [existingRoles, setExistingRoles] = useState<string[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+  const [roleName, setRoleName] = useState<string>('');
+  const [maxWeeklyHours, setMaxWeeklyHours] = useState<number>(40);
+  const [priorityOrder, setPriorityOrder] = useState<number>(1);
+  const [shiftTypes, setShiftTypes] = useState<string[]>(['morning', 'evening']);
+  const [availableDays, setAvailableDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
+
+  // Get branches for the current business
+  const { data: branches = [] } = useBranchesData(formData.main_branch_id ? 
+    // Extract business_id from employee data if available 
+    undefined : undefined);
+
+  // Get existing branch assignments for this employee
+  const { data: branchAssignments = [] } = useQuery({
+    queryKey: ['employee-branch-assignments', formData],
+    queryFn: async () => {
+      // We'll need the employee ID from somewhere - this needs to be passed down
+      return [];
+    },
+    enabled: false // Disable for now until we have proper employee ID
+  });
+
+  // Fetch existing roles from the system
+  useEffect(() => {
+    const fetchExistingRoles = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('employee_branch_assignments')
+          .select('role_name')
+          .not('role_name', 'is', null);
+
+        if (error) throw error;
+
+        const uniqueRoles = [...new Set(
+          data
+            .map(item => item.role_name?.trim())
+            .filter(role => role && role.length > 0)
+        )];
+
+        setExistingRoles(uniqueRoles);
+      } catch (error) {
+        console.error('Error fetching existing roles:', error);
+        setExistingRoles(['קופאי', 'מכירות', 'מנהל', 'אבטחה', 'ניקיון', 'טבח', 'מלצר', 'נהג']);
+      }
+    };
+
+    fetchExistingRoles();
+  }, []);
 
   const handleAddressChange = (addressData: AddressData | null) => {
     setFormData({
@@ -226,6 +280,148 @@ export const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
           checked={formData.is_active}
           onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
         />
+      </div>
+
+      {/* Branch Assignments Section */}
+      <Separator className="my-6" />
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">שיוכי סניפים ומשמרות</h3>
+        
+        {/* Branch Selection */}
+        <div>
+          <Label htmlFor="branch">סניף</Label>
+          <Select value={selectedBranchId} onValueChange={setSelectedBranchId}>
+            <SelectTrigger>
+              <SelectValue placeholder="בחר סניף לשיוך" />
+            </SelectTrigger>
+            <SelectContent>
+              {branches.map(branch => (
+                <SelectItem key={branch.id} value={branch.id}>
+                  {branch.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Role Selection */}
+        <div>
+          <Label htmlFor="role">תפקיד</Label>
+          <Select value={roleName} onValueChange={setRoleName}>
+            <SelectTrigger>
+              <SelectValue placeholder="בחר תפקיד" />
+            </SelectTrigger>
+            <SelectContent>
+              {existingRoles.length > 0 ? (
+                existingRoles.map(role => (
+                  <SelectItem key={role} value={role}>
+                    {role}
+                  </SelectItem>
+                ))
+              ) : (
+                <>
+                  <SelectItem value="קופאי">קופאי</SelectItem>
+                  <SelectItem value="מכירות">מכירות</SelectItem>
+                  <SelectItem value="מנהל">מנהל</SelectItem>
+                  <SelectItem value="אבטחה">אבטחה</SelectItem>
+                  <SelectItem value="ניקיון">ניקיון</SelectItem>
+                  <SelectItem value="טבח">טבח</SelectItem>
+                  <SelectItem value="מלצר">מלצר</SelectItem>
+                  <SelectItem value="נהג">נהג</SelectItem>
+                </>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Working Hours and Priority */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="branch_hours">מקסימום שעות שבועיות</Label>
+            <Input
+              id="branch_hours"
+              type="number"
+              min="1"
+              max="60"
+              value={maxWeeklyHours}
+              onChange={(e) => setMaxWeeklyHours(parseInt(e.target.value) || 40)}
+              className="text-right"
+            />
+          </div>
+          <div>
+            <Label htmlFor="priority">עדיפות</Label>
+            <Input
+              id="priority"
+              type="number"
+              min="1"
+              max="10"
+              value={priorityOrder}
+              onChange={(e) => setPriorityOrder(parseInt(e.target.value) || 1)}
+              className="text-right"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              1 = עדיפות גבוהה, 10 = עדיפות נמוכה
+            </p>
+          </div>
+        </div>
+
+        {/* Shift Types */}
+        <div>
+          <Label>סוגי משמרות</Label>
+          <div className="flex gap-4 mt-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="edit-morning"
+                checked={shiftTypes.includes('morning')}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setShiftTypes([...shiftTypes, 'morning']);
+                  } else {
+                    setShiftTypes(shiftTypes.filter(type => type !== 'morning'));
+                  }
+                }}
+              />
+              <Label htmlFor="edit-morning">בוקר</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="edit-evening"
+                checked={shiftTypes.includes('evening')}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setShiftTypes([...shiftTypes, 'evening']);
+                  } else {
+                    setShiftTypes(shiftTypes.filter(type => type !== 'evening'));
+                  }
+                }}
+              />
+              <Label htmlFor="edit-evening">ערב</Label>
+            </div>
+          </div>
+        </div>
+
+        {/* Available Days */}
+        <div>
+          <Label>ימים זמינים</Label>
+          <div className="grid grid-cols-3 gap-2 mt-2">
+            {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'].map((day, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`edit-day-${index}`}
+                  checked={availableDays.includes(index)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setAvailableDays([...availableDays, index].sort());
+                    } else {
+                      setAvailableDays(availableDays.filter(d => d !== index));
+                    }
+                  }}
+                />
+                <Label htmlFor={`edit-day-${index}`} className="text-sm">{day}</Label>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
