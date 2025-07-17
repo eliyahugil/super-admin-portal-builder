@@ -1,6 +1,7 @@
 
 import { useState, useMemo } from 'react';
 import type { ShiftData } from '../types';
+import { getUpcomingWeekDates } from '@/lib/dateUtils';
 
 export const useShiftTableFilters = (shifts: ShiftData[]) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,11 +39,11 @@ export const useShiftTableFilters = (shifts: ShiftData[]) => {
           case 'today':
             return shiftDate.getTime() === today.getTime();
           case 'this_week':
-            const startOfWeek = new Date(today);
-            startOfWeek.setDate(today.getDate() - today.getDay());
-            const endOfWeek = new Date(startOfWeek);
-            endOfWeek.setDate(startOfWeek.getDate() + 6);
-            return shiftDate >= startOfWeek && shiftDate <= endOfWeek;
+            // Use upcoming week instead of current week
+            const upcomingWeek = getUpcomingWeekDates();
+            const weekStart = new Date(upcomingWeek.start);
+            const weekEnd = new Date(upcomingWeek.end);
+            return shiftDate >= weekStart && shiftDate <= weekEnd;
           case 'this_month':
             return shiftDate.getMonth() === now.getMonth() && shiftDate.getFullYear() === now.getFullYear();
           case 'next_week':

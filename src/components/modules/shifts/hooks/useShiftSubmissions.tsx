@@ -5,6 +5,7 @@ import { useBusiness } from '@/hooks/useBusiness';
 import { supabase } from '@/integrations/supabase/client';
 import { WeeklyShiftService } from '@/services/WeeklyShiftService';
 import { ShiftSubmission, ShiftEntry } from '../types';
+import { getUpcomingWeekDates } from '@/lib/dateUtils';
 
 export const useShiftSubmissions = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -117,19 +118,9 @@ export const useShiftSubmissions = () => {
     }
   };
 
-  // Get current week dates
+  // Get upcoming week dates (next week as default)
   const getWeekDates = () => {
-    const now = new Date();
-    const currentDay = now.getDay();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - currentDay);
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-
-    return {
-      start: startOfWeek.toISOString().split('T')[0],
-      end: endOfWeek.toISOString().split('T')[0]
-    };
+    return getUpcomingWeekDates();
   };
 
   // Parse shifts from JSON and ensure it's an array

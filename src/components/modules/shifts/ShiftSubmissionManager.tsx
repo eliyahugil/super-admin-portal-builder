@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Send, Users, Plus, LogIn } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { getUpcomingWeekDates } from '@/lib/dateUtils';
 
 export const ShiftSubmissionManager: React.FC = () => {
   const [selectedWeek, setSelectedWeek] = useState('');
@@ -94,23 +95,10 @@ export const ShiftSubmissionManager: React.FC = () => {
 
   // פונקציות לחישוב שבועות שונים - תמיד מתחיל ביום ראשון
   const getCurrentWeek = () => {
-    const now = new Date();
-    const currentWeek = new Date(now);
-    
-    console.log('🗓️ getCurrentWeek - היום הוא:', now.getDay(), 'התאריך:', now.toISOString().split('T')[0]);
-    
-    // אם היום הוא יום ראשון - השאר אותו
-    // אחרת - קדם ליום ראשון הבא
-    if (now.getDay() === 0) {
-      console.log('📅 השבוע הנוכחי - היום הוא ראשון, לא משנה:', currentWeek.toISOString().split('T')[0]);
-      return currentWeek.toISOString().split('T')[0];
-    } else {
-      // קדם ליום ראשון הבא: (7 - מספר היום הנוכחי)
-      const daysToAdd = 7 - now.getDay();
-      currentWeek.setDate(now.getDate() + daysToAdd);
-      console.log('📅 השבוע הנוכחי - קודם ל:', daysToAdd, 'ימים, תוצאה:', currentWeek.toISOString().split('T')[0]);
-      return currentWeek.toISOString().split('T')[0];
-    }
+    // שנה: החזר את השבוע הקרוב במקום השבוע הנוכחי
+    const upcomingWeek = getUpcomingWeekDates();
+    console.log('📅 השבוע הקרוב (החדש):', upcomingWeek.start);
+    return upcomingWeek.start;
   };
 
   const getNextWeek = () => {

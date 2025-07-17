@@ -7,6 +7,7 @@ import { Calendar, Clock, MapPin, Users, Plus, Minus, Send } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getUpcomingWeekDates } from '@/lib/dateUtils';
 
 interface SelectedShift {
   date: Date;
@@ -51,11 +52,9 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
     if (weekRange) return weekRange.start;
     
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    const start = new Date(today);
-    start.setDate(today.getDate() - dayOfWeek);
-    return start;
+    // Use upcoming week as default
+    const upcomingWeek = getUpcomingWeekDates();
+    return upcomingWeek.startDate;
   });
   
   const { toast } = useToast();

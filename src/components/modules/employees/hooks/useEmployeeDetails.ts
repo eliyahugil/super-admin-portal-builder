@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useBusiness } from '@/hooks/useBusiness';
+import { getUpcomingWeekDates } from '@/lib/dateUtils';
 
 export const useEmployeeDetails = (employeeId: string | undefined) => {
   const { businessId } = useBusiness();
@@ -132,17 +133,7 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
   });
 
   const getNextWeekDates = () => {
-    const now = new Date();
-    const currentDay = now.getDay();
-    const startOfNextWeek = new Date(now);
-    startOfNextWeek.setDate(now.getDate() - currentDay + 7);
-    const endOfNextWeek = new Date(startOfNextWeek);
-    endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
-
-    return {
-      start: startOfNextWeek.toISOString().split('T')[0],
-      end: endOfNextWeek.toISOString().split('T')[0]
-    };
+    return getUpcomingWeekDates();
   };
 
   return {
