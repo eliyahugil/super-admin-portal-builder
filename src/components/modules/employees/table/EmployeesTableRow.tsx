@@ -32,12 +32,22 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
   };
 
   const getBranchName = () => {
+    // First, try to get the main branch
     if (employee.main_branch?.name) {
       return employee.main_branch.name;
     }
+    
+    // If no main branch, get the first active branch assignment
+    const activeBranchAssignment = employee.branch_assignments?.find(ba => ba.is_active);
+    if (activeBranchAssignment?.branch?.name) {
+      return activeBranchAssignment.branch.name;
+    }
+    
+    // Fallback to any branch assignment
     if (employee.branch_assignments?.[0]?.branch?.name) {
       return employee.branch_assignments[0].branch.name;
     }
+    
     return 'לא משויך';
   };
 

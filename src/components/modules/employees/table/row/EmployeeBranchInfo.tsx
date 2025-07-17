@@ -18,18 +18,29 @@ export const EmployeeBranchInfo: React.FC<EmployeeBranchInfoProps> = ({
   branchAssignments
 }) => {
   const activeBranches = branchAssignments?.filter(ba => ba.is_active) || [];
+  
+  // If no main branch, show the first active branch assignment as main
+  let displayMainBranch = mainBranch;
+  if (!displayMainBranch && activeBranches.length > 0) {
+    displayMainBranch = { name: activeBranches[0].branch.name };
+  }
 
   return (
     <div className="space-y-1">
-      {mainBranch && (
+      {displayMainBranch && (
         <div className="flex items-center text-sm text-gray-600">
           <Building className="h-3 w-3 mr-1" />
-          {mainBranch.name}
+          {displayMainBranch.name}
         </div>
       )}
-      {activeBranches.length > 0 && (
+      {activeBranches.length > 1 && (
         <div className="text-xs text-gray-500">
-          +{activeBranches.length} הקצאות פעילות
+          +{activeBranches.length - 1} הקצאות פעילות נוספות
+        </div>
+      )}
+      {activeBranches.length === 1 && !mainBranch && (
+        <div className="text-xs text-gray-500">
+          סניף יחיד
         </div>
       )}
     </div>
