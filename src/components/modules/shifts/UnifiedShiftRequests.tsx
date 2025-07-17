@@ -506,9 +506,11 @@ export const UnifiedShiftRequests: React.FC = () => {
     a.employee_name.localeCompare(b.employee_name, 'he')
   );
 
-  const pendingRequests = filteredRequests.filter(req => req.status === 'pending');
-  const approvedRequests = filteredRequests.filter(req => req.status === 'approved');
-  const rejectedRequests = filteredRequests.filter(req => req.status === 'rejected');
+  // חישוב סטטיסטיקות מעודכן
+  const allEmployeeRequests = sortedEmployees.flatMap(emp => emp.requests);
+  const pendingRequests = allEmployeeRequests.filter(req => req.status === 'pending');
+  const approvedRequests = allEmployeeRequests.filter(req => req.status === 'approved');
+  const rejectedRequests = allEmployeeRequests.filter(req => req.status === 'rejected');
 
   if (isLoading) {
     return (
@@ -603,7 +605,7 @@ export const UnifiedShiftRequests: React.FC = () => {
           </div>
 
           {/* מסננים וכפתורי פעולות */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center" dir="rtl">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
@@ -611,14 +613,15 @@ export const UnifiedShiftRequests: React.FC = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pr-10 text-right"
+                dir="rtl"
               />
             </div>
             
             <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-              <SelectTrigger className="w-full sm:w-48">
+              <SelectTrigger className="w-full sm:w-48" dir="rtl">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent dir="rtl">
                 <SelectItem value="all">כל הסטטוסים</SelectItem>
                 <SelectItem value="pending">ממתין</SelectItem>
                 <SelectItem value="approved">מאושר</SelectItem>
@@ -630,7 +633,7 @@ export const UnifiedShiftRequests: React.FC = () => {
               variant="destructive"
               onClick={() => setDeleteAllDialogOpen(true)}
               className="flex items-center gap-2"
-              disabled={filteredRequests.length === 0}
+              disabled={sortedEmployees.length === 0}
             >
               <Trash2 className="h-4 w-4" />
               מחק הכל
@@ -638,14 +641,14 @@ export const UnifiedShiftRequests: React.FC = () => {
           </div>
 
           {/* תוכן ראשי - מימין לשמאל */}
-          <div className="flex gap-6" dir="rtl">
-            {/* רשימת בקשות מקובצת לפי עובדים - צד שמאל */}
-            <div className="flex-1 space-y-4">
+          <div className="w-full" dir="rtl">
+            {/* רשימת בקשות מקובצת לפי עובדים */}
+            <div className="w-full space-y-4">
               {sortedEmployees.map(employee => (
-                <Card key={employee.employee_id} className="hover-scale animate-fade-in">
-                  <CardContent className="p-6">
+                <Card key={employee.employee_id} className="hover-scale animate-fade-in" dir="rtl">
+                  <CardContent className="p-6" dir="rtl">
                     {/* כותרת עובד */}
-                    <div className="flex items-center justify-between mb-4 pb-3 border-b">
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b" dir="rtl">
                       <div className="flex items-center gap-3">
                         <User className="h-5 w-5 text-primary" />
                         <span className="font-bold text-xl">{employee.employee_name}</span>
@@ -674,7 +677,7 @@ export const UnifiedShiftRequests: React.FC = () => {
                     </div>
 
                     {/* רשימת בקשות העובד */}
-                    <div className="space-y-3">
+                    <div className="space-y-3" dir="rtl">
                       {employee.requests.map(request => (
                         <div key={request.id} className="bg-muted/30 rounded-lg p-4 border border-muted">
                           <div className="flex items-center justify-between mb-3">
