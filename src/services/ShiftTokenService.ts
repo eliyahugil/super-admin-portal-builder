@@ -78,6 +78,7 @@ export class ShiftTokenService {
               max_weekly_hours,
               role_name,
               is_active,
+              priority_order,
               branch:branches(name)
             )
           )
@@ -93,6 +94,7 @@ export class ShiftTokenService {
       }
       
       console.log('✅ Token validated successfully:', data.id);
+      console.log('🔍 Employee data with branch assignments:', data.employee);
       return data;
     } catch (error) {
       console.error('❌ ShiftTokenService.validateToken error:', error);
