@@ -55,6 +55,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
   const [branchId, setBranchId] = useState<string>('');
   const [role, setRole] = useState<string>('');
   const [notes, setNotes] = useState('');
+  const [priority, setPriority] = useState<'normal' | 'critical' | 'backup'>('normal');
   const [requiredEmployees, setRequiredEmployees] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -110,6 +111,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
             role: role && role !== 'none' && role !== '' ? role : null,
             notes: null,
             status: 'pending',
+            priority: priority,
             required_employees: requiredEmployees
           });
         });
@@ -211,6 +213,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
                 notes: notes || null,
                 status: 'pending',
                 shift_template_id: null,
+                priority: priority,
                 required_employees: requiredEmployees
               };
               shifts.push(shiftData);
@@ -242,6 +245,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
             notes: notes || null,
             status: 'pending',
             shift_template_id: null,
+            priority: priority,
             required_employees: requiredEmployees
           }));
 
@@ -265,6 +269,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
             notes: notes || null,
             status: 'pending',
             shift_template_id: null,
+            priority: priority,
             required_employees: requiredEmployees
           };
 
@@ -289,6 +294,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
       setBranchId('');
       setRole('');
       setNotes('');
+      setPriority('normal');
       setRequiredEmployees(1);
       setNumberOfDays(1);
       setSelectedDays([]);
@@ -324,6 +330,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
     setBranchId('');
     setRole('');
     setNotes('');
+    setPriority('normal');
     setRequiredEmployees(1);
     setNumberOfDays(1);
     setSelectedDays([]);
@@ -667,6 +674,39 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Priority Selection */}
+          <div className="space-y-2">
+            <Label>רמת דחיפות</Label>
+            <Select value={priority} onValueChange={(value: 'normal' | 'critical' | 'backup') => setPriority(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="בחר רמת דחיפות" />
+              </SelectTrigger>
+              <SelectContent className="z-[1000] bg-popover border shadow-lg max-h-[200px] overflow-y-auto">
+                <SelectItem value="normal">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span>רגיל</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="critical">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <span>חובה</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="backup">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <span>תגבור</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              רמת הדחיפות של המשמרת - חובה (אדום), רגיל (ירוק), או תגבור (כחול)
+            </p>
           </div>
 
           {/* Required Employees */}
