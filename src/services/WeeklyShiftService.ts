@@ -23,6 +23,7 @@ export interface ShiftEntry {
   role_preference?: string;
   notes?: string;
   scheduled_shift_id?: string; // Add this to track selected scheduled shift
+  available_shift_id?: string; // Add this to track selected available shift
 }
 
 export interface WeeklySubmissionData {
@@ -165,16 +166,33 @@ export class WeeklyShiftService {
 
     // Check if already submitted
     const { data: existingSubmission } = await supabase
-      .from('shift_submissions')
+      .from('employee_shift_choices')
       .select('id')
-      .eq('token', token)
-      .single();
+      .eq('employee_id', tokenData.employee_id)
+      .eq('week_start_date', submissionData.week_start_date)
+      .maybeSingle();
 
     if (existingSubmission) {
       throw new Error('Shifts already submitted for this week');
     }
 
-    // Insert shift submission - convert shifts array to JSON
+    // Insert shift choices for each selected shift
+    const choicesData = submissionData.shifts.map(shift => ({
+      employee_id: tokenData.employee_id,
+      available_shift_id: shift.available_shift_id,
+      week_start_date: submissionData.week_start_date,
+      choice_type: 'regular',
+      preference_level: 1,
+      notes: shift.notes || submissionData.notes || null
+    }));
+
+    const { error: choicesError } = await supabase
+      .from('employee_shift_choices')
+      .insert(choicesData);
+
+    if (choicesError) throw choicesError;
+
+    // Also create a legacy shift_submissions record for compatibility
     const { error: submissionError } = await supabase
       .from('shift_submissions')
       .insert({
