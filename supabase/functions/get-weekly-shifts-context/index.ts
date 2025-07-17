@@ -156,34 +156,35 @@ serve(async (req) => {
 
       console.log('✅ Found', shifts.length, 'assigned shifts');
     } else {
-      // Get available shifts that haven't been assigned yet
-      console.log('📋 Getting available shifts for next week');
-      const { data: availableShifts, error: availableError } = await supabaseAdmin
-        .from('available_shifts')
+      // Get unassigned scheduled shifts for this week
+      console.log('📋 Getting unassigned scheduled shifts for next week');
+      const { data: unassignedShifts, error: unassignedError } = await supabaseAdmin
+        .from('scheduled_shifts')
         .select(`
           *,
           branch:branches(id, name, address)
         `)
         .eq('business_id', businessId)
-        .eq('week_start_date', weekStart)
-        .eq('week_end_date', weekEnd)
-        .order('day_of_week', { ascending: true })
+        .is('employee_id', null)
+        .gte('shift_date', weekStart)
+        .lte('shift_date', weekEnd)
+        .order('shift_date', { ascending: true })
         .order('start_time', { ascending: true });
 
-      if (availableError) {
-        console.error('❌ Error fetching available shifts:', availableError);
-        throw availableError;
+      if (unassignedError) {
+        console.error('❌ Error fetching unassigned shifts:', unassignedError);
+        throw unassignedError;
       }
 
-      shifts = availableShifts || [];
+      shifts = unassignedShifts || [];
       context = {
         type: 'available_shifts',
         title: 'משמרות זמינות לשבוע הקרוב',
-        description: 'אלו המשמרות הזמינות להרשמה לשבוע זה',
+        description: 'אלו המשמרות שטרם הוקצו ומחכות לעובדים',
         shiftsPublished: false
       };
 
-      console.log('✅ Found', shifts.length, 'available shifts');
+      console.log('✅ Found', shifts.length, 'unassigned scheduled shifts');
     }
 
     const response = {
