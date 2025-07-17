@@ -14,6 +14,8 @@ export interface TokenData {
   week_end_date: string;
   expires_at: string;
   is_active: boolean;
+  context_type?: 'submission' | 'available_shifts' | 'assigned_shifts';
+  shifts_published?: boolean;
   submissionUrl: string;
   advancedSubmissionUrl: string;
 }

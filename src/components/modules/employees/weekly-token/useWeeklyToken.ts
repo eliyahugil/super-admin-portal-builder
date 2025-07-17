@@ -16,7 +16,7 @@ export const useWeeklyToken = (employeeId: string, employeeName: string, phone: 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Get or create weekly token for next week
+  // Get or create weekly token for next week - now includes context for available/assigned shifts
   const { data: tokenData, isLoading } = useQuery({
     queryKey: ['weekly-token', employeeId],
     queryFn: async (): Promise<TokenData> => {
@@ -45,12 +45,13 @@ export const useWeeklyToken = (employeeId: string, employeeName: string, phone: 
       if (existingToken) {
         return {
           ...existingToken,
-          submissionUrl: `${window.location.origin}/weekly-shift-submission/${existingToken.token}`,
+          context_type: existingToken.context_type as 'submission' | 'available_shifts' | 'assigned_shifts',
+          submissionUrl: `${window.location.origin}/weekly-shift-view/${existingToken.token}`,
           advancedSubmissionUrl: `${window.location.origin}/advanced-shift-submission/${existingToken.token}`
         };
       }
 
-      // Create new token
+      // Create new token with open context (shows available shifts before publishing)
       const newToken = crypto.randomUUID().replace(/-/g, '');
       const expiresAt = new Date(endOfNextWeek);
       expiresAt.setDate(expiresAt.getDate() + 7);
@@ -63,6 +64,8 @@ export const useWeeklyToken = (employeeId: string, employeeName: string, phone: 
           week_start_date: weekStart,
           week_end_date: weekEnd,
           expires_at: expiresAt.toISOString(),
+          context_type: 'available_shifts',
+          shifts_published: false
         })
         .select()
         .single();
@@ -71,7 +74,8 @@ export const useWeeklyToken = (employeeId: string, employeeName: string, phone: 
 
       return {
         ...newTokenData,
-        submissionUrl: `${window.location.origin}/weekly-shift-submission/${newTokenData.token}`,
+        context_type: newTokenData.context_type as 'submission' | 'available_shifts' | 'assigned_shifts',
+        submissionUrl: `${window.location.origin}/weekly-shift-view/${newTokenData.token}`,
         advancedSubmissionUrl: `${window.location.origin}/advanced-shift-submission/${newTokenData.token}`
       };
     },
@@ -154,13 +158,13 @@ export const useWeeklyToken = (employeeId: string, employeeName: string, phone: 
       // Log successful reminder
       await logReminderMutation.mutateAsync({
         phone,
-        message: `שליחת טוכן ${useAdvanced ? 'מתקדם' : 'רגיל'} ל-${employeeName}`,
+        message: `שליחת קישור צפייה במשמרות ${useAdvanced ? 'מתקדם' : 'רגיל'} ל-${employeeName}`,
         method: useAPI ? 'whatsapp_api' : 'browser',
         status: 'success',
       });
       
       const methodText = useAPI ? 'WhatsApp API' : 'דפדפן';
-      const systemText = useAdvanced ? 'מערכת מתקדמת' : 'מערכת רגילה';
+      const systemText = useAdvanced ? 'מערכת מתקדמת' : 'צפייה במשמרות';
       toast({
         title: useAPI ? 'הודעה נשלחה' : 'נפתח WhatsApp',
         description: `${useAPI ? 'הודעה נשלחה בהצלחה' : 'WhatsApp נפתח עם הודעה מוכנה'} ל-${employeeName} דרך ${methodText} (${systemText})`,
@@ -193,7 +197,7 @@ export const useWeeklyToken = (employeeId: string, employeeName: string, phone: 
       navigator.clipboard.writeText(url);
       toast({
         title: 'הקישור הועתק',
-        description: `קישור הגשת המשמרות ${useAdvanced ? '(מתקדם)' : ''} הועתק ללוח`,
+        description: `קישור צפייה במשמרות ${useAdvanced ? '(מתקדם)' : ''} הועתק ללוח`,
       });
     }
   };
@@ -204,7 +208,7 @@ export const useWeeklyToken = (employeeId: string, employeeName: string, phone: 
       window.open(url, '_blank');
       toast({
         title: 'הקישור נפתח',
-        description: `קישור הגשת המשמרות ${useAdvanced ? '(מתקדם)' : ''} נפתח בכרטיסייה חדשה`,
+        description: `קישור צפייה במשמרות ${useAdvanced ? '(מתקדם)' : ''} נפתח בכרטיסייה חדשה`,
       });
     }
   };

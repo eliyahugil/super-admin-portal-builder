@@ -11,6 +11,7 @@ const QuickRegistrationPage = lazy(() => import('@/pages/QuickRegistrationPage')
 const EmployeeLoginPage = lazy(() => import('@/pages/auth/EmployeeLoginPage'));
 
 const WeeklyShiftSubmissionForm = lazy(() => import('@/components/modules/shifts/WeeklyShiftSubmissionForm').then(m => ({ default: m.WeeklyShiftSubmissionForm })));
+const WeeklyShiftView = lazy(() => import('@/pages/WeeklyShiftView').then(m => ({ default: m.WeeklyShiftView })));
 const ShiftSubmissionSuccess = lazy(() => import('@/components/modules/shifts/ShiftSubmissionSuccess').then(m => ({ default: m.ShiftSubmissionSuccess })));
 
 export const PublicRoutes = () => (
@@ -24,6 +25,14 @@ export const PublicRoutes = () => (
       element={
         <Suspense fallback={<div>טוען טופס שבועי...</div>}>
           <WeeklyShiftSubmissionForm />
+        </Suspense>
+      } 
+    />
+    <Route 
+      path="/weekly-shift-view/:token" 
+      element={
+        <Suspense fallback={<div>טוען תצוגת משמרות...</div>}>
+          <WeeklyShiftView />
         </Suspense>
       } 
     />
