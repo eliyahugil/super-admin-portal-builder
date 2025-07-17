@@ -12,7 +12,16 @@ serve(async (req) => {
   }
 
   try {
-    const { token } = await req.json();
+    // Handle both GET and POST requests
+    let token = null;
+    
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      token = url.searchParams.get('token');
+    } else {
+      const body = await req.json();
+      token = body.token;
+    }
 
     if (!token) {
       return new Response(
