@@ -95,22 +95,38 @@ serve(async (req) => {
       console.log('Continuing with available shifts mode...');
     }
 
-    const shiftsPublished = publishedShifts && publishedShifts.length > 0;
-    console.log('📅 Shifts published status for this week:', shiftsPublished);
+    // Check if this specific employee has assigned shifts for this week
+    const { data: employeeAssignedShifts, error: assignedError } = await supabaseAdmin
+      .from('scheduled_shifts')
+      .select('id')
+      .eq('business_id', businessId)
+      .eq('employee_id', employeeId)
+      .gte('shift_date', weekStart)
+      .lte('shift_date', weekEnd)
+      .limit(1);
 
-    // Update token with current publication status
+    if (assignedError) {
+      console.error('❌ Error checking employee assigned shifts:', assignedError);
+      // Don't throw, just log and continue with available shifts
+      console.log('Continuing with available shifts mode...');
+    }
+
+    const employeeHasAssignedShifts = employeeAssignedShifts && employeeAssignedShifts.length > 0;
+    console.log('📅 Employee has assigned shifts for this week:', employeeHasAssignedShifts);
+
+    // Update token with current publication status based on employee's assignments
     await supabaseAdmin
       .from('employee_weekly_tokens')
       .update({
-        shifts_published: shiftsPublished,
-        context_type: shiftsPublished ? 'assigned_shifts' : 'available_shifts'
+        shifts_published: employeeHasAssignedShifts,
+        context_type: employeeHasAssignedShifts ? 'assigned_shifts' : 'available_shifts'
       })
       .eq('id', tokenData.id);
 
     let shifts = [];
     let context = {};
 
-    if (shiftsPublished) {
+    if (employeeHasAssignedShifts) {
       // Get assigned shifts for this employee
       console.log('🎯 Getting assigned shifts for employee');
       const { data: assignedShifts, error: assignedError } = await supabaseAdmin
