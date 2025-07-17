@@ -65,6 +65,8 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
   // Bulk shifts (specific days in date range)
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+  // Single shift with multiple branches
+  const [selectedBranchesForSingle, setSelectedBranchesForSingle] = useState<string[]>([]);
   
   // Dialogs
   const [showAddRoleDialog, setShowAddRoleDialog] = useState(false);
@@ -227,26 +229,52 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
           });
         }
       } else {
-        // Create single shift
-        const shiftData: CreateShiftData = {
-          shift_date: format(date!, 'yyyy-MM-dd'),
-          start_time: startTime,
-          end_time: endTime,
-          employee_id: employeeId === 'no-employee' ? null : employeeId || null,
-          branch_id: branchId === 'no-branch' ? null : branchId || null,
-          role: role === 'no-role' ? null : role || null,
-          notes: notes || null,
-          status: 'pending',
-          shift_template_id: null,
-          required_employees: requiredEmployees
-        };
+        // Create single shift - handle multiple branches if selected
+        if (selectedBranchesForSingle.length > 0) {
+          // Create shifts for each selected branch
+          const shifts: CreateShiftData[] = selectedBranchesForSingle.map(branchId => ({
+            shift_date: format(date!, 'yyyy-MM-dd'),
+            start_time: startTime,
+            end_time: endTime,
+            employee_id: employeeId === 'no-employee' ? null : employeeId || null,
+            branch_id: branchId,
+            role: role === 'no-role' ? null : role || null,
+            notes: notes || null,
+            status: 'pending',
+            shift_template_id: null,
+            required_employees: requiredEmployees
+          }));
 
-        await onSubmit(shiftData);
-        
-        toast({
-          title: "הצלחה",
-          description: "המשמרת נוצרה בהצלחה",
-        });
+          for (const shift of shifts) {
+            await onSubmit(shift);
+          }
+          
+          toast({
+            title: "הצלחה",
+            description: `${shifts.length} משמרות נוצרו עבור ${shifts.length} סניפים`,
+          });
+        } else {
+          // Create single shift for one branch
+          const shiftData: CreateShiftData = {
+            shift_date: format(date!, 'yyyy-MM-dd'),
+            start_time: startTime,
+            end_time: endTime,
+            employee_id: employeeId === 'no-employee' ? null : employeeId || null,
+            branch_id: branchId === 'no-branch' ? null : branchId || null,
+            role: role === 'no-role' ? null : role || null,
+            notes: notes || null,
+            status: 'pending',
+            shift_template_id: null,
+            required_employees: requiredEmployees
+          };
+
+          await onSubmit(shiftData);
+          
+          toast({
+            title: "הצלחה",
+            description: "המשמרת נוצרה בהצלחה",
+          });
+        }
       }
       
       setShowSuccess(true);
@@ -265,6 +293,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
       setNumberOfDays(1);
       setSelectedDays([]);
       setSelectedBranches([]);
+      setSelectedBranchesForSingle([]);
       setIsMultipleShifts(false);
       
       setTimeout(() => {
@@ -299,6 +328,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
     setNumberOfDays(1);
     setSelectedDays([]);
     setSelectedBranches([]);
+    setSelectedBranchesForSingle([]);
     setIsMultipleShifts(false);
     setShowSuccess(false);
     onClose();
@@ -481,7 +511,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
           </div>
 
           {/* Employee Selection - Only when not using multiple branches */}
-          {!(isMultipleShifts && selectedBranches.length > 0) && (
+          {!(isMultipleShifts && selectedBranches.length > 0) && !((!isMultipleShifts) && selectedBranchesForSingle.length > 0) && (
             <div className="space-y-2">
               <Label>עובד</Label>
               <Select value={employeeId} onValueChange={setEmployeeId}>
@@ -503,7 +533,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
           {/* Branch Selection */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>{isMultipleShifts ? 'סניפים (אופציונלי)' : 'סניף'}</Label>
+              <Label>סניפים</Label>
               <Button
                 type="button"
                 variant="outline"
@@ -514,6 +544,22 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
                 צור סניף חדש
               </Button>
             </div>
+
+            {/* Toggle for multi-branch selection in single mode */}
+            {!isMultipleShifts && (
+              <div className="flex items-center space-x-2 mb-3">
+                <Checkbox
+                  checked={selectedBranchesForSingle.length > 0}
+                  onCheckedChange={(checked) => {
+                    if (!checked) {
+                      setSelectedBranchesForSingle([]);
+                      setBranchId('');
+                    }
+                  }}
+                />
+                <Label className="text-sm">צור משמרת עבור מספר סניפים</Label>
+              </div>
+            )}
 
             {isMultipleShifts ? (
               <div className="border rounded-md p-3 max-h-32 overflow-y-auto">
@@ -527,6 +573,31 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
                             setSelectedBranches(prev => [...prev, branch.id]);
                           } else {
                             setSelectedBranches(prev => prev.filter(id => id !== branch.id));
+                          }
+                        }}
+                      />
+                      <Label className="text-sm">{branch.name}</Label>
+                    </div>
+                  ))}
+                  {branches.length === 0 && (
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">אין סניפים זמינים</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : selectedBranchesForSingle.length > 0 ? (
+              <div className="border rounded-md p-3 max-h-32 overflow-y-auto">
+                <div className="space-y-2">
+                  {branches.map(branch => (
+                    <div key={branch.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={selectedBranchesForSingle.includes(branch.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedBranchesForSingle(prev => [...prev, branch.id]);
+                          } else {
+                            setSelectedBranchesForSingle(prev => prev.filter(id => id !== branch.id));
                           }
                         }}
                       />
@@ -559,6 +630,12 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
             {isMultipleShifts && selectedBranches.length > 0 && (
               <p className="text-xs text-muted-foreground">
                 נבחרו {selectedBranches.length} סניפים
+              </p>
+            )}
+            
+            {!isMultipleShifts && selectedBranchesForSingle.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                נבחרו {selectedBranchesForSingle.length} סניפים - תיווצר משמרת נפרדת עבור כל סניף
               </p>
             )}
           </div>
@@ -609,7 +686,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
           </div>
 
           {/* Notes - Only when not using multiple branches */}
-          {!(isMultipleShifts && selectedBranches.length > 0) && (
+          {!(isMultipleShifts && selectedBranches.length > 0) && !((!isMultipleShifts) && selectedBranchesForSingle.length > 0) && (
             <div className="space-y-2">
               <Label>הערות</Label>
               <Textarea
@@ -646,6 +723,7 @@ export const UnifiedShiftCreator: React.FC<UnifiedShiftCreatorProps> = ({
             >
               {isSubmitting ? 'יוצר...' : 
                isMultipleShifts && selectedBranches.length > 0 ? `צור ${previewShifts.length} משמרות` :
+               !isMultipleShifts && selectedBranchesForSingle.length > 0 ? `צור ${selectedBranchesForSingle.length} משמרות` :
                isMultipleShifts ? 'צור משמרות' : 
                'צור משמרת'}
             </Button>
