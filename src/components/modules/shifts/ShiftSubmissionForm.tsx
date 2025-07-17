@@ -179,14 +179,29 @@ export const ShiftSubmissionForm: React.FC = () => {
   const getAvailableShiftTypes = () => {
     // Cast tokenData to access employee data
     const employee = (tokenData as any)?.employee;
-    const activeBranchAssignment = employee?.branch_assignments?.find((assignment: any) => assignment.is_active);
-    const preferredType = activeBranchAssignment?.shift_types?.[0];
+    
+    if (!employee || !employee.branch_assignments) {
+      console.log('⚠️ No employee or branch assignments found');
+      return [];
+    }
+    
+    // Find active branch assignment with shift_types
+    const activeBranchAssignment = employee.branch_assignments.find((assignment: any) => 
+      assignment.is_active === true && assignment.shift_types && assignment.shift_types.length > 0
+    );
     
     console.log('🔍 Getting available shift types');
     console.log('🔍 TokenData:', tokenData);
     console.log('🔍 Employee:', employee);
-    console.log('🔍 All branch assignments:', employee?.branch_assignments);
-    console.log('🔍 Active branch assignment:', activeBranchAssignment);
+    console.log('🔍 All branch assignments:', employee.branch_assignments);
+    console.log('🔍 Active branch assignment found:', activeBranchAssignment);
+    
+    if (!activeBranchAssignment || !activeBranchAssignment.shift_types) {
+      console.log('⚠️ No active branch assignment with shift types found');
+      return [];
+    }
+    
+    const preferredType = activeBranchAssignment.shift_types[0];
     console.log('🔍 Extracted preferred type:', preferredType);
     
     const allTypes = [
@@ -196,24 +211,33 @@ export const ShiftSubmissionForm: React.FC = () => {
       { value: 'night', label: 'משמרת לילה (23:00-07:00)', time: '23:00-07:00' }
     ];
 
-    // If employee has a preferred shift type, show ONLY that type
-    if (preferredType) {
-      console.log('✅ Found preferred shift type, filtering to:', preferredType);
-      const filteredTypes = allTypes.filter(type => type.value === preferredType);
-      console.log('✅ Returning filtered types:', filteredTypes);
-      return filteredTypes;
-    }
-    
-    console.log('⚠️ No preferred shift type found, showing all options - THIS SHOULD NOT HAPPEN');
-    return allTypes;
+    // Show ONLY the employee's preferred shift type
+    const filteredTypes = allTypes.filter(type => type.value === preferredType);
+    console.log('✅ Returning filtered types for preferred type', preferredType, ':', filteredTypes);
+    return filteredTypes;
   };
 
   // Get additional shift types (for special checkboxes)
   const getAdditionalShiftTypes = () => {
     // Get preferred shift type from the first active branch assignment
     const employee = (tokenData as any)?.employee;
-    const activeBranchAssignment = employee?.branch_assignments?.find((assignment: any) => assignment.is_active);
-    const preferredType = activeBranchAssignment?.shift_types?.[0];
+    
+    if (!employee || !employee.branch_assignments) {
+      console.log('❌ No employee or branch assignments found for additional options');
+      return [];
+    }
+    
+    // Find active branch assignment with shift_types
+    const activeBranchAssignment = employee.branch_assignments.find((assignment: any) => 
+      assignment.is_active === true && assignment.shift_types && assignment.shift_types.length > 0
+    );
+    
+    if (!activeBranchAssignment || !activeBranchAssignment.shift_types) {
+      console.log('❌ No active branch assignment found for additional options');
+      return [];
+    }
+    
+    const preferredType = activeBranchAssignment.shift_types[0];
     
     // Only show additional options if there is a valid preferred type
     if (!preferredType) {
