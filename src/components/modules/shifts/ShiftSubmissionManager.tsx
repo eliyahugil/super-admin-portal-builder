@@ -258,9 +258,9 @@ export const ShiftSubmissionManager: React.FC = () => {
       return;
     }
 
-    // פתיחת דף הגשת המשמרות בטאב חדש
-    const submissionUrl = `${window.location.origin}/weekly-shift-submission/${tokenToTest}`;
-    window.open(submissionUrl, '_blank');
+    // מעבר לדף הגשת המשמרות
+    const submissionUrl = `/weekly-shift-submission/${tokenToTest}`;
+    window.location.href = submissionUrl;
   };
 
   if (isLoading || employeesLoading) {

@@ -137,11 +137,11 @@ export const WeeklyTokenManagement: React.FC = () => {
   };
 
   const openTokenLink = (token: string) => {
-    const link = `${window.location.origin}/weekly-shift-submission/${token}`;
-    window.open(link, '_blank');
+    const link = `/weekly-shift-submission/${token}`;
+    window.location.href = link;
     toast({
-      title: 'הטוקן נפתח',
-      description: 'טופס הגשת המשמרות השבועיות נפתח בכרטיסייה חדשה',
+      title: 'מעבר לטוקן',
+      description: 'עובר לטופס הגשת המשמרות השבועיות',
     });
   };
 
