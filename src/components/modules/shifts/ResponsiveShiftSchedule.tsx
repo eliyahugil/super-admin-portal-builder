@@ -10,6 +10,7 @@ import { UnifiedShiftCreator } from './schedule/UnifiedShiftCreator';
 import { ShiftDetailsDialog } from './schedule/ShiftDetailsDialog';
 import { QuickMultipleShiftsDialog } from './schedule/QuickMultipleShiftsDialog';
 import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
+import { PendingSubmissionsDialog } from './schedule/PendingSubmissionsDialog';
 import { ShiftTemplatesApplyDialog } from './schedule/components/ShiftTemplatesApplyDialog';
 import { BulkEditShiftsDialog } from './schedule/BulkEditShiftsDialog';
 import { ScheduleErrorBoundary } from './schedule/ScheduleErrorBoundary';
@@ -44,6 +45,9 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const [selectedShifts, setSelectedShifts] = useState<ShiftScheduleData[]>([]);
   const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  
+  // Pending submissions dialog state
+  const [showPendingSubmissionsDialog, setShowPendingSubmissionsDialog] = useState(false);
 
   const {
     currentDate,
@@ -258,6 +262,16 @@ export const ResponsiveShiftSchedule: React.FC = () => {
 
   const isLoading = loading || calendarLoading;
 
+  // Helper function to parse shifts data for pending submissions dialog
+  const parseShifts = (shiftsData: any) => {
+    if (!shiftsData) return [];
+    try {
+      return Array.isArray(shiftsData) ? shiftsData : [];
+    } catch {
+      return [];
+    }
+  };
+
   return (
     <div className={`${isMobile ? 'p-2' : 'p-6'} space-y-2 lg:space-y-6 h-full flex flex-col overflow-hidden`} dir="rtl">
       {/* Mobile optimized header */}
@@ -372,15 +386,16 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                      holidays={holidays}
                      shabbatTimes={shabbatTimes}
                      calendarEvents={combinedEvents}
-                     pendingSubmissions={pendingSubmissions}
-                     businessId={businessId}
-                     onShiftClick={handleShiftClick}
-                     onShiftUpdate={updateShift}
-                     onAddShift={handleAddShift}
-                     onShiftDelete={deleteShift}
-                     isSelectionMode={isSelectionMode}
-                     selectedShifts={selectedShifts}
-                     onShiftSelection={handleShiftSelection}
+                      pendingSubmissions={pendingSubmissions}
+                      businessId={businessId}
+                      onShiftClick={handleShiftClick}
+                      onShiftUpdate={updateShift}
+                      onAddShift={handleAddShift}
+                      onShiftDelete={deleteShift}
+                      isSelectionMode={isSelectionMode}
+                      selectedShifts={selectedShifts}
+                      onShiftSelection={handleShiftSelection}
+                      onShowPendingSubmissions={() => setShowPendingSubmissionsDialog(true)}
                    />
                  ) : view === 'month' ? (
                    <MonthlyScheduleView
@@ -510,6 +525,15 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           employees={employees}
           branches={branches}
           onUpdate={handleBulkUpdate}
+        />
+      )}
+
+      {showPendingSubmissionsDialog && (
+        <PendingSubmissionsDialog
+          isOpen={showPendingSubmissionsDialog}
+          onClose={() => setShowPendingSubmissionsDialog(false)}
+          submissions={pendingSubmissions}
+          parseShifts={parseShifts}
         />
       )}
     </div>

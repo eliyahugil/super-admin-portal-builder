@@ -40,7 +40,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   onShiftDelete,
   isSelectionMode = false,
   selectedShifts = [],
-  onShiftSelection
+  onShiftSelection,
+  onShowPendingSubmissions
 }) => {
   const isMobile = useIsMobile();
   const [showSubmissionDialog, setShowSubmissionDialog] = useState(false);
@@ -865,11 +866,14 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div
-                          className="w-full text-xs bg-yellow-50 border border-yellow-200 text-yellow-800 hover:bg-yellow-100 px-3 py-2 rounded cursor-help transition-colors text-center"
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs bg-yellow-50 border border-yellow-200 text-yellow-800 hover:bg-yellow-100 transition-colors"
+                          onClick={() => onShowPendingSubmissions?.()}
                         >
                           הגשות ממתינות ({getPendingSubmissionsForDate(date).length})
-                        </div>
+                        </Button>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-md">
                         <div className="text-right space-y-3">

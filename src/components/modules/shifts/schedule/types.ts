@@ -82,6 +82,8 @@ export interface ShiftScheduleViewProps {
   isSelectionMode?: boolean;
   selectedShifts?: ShiftScheduleData[];
   onShiftSelection?: (shift: ShiftScheduleData, selected: boolean) => void;
+  // Pending submissions dialog
+  onShowPendingSubmissions?: () => void;
 }
 
 // Employee preferences types

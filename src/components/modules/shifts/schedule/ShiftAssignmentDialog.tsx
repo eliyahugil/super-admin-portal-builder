@@ -193,6 +193,15 @@ export const ShiftAssignmentDialog: React.FC<ShiftAssignmentDialogProps> = ({
 
           {/* Actions */}
           <div className="flex gap-2 pt-4">
+            {currentEmployee && (
+              <Button 
+                variant="destructive"
+                onClick={handleUnassign} 
+                disabled={isAssigning}
+              >
+                {isAssigning ? 'מסיר...' : 'הסר עובד'}
+              </Button>
+            )}
             <Button 
               onClick={handleAssign} 
               disabled={!selectedEmployeeId || isAssigning}
