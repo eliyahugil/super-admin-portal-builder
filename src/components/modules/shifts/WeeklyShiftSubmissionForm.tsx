@@ -223,9 +223,10 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
     }
   };
 
-  // פונקציה לחיפוש משמרות נוספות באותו יום
+  // פונקציה לחיפוש משמרות נוספות באותו יום שהעובד יכול לעבוד בהן
   const findAdditionalShifts = (selectedShift: any) => {
     const sameDate = selectedShift.shift_date;
+    const selectedStartTime = selectedShift.start_time;
     const selectedEndTime = selectedShift.end_time;
     
     // המרת זמן לדקות לצורך השוואה
@@ -234,15 +235,23 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
       return hours * 60 + minutes;
     };
     
+    const selectedStartMinutes = timeToMinutes(selectedStartTime);
     const selectedEndMinutes = timeToMinutes(selectedEndTime);
     
-    // חיפוש משמרות נוספות באותו יום שמתחילות אחרי שהמשמרת הנוכחית מסתיימת
-    return availableShifts.filter(shift => 
-      shift.shift_date === sameDate && 
-      shift.id !== selectedShift.id &&
-      timeToMinutes(shift.start_time) >= selectedEndMinutes && // מתחיל אחרי או בדיוק כשהמשמרת מסתיימת
-      timeToMinutes(shift.start_time) <= selectedEndMinutes + 60 // עד שעה אחרי סיום המשמרת
-    );
+    // חיפוש משמרות נוספות באותו יום שהזמנים שלהן נכנסים בזמנים של המשמרת שנבחרה
+    return availableShifts.filter(shift => {
+      if (shift.shift_date !== sameDate || shift.id === selectedShift.id) {
+        return false;
+      }
+      
+      const shiftStartMinutes = timeToMinutes(shift.start_time);
+      const shiftEndMinutes = timeToMinutes(shift.end_time);
+      
+      // בדיקה אם המשמרת נכנסת בזמנים של המשמרת שנבחרה
+      // המשמרת צריכה להתחיל אחרי או בזמן ההתחלה של המשמרת שנבחרה
+      // ולהסתיים לפני או בזמן הסיום של המשמרת שנבחרה
+      return shiftStartMinutes >= selectedStartMinutes && shiftEndMinutes <= selectedEndMinutes;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
