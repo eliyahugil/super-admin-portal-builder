@@ -40,32 +40,19 @@ import { useBusinessId } from '@/hooks/useBusinessId';
 import { useAuth } from '@/components/auth/AuthContext';
 import { DeviceIndicator } from '@/components/shared/DeviceIndicator';
 import { useDeviceType } from '@/hooks/useDeviceType';
-import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ShiftSubmissionCalendarView } from './ShiftSubmissionCalendarView';
 import { useToast } from '@/hooks/use-toast';
-
-interface ShiftRequest {
-  id: string;
-  employee_id: string;
-  employee_name?: string;
-  shift_date: string;
-  start_time: string;
-  end_time: string;
-  branch_preference?: string;
-  role_preference?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  notes?: string;
-  created_at: string;
-  reviewed_at?: string;
-  review_notes?: string;
-  employee?: {
-    first_name: string;
-    last_name: string;
-    phone?: string;
-  };
-  optional_morning_availability?: number[]; // זמינות למשמרות בוקר אופציונליות
-}
+import { 
+  fetchShiftRequests, 
+  updateRequestStatus, 
+  deleteRequest, 
+  deleteAllRequests, 
+  sendWhatsApp, 
+  getStatusColor, 
+  getStatusLabel,
+  ShiftRequest
+} from './utils/shiftRequestUtils';
 
 export const UnifiedShiftRequests: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
@@ -84,317 +71,59 @@ export const UnifiedShiftRequests: React.FC = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // שליפת בקשות משמרות מטבלת employee_shift_requests ו shift_submissions
   const { data: requests = [], isLoading, refetch } = useQuery({
     queryKey: ['unified-shift-requests', businessId, statusFilter],
-    queryFn: async (): Promise<ShiftRequest[]> => {
-      if (!businessId) return [];
-
-      console.log('🔄 שליפת בקשות משמרות מאוחדות עבור עסק:', businessId);
-
-      // שליפה מטבלת employee_shift_requests
-      const { data: shiftRequests, error: shiftRequestsError } = await supabase
-        .from('employee_shift_requests')
-        .select(`
-          *,
-          employee:employees!inner(first_name, last_name, phone, business_id, is_active)
-        `)
-        .eq('employee.business_id', businessId)
-        .eq('employee.is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (shiftRequestsError) throw shiftRequestsError;
-
-      // שליפה מטבלת shift_submissions
-      const { data: submissions, error: submissionsError } = await supabase
-        .from('shift_submissions')
-        .select(`
-          *,
-          employee:employees!inner(first_name, last_name, phone, business_id, is_active)
-        `)
-        .eq('employee.business_id', businessId)
-        .eq('employee.is_active', true)
-        .order('submitted_at', { ascending: false });
-
-      if (submissionsError) throw submissionsError;
-
-      const allRequests: ShiftRequest[] = [];
-
-      // הוספת בקשות מטבלת employee_shift_requests
-      (shiftRequests || []).forEach(request => {
-        allRequests.push({
-          id: request.id,
-          employee_id: request.employee_id,
-          employee_name: request.employee 
-            ? `${request.employee.first_name} ${request.employee.last_name}` 
-            : 'לא ידוע',
-          shift_date: request.shift_date,
-          start_time: request.start_time,
-          end_time: request.end_time,
-          branch_preference: request.branch_preference,
-          role_preference: request.role_preference,
-          status: request.status as 'pending' | 'approved' | 'rejected',
-          notes: request.notes,
-          created_at: request.created_at,
-          reviewed_at: request.reviewed_at,
-          review_notes: request.review_notes,
-          employee: request.employee
-        });
-      });
-
-      // הוספת בקשות מטבלת shift_submissions (ממרות)
-      (submissions || []).forEach(submission => {
-        if (!submission.shifts) return;
-        
-        const shifts = typeof submission.shifts === 'string' 
-          ? JSON.parse(submission.shifts) 
-          : submission.shifts;
-          
-        shifts.forEach((shift: any, shiftIndex: number) => {
-          allRequests.push({
-            id: `submission-${submission.id}-${shift.date}-${shiftIndex}`,
-            employee_id: submission.employee_id,
-            employee_name: submission.employee 
-              ? `${submission.employee.first_name} ${submission.employee.last_name}` 
-              : 'לא ידוע',
-            shift_date: shift.date,
-            start_time: shift.start_time,
-            end_time: shift.end_time,
-            branch_preference: shift.branch_preference || 'לא צוין',
-            role_preference: shift.role_preference,
-            status: submission.status as 'pending' | 'approved' | 'rejected',
-            notes: shift.notes,
-            created_at: submission.submitted_at,
-            reviewed_at: submission.updated_at,
-            review_notes: submission.notes,
-            employee: submission.employee,
-            optional_morning_availability: submission.optional_morning_availability // הוספת זמינות בוקר
-          });
-        });
-      });
-
-      // מיון לפי תאריך יצירה
-      allRequests.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-      // סינון לפי סטטוס
-      if (statusFilter !== 'all') {
-        return allRequests.filter(req => req.status === statusFilter);
-      }
-
-      return allRequests;
-    },
+    queryFn: () => fetchShiftRequests(businessId, statusFilter),
     enabled: !!businessId,
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
     refetchOnMount: true
   });
 
-  // מוטציה לעדכון סטטוס בקשה
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ requestId, status, notes }: { requestId: string, status: 'approved' | 'rejected', notes?: string }) => {
-      // בדיקה אם זו בקשה מ shift_submissions
-      if (requestId.startsWith('submission-')) {
-        const submissionId = requestId.split('-')[1];
-        const { error } = await supabase
-          .from('shift_submissions')
-          .update({
-            status,
-            review_notes: notes,
-            reviewed_at: new Date().toISOString(),
-            reviewed_by: user?.id
-          })
-          .eq('id', submissionId);
-        
-        if (error) throw error;
-      } else {
-        // בקשה מ employee_shift_requests
-        const { error } = await supabase
-          .from('employee_shift_requests')
-          .update({
-            status,
-            review_notes: notes,
-            reviewed_at: new Date().toISOString(),
-            reviewed_by: user?.id
-          })
-          .eq('id', requestId);
-        
-        if (error) throw error;
-      }
-    },
+    mutationFn: ({ requestId, status, notes }: { requestId: string, status: 'approved' | 'rejected', notes?: string }) => 
+      updateRequestStatus(requestId, status, notes, user?.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['unified-shift-requests'] });
-      toast({
-        title: 'הצלחה',
-        description: 'הסטטוס עודכן בהצלחה',
-      });
+      toast({ title: 'הצלחה', description: 'הסטטוס עודכן בהצלחה' });
     },
-    onError: (error) => {
-      toast({
-        title: 'שגיאה',
-        description: 'לא הצלחנו לעדכן את הסטטוס',
-        variant: 'destructive',
-      });
+    onError: () => {
+      toast({ title: 'שגיאה', description: 'לא הצלחנו לעדכן את הסטטוס', variant: 'destructive' });
     }
   });
 
-  // מוטציה למחיקת בקשה
   const deleteRequestMutation = useMutation({
-    mutationFn: async (requestId: string) => {
-      console.log('🗑️ מוחק בקשה:', requestId);
-      
-      if (requestId.startsWith('submission-')) {
-        // חילוץ מזהה ההגשה הנכון
-        const parts = requestId.split('-');
-        const submissionId = parts[1]; // submission-[ID]-[DATE]-[INDEX]
-        
-        console.log('🗑️ מוחק הגשה מ shift_submissions:', submissionId);
-        console.log('🔍 מבצע שאילתת מחיקה עבור submission ID:', submissionId);
-        
-        const { data: beforeDelete, error: beforeError } = await supabase
-          .from('shift_submissions')
-          .select('*')
-          .eq('id', submissionId);
-          
-        console.log('📊 נתונים לפני מחיקה:', beforeDelete);
-        
-        const { error } = await supabase
-          .from('shift_submissions')
-          .delete()
-          .eq('id', submissionId);
-        
-        if (error) {
-          console.error('❌ שגיאה במחיקת הגשה:', error);
-          throw error;
-        }
-        
-        const { data: afterDelete, error: afterError } = await supabase
-          .from('shift_submissions')
-          .select('*')
-          .eq('id', submissionId);
-          
-        console.log('📊 נתונים אחרי מחיקה:', afterDelete);
-        console.log('✅ הגשה נמחקה בהצלחה');
-      } else {
-        console.log('🗑️ מוחק בקשה מ employee_shift_requests:', requestId);
-        console.log('🔍 מבצע שאילתת מחיקה עבור request ID:', requestId);
-        
-        const { data: beforeDelete, error: beforeError } = await supabase
-          .from('employee_shift_requests')
-          .select('*')
-          .eq('id', requestId);
-          
-        console.log('📊 נתונים לפני מחיקה:', beforeDelete);
-        
-        const { error } = await supabase
-          .from('employee_shift_requests')
-          .delete()
-          .eq('id', requestId);
-        
-        if (error) {
-          console.error('❌ שגיאה במחיקת בקשה:', error);
-          throw error;
-        }
-        
-        const { data: afterDelete, error: afterError } = await supabase
-          .from('employee_shift_requests')
-          .select('*')
-          .eq('id', requestId);
-          
-        console.log('📊 נתונים אחרי מחיקה:', afterDelete);
-        console.log('✅ בקשה נמחקה בהצלחה');
-      }
-    },
+    mutationFn: (requestId: string) => deleteRequest(requestId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['unified-shift-requests'] });
-      toast({
-        title: 'הצלחה',
-        description: 'הבקשה נמחקה בהצלחה',
-      });
+      toast({ title: 'הצלחה', description: 'הבקשה נמחקה בהצלחה' });
       setDeleteDialogOpen(false);
       setSelectedRequestId('');
       setManagerCode('');
     },
-    onError: (error) => {
-      toast({
-        title: 'שגיאה',
-        description: 'לא הצלחנו למחוק את הבקשה',
-        variant: 'destructive',
-      });
+    onError: () => {
+      toast({ title: 'שגיאה', description: 'לא הצלחנו למחוק את הבקשה', variant: 'destructive' });
     }
   });
 
-  // מוטציה למחיקת כל הבקשות
   const deleteAllRequestsMutation = useMutation({
-    mutationFn: async () => {
-      console.log('🗑️ מוחק את כל הבקשות');
-      
-      if (!businessId) throw new Error('No business ID');
-      
-      // שליפת מזהי עובדים פעילים בלבד
-      const { data: employees, error: employeesError } = await supabase
-        .from('employees')
-        .select('id')
-        .eq('business_id', businessId)
-        .eq('is_active', true);
-        
-      if (employeesError) throw employeesError;
-      
-      const employeeIds = employees?.map(emp => emp.id) || [];
-      
-      if (employeeIds.length === 0) {
-        console.log('❌ לא נמצאו עובדים לעסק זה');
-        return;
-      }
-      
-      // מחיקת כל הבקשות מ employee_shift_requests
-      const { error: shiftRequestsError } = await supabase
-        .from('employee_shift_requests')
-        .delete()
-        .in('employee_id', employeeIds);
-      
-      if (shiftRequestsError) {
-        console.error('❌ שגיאה במחיקת employee_shift_requests:', shiftRequestsError);
-        throw shiftRequestsError;
-      }
-      
-      // מחיקת כל הבקשות מ shift_submissions
-      const { error: submissionsError } = await supabase
-        .from('shift_submissions')
-        .delete()
-        .in('employee_id', employeeIds);
-      
-      if (submissionsError) {
-        console.error('❌ שגיאה במחיקת shift_submissions:', submissionsError);
-        throw submissionsError;
-      }
-      
-      console.log('✅ כל הבקשות נמחקו בהצלחה');
-    },
+    mutationFn: () => deleteAllRequests(businessId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['unified-shift-requests'] });
-      toast({
-        title: 'הצלחה',
-        description: 'כל הבקשות נמחקו בהצלחה',
-      });
+      toast({ title: 'הצלחה', description: 'כל הבקשות נמחקו בהצלחה' });
       setDeleteAllDialogOpen(false);
       setManagerCodeAll('');
     },
-    onError: (error) => {
-      toast({
-        title: 'שגיאה',
-        description: 'לא הצלחנו למחוק את הבקשות',
-        variant: 'destructive',
-      });
+    onError: () => {
+      toast({ title: 'שגיאה', description: 'לא הצלחנו למחוק את הבקשות', variant: 'destructive' });
     }
   });
 
-  const handleUpdateStatus = (requestId: string, status: 'approved' | 'rejected', notes?: string) => {
+  const handleUpdateStatus = (requestId: string, status: 'approved' | 'rejected', notes?: string) => 
     updateStatusMutation.mutate({ requestId, status, notes });
-  };
 
-  const handleReviewNotesChange = (requestId: string, notes: string) => {
+  const handleReviewNotesChange = (requestId: string, notes: string) => 
     setReviewNotes(prev => ({ ...prev, [requestId]: notes }));
-  };
 
   const handleDeleteRequest = (requestId: string) => {
     setSelectedRequestId(requestId);
@@ -402,76 +131,19 @@ export const UnifiedShiftRequests: React.FC = () => {
   };
 
   const confirmDelete = () => {
-    console.log('🔍 confirmDelete called - קוד שהוזן:', managerCode);
-    console.log('🔍 selectedRequestId:', selectedRequestId);
-    
-    if (!managerCode || managerCode !== '130898') {
-      console.log('❌ קוד מנהל שגוי:', managerCode);
-      toast({
-        title: 'שגיאה',
-        description: 'קוד מנהל שגוי',
-        variant: 'destructive',
-      });
+    if (managerCode !== '130898') {
+      toast({ title: 'שגיאה', description: 'קוד מנהל שגוי', variant: 'destructive' });
       return;
     }
-
-    console.log('✅ קוד מנהל נכון, מתחיל מחיקה...');
     deleteRequestMutation.mutate(selectedRequestId);
   };
 
   const confirmDeleteAll = () => {
-    console.log('🔍 confirmDeleteAll called - קוד שהוזן:', managerCodeAll);
-    
-    if (!managerCodeAll || managerCodeAll !== '130898') {
-      console.log('❌ קוד מנהל שגוי:', managerCodeAll);
-      toast({
-        title: 'שגיאה',
-        description: 'קוד מנהל שגוי',
-        variant: 'destructive',
-      });
+    if (managerCodeAll !== '130898') {
+      toast({ title: 'שגיאה', description: 'קוד מנהל שגוי', variant: 'destructive' });
       return;
     }
-
-    console.log('✅ קוד מנהל נכון, מתחיל מחיקת הכל...');
     deleteAllRequestsMutation.mutate();
-  };
-
-  const sendWhatsApp = (phone: string, employeeName: string, status: string, date: string, notes?: string) => {
-    let message = `שלום ${employeeName}! `;
-    
-    if (status === 'approved') {
-      message += `בקשת המשמרת שלך לתאריך ${date} אושרה! ✅`;
-    } else if (status === 'rejected') {
-      message += `בקשת המשמרת שלך לתאריך ${date} נדחתה. ❌`;
-    } else {
-      message += `בקשת המשמרת שלך לתאריך ${date} בבדיקה...`;
-    }
-    
-    if (notes) {
-      message += `\n\nהערת מנהל: ${notes}`;
-    }
-    
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodedMessage}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-warning/10 text-warning border-warning/20';
-      case 'approved': return 'bg-success/10 text-success border-success/20';
-      case 'rejected': return 'bg-destructive/10 text-destructive border-destructive/20';
-      default: return 'bg-muted/10 text-muted-foreground border-muted/20';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'pending': return 'ממתין לאישור';
-      case 'approved': return 'מאושר';
-      case 'rejected': return 'נדחה';
-      default: return status;
-    }
   };
 
   const filteredRequests = requests.filter(request => {
