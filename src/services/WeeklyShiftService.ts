@@ -79,7 +79,9 @@ export class WeeklyShiftService {
     console.log('🆕 Creating new token for employee:', employeeId);
     const token = crypto.randomUUID(); // Keep it as UUID, not converting to string
     const expiresAt = new Date(weekEndDate);
-    expiresAt.setDate(expiresAt.getDate() + 7); // Expires one week after the week ends
+    // Set expiry to Thursday 23:59 of the following week
+    expiresAt.setDate(expiresAt.getDate() + 4); // Thursday (end of week is Sunday, so +4 = Thursday)
+    expiresAt.setHours(23, 59, 59, 999); // Set to 23:59:59.999
 
     try {
       const { data, error } = await supabase
