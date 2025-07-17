@@ -12,9 +12,15 @@ serve(async (req) => {
   }
 
   try {
-    const { token } = await req.json();
+    console.log('🚀 Function started');
+    
+    const body = await req.json();
+    console.log('📦 Request body:', body);
+    
+    const { token } = body;
 
     if (!token) {
+      console.log('❌ No token provided');
       return new Response(
         JSON.stringify({ error: 'Token is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -24,9 +30,15 @@ serve(async (req) => {
     console.log('🔍 Getting weekly shifts context for token:', token);
     console.log('🕐 Current time:', new Date().toISOString());
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    console.log('🔑 Supabase URL:', supabaseUrl ? 'Set' : 'Not set');
+    console.log('🔑 Service role key:', supabaseKey ? 'Set' : 'Not set');
+
     const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      supabaseUrl ?? '',
+      supabaseKey ?? ''
     );
 
     // Get token data first
