@@ -111,10 +111,13 @@ export const ShiftSubmissionForm: React.FC = () => {
   };
 
   const handleShiftTypeChange = (shiftType: string) => {
-    const preferredType = tokenData?.employee?.preferred_shift_type;
+    // Get preferred shift type from branch assignments
+    const branchAssignments = tokenData?.employee?.branch_assignments;
+    const preferredType = branchAssignments?.[0]?.shift_types?.[0] || tokenData?.employee?.preferred_shift_type;
     
     console.log('Trying to select shift type:', shiftType);
     console.log('Employee preferred shift type:', preferredType);
+    console.log('Branch assignments:', branchAssignments);
     console.log('Full employee data:', tokenData?.employee);
     
     // Check if employee is trying to select a shift type they're not supposed to
@@ -160,7 +163,10 @@ export const ShiftSubmissionForm: React.FC = () => {
 
   // Get available shift types based on employee preference
   const getAvailableShiftTypes = () => {
-    const preferredType = tokenData?.employee?.preferred_shift_type;
+    // Get preferred shift type from branch assignments
+    const branchAssignments = tokenData?.employee?.branch_assignments;
+    const preferredType = branchAssignments?.[0]?.shift_types?.[0] || tokenData?.employee?.preferred_shift_type;
+    
     const allTypes = [
       { value: 'morning', label: 'משמרת בוקר (07:00-15:00)', time: '07:00-15:00' },
       { value: 'afternoon', label: 'משמרת צהריים (15:00-23:00)', time: '15:00-23:00' },
@@ -181,7 +187,9 @@ export const ShiftSubmissionForm: React.FC = () => {
 
   // Get additional shift types (for special checkboxes)
   const getAdditionalShiftTypes = () => {
-    const preferredType = tokenData?.employee?.preferred_shift_type;
+    // Get preferred shift type from branch assignments
+    const branchAssignments = tokenData?.employee?.branch_assignments;
+    const preferredType = branchAssignments?.[0]?.shift_types?.[0] || tokenData?.employee?.preferred_shift_type;
     
     // Only show additional options if there is a valid preferred type
     if (!preferredType || preferredType === 'undefined' || preferredType === null) {
