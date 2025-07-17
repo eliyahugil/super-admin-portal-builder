@@ -111,18 +111,17 @@ export const ShiftSubmissionForm: React.FC = () => {
   };
 
   const handleShiftTypeChange = (shiftType: string) => {
-    // Get preferred shift type from branch assignments
-    const branchAssignments = tokenData?.employee?.branch_assignments;
-    const preferredType = branchAssignments?.[0]?.shift_types?.[0] || tokenData?.employee?.preferred_shift_type;
+    // Get preferred shift type from the first active branch assignment
+    const activeBranchAssignment = tokenData?.employee?.branch_assignments?.find((assignment: any) => assignment.is_active);
+    const preferredType = activeBranchAssignment?.shift_types?.[0];
     
-    console.log('Trying to select shift type:', shiftType);
-    console.log('Employee preferred shift type:', preferredType);
-    console.log('Branch assignments:', branchAssignments);
-    console.log('Full employee data:', tokenData?.employee);
+    console.log('🎯 Trying to select shift type:', shiftType);
+    console.log('🎯 Employee preferred shift type:', preferredType);
+    console.log('🎯 Active branch assignment:', activeBranchAssignment);
     
     // Check if employee is trying to select a shift type they're not supposed to
-    if (preferredType && preferredType !== 'undefined' && preferredType !== null && shiftType !== preferredType) {
-      console.log('Blocked shift type selection - not matching preference');
+    if (preferredType && shiftType !== preferredType) {
+      console.log('🚫 Blocked shift type selection - not matching preference');
       toast({
         title: 'לא ניתן לבחור משמרת זו',
         description: `אתה מוגדר כעובד ${getShiftTypeLabel(preferredType)}. משמרות ${getShiftTypeLabel(shiftType)} זמינות רק על בסיס צורך ניתן לבחור בתיבות הסימון למטה.`,
@@ -131,6 +130,7 @@ export const ShiftSubmissionForm: React.FC = () => {
       return;
     }
     
+    console.log('✅ Allowed shift type selection');
     setSelectedShiftType(shiftType);
     
     // Set predefined times based on shift type
@@ -163,14 +163,12 @@ export const ShiftSubmissionForm: React.FC = () => {
 
   // Get available shift types based on employee preference
   const getAvailableShiftTypes = () => {
-    // Get preferred shift type from branch assignments
-    const branchAssignments = tokenData?.employee?.branch_assignments;
-    const preferredType = branchAssignments?.[0]?.shift_types?.[0] || tokenData?.employee?.preferred_shift_type;
+    // Get preferred shift type from the first active branch assignment
+    const activeBranchAssignment = tokenData?.employee?.branch_assignments?.find((assignment: any) => assignment.is_active);
+    const preferredType = activeBranchAssignment?.shift_types?.[0];
     
-    // Debug logs
-    console.log('🔍 Full tokenData:', tokenData);
-    console.log('🔍 Employee data:', tokenData?.employee);
-    console.log('🔍 Branch assignments:', branchAssignments);
+    console.log('🔍 Getting available shift types');
+    console.log('🔍 Active branch assignment:', activeBranchAssignment);
     console.log('🔍 Extracted preferred type:', preferredType);
     
     const allTypes = [
@@ -181,7 +179,7 @@ export const ShiftSubmissionForm: React.FC = () => {
     ];
 
     // If employee has a preferred shift type, show ONLY that type
-    if (preferredType && preferredType !== 'undefined' && preferredType !== null) {
+    if (preferredType) {
       console.log('✅ Found preferred shift type, filtering to:', preferredType);
       const filteredTypes = allTypes.filter(type => type.value === preferredType);
       console.log('✅ Returning filtered types:', filteredTypes);
@@ -189,23 +187,22 @@ export const ShiftSubmissionForm: React.FC = () => {
     }
     
     console.log('⚠️ No preferred shift type found, showing all options - THIS SHOULD NOT HAPPEN');
-    // If no preference, show all options (for flexibility)
     return allTypes;
   };
 
   // Get additional shift types (for special checkboxes)
   const getAdditionalShiftTypes = () => {
-    // Get preferred shift type from branch assignments
-    const branchAssignments = tokenData?.employee?.branch_assignments;
-    const preferredType = branchAssignments?.[0]?.shift_types?.[0] || tokenData?.employee?.preferred_shift_type;
+    // Get preferred shift type from the first active branch assignment
+    const activeBranchAssignment = tokenData?.employee?.branch_assignments?.find((assignment: any) => assignment.is_active);
+    const preferredType = activeBranchAssignment?.shift_types?.[0];
     
     // Only show additional options if there is a valid preferred type
-    if (!preferredType || preferredType === 'undefined' || preferredType === null) {
-      console.log('No preferred type, not showing additional options');
+    if (!preferredType) {
+      console.log('❌ No preferred type, not showing additional options');
       return [];
     }
     
-    console.log('Generating additional shift types for:', preferredType);
+    console.log('🔧 Generating additional shift types for:', preferredType);
     
     // Handler for morning checkbox with validation
     const handleMorningCheckbox = (checked: boolean) => {
