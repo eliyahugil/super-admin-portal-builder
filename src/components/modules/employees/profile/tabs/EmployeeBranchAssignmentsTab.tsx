@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Building2, Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { DynamicSelect } from '@/components/ui/DynamicSelect';
 import type { Employee } from '@/types/employee';
 
 interface EmployeeBranchAssignmentsTabProps {
@@ -24,6 +25,7 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
 }) => {
   const [assignments, setAssignments] = useState(employee.branch_assignments || []);
   const [branches, setBranches] = useState<any[]>([]);
+  const [roles, setRoles] = useState<any[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<any>(null);
   const [newAssignment, setNewAssignment] = useState({
@@ -36,25 +38,61 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
     available_days: [0, 1, 2, 3, 4, 5, 6] as number[]
   });
 
-  // Fetch branches for the business
+  // Fetch branches and roles for the business
   useEffect(() => {
-    const fetchBranches = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch branches
+        const { data: branchData, error: branchError } = await supabase
           .from('branches')
           .select('*')
           .eq('business_id', employee.business_id)
           .eq('is_active', true);
 
-        if (error) throw error;
-        setBranches(data || []);
+        if (branchError) throw branchError;
+        setBranches(branchData || []);
+
+        // Fetch roles
+        const { data: roleData, error: roleError } = await supabase
+          .from('shift_roles')
+          .select('*')
+          .eq('business_id', employee.business_id)
+          .eq('is_active', true);
+
+        if (roleError) throw roleError;
+        setRoles(roleData || []);
       } catch (error) {
-        console.error('Error fetching branches:', error);
+        console.error('Error fetching data:', error);
       }
     };
 
-    fetchBranches();
+    fetchData();
   }, [employee.business_id]);
+
+  // Function to add a new role
+  const handleAddNewRole = async (newRole: { value: string; label: string }): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('shift_roles')
+        .insert({
+          business_id: employee.business_id,
+          name: newRole.label,
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update the roles list
+      setRoles([...roles, data]);
+      return true;
+    } catch (error) {
+      console.error('Error adding new role:', error);
+      toast.error('שגיאה בהוספת תפקיד חדש');
+      return false;
+    }
+  };
 
   const handleAddAssignment = async () => {
     try {
@@ -225,11 +263,20 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
                 </div>
                 <div>
                   <Label htmlFor="role">תפקיד</Label>
-                  <Input
-                    id="role"
+                  <DynamicSelect
                     value={newAssignment.role_name}
-                    onChange={(e) => setNewAssignment({...newAssignment, role_name: e.target.value})}
-                    placeholder="הכנס תפקיד..."
+                    onValueChange={(value) => setNewAssignment({...newAssignment, role_name: value})}
+                    options={roles.map(role => ({ 
+                      value: role.name, 
+                      label: role.name, 
+                      id: role.id 
+                    }))}
+                    placeholder="בחר תפקיד..."
+                    onAddNew={handleAddNewRole}
+                    addNewText="➕ הוסף תפקיד חדש"
+                    addNewDialogTitle="הוספת תפקיד חדש"
+                    addNewDialogLabel="שם התפקיד"
+                    addNewPlaceholder="הכנס שם תפקיד"
                   />
                 </div>
                 <div>
@@ -380,10 +427,20 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
                 </div>
                 <div>
                   <Label htmlFor="edit-role">תפקיד</Label>
-                  <Input
-                    id="edit-role"
+                  <DynamicSelect
                     value={editingAssignment.role_name}
-                    onChange={(e) => setEditingAssignment({...editingAssignment, role_name: e.target.value})}
+                    onValueChange={(value) => setEditingAssignment({...editingAssignment, role_name: value})}
+                    options={roles.map(role => ({ 
+                      value: role.name, 
+                      label: role.name, 
+                      id: role.id 
+                    }))}
+                    placeholder="בחר תפקיד..."
+                    onAddNew={handleAddNewRole}
+                    addNewText="➕ הוסף תפקיד חדש"
+                    addNewDialogTitle="הוספת תפקיד חדש"
+                    addNewDialogLabel="שם התפקיד"
+                    addNewPlaceholder="הכנס שם תפקיד"
                   />
                 </div>
                 <div>
