@@ -25,14 +25,7 @@ export const InactiveEmployeesList: React.FC<InactiveEmployeesListProps> = ({
     refetch 
   } = useInactiveEmployees(businessId);
 
-  const { updateFilters } = useEmployeeListPreferences(businessId);
-  
   const employees = propEmployees || inactiveEmployees;
-
-  // וידוא שהפילטר מוגדר להציג עובדים לא פעילים
-  useEffect(() => {
-    updateFilters({ status: 'inactive' });
-  }, [updateFilters]);
 
   const handleRefetch = async () => {
     await refetch();
