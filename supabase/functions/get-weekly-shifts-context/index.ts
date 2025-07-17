@@ -13,9 +13,10 @@ serve(async (req) => {
 
   try {
     console.log('🚀 Function started');
+    console.log('🔍 Headers:', Object.fromEntries(req.headers.entries()));
     
     const body = await req.json();
-    console.log('📦 Request body:', body);
+    console.log('📦 Request body:', JSON.stringify(body, null, 2));
     
     const { token } = body;
 
