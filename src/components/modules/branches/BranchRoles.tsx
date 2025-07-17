@@ -6,10 +6,16 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { UserCheck, Shield, Search, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useShiftRoles } from '../shifts/templates/useShiftRoles';
+import { AddRoleDialog } from '../shifts/templates/AddRoleDialog';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import type { Branch, EmployeeBranchPriority } from '@/types/supabase';
 
 export const BranchRoles: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAddRoleDialog, setShowAddRoleDialog] = useState(false);
+  const { businessId } = useCurrentBusiness();
+  const { roles, loading: rolesLoading, addRole } = useShiftRoles(businessId);
 
   const { data: branches } = useQuery({
     queryKey: ['branches'],
@@ -91,7 +97,10 @@ export const BranchRoles: React.FC = () => {
           </div>
         </div>
 
-        <Button className="flex items-center gap-2">
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => setShowAddRoleDialog(true)}
+        >
           <Plus className="h-4 w-4" />
           הוסף תפקיד
         </Button>
@@ -143,6 +152,13 @@ export const BranchRoles: React.FC = () => {
           <p className="text-gray-600">לא נמצאו תפקידים במערכת</p>
         </div>
       )}
+
+      <AddRoleDialog
+        open={showAddRoleDialog}
+        onOpenChange={setShowAddRoleDialog}
+        onRoleCreated={addRole}
+        loading={rolesLoading}
+      />
     </div>
   );
 };
