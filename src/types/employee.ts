@@ -25,6 +25,8 @@ export interface BranchAssignment {
   max_weekly_hours?: number;
   is_active: boolean;
   created_at: string;
+  shift_types?: string[];
+  available_days?: number[];
 }
 
 // Base weekly token type

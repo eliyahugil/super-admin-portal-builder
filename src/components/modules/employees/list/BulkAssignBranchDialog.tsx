@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Branch } from '@/types/branch';
@@ -40,6 +41,8 @@ export const BulkAssignBranchDialog: React.FC<BulkAssignBranchDialogProps> = ({
   const [roleName, setRoleName] = useState<string>('');
   const [maxWeeklyHours, setMaxWeeklyHours] = useState<number>(40);
   const [priorityOrder, setPriorityOrder] = useState<number>(1);
+  const [shiftTypes, setShiftTypes] = useState<string[]>(['morning', 'evening']);
+  const [availableDays, setAvailableDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
 
   const handleSubmit = async () => {
     if (!selectedBranchId || !roleName) {
@@ -67,7 +70,9 @@ export const BulkAssignBranchDialog: React.FC<BulkAssignBranchDialogProps> = ({
         role_name: roleName,
         max_weekly_hours: maxWeeklyHours,
         priority_order: priorityOrder,
-        is_active: true
+        is_active: true,
+        shift_types: shiftTypes,
+        available_days: availableDays
       }));
 
       const { error } = await supabase
@@ -91,6 +96,22 @@ export const BulkAssignBranchDialog: React.FC<BulkAssignBranchDialogProps> = ({
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleShiftTypeChange = (shiftType: string, checked: boolean) => {
+    if (checked) {
+      setShiftTypes([...shiftTypes, shiftType]);
+    } else {
+      setShiftTypes(shiftTypes.filter(type => type !== shiftType));
+    }
+  };
+
+  const handleDayChange = (day: number, checked: boolean) => {
+    if (checked) {
+      setAvailableDays([...availableDays, day].sort());
+    } else {
+      setAvailableDays(availableDays.filter(d => d !== day));
     }
   };
 
@@ -164,6 +185,44 @@ export const BulkAssignBranchDialog: React.FC<BulkAssignBranchDialogProps> = ({
             </p>
           </div>
 
+          <div>
+            <Label>סוגי משמרות</Label>
+            <div className="flex gap-4 mt-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="bulk-morning"
+                  checked={shiftTypes.includes('morning')}
+                  onCheckedChange={(checked) => handleShiftTypeChange('morning', checked as boolean)}
+                />
+                <Label htmlFor="bulk-morning">בוקר</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="bulk-evening"
+                  checked={shiftTypes.includes('evening')}
+                  onCheckedChange={(checked) => handleShiftTypeChange('evening', checked as boolean)}
+                />
+                <Label htmlFor="bulk-evening">ערב</Label>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label>ימים זמינים</Label>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'].map((day, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`bulk-day-${index}`}
+                    checked={availableDays.includes(index)}
+                    onCheckedChange={(checked) => handleDayChange(index, checked as boolean)}
+                  />
+                  <Label htmlFor={`bulk-day-${index}`} className="text-sm">{day}</Label>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2 pt-4">
             <Button
               variant="outline"
@@ -174,7 +233,7 @@ export const BulkAssignBranchDialog: React.FC<BulkAssignBranchDialogProps> = ({
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={loading || !selectedBranchId || !roleName}
+              disabled={loading || !selectedBranchId || !roleName || shiftTypes.length === 0 || availableDays.length === 0}
             >
               {loading ? 'משייך...' : 'שייך לסניף'}
             </Button>

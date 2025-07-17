@@ -77,6 +77,17 @@ export const EmployeeBranchAssignments: React.FC<EmployeeBranchAssignmentsProps>
     }
   };
 
+  const getShiftTypeLabel = (shiftTypes: string[]) => {
+    if (!shiftTypes || shiftTypes.length === 0) return 'כל הסוגים';
+    return shiftTypes.map(type => type === 'morning' ? 'בוקר' : 'ערב').join(', ');
+  };
+
+  const getDayLabels = (availableDays: number[]) => {
+    if (!availableDays || availableDays.length === 0) return 'כל הימים';
+    const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    return availableDays.map(day => dayNames[day]).join(', ');
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -108,6 +119,10 @@ export const EmployeeBranchAssignments: React.FC<EmployeeBranchAssignmentsProps>
                   <div className="text-sm text-gray-500">
                     תפקיד: {assignment.role_name}
                     {assignment.max_weekly_hours && ` • עד ${assignment.max_weekly_hours} שעות שבועיות`}
+                  </div>
+                  <div className="text-xs text-gray-400 space-y-1 mt-1">
+                    <div>סוגי משמרות: {getShiftTypeLabel(assignment.shift_types)}</div>
+                    <div>ימים זמינים: {getDayLabels(assignment.available_days)}</div>
                   </div>
                 </div>
               </div>

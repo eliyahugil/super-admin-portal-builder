@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Building2, Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -30,7 +31,9 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
     role_name: '',
     priority_order: 1,
     max_weekly_hours: '',
-    is_active: true
+    is_active: true,
+    shift_types: ['morning', 'evening'] as string[],
+    available_days: [0, 1, 2, 3, 4, 5, 6] as number[]
   });
 
   // Fetch branches for the business
@@ -63,7 +66,9 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
           role_name: newAssignment.role_name,
           priority_order: newAssignment.priority_order,
           max_weekly_hours: newAssignment.max_weekly_hours ? parseInt(newAssignment.max_weekly_hours) : null,
-          is_active: newAssignment.is_active
+          is_active: newAssignment.is_active,
+          shift_types: newAssignment.shift_types,
+          available_days: newAssignment.available_days
         })
         .select(`
           *,
@@ -79,7 +84,9 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
         role_name: '',
         priority_order: 1,
         max_weekly_hours: '',
-        is_active: true
+        is_active: true,
+        shift_types: ['morning', 'evening'],
+        available_days: [0, 1, 2, 3, 4, 5, 6]
       });
       setIsAddDialogOpen(false);
       toast.success('שיוך לסניף נוסף בהצלחה');
@@ -99,7 +106,9 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
           role_name: editingAssignment.role_name,
           priority_order: editingAssignment.priority_order,
           max_weekly_hours: editingAssignment.max_weekly_hours ? parseInt(editingAssignment.max_weekly_hours) : null,
-          is_active: editingAssignment.is_active
+          is_active: editingAssignment.is_active,
+          shift_types: editingAssignment.shift_types,
+          available_days: editingAssignment.available_days
         })
         .eq('id', editingAssignment.id)
         .select(`
@@ -139,6 +148,45 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
   const availableBranches = branches.filter(branch => 
     !assignments.some(assignment => assignment.branch_id === branch.id && assignment.is_active)
   );
+
+  const getShiftTypeLabel = (shiftTypes: string[]) => {
+    if (!shiftTypes || shiftTypes.length === 0) return 'כל הסוגים';
+    return shiftTypes.map(type => type === 'morning' ? 'בוקר' : 'ערב').join(', ');
+  };
+
+  const getDayLabels = (availableDays: number[]) => {
+    if (!availableDays || availableDays.length === 0) return 'כל הימים';
+    const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    return availableDays.map(day => dayNames[day]).join(', ');
+  };
+
+  const handleShiftTypeChange = (shiftType: string, checked: boolean) => {
+    if (checked) {
+      setNewAssignment({
+        ...newAssignment,
+        shift_types: [...newAssignment.shift_types, shiftType]
+      });
+    } else {
+      setNewAssignment({
+        ...newAssignment,
+        shift_types: newAssignment.shift_types.filter(type => type !== shiftType)
+      });
+    }
+  };
+
+  const handleDayChange = (day: number, checked: boolean) => {
+    if (checked) {
+      setNewAssignment({
+        ...newAssignment,
+        available_days: [...newAssignment.available_days, day].sort()
+      });
+    } else {
+      setNewAssignment({
+        ...newAssignment,
+        available_days: newAssignment.available_days.filter(d => d !== day)
+      });
+    }
+  };
 
   return (
     <Card>
@@ -205,19 +253,54 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
                     placeholder="הכנס מספר שעות..."
                   />
                 </div>
+                <div>
+                  <Label>סוגי משמרות</Label>
+                  <div className="flex gap-4 mt-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="morning"
+                        checked={newAssignment.shift_types.includes('morning')}
+                        onCheckedChange={(checked) => handleShiftTypeChange('morning', checked as boolean)}
+                      />
+                      <Label htmlFor="morning">בוקר</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="evening"
+                        checked={newAssignment.shift_types.includes('evening')}
+                        onCheckedChange={(checked) => handleShiftTypeChange('evening', checked as boolean)}
+                      />
+                      <Label htmlFor="evening">ערב</Label>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <Label>ימים זמינים</Label>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'].map((day, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`day-${index}`}
+                          checked={newAssignment.available_days.includes(index)}
+                          onCheckedChange={(checked) => handleDayChange(index, checked as boolean)}
+                        />
+                        <Label htmlFor={`day-${index}`} className="text-sm">{day}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="is-active"
                     checked={newAssignment.is_active}
-                    onChange={(e) => setNewAssignment({...newAssignment, is_active: e.target.checked})}
+                    onCheckedChange={(checked) => setNewAssignment({...newAssignment, is_active: checked as boolean})}
                   />
                   <Label htmlFor="is-active">שיוך פעיל</Label>
                 </div>
                 <div className="flex gap-2">
                   <Button 
                     onClick={handleAddAssignment} 
-                    disabled={!newAssignment.branch_id || !newAssignment.role_name.trim()}
+                    disabled={!newAssignment.branch_id || !newAssignment.role_name.trim() || newAssignment.shift_types.length === 0 || newAssignment.available_days.length === 0}
                   >
                     הוסף שיוך
                   </Button>
@@ -246,6 +329,8 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
                 {assignment.max_weekly_hours && (
                   <p className="text-sm text-gray-500">מקסימום שעות: {assignment.max_weekly_hours}</p>
                 )}
+                <p className="text-xs text-gray-400">משמרות: {getShiftTypeLabel(assignment.shift_types)}</p>
+                <p className="text-xs text-gray-400">ימים: {getDayLabels(assignment.available_days)}</p>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -253,7 +338,9 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
                   size="sm"
                   onClick={() => setEditingAssignment({
                     ...assignment,
-                    max_weekly_hours: assignment.max_weekly_hours?.toString() || ''
+                    max_weekly_hours: assignment.max_weekly_hours?.toString() || '',
+                    shift_types: assignment.shift_types || ['morning', 'evening'],
+                    available_days: assignment.available_days || [0, 1, 2, 3, 4, 5, 6]
                   })}
                 >
                   <Edit className="h-4 w-4" />
@@ -319,12 +406,62 @@ export const EmployeeBranchAssignmentsTab: React.FC<EmployeeBranchAssignmentsTab
                     onChange={(e) => setEditingAssignment({...editingAssignment, max_weekly_hours: e.target.value})}
                   />
                 </div>
+                <div>
+                  <Label>סוגי משמרות</Label>
+                  <div className="flex gap-4 mt-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-morning"
+                        checked={editingAssignment.shift_types?.includes('morning')}
+                        onCheckedChange={(checked) => {
+                          const shiftTypes = checked 
+                            ? [...(editingAssignment.shift_types || []), 'morning']
+                            : (editingAssignment.shift_types || []).filter(type => type !== 'morning');
+                          setEditingAssignment({...editingAssignment, shift_types: shiftTypes});
+                        }}
+                      />
+                      <Label htmlFor="edit-morning">בוקר</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-evening"
+                        checked={editingAssignment.shift_types?.includes('evening')}
+                        onCheckedChange={(checked) => {
+                          const shiftTypes = checked 
+                            ? [...(editingAssignment.shift_types || []), 'evening']
+                            : (editingAssignment.shift_types || []).filter(type => type !== 'evening');
+                          setEditingAssignment({...editingAssignment, shift_types: shiftTypes});
+                        }}
+                      />
+                      <Label htmlFor="edit-evening">ערב</Label>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <Label>ימים זמינים</Label>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'].map((day, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`edit-day-${index}`}
+                          checked={editingAssignment.available_days?.includes(index)}
+                          onCheckedChange={(checked) => {
+                            const availableDays = checked 
+                              ? [...(editingAssignment.available_days || []), index].sort()
+                              : (editingAssignment.available_days || []).filter(d => d !== index);
+                            setEditingAssignment({...editingAssignment, available_days: availableDays});
+                          }}
+                        />
+                        <Label htmlFor={`edit-day-${index}`} className="text-sm">{day}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="edit-is-active"
                     checked={editingAssignment.is_active}
-                    onChange={(e) => setEditingAssignment({...editingAssignment, is_active: e.target.checked})}
+                    onCheckedChange={(checked) => setEditingAssignment({...editingAssignment, is_active: checked as boolean})}
                   />
                   <Label htmlFor="edit-is-active">שיוך פעיל</Label>
                 </div>
