@@ -18,6 +18,9 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  console.log('🔍 WeeklyShiftSubmissionForm mounted with token:', token);
+  console.log('🔍 Current URL:', window.location.href);
+  
   const [tokenData, setTokenData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
