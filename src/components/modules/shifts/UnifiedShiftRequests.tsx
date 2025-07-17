@@ -481,7 +481,7 @@ export const UnifiedShiftRequests: React.FC = () => {
     return true;
   });
 
-  // קיבוץ בקשות לפי עובדים
+  // קיבוץ בקשות לפי עובדים ואז לפי משמרות זהות
   const groupedRequests = filteredRequests.reduce((acc, request) => {
     const employeeKey = request.employee_id;
     if (!acc[employeeKey]) {
@@ -489,16 +489,35 @@ export const UnifiedShiftRequests: React.FC = () => {
         employee_name: request.employee_name || 'לא ידוע',
         employee_id: request.employee_id,
         employee: request.employee,
+        shiftGroups: {}
+      };
+    }
+    
+    // קיבוץ משמרות לפי שעות + סניף + תפקיד
+    const shiftKey = `${request.start_time}-${request.end_time}-${request.branch_preference || 'none'}-${request.role_preference || 'none'}`;
+    if (!acc[employeeKey].shiftGroups[shiftKey]) {
+      acc[employeeKey].shiftGroups[shiftKey] = {
+        start_time: request.start_time,
+        end_time: request.end_time,
+        branch_preference: request.branch_preference,
+        role_preference: request.role_preference,
         requests: []
       };
     }
-    acc[employeeKey].requests.push(request);
+    
+    acc[employeeKey].shiftGroups[shiftKey].requests.push(request);
     return acc;
   }, {} as Record<string, {
     employee_name: string;
     employee_id: string;
     employee: any;
-    requests: ShiftRequest[];
+    shiftGroups: Record<string, {
+      start_time: string;
+      end_time: string;
+      branch_preference?: string;
+      role_preference?: string;
+      requests: ShiftRequest[];
+    }>;
   }>);
 
   // מיון העובדים לפי שם
@@ -507,7 +526,7 @@ export const UnifiedShiftRequests: React.FC = () => {
   );
 
   // חישוב סטטיסטיקות מעודכן
-  const allEmployeeRequests = sortedEmployees.flatMap(emp => emp.requests);
+  const allEmployeeRequests = sortedEmployees.flatMap(emp => Object.values(emp.shiftGroups).flatMap(group => group.requests));
   const pendingRequests = allEmployeeRequests.filter(req => req.status === 'pending');
   const approvedRequests = allEmployeeRequests.filter(req => req.status === 'approved');
   const rejectedRequests = allEmployeeRequests.filter(req => req.status === 'rejected');
@@ -653,7 +672,7 @@ export const UnifiedShiftRequests: React.FC = () => {
                         <User className="h-5 w-5 text-primary" />
                         <span className="font-bold text-xl">{employee.employee_name}</span>
                         <Badge variant="outline" className="text-xs">
-                          {employee.requests.length} בקשות
+                          {Object.values(employee.shiftGroups).reduce((total, group) => total + group.requests.length, 0)} בקשות
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2">
@@ -676,136 +695,183 @@ export const UnifiedShiftRequests: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* רשימת בקשות העובד */}
+                    {/* רשימת קבוצות משמרות העובד */}
                     <div className="space-y-3" dir="rtl">
-                      {employee.requests.map(request => (
-                        <div key={request.id} className="bg-muted/30 rounded-lg p-4 border border-muted">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-semibold">
-                                {format(new Date(request.shift_date), 'dd/MM/yyyy')}
-                              </span>
-                              <span className="text-muted-foreground">•</span>
-                              <span className="font-medium">
-                                {request.start_time} - {request.end_time}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteRequest(request.id)}
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                              <Badge className={getStatusColor(request.status)}>
-                                {getStatusLabel(request.status)}
-                              </Badge>
-                            </div>
-                          </div>
-
-                          {/* פרטי המשמרת */}
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-sm">
-                            {request.branch_preference && (
-                              <div className="text-right">
-                                <p className="text-muted-foreground mb-1">סניף</p>
-                                <p className="flex items-center gap-1 justify-end">
-                                  <span>{request.branch_preference}</span>
-                                  <MapPin className="h-3 w-3" />
-                                </p>
+                      {Object.entries(employee.shiftGroups).map(([shiftKey, shiftGroup]) => {
+                        const hasMultipleDates = shiftGroup.requests.length > 1;
+                        const allSameStatus = shiftGroup.requests.every(req => req.status === shiftGroup.requests[0].status);
+                        const mainStatus = shiftGroup.requests[0].status;
+                        
+                        return (
+                          <div key={shiftKey} className="bg-muted/30 rounded-lg p-4 border border-muted">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">
+                                  {shiftGroup.start_time} - {shiftGroup.end_time}
+                                </span>
+                                {shiftGroup.branch_preference && (
+                                  <>
+                                    <span className="text-muted-foreground">•</span>
+                                    <div className="flex items-center gap-1">
+                                      <MapPin className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-sm">{shiftGroup.branch_preference}</span>
+                                    </div>
+                                  </>
+                                )}
+                                {shiftGroup.role_preference && (
+                                  <>
+                                    <span className="text-muted-foreground">•</span>
+                                    <span className="text-sm">{shiftGroup.role_preference}</span>
+                                  </>
+                                )}
                               </div>
-                            )}
-                            {request.role_preference && (
-                              <div className="text-right">
-                                <p className="text-muted-foreground mb-1">תפקיד</p>
-                                <p>{request.role_preference}</p>
-                              </div>
-                            )}
-                            <div className="text-right">
-                              <p className="text-muted-foreground mb-1">נוצר</p>
-                              <p>{format(new Date(request.created_at), 'dd/MM HH:mm')}</p>
-                            </div>
-                            {request.reviewed_at && (
-                              <div className="text-right">
-                                <p className="text-muted-foreground mb-1">נבדק</p>
-                                <p>{format(new Date(request.reviewed_at), 'dd/MM HH:mm')}</p>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* הערות */}
-                          {request.notes && (
-                            <div className="mb-3 p-2 bg-background rounded text-sm">
-                              <p className="text-muted-foreground mb-1">הערות עובד:</p>
-                              <p>{request.notes}</p>
-                            </div>
-                          )}
-
-                          {request.review_notes && (
-                            <div className="mb-3 p-2 bg-primary/5 rounded border border-primary/20 text-sm">
-                              <p className="text-muted-foreground mb-1">הערת מנהל:</p>
-                              <p>{request.review_notes}</p>
-                            </div>
-                          )}
-
-                          {/* זמינות בוקר אופציונלית */}
-                          {request.optional_morning_availability && request.optional_morning_availability.length > 0 && (
-                            <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200 text-sm">
-                              <p className="text-blue-800 mb-1 flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                זמינות בוקר (אופציונלי)
-                              </p>
-                              <div className="flex flex-wrap gap-1">
-                                {request.optional_morning_availability.map(day => (
-                                  <Badge 
-                                    key={day} 
-                                    variant="outline" 
-                                    className="text-xs bg-blue-100 text-blue-800 border-blue-300"
-                                  >
-                                    {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][day]}
+                              <div className="flex items-center gap-2">
+                                {hasMultipleDates && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {shiftGroup.requests.length} תאריכים
                                   </Badge>
+                                )}
+                                {allSameStatus ? (
+                                  <Badge className={getStatusColor(mainStatus)}>
+                                    {getStatusLabel(mainStatus)}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-xs">
+                                    סטטוס מעורב
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* תאריכים שהוגשו */}
+                            <div className="mb-3">
+                              <p className="text-sm text-muted-foreground mb-2">תאריכים שהוגשו:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {shiftGroup.requests.map(request => (
+                                  <div key={request.id} className="flex items-center gap-1">
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`text-xs ${getStatusColor(request.status)}`}
+                                    >
+                                      {format(new Date(request.shift_date), 'dd/MM')}
+                                    </Badge>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteRequest(request.id)}
+                                      className="h-5 w-5 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
                                 ))}
                               </div>
                             </div>
-                          )}
 
-                          {/* כפתורי פעולה למשמרת */}
-                          {request.status === 'pending' && (
-                            <div className="flex gap-2 mt-3 pt-2 border-t border-muted">
-                              <Button
-                                size="sm"
-                                onClick={() => handleUpdateStatus(request.id, 'approved', reviewNotes[request.id])}
-                                disabled={updateStatusMutation.isPending}
-                                className="bg-success hover:bg-success/90 text-white text-xs h-7"
-                              >
-                                <CheckCircle className="h-3 w-3 ml-1" />
-                                אשר
-                              </Button>
-                              
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleUpdateStatus(request.id, 'rejected', reviewNotes[request.id])}
-                                disabled={updateStatusMutation.isPending}
-                                className="text-xs h-7"
-                              >
-                                <XCircle className="h-3 w-3 ml-1" />
-                                דחה
-                              </Button>
+                            {/* הערות אם יש */}
+                            {shiftGroup.requests.some(req => req.notes) && (
+                              <div className="mb-3 p-2 bg-background rounded text-sm">
+                                <p className="text-muted-foreground mb-1">הערות עובד:</p>
+                                {shiftGroup.requests.filter(req => req.notes).map(request => (
+                                  <div key={request.id} className="mb-1">
+                                    <span className="font-medium">{format(new Date(request.shift_date), 'dd/MM')}:</span> {request.notes}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
 
-                              <Textarea
-                                placeholder="הערה..."
-                                value={reviewNotes[request.id] || ''}
-                                onChange={(e) => handleReviewNotesChange(request.id, e.target.value)}
-                                rows={1}
-                                className="text-xs h-7 flex-1"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                            {/* הערות מנהל */}
+                            {shiftGroup.requests.some(req => req.review_notes) && (
+                              <div className="mb-3 p-2 bg-primary/5 rounded border border-primary/20 text-sm">
+                                <p className="text-muted-foreground mb-1">הערות מנהל:</p>
+                                {shiftGroup.requests.filter(req => req.review_notes).map(request => (
+                                  <div key={request.id} className="mb-1">
+                                    <span className="font-medium">{format(new Date(request.shift_date), 'dd/MM')}:</span> {request.review_notes}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* זמינות בוקר אופציונלית */}
+                            {shiftGroup.requests.some(req => req.optional_morning_availability?.length) && (
+                              <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200 text-sm">
+                                <p className="text-blue-800 mb-1 flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  זמינות בוקר (אופציונלי)
+                                </p>
+                                <div className="flex flex-wrap gap-1">
+                                  {Array.from(new Set(shiftGroup.requests.flatMap(req => req.optional_morning_availability || []))).map(day => (
+                                    <Badge 
+                                      key={day} 
+                                      variant="outline" 
+                                      className="text-xs bg-blue-100 text-blue-800 border-blue-300"
+                                    >
+                                      {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][day]}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* כפתורי פעולה קבוצתיים */}
+                            {shiftGroup.requests.some(req => req.status === 'pending') && (
+                              <div className="flex gap-2 mt-3 pt-2 border-t border-muted">
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    shiftGroup.requests.forEach(request => {
+                                      if (request.status === 'pending') {
+                                        handleUpdateStatus(request.id, 'approved', reviewNotes[request.id]);
+                                      }
+                                    });
+                                  }}
+                                  disabled={updateStatusMutation.isPending}
+                                  className="bg-success hover:bg-success/90 text-white text-xs h-7"
+                                >
+                                  <CheckCircle className="h-3 w-3 ml-1" />
+                                  אשר הכל
+                                </Button>
+                                
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => {
+                                    shiftGroup.requests.forEach(request => {
+                                      if (request.status === 'pending') {
+                                        handleUpdateStatus(request.id, 'rejected', reviewNotes[request.id]);
+                                      }
+                                    });
+                                  }}
+                                  disabled={updateStatusMutation.isPending}
+                                  className="text-xs h-7"
+                                >
+                                  <XCircle className="h-3 w-3 ml-1" />
+                                  דחה הכל
+                                </Button>
+
+                                <Textarea
+                                  placeholder="הערה לכל המשמרות..."
+                                  value={reviewNotes[shiftKey] || ''}
+                                  onChange={(e) => {
+                                    const notes = e.target.value;
+                                    setReviewNotes(prev => {
+                                      const updated = { ...prev, [shiftKey]: notes };
+                                      // עדכון כל הבקשות בקבוצה
+                                      shiftGroup.requests.forEach(request => {
+                                        updated[request.id] = notes;
+                                      });
+                                      return updated;
+                                    });
+                                  }}
+                                  rows={1}
+                                  className="text-xs h-7 flex-1"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
