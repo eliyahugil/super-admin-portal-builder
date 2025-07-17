@@ -156,27 +156,23 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
 
           {/* תצוגה למחשב - לוח שנה */}
           <div className="hidden md:block">
-            <div className="grid grid-cols-7 gap-4 mb-6">
+            <div className="grid grid-cols-7 gap-3 mb-4">
             {weekDays.map((day, index) => {
               const dayShifts = getShiftsForDay(day);
               const isToday = isSameDay(day, new Date());
               
               return (
-                <div key={index} className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                  <div className={`text-center p-4 border-b ${
+                <div key={index} className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <div className={`text-center p-3 rounded-t-lg ${
                     isToday 
-                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
-                      : 'bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700'
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-gray-100 text-gray-700'
                   }`}>
-                    <div className="text-sm font-medium mb-1">
-                      {dayNames[index]}
-                    </div>
-                    <div className="text-2xl font-bold">
-                      {format(day, 'd')}
-                    </div>
+                    <div className="text-sm font-medium">{dayNames[index]}</div>
+                    <div className="text-xl font-bold">{format(day, 'd')}</div>
                   </div>
                   
-                  <div className="p-4 min-h-[280px] space-y-3">
+                  <div className="p-2 min-h-[280px] space-y-2">
                     {dayShifts.length > 0 ? (
                       dayShifts.map((shift) => {
                         const isSelected = isShiftSelected(shift.id);
@@ -184,69 +180,48 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
                           <div
                             key={shift.id}
                             onClick={() => onToggleShift(shift.id)}
-                            className={`group relative p-4 rounded-lg cursor-pointer border-2 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1 ${
+                            className={`p-3 rounded-lg cursor-pointer border transition-all duration-200 hover:shadow-md ${
                               isSelected 
-                                ? 'border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100 shadow-md' 
-                                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                                ? 'border-blue-400 bg-blue-50 shadow-md' 
+                                : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
                             }`}
                           >
-                            {isSelected && (
-                              <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                                <div className="w-2 h-2 bg-white rounded-full"></div>
-                              </div>
-                            )}
+                            {/* שעות - בולט ובמרכז */}
+                            <div className="text-center mb-2">
+                              <span className="text-sm font-bold text-gray-900 bg-white px-2 py-1 rounded border">
+                                {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                              </span>
+                            </div>
                             
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-2">
-                                <div className="p-1.5 rounded-full bg-green-100">
-                                  <Clock className="h-4 w-4 text-green-600" />
-                                </div>
-                                <span className="text-sm font-semibold text-gray-900">
-                                  {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                </span>
-                              </div>
-                              
+                            {/* פרטים נוספים - קומפקטי */}
+                            <div className="space-y-1 text-xs">
                               {shift.branches?.name && (
-                                <div className="flex items-start gap-2">
-                                  <div className="p-1.5 rounded-full bg-blue-100 flex-shrink-0 mt-0.5">
-                                    <MapPin className="h-4 w-4 text-blue-600" />
-                                  </div>
-                                  <span className="text-xs text-gray-600 leading-relaxed font-medium" title={shift.branches.name}>
-                                    {shift.branches.name}
-                                  </span>
+                                <div className="text-center text-gray-700 font-medium" title={shift.branches.name}>
+                                  📍 {shift.branches.name}
                                 </div>
                               )}
                               
                               {shift.role && (
-                                <div className="flex items-center gap-2">
-                                  <div className="p-1.5 rounded-full bg-purple-100">
-                                    <User className="h-4 w-4 text-purple-600" />
-                                  </div>
-                                  <span className="text-xs text-gray-600 font-medium" title={shift.role}>
-                                    {shift.role}
-                                  </span>
+                                <div className="text-center text-gray-600" title={shift.role}>
+                                  👤 {shift.role}
                                 </div>
                               )}
                             </div>
                             
+                            {/* סימון נבחר */}
                             {isSelected && (
-                              <div className="mt-3 pt-3 border-t border-blue-200">
-                                <div className="text-center">
-                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                                    ✓ נבחר
-                                  </span>
-                                </div>
+                              <div className="text-center mt-2">
+                                <span className="inline-block px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full">
+                                  ✓ נבחר
+                                </span>
                               </div>
                             )}
                           </div>
                         );
                       })
                     ) : (
-                      <div className="flex flex-col items-center justify-center h-full py-8 text-gray-400">
-                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                          <CalendarIcon className="h-6 w-6" />
-                        </div>
-                        <div className="text-sm font-medium">אין משמרות</div>
+                      <div className="flex flex-col items-center justify-center h-32 text-gray-400">
+                        <div className="text-sm">אין משמרות</div>
                       </div>
                     )}
                   </div>
