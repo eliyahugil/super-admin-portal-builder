@@ -121,11 +121,16 @@ export const WeeklyShiftView: React.FC = () => {
   });
 
   useEffect(() => {
+    console.log('🔍 WeeklyShiftView - Token:', token);
     console.log('🔍 WeeklyShiftView state:', { isLoading, hasData: !!shiftsData, hasError: !!error });
+    console.log('🔍 WeeklyShiftView - Error details:', error);
+    console.log('🔍 WeeklyShiftView - Data received:', shiftsData);
+    
     if (!isLoading) {
+      console.log('✅ Loading completed, hiding validation spinner');
       setIsValidating(false);
     }
-  }, [isLoading, shiftsData, error]);
+  }, [isLoading, shiftsData, error, token]);
 
   const handleShiftSelection = (shiftId: string, checked: boolean) => {
     const newSelected = new Set(selectedShifts);
