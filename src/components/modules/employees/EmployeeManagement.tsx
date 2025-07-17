@@ -5,6 +5,7 @@ import { EmployeeManagementLoading } from './EmployeeManagementLoading';
 import { EmployeeManagementEmptyState } from './EmployeeManagementEmptyState';
 import { ModernEmployeesList } from './ModernEmployeesList';
 import { ArchivedEmployeesList } from './ArchivedEmployeesList';
+import { InactiveEmployeesList } from './InactiveEmployeesList';
 import { ManagementToolsSection } from './ManagementToolsSection/ManagementToolsSection';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useEmployeeStats } from '@/hooks/useEmployeeStats';
@@ -35,7 +36,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
     setRefreshKey(prev => prev + 1);
   }, [effectiveBusinessId]);
   
-  const [showArchived, setShowArchived] = useState(false);
+  const [currentView, setCurrentView] = useState<'active' | 'inactive' | 'archived'>('active');
   const [refreshKey, setRefreshKey] = useState(0);
   
   // Fetch employees data - זה כבר מחזיר רק עובדים פעילים
@@ -48,7 +49,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
 
   console.log('📊 EmployeeManagement - Employee data:', {
     activeEmployees: activeEmployees.length,
-    showArchived,
+    currentView,
     refreshKey
   });
 
@@ -107,9 +108,10 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
     <div className="container-mobile space-y-6 py-6" key={refreshKey}>
       <ModernEmployeeHeader 
         businessId={effectiveBusinessId}
-        showArchived={showArchived}
-        onToggleArchived={setShowArchived}
-        totalActiveEmployees={activeEmployees.length}
+        currentView={currentView}
+        onViewChange={setCurrentView}
+        totalActiveEmployees={stats.activeEmployees}
+        totalInactiveEmployees={stats.inactiveEmployees}
         totalArchivedEmployees={stats.archivedEmployees}
       />
 
@@ -122,13 +124,19 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
         businessId={effectiveBusinessId}
       />
 
-      {!showArchived && activeEmployees.length === 0 ? (
+      {currentView === 'active' && activeEmployees.length === 0 ? (
         <EmployeeManagementEmptyState 
           businessId={effectiveBusinessId} 
           onRefetch={handleRefetch}
         />
-      ) : showArchived ? (
+      ) : currentView === 'archived' ? (
         <ArchivedEmployeesList 
+          businessId={effectiveBusinessId}
+          employees={[]}
+          onRefetch={handleRefetch}
+        />
+      ) : currentView === 'inactive' ? (
+        <InactiveEmployeesList 
           businessId={effectiveBusinessId}
           employees={[]}
           onRefetch={handleRefetch}

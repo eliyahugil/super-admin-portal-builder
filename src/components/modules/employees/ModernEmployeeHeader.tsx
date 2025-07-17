@@ -9,22 +9,25 @@ import {
   Upload,
   Settings,
   RefreshCw,
-  Plus
+  Plus,
+  UserX
 } from 'lucide-react';
 
 interface ModernEmployeeHeaderProps {
   businessId: string;
-  showArchived: boolean;
-  onToggleArchived: (show: boolean) => void;
+  currentView: 'active' | 'inactive' | 'archived';
+  onViewChange: (view: 'active' | 'inactive' | 'archived') => void;
   totalActiveEmployees: number;
+  totalInactiveEmployees: number;
   totalArchivedEmployees: number;
 }
 
 export const ModernEmployeeHeader: React.FC<ModernEmployeeHeaderProps> = ({
   businessId,
-  showArchived,
-  onToggleArchived,
+  currentView,
+  onViewChange,
   totalActiveEmployees,
+  totalInactiveEmployees,
   totalArchivedEmployees,
 }) => {
   const handleExport = () => {
@@ -59,7 +62,9 @@ export const ModernEmployeeHeader: React.FC<ModernEmployeeHeaderProps> = ({
                   ניהול ומעקב אחר כוח האדם בעסק
                 </p>
                 <Badge variant="secondary" className="w-fit">
-                  {showArchived ? `${totalArchivedEmployees} בארכיון` : `${totalActiveEmployees} פעילים`}
+                  {currentView === 'archived' ? `${totalArchivedEmployees} בארכיון` : 
+                   currentView === 'inactive' ? `${totalInactiveEmployees} לא פעילים` : 
+                   `${totalActiveEmployees} פעילים`}
                 </Badge>
               </div>
             </div>
@@ -68,18 +73,27 @@ export const ModernEmployeeHeader: React.FC<ModernEmployeeHeaderProps> = ({
           {/* View Toggle - Mobile First */}
           <div className="flex bg-muted rounded-lg p-1 w-full">
             <Button
-              variant={!showArchived ? "default" : "ghost"}
+              variant={currentView === "active" ? "default" : "ghost"}
               size="sm"
-              onClick={() => onToggleArchived(false)}
+              onClick={() => onViewChange("active")}
               className="flex-1 text-xs sm:text-sm"
             >
               <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               <span className="hidden xs:inline">פעילים </span>({totalActiveEmployees})
             </Button>
             <Button
-              variant={showArchived ? "default" : "ghost"}
+              variant={currentView === "inactive" ? "default" : "ghost"}
               size="sm"
-              onClick={() => onToggleArchived(true)}
+              onClick={() => onViewChange("inactive")}
+              className="flex-1 text-xs sm:text-sm"
+            >
+              <UserX className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">לא פעילים </span>({totalInactiveEmployees})
+            </Button>
+            <Button
+              variant={currentView === "archived" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => onViewChange("archived")}
               className="flex-1 text-xs sm:text-sm"
             >
               <Archive className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -144,16 +158,16 @@ export const ModernEmployeeHeader: React.FC<ModernEmployeeHeaderProps> = ({
               <p className="text-xs sm:text-sm text-muted-foreground">עובדים פעילים</p>
             </div>
             <div className="text-center p-2 bg-background/50 rounded-lg">
+              <p className="text-lg sm:text-2xl font-bold text-orange-600">{totalInactiveEmployees}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">לא פעילים</p>
+            </div>
+            <div className="text-center p-2 bg-background/50 rounded-lg">
               <p className="text-lg sm:text-2xl font-bold text-foreground">{totalArchivedEmployees}</p>
               <p className="text-xs sm:text-sm text-muted-foreground">בארכיון</p>
             </div>
             <div className="text-center p-2 bg-background/50 rounded-lg">
-              <p className="text-lg sm:text-2xl font-bold text-foreground">{totalActiveEmployees + totalArchivedEmployees}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground">סה"כ עובדים</p>
-            </div>
-            <div className="text-center p-2 bg-background/50 rounded-lg">
               <p className="text-lg sm:text-2xl font-bold text-success">
-                {totalActiveEmployees > 0 ? Math.round((totalActiveEmployees / (totalActiveEmployees + totalArchivedEmployees)) * 100) : 0}%
+                {totalActiveEmployees > 0 ? Math.round((totalActiveEmployees / (totalActiveEmployees + totalInactiveEmployees + totalArchivedEmployees)) * 100) : 0}%
               </p>
               <p className="text-xs sm:text-sm text-muted-foreground">שיעור פעילים</p>
             </div>

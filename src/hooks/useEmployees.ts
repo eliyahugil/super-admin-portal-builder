@@ -66,6 +66,7 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
         `)
         .eq('business_id', effectiveBusinessId)
         .eq('is_archived', false)  // 🔒 CRITICAL: Only non-archived employees
+        .eq('is_active', true)     // 🔒 CRITICAL: Only active employees
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -73,10 +74,10 @@ export const useEmployees = (selectedBusinessId?: string | null) => {
         throw error;
       }
 
-      // Additional safety check: filter out any archived employees
-      const activeEmployees = (data || []).filter(emp => !emp.is_archived);
+      // Additional safety check: filter out any archived or inactive employees
+      const activeEmployees = (data || []).filter(emp => !emp.is_archived && emp.is_active);
 
-      console.log('✅ Active (non-archived) employees fetched:', {
+      console.log('✅ Active employees fetched:', {
         total: data?.length || 0,
         active: activeEmployees.length,
         filtered: (data?.length || 0) - activeEmployees.length
