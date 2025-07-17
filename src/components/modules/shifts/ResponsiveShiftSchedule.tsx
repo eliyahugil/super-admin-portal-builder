@@ -286,11 +286,14 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           {/* Templates and Quick Multiple Buttons */}
           <div className="flex gap-2">
             <Button
-              onClick={async () => {
-                console.log('🔄 Manual refresh triggered');
-                queryClient.removeQueries({ queryKey: ['schedule-shifts'] });
-                await queryClient.refetchQueries({ queryKey: ['schedule-shifts', businessId] });
-                console.log('✅ Manual refresh completed');
+              onClick={() => {
+                console.log('🔄 Manual refresh button clicked');
+                try {
+                  queryClient.clear();
+                  window.location.reload();
+                } catch (error) {
+                  console.error('Error during refresh:', error);
+                }
               }}
               variant="outline"
               size={isMobile ? "sm" : "default"}
