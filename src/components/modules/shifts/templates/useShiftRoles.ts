@@ -55,5 +55,22 @@ export const useShiftRoles = (businessId?: string) => {
     setLoading(false);
   };
 
-  return { roles, loading, addRole };
+  const updateRole = async (roleId: string, name: string) => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("shift_roles")
+      .update({ name })
+      .eq("id", roleId)
+      .select()
+      .single();
+    if (error || !data) {
+      toast({ title: "שגיאה", description: error?.message || "בעיה בעדכון תפקיד", variant: "destructive" });
+    } else {
+      setRoles((prev) => prev.map(role => role.id === roleId ? data : role));
+      toast({ title: "הצלחה", description: "התפקיד עודכן בהצלחה" });
+    }
+    setLoading(false);
+  };
+
+  return { roles, loading, addRole, updateRole };
 };

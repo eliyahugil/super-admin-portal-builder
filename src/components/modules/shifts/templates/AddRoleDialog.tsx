@@ -10,16 +10,24 @@ interface AddRoleDialogProps {
   onOpenChange: (open: boolean) => void;
   onRoleCreated: (roleName: string) => void;
   loading: boolean;
+  initialValue?: string;
+  title?: string;
 }
 
 export const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
   open,
   onOpenChange,
   onRoleCreated,
-  loading
+  loading,
+  initialValue = "",
+  title = "הוסף תפקיד חדש"
 }) => {
   const { toast } = useToast();
-  const [roleName, setRoleName] = useState("");
+  const [roleName, setRoleName] = useState(initialValue);
+
+  React.useEffect(() => {
+    setRoleName(initialValue);
+  }, [initialValue, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +44,7 @@ export const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>הוסף תפקיד חדש</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input

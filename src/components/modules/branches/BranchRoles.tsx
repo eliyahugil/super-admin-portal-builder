@@ -14,8 +14,9 @@ import type { Branch, EmployeeBranchPriority } from '@/types/supabase';
 export const BranchRoles: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddRoleDialog, setShowAddRoleDialog] = useState(false);
+  const [editingRole, setEditingRole] = useState<{id: string, name: string} | null>(null);
   const { businessId } = useCurrentBusiness();
-  const { roles, loading: rolesLoading, addRole } = useShiftRoles(businessId);
+  const { roles, loading: rolesLoading, addRole, updateRole } = useShiftRoles(businessId);
 
   const { data: branches } = useQuery({
     queryKey: ['branches'],
@@ -91,14 +92,23 @@ export const BranchRoles: React.FC = () => {
             {roles.map((role) => (
               <Card key={role.id}>
                 <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <Shield className="h-5 w-5 text-green-600" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <Shield className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{role.name}</h3>
+                        <p className="text-sm text-gray-600">תפקיד משמרת</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold">{role.name}</h3>
-                      <p className="text-sm text-gray-600">תפקיד משמרת</p>
-                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setEditingRole({ id: role.id, name: role.name })}
+                    >
+                      ערוך
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -182,6 +192,20 @@ export const BranchRoles: React.FC = () => {
         onOpenChange={setShowAddRoleDialog}
         onRoleCreated={addRole}
         loading={rolesLoading}
+      />
+
+      <AddRoleDialog
+        open={!!editingRole}
+        onOpenChange={(open) => !open && setEditingRole(null)}
+        onRoleCreated={async (name) => {
+          if (editingRole) {
+            await updateRole(editingRole.id, name);
+            setEditingRole(null);
+          }
+        }}
+        loading={rolesLoading}
+        initialValue={editingRole?.name || ""}
+        title="ערוך תפקיד"
       />
     </div>
   );
