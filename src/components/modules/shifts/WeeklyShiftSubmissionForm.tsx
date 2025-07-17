@@ -204,8 +204,8 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
             const hour = parseInt(startTime.split(':')[0]);
             // Updated time ranges to match actual shift definitions
             if (hour >= 6 && hour <= 14) return 'morning';     // 06:00-14:59 
-            if (hour >= 15 && hour <= 16) return 'afternoon';  // 15:00-16:59
-            if (hour >= 17 || hour <= 1) return 'evening';     // 17:00-01:59
+            if (hour >= 16 || hour <= 1) return 'evening';     // 16:00-01:59 (כולל 16:00)
+            if (hour >= 15 && hour < 16) return 'afternoon';   // 15:00-15:59
             return 'night';                                     // 02:00-05:59
           };
           
@@ -549,6 +549,55 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                          <div className="text-xs text-blue-600 bg-white rounded p-2 border border-blue-200">
                            <strong>הסבר:</strong> סימון ימים כאן מאפשר למנהל לדעת שאתה זמין למשמרות בוקר באותם ימים במידת הצורך. 
                            זה לא מחייב אותך ולא מבטיח שתקבל משמרות בוקר.
+                         </div>
+                       </CardContent>
+                     </Card>
+                   )}
+                   
+                   {/* אופציה למשמרות ערב נוספות - רק לעובדי בוקר */}
+                   {tokenData.employeeShiftTypes?.includes('morning') && !tokenData.employeeShiftTypes?.includes('evening') && (
+                     <Card className="bg-purple-50 border-purple-200">
+                       <CardHeader className="pb-3">
+                         <CardTitle className="text-lg flex items-center gap-2">
+                           <Clock className="h-5 w-5 text-purple-600" />
+                           זמינות למשמרות ערב (אופציונלי)
+                         </CardTitle>
+                       </CardHeader>
+                       <CardContent className="space-y-4">
+                         <div className="bg-purple-100 border border-purple-300 rounded-lg p-3">
+                           <p className="text-sm text-purple-800 font-medium mb-1">
+                             💡 מיועד לחופשים ומקרים מיוחדים
+                           </p>
+                           <p className="text-xs text-purple-700">
+                             בנוסף למשמרות הבוקר הקבועות שלך, תוכל לציין זמינות למשמרות ערב במידת הצורך.
+                             <br />
+                             <strong>שימו לב:</strong> משמרות הערב אינן מובטחות ותוענקנה רק לפי צורך ובהתאם לזמינות.
+                           </p>
+                         </div>
+                         
+                         <div className="space-y-3">
+                           <Label className="text-sm font-medium">ימים בהם אני זמין גם למשמרות ערב:</Label>
+                           <div className="grid grid-cols-2 gap-2">
+                             {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'].map((day, index) => (
+                               <label key={day} className="flex items-center gap-2 p-2 bg-white rounded border hover:bg-purple-50 cursor-pointer">
+                                 <input
+                                   type="checkbox"
+                                   checked={optionalMorningShifts[index.toString()] || false}
+                                   onChange={(e) => setOptionalMorningShifts(prev => ({
+                                     ...prev,
+                                     [index.toString()]: e.target.checked
+                                   }))}
+                                   className="rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                                 />
+                                 <span className="text-sm">{day}</span>
+                               </label>
+                             ))}
+                           </div>
+                         </div>
+                         
+                         <div className="text-xs text-purple-600 bg-white rounded p-2 border border-purple-200">
+                           <strong>הסבר:</strong> סימון ימים כאן מאפשר למנהל לדעת שאתה זמין למשמרות ערב באותם ימים במידת הצורך. 
+                           זה לא מחייב אותך ולא מבטיח שתקבל משמרות ערב.
                          </div>
                        </CardContent>
                      </Card>
