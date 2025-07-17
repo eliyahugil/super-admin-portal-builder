@@ -50,6 +50,12 @@ export const ShiftSubmissionManager: React.FC = () => {
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
 
+      console.log('🔍 מחפש טוכנים לשבוע:', {
+        selectedWeek,
+        weekStart: weekStart.toISOString().split('T')[0],
+        businessId
+      });
+
       const { data, error } = await supabase
         .from('employee_weekly_tokens')
         .select(`
@@ -59,7 +65,17 @@ export const ShiftSubmissionManager: React.FC = () => {
         .eq('week_start_date', weekStart.toISOString().split('T')[0])
         .eq('is_active', true);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ שגיאה בטעינת טוכנים:', error);
+        throw error;
+      }
+      
+      console.log('📊 טוכנים שנמצאו:', data?.map(t => ({
+        employee: t.employee?.first_name + ' ' + t.employee?.last_name,
+        token: t.token.substring(0, 8) + '...',
+        week: t.week_start_date
+      })));
+      
       return data || [];
     },
     enabled: !!businessId && !!selectedWeek,
@@ -98,6 +114,7 @@ export const ShiftSubmissionManager: React.FC = () => {
     // שנה: החזר את השבוע הקרוב במקום השבוע הנוכחי
     const upcomingWeek = getUpcomingWeekDates();
     console.log('📅 השבוע הקרוב (החדש):', upcomingWeek.start);
+    console.log('📊 בדיקת טוכנים קיימים לשבוע:', upcomingWeek.start);
     return upcomingWeek.start;
   };
 
@@ -135,7 +152,9 @@ export const ShiftSubmissionManager: React.FC = () => {
 
   React.useEffect(() => {
     if (!selectedWeek) {
-      setSelectedWeek(getNextWeek());
+      const defaultWeek = getNextWeek();
+      console.log('🎯 הגדרת שבוע ברירת מחדל:', defaultWeek);
+      setSelectedWeek(defaultWeek);
     }
   }, [selectedWeek]);
 
