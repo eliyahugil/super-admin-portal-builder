@@ -3590,6 +3590,7 @@ export type Database = {
           employee_id: string | null
           id: string
           notes: string | null
+          optional_morning_availability: number[] | null
           shifts: Json
           status: string | null
           submitted_at: string | null
@@ -3603,6 +3604,7 @@ export type Database = {
           employee_id?: string | null
           id?: string
           notes?: string | null
+          optional_morning_availability?: number[] | null
           shifts?: Json
           status?: string | null
           submitted_at?: string | null
@@ -3616,6 +3618,7 @@ export type Database = {
           employee_id?: string | null
           id?: string
           notes?: string | null
+          optional_morning_availability?: number[] | null
           shifts?: Json
           status?: string | null
           submitted_at?: string | null

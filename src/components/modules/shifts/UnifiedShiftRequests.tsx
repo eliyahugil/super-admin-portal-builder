@@ -64,6 +64,7 @@ interface ShiftRequest {
     last_name: string;
     phone?: string;
   };
+  optional_morning_availability?: number[]; // זמינות למשמרות בוקר אופציונליות
 }
 
 export const UnifiedShiftRequests: React.FC = () => {
@@ -166,7 +167,8 @@ export const UnifiedShiftRequests: React.FC = () => {
             created_at: submission.submitted_at,
             reviewed_at: submission.updated_at,
             review_notes: submission.notes,
-            employee: submission.employee
+            employee: submission.employee,
+            optional_morning_availability: submission.optional_morning_availability // הוספת זמינות בוקר
           });
         });
       });
@@ -676,9 +678,33 @@ export const UnifiedShiftRequests: React.FC = () => {
                         <p className="font-medium text-sm text-muted-foreground mb-1">הערת מנהל</p>
                         <p className="text-sm">{request.review_notes}</p>
                       </div>
-                    )}
+                     )}
 
-                    <div className="text-sm text-muted-foreground border-t pt-3">
+                     {/* זמינות למשמרות בוקר אופציונליות */}
+                     {request.optional_morning_availability && request.optional_morning_availability.length > 0 && (
+                       <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                         <p className="font-medium text-sm text-blue-800 mb-2 flex items-center gap-1">
+                           <Clock className="h-4 w-4" />
+                           זמינות למשמרות בוקר (אופציונלי)
+                         </p>
+                         <p className="text-xs text-blue-700 mb-2">
+                           העובד ציין שהוא זמין גם למשמרות בוקר בימים הבאים (לא מובטח):
+                         </p>
+                         <div className="flex flex-wrap gap-1">
+                           {request.optional_morning_availability.map(day => (
+                             <Badge 
+                               key={day} 
+                               variant="outline" 
+                               className="text-xs bg-blue-100 text-blue-800 border-blue-300"
+                             >
+                               {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][day]}
+                             </Badge>
+                           ))}
+                         </div>
+                       </div>
+                     )}
+
+                     <div className="text-sm text-muted-foreground border-t pt-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1">
                           <CalendarIcon className="h-4 w-4" />

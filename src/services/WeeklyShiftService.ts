@@ -30,6 +30,7 @@ export interface WeeklySubmissionData {
   week_start_date: string;
   week_end_date: string;
   notes?: string;
+  optional_morning_availability?: number[]; // Days available for optional morning shifts
 }
 
 export class WeeklyShiftService {
@@ -183,6 +184,7 @@ export class WeeklyShiftService {
         week_start_date: submissionData.week_start_date,
         week_end_date: submissionData.week_end_date,
         notes: submissionData.notes,
+        optional_morning_availability: submissionData.optional_morning_availability,
       });
 
     if (submissionError) throw submissionError;

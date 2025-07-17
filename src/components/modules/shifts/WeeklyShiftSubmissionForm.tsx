@@ -338,6 +338,9 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
         week_start_date: tokenData.week_start_date,
         week_end_date: tokenData.week_end_date,
         notes,
+        optional_morning_availability: Object.entries(optionalMorningShifts)
+          .filter(([_, isSelected]) => isSelected)
+          .map(([dayIndex, _]) => parseInt(dayIndex))
       };
 
       await WeeklyShiftService.submitWeeklyShifts(token, submissionData);
