@@ -111,6 +111,18 @@ export const ShiftSubmissionForm: React.FC = () => {
   };
 
   const handleShiftTypeChange = (shiftType: string) => {
+    const preferredType = tokenData?.employee?.preferred_shift_type;
+    
+    // Check if employee is trying to select a shift type they're not supposed to
+    if (preferredType && shiftType !== preferredType) {
+      toast({
+        title: 'לא ניתן לבחור משמרת זו',
+        description: `אתה מוגדר כעובד ${getShiftTypeLabel(preferredType)}. לבחירת משמרות נוספות, השתמש בתיבות הסימון למטה.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setSelectedShiftType(shiftType);
     
     // Set predefined times based on shift type
@@ -128,6 +140,17 @@ export const ShiftSubmissionForm: React.FC = () => {
         setFormData(prev => ({ ...prev, start_time: '23:00', end_time: '07:00' }));
         break;
     }
+  };
+
+  // Helper function to get shift type label in Hebrew
+  const getShiftTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      'morning': 'בוקר',
+      'afternoon': 'צהריים', 
+      'evening': 'ערב',
+      'night': 'לילה'
+    };
+    return labels[type] || type;
   };
 
   // Get available shift types based on employee preference
@@ -152,9 +175,44 @@ export const ShiftSubmissionForm: React.FC = () => {
   // Get additional shift types (for special checkboxes)
   const getAdditionalShiftTypes = () => {
     const preferredType = tokenData?.employee?.preferred_shift_type;
+    
+    // Handler for morning checkbox with validation
+    const handleMorningCheckbox = (checked: boolean) => {
+      if (checked && preferredType === 'evening') {
+        // This is allowed - evening worker can choose to work morning on special days
+        setCanWorkMorning(checked);
+      } else if (checked && preferredType !== 'evening') {
+        toast({
+          title: 'לא ניתן לבחור אופציה זו',
+          description: 'אופציה זו מיועדת רק לעובדי ערב',
+          variant: 'destructive',
+        });
+        return;
+      } else {
+        setCanWorkMorning(checked);
+      }
+    };
+
+    // Handler for evening checkbox with validation  
+    const handleEveningCheckbox = (checked: boolean) => {
+      if (checked && preferredType === 'morning') {
+        // This is allowed - morning worker can choose to work evening on special days
+        setCanWorkEvening(checked);
+      } else if (checked && preferredType !== 'morning') {
+        toast({
+          title: 'לא ניתן לבחור אופציה זו',
+          description: 'אופציה זו מיועדת רק לעובדי בוקר',
+          variant: 'destructive',
+        });
+        return;
+      } else {
+        setCanWorkEvening(checked);
+      }
+    };
+
     const allTypes = [
-      { value: 'morning', label: 'יכול לעבוד גם בבוקר', enabled: canWorkMorning, setter: setCanWorkMorning },
-      { value: 'evening', label: 'יכול לעבוד גם בערב', enabled: canWorkEvening, setter: setCanWorkEvening }
+      { value: 'morning', label: 'יכול לעבוד גם בבוקר', enabled: canWorkMorning, setter: handleMorningCheckbox },
+      { value: 'evening', label: 'יכול לעבוד גם בערב', enabled: canWorkEvening, setter: handleEveningCheckbox }
     ];
 
     // If employee is evening worker, show morning as additional option
