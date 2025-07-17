@@ -22,6 +22,7 @@ serve(async (req) => {
     }
 
     console.log('🔍 Getting weekly shifts context for token:', token);
+    console.log('🕐 Current time:', new Date().toISOString());
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
