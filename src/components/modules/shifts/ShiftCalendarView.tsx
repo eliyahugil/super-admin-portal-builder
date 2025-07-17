@@ -101,24 +101,23 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
                 const dayName = dayNames[dayIndex];
                 const isToday = isSameDay(day, new Date());
                 
-                // חלוקה לפי סוג משמרת
-                const morningShifts = dayShifts.filter(shift => {
-                  const startHour = parseInt(shift.start_time.split(':')[0]);
-                  return startHour < 15; // לפני 15:00 = בוקר
-                });
-                
-                const eveningShifts = dayShifts.filter(shift => {
-                  const startHour = parseInt(shift.start_time.split(':')[0]);
-                  return startHour >= 15; // אחרי 15:00 = ערב
-                });
+                // חלוקה לפי סניף
+                const shiftsByBranch = dayShifts.reduce((acc, shift) => {
+                  const branchName = shift.branches?.name || 'ללא סניף';
+                  if (!acc[branchName]) {
+                    acc[branchName] = [];
+                  }
+                  acc[branchName].push(shift);
+                  return acc;
+                }, {} as Record<string, any[]>);
                 
                 return (
                   <div key={dayIndex} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                     {/* כותרת היום */}
-                    <div className={`p-4 text-center border-b ${
+                    <div className={`p-4 text-center border-b-2 ${
                       isToday 
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
-                        : 'bg-gradient-to-r from-gray-100 to-gray-50 text-gray-800'
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-400' 
+                        : 'bg-gradient-to-r from-gray-100 to-gray-50 text-gray-800 border-gray-300'
                     }`}>
                       <div className="text-lg font-bold">
                         {dayName}, {format(day, 'd/M')}
@@ -128,134 +127,164 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
                       </div>
                     </div>
                     
-                    <div className="p-4 space-y-4">
-                      {/* משמרות בוקר */}
-                      {morningShifts.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="w-4 h-4 bg-yellow-400 rounded-full"></div>
-                            <span className="text-sm font-semibold text-gray-700">משמרות בוקר</span>
-                            <div className="flex-1 h-px bg-yellow-200"></div>
+                    <div className="p-4 space-y-6">
+                      {/* חלוקה לפי סניפים */}
+                      {Object.entries(shiftsByBranch).map(([branchName, branchShifts], branchIndex) => (
+                        <div key={branchName} className="relative">
+                          {/* כותרת סניף עם הפרדה */}
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-3 h-3 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full shadow-sm"></div>
+                            <span className="text-base font-bold text-gray-800">📍 {branchName}</span>
+                            <div className="flex-1 h-0.5 bg-gradient-to-r from-blue-200 to-transparent rounded"></div>
+                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                              {branchShifts.length} משמרות
+                            </span>
                           </div>
-                          <div className="space-y-3">
-                            {morningShifts.map((shift) => {
-                              const isSelected = isShiftSelected(shift.id);
+                          
+                          {/* משמרות הסניף בחלוקה לבוקר וערב */}
+                          <div className="space-y-4 pr-4 border-r-2 border-blue-100">
+                            {/* משמרות בוקר */}
+                            {(() => {
+                              const morningShifts = branchShifts.filter(shift => {
+                                const startHour = parseInt(shift.start_time.split(':')[0]);
+                                return startHour < 15;
+                              });
+                              
+                              if (morningShifts.length === 0) return null;
+                              
                               return (
-                                <div
-                                  key={shift.id}
-                                  onClick={() => onToggleShift(shift.id)}
-                                  className={`p-4 rounded-lg cursor-pointer border transition-all duration-200 hover:shadow-sm ${
-                                    isSelected 
-                                      ? 'bg-yellow-50 border-yellow-300 shadow-sm ring-2 ring-yellow-200' 
-                                      : 'bg-yellow-25 border-yellow-100 hover:bg-yellow-50'
-                                  }`}
-                                >
-                                  <div className="space-y-2">
-                                    {/* שם הסניף ראשון */}
-                                    {shift.branches?.name && (
-                                      <div className="text-center">
-                                        <span className="text-sm font-medium text-gray-800">
-                                          📍 {shift.branches.name}
-                                        </span>
-                                      </div>
-                                    )}
-                                    
-                                     {/* שעות */}
-                                     <div className="text-center">
-                                       <span className="text-sm font-semibold text-yellow-800 bg-yellow-100 px-3 py-1 rounded-full" dir="ltr">
-                                         {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                       </span>
-                                     </div>
-                                    
-                                    {/* תפקיד */}
-                                    {shift.role && (
-                                      <div className="text-center text-sm text-gray-600">
-                                        👤 {shift.role}
-                                      </div>
-                                    )}
-                                    
-                                    {/* סימון נבחר */}
-                                    {isSelected && (
-                                      <div className="text-center mt-2">
-                                        <span className="inline-block px-3 py-1 bg-green-500 text-white text-xs font-medium rounded-full">
-                                          ✓ נבחר
-                                        </span>
-                                      </div>
-                                    )}
+                                <div className="bg-yellow-25 rounded-lg p-3 border border-yellow-200">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                    <span className="text-sm font-semibold text-yellow-800">🌅 בוקר</span>
+                                    <div className="flex-1 h-px bg-yellow-300"></div>
+                                  </div>
+                                  <div className="grid gap-3">
+                                    {morningShifts.map((shift) => {
+                                      const isSelected = isShiftSelected(shift.id);
+                                      return (
+                                        <div
+                                          key={shift.id}
+                                          onClick={() => onToggleShift(shift.id)}
+                                          className={`p-3 rounded-md cursor-pointer border-2 transition-all duration-200 hover:shadow-sm ${
+                                            isSelected 
+                                              ? 'bg-yellow-100 border-yellow-400 shadow-sm ring-1 ring-yellow-300' 
+                                              : 'bg-white border-yellow-200 hover:bg-yellow-50 hover:border-yellow-300'
+                                          }`}
+                                        >
+                                          <div className="space-y-2">
+                                            {/* שעות */}
+                                            <div className="text-center">
+                                              <span className="text-sm font-bold text-yellow-800 bg-yellow-200 px-3 py-1 rounded-full border border-yellow-300" dir="ltr">
+                                                {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                              </span>
+                                            </div>
+                                            
+                                            {/* תפקיד */}
+                                            {shift.role && (
+                                              <div className="text-center text-sm text-gray-700 font-medium">
+                                                👤 {shift.role}
+                                              </div>
+                                            )}
+                                            
+                                            {/* סימון נבחר */}
+                                            {isSelected && (
+                                              <div className="text-center mt-2">
+                                                <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full shadow-sm">
+                                                  ✓ נבחר
+                                                </span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* משמרות ערב */}
-                      {eveningShifts.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="w-4 h-4 bg-purple-400 rounded-full"></div>
-                            <span className="text-sm font-semibold text-gray-700">משמרות ערב</span>
-                            <div className="flex-1 h-px bg-purple-200"></div>
-                          </div>
-                          <div className="space-y-3">
-                            {eveningShifts.map((shift) => {
-                              const isSelected = isShiftSelected(shift.id);
+                            })()}
+                            
+                            {/* משמרות ערב */}
+                            {(() => {
+                              const eveningShifts = branchShifts.filter(shift => {
+                                const startHour = parseInt(shift.start_time.split(':')[0]);
+                                return startHour >= 15;
+                              });
+                              
+                              if (eveningShifts.length === 0) return null;
+                              
                               return (
-                                <div
-                                  key={shift.id}
-                                  onClick={() => onToggleShift(shift.id)}
-                                  className={`p-4 rounded-lg cursor-pointer border transition-all duration-200 hover:shadow-sm ${
-                                    isSelected 
-                                      ? 'bg-purple-50 border-purple-300 shadow-sm ring-2 ring-purple-200' 
-                                      : 'bg-purple-25 border-purple-100 hover:bg-purple-50'
-                                  }`}
-                                >
-                                  <div className="space-y-2">
-                                    {/* שם הסניף ראשון */}
-                                    {shift.branches?.name && (
-                                      <div className="text-center">
-                                        <span className="text-sm font-medium text-gray-800">
-                                          📍 {shift.branches.name}
-                                        </span>
-                                      </div>
-                                    )}
-                                    
-                                     {/* שעות */}
-                                     <div className="text-center">
-                                       <span className="text-sm font-semibold text-purple-800 bg-purple-100 px-3 py-1 rounded-full" dir="ltr">
-                                         {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                       </span>
-                                     </div>
-                                    
-                                    {/* תפקיד */}
-                                    {shift.role && (
-                                      <div className="text-center text-sm text-gray-600">
-                                        👤 {shift.role}
-                                      </div>
-                                    )}
-                                    
-                                    {/* סימון נבחר */}
-                                    {isSelected && (
-                                      <div className="text-center mt-2">
-                                        <span className="inline-block px-3 py-1 bg-green-500 text-white text-xs font-medium rounded-full">
-                                          ✓ נבחר
-                                        </span>
-                                      </div>
-                                    )}
+                                <div className="bg-purple-25 rounded-lg p-3 border border-purple-200">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                    <span className="text-sm font-semibold text-purple-800">🌙 ערב</span>
+                                    <div className="flex-1 h-px bg-purple-300"></div>
+                                  </div>
+                                  <div className="grid gap-3">
+                                    {eveningShifts.map((shift) => {
+                                      const isSelected = isShiftSelected(shift.id);
+                                      return (
+                                        <div
+                                          key={shift.id}
+                                          onClick={() => onToggleShift(shift.id)}
+                                          className={`p-3 rounded-md cursor-pointer border-2 transition-all duration-200 hover:shadow-sm ${
+                                            isSelected 
+                                              ? 'bg-purple-100 border-purple-400 shadow-sm ring-1 ring-purple-300' 
+                                              : 'bg-white border-purple-200 hover:bg-purple-50 hover:border-purple-300'
+                                          }`}
+                                        >
+                                          <div className="space-y-2">
+                                            {/* שעות */}
+                                            <div className="text-center">
+                                              <span className="text-sm font-bold text-purple-800 bg-purple-200 px-3 py-1 rounded-full border border-purple-300" dir="ltr">
+                                                {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                              </span>
+                                            </div>
+                                            
+                                            {/* תפקיד */}
+                                            {shift.role && (
+                                              <div className="text-center text-sm text-gray-700 font-medium">
+                                                👤 {shift.role}
+                                              </div>
+                                            )}
+                                            
+                                            {/* סימון נבחר */}
+                                            {isSelected && (
+                                              <div className="text-center mt-2">
+                                                <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full shadow-sm">
+                                                  ✓ נבחר
+                                                </span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               );
-                            })}
+                            })()}
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                          
+                          {/* הפרדה בין סניפים (למעט האחרון) */}
+                          {branchIndex < Object.keys(shiftsByBranch).length - 1 && (
+                            <div className="mt-6 mb-2">
+                              <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                              <div className="flex justify-center -mt-2">
+                                <div className="bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+                                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                 );
+               })}
+             </div>
+           </div>
 
           {/* תצוגה למחשב - לוח שנה */}
           <div className="hidden md:block">
