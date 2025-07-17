@@ -12,16 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    console.log('📥 Request received, method:', req.method);
-    console.log('📥 Request headers:', Object.fromEntries(req.headers.entries()));
-    
-    const body = await req.json();
-    console.log('📥 Request body:', body);
-    
-    const { token } = body;
+    const { token } = await req.json();
 
     if (!token) {
-      console.log('❌ No token provided in request');
       return new Response(
         JSON.stringify({ error: 'Token is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -29,8 +22,6 @@ serve(async (req) => {
     }
 
     console.log('🔍 Getting weekly shifts context for token:', token);
-    console.log('🔍 Using SUPABASE_URL:', Deno.env.get('SUPABASE_URL'));
-    console.log('🔍 Using SERVICE_ROLE_KEY:', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ? 'Present' : 'Missing');
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -71,53 +62,97 @@ serve(async (req) => {
     const weekEnd = tokenData.week_end_date;
 
     console.log('✅ Token validated for employee:', employeeId, 'business:', businessId, 'week:', weekStart, 'to', weekEnd);
-    console.log('🔍 Token data details:', {
-      tokenId: tokenData.id,
-      employeeName: `${tokenData.employee.first_name} ${tokenData.employee.last_name}`,
-      businessName: tokenData.employee.business.name,
-      weekDates: { start: weekStart, end: weekEnd }
-    });
 
-    // Get available shifts for this week
-    console.log('📋 Getting available shifts for week:', weekStart, 'to', weekEnd);
-    
-    const { data: availableShifts, error: availableError } = await supabaseAdmin
-      .from('available_shifts')
-      .select(`
-        *,
-        branch:branches(id, name, address)
-      `)
+    // Check if shifts have been published for this week
+    const { data: publishedShifts, error: publishedError } = await supabaseAdmin
+      .from('scheduled_shifts')
+      .select('id')
       .eq('business_id', businessId)
-      .eq('week_start_date', weekStart)
-      .eq('week_end_date', weekEnd)
-      .order('day_of_week', { ascending: true })
-      .order('start_time', { ascending: true });
+      .gte('shift_date', weekStart)
+      .lte('shift_date', weekEnd)
+      .limit(1);
 
-    if (availableError) {
-      console.error('❌ Error fetching available shifts:', availableError);
-      throw availableError;
+    if (publishedError) {
+      console.error('❌ Error checking published shifts:', publishedError);
+      throw publishedError;
     }
 
-    console.log('🔍 Available shifts query result:', {
-      shiftsFound: availableShifts?.length || 0,
-      shifts: availableShifts,
-      queryParams: { businessId, weekStart, weekEnd }
-    });
+    const shiftsPublished = publishedShifts && publishedShifts.length > 0;
+    console.log('📅 Shifts published status for this week:', shiftsPublished);
 
-    const shifts = availableShifts || [];
-    
-    // Context for showing available shifts
-    const context = {
-      type: 'available_shifts',
-      title: 'הגשת משמרות לשבוע הקרוב',
-      description: shifts.length > 0 
-        ? 'בחר את המשמרות שברצונך לעבוד השבוע והגש את בקשתך'
-        : 'טרם הוגדרו משמרות זמינות לשבוע זה. אנא פנה למנהל העבודה.',
-      shiftsPublished: false
-    };
+    // Update token with current publication status
+    await supabaseAdmin
+      .from('employee_weekly_tokens')
+      .update({
+        shifts_published: shiftsPublished,
+        context_type: shiftsPublished ? 'assigned_shifts' : 'available_shifts'
+      })
+      .eq('id', tokenData.id);
 
-    console.log('✅ Found', shifts.length, 'scheduled shifts for employee');
-    console.log('📝 Context type:', context.type);
+    let shifts = [];
+    let context = {};
+
+    if (shiftsPublished) {
+      // Get assigned shifts for this employee
+      console.log('🎯 Getting assigned shifts for employee');
+      const { data: assignedShifts, error: assignedError } = await supabaseAdmin
+        .from('scheduled_shifts')
+        .select(`
+          *,
+          branch:branches(id, name, address),
+          business:businesses(id, name)
+        `)
+        .eq('employee_id', employeeId)
+        .eq('business_id', businessId)
+        .gte('shift_date', weekStart)
+        .lte('shift_date', weekEnd)
+        .order('shift_date', { ascending: true });
+
+      if (assignedError) {
+        console.error('❌ Error fetching assigned shifts:', assignedError);
+        throw assignedError;
+      }
+
+      shifts = assignedShifts || [];
+      context = {
+        type: 'assigned_shifts',
+        title: 'המשמרות שלך לשבוע הקרוב',
+        description: 'אלו המשמרות שהוקצו לך לשבוע זה',
+        shiftsPublished: true
+      };
+
+      console.log('✅ Found', shifts.length, 'assigned shifts');
+    } else {
+      // Get available shifts that haven't been assigned yet
+      console.log('📋 Getting available shifts for next week');
+      const { data: availableShifts, error: availableError } = await supabaseAdmin
+        .from('available_shifts')
+        .select(`
+          *,
+          branch:branches(id, name, address),
+          business:businesses(id, name)
+        `)
+        .eq('business_id', businessId)
+        .eq('week_start_date', weekStart)
+        .eq('week_end_date', weekEnd)
+        .order('day_of_week', { ascending: true })
+        .order('start_time', { ascending: true });
+
+      if (availableError) {
+        console.error('❌ Error fetching available shifts:', availableError);
+        throw availableError;
+      }
+
+      shifts = availableShifts || [];
+      context = {
+        type: 'available_shifts',
+        title: 'משמרות זמינות לשבוע הקרוב',
+        description: 'אלו המשמרות הזמינות להרשמה לשבוע זה',
+        shiftsPublished: false
+      };
+
+      console.log('✅ Found', shifts.length, 'available shifts');
+    }
 
     const response = {
       success: true,
