@@ -2,14 +2,15 @@
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Plus, Clock, User, MapPin, Send, AlertTriangle, Filter, Trash2 } from 'lucide-react';
+import { Plus, Clock, User, MapPin, Send, AlertTriangle, Filter, Trash2, CheckSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { HolidayIndicator } from './HolidayIndicator';
 import { ShabbatIndicator } from './components/ShabbatIndicator';
 import { useIsMobile } from '@/hooks/use-mobile';
-import type { ShiftScheduleViewProps } from './types';
+import type { ShiftScheduleViewProps, ShiftScheduleData } from './types';
 import { SubmissionApprovalDialog } from './components/SubmissionApprovalDialog';
 import { ActivityLogViewer } from './ActivityLogViewer';
 import { ShiftFiltersToolbar, type ShiftFilters } from './ShiftFiltersToolbar';
@@ -35,7 +36,10 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   onShiftClick,
   onShiftUpdate,
   onAddShift,
-  onShiftDelete
+  onShiftDelete,
+  isSelectionMode = false,
+  selectedShifts = [],
+  onShiftSelection
 }) => {
   const isMobile = useIsMobile();
   const [showSubmissionDialog, setShowSubmissionDialog] = useState(false);
@@ -329,6 +333,35 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     }
   };
 
+  const handleShiftSelection = (shift: ShiftScheduleData, selected: boolean, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onShiftSelection) {
+      onShiftSelection(shift, selected);
+    }
+  };
+
+  const isShiftSelected = (shift: ShiftScheduleData) => {
+    return selectedShifts.some(s => s.id === shift.id);
+  };
+
+  const handleShiftCardClick = (shift: ShiftScheduleData, e: React.MouseEvent) => {
+    if (isSelectionMode) {
+      const isSelected = isShiftSelected(shift);
+      handleShiftSelection(shift, !isSelected, e);
+    } else {
+      onShiftClick(shift);
+    }
+  };
+
+  const handleDeleteShift = async (shiftId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onShiftDelete) {
+      await onShiftDelete(shiftId);
+    }
+  };
+
   // Hebrew day names - ordered from Sunday to Saturday for RTL display
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -347,13 +380,6 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     return weekShifts.length === 0 || (assignedShifts.length / Math.max(weekShifts.length, 1)) < 0.7;
   }, [shifts, weekDays]);
 
-  // Handle shift deletion
-  const handleDeleteShift = async (shiftId: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (onShiftDelete) {
-      await onShiftDelete(shiftId);
-    }
-  };
 
   // Mobile layout - vertical scrolling list
   if (isMobile) {
@@ -428,23 +454,36 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                               {morning.map((shift) => {
                        const hasConflict = hasShiftConflict(shift);
                        
-                        return (
-                          <div
-                            key={shift.id}
-                            className={`relative group p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
-                              hasConflict ? 'border-red-300 bg-red-50' : ''
-                            }`}
-                            onClick={() => onShiftClick(shift)}
-                          >
-                            {/* Delete button - appears on hover */}
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="absolute top-2 left-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                              onClick={(e) => handleDeleteShift(shift.id, e)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                         return (
+                           <div
+                             key={shift.id}
+                             className={`relative group p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                               hasConflict ? 'border-red-300 bg-red-50' : ''
+                             } ${isSelectionMode && isShiftSelected(shift) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+                             onClick={(e) => handleShiftCardClick(shift, e)}
+                           >
+                             {/* Selection checkbox - appears in selection mode */}
+                             {isSelectionMode && (
+                               <div className="absolute top-2 right-2 z-20">
+                                 <Checkbox
+                                   checked={isShiftSelected(shift)}
+                                   onCheckedChange={(checked) => handleShiftSelection(shift, !!checked, {} as React.MouseEvent)}
+                                   onClick={(e) => e.stopPropagation()}
+                                 />
+                               </div>
+                             )}
+                             
+                             {/* Delete button - appears on hover when not in selection mode */}
+                             {!isSelectionMode && (
+                               <Button
+                                 size="sm"
+                                 variant="destructive"
+                                 className="absolute top-2 left-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                 onClick={(e) => handleDeleteShift(shift.id, e)}
+                               >
+                                 <Trash2 className="h-3 w-3" />
+                               </Button>
+                             )}
                            <div className="space-y-2">
                              {/* סניף - ראשון ובולט */}
                              {shift.branch_name && (

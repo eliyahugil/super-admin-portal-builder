@@ -340,6 +340,9 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                      onShiftUpdate={updateShift}
                      onAddShift={handleAddShift}
                      onShiftDelete={deleteShift}
+                     isSelectionMode={isSelectionMode}
+                     selectedShifts={selectedShifts}
+                     onShiftSelection={handleShiftSelection}
                    />
                  ) : view === 'month' ? (
                    <MonthlyScheduleView
@@ -354,6 +357,9 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                      onShiftUpdate={updateShift}
                      onAddShift={handleAddShift}
                      onShiftDelete={deleteShift}
+                     isSelectionMode={isSelectionMode}
+                     selectedShifts={selectedShifts}
+                     onShiftSelection={handleShiftSelection}
                    />
                  ) : (
                    <YearlyScheduleView
@@ -368,6 +374,9 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                      onShiftUpdate={updateShift}
                      onAddShift={handleAddShift}
                      onShiftDelete={deleteShift}
+                     isSelectionMode={isSelectionMode}
+                     selectedShifts={selectedShifts}
+                     onShiftSelection={handleShiftSelection}
                    />
                 )}
               </CardContent>
