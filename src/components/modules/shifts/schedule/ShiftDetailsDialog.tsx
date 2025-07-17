@@ -115,13 +115,15 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
   const shiftSubmissions = getSubmissionsForShift();
 
   const handleUpdate = async () => {
+    console.log('💾 Updating shift with data:', editData);
     setIsUpdating(true);
     try {
       await onUpdate(shift.id, editData);
+      console.log('✅ Shift updated successfully');
       setIsEditing(false);
     } catch (error) {
-      console.error('Error updating shift:', error);
-      alert('שגיאה בעדכון המשמרת');
+      console.error('❌ Error updating shift:', error);
+      toast.error('שגיאה בעדכון המשמרת');
     } finally {
       setIsUpdating(false);
     }
@@ -460,10 +462,13 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setEditData(prev => ({ 
-                      ...prev, 
-                      required_employees: Math.max(1, prev.required_employees - 1) 
-                    }))}
+                    onClick={() => {
+                      console.log('🔽 Decreasing required_employees from:', editData.required_employees);
+                      setEditData(prev => ({ 
+                        ...prev, 
+                        required_employees: Math.max(1, prev.required_employees - 1) 
+                      }));
+                    }}
                     disabled={editData.required_employees <= 1}
                   >
                     -
@@ -475,10 +480,13 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setEditData(prev => ({ 
-                      ...prev, 
-                      required_employees: Math.min(20, prev.required_employees + 1) 
-                    }))}
+                    onClick={() => {
+                      console.log('🔼 Increasing required_employees from:', editData.required_employees);
+                      setEditData(prev => ({ 
+                        ...prev, 
+                        required_employees: Math.min(20, prev.required_employees + 1) 
+                      }));
+                    }}
                     disabled={editData.required_employees >= 20}
                   >
                     +
