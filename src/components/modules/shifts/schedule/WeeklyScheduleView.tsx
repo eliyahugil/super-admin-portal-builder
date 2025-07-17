@@ -346,6 +346,9 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   };
 
   const handleShiftCardClick = (shift: ShiftScheduleData, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (isSelectionMode) {
       const isSelected = isShiftSelected(shift);
       handleShiftSelection(shift, !isSelected, e);
@@ -455,23 +458,29 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                        const hasConflict = hasShiftConflict(shift);
                        
                          return (
-                           <div
-                             key={shift.id}
-                             className={`relative group p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
-                               hasConflict ? 'border-red-300 bg-red-50' : ''
-                             } ${isSelectionMode && isShiftSelected(shift) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
-                             onClick={(e) => handleShiftCardClick(shift, e)}
-                           >
-                             {/* Selection checkbox - appears in selection mode */}
-                             {isSelectionMode && (
-                               <div className="absolute top-2 right-2 z-20">
-                                 <Checkbox
-                                   checked={isShiftSelected(shift)}
-                                   onCheckedChange={(checked) => handleShiftSelection(shift, !!checked, {} as React.MouseEvent)}
-                                   onClick={(e) => e.stopPropagation()}
-                                 />
-                               </div>
-                             )}
+                            <div
+                              key={shift.id}
+                              className={`relative group p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                                hasConflict ? 'border-red-300 bg-red-50' : ''
+                              } ${isSelectionMode && isShiftSelected(shift) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+                              onClick={(e) => handleShiftCardClick(shift, e)}
+                            >
+                              {/* Selection checkbox - appears in selection mode */}
+                              {isSelectionMode && (
+                                <div className="absolute top-2 right-2 z-20">
+                                  <Checkbox
+                                    checked={isShiftSelected(shift)}
+                                    onCheckedChange={(checked) => {
+                                      const mockEvent = {
+                                        preventDefault: () => {},
+                                        stopPropagation: () => {}
+                                      } as React.MouseEvent;
+                                      handleShiftSelection(shift, !!checked, mockEvent);
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                </div>
+                              )}
                              
                              {/* Delete button - appears on hover when not in selection mode */}
                              {!isSelectionMode && (

@@ -16,7 +16,10 @@ export const MonthlyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   calendarEvents,
   onShiftClick,
   onShiftUpdate,
-  onAddShift
+  onAddShift,
+  isSelectionMode = false,
+  selectedShifts = [],
+  onShiftSelection
 }) => {
   const isMobile = useIsMobile();
   
