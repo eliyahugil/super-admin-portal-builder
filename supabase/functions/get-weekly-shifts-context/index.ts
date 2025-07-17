@@ -96,36 +96,37 @@ serve(async (req) => {
 
     console.log('✅ Token validated for employee:', employeeId, 'business:', businessId, 'week:', weekStart, 'to', weekEnd);
 
-    // Check if shifts have been published for this week
-    const { data: publishedShifts, error: publishedError } = await supabaseAdmin
+    // Check if this employee has any assigned shifts for this week
+    const { data: assignedShiftsCheck, error: assignedCheckError } = await supabaseAdmin
       .from('scheduled_shifts')
       .select('id')
+      .eq('employee_id', employeeId)
       .eq('business_id', businessId)
       .gte('shift_date', weekStart)
       .lte('shift_date', weekEnd)
       .limit(1);
 
-    if (publishedError) {
-      console.error('❌ Error checking published shifts:', publishedError);
-      throw publishedError;
+    if (assignedCheckError) {
+      console.error('❌ Error checking assigned shifts:', assignedCheckError);
+      throw assignedCheckError;
     }
 
-    const shiftsPublished = publishedShifts && publishedShifts.length > 0;
-    console.log('📅 Shifts published status for this week:', shiftsPublished);
+    const hasAssignedShifts = assignedShiftsCheck && assignedShiftsCheck.length > 0;
+    console.log('📅 Employee has assigned shifts for this week:', hasAssignedShifts);
 
-    // Update token with current publication status
+    // Update token with current status
     await supabaseAdmin
       .from('employee_weekly_tokens')
       .update({
-        shifts_published: shiftsPublished,
-        context_type: shiftsPublished ? 'assigned_shifts' : 'available_shifts'
+        shifts_published: hasAssignedShifts,
+        context_type: hasAssignedShifts ? 'assigned_shifts' : 'available_shifts'
       })
       .eq('id', tokenData.id);
 
     let shifts = [];
     let context = {};
 
-    if (shiftsPublished) {
+    if (hasAssignedShifts) {
       // Get assigned shifts for this employee
       console.log('🎯 Getting assigned shifts for employee');
       const { data: assignedShifts, error: assignedError } = await supabaseAdmin
