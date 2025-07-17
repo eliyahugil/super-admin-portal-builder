@@ -16,6 +16,7 @@ import { ActivityLogViewer } from './ActivityLogViewer';
 import { ShiftFiltersToolbar, type ShiftFilters } from './ShiftFiltersToolbar';
 import { EmployeeStatsPanel } from './EmployeeStatsPanel';
 import { ShiftPriorityManager } from './components/ShiftPriorityManager';
+import { ShiftGroupDisplay } from './components/ShiftGroupDisplay';
 import {
   Tooltip,
   TooltipContent,
@@ -437,287 +438,61 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
               <CardContent className="space-y-3">
                 {dayShifts.length > 0 ? (
                   <div className="space-y-2">
-                    {/* Display shifts grouped by time period */}
+                    {/* Display shifts grouped by time period with improved organization */}
                     {(() => {
                       const { morning, evening, night } = groupShiftsByTimePeriod(dayShifts);
-                      const showSeparators = dayShifts.length > 1;
+                      const hasMultipleTypes = [morning.length > 0, evening.length > 0, night.length > 0].filter(Boolean).length > 1;
                       
                       return (
-                        <>
+                        <div className="space-y-1">
                           {/* Morning shifts */}
-                          {morning.length > 0 && (
-                            <div className="space-y-2">
-                              {showSeparators && morning.length > 0 && (evening.length > 0 || night.length > 0) && (
-                                <div className="flex items-center gap-2 my-2">
-                                  <div className="flex-1 h-px bg-amber-300"></div>
-                                  <span className="text-xs text-amber-600 font-medium px-2 bg-amber-50 rounded">בוקר</span>
-                                  <div className="flex-1 h-px bg-amber-300"></div>
-                                </div>
-                              )}
-                              {morning.map((shift) => {
-                       const hasConflict = hasShiftConflict(shift);
-                       
-                         return (
-                            <div
-                              key={shift.id}
-                              className={`relative group p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
-                                hasConflict ? 'border-red-300 bg-red-50' : ''
-                              } ${isSelectionMode && isShiftSelected(shift) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
-                              onClick={(e) => handleShiftCardClick(shift, e)}
-                            >
-                              {/* Selection checkbox - appears in selection mode */}
-                              {isSelectionMode && (
-                                <div className="absolute top-2 right-2 z-20">
-                                  <Checkbox
-                                    checked={isShiftSelected(shift)}
-                                    onCheckedChange={(checked) => {
-                                      const mockEvent = {
-                                        preventDefault: () => {},
-                                        stopPropagation: () => {}
-                                      } as React.MouseEvent;
-                                      handleShiftSelection(shift, !!checked, mockEvent);
-                                    }}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                </div>
-                              )}
-                             
-                             {/* Delete button - appears on hover when not in selection mode */}
-                             {!isSelectionMode && (
-                               <Button
-                                 size="sm"
-                                 variant="destructive"
-                                 className="absolute top-2 left-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                 onClick={(e) => handleDeleteShift(shift.id, e)}
-                               >
-                                 <Trash2 className="h-3 w-3" />
-                               </Button>
-                             )}
-                           <div className="space-y-2">
-                             {/* סניף - ראשון ובולט */}
-                             {shift.branch_name && (
-                               <div className="flex items-center justify-center">
-                                 <Badge className="bg-blue-600 text-white font-medium px-3 py-1">
-                                   <MapPin className="h-3 w-3 ml-1" />
-                                   {shift.branch_name}
-                                 </Badge>
-                               </div>
-                             )}
-                             
-                             {/* שעות משמרת - שני */}
-                             <div className="flex items-center justify-center">
-                               <Badge variant="outline" className="bg-gray-50 border-2 font-medium px-3 py-1">
-                                 <Clock className="h-3 w-3 ml-1" />
-                                 {shift.start_time} - {shift.end_time}
-                               </Badge>
-                             </div>
-                             
-                             {/* עובד מוקצה או לא מוקצה - שלישי */}
-                             <div className="flex items-center justify-center">
-                               {shift.employee_id ? (
-                                 <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 px-3 py-1">
-                                   <User className="h-3 w-3 ml-1" />
-                                   {getEmployeeName(shift.employee_id)}
-                                 </Badge>
-                               ) : (
-                                 <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-3 py-1">
-                                   <User className="h-3 w-3 ml-1" />
-                                   לא מוקצה
-                                 </Badge>
-                               )}
-                             </div>
-                           </div>
-                           
-                           {/* סטטוס וקונפליקטים - רביעי במטה */}
-                           <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-                             <Badge variant="secondary" className={`${getStatusColor(shift.status || 'pending')} text-xs`}>
-                               {shift.status === 'approved' ? 'מאושר' : 
-                                shift.status === 'pending' ? 'ממתין' :
-                                shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
-                             </Badge>
-                             {hasConflict && (
-                               <div className="flex items-center gap-1">
-                                 <AlertTriangle className="h-3 w-3 text-red-500" />
-                                 <span className="text-xs text-red-500">התנגשות</span>
-                               </div>
-                             )}
-                           </div>
-                         </div>
-                                );
-                              })}
-                            </div>
-                          )}
+                          <ShiftGroupDisplay
+                            shifts={morning}
+                            shiftType="morning"
+                            hasOtherShifts={hasMultipleTypes}
+                            isSelectionMode={isSelectionMode}
+                            selectedShifts={selectedShifts}
+                            onShiftClick={onShiftClick}
+                            onShiftSelection={onShiftSelection}
+                            onDeleteShift={handleDeleteShift}
+                            getEmployeeName={getEmployeeName}
+                            getStatusColor={getStatusColor}
+                            hasShiftConflict={hasShiftConflict}
+                            isShiftSelected={isShiftSelected}
+                          />
                           
                           {/* Evening shifts */}
-                          {evening.length > 0 && (
-                            <div className="space-y-2">
-                              {showSeparators && evening.length > 0 && (morning.length > 0 || night.length > 0) && (
-                                <div className="flex items-center gap-2 my-2">
-                                  <div className="flex-1 h-px bg-orange-300"></div>
-                                  <span className="text-xs text-orange-600 font-medium px-2 bg-orange-50 rounded">ערב</span>
-                                  <div className="flex-1 h-px bg-orange-300"></div>
-                                </div>
-                              )}
-                               {evening.map((shift) => {
-                                 const hasConflict = hasShiftConflict(shift);
-                         
-                                 return (
-                                   <div
-                                     key={shift.id}
-                                     className={`relative group p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
-                                       hasConflict ? 'border-red-300 bg-red-50' : ''
-                                     }`}
-                                      onClick={() => onShiftClick(shift)}
-                                   >
-                                     {/* Delete button - appears on hover */}
-                                     <Button
-                                       size="sm"
-                                       variant="destructive"
-                                       className="absolute top-2 left-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                       onClick={(e) => handleDeleteShift(shift.id, e)}
-                                     >
-                                       <Trash2 className="h-3 w-3" />
-                                     </Button>
-                                    <div className="space-y-2">
-                                      {/* סניף - ראשון ובולט */}
-                                      {shift.branch_name && (
-                                        <div className="flex items-center justify-center">
-                                          <Badge className="bg-blue-600 text-white font-medium px-3 py-1">
-                                            <MapPin className="h-3 w-3 ml-1" />
-                                            {shift.branch_name}
-                                          </Badge>
-                                        </div>
-                                      )}
-                                      
-                                      {/* שעות משמרת - שני */}
-                                      <div className="flex items-center justify-center">
-                                        <Badge variant="outline" className="bg-gray-50 border-2 font-medium px-3 py-1">
-                                          <Clock className="h-3 w-3 ml-1" />
-                                          {shift.start_time} - {shift.end_time}
-                                        </Badge>
-                                      </div>
-                                      
-                                      {/* עובד מוקצה או לא מוקצה - שלישי */}
-                                      <div className="flex items-center justify-center">
-                                        {shift.employee_id ? (
-                                          <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 px-3 py-1">
-                                            <User className="h-3 w-3 ml-1" />
-                                            {getEmployeeName(shift.employee_id)}
-                                          </Badge>
-                                        ) : (
-                                          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-3 py-1">
-                                            <User className="h-3 w-3 ml-1" />
-                                            לא מוקצה
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                    
-                                    {/* סטטוס וקונפליקטים - רביעי במטה */}
-                                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-                                      <Badge variant="secondary" className={`${getStatusColor(shift.status || 'pending')} text-xs`}>
-                                        {shift.status === 'approved' ? 'מאושר' : 
-                                         shift.status === 'pending' ? 'ממתין' :
-                                         shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
-                                      </Badge>
-                                      {hasConflict && (
-                                        <div className="flex items-center gap-1">
-                                          <AlertTriangle className="h-3 w-3 text-red-500" />
-                                          <span className="text-xs text-red-500">התנגשות</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
+                          <ShiftGroupDisplay
+                            shifts={evening}
+                            shiftType="evening"
+                            hasOtherShifts={hasMultipleTypes}
+                            isSelectionMode={isSelectionMode}
+                            selectedShifts={selectedShifts}
+                            onShiftClick={onShiftClick}
+                            onShiftSelection={onShiftSelection}
+                            onDeleteShift={handleDeleteShift}
+                            getEmployeeName={getEmployeeName}
+                            getStatusColor={getStatusColor}
+                            hasShiftConflict={hasShiftConflict}
+                            isShiftSelected={isShiftSelected}
+                          />
                           
                           {/* Night shifts */}
-                          {night.length > 0 && (
-                            <div className="space-y-2">
-                              {showSeparators && night.length > 0 && (morning.length > 0 || evening.length > 0) && (
-                                <div className="flex items-center gap-2 my-2">
-                                  <div className="flex-1 h-px bg-purple-300"></div>
-                                  <span className="text-xs text-purple-600 font-medium px-2 bg-purple-50 rounded">לילה</span>
-                                  <div className="flex-1 h-px bg-purple-300"></div>
-                                </div>
-                              )}
-                               {night.map((shift) => {
-                                 const hasConflict = hasShiftConflict(shift);
-                         
-                                 return (
-                                   <div
-                                     key={shift.id}
-                                     className={`relative group p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
-                                       hasConflict ? 'border-red-300 bg-red-50' : ''
-                                     }`}
-                                      onClick={() => onShiftClick(shift)}
-                                   >
-                                     {/* Delete button - appears on hover */}
-                                     <Button
-                                       size="sm"
-                                       variant="destructive"
-                                       className="absolute top-2 left-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                       onClick={(e) => handleDeleteShift(shift.id, e)}
-                                     >
-                                       <Trash2 className="h-3 w-3" />
-                                     </Button>
-                                    <div className="space-y-2">
-                                      {/* סניף - ראשון ובולט */}
-                                      {shift.branch_name && (
-                                        <div className="flex items-center justify-center">
-                                          <Badge className="bg-blue-600 text-white font-medium px-3 py-1">
-                                            <MapPin className="h-3 w-3 ml-1" />
-                                            {shift.branch_name}
-                                          </Badge>
-                                        </div>
-                                      )}
-                                      
-                                      {/* שעות משמרת - שני */}
-                                      <div className="flex items-center justify-center">
-                                        <Badge variant="outline" className="bg-gray-50 border-2 font-medium px-3 py-1">
-                                          <Clock className="h-3 w-3 ml-1" />
-                                          {shift.start_time} - {shift.end_time}
-                                        </Badge>
-                                      </div>
-                                      
-                                      {/* עובד מוקצה או לא מוקצה - שלישי */}
-                                      <div className="flex items-center justify-center">
-                                        {shift.employee_id ? (
-                                          <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 px-3 py-1">
-                                            <User className="h-3 w-3 ml-1" />
-                                            {getEmployeeName(shift.employee_id)}
-                                          </Badge>
-                                        ) : (
-                                          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-3 py-1">
-                                            <User className="h-3 w-3 ml-1" />
-                                            לא מוקצה
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                    
-                                    {/* סטטוס וקונפליקטים - רביעי במטה */}
-                                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-                                      <Badge variant="secondary" className={`${getStatusColor(shift.status || 'pending')} text-xs`}>
-                                        {shift.status === 'approved' ? 'מאושר' : 
-                                         shift.status === 'pending' ? 'ממתין' :
-                                         shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
-                                      </Badge>
-                                      {hasConflict && (
-                                        <div className="flex items-center gap-1">
-                                          <AlertTriangle className="h-3 w-3 text-red-500" />
-                                          <span className="text-xs text-red-500">התנגשות</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </>
+                          <ShiftGroupDisplay
+                            shifts={night}
+                            shiftType="night"
+                            hasOtherShifts={hasMultipleTypes}
+                            isSelectionMode={isSelectionMode}
+                            selectedShifts={selectedShifts}
+                            onShiftClick={onShiftClick}
+                            onShiftSelection={onShiftSelection}
+                            onDeleteShift={handleDeleteShift}
+                            getEmployeeName={getEmployeeName}
+                            getStatusColor={getStatusColor}
+                            hasShiftConflict={hasShiftConflict}
+                            isShiftSelected={isShiftSelected}
+                          />
+                        </div>
                       );
                     })()}
                   </div>
