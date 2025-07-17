@@ -57,6 +57,11 @@ export const ShiftSubmissionForm: React.FC = () => {
         }
         setTokenData(data);
         
+        // Debug: Log all the important data
+        console.log('🔍 Full token data received:', data);
+        console.log('🔍 Employee data:', (data as any).employee);
+        console.log('🔍 Branch assignments:', (data as any).employee?.branch_assignments);
+        
         // Set default date to today instead of week start
         const today = new Date().toISOString().split('T')[0];
         setFormData(prev => ({
@@ -120,7 +125,8 @@ export const ShiftSubmissionForm: React.FC = () => {
 
   const handleShiftTypeChange = (shiftType: string) => {
     // Get preferred shift type from the first active branch assignment
-    const activeBranchAssignment = tokenData?.employee?.branch_assignments?.find((assignment: any) => assignment.is_active);
+    const employee = (tokenData as any)?.employee;
+    const activeBranchAssignment = employee?.branch_assignments?.find((assignment: any) => assignment.is_active);
     const preferredType = activeBranchAssignment?.shift_types?.[0];
     
     console.log('🎯 Trying to select shift type:', shiftType);
@@ -171,11 +177,15 @@ export const ShiftSubmissionForm: React.FC = () => {
 
   // Get available shift types based on employee preference
   const getAvailableShiftTypes = () => {
-    // Get preferred shift type from the first active branch assignment
-    const activeBranchAssignment = tokenData?.employee?.branch_assignments?.find((assignment: any) => assignment.is_active);
+    // Cast tokenData to access employee data
+    const employee = (tokenData as any)?.employee;
+    const activeBranchAssignment = employee?.branch_assignments?.find((assignment: any) => assignment.is_active);
     const preferredType = activeBranchAssignment?.shift_types?.[0];
     
     console.log('🔍 Getting available shift types');
+    console.log('🔍 TokenData:', tokenData);
+    console.log('🔍 Employee:', employee);
+    console.log('🔍 All branch assignments:', employee?.branch_assignments);
     console.log('🔍 Active branch assignment:', activeBranchAssignment);
     console.log('🔍 Extracted preferred type:', preferredType);
     
@@ -201,7 +211,8 @@ export const ShiftSubmissionForm: React.FC = () => {
   // Get additional shift types (for special checkboxes)
   const getAdditionalShiftTypes = () => {
     // Get preferred shift type from the first active branch assignment
-    const activeBranchAssignment = tokenData?.employee?.branch_assignments?.find((assignment: any) => assignment.is_active);
+    const employee = (tokenData as any)?.employee;
+    const activeBranchAssignment = employee?.branch_assignments?.find((assignment: any) => assignment.is_active);
     const preferredType = activeBranchAssignment?.shift_types?.[0];
     
     // Only show additional options if there is a valid preferred type
