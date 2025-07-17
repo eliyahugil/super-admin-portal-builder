@@ -23,8 +23,8 @@ export const PublicRoutes = () => (
     <Route 
       path="/weekly-shift-submission/:token" 
       element={
-        <Suspense fallback={<div>טוען טופס שבועי...</div>}>
-          <WeeklyShiftSubmissionForm />
+        <Suspense fallback={<div>טוען תצוגת משמרות...</div>}>
+          <WeeklyShiftView />
         </Suspense>
       } 
     />
