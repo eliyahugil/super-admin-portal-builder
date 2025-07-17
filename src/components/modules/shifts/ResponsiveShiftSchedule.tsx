@@ -153,9 +153,24 @@ export const ResponsiveShiftSchedule: React.FC = () => {
 
   const handleCreateMultipleShifts = async (shifts: CreateShiftData[]) => {
     console.log('📝 Creating multiple shifts:', shifts.length);
+    console.log('📝 Shifts data:', shifts);
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
     for (const shift of shifts) {
-      await createShift(shift);
+      try {
+        console.log('📝 Creating shift:', shift);
+        await createShift(shift);
+        successCount++;
+        console.log('✅ Successfully created shift');
+      } catch (error) {
+        errorCount++;
+        console.error('❌ Failed to create shift:', error, shift);
+      }
     }
+    
+    console.log(`📊 Creation summary: ${successCount} successful, ${errorCount} failed`);
   };
 
   const handleBulkCreate = async (shifts: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>[]) => {
