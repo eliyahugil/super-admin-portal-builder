@@ -83,6 +83,30 @@ export const BranchRoles: React.FC = () => {
         <p className="text-gray-600">ניהול תפקידים ועדיפויות עובדים בסניפים שונים</p>
       </div>
 
+      {/* Shift Roles Section */}
+      {roles && roles.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">תפקידי משמרות</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {roles.map((role) => (
+              <Card key={role.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <Shield className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">{role.name}</h3>
+                      <p className="text-sm text-gray-600">תפקיד משמרת</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Controls */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="flex-1">
