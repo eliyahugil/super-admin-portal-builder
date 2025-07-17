@@ -18,10 +18,11 @@ export const useShiftScheduleData = (businessId: string | null) => {
   console.log('🔍 useShiftScheduleData initialized with businessId:', businessId);
 
   // Fetch shifts from scheduled_shifts table with business filtering
-  const { data: shifts = [], isLoading: shiftsLoading, error: shiftsError } = useQuery({
+  const { data: shifts = [], isLoading: shiftsLoading, error: shiftsError, refetch: refetchShifts } = useQuery({
     queryKey: ['schedule-shifts', businessId],
     queryFn: async (): Promise<ShiftScheduleData[]> => {
       console.log('🔍 Fetching shifts for business:', businessId);
+      console.log('🔍 Query timestamp:', new Date().toISOString());
       
       if (!businessId) {
         console.log('❌ No business ID provided');
@@ -85,7 +86,17 @@ export const useShiftScheduleData = (businessId: string | null) => {
           };
         });
 
-        console.log('✅ Transformed shifts:', transformedShifts.length, 'shifts');
+        console.log('✅ Shifts loaded successfully:', {
+          count: data.length,
+          shifts: data.map(s => ({
+            id: s.id,
+            date: s.shift_date,
+            time: `${s.start_time}-${s.end_time}`,
+            branch: s.branch?.name,
+            employee: s.employee ? `${s.employee.first_name} ${s.employee.last_name}` : 'ללא עובד'
+          }))
+        });
+        
         return transformedShifts;
       } catch (error) {
         console.error('💥 Exception in shifts fetch:', error);
@@ -93,8 +104,9 @@ export const useShiftScheduleData = (businessId: string | null) => {
       }
     },
     enabled: !!businessId,
-    retry: 1,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0, // תמיד יביא נתונים חדשים
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   // Fetch employees - only from current business
@@ -243,6 +255,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
     branches,
     pendingSubmissions,
     loading,
-    error: hasError ? (shiftsError || employeesError || branchesError || submissionsError) : null
+    error: hasError ? (shiftsError || employeesError || branchesError || submissionsError) : null,
+    refetchShifts
   };
 };

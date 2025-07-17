@@ -59,7 +59,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     updateShift,
     deleteShift,
     createShift,
-    businessId
+    businessId,
+    refetchShifts
   } = useShiftSchedule();
 
   const queryClient = useQueryClient();
@@ -286,11 +287,11 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           {/* Templates and Quick Multiple Buttons */}
           <div className="flex gap-2">
             <Button
-              onClick={() => {
+              onClick={async () => {
                 console.log('🔄 Manual refresh button clicked');
                 try {
-                  queryClient.clear();
-                  window.location.reload();
+                  await refetchShifts();
+                  console.log('✅ Refetch completed');
                 } catch (error) {
                   console.error('Error during refresh:', error);
                 }
