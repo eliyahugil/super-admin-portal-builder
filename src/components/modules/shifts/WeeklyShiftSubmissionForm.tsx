@@ -174,17 +174,16 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
             .select('shift_types')
             .eq('employee_id', data.employee_id)
             .eq('is_active', true)
-            .single();
+            .maybeSingle();
 
-          console.log('🕐 Employee shift types permissions:', employeeShiftTypes?.shift_types);
+          console.log('🕐 Employee shift types permissions:', employeeShiftTypes);
           
-          // Store employee's allowed shift types for UI logic
-          if (employeeShiftTypes?.shift_types) {
-            setTokenData(prev => ({
-              ...prev,
-              employeeShiftTypes: employeeShiftTypes.shift_types
-            }));
-          }
+          // Store employee's allowed shift types for UI logic - אם אין הקצאת סניף, נאפשר כל סוגי המשמרות
+          const allowedShiftTypes = employeeShiftTypes?.shift_types || ['morning', 'evening', 'night'];
+          setTokenData(prev => ({
+            ...prev,
+            employeeShiftTypes: allowedShiftTypes
+          }));
         }
       } catch (error) {
         console.error('💥 Token validation error:', error);
