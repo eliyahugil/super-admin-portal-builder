@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, Users, UserX } from 'lucide-react';
 import { EmployeesList } from './EmployeesList';
 import { useInactiveEmployees } from '@/hooks/useInactiveEmployees';
+import { useEmployeeListPreferences } from '@/hooks/useEmployeeListPreferences';
 import type { Employee } from '@/hooks/useEmployees';
 
 interface InactiveEmployeesListProps {
@@ -24,7 +25,14 @@ export const InactiveEmployeesList: React.FC<InactiveEmployeesListProps> = ({
     refetch 
   } = useInactiveEmployees(businessId);
 
+  const { updateFilters } = useEmployeeListPreferences(businessId);
+  
   const employees = propEmployees || inactiveEmployees;
+
+  // וידוא שהפילטר מוגדר להציג עובדים לא פעילים
+  useEffect(() => {
+    updateFilters({ status: 'inactive' });
+  }, [updateFilters]);
 
   const handleRefetch = async () => {
     await refetch();
