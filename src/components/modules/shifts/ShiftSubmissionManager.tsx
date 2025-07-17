@@ -57,6 +57,21 @@ export const ShiftSubmissionManager: React.FC = () => {
         businessId
       });
 
+      // קודם בואו נראה מה יש בכלל בבסיס הנתונים
+      const { data: allTokens, error: allTokensError } = await supabase
+        .from('employee_weekly_tokens')
+        .select(`
+          *,
+          employee:employees(first_name, last_name, phone)
+        `)
+        .eq('is_active', true);
+
+      console.log('🗂️ כל הטוקנים הפעילים בבסיס הנתונים:', allTokens?.map(t => ({
+        employee: t.employee?.first_name + ' ' + t.employee?.last_name,
+        week_start: t.week_start_date,
+        token: t.token.substring(0, 8) + '...'
+      })));
+
       const { data, error } = await supabase
         .from('employee_weekly_tokens')
         .select(`
@@ -71,7 +86,7 @@ export const ShiftSubmissionManager: React.FC = () => {
         throw error;
       }
       
-      console.log('📊 טוכנים שנמצאו:', data?.map(t => ({
+      console.log('📊 טוכנים שנמצאו לשבוע הספציפי:', data?.map(t => ({
         employee: t.employee?.first_name + ' ' + t.employee?.last_name,
         token: t.token.substring(0, 8) + '...',
         week: t.week_start_date
