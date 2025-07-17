@@ -56,19 +56,33 @@ export const WeeklyShiftView: React.FC = () => {
     queryFn: async (): Promise<WeeklyShiftsData> => {
       console.log('📞 Calling get-weekly-shifts-context with token:', token);
       
-      const { data, error } = await supabase.functions.invoke('get-weekly-shifts-context', {
-        body: { token }
-      });
+      try {
+        // Use direct fetch call to avoid automatic JWT header inclusion
+        const response = await fetch(
+          `https://xmhmztipuvzmwgbcovch.supabase.co/functions/v1/get-weekly-shifts-context`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtaG16dGlwdXZ6bXdnYmNvdmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMjkzODIsImV4cCI6MjA2NDcwNTM4Mn0.QEugxUTGlJ1rnG8ddf3E6BIpNaiqwkp2ml7MbiUfY9c`,
+            },
+            body: JSON.stringify({ token })
+          }
+        );
 
-      console.log('🔍 Function response:', { data, error });
-      
-      if (error) {
-        console.error('❌ Function error:', error);
-        throw error;
+        console.log('🔍 Function response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('✅ Function success, returning data:', data);
+        return data;
+      } catch (fetchError) {
+        console.error('❌ Function error:', fetchError);
+        throw fetchError;
       }
-      
-      console.log('✅ Function success, returning data:', data);
-      return data;
     },
     enabled: !!token,
     refetchInterval: 30000, // Refresh every 30 seconds to check for updates
