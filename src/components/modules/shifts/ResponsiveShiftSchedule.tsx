@@ -214,7 +214,11 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   };
 
   const handleBulkUpdate = async (updates: Partial<ShiftScheduleData>) => {
+    console.log('🔄 Starting bulk update with data:', updates);
+    console.log('🔄 Updating shifts:', selectedShifts.map(s => s.id));
+    
     for (const shift of selectedShifts) {
+      console.log(`🔄 Updating shift ${shift.id} with:`, updates);
       await updateShift(shift.id, updates);
     }
     handleClearSelection();
