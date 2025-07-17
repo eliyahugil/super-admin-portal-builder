@@ -48,6 +48,8 @@ export const useShiftScheduleData = (businessId: string | null) => {
             created_at,
             updated_at,
             shift_template_id,
+            required_employees,
+            priority,
             employee:employees(first_name, last_name, business_id),
             branch:branches(name, business_id)
           `)
@@ -82,7 +84,9 @@ export const useShiftScheduleData = (businessId: string | null) => {
             shift_template_id: shift.shift_template_id || undefined,
             branch_id: shift.branch_id || '',
             branch_name: shift.branch?.name || 'לא צוין',
-            role_preference: shift.role || ''
+            role_preference: shift.role || '',
+            required_employees: shift.required_employees || 1,
+            priority: (shift.priority as 'critical' | 'normal' | 'backup') || 'normal'
           };
         });
 
