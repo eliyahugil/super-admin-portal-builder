@@ -75,19 +75,30 @@ export const WeeklyShiftView: React.FC = () => {
   const [shiftNotes, setShiftNotes] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
+  console.log('🔍 WeeklyShiftView: Component rendered with token:', token);
+  console.log('🔍 WeeklyShiftView: Current URL:', window.location.href);
+  console.log('🔍 WeeklyShiftView: isValidating:', isValidating);
+
   const { data: shiftsData, error, isLoading } = useQuery({
     queryKey: ['weekly-shifts-context', token],
     queryFn: async (): Promise<WeeklyShiftsData> => {
+      console.log('🔍 WeeklyShiftView: Starting query with token:', token);
       const { data, error } = await supabase.functions.invoke('get-weekly-shifts-context', {
         body: { token }
       });
 
-      if (error) throw error;
+      console.log('🔍 WeeklyShiftView: Query result:', { data, error });
+      if (error) {
+        console.error('🔍 WeeklyShiftView: Query error:', error);
+        throw error;
+      }
       return data;
     },
     enabled: !!token,
     refetchInterval: 30000, // Refresh every 30 seconds to check for updates
   });
+
+  console.log('🔍 WeeklyShiftView: Current query state:', { isLoading, error, hasData: !!shiftsData });
 
   const submitChoicesMutation = useMutation({
     mutationFn: async (choices: ShiftChoice[]) => {
