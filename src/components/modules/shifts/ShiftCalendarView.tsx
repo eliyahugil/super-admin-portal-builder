@@ -186,27 +186,28 @@ export const ShiftCalendarView: React.FC<ShiftCalendarViewProps> = ({
                                 : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
                             }`}
                           >
-                            {/* שעות - בולט ובמרכז */}
+                            {/* שם הסניף ראשון */}
+                            {shift.branches?.name && (
+                              <div className="text-center mb-2">
+                                <div className="text-sm font-medium text-gray-800" title={shift.branches.name}>
+                                  📍 {shift.branches.name}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* שעות - קטנות יותר */}
                             <div className="text-center mb-2">
-                              <span className="text-sm font-bold text-gray-900 bg-white px-2 py-1 rounded border">
+                              <span className="text-xs font-semibold text-gray-700 bg-white px-2 py-1 rounded border">
                                 {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
                               </span>
                             </div>
                             
-                            {/* פרטים נוספים - קומפקטי */}
-                            <div className="space-y-1 text-xs">
-                              {shift.branches?.name && (
-                                <div className="text-center text-gray-700 font-medium" title={shift.branches.name}>
-                                  📍 {shift.branches.name}
-                                </div>
-                              )}
-                              
-                              {shift.role && (
-                                <div className="text-center text-gray-600" title={shift.role}>
-                                  👤 {shift.role}
-                                </div>
-                              )}
-                            </div>
+                            {/* תפקיד */}
+                            {shift.role && (
+                              <div className="text-center text-xs text-gray-600" title={shift.role}>
+                                👤 {shift.role}
+                              </div>
+                            )}
                             
                             {/* סימון נבחר */}
                             {isSelected && (
