@@ -12,6 +12,7 @@ import { Copy, Plus, Calendar, Users, Timer, Eye, User, UsersRound, TrendingDown
 import { format, addDays, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { TokenSubmissionsList } from './TokenSubmissionsList';
+import { ShiftSubmissionsList } from './ShiftSubmissionsList';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -297,10 +298,17 @@ ${url}
         </AlertDialog>
       </div>
 
-      <Tabs defaultValue="single" className="w-full">
+      <Tabs defaultValue="submissions" className="w-full">
         {/* טאבים רספונסיביים עם גלילה אופקית במובייל */}
         <div className="w-full overflow-x-auto scrollbar-hide mb-6">
-          <TabsList className="inline-flex w-auto min-w-full lg:w-full lg:grid lg:grid-cols-4 h-auto p-1 bg-muted rounded-lg">
+          <TabsList className="inline-flex w-auto min-w-full lg:w-full lg:grid lg:grid-cols-5 h-auto p-1 bg-muted rounded-lg">
+            <TabsTrigger 
+              value="submissions" 
+              className="flex items-center gap-2 px-3 py-2.5 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            >
+              <Calendar className="h-4 w-4" />
+              הגשות משמרות
+            </TabsTrigger>
             <TabsTrigger 
               value="single" 
               className="flex items-center gap-2 px-3 py-2.5 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
@@ -331,6 +339,11 @@ ${url}
             </TabsTrigger>
           </TabsList>
         </div>
+
+        {/* Shift Submissions Tab */}
+        <TabsContent value="submissions" className="space-y-4 sm:space-y-6 mt-0">
+          <ShiftSubmissionsList />
+        </TabsContent>
 
         {/* Single Token Tab */}
         <TabsContent value="single" className="space-y-4 sm:space-y-6 mt-0">
