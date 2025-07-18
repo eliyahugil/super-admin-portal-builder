@@ -17,7 +17,7 @@ export const AdvancedSchedulingDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 w-full overflow-hidden p-3 sm:p-6 bg-gray-50">
+      <div className="flex-1 w-full overflow-hidden bg-gray-50">
         <Tabs defaultValue="auto-scheduling" className="w-full h-full flex flex-col">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 flex-shrink-0 mb-4 bg-white shadow-sm">
             <TabsTrigger value="auto-scheduling" className="flex items-center gap-1 text-xs sm:text-sm data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
