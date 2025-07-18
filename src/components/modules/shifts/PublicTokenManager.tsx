@@ -298,30 +298,45 @@ ${url}
       </div>
 
       <Tabs defaultValue="single" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="single" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            טוקן אישי
-          </TabsTrigger>
-          <TabsTrigger value="bulk" className="flex items-center gap-2">
-            <UsersRound className="h-4 w-4" />
-            יצירה גורפת
-          </TabsTrigger>
-          <TabsTrigger value="existing" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            טוקנים קיימים
-          </TabsTrigger>
-          <TabsTrigger value="unused" className="flex items-center gap-2">
-            <TrendingDown className="h-4 w-4" />
-            טוקנים לא מנוצלים
-          </TabsTrigger>
-        </TabsList>
+        {/* טאבים רספונסיביים עם גלילה אופקית במובייל */}
+        <div className="w-full overflow-x-auto scrollbar-hide mb-6">
+          <TabsList className="inline-flex w-auto min-w-full lg:w-full lg:grid lg:grid-cols-4 h-auto p-1 bg-muted rounded-lg">
+            <TabsTrigger 
+              value="single" 
+              className="flex items-center gap-2 px-3 py-2.5 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            >
+              <User className="h-4 w-4" />
+              טוקן אישי
+            </TabsTrigger>
+            <TabsTrigger 
+              value="bulk" 
+              className="flex items-center gap-2 px-3 py-2.5 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            >
+              <UsersRound className="h-4 w-4" />
+              יצירה גורפת
+            </TabsTrigger>
+            <TabsTrigger 
+              value="existing" 
+              className="flex items-center gap-2 px-3 py-2.5 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            >
+              <Calendar className="h-4 w-4" />
+              טוקנים קיימים
+            </TabsTrigger>
+            <TabsTrigger 
+              value="unused" 
+              className="flex items-center gap-2 px-3 py-2.5 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            >
+              <TrendingDown className="h-4 w-4" />
+              טוקנים לא מנוצלים
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Single Token Tab */}
-        <TabsContent value="single" className="space-y-6">
+        <TabsContent value="single" className="space-y-4 sm:space-y-6 mt-0">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="px-4 py-4 sm:px-6">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Plus className="h-5 w-5" />
                 יצירת טוקן אישי לעובד
               </CardTitle>
