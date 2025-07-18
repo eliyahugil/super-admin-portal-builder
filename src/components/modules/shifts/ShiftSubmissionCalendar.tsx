@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar, Clock, MapPin, Users, Plus, Minus, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -49,6 +50,7 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
   weekRange
 }) => {
   const [selectedShifts, setSelectedShifts] = useState<SelectedShift[]>([]);
+  const [showSpecialShifts, setShowSpecialShifts] = useState<boolean>(false);
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
     if (weekRange) return weekRange.start;
     
@@ -56,6 +58,10 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
     const upcomingWeek = getUpcomingWeekDates();
     return upcomingWeek.startDate;
   });
+  
+  // For demo purposes, assume user is an evening worker
+  // In real app, this would come from user preferences/profile
+  const [employeePreference] = useState<'morning' | 'evening'>('evening');
   
   const { toast } = useToast();
 
@@ -151,11 +157,24 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
     setCurrentWeekStart(newStart);
   };
 
+  // Helper function to check if two shifts overlap
+  const shiftsOverlap = (shift1: AvailableShift, shift2: AvailableShift) => {
+    if (shift1.date !== shift2.date) return false;
+    
+    const start1 = parseInt(shift1.start_time.replace(':', ''));
+    const end1 = parseInt(shift1.end_time.replace(':', ''));
+    const start2 = parseInt(shift2.start_time.replace(':', ''));
+    const end2 = parseInt(shift2.end_time.replace(':', ''));
+    
+    return (start1 < end2 && start2 < end1);
+  };
+
   const toggleShiftSelection = (shift: AvailableShift) => {
     const shiftDate = new Date(shift.date);
     const isSelected = selectedShifts.some(s => s.shiftId === shift.id);
 
     if (isSelected) {
+      // Remove the shift and any overlapping shifts that were auto-selected
       setSelectedShifts(prev => prev.filter(s => s.shiftId !== shift.id));
     } else {
       if (shift.current_employees >= shift.max_employees) {
@@ -176,13 +195,62 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
         branchName: shift.branch_name,
       };
 
-      setSelectedShifts(prev => [...prev, newShift]);
+      // Find overlapping shifts on the same date
+      const overlappingShifts = availableShifts.filter(otherShift => 
+        otherShift.id !== shift.id && 
+        shiftsOverlap(shift, otherShift) &&
+        otherShift.current_employees < otherShift.max_employees &&
+        !selectedShifts.some(s => s.shiftId === otherShift.id)
+      );
+
+      // Add the main shift
+      let shiftsToAdd = [newShift];
+
+      // Add overlapping shifts automatically
+      overlappingShifts.forEach(overlappingShift => {
+        const overlappingShiftObj: SelectedShift = {
+          date: new Date(overlappingShift.date),
+          shiftId: overlappingShift.id,
+          shiftName: overlappingShift.name,
+          startTime: overlappingShift.start_time,
+          endTime: overlappingShift.end_time,
+          branchName: overlappingShift.branch_name,
+        };
+        shiftsToAdd.push(overlappingShiftObj);
+      });
+
+      setSelectedShifts(prev => [...prev, ...shiftsToAdd]);
+
+      // Show toast if overlapping shifts were auto-selected
+      if (overlappingShifts.length > 0) {
+        toast({
+          title: 'משמרות חופפות נבחרו אוטומטית',
+          description: `נבחרו ${overlappingShifts.length} משמרות נוספות שחופפות בזמן`,
+        });
+      }
     }
   };
 
   const getShiftsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return availableShifts.filter(shift => shift.date === dateStr);
+    let shifts = availableShifts.filter(shift => shift.date === dateStr);
+    
+    // Filter based on employee preference and special shifts checkbox
+    if (!showSpecialShifts) {
+      if (employeePreference === 'evening') {
+        // Evening worker sees only evening and night shifts normally
+        shifts = shifts.filter(shift => 
+          shift.name.includes('ערב') || shift.name.includes('לילה')
+        );
+      } else {
+        // Morning worker sees only morning shifts normally
+        shifts = shifts.filter(shift => 
+          shift.name.includes('בוקר')
+        );
+      }
+    }
+    
+    return shifts;
   };
 
   const isShiftSelected = (shiftId: string) => {
@@ -242,6 +310,18 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
             </div>
           </div>
         </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-2 justify-center">
+            <Checkbox 
+              id="special-shifts"
+              checked={showSpecialShifts}
+              onCheckedChange={(checked) => setShowSpecialShifts(checked as boolean)}
+            />
+            <label htmlFor="special-shifts" className="text-sm font-medium">
+              הצג משמרות {employeePreference === 'evening' ? 'בוקר' : 'ערב'} מיוחדות
+            </label>
+          </div>
+        </CardContent>
       </Card>
 
       {/* Calendar Grid */}
@@ -277,12 +357,11 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
                         <div className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">
                           משמרות בוקר
                         </div>
-                        {dayShifts.filter(s => s.name.includes('בוקר')).map((shift) => {
+                         {dayShifts.filter(s => s.name.includes('בוקר')).map((shift) => {
                           const isSelected = isShiftSelected(shift.id);
                           const isFull = shift.current_employees >= shift.max_employees;
-                          // For demo purposes, assume some employees are primarily evening workers
-                          // In real app, this would come from employee preferences data
-                          const isSpecialCase = Math.random() > 0.7; // 30% chance this is special case
+                          // Morning shift is special for evening workers
+                          const isSpecialCase = employeePreference === 'evening' && showSpecialShifts;
                           
                           return (
                             <div
@@ -347,8 +426,8 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
                         {dayShifts.filter(s => s.name.includes('ערב')).map((shift) => {
                           const isSelected = isShiftSelected(shift.id);
                           const isFull = shift.current_employees >= shift.max_employees;
-                          // For demo purposes, assume some employees are primarily morning workers
-                          const isSpecialCase = Math.random() > 0.6; // 40% chance this is special case
+                          // Evening shift is special for morning workers
+                          const isSpecialCase = employeePreference === 'morning' && showSpecialShifts;
                           
                           return (
                             <div
