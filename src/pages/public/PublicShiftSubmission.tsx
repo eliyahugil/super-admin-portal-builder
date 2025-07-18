@@ -67,15 +67,14 @@ const PublicShiftSubmission: React.FC = () => {
     loadEmployeeData();
   }, [tokenData]);
 
-  // Load scheduled shifts and available shifts for the token's date range
+  // Load scheduled shifts for the token's date range
   useEffect(() => {
-    const loadShifts = async () => {
+    const loadScheduledShifts = async () => {
       if (!tokenData?.business_id || !tokenData?.week_start_date || !tokenData?.week_end_date || !employeeData) return;
       
       setShiftsLoading(true);
       try {
-        // Load scheduled shifts (existing functionality)
-        const { data: scheduledShifts, error: scheduledError } = await supabase
+        const { data: shifts, error } = await supabase
           .from('scheduled_shifts')
           .select(`
             id,
@@ -96,34 +95,9 @@ const PublicShiftSubmission: React.FC = () => {
           .order('shift_date', { ascending: true })
           .order('start_time', { ascending: true });
 
-        // Load available shifts (new functionality)
-        const { data: availableShifts, error: availableError } = await supabase
-          .from('available_shifts')
-          .select(`
-            id,
-            day_of_week,
-            start_time,
-            end_time,
-            shift_type,
-            shift_name,
-            branch_id,
-            week_start_date,
-            week_end_date,
-            branch:branches(id, name)
-          `)
-          .eq('business_id', tokenData.business_id)
-          .eq('week_start_date', tokenData.week_start_date)
-          .eq('week_end_date', tokenData.week_end_date)
-          .eq('is_open_for_unassigned', true)
-          .order('day_of_week', { ascending: true })
-          .order('start_time', { ascending: true });
-
-        if (scheduledError) {
-          console.error('Error loading scheduled shifts:', scheduledError);
-        }
-        
-        if (availableError) {
-          console.error('Error loading available shifts:', availableError);
+        if (error) {
+          console.error('Error loading scheduled shifts:', error);
+          return;
         }
 
         // Helper function to determine shift type based on start time
@@ -135,32 +109,8 @@ const PublicShiftSubmission: React.FC = () => {
           return 'night';
         };
 
-        // Convert available shifts to the same format as scheduled shifts
-        const formattedAvailableShifts = (availableShifts || []).map(shift => {
-          // Calculate the actual date based on day_of_week and week_start_date
-          const weekStartDate = new Date(shift.week_start_date);
-          const shiftDate = new Date(weekStartDate);
-          shiftDate.setDate(weekStartDate.getDate() + shift.day_of_week);
-          
-          return {
-            id: shift.id,
-            shift_date: shiftDate.toISOString().split('T')[0],
-            start_time: shift.start_time,
-            end_time: shift.end_time,
-            role: shift.shift_name,
-            employee_id: null,
-            branch_id: shift.branch_id,
-            status: 'available',
-            branch: shift.branch,
-            isFromAvailableShifts: true
-          };
-        });
-
-        // Combine scheduled shifts and formatted available shifts
-        const allShifts = [...(scheduledShifts || []), ...formattedAvailableShifts];
-
         // Filter shifts based on employee's branch assignments and shift type preferences
-        let filteredShifts = allShifts;
+        let filteredShifts = shifts || [];
         
         if (employeeData.employee_branch_assignments && employeeData.employee_branch_assignments.length > 0) {
           // Get employee's assigned branch IDs
@@ -198,10 +148,10 @@ const PublicShiftSubmission: React.FC = () => {
           }
         }
 
-        console.log('📊 Loaded scheduled shifts:', scheduledShifts?.length || 0);
-        console.log('📊 Loaded available shifts:', availableShifts?.length || 0);
-        console.log('📊 Combined shifts:', allShifts.length);
+        console.log('📊 Loaded scheduled shifts for token:', shifts?.length || 0);
+        console.log('📊 All shifts:', shifts);
         console.log('📊 Filtered shifts for employee:', filteredShifts.length);
+        console.log('📊 Final filtered shifts:', filteredShifts);
         setScheduledShifts(filteredShifts);
       } catch (error) {
         console.error('Error loading scheduled shifts:', error);
@@ -210,7 +160,7 @@ const PublicShiftSubmission: React.FC = () => {
       }
     };
 
-    loadShifts();
+    loadScheduledShifts();
   }, [tokenData, employeeData]);
 
   const handleShiftToggle = (shift: any, available: boolean) => {
