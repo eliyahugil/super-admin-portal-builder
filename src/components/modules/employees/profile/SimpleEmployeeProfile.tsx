@@ -104,6 +104,7 @@ export const SimpleEmployeeProfile: React.FC = () => {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [availableShifts, setAvailableShifts] = useState<AvailableShift[]>([]);
+  const [activeTokens, setActiveTokens] = useState<any[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [files, setFiles] = useState<EmployeeFile[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -230,6 +231,20 @@ export const SimpleEmployeeProfile: React.FC = () => {
 
         if (notificationsData) {
           setNotifications(notificationsData);
+        }
+
+        // Fetch active tokens for this employee
+        const { data: tokensData } = await supabase
+          .from('shift_submission_tokens')
+          .select('*')
+          .eq('business_id', employeeData.business_id)
+          .eq('is_active', true)
+          .gt('expires_at', new Date().toISOString())
+          .or(`employee_id.is.null,employee_id.eq.${employeeId}`)
+          .order('created_at', { ascending: false });
+
+        if (tokensData) {
+          setActiveTokens(tokensData);
         }
 
       } catch (error) {
@@ -368,10 +383,11 @@ export const SimpleEmployeeProfile: React.FC = () => {
 
         {/* Main Content with Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-7 gap-1">
             <TabsTrigger value="profile" className="text-xs sm:text-sm">פרטים אישיים</TabsTrigger>
             <TabsTrigger value="shifts" className="text-xs sm:text-sm">המשמרות שלי</TabsTrigger>
             <TabsTrigger value="available" className="text-xs sm:text-sm">משמרות פתוחות</TabsTrigger>
+            <TabsTrigger value="tokens" className="text-xs sm:text-sm">טוקנים פעילים</TabsTrigger>
             <TabsTrigger value="documents" className="text-xs sm:text-sm">מסמכים</TabsTrigger>
             <TabsTrigger value="files" className="text-xs sm:text-sm">קבצים</TabsTrigger>
             <TabsTrigger value="notifications" className="text-xs sm:text-sm">התראות</TabsTrigger>
@@ -797,6 +813,100 @@ export const SimpleEmployeeProfile: React.FC = () => {
                           <p className="text-sm text-muted-foreground">
                             {notification.message}
                           </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Active Tokens Tab */}
+          <TabsContent value="tokens" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-right">
+                  <CheckCircle className="h-5 w-5" />
+                  טוקנים פעילים ({activeTokens.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {activeTokens.length === 0 ? (
+                  <div className="text-center py-8">
+                    <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">אין טוקנים פעילים כרגע</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      טוקנים לשליחת משמרות יופיעו כאן כשיהיו זמינים
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {activeTokens.map((token) => (
+                      <div key={token.id} className="p-4 border rounded-lg bg-green-50 border-green-200">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="text-right flex-1">
+                            <h4 className="font-medium text-lg">טוקן הגשת משמרות</h4>
+                            <p className="text-sm text-muted-foreground">
+                              תקף מ-{format(new Date(token.week_start_date), 'dd/MM/yyyy')} 
+                              {' '}עד{' '}
+                              {format(new Date(token.week_end_date), 'dd/MM/yyyy')}
+                            </p>
+                          </div>
+                          <div className="text-left">
+                            <Badge variant="outline" className="bg-green-100 text-green-800">
+                              פעיל
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">תוקף עד:</span>
+                            <span className="font-medium">
+                              {format(new Date(token.expires_at), 'dd/MM/yyyy HH:mm')}
+                            </span>
+                          </div>
+                          
+                          {token.max_submissions && (
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">מגבלת הגשות:</span>
+                              <span className="font-medium">
+                                {token.current_submissions || 0}/{token.max_submissions}
+                              </span>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">סוג טוקן:</span>
+                            <span className="font-medium">
+                              {token.employee_id ? 'אישי' : 'כללי'}
+                            </span>
+                          </div>
+                          
+                          <div className="pt-2 border-t">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">קוד טוקן:</span>
+                              <div className="flex items-center gap-2">
+                                <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
+                                  {token.token}
+                                </code>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(token.token);
+                                    toast({
+                                      title: 'הועתק!',
+                                      description: 'קוד הטוקן הועתק ללוח',
+                                    });
+                                  }}
+                                >
+                                  העתק
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
