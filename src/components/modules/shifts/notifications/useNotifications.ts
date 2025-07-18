@@ -78,6 +78,31 @@ export const useNotifications = () => {
 
   useEffect(() => {
     loadNotifications();
+    
+    // הגדרת real-time subscription להתראות חדשות
+    if (!profile?.business_id) return;
+    
+    const channel = supabase
+      .channel('shift-submissions')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'employee_shift_requests',
+          filter: `employees.business_id=eq.${profile.business_id}`
+        },
+        (payload) => {
+          console.log('New shift submission:', payload);
+          // טעינה מחדש של ההתראות כשיש הגשה חדשה
+          loadNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [profile?.business_id]);
 
   const addNotification = (notification: Omit<Notification, 'id' | 'createdAt'>) => {
