@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { EmployeeBirthDateUpdate } from './EmployeeBirthDateUpdate';
 import { Phone, Lock, User, Info } from 'lucide-react';
 
 export const EmployeeLoginFlow: React.FC = () => {
+  const navigate = useNavigate();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showBirthDateUpdate, setShowBirthDateUpdate] = useState(false);
@@ -50,13 +52,13 @@ export const EmployeeLoginFlow: React.FC = () => {
       setCurrentEmployee(result.employee);
       setShowBirthDateUpdate(true);
     } else if (result.success) {
-      // Successful login, navigate to employee profile with slight delay to allow session update
+      // Successful login, navigate to employee profile with React Router
       setTimeout(() => {
         if (result.employee?.id) {
-          window.location.href = `/modules/employees/profile/${result.employee.id}`;
+          navigate(`/modules/employees/profile/${result.employee.id}`);
         } else if (session?.employee?.id) {
           // Fallback to session employee id if available
-          window.location.href = `/modules/employees/profile/${session.employee.id}`;
+          navigate(`/modules/employees/profile/${session.employee.id}`);
         } else {
           // Force page reload if no employee id available
           window.location.reload();
@@ -72,9 +74,9 @@ export const EmployeeLoginFlow: React.FC = () => {
     setCurrentEmployee(updatedEmployee);
     setShowBirthDateUpdate(false);
     
-    // Navigate to the employee's profile page
+    // Navigate to the employee's profile page using React Router
     setTimeout(() => {
-      window.location.href = `/modules/employees/profile/${updatedEmployee.id}`;
+      navigate(`/modules/employees/profile/${updatedEmployee.id}`);
     }, 1000);
   };
 
@@ -93,11 +95,11 @@ export const EmployeeLoginFlow: React.FC = () => {
   // Show authenticated state - redirect to profile instead of showing success screen
   const effectiveSession = session || (currentEmployee && !showBirthDateUpdate ? { employee: currentEmployee, isFirstLogin: false } : null);
   if (effectiveSession && !showBirthDateUpdate) {
-    // Auto-redirect to employee profile
+    // Auto-redirect to employee profile using React Router
     const employeeId = effectiveSession.employee.id;
     if (employeeId) {
       setTimeout(() => {
-        window.location.href = `/modules/employees/profile/${employeeId}`;
+        navigate(`/modules/employees/profile/${employeeId}`);
       }, 500); // Small delay to show the redirect message
     }
     
