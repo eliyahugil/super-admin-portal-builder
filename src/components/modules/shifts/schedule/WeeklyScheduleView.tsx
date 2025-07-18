@@ -773,12 +773,20 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                   </TooltipProvider>
                                 )}
                              </div>
-                             {/* הצגת מספר הגשות - תמיד נראה */}
-                             {shiftSubmissions.length > 0 && (
-                               <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 cursor-pointer hover:bg-green-100">
-                                 📋 {shiftSubmissions.length}
-                               </Badge>
-                             )}
+                              {/* הצגת מספר הגשות - תמיד נראה */}
+                              {shiftSubmissions.length > 0 && (
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-xs bg-blue-50 text-blue-700 border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setOpenSubmissionsPopover(openSubmissionsPopover === shift.id ? null : shift.id);
+                                  }}
+                                >
+                                  📋 {shiftSubmissions.length} הגשות
+                                </Badge>
+                              )}
                            </div>
                        </div>
                      </ShiftSubmissionsPopover>
