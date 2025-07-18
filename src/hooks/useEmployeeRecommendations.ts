@@ -142,6 +142,8 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
   return useQuery({
     queryKey: ['employee-recommendations', businessId, weekStartDate],
     queryFn: async (): Promise<ShiftRecommendationData[]> => {
+      console.log('🚀 Starting employee recommendations query:', { businessId, weekStartDate });
+      
       // First, find the active token for this week and business
       const { data: activeToken, error: tokenError } = await supabase
         .from('shift_submission_tokens')
@@ -150,6 +152,8 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
         .eq('week_start_date', weekStartDate)
         .eq('is_active', true)
         .single();
+
+      console.log('🔍 Token query result:', { activeToken, tokenError });
 
       if (tokenError) {
         console.log('❌ No active token found for this week:', tokenError);

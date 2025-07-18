@@ -34,6 +34,12 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
   const [results, setResults] = useState<AutoAssignmentResult[]>([]);
   const { businessId } = useCurrentBusiness();
 
+  console.log('🔧 AutoScheduleAssistant rendered with:', { 
+    businessId, 
+    weekStartDate, 
+    emptyShiftsCount: emptyShifts.length 
+  });
+
   const { data: recommendations, isLoading } = useEmployeeRecommendations(
     businessId || '',
     weekStartDate
