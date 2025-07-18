@@ -197,7 +197,10 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   const getPendingSubmissionsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     return pendingSubmissions.filter(submission => {
-      return submission.shift_date === dateStr;
+      const shifts = typeof submission.shifts === 'string' 
+        ? JSON.parse(submission.shifts) 
+        : submission.shifts || [];
+      return shifts.some((shift: any) => shift.date === dateStr);
     });
   };
 
@@ -650,13 +653,20 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 {/* Shifts */}
                 <div className="space-y-1">
                   {dayShifts.map((shift) => {
-                    // Get submissions for this specific shift
-                    const shiftSubmissions = getPendingSubmissionsForDate(date).filter(submission => {
-                      // Check if submission matches shift time and branch
-                      return submission.start_time === shift.start_time && 
-                             submission.end_time === shift.end_time &&
-                             (!submission.branch_preference || submission.branch_preference === shift.branch_name);
-                    });
+                     // Get submissions for this specific shift by checking shift data
+                     const shiftSubmissions = getPendingSubmissionsForDate(date).filter(submission => {
+                       // Parse shifts from the submission
+                       const shifts = typeof submission.shifts === 'string' 
+                         ? JSON.parse(submission.shifts) 
+                         : submission.shifts || [];
+                       
+                       // Check if any shift in the submission matches this shift's time and branch
+                       return shifts.some((submittedShift: any) => 
+                         submittedShift.start_time === shift.start_time && 
+                         submittedShift.end_time === shift.end_time &&
+                         submittedShift.branch_preference === shift.branch_name
+                       );
+                     });
                     const hasConflict = hasShiftConflict(shift);
 
                       return (

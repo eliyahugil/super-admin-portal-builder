@@ -13,21 +13,26 @@ import {
 
 interface ShiftSubmission {
   id: string;
-  employee_id: string;
-  shift_date: string;
-  start_time: string;
-  end_time: string;
-  branch_preference?: string;
-  role_preference?: string;
+  employee_id?: string;
+  week_start_date: string;
+  week_end_date: string;
+  shifts: Array<{
+    date: string;
+    start_time: string;
+    end_time: string;
+    branch_preference: string;
+    role_preference?: string;
+    notes?: string;
+    available_shift_id?: string;
+  }>;
   notes?: string;
   submitted_at: string;
-  status?: string;
+  status: string;
   employees: {
     id: string;
     first_name: string;
     last_name: string;
     employee_id: string;
-    phone?: string;
   };
 }
 
@@ -46,13 +51,37 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
   shiftId,
   onAssignEmployee
 }) => {
-  // Filter submissions for the specific date
-  const submissionsForDate = useMemo(() => {
+  // Filter submissions for the specific date and extract relevant shifts
+  const relevantShifts = useMemo(() => {
     const targetDateStr = targetDate.toISOString().split('T')[0];
-    return submissions.filter(submission => {
-      return submission.shift_date === targetDateStr;
+    const results: Array<{
+      submission: ShiftSubmission;
+      shift: ShiftSubmission['shifts'][0];
+    }> = [];
+
+    submissions.forEach(submission => {
+      // Parse shifts if they're stored as JSON string
+      let shifts;
+      try {
+        shifts = typeof submission.shifts === 'string' 
+          ? JSON.parse(submission.shifts) 
+          : submission.shifts || [];
+      } catch {
+        shifts = [];
+      }
+
+      shifts.forEach((shift: any) => {
+        if (shift.date === targetDateStr) {
+          // If shiftId is provided, only include shifts that match or don't have an ID
+          if (!shiftId || shift.available_shift_id === shiftId || !shift.available_shift_id) {
+            results.push({ submission, shift });
+          }
+        }
+      });
     });
-  }, [submissions, targetDate]);
+
+    return results;
+  }, [submissions, targetDate, shiftId]);
 
   const getStatusBadge = (status?: string) => {
     switch (status) {
@@ -65,6 +94,7 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
           נדחה
         </Badge>;
       case 'pending':
+      case 'submitted':
       default:
         return <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
           ממתין
@@ -80,7 +110,7 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
     return format(date, 'dd/MM/yyyy', { locale: he });
   };
 
-  if (submissionsForDate.length === 0) {
+  if (relevantShifts.length === 0) {
     return <>{children}</>;
   }
 
@@ -97,13 +127,13 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
               הגשות ליום {formatDate(targetDate)}
             </CardTitle>
             <CardDescription className="text-xs">
-              {submissionsForDate.length} עובדים הגישו בקשות
+              {relevantShifts.length} עובדים הגישו בקשות
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 max-h-96 overflow-y-auto">
-            {submissionsForDate.map((submission) => (
+            {relevantShifts.map(({ submission, shift }, index) => (
               <div 
-                key={submission.id}
+                key={`${submission.id}-${index}`}
                 className="border rounded-lg p-3 bg-gray-50/50 space-y-2 hover:bg-gray-100/50 transition-colors"
               >
                 <div className="flex items-center justify-between">
@@ -124,27 +154,27 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3 text-muted-foreground" />
-                    <span>{formatTime(submission.start_time)} - {formatTime(submission.end_time)}</span>
+                    <span>{formatTime(shift.start_time)} - {formatTime(shift.end_time)}</span>
                   </div>
                   
-                  {submission.branch_preference && (
+                  {shift.branch_preference && (
                     <div className="flex items-center gap-1">
                       <MapPin className="h-3 w-3 text-muted-foreground" />
-                      <span className="truncate">{submission.branch_preference}</span>
+                      <span className="truncate">{shift.branch_preference}</span>
                     </div>
                   )}
                 </div>
 
-                {submission.role_preference && (
+                {shift.role_preference && (
                   <div className="text-xs text-muted-foreground">
-                    <span className="font-medium">תפקיד מועדף:</span> {submission.role_preference}
+                    <span className="font-medium">תפקיד מועדף:</span> {shift.role_preference}
                   </div>
                 )}
 
-                {submission.notes && (
+                {shift.notes && (
                   <div className="text-xs text-muted-foreground bg-white p-2 rounded border">
                     <FileText className="h-3 w-3 inline mr-1" />
-                    {submission.notes}
+                    {shift.notes}
                   </div>
                 )}
 
@@ -158,7 +188,7 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
                       size="sm"
                       variant="outline"
                       className="h-6 px-2 text-xs"
-                      onClick={() => onAssignEmployee(submission.employee_id)}
+                      onClick={() => onAssignEmployee(submission.employees.id)}
                     >
                       <UserCheck className="h-3 w-3 mr-1" />
                       שייך למשמרת
