@@ -8,18 +8,21 @@ import { useToast } from '@/hooks/use-toast';
 import { useEmployees } from '@/hooks/useEmployees';
 import { usePublicShifts } from '@/hooks/usePublicShifts';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-import { Copy, Plus, Calendar, Users, Timer, Eye, User, UsersRound, TrendingDown, AlertTriangle } from 'lucide-react';
+import { Copy, Plus, Calendar, Users, Timer, Eye, User, UsersRound, TrendingDown, AlertTriangle, RotateCcw } from 'lucide-react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { TokenSubmissionsList } from './TokenSubmissionsList';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 export const PublicTokenManager: React.FC = () => {
   const { toast } = useToast();
   const { businessId } = useCurrentBusiness();
   const { data: employees = [] } = useEmployees(businessId);
-  const { generateToken, useBusinessTokens } = usePublicShifts();
+  const { generateToken, useBusinessTokens, resetAllTokens } = usePublicShifts();
   const { data: existingTokens = [] } = useBusinessTokens(businessId || '');
+  
+  const [isResetting, setIsResetting] = useState(false);
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isBulkGenerating, setIsBulkGenerating] = useState(false);
@@ -202,10 +205,78 @@ ${url}
     window.open(whatsappUrl, '_blank');
   };
 
+  const handleResetAllTokens = async () => {
+    if (!businessId) {
+      toast({
+        title: 'שגיאה',
+        description: 'לא נמצא מזהה עסק',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsResetting(true);
+    
+    try {
+      await resetAllTokens.mutateAsync(businessId);
+      
+      toast({
+        title: 'טוקנים אופסו בהצלחה!',
+        description: 'כל הטוקנים הפעילים הועברו למצב לא פעיל',
+      });
+    } catch (error) {
+      console.error('Error resetting tokens:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'אירעה שגיאה באיפוס הטוקנים',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   const { start: weekStart, end: weekEnd } = getWeekDates(tokenForm.weekOffset);
 
   return (
     <div className="space-y-6" dir="rtl">
+      {/* Reset all tokens button */}
+      <div className="flex justify-end">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="destructive"
+              className="gap-2"
+              disabled={isResetting || existingTokens.filter(t => t.is_active).length === 0}
+            >
+              <RotateCcw className="h-4 w-4" />
+              איפוס כל הטוקנים ({existingTokens.filter(t => t.is_active).length})
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent dir="rtl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>האם אתה בטוח שברצונך לאפס את כל הטוקנים?</AlertDialogTitle>
+              <AlertDialogDescription>
+                פעולה זו תבטל את כל הטוקנים הפעילים ({existingTokens.filter(t => t.is_active).length} טוקנים).
+                העובדים לא יוכלו יותר להשתמש בקישורים הקיימים.
+                <br />
+                <strong>פעולה זו לא ניתנת לביטול.</strong>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleResetAllTokens}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={isResetting}
+              >
+                {isResetting ? 'מאפס...' : 'כן, אפס את כל הטוקנים'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+
       <Tabs defaultValue="single" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="single" className="flex items-center gap-2">
