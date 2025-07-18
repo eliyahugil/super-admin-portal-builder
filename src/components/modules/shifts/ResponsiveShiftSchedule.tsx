@@ -25,6 +25,7 @@ import { ScheduleStats } from './schedule/components/ScheduleStats';
 import { HolidaysAndFestivalsTable } from './schedule/components/HolidaysAndFestivalsTable';
 import { GoogleCalendarEventsTable } from './schedule/components/GoogleCalendarEventsTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AutoScheduleAssistant } from './AutoScheduleAssistant';
 import { AdvancedSchedulingDashboard } from './advanced-scheduling/AdvancedSchedulingDashboard';
 import { NotificationsPanel } from './notifications/NotificationsPanel';
 import { useNotifications } from './notifications/useNotifications';
@@ -347,6 +348,15 @@ export const ResponsiveShiftSchedule: React.FC = () => {
               <FileText className="h-4 w-4 ml-1" />
               תבניות משמרות
             </Button>
+            
+            {/* Auto Schedule Assistant */}
+            <AutoScheduleAssistant
+              weekStartDate={currentDate.toISOString().split('T')[0]}
+              emptyShifts={shifts.filter(shift => !shift.employee_id)}
+              onShiftUpdate={async (shiftId: string, updates: any) => {
+                await updateShift(shiftId, updates);
+              }}
+            />
             <Button
               onClick={() => setShowQuickMultiple(true)}
               size={isMobile ? "sm" : "default"}

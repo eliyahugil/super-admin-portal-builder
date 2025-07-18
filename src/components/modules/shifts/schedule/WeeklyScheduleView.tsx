@@ -19,6 +19,7 @@ import { ShiftPriorityManager } from './components/ShiftPriorityManager';
 import { ShiftGroupDisplay } from './components/ShiftGroupDisplay';
 import { ShiftSubmissionsPopover } from './components/ShiftSubmissionsPopover';
 import { EmployeeRecommendationEngine } from '../recommendations/EmployeeRecommendationEngine';
+import { AutoScheduleAssistant } from '../AutoScheduleAssistant';
 import {
   Tooltip,
   TooltipContent,
