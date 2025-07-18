@@ -46,23 +46,8 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
     enabled: !!employeeId,
   });
 
-  // Get shift submissions history
-  const { data: submissions } = useQuery({
-    queryKey: ['employee-submissions', employeeId],
-    queryFn: async () => {
-      if (!employeeId) return [];
-      
-      const { data, error } = await supabase
-        .from('shift_submissions')
-        .select('*')
-        .eq('employee_id', employeeId)
-        .order('week_start_date', { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!employeeId,
-  });
+  // Get shift submissions history - מוסר כיוון שמערכת הטוקנים הוסרה
+  const submissions: any[] = [];
 
   // Get employee notes
   const { data: notes } = useQuery({
@@ -86,55 +71,8 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
     enabled: !!employeeId,
   });
 
-  // Get or create permanent submission token
-  const { data: permanentToken } = useQuery({
-    queryKey: ['employee-permanent-token', employeeId],
-    queryFn: async () => {
-      if (!employeeId) return null;
-      
-      // Check if there's an active token for next week
-      const nextWeek = getNextWeekDates();
-      
-      const { data: existingToken, error } = await supabase
-        .from('employee_weekly_tokens')
-        .select('token')
-        .eq('employee_id', employeeId)
-        .eq('week_start_date', nextWeek.start)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (error) throw error;
-      
-      if (existingToken) {
-        return existingToken.token;
-      }
-
-      // Create new token for next week
-      const newToken = crypto.randomUUID().replace(/-/g, '');
-      const expiresAt = new Date(nextWeek.end);
-      expiresAt.setDate(expiresAt.getDate() + 7);
-
-      const { data: tokenData, error: insertError } = await supabase
-        .from('employee_weekly_tokens')
-        .insert({
-          employee_id: employeeId,
-          token: newToken,
-          week_start_date: nextWeek.start,
-          week_end_date: nextWeek.end,
-          expires_at: expiresAt.toISOString(),
-        })
-        .select('token')
-        .single();
-
-      if (insertError) throw insertError;
-      return tokenData.token;
-    },
-    enabled: !!employeeId,
-  });
-
-  const getNextWeekDates = () => {
-    return getUpcomingWeekDates();
-  };
+  // מערכת הטוקנים הוסרה
+  const permanentToken: string | null = null;
 
   return {
     employee,
@@ -143,6 +81,6 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
     notes: notes || [],
     permanentToken,
     isLoading: employeeLoading,
-    submissionUrl: permanentToken ? `${window.location.origin}/weekly-shift-submission/${permanentToken}` : null
+    submissionUrl: null
   };
 };

@@ -7,7 +7,7 @@ import { AutoShiftAssignment } from '../shifts/AutoShiftAssignment';
 import { VacationRequestSystem } from '../shifts/VacationRequestSystem';
 import { QuickRequestRegistration } from '../shifts/QuickRequestRegistration';
 import { UnifiedShiftRequests } from '../shifts/UnifiedShiftRequests';
-import { ShiftSubmissionManager } from '../shifts/ShiftSubmissionManager';
+
 
 interface Props {
   route: string;
@@ -20,7 +20,7 @@ export const ShiftsModuleRouter: React.FC<Props> = ({ route }) => {
     case 'schedule':
       return <ShiftSchedule />;
     case 'submission':
-      return <ShiftSubmissionManager />;
+      return <div className="p-4 text-center">מערכת הגשת משמרות הוסרה</div>;
     case 'auto-assignment':
       return <AutoShiftAssignment />;
     case 'vacation-requests':

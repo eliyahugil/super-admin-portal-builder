@@ -630,7 +630,6 @@ export type Database = {
           allow_employee_reporting_web: boolean
           allow_past_shift_editing: boolean
           allow_shift_editing: boolean
-          allow_shift_submission_without_token: boolean
           auto_shift_reminders: boolean
           business_id: string
           created_at: string
@@ -645,7 +644,6 @@ export type Database = {
           allow_employee_reporting_web?: boolean
           allow_past_shift_editing?: boolean
           allow_shift_editing?: boolean
-          allow_shift_submission_without_token?: boolean
           auto_shift_reminders?: boolean
           business_id: string
           created_at?: string
@@ -660,7 +658,6 @@ export type Database = {
           allow_employee_reporting_web?: boolean
           allow_past_shift_editing?: boolean
           allow_shift_editing?: boolean
-          allow_shift_submission_without_token?: boolean
           auto_shift_reminders?: boolean
           business_id?: string
           created_at?: string
@@ -1983,50 +1980,6 @@ export type Database = {
           },
         ]
       }
-      employee_quick_add_tokens: {
-        Row: {
-          business_id: string
-          created_at: string
-          created_by: string
-          expires_at: string
-          id: string
-          is_used: boolean
-          token: string
-          updated_at: string
-          used_at: string | null
-        }
-        Insert: {
-          business_id: string
-          created_at?: string
-          created_by: string
-          expires_at: string
-          id?: string
-          is_used?: boolean
-          token: string
-          updated_at?: string
-          used_at?: string | null
-        }
-        Update: {
-          business_id?: string
-          created_at?: string
-          created_by?: string
-          expires_at?: string
-          id?: string
-          is_used?: boolean
-          token?: string
-          updated_at?: string
-          used_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employee_quick_add_tokens_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       employee_requests: {
         Row: {
           created_at: string | null
@@ -2454,59 +2407,6 @@ export type Database = {
           },
         ]
       }
-      employee_weekly_tokens: {
-        Row: {
-          choices_submitted: boolean | null
-          context_type: string | null
-          created_at: string
-          employee_id: string | null
-          expires_at: string
-          id: string
-          is_active: boolean
-          last_used_at: string | null
-          shifts_published: boolean | null
-          token: string
-          week_end_date: string
-          week_start_date: string
-        }
-        Insert: {
-          choices_submitted?: boolean | null
-          context_type?: string | null
-          created_at?: string
-          employee_id?: string | null
-          expires_at: string
-          id?: string
-          is_active?: boolean
-          last_used_at?: string | null
-          shifts_published?: boolean | null
-          token?: string
-          week_end_date: string
-          week_start_date: string
-        }
-        Update: {
-          choices_submitted?: boolean | null
-          context_type?: string | null
-          created_at?: string
-          employee_id?: string | null
-          expires_at?: string
-          id?: string
-          is_active?: boolean
-          last_used_at?: string | null
-          shifts_published?: boolean | null
-          token?: string
-          week_end_date?: string
-          week_start_date?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employee_weekly_tokens_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       employees: {
         Row: {
           address: string | null
@@ -2530,7 +2430,6 @@ export type Database = {
           phone: string | null
           preferred_shift_time: string | null
           preferred_shift_type: Database["public"]["Enums"]["shift_type"] | null
-          shift_submission_quota: number | null
           submission_notes: string | null
           termination_date: string | null
           updated_at: string | null
@@ -2561,7 +2460,6 @@ export type Database = {
           preferred_shift_type?:
             | Database["public"]["Enums"]["shift_type"]
             | null
-          shift_submission_quota?: number | null
           submission_notes?: string | null
           termination_date?: string | null
           updated_at?: string | null
@@ -2592,7 +2490,6 @@ export type Database = {
           preferred_shift_type?:
             | Database["public"]["Enums"]["shift_type"]
             | null
-          shift_submission_quota?: number | null
           submission_notes?: string | null
           termination_date?: string | null
           updated_at?: string | null
@@ -3734,59 +3631,6 @@ export type Database = {
           },
         ]
       }
-      shift_submissions: {
-        Row: {
-          created_at: string | null
-          employee_id: string | null
-          id: string
-          notes: string | null
-          optional_morning_availability: number[] | null
-          shifts: Json
-          status: string | null
-          submitted_at: string | null
-          token: string
-          updated_at: string | null
-          week_end_date: string
-          week_start_date: string
-        }
-        Insert: {
-          created_at?: string | null
-          employee_id?: string | null
-          id?: string
-          notes?: string | null
-          optional_morning_availability?: number[] | null
-          shifts?: Json
-          status?: string | null
-          submitted_at?: string | null
-          token: string
-          updated_at?: string | null
-          week_end_date: string
-          week_start_date: string
-        }
-        Update: {
-          created_at?: string | null
-          employee_id?: string | null
-          id?: string
-          notes?: string | null
-          optional_morning_availability?: number[] | null
-          shifts?: Json
-          status?: string | null
-          submitted_at?: string | null
-          token?: string
-          updated_at?: string | null
-          week_end_date?: string
-          week_start_date?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shift_submissions_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       shift_swap_requests: {
         Row: {
           approved_at: string | null
@@ -4007,94 +3851,6 @@ export type Database = {
           },
           {
             foreignKeyName: "shift_token_logs_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      shift_token_schedules: {
-        Row: {
-          business_id: string
-          channel_type: string
-          created_at: string
-          id: string
-          is_active: boolean
-          message_template: string | null
-          send_day: string
-          send_time: string
-          updated_at: string
-        }
-        Insert: {
-          business_id: string
-          channel_type?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          message_template?: string | null
-          send_day: string
-          send_time?: string
-          updated_at?: string
-        }
-        Update: {
-          business_id?: string
-          channel_type?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          message_template?: string | null
-          send_day?: string
-          send_time?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shift_token_schedules_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      shift_tokens: {
-        Row: {
-          branch_preference_1: string | null
-          branch_preference_2: string | null
-          created_at: string
-          employee_id: string
-          expires_at: string
-          id: string
-          is_used: boolean | null
-          submitted_data: Json | null
-          token: string
-        }
-        Insert: {
-          branch_preference_1?: string | null
-          branch_preference_2?: string | null
-          created_at?: string
-          employee_id: string
-          expires_at: string
-          id?: string
-          is_used?: boolean | null
-          submitted_data?: Json | null
-          token: string
-        }
-        Update: {
-          branch_preference_1?: string | null
-          branch_preference_2?: string | null
-          created_at?: string
-          employee_id?: string
-          expires_at?: string
-          id?: string
-          is_used?: boolean | null
-          submitted_data?: Json | null
-          token?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shift_tokens_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"

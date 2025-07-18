@@ -24,7 +24,7 @@ import { format } from 'date-fns';
 import { useShiftReminderLogs } from '@/hooks/useShiftReminderLogs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { sendShiftTokenWhatsapp } from '@/utils/sendWhatsappReminder';
+
 
 export const ReminderLogsSection: React.FC = () => {
   const { data: logs = [], isLoading, refetch } = useShiftReminderLogs(200);
@@ -87,54 +87,13 @@ export const ReminderLogsSection: React.FC = () => {
     });
   };
 
-  // שליחה מחדש
+  // פונקציה זו הוסרה - מערכת הטוקנים לא קיימת יותר
   const retrySend = async (log: any) => {
-    if (!log.employee || !log.phone_number) {
-      toast({
-        title: 'שגיאה',
-        description: 'חסרים פרטי עובד או מספר טלפון',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    try {
-      const employeeName = `${log.employee.first_name} ${log.employee.last_name}`;
-      const tokenUrl = `${window.location.origin}/weekly-shift-submission/token123`; // נצטרך ליצור טוקן חדש
-      
-      await sendShiftTokenWhatsapp({
-        phone: log.phone_number,
-        employeeName,
-        employeeId: log.employee_id,
-        tokenUrl,
-        useAPI: false
-      });
-
-      // רישום לוג חדש
-      await supabase.from('shift_reminder_logs').insert({
-        employee_id: log.employee_id,
-        business_id: log.business_id,
-        sent_at: new Date().toISOString(),
-        method: 'manual',
-        status: 'success',
-        message_content: `שליחה חוזרת של טוכן משמרות ל${employeeName}`,
-        phone_number: log.phone_number
-      });
-
-      refetch();
-
-      toast({
-        title: 'נשלח בהצלחה',
-        description: `הטוכן נשלח מחדש ל${employeeName}`,
-      });
-    } catch (error) {
-      console.error('Error resending:', error);
-      toast({
-        title: 'שגיאה בשליחה',
-        description: 'לא ניתן לשלוח את הטוכן מחדש',
-        variant: 'destructive'
-      });
-    }
+    toast({
+      title: 'פונקציה לא זמינה',
+      description: 'מערכת הטוקנים הוסרה',
+      variant: 'destructive'
+    });
   };
 
   const getStatusBadge = (status: string) => {

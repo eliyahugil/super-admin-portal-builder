@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShiftSubmissionsDashboard } from './ShiftSubmissionsDashboard';
+
 import { ShiftApprovalDashboard } from './ShiftApprovalDashboard';
 import { ShiftTemplatesManagement } from './ShiftTemplatesManagement';
 import { DeleteAllShiftsButton } from './DeleteAllShiftsButton';
@@ -31,7 +31,7 @@ export const ShiftManagementTabs: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="submissions" className="mt-6">
-          <ShiftSubmissionsDashboard />
+          <div className="p-4 text-center">מערכת הגשת משמרות הוסרה</div>
         </TabsContent>
         
         

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Bell, Phone, CheckCircle, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { sendWhatsappReminder } from '@/utils/sendWhatsappReminder';
+
 
 interface SystemNotification {
   id: string;
@@ -50,12 +50,8 @@ export const SystemNotificationManager: React.FC = () => {
         duration: 10000,
       });
 
-      // Alternative: Send WhatsApp message as fallback
-      await sendWhatsappReminder(
-        phone,
-        `🚨 התראת מערכת חשובה: ${message}\n\nאנא התחבר למערכת לטיפול בבקשה.`,
-        false
-      );
+      // Alternative: Open WhatsApp manually
+      window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`🚨 התראת מערכת חשובה: ${message}\n\nאנא התחבר למערכת לטיפול בבקשה.`)}`, '_blank');
 
     } catch (error) {
       console.error('Failed to make phone call:', error);
