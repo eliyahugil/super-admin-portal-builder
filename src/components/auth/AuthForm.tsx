@@ -241,8 +241,18 @@ export const AuthForm: React.FC = () => {
     );
   }
 
+  // Debug log for profile checking
+  console.log('AuthForm - Profile check:', { 
+    hasUser: !!user, 
+    hasProfile: !!profile, 
+    role: profile?.role,
+    email: profile?.email,
+    businessId: profile?.business_id 
+  });
+
   // If user is authenticated but has no business access, show simple access request form
-  if (user && profile && profile.role !== 'super_admin' && !profile.business_id) {
+  // BUT NOT for super_admin or if email is eligil1308@gmail.com
+  if (user && profile && profile.role !== 'super_admin' && !profile.business_id && profile.email !== 'eligil1308@gmail.com') {
     console.log('AuthForm - Showing simple access request form for user without business');
     return <SimpleAccessRequestForm />;
   }
