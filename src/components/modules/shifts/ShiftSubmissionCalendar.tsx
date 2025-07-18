@@ -115,6 +115,17 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
             current_employees: 1
           },
           {
+            id: `${dateStr}-afternoon`,
+            name: 'משמרת צהריים',
+            start_time: '14:00',
+            end_time: '22:00',
+            branch_name: 'סניף ראשי',
+            branch_id: 'main-branch',
+            date: dateStr,
+            max_employees: 2,
+            current_employees: 0
+          },
+          {
             id: `${dateStr}-evening`,
             name: 'משמרת ערב',
             start_time: '16:00',
@@ -162,12 +173,27 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
   const shiftsOverlap = (shift1: AvailableShift, shift2: AvailableShift) => {
     if (shift1.date !== shift2.date) return false;
     
-    const start1 = parseInt(shift1.start_time.replace(':', ''));
-    const end1 = parseInt(shift1.end_time.replace(':', ''));
-    const start2 = parseInt(shift2.start_time.replace(':', ''));
-    const end2 = parseInt(shift2.end_time.replace(':', ''));
+    // Convert time strings to minutes for easier comparison
+    const timeToMinutes = (timeStr: string) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
     
-    return (start1 < end2 && start2 < end1);
+    const start1 = timeToMinutes(shift1.start_time);
+    const end1 = timeToMinutes(shift1.end_time);
+    const start2 = timeToMinutes(shift2.start_time);
+    const end2 = timeToMinutes(shift2.end_time);
+    
+    console.log(`Checking overlap: ${shift1.name} (${start1}-${end1}) vs ${shift2.name} (${start2}-${end2})`);
+    
+    // Handle overnight shifts (end time is next day)
+    const actualEnd1 = end1 < start1 ? end1 + 24 * 60 : end1;
+    const actualEnd2 = end2 < start2 ? end2 + 24 * 60 : end2;
+    
+    const overlaps = (start1 < actualEnd2 && start2 < actualEnd1);
+    console.log(`Overlap result: ${overlaps}`);
+    
+    return overlaps;
   };
 
   const toggleShiftSelection = (shift: AvailableShift) => {
@@ -250,8 +276,9 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
   };
 
   const isShiftSelectable = (shift: AvailableShift) => {
+    console.log(`Checking if shift ${shift.name} is selectable for ${employeePreference} worker`);
     if (employeePreference === 'evening') {
-      return shift.name.includes('ערב') || shift.name.includes('לילה');
+      return shift.name.includes('ערב') || shift.name.includes('לילה') || shift.name.includes('צהריים');
     } else {
       return shift.name.includes('בוקר');
     }
@@ -537,14 +564,16 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
                           return (
                             <div
                               key={shift.id}
-                              className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                                isSelected
-                                  ? 'bg-purple-100 border-purple-300 text-purple-800'
-                                  : isFull
-                                  ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
-                                  : 'bg-white border-purple-200 hover:border-purple-300 hover:bg-purple-50'
-                              }`}
-                              onClick={() => !isFull && toggleShiftSelection(shift)}
+                               className={`p-3 rounded-lg border transition-all ${
+                                 isSelected
+                                   ? 'bg-purple-100 border-purple-300 text-purple-800'
+                                   : isFull
+                                   ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
+                                   : isShiftSelectable(shift)
+                                   ? 'bg-white border-purple-200 hover:border-purple-300 hover:bg-purple-50 cursor-pointer'
+                                   : 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                               }`}
+                               onClick={() => !isFull && isShiftSelectable(shift) && toggleShiftSelection(shift)}
                             >
                               <div className="space-y-1">
                                 <div className="font-medium text-sm">{shift.name}</div>
