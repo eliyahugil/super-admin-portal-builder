@@ -50,12 +50,18 @@ export const EmployeeLoginFlow: React.FC = () => {
       setCurrentEmployee(result.employee);
       setShowBirthDateUpdate(true);
     } else if (result.success) {
-      // Successful login, navigate to employee profile
-      if (result.employee?.id) {
-        window.location.href = `/modules/employees/profile/${result.employee.id}`;
-      } else {
-        window.location.reload();
-      }
+      // Successful login, navigate to employee profile with slight delay to allow session update
+      setTimeout(() => {
+        if (result.employee?.id) {
+          window.location.href = `/modules/employees/profile/${result.employee.id}`;
+        } else if (session?.employee?.id) {
+          // Fallback to session employee id if available
+          window.location.href = `/modules/employees/profile/${session.employee.id}`;
+        } else {
+          // Force page reload if no employee id available
+          window.location.reload();
+        }
+      }, 100);
     }
   };
 
