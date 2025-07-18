@@ -21,22 +21,37 @@ import { supabase } from '@/integrations/supabase/client';
 export const SuperAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
-  // Fetch dashboard stats
-  const { data: stats } = useQuery({
+  // Fetch dashboard stats with error handling
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ['super-admin-stats'],
     queryFn: async () => {
-      const [businessesRes, usersRes, requestsRes] = await Promise.all([
-        supabase.from('businesses').select('id').eq('is_active', true),
-        supabase.from('profiles').select('id'),
-        supabase.from('user_access_requests').select('id').eq('status', 'pending')
-      ]);
+      try {
+        console.log('🔄 Fetching super admin stats...');
+        const [businessesRes, usersRes, requestsRes] = await Promise.all([
+          supabase.from('businesses').select('id').eq('is_active', true),
+          supabase.from('profiles').select('id'),
+          supabase.from('user_access_requests').select('id').eq('status', 'pending')
+        ]);
 
-      return {
-        totalBusinesses: businessesRes.data?.length || 0,
-        totalUsers: usersRes.data?.length || 0,
-        pendingRequests: requestsRes.data?.length || 0,
-      };
+        const result = {
+          totalBusinesses: businessesRes.data?.length || 0,
+          totalUsers: usersRes.data?.length || 0,
+          pendingRequests: requestsRes.data?.length || 0,
+        };
+        
+        console.log('✅ Super admin stats loaded:', result);
+        return result;
+      } catch (error) {
+        console.error('❌ Error fetching super admin stats:', error);
+        return {
+          totalBusinesses: 0,
+          totalUsers: 0,
+          pendingRequests: 0,
+        };
+      }
     },
+    retry: 1,
+    refetchOnWindowFocus: false
   });
 
   const quickActions = [
