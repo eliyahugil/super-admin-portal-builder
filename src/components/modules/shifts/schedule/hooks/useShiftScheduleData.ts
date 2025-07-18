@@ -165,16 +165,40 @@ export const useShiftScheduleData = (businessId: string | null) => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Fetch pending submissions - now returns empty array since submissions system was removed
+  // Fetch shift submissions for display in schedule
   const { data: pendingSubmissions = [], isLoading: submissionsLoading, error: submissionsError } = useQuery({
-    queryKey: ['pending-submissions', businessId],
+    queryKey: ['shift-submissions', businessId],
     queryFn: async () => {
-      // Shift submissions system removed - return empty array
-      console.log('🔍 Pending submissions system removed - returning empty array');
-      return [];
+      if (!businessId) {
+        console.log('❌ No business ID provided for shift submissions');
+        return [];
+      }
+
+      console.log('🔍 Fetching shift submissions for business:', businessId);
+
+      const { data, error } = await supabase
+        .from('shift_submissions')
+        .select(`
+          *,
+          employee:employees(
+            id,
+            first_name,
+            last_name,
+            employee_id
+          )
+        `)
+        .order('submitted_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching shift submissions:', error);
+        throw error;
+      }
+
+      console.log('✅ Fetched shift submissions:', data?.length || 0);
+      return data || [];
     },
     enabled: !!businessId,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     staleTime: 1000 * 60, // 1 minute
   });
 

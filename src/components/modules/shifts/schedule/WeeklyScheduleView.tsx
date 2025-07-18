@@ -17,6 +17,7 @@ import { ShiftFiltersToolbar, type ShiftFilters } from './ShiftFiltersToolbar';
 import { EmployeeStatsPanel } from './EmployeeStatsPanel';
 import { ShiftPriorityManager } from './components/ShiftPriorityManager';
 import { ShiftGroupDisplay } from './components/ShiftGroupDisplay';
+import { ShiftSubmissionsPopover } from './components/ShiftSubmissionsPopover';
 import {
   Tooltip,
   TooltipContent,
@@ -687,184 +688,88 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                     const shiftSubmissions = getSubmissionsForShift();
                     const hasConflict = hasShiftConflict(shift);
 
-                    return (
-                       <TooltipProvider key={shift.id}>
-                         <Tooltip>
-                           <TooltipTrigger asChild>
-                              <div
-                                className={`relative group p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all ${
-                                  hasConflict ? 'border-red-300 bg-red-50' : ''
-                                } ${isSelectionMode && isShiftSelected(shift) ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300' : ''}`}
-                                onClick={(e) => handleShiftCardClick(shift, e)}
-                              >
-                               {/* Delete button - appears on hover */}
-                               <Button
-                                 size="sm"
-                                 variant="destructive"
-                                 className="absolute top-1 left-1 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                 onClick={(e) => handleDeleteShift(shift.id, e)}
-                               >
-                                 <Trash2 className="h-2.5 w-2.5" />
-                               </Button>
-                               <div className={`space-y-1 text-xs ${hasConflict ? 'line-through opacity-60' : ''}`}>
-                                 {/* סניף - ראשון ובולט */}
-                                 {shift.branch_name && (
-                                   <div className="text-center">
-                                     <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5">
-                                       {shift.branch_name}
-                                     </Badge>
-                                   </div>
-                                 )}
-                                 
-                                 {/* שעות משמרת - שני */}
-                                 <div className="text-center">
-                                   <Badge variant="outline" className="text-xs font-medium border-gray-300">
-                                     {shift.start_time}-{shift.end_time}
-                                   </Badge>
-                                 </div>
-                                 
-                                 {/* עובד מוקצה או לא מוקצה */}
-                                 <div className="text-center">
-                                   {shift.employee_id ? (
-                                     <Badge variant="secondary" className="bg-green-50 text-green-700 text-xs px-2 py-0.5">
-                                       {getEmployeeName(shift.employee_id).split(' ')[0]}
-                                     </Badge>
-                                   ) : (
-                                     <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs px-2 py-0.5">
-                                       לא מוקצה
-                                     </Badge>
-                                   )}
-                                 </div>
-                               </div>
-                               
-                               {/* סטטוס וקונפליקטים ובקשות - במטה */}
-                               <div className="flex items-center justify-between mt-2 pt-1 border-t border-gray-100">
-                                 <div className="flex items-center gap-1">
-                                   <Badge variant="secondary" className={`text-xs ${getStatusColor(shift.status || 'pending')}`}>
-                                     {shift.status === 'approved' ? 'מאושר' : 
-                                      shift.status === 'pending' ? 'ממתין' :
-                                      shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
-                                   </Badge>
-                                    {hasConflict && (
-                                      <TooltipProvider>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <AlertTriangle className="h-3 w-3 text-red-500" />
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            התנגשות עם משמרת אחרת
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-                                    )}
-                                 </div>
-                                 {shiftSubmissions.length > 0 && (
-                                   <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                     {shiftSubmissions.length} בקשות
-                                   </Badge>
-                                 )}
-                               </div>
-                            </div>
-                          </TooltipTrigger>
-                          
-                          {shiftSubmissions.length > 0 && (
-                            <TooltipContent side="top" className="max-w-sm p-4">
-                              <div className="text-right space-y-3">
-                                <div className="border-b pb-2">
-                                  <h4 className="font-medium text-sm">בקשות למשמרת:</h4>
-                                  <p className="text-xs text-gray-600">
-                                    {shift.start_time} - {shift.end_time} | {shift.branch_name}
-                                  </p>
-                                </div>
-                                
-                                <div className="space-y-2">
-                                  {shiftSubmissions.map((submission, index) => (
-                                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs">
-                                      <div className="flex-1">
-                                        <div className="font-medium">
-                                          {submission.employeeName}
-                                          {submission.isCurrentlyAssigned && (
-                                            <span className="text-green-600 mr-1">✓</span>
-                                          )}
-                                        </div>
-                                        <div className="text-gray-600">{submission.role}</div>
-                                      </div>
-                                      
-                                      <div className="flex gap-1">
-                                        {!submission.isCurrentlyAssigned && (
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="h-6 px-2 text-xs"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              if (onShiftUpdate) {
-                                                onShiftUpdate(shift.id, {
-                                                  ...shift,
-                                                  employee_id: submission.employee_id
-                                                });
-                                              }
-                                            }}
-                                          >
-                                            שייך
-                                          </Button>
-                                        )}
-                                        
-                                        <Button
-                                          size="sm"
-                                          variant="outline" 
-                                          className="h-6 px-2 text-xs"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            // Add functionality to move employee to different shift
-                                            console.log('Move employee to different shift:', submission.employee_id);
-                                          }}
-                                        >
-                                          העבר
-                                        </Button>
-                                        
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="h-6 px-2 text-xs"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            // Add functionality to change branch
-                                            console.log('Change branch for employee:', submission.employee_id);
-                                          }}
-                                        >
-                                          סניף
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                                
-                                {shift.employee_id && (
-                                  <div className="border-t pt-2">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="w-full text-xs"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (onShiftUpdate) {
-                                          onShiftUpdate(shift.id, {
-                                            ...shift,
-                                            employee_id: null
-                                          });
-                                        }
-                                      }}
-                                    >
-                                      בטל שיוך נוכחי
-                                    </Button>
-                                  </div>
-                                )}
+                     return (
+                       <ShiftSubmissionsPopover 
+                         key={shift.id}
+                         submissions={pendingSubmissions}
+                         targetDate={date}
+                         shiftId={shift.id}
+                       >
+                         <div
+                           className={`relative group p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all ${
+                             hasConflict ? 'border-red-300 bg-red-50' : ''
+                           } ${isSelectionMode && isShiftSelected(shift) ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300' : ''}`}
+                           onClick={(e) => handleShiftCardClick(shift, e)}
+                         >
+                          {/* Delete button - appears on hover */}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="absolute top-1 left-1 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            onClick={(e) => handleDeleteShift(shift.id, e)}
+                          >
+                            <Trash2 className="h-2.5 w-2.5" />
+                          </Button>
+                          <div className={`space-y-1 text-xs ${hasConflict ? 'line-through opacity-60' : ''}`}>
+                            {/* סניף - ראשון ובולט */}
+                            {shift.branch_name && (
+                              <div className="text-center">
+                                <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5">
+                                  {shift.branch_name}
+                                </Badge>
                               </div>
-                            </TooltipContent>
-                          )}
-                        </Tooltip>
-                      </TooltipProvider>
+                            )}
+                            
+                            {/* שעות משמרת - שני */}
+                            <div className="text-center">
+                              <Badge variant="outline" className="text-xs font-medium border-gray-300">
+                                {shift.start_time}-{shift.end_time}
+                              </Badge>
+                            </div>
+                            
+                            {/* עובד מוקצה או לא מוקצה */}
+                            <div className="text-center">
+                              {shift.employee_id ? (
+                                <Badge variant="secondary" className="bg-green-50 text-green-700 text-xs px-2 py-0.5">
+                                  {getEmployeeName(shift.employee_id).split(' ')[0]}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs px-2 py-0.5">
+                                  לא מוקצה
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* סטטוס וקונפליקטים ובקשות - במטה */}
+                          <div className="flex items-center justify-between mt-2 pt-1 border-t border-gray-100">
+                            <div className="flex items-center gap-1">
+                              <Badge variant="secondary" className={`text-xs ${getStatusColor(shift.status || 'pending')}`}>
+                                {shift.status === 'approved' ? 'מאושר' : 
+                                 shift.status === 'pending' ? 'ממתין' :
+                                 shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
+                              </Badge>
+                               {hasConflict && (
+                                 <TooltipProvider>
+                                   <Tooltip>
+                                     <TooltipTrigger asChild>
+                                       <AlertTriangle className="h-3 w-3 text-red-500" />
+                                     </TooltipTrigger>
+                                     <TooltipContent>
+                                       התנגשות עם משמרת אחרת
+                                     </TooltipContent>
+                                   </Tooltip>
+                                 </TooltipProvider>
+                               )}
+                            </div>
+                            {shiftSubmissions.length > 0 && (
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                {shiftSubmissions.length} בקשות
+                              </Badge>
+                            )}
+                          </div>
+                       </div>
+                     </ShiftSubmissionsPopover>
                     );
                   })}
                 </div>
