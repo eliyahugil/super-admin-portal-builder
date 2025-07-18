@@ -16,9 +16,12 @@ export const useShiftSubmissions = () => {
   const { data: submissions, isLoading: submissionsLoading, refetch } = useQuery({
     queryKey: ['shift-submissions', businessId],
     queryFn: async () => {
-      if (!businessId) return [];
+      console.log('🔄 Fetching submissions from useShiftSubmissions hook. businessId:', businessId);
       
-      console.log('🔄 Fetching submissions from useShiftSubmissions hook...');
+      if (!businessId) {
+        console.log('❌ No businessId provided');
+        return [];
+      }
       
       const { data, error } = await supabase
         .from('shift_submissions')
@@ -40,6 +43,7 @@ export const useShiftSubmissions = () => {
       }
       
       console.log('📊 Hook fetched submissions count:', data?.length || 0);
+      console.log('📄 First submission sample:', data?.[0]);
       return (data || []) as any[];
     },
     enabled: !!businessId && !isLoading,
