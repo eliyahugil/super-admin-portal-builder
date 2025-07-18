@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,9 +19,15 @@ import {
   Calendar,
   CheckCircle,
   AlertTriangle,
-  Clock 
+  Clock,
+  Brain,
+  Zap,
+  Target
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { SmartSchedulingAlgorithm } from './advanced-scheduling/SmartSchedulingAlgorithm';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
 
 interface AssignmentRule {
   id: string;
@@ -39,9 +44,13 @@ interface AssignmentRule {
 
 export const AutoShiftAssignment: React.FC = () => {
   const { toast } = useToast();
+  const { businessId } = useCurrentBusiness();
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [assignmentMode, setAssignmentMode] = useState<'automatic' | 'suggest'>('suggest');
+  const [selectedWeek, setSelectedWeek] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [algorithmType, setAlgorithmType] = useState<'basic' | 'advanced' | 'ai_optimized'>('advanced');
+  const [lastResult, setLastResult] = useState<any>(null);
   
   const [rules, setRules] = useState<AssignmentRule[]>([
     {
@@ -83,40 +92,81 @@ export const AutoShiftAssignment: React.FC = () => {
   ]);
 
   const [stats, setStats] = useState({
-    totalShifts: 156,
-    assignedShifts: 89,
-    unassignedShifts: 67,
-    conflictingShifts: 12
+    totalShifts: 0,
+    assignedShifts: 0,
+    unassignedShifts: 0,
+    conflictingShifts: 0
   });
 
   const handleRunAssignment = async () => {
+    if (!businessId) {
+      toast({
+        title: 'שגיאה',
+        description: 'לא נמצא מזהה עסק תקין',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsRunning(true);
     setProgress(0);
     
-    // סימולציה של תהליך השיוך
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsRunning(false);
-          
-          // עדכון סטטיסטיקות אחרי השיוך
-          setStats(prev => ({
-            ...prev,
-            assignedShifts: prev.assignedShifts + 15,
-            unassignedShifts: prev.unassignedShifts - 15
-          }));
-          
-          toast({
-            title: 'השיוך הושלם בהצלחה',
-            description: `שוייכו 15 משמרות נוספות לעובדים זמינים`,
-          });
-          
-          return 100;
-        }
-        return prev + Math.random() * 20;
+    try {
+      const algorithm = new SmartSchedulingAlgorithm(businessId);
+      
+      // חישוב תאריכי השבוע
+      const weekStart = startOfWeek(new Date(selectedWeek), { weekStartsOn: 0 });
+      const weekEnd = endOfWeek(new Date(selectedWeek), { weekStartsOn: 0 });
+      
+      // עדכון התקדמות
+      setProgress(20);
+      
+      // טעינת נתונים
+      await algorithm.loadData(
+        format(weekStart, 'yyyy-MM-dd'),
+        format(weekEnd, 'yyyy-MM-dd')
+      );
+      
+      setProgress(50);
+      
+      // יצירת סידור
+      const result = await algorithm.generateSchedule(algorithmType);
+      
+      setProgress(80);
+      
+      // שמירה אם במצב אוטומטי
+      if (assignmentMode === 'automatic' && result.success) {
+        await algorithm.saveSchedule(result.assignments);
+      }
+      
+      setProgress(100);
+      
+      // עדכון תוצאות
+      setLastResult(result);
+      setStats({
+        totalShifts: result.statistics.total_shifts,
+        assignedShifts: result.statistics.assigned_shifts,
+        unassignedShifts: result.statistics.total_shifts - result.statistics.assigned_shifts,
+        conflictingShifts: result.conflicts.length
       });
-    }, 500);
+      
+      toast({
+        title: result.success ? 'השיוך הושלם בהצלחה' : 'השיוך הושלם עם קונפליקטים',
+        description: `שוייכו ${result.assignments.length} משמרות, ${result.conflicts.length} קונפליקטים`,
+        variant: result.success ? 'default' : 'destructive'
+      });
+      
+    } catch (error) {
+      console.error('שגיאה בסידור אוטומטי:', error);
+      toast({
+        title: 'שגיאה בסידור אוטומטי',
+        description: 'אנא נסה שוב או פנה לתמיכה',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsRunning(false);
+      setProgress(0);
+    }
   };
 
   const toggleRule = (ruleId: string) => {
@@ -145,6 +195,39 @@ export const AutoShiftAssignment: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-3">
+          <input
+            type="week"
+            value={selectedWeek}
+            onChange={(e) => setSelectedWeek(e.target.value)}
+            className="px-3 py-2 border rounded-md"
+          />
+          
+          <Select value={algorithmType} onValueChange={(value: any) => setAlgorithmType(value)}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-white border shadow-lg z-50">
+              <SelectItem value="basic">
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  בסיסי
+                </div>
+              </SelectItem>
+              <SelectItem value="advanced">
+                <div className="flex items-center gap-2">
+                  <Brain className="h-4 w-4" />
+                  מתקדם
+                </div>
+              </SelectItem>
+              <SelectItem value="ai_optimized">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  AI מאופטם
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          
           <Select value={assignmentMode} onValueChange={(value: any) => setAssignmentMode(value)}>
             <SelectTrigger className="w-48">
               <SelectValue />
@@ -157,7 +240,7 @@ export const AutoShiftAssignment: React.FC = () => {
           
           <Button
             onClick={handleRunAssignment}
-            disabled={isRunning}
+            disabled={isRunning || !businessId}
             className="bg-blue-600 hover:bg-blue-700"
           >
             {isRunning ? (
@@ -264,6 +347,66 @@ export const AutoShiftAssignment: React.FC = () => {
         </Card>
       )}
 
+      {/* תוצאות הסידור האחרון */}
+      {lastResult && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              תוצאות הסידור האחרון
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-medium mb-2">שיוכים שבוצעו ({lastResult.assignments.length})</h4>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {lastResult.assignments.slice(0, 5).map((assignment: any, index: number) => (
+                    <div key={index} className="text-sm p-2 bg-green-50 rounded border">
+                      <div className="font-medium">משמרת {assignment.shift_id.slice(-8)}</div>
+                      <div className="text-gray-600">{assignment.reasoning}</div>
+                      <div className="text-xs text-green-600">ציון: {assignment.confidence_score}</div>
+                    </div>
+                  ))}
+                  {lastResult.assignments.length > 5 && (
+                    <div className="text-sm text-gray-500">ועוד {lastResult.assignments.length - 5} שיוכים...</div>
+                  )}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium mb-2">קונפליקטים ({lastResult.conflicts.length})</h4>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {lastResult.conflicts.slice(0, 3).map((conflict: any, index: number) => (
+                    <div key={index} className="text-sm p-2 bg-red-50 rounded border">
+                      <div className="font-medium text-red-700">{conflict.issue}</div>
+                      <div className="text-xs text-gray-600">
+                        הצעות: {conflict.suggestions.join(', ')}
+                      </div>
+                    </div>
+                  ))}
+                  {lastResult.conflicts.length > 3 && (
+                    <div className="text-sm text-gray-500">ועוד {lastResult.conflicts.length - 3} קונפליקטים...</div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="pt-4 border-t">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">ציון שביעות רצון כללי:</span>
+                <Badge 
+                  variant={lastResult.statistics.employee_satisfaction_score > 70 ? "default" : "destructive"}
+                  className="text-lg px-3 py-1"
+                >
+                  {lastResult.statistics.employee_satisfaction_score}%
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* כללי השיוך */}
       <Card>
         <CardHeader>
@@ -278,7 +421,7 @@ export const AutoShiftAssignment: React.FC = () => {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs">
-                    עדיফות {rule.priority}
+                    עדיפות {rule.priority}
                   </Badge>
                   <span className="font-medium">{rule.name}</span>
                 </div>
