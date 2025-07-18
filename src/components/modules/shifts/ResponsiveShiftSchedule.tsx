@@ -26,6 +26,8 @@ import { HolidaysAndFestivalsTable } from './schedule/components/HolidaysAndFest
 import { GoogleCalendarEventsTable } from './schedule/components/GoogleCalendarEventsTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdvancedSchedulingDashboard } from './advanced-scheduling/AdvancedSchedulingDashboard';
+import { NotificationsPanel } from './notifications/NotificationsPanel';
+import { useNotifications } from './notifications/useNotifications';
 import type { ScheduleView, ShiftScheduleData, CreateShiftData } from './schedule/types';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
@@ -83,6 +85,16 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     shifts,
     employees
   });
+
+  // Notifications system
+  const {
+    notifications,
+    addNotification,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    addShiftSubmissionNotification
+  } = useNotifications();
 
   console.log('📊 ResponsiveShiftSchedule - Current state:', {
     businessId,
@@ -284,21 +296,31 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             {!isMobile && <p className="text-gray-600 mt-1">ניהול וצפייה בלוח הזמנים עם אינטגרציית Google Calendar, חגים וזמני שבת</p>}
           </div>
           
-          <ScheduleActions
-            showFilters={showFilters}
-            setShowFilters={setShowFilters}
-            setShowCreateDialog={setShowCreateDialog}
-            mobileMenuOpen={mobileMenuOpen}
-            setMobileMenuOpen={setMobileMenuOpen}
-            isMobile={isMobile}
-            isSelectionMode={isSelectionMode}
-            setIsSelectionMode={setIsSelectionMode}
-            selectedShifts={selectedShifts}
-            onBulkEdit={() => setShowBulkEditDialog(true)}
-            onBulkDelete={handleBulkDelete}
-            onSelectAll={handleSelectAllShifts}
-            onClearSelection={handleClearSelection}
-          />
+          <div className="flex items-center gap-3">
+            {/* Notifications Panel */}
+            <NotificationsPanel
+              notifications={notifications}
+              onMarkAsRead={markAsRead}
+              onMarkAllAsRead={markAllAsRead}
+              onDeleteNotification={deleteNotification}
+            />
+            
+            <ScheduleActions
+              showFilters={showFilters}
+              setShowFilters={setShowFilters}
+              setShowCreateDialog={setShowCreateDialog}
+              mobileMenuOpen={mobileMenuOpen}
+              setMobileMenuOpen={setMobileMenuOpen}
+              isMobile={isMobile}
+              isSelectionMode={isSelectionMode}
+              setIsSelectionMode={setIsSelectionMode}
+              selectedShifts={selectedShifts}
+              onBulkEdit={() => setShowBulkEditDialog(true)}
+              onBulkDelete={handleBulkDelete}
+              onSelectAll={handleSelectAllShifts}
+              onClearSelection={handleClearSelection}
+            />
+          </div>
           
           {/* Templates and Quick Multiple Buttons */}
           <div className="flex gap-2">
