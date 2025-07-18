@@ -20,16 +20,27 @@ export const ShiftSubmissionsList: React.FC = () => {
       setIsLoading(true);
       try {
         const supabase = createClient('https://xmhmztipuvzmwgbcovch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtaG16dGlwdXZ6bXdnYmNvdmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMjkzODIsImV4cCI6MjA2NDcwNTM4Mn0.QEugxUTGlJ1rnG8ddf3E6BIpNaiqwkp2ml7MbiUfY9c');
+        
+        // Fetch submissions by joining with employees table to filter by business_id
         const { data, error } = await supabase
           .from('shift_submissions')
-          .select('*')
-          .eq('business_id', businessId)
+          .select(`
+            *,
+            employees!inner(
+              id,
+              first_name,
+              last_name,
+              business_id
+            )
+          `)
+          .eq('employees.business_id', businessId)
           .order('submitted_at', { ascending: false });
 
         if (error) {
           console.error('Error fetching shift submissions:', error);
           setError(error);
         } else {
+          console.log('Fetched submissions:', data);
           setSubmissions(data || []);
         }
       } catch (err) {
@@ -129,7 +140,10 @@ export const ShiftSubmissionsList: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <User className="h-5 w-5" />
-                    עובד אנונימי
+                    {submission.employees?.first_name && submission.employees?.last_name 
+                      ? `${submission.employees.first_name} ${submission.employees.last_name}`
+                      : 'עובד אנונימי'
+                    }
                   </CardTitle>
                   {getStatusBadge(submission.status)}
                 </div>
