@@ -104,8 +104,8 @@ const PublicShiftSubmission: React.FC = () => {
         const getShiftTypeFromTime = (startTime: string) => {
           const hour = parseInt(startTime.split(':')[0]);
           if (hour >= 6 && hour < 12) return 'morning';
-          if (hour >= 12 && hour < 17) return 'afternoon';
-          if (hour >= 17 && hour < 22) return 'evening';
+          if (hour >= 12 && hour < 16) return 'afternoon';  // Changed from 17 to 16
+          if (hour >= 16 && hour < 22) return 'evening';    // Changed from 17 to 16
           return 'night';
         };
 
