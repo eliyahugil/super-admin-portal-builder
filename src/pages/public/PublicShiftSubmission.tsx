@@ -211,6 +211,25 @@ const PublicShiftSubmission: React.FC = () => {
            isMainBranch: mainBranchId === shift.branch_id
          }));
          
+         // Sort shifts: main branch first, then by date and time
+         shiftsWithBranchInfo.sort((a, b) => {
+           // Main branch shifts come first
+           if (mainBranchId) {
+             const aIsMain = a.branch_id === mainBranchId;
+             const bIsMain = b.branch_id === mainBranchId;
+             if (aIsMain && !bIsMain) return -1;
+             if (!aIsMain && bIsMain) return 1;
+           }
+           
+           // Then sort by date
+           if (a.shift_date !== b.shift_date) {
+             return a.shift_date.localeCompare(b.shift_date);
+           }
+           
+           // Finally sort by start time
+           return a.start_time.localeCompare(b.start_time);
+         });
+         
          // Store all shifts and filtered shifts separately
          setAllScheduledShifts(shifts || []);
          setScheduledShifts(shiftsWithBranchInfo);
@@ -578,15 +597,29 @@ const PublicShiftSubmission: React.FC = () => {
                             const dateStr = currentDate.toISOString().split('T')[0];
                             const dayShifts = scheduledShifts.filter(shift => shift.shift_date === dateStr);
                             
-                            // Group shifts by type (morning/evening)
-                            const morningShifts = dayShifts.filter(shift => {
-                              const hour = parseInt(shift.start_time.split(':')[0]);
-                              return hour >= 6 && hour < 16;
-                            });
-                            const eveningShifts = dayShifts.filter(shift => {
-                              const hour = parseInt(shift.start_time.split(':')[0]);
-                              return hour >= 16 && hour < 24;
-                            });
+                             // Group shifts by type (morning/evening) and sort within each group
+                             let morningShifts = dayShifts.filter(shift => {
+                               const hour = parseInt(shift.start_time.split(':')[0]);
+                               return hour >= 6 && hour < 16;
+                             });
+                             let eveningShifts = dayShifts.filter(shift => {
+                               const hour = parseInt(shift.start_time.split(':')[0]);
+                               return hour >= 16 && hour < 24;
+                             });
+                             
+                             // Sort each group: main branch first, then by time
+                             const sortShifts = (shifts: any[]) => {
+                               return shifts.sort((a, b) => {
+                                 // Main branch first
+                                 if (a.isMainBranch && !b.isMainBranch) return -1;
+                                 if (!a.isMainBranch && b.isMainBranch) return 1;
+                                 // Then by time
+                                 return a.start_time.localeCompare(b.start_time);
+                               });
+                             };
+                             
+                             morningShifts = sortShifts(morningShifts);
+                             eveningShifts = sortShifts(eveningShifts);
 
                             days.push(
                               <div key={dateStr} className="grid grid-cols-8 border-b last:border-b-0 min-h-[80px]">
@@ -707,15 +740,29 @@ const PublicShiftSubmission: React.FC = () => {
                             
                             if (dayShifts.length === 0) continue;
                             
-                            // Group shifts by type
-                            const morningShifts = dayShifts.filter(shift => {
-                              const hour = parseInt(shift.start_time.split(':')[0]);
-                              return hour >= 6 && hour < 16;
-                            });
-                            const eveningShifts = dayShifts.filter(shift => {
-                              const hour = parseInt(shift.start_time.split(':')[0]);
-                              return hour >= 16 && hour < 24;
-                            });
+                             // Group shifts by type and sort within each group
+                             let morningShifts = dayShifts.filter(shift => {
+                               const hour = parseInt(shift.start_time.split(':')[0]);
+                               return hour >= 6 && hour < 16;
+                             });
+                             let eveningShifts = dayShifts.filter(shift => {
+                               const hour = parseInt(shift.start_time.split(':')[0]);
+                               return hour >= 16 && hour < 24;
+                             });
+                             
+                             // Sort each group: main branch first, then by time
+                             const sortShifts = (shifts: any[]) => {
+                               return shifts.sort((a, b) => {
+                                 // Main branch first
+                                 if (a.isMainBranch && !b.isMainBranch) return -1;
+                                 if (!a.isMainBranch && b.isMainBranch) return 1;
+                                 // Then by time
+                                 return a.start_time.localeCompare(b.start_time);
+                               });
+                             };
+                             
+                             morningShifts = sortShifts(morningShifts);
+                             eveningShifts = sortShifts(eveningShifts);
 
                             days.push(
                               <div key={dateStr} className="border-b last:border-b-0">
