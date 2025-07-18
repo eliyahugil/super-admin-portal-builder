@@ -95,6 +95,16 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
     return 'night';
   };
 
+  // Helper function to check if times overlap or are the same shift
+  const timesOverlap = (start1: string, end1: string, start2: string, end2: string): boolean => {
+    const s1 = new Date(`2000-01-01T${start1}`);
+    const e1 = new Date(`2000-01-01T${end1}`);
+    const s2 = new Date(`2000-01-01T${start2}`);
+    const e2 = new Date(`2000-01-01T${end2}`);
+    
+    return s1 < e2 && s2 < e1;
+  };
+
   // Helper function to check if shift is valid for employee
   const isValidShiftForEmployee = (shift: any, allowedShiftTypes: string[], allowedDays: number[]): boolean => {
     if (!shift.date || !shift.start_time || !shift.end_time) return false;
@@ -157,24 +167,45 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
     const pending = submissionsData.filter(s => s.status === 'pending').length;
     const rejected = submissionsData.filter(s => s.status === 'rejected').length;
     
-    // Calculate total valid unique shifts requested (group by date + time, filter by employee preferences)
+    // Calculate total valid unique shifts requested - group by date and overlapping times
     const totalShifts = submissionsData.reduce((acc, submission) => {
       if (!submission.shifts || !Array.isArray(submission.shifts)) return acc;
       
-      // Group shifts by date and time to count unique shifts, but only valid ones
-      const uniqueValidShifts = new Map();
+      // Group shifts by date first
+      const shiftsByDate = new Map<string, any[]>();
       
       submission.shifts.forEach((shift: any) => {
         if (shift.date && shift.start_time && shift.end_time) {
           // Check if this shift is valid for the employee
           if (isValidShiftForEmployee(shift, allowedShiftTypes, allowedDays)) {
-            const shiftKey = `${shift.date}_${shift.start_time}_${shift.end_time}`;
-            uniqueValidShifts.set(shiftKey, shift);
+            if (!shiftsByDate.has(shift.date)) {
+              shiftsByDate.set(shift.date, []);
+            }
+            shiftsByDate.get(shift.date)!.push(shift);
           }
         }
       });
       
-      return acc + uniqueValidShifts.size;
+      // For each date, count overlapping shifts as one
+      let dateShiftCount = 0;
+      shiftsByDate.forEach((shifts) => {
+        const uniqueShifts: any[] = [];
+        
+        shifts.forEach((shift) => {
+          // Check if this shift overlaps with any existing unique shift
+          const overlapsWithExisting = uniqueShifts.some(existingShift => 
+            timesOverlap(shift.start_time, shift.end_time, existingShift.start_time, existingShift.end_time)
+          );
+          
+          if (!overlapsWithExisting) {
+            uniqueShifts.push(shift);
+          }
+        });
+        
+        dateShiftCount += uniqueShifts.length;
+      });
+      
+      return acc + dateShiftCount;
     }, 0);
 
     // Calculate weeks available for submission rate
@@ -193,21 +224,39 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
     submissionsData.forEach(submission => {
       if (!submission.shifts || !Array.isArray(submission.shifts)) return;
       
-      // Count valid unique shifts in this submission
-      const uniqueValidShifts = new Map();
+      // Count valid unique shifts in this submission with overlap handling
+      const shiftsByDate = new Map<string, any[]>();
+      
       submission.shifts.forEach((shift: any) => {
         if (shift.date && shift.start_time && shift.end_time) {
           if (isValidShiftForEmployee(shift, allowedShiftTypes, allowedDays)) {
-            const shiftKey = `${shift.date}_${shift.start_time}_${shift.end_time}`;
-            uniqueValidShifts.set(shiftKey, shift);
+            if (!shiftsByDate.has(shift.date)) {
+              shiftsByDate.set(shift.date, []);
+            }
+            shiftsByDate.get(shift.date)!.push(shift);
           }
         }
       });
       
-      const shiftsCount = uniqueValidShifts.size;
+      let submissionShiftCount = 0;
+      shiftsByDate.forEach((shifts) => {
+        const uniqueShifts: any[] = [];
+        
+        shifts.forEach((shift) => {
+          const overlapsWithExisting = uniqueShifts.some(existingShift => 
+            timesOverlap(shift.start_time, shift.end_time, existingShift.start_time, existingShift.end_time)
+          );
+          
+          if (!overlapsWithExisting) {
+            uniqueShifts.push(shift);
+          }
+        });
+        
+        submissionShiftCount += uniqueShifts.length;
+      });
       
-      if (shiftsCount > maxShifts) {
-        maxShifts = shiftsCount;
+      if (submissionShiftCount > maxShifts) {
+        maxShifts = submissionShiftCount;
         mostActiveWeek = `${format(new Date(submission.week_start_date), 'dd/MM', { locale: he })} - ${format(new Date(submission.week_end_date), 'dd/MM', { locale: he })}`;
       }
     });
@@ -399,7 +448,7 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
           {submissions && submissions.submissions.length > 0 ? (
             <div className="space-y-3">
               {submissions.submissions.slice(0, 5).map((submission) => {
-                // Count valid shifts for this employee
+                // Count valid shifts for this employee - handle overlapping shifts
                 const validShiftsCount = (() => {
                   if (!submission.shifts || !Array.isArray(submission.shifts)) return 0;
                   
@@ -420,18 +469,38 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
                     }
                   });
                   
-                  // Count unique valid shifts
-                  const uniqueValidShifts = new Map();
+                  // Group by date and handle overlapping shifts
+                  const shiftsByDate = new Map<string, any[]>();
+                  
                   submission.shifts.forEach((shift: any) => {
                     if (shift.date && shift.start_time && shift.end_time) {
                       if (isValidShiftForEmployee(shift, allowedShiftTypes, allowedDays)) {
-                        const shiftKey = `${shift.date}_${shift.start_time}_${shift.end_time}`;
-                        uniqueValidShifts.set(shiftKey, shift);
+                        if (!shiftsByDate.has(shift.date)) {
+                          shiftsByDate.set(shift.date, []);
+                        }
+                        shiftsByDate.get(shift.date)!.push(shift);
                       }
                     }
                   });
                   
-                  return uniqueValidShifts.size;
+                  let totalUniqueShifts = 0;
+                  shiftsByDate.forEach((shifts) => {
+                    const uniqueShifts: any[] = [];
+                    
+                    shifts.forEach((shift) => {
+                      const overlapsWithExisting = uniqueShifts.some(existingShift => 
+                        timesOverlap(shift.start_time, shift.end_time, existingShift.start_time, existingShift.end_time)
+                      );
+                      
+                      if (!overlapsWithExisting) {
+                        uniqueShifts.push(shift);
+                      }
+                    });
+                    
+                    totalUniqueShifts += uniqueShifts.length;
+                  });
+                  
+                  return totalUniqueShifts;
                 })();
 
                 return (

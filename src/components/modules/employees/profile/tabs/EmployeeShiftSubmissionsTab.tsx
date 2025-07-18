@@ -76,52 +76,107 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
     }
   };
 
+  // Helper function to check if times overlap
+  const timesOverlap = (start1: string, end1: string, start2: string, end2: string): boolean => {
+    const s1 = new Date(`2000-01-01T${start1}`);
+    const e1 = new Date(`2000-01-01T${end1}`);
+    const s2 = new Date(`2000-01-01T${start2}`);
+    const e2 = new Date(`2000-01-01T${end2}`);
+    
+    return s1 < e2 && s2 < e1;
+  };
+
   const formatShifts = (shifts: any) => {
     if (!shifts || !Array.isArray(shifts)) return 'לא הוגדר';
     
-    // Count unique shifts by date + time (ignoring different branches)
-    const uniqueShifts = new Map();
+    // Group by date and handle overlapping shifts
+    const shiftsByDate = new Map<string, any[]>();
     
     shifts.forEach((shift: any) => {
       if (shift.date && shift.start_time && shift.end_time) {
-        const shiftKey = `${shift.date}_${shift.start_time}_${shift.end_time}`;
-        uniqueShifts.set(shiftKey, shift);
+        if (!shiftsByDate.has(shift.date)) {
+          shiftsByDate.set(shift.date, []);
+        }
+        shiftsByDate.get(shift.date)!.push(shift);
       }
     });
     
-    const uniqueCount = uniqueShifts.size;
-    return uniqueCount > 0 ? `${uniqueCount} משמרות` : 'אין משמרות';
+    let totalUniqueShifts = 0;
+    shiftsByDate.forEach((dateShifts) => {
+      const uniqueShifts: any[] = [];
+      
+      dateShifts.forEach((shift) => {
+        const overlapsWithExisting = uniqueShifts.some(existingShift => 
+          timesOverlap(shift.start_time, shift.end_time, existingShift.start_time, existingShift.end_time)
+        );
+        
+        if (!overlapsWithExisting) {
+          uniqueShifts.push(shift);
+        }
+      });
+      
+      totalUniqueShifts += uniqueShifts.length;
+    });
+    
+    return totalUniqueShifts > 0 ? `${totalUniqueShifts} משמרות` : 'אין משמרות';
   };
 
   const renderShiftDetails = (shifts: any) => {
     if (!shifts || !Array.isArray(shifts)) return null;
     
-    // Group shifts by date and time to show unique shifts
-    const uniqueShifts = new Map();
+    // Group shifts by date first
+    const shiftsByDate = new Map<string, any[]>();
     shifts.forEach((shift: any) => {
       if (shift.date && shift.start_time && shift.end_time) {
-        const shiftKey = `${shift.date}_${shift.start_time}_${shift.end_time}`;
-        if (!uniqueShifts.has(shiftKey)) {
-          uniqueShifts.set(shiftKey, {
-            ...shift,
-            branches: [shift.branch_preference]
-          });
-        } else {
-          const existing = uniqueShifts.get(shiftKey);
-          if (!existing.branches.includes(shift.branch_preference)) {
-            existing.branches.push(shift.branch_preference);
-          }
+        if (!shiftsByDate.has(shift.date)) {
+          shiftsByDate.set(shift.date, []);
         }
+        shiftsByDate.get(shift.date)!.push(shift);
       }
     });
 
-    const shiftsArray = Array.from(uniqueShifts.values());
+    // For each date, group overlapping shifts
+    const finalShifts: any[] = [];
+    shiftsByDate.forEach((dateShifts, date) => {
+      const uniqueShifts: any[] = [];
+      
+      dateShifts.forEach((shift) => {
+        // Find if this shift overlaps with any existing unique shift
+        const existingShift = uniqueShifts.find(existing => 
+          timesOverlap(shift.start_time, shift.end_time, existing.start_time, existing.end_time)
+        );
+        
+        if (existingShift) {
+          // Add branch to existing shift
+          if (!existingShift.branches.includes(shift.branch_preference)) {
+            existingShift.branches.push(shift.branch_preference);
+          }
+          // Merge role preferences and notes
+          if (shift.role_preference && !existingShift.role_preferences.includes(shift.role_preference)) {
+            existingShift.role_preferences.push(shift.role_preference);
+          }
+          if (shift.notes && !existingShift.notes_list.includes(shift.notes)) {
+            existingShift.notes_list.push(shift.notes);
+          }
+        } else {
+          // Create new unique shift
+          uniqueShifts.push({
+            ...shift,
+            branches: [shift.branch_preference],
+            role_preferences: shift.role_preference ? [shift.role_preference] : [],
+            notes_list: shift.notes ? [shift.notes] : []
+          });
+        }
+      });
+      
+      finalShifts.push(...uniqueShifts);
+    });
     
     return (
       <div className="mt-3 space-y-2">
         <div className="text-sm font-medium text-foreground">פירוט המשמרות:</div>
         <div className="grid gap-2">
-          {shiftsArray.map((shift, index) => (
+          {finalShifts.map((shift, index) => (
             <div key={index} className="bg-muted/50 rounded-lg p-3 text-sm">
               <div className="flex items-center justify-between mb-2">
                 <div className="font-medium">
@@ -133,19 +188,19 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
               </div>
               <div className="text-xs text-muted-foreground">
                 <div className="mb-1">
-                  <span className="font-medium">סניפים: </span>
+                  <span className="font-medium">אופציות סניפים: </span>
                   {shift.branches.join(', ')}
                 </div>
-                {shift.role_preference && (
-                  <div>
-                    <span className="font-medium">תפקיד מועדף: </span>
-                    {shift.role_preference}
+                {shift.role_preferences.length > 0 && (
+                  <div className="mb-1">
+                    <span className="font-medium">תפקידים מועדפים: </span>
+                    {shift.role_preferences.join(', ')}
                   </div>
                 )}
-                {shift.notes && (
+                {shift.notes_list.length > 0 && (
                   <div>
                     <span className="font-medium">הערות: </span>
-                    {shift.notes}
+                    {shift.notes_list.join(', ')}
                   </div>
                 )}
               </div>
