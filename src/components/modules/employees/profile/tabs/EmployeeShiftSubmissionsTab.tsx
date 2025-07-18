@@ -146,6 +146,8 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
 
   // Function to separate shifts into regular and special
   const categorizeShifts = (shifts: any[]) => {
+    if (!shifts || !Array.isArray(shifts)) return { regular: [], special: [] };
+    
     const regular: any[] = [];
     const special: any[] = [];
     
@@ -157,6 +159,7 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
       }
     });
     
+    console.log('📋 Categorized shifts:', { regular: regular.length, special: special.length, total: shifts.length });
     return { regular, special };
   };
 
@@ -367,8 +370,16 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
         ) : (
           <div className="space-y-4">
             {submissions.map((submission: ShiftSubmission) => {
-              const { regular: regularShifts, special: specialShifts } = categorizeShifts(submission.shifts || []);
+              const submissionShifts = Array.isArray(submission.shifts) ? submission.shifts : [];
+              const { regular: regularShifts, special: specialShifts } = categorizeShifts(submissionShifts);
               const isExpanded = expandedSubmissions.has(submission.id);
+              
+              console.log('📝 Processing submission:', {
+                id: submission.id,
+                totalShifts: submissionShifts.length,
+                regular: regularShifts.length,
+                special: specialShifts.length
+              });
               
               return (
                 <Card key={submission.id} className="border-l-4 border-l-primary">
@@ -391,10 +402,14 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
                           
                           {/* Summary of shifts */}
                           <div className="flex items-center gap-4 text-sm">
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">סה"כ משמרות: </span>
+                              <span>{submissionShifts.length}</span>
+                            </div>
                             {regularShifts.length > 0 && (
                               <div className="flex items-center gap-1">
-                                <span className="font-medium">רגילות: </span>
-                                <span>{formatShiftCount(regularShifts)}</span>
+                                <span className="font-medium text-green-600">רגילות: </span>
+                                <span className="text-green-600">{formatShiftCount(regularShifts)}</span>
                               </div>
                             )}
                             {specialShifts.length > 0 && (
@@ -446,8 +461,21 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
                       {/* Detailed view */}
                       {isExpanded && (
                         <div className="space-y-4">
-                          {regularShifts.length > 0 && renderShiftDetails(regularShifts, false)}
-                          {specialShifts.length > 0 && renderShiftDetails(specialShifts, true)}
+                          {submissionShifts.length === 0 ? (
+                            <div className="text-center py-4 text-muted-foreground">
+                              אין משמרות בהגשה זו
+                            </div>
+                          ) : (
+                            <>
+                              {regularShifts.length > 0 && renderShiftDetails(regularShifts, false)}
+                              {specialShifts.length > 0 && renderShiftDetails(specialShifts, true)}
+                              {regularShifts.length === 0 && specialShifts.length === 0 && (
+                                <div className="text-center py-4 text-muted-foreground">
+                                  לא ניתן לעבד את המשמרות בהגשה זו
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
