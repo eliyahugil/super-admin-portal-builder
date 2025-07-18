@@ -46,8 +46,31 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
     enabled: !!employeeId,
   });
 
-  // Get shift submissions history - מוסר כיוון שמערכת הטוקנים הוסרה
-  const submissions: any[] = [];
+  // Get regular shift submissions (non-special submissions)
+  const { data: submissions } = useQuery({
+    queryKey: ['employee-regular-submissions', employeeId],
+    queryFn: async () => {
+      if (!employeeId) return [];
+      
+      const { data, error } = await supabase
+        .from('shift_submissions')
+        .select(`
+          *,
+          employees!inner(
+            id,
+            first_name,
+            last_name
+          )
+        `)
+        .eq('employee_id', employeeId)
+        .or('submission_type.eq.regular,submission_type.is.null')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!employeeId,
+  });
 
   // Get employee notes
   const { data: notes } = useQuery({

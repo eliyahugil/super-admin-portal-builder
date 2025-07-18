@@ -16,6 +16,7 @@ import { EmployeeDocumentsTab } from './EmployeeDocumentsTab';
 import { EmployeeBranchAssignmentsTab } from './EmployeeBranchAssignmentsTab';
 import { EmployeeSalaryTab } from './EmployeeSalaryTab';
 import { EmployeeAttendanceTab } from './EmployeeAttendanceTab';
+import { EmployeeShiftSubmissionsTab } from './EmployeeShiftSubmissionsTab';
 import type { Employee } from '@/types/employee';
 
 interface EmployeeTabsContentProps {
@@ -56,7 +57,7 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
       </TabsContent>
 
       <TabsContent value="shifts">
-        <div className="p-4 text-center">היסטוריית הגשות הוסרה</div>
+        <EmployeeShiftSubmissionsTab employee={employee} employeeId={employeeId} employeeName={employeeName} />
       </TabsContent>
 
 
