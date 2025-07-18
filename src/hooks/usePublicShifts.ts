@@ -65,6 +65,8 @@ export const usePublicShifts = () => {
   // Submit shifts via public token
   const submitShifts = useMutation({
     mutationFn: async ({ tokenId, formData }: { tokenId: string; formData: PublicShiftForm }) => {
+      console.log('🔥 Starting submission mutation:', { tokenId, formData });
+      
       const { data, error } = await supabase
         .from('public_shift_submissions')
         .insert({
@@ -77,9 +79,11 @@ export const usePublicShifts = () => {
         .select()
         .single();
 
+      console.log('🔥 Submission result:', { data, error });
+
       if (error) {
         console.error('Error submitting shifts:', error);
-        throw new Error('שגיאה בהגשת המשמרות');
+        throw new Error(`שגיאה בהגשת המשמרות: ${error.message}`);
       }
 
       return {

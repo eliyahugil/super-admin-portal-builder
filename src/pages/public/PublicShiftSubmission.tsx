@@ -453,6 +453,12 @@ const PublicShiftSubmission: React.FC = () => {
     }
 
     try {
+      console.log('🚀 Attempting to submit shifts:', {
+        tokenId: tokenData.id,
+        formData,
+        preferencesCount: formData.preferences.length
+      });
+      
       await submitShifts.mutateAsync({
         tokenId: tokenData.id,
         formData,
@@ -673,8 +679,8 @@ const PublicShiftSubmission: React.FC = () => {
                                                  
                                                  console.log(`🕐 Displaying shift: start=${start}, end=${end}, startHour=${startHour}, endHour=${endHour}`);
                                                  
-                                                 // Always display as start-end regardless of crossing midnight
-                                                 return `${start}-${end}`;
+                                                  // Always display as start-end (FIXED ORDER)
+                                                  return `${start}-${end}`;
                                                })()}
                                              </div>
                                            {shift.branch?.name && (
