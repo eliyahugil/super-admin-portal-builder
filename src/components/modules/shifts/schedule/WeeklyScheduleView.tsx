@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Plus, Clock, User, MapPin, Send, AlertTriangle, Filter, Trash2, CheckSquare } from 'lucide-react';
+import { Plus, Clock, User, MapPin, Send, AlertTriangle, Filter, Trash2, CheckSquare, Edit2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { HolidayIndicator } from './HolidayIndicator';
@@ -742,15 +742,29 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                               }
                             }}
                           >
-                          {/* Delete button - appears on hover */}
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="absolute top-1 left-1 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                            onClick={(e) => handleDeleteShift(shift.id, e)}
-                          >
-                            <Trash2 className="h-2.5 w-2.5" />
-                          </Button>
+                           {/* Edit and Delete buttons - appear on hover */}
+                           <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               className="h-5 w-5 p-0 bg-white hover:bg-blue-50 border-blue-200"
+                               onClick={(e) => {
+                                 e.preventDefault();
+                                 e.stopPropagation();
+                                 onShiftClick(shift);
+                               }}
+                             >
+                               <Edit2 className="h-2.5 w-2.5 text-blue-600" />
+                             </Button>
+                             <Button
+                               size="sm"
+                               variant="destructive"
+                               className="h-5 w-5 p-0"
+                               onClick={(e) => handleDeleteShift(shift.id, e)}
+                             >
+                               <Trash2 className="h-2.5 w-2.5" />
+                             </Button>
+                           </div>
                           <div className={`space-y-1 text-xs ${hasConflict ? 'line-through opacity-60' : ''}`}>
                             {/* סניף - ראשון ובולט */}
                             {shift.branch_name && (
