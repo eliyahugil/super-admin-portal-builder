@@ -21,10 +21,9 @@ export const ShiftManagementTabs: React.FC = () => {
       </div>
 
       <Tabs defaultValue="templates" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 gap-1">
           <TabsTrigger value="templates" className="text-xs sm:text-sm">תבניות משמרות</TabsTrigger>
-          <TabsTrigger value="public-tokens" className="text-xs sm:text-sm">טוקנים ציבוריים</TabsTrigger>
-          <TabsTrigger value="submissions" className="text-xs sm:text-sm">הגשות משמרות</TabsTrigger>
+          <TabsTrigger value="submissions" className="text-xs sm:text-sm">הגשות משמרות וטוקנים</TabsTrigger>
           <TabsTrigger value="approvals" className="text-xs sm:text-sm">אישור בקשות</TabsTrigger>
         </TabsList>
         
@@ -32,14 +31,9 @@ export const ShiftManagementTabs: React.FC = () => {
           <ShiftTemplatesManagement />
         </TabsContent>
         
-        <TabsContent value="public-tokens" className="mt-6">
+        <TabsContent value="submissions" className="mt-6">
           <PublicTokenManager />
         </TabsContent>
-        
-        <TabsContent value="submissions" className="mt-6">
-          <div className="p-4 text-center">מערכת הגשת משמרות הוסרה - השתמש בטוקנים ציבוריים</div>
-        </TabsContent>
-        
         
         <TabsContent value="approvals" className="mt-6">
           <ShiftApprovalDashboard />

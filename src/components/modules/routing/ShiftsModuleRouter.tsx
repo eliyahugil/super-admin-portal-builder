@@ -7,6 +7,7 @@ import { AutoShiftAssignment } from '../shifts/AutoShiftAssignment';
 import { VacationRequestSystem } from '../shifts/VacationRequestSystem';
 import { QuickRequestRegistration } from '../shifts/QuickRequestRegistration';
 import { UnifiedShiftRequests } from '../shifts/UnifiedShiftRequests';
+import { PublicTokenManager } from '../shifts/PublicTokenManager';
 
 
 interface Props {
@@ -20,8 +21,9 @@ export const ShiftsModuleRouter: React.FC<Props> = ({ route }) => {
     case 'schedule':
       return <ShiftSchedule />;
     case 'submission':
+      return <PublicTokenManager />;
     case 'public-tokens':
-      return <div className="p-4 text-center">מערכת הגשת משמרות הוסרה - השתמש בטוקנים ציבוריים</div>;
+      return <div className="p-4 text-center">מערכת הטוקנים הציבוריים זמינה בהגשות משמרות</div>;
     case 'auto-assignment':
       return <AutoShiftAssignment />;
     case 'vacation-requests':
