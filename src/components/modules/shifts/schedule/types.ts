@@ -82,7 +82,7 @@ export interface ShiftScheduleViewProps {
   // Bulk edit props
   isSelectionMode?: boolean;
   selectedShifts?: ShiftScheduleData[];
-  onShiftSelection?: (shift: ShiftScheduleData, selected: boolean) => void;
+  onShiftSelection?: (shift: ShiftScheduleData, selected: boolean, event?: React.MouseEvent) => void;
   // Pending submissions dialog
   onShowPendingSubmissions?: () => void;
 }

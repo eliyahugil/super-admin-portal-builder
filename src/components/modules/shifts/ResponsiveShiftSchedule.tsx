@@ -223,7 +223,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ['schedule-branches', businessId] });
   };
 
-  const handleShiftSelection = (shift: ShiftScheduleData, selected: boolean) => {
+  const handleShiftSelection = (shift: ShiftScheduleData, selected: boolean, event?: React.MouseEvent) => {
     if (selected) {
       setSelectedShifts(prev => [...prev, shift]);
     } else {

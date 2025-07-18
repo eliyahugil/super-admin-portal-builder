@@ -335,11 +335,13 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     }
   };
 
-  const handleShiftSelection = (shift: ShiftScheduleData, selected: boolean, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleShiftSelection = (shift: ShiftScheduleData, selected: boolean, event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     if (onShiftSelection) {
-      onShiftSelection(shift, selected);
+      onShiftSelection(shift, selected, event);
     }
   };
 

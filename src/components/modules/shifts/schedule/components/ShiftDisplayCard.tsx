@@ -11,7 +11,7 @@ interface ShiftDisplayCardProps {
   isSelectionMode: boolean;
   isSelected: boolean;
   onShiftClick: (shift: ShiftScheduleData) => void;
-  onShiftSelection?: (shift: ShiftScheduleData, selected: boolean, event: React.MouseEvent) => void;
+  onShiftSelection?: (shift: ShiftScheduleData, selected: boolean, event?: React.MouseEvent) => void;
   onDeleteShift: (shiftId: string, event: React.MouseEvent) => void;
   getEmployeeName: (employeeId: string) => string;
   getStatusColor: (status: string) => string;
