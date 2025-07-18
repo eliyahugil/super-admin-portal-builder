@@ -224,38 +224,34 @@ const PublicShiftSubmission: React.FC = () => {
     loadScheduledShifts();
   }, [tokenData, employeeData]);
 
-  // Helper function to check if shifts overlap (and if auto-selection makes sense)
-  const shiftsOverlap = (shift1: any, shift2: any) => {
-    if (shift1.shift_date !== shift2.shift_date) return false;
+  // Helper function to check if shifts overlap and should be auto-selected
+  const shiftsOverlap = (selectedShift: any, otherShift: any) => {
+    if (selectedShift.shift_date !== otherShift.shift_date) return false;
     
     const timeToMinutes = (timeStr: string) => {
       const [hours, minutes] = timeStr.split(':').map(Number);
       return hours * 60 + minutes;
     };
     
-    const start1 = timeToMinutes(shift1.start_time);
-    const end1 = timeToMinutes(shift1.end_time);
-    const start2 = timeToMinutes(shift2.start_time);
-    const end2 = timeToMinutes(shift2.end_time);
+    const selectedStart = timeToMinutes(selectedShift.start_time);
+    const selectedEnd = timeToMinutes(selectedShift.end_time);
+    const otherStart = timeToMinutes(otherShift.start_time);
+    const otherEnd = timeToMinutes(otherShift.end_time);
     
-    console.log(`🔍 Checking overlap: ${shift1.start_time}-${shift1.end_time} vs ${shift2.start_time}-${shift2.end_time}`);
+    console.log(`🔍 Checking if ${otherShift.start_time}-${otherShift.end_time} fits within ${selectedShift.start_time}-${selectedShift.end_time}`);
     
     // Handle overnight shifts
-    const actualEnd1 = end1 < start1 ? end1 + 24 * 60 : end1;
-    const actualEnd2 = end2 < start2 ? end2 + 24 * 60 : end2;
+    const actualSelectedEnd = selectedEnd < selectedStart ? selectedEnd + 24 * 60 : selectedEnd;
+    const actualOtherEnd = otherEnd < otherStart ? otherEnd + 24 * 60 : otherEnd;
     
-    // Check if shifts truly overlap (one starts before the other ends)
-    const overlaps = (start1 < actualEnd2 && start2 < actualEnd1);
+    // Auto-select if the other shift is contained within the selected shift's time window
+    // This means: other shift starts at or after selected shift starts
+    // AND other shift ends at or before selected shift ends
+    const isContained = (otherStart >= selectedStart) && (actualOtherEnd <= actualSelectedEnd);
     
-    // For auto-selection, only select if the second shift can logically follow the first
-    // This means shift1 should end before or when shift2 starts (allowing transition time)
-    const canTransition = actualEnd1 <= start2;
+    console.log(`🔍 Selected: ${selectedStart}-${actualSelectedEnd}, Other: ${otherStart}-${actualOtherEnd}, Contained: ${isContained}`);
     
-    console.log(`🔍 Overlap: ${overlaps}, Can transition: ${canTransition}`);
-    
-    // Return true only if they overlap AND it makes sense to auto-select
-    // (i.e., the first shift ends before the second starts, allowing transition)
-    return overlaps && canTransition;
+    return isContained;
   };
 
   // Get shifts that are not normally available to this employee
@@ -354,33 +350,33 @@ const PublicShiftSubmission: React.FC = () => {
         };
         newPreferences.push(newShift);
 
-        // Find and auto-select overlapping shifts
-        const overlappingShifts = allScheduledShifts.filter(otherShift => 
+        // Find and auto-select shifts that are contained within this shift's time window
+        const containedShifts = allScheduledShifts.filter(otherShift => 
           otherShift.id !== shift.id && 
           shiftsOverlap(shift, otherShift) &&
           !newPreferences.some((p: any) => p.shift_id === otherShift.id)
         );
 
-        console.log(`🔍 Found ${overlappingShifts.length} overlapping shifts`);
+        console.log(`🔍 Found ${containedShifts.length} shifts contained within selected shift`);
 
-        overlappingShifts.forEach(overlappingShift => {
-          const overlappingPref = {
-            shift_id: overlappingShift.id,
-            shift_date: overlappingShift.shift_date,
-            start_time: overlappingShift.start_time,
-            end_time: overlappingShift.end_time,
-            role: overlappingShift.role,
-            branch_name: overlappingShift.branch?.name,
+        containedShifts.forEach(containedShift => {
+          const containedPref = {
+            shift_id: containedShift.id,
+            shift_date: containedShift.shift_date,
+            start_time: containedShift.start_time,
+            end_time: containedShift.end_time,
+            role: containedShift.role,
+            branch_name: containedShift.branch?.name,
             available: true,
           };
-          newPreferences.push(overlappingPref);
+          newPreferences.push(containedPref);
         });
 
-        // Show toast if overlapping shifts were auto-selected
-        if (overlappingShifts.length > 0) {
+        // Show toast if contained shifts were auto-selected
+        if (containedShifts.length > 0) {
           toast({
-            title: 'משמרות חופפות נבחרו אוטומטית',
-            description: `נבחרו ${overlappingShifts.length} משמרות נוספות שחופפות בזמן`,
+            title: 'משמרות נבחרו אוטומטית',
+            description: `נבחרו ${containedShifts.length} משמרות נוספות הכלולות בחלון הזמן שבחרת`,
           });
         }
       }
