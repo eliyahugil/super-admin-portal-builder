@@ -927,13 +927,12 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                               size={isMobile ? "sm" : "sm"}
                               className={`w-full ${isMobile ? 'text-sm py-3 px-4' : 'text-xs'} bg-blue-50 border-2 border-blue-300 text-blue-800 hover:bg-blue-100 transition-colors font-medium shadow-sm`}
                               onClick={() => onShowPendingSubmissions?.()}
-                            >
-                              <div className="flex items-center justify-center gap-2">
-                                <span className="text-lg">👤</span>
-                                <span>הגשות רגילות ({getPendingSubmissionsForDate(date, 'regular').length})</span>
-                              </div>
-                            </Button>
-                            </Button>
+                             >
+                               <div className="flex items-center justify-center gap-2">
+                                 <span className="text-lg">👤</span>
+                                 <span>הגשות רגילות ({getPendingSubmissionsForDate(date, 'regular').length})</span>
+                               </div>
+                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-md">
                             <div className="text-right space-y-3">
@@ -1004,13 +1003,12 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                               size={isMobile ? "sm" : "sm"}
                               className={`w-full ${isMobile ? 'text-sm py-3 px-4' : 'text-xs'} bg-purple-50 border-2 border-purple-300 text-purple-800 hover:bg-purple-100 transition-colors font-medium shadow-sm`}
                               onClick={() => onShowPendingSubmissions?.()}
-                            >
-                              <div className="flex items-center justify-center gap-2">
-                                <span className="text-lg">⭐</span>
-                                <span>הגשות מיוחדות ({getPendingSubmissionsForDate(date, 'special').length})</span>
-                              </div>
-                            </Button>
-                            </Button>
+                             >
+                               <div className="flex items-center justify-center gap-2">
+                                 <span className="text-lg">⭐</span>
+                                 <span>הגשות מיוחדות ({getPendingSubmissionsForDate(date, 'special').length})</span>
+                               </div>
+                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-md">
                             <div className="text-right space-y-3">
