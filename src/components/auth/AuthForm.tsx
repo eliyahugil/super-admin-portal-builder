@@ -242,14 +242,12 @@ export const AuthForm: React.FC = () => {
     );
   }
 
-  // Debug log for profile checking
-  console.log('AuthForm - Profile check:', { 
-    hasUser: !!user, 
-    hasProfile: !!profile, 
-    role: profile?.role,
-    email: profile?.email,
-    businessId: profile?.business_id 
-  });
+  // EMERGENCY FIX: Force eligil1308@gmail.com to admin immediately
+  if (user && profile && profile.email === 'eligil1308@gmail.com') {
+    console.log('EMERGENCY: Forcing admin access for eligil1308@gmail.com');
+    window.location.href = '/admin';
+    return null;
+  }
 
   // If user is authenticated but has no business access, show simple access request form
   // BUT NOT for super_admin or if email is eligil1308@gmail.com
