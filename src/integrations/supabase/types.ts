@@ -4609,6 +4609,14 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      is_valid_public_token: {
+        Args: {
+          token_value: string
+          target_business_id: string
+          target_date: string
+        }
+        Returns: boolean
+      }
       mark_all_shifts_as_seen: {
         Args: { business_id_param: string }
         Returns: number
