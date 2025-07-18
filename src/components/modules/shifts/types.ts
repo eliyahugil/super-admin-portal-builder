@@ -17,6 +17,7 @@ export interface ShiftSubmission {
   week_start_date: string;
   week_end_date: string;
   status: string;
+  submission_type?: string; // 'regular' או 'special'
   notes?: string;
   created_at: string;
   updated_at: string;
