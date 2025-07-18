@@ -70,7 +70,7 @@ const PublicShiftSubmission: React.FC = () => {
   // Load scheduled shifts for the token's date range
   useEffect(() => {
     const loadScheduledShifts = async () => {
-      if (!tokenData?.business_id || !tokenData?.week_start_date || !tokenData?.week_end_date) return;
+      if (!tokenData?.business_id || !tokenData?.week_start_date || !tokenData?.week_end_date || !employeeData) return;
       
       setShiftsLoading(true);
       try {
@@ -100,8 +100,57 @@ const PublicShiftSubmission: React.FC = () => {
           return;
         }
 
+        // Helper function to determine shift type based on start time
+        const getShiftTypeFromTime = (startTime: string) => {
+          const hour = parseInt(startTime.split(':')[0]);
+          if (hour >= 6 && hour < 12) return 'morning';
+          if (hour >= 12 && hour < 17) return 'afternoon';
+          if (hour >= 17 && hour < 22) return 'evening';
+          return 'night';
+        };
+
+        // Filter shifts based on employee's branch assignments and shift type preferences
+        let filteredShifts = shifts || [];
+        
+        if (employeeData.employee_branch_assignments && employeeData.employee_branch_assignments.length > 0) {
+          // Get employee's assigned branch IDs
+          const assignedBranchIds = employeeData.employee_branch_assignments
+            .filter(assignment => assignment.is_active)
+            .map(assignment => assignment.branch_id);
+          
+          // Get employee's preferred shift types from assignments
+          const preferredShiftTypes = employeeData.employee_branch_assignments
+            .filter(assignment => assignment.is_active && assignment.shift_types)
+            .flatMap(assignment => assignment.shift_types || []);
+          
+          // Filter shifts by assigned branches
+          if (assignedBranchIds.length > 0) {
+            filteredShifts = filteredShifts.filter(shift => 
+              assignedBranchIds.includes(shift.branch_id)
+            );
+          }
+          
+          // Filter shifts by preferred shift types if available
+          if (preferredShiftTypes.length > 0) {
+            filteredShifts = filteredShifts.filter(shift => {
+              const shiftType = getShiftTypeFromTime(shift.start_time);
+              return preferredShiftTypes.includes(shiftType);
+            });
+          }
+        } else if (employeeData.employee_default_preferences && employeeData.employee_default_preferences.length > 0) {
+          // Fallback to default preferences if no branch assignments
+          const defaultPrefs = employeeData.employee_default_preferences[0];
+          if (defaultPrefs.shift_types && defaultPrefs.shift_types.length > 0) {
+            filteredShifts = filteredShifts.filter(shift => {
+              const shiftType = getShiftTypeFromTime(shift.start_time);
+              return defaultPrefs.shift_types.includes(shiftType);
+            });
+          }
+        }
+
         console.log('📊 Loaded scheduled shifts for token:', shifts?.length || 0);
-        setScheduledShifts(shifts || []);
+        console.log('📊 Filtered shifts for employee:', filteredShifts.length);
+        setScheduledShifts(filteredShifts);
       } catch (error) {
         console.error('Error loading scheduled shifts:', error);
       } finally {
@@ -110,7 +159,7 @@ const PublicShiftSubmission: React.FC = () => {
     };
 
     loadScheduledShifts();
-  }, [tokenData]);
+  }, [tokenData, employeeData]);
 
   const handleShiftToggle = (shift: any, available: boolean) => {
     setFormData(prev => {
