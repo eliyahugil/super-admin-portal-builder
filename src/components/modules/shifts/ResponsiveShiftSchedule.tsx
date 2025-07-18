@@ -408,15 +408,15 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                     </div>
                   </div>
                   ) : view === 'week' ? (
-                   <WeeklyScheduleView
-                     shifts={shifts}
-                     employees={employees}
-                     branches={branches}
-                     currentDate={currentDate}
-                     holidays={holidays}
-                     shabbatTimes={shabbatTimes}
-                     calendarEvents={combinedEvents}
-                      pendingSubmissions={[]}
+                    <WeeklyScheduleView
+                      shifts={shifts}
+                      employees={employees}
+                      branches={branches}
+                      currentDate={currentDate}
+                      holidays={holidays}
+                      shabbatTimes={shabbatTimes}
+                      calendarEvents={combinedEvents}
+                      pendingSubmissions={pendingSubmissions}
                       businessId={businessId}
                       onShiftClick={handleShiftClick}
                       onShiftUpdate={updateShift}
