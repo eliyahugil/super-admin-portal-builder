@@ -916,7 +916,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 
                 {/* Pending submissions - separated by type */}
                 {(getPendingSubmissionsForDate(date, 'regular').length > 0 || getPendingSubmissionsForDate(date, 'special').length > 0) && (
-                  <div className="space-y-1">
+                  <div className="space-y-2 mt-3">
                     {/* Regular submissions */}
                     {getPendingSubmissionsForDate(date, 'regular').length > 0 && (
                       <TooltipProvider>
@@ -924,11 +924,15 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                           <TooltipTrigger asChild>
                             <Button
                               variant="outline"
-                              size="sm"
-                              className="w-full text-xs bg-blue-50 border border-blue-200 text-blue-800 hover:bg-blue-100 transition-colors"
+                              size={isMobile ? "sm" : "sm"}
+                              className={`w-full ${isMobile ? 'text-sm py-3 px-4' : 'text-xs'} bg-blue-50 border-2 border-blue-300 text-blue-800 hover:bg-blue-100 transition-colors font-medium shadow-sm`}
                               onClick={() => onShowPendingSubmissions?.()}
                             >
-                              👤 הגשות רגילות ({getPendingSubmissionsForDate(date, 'regular').length})
+                              <div className="flex items-center justify-center gap-2">
+                                <span className="text-lg">👤</span>
+                                <span>הגשות רגילות ({getPendingSubmissionsForDate(date, 'regular').length})</span>
+                              </div>
+                            </Button>
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-md">
@@ -991,19 +995,21 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                         </Tooltip>
                       </TooltipProvider>
                     )}
-                    
-                    {/* Special submissions */}
                     {getPendingSubmissionsForDate(date, 'special').length > 0 && (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
                               variant="outline"
-                              size="sm"
-                              className="w-full text-xs bg-purple-50 border border-purple-200 text-purple-800 hover:bg-purple-100 transition-colors"
+                              size={isMobile ? "sm" : "sm"}
+                              className={`w-full ${isMobile ? 'text-sm py-3 px-4' : 'text-xs'} bg-purple-50 border-2 border-purple-300 text-purple-800 hover:bg-purple-100 transition-colors font-medium shadow-sm`}
                               onClick={() => onShowPendingSubmissions?.()}
                             >
-                               ⭐ הגשות מיוחדות ({getPendingSubmissionsForDate(date, 'special').length})
+                              <div className="flex items-center justify-center gap-2">
+                                <span className="text-lg">⭐</span>
+                                <span>הגשות מיוחדות ({getPendingSubmissionsForDate(date, 'special').length})</span>
+                              </div>
+                            </Button>
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-md">
