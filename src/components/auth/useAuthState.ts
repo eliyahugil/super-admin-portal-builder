@@ -52,25 +52,38 @@ export const useAuthState = () => {
               // Use setTimeout to prevent blocking the auth state change
               setTimeout(async () => {
                 if (isMounted) {
-                  try {
-                    await fetchProfile(newSession.user.id);
-                    if (isMounted) {
-                      setLoading(false);
+                    try {
+                      await fetchProfile(newSession.user.id);
+                      if (isMounted) {
+                        setLoading(false);
+                      }
+                    } catch (profileError) {
+                      console.error('❌ Error loading profile:', profileError);
+                      
+                      // If profile loading fails, it might be due to RLS issues
+                      // Force a session refresh or clear
+                      if (profileError?.message?.includes('row-level security') || 
+                          profileError?.message?.includes('policy')) {
+                        console.log('🔄 RLS error detected, clearing session');
+                        setTimeout(async () => {
+                          await supabase.auth.signOut({ scope: 'local' });
+                          window.location.href = '/auth?tab=signin';
+                        }, 1000);
+                        return;
+                      }
+                      
+                      if (isMounted) {
+                        // Set default profile on error
+                        setProfile({
+                          id: newSession.user.id,
+                          email: newSession.user.email || '',
+                          full_name: newSession.user.email || '',
+                          role: 'business_user' as const,
+                          business_id: null
+                        });
+                        setLoading(false);
+                      }
                     }
-                  } catch (profileError) {
-                    console.error('❌ Error loading profile:', profileError);
-                    if (isMounted) {
-                      // Set default profile on error
-                      setProfile({
-                        id: newSession.user.id,
-                        email: newSession.user.email || '',
-                        full_name: newSession.user.email || '',
-                        role: 'business_user' as const,
-                        business_id: null
-                      });
-                      setLoading(false);
-                    }
-                  }
                 }
               }, 100);
             } else {

@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/AuthContext';
+import { AuthErrorHandler } from '@/components/auth/AuthErrorHandler';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import NotFound from '@/pages/NotFound';
 import NotAuthorized from '@/pages/NotAuthorized';
@@ -29,22 +30,24 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Router>
-            <Toaster />
-            <Routes>
-              {PublicRoutes()}
-              {MainRoutes()}
-              {BusinessRoutes()}
-              {ModuleRoutes()}
-              {AdminRoutes()}
-              
-              {/* Not authorized route */}
-              <Route path="/not-authorized" element={<NotAuthorized />} />
-              
-              {/* Catch all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Router>
+          <AuthErrorHandler>
+            <Router>
+              <Toaster />
+              <Routes>
+                {PublicRoutes()}
+                {MainRoutes()}
+                {BusinessRoutes()}
+                {ModuleRoutes()}
+                {AdminRoutes()}
+                
+                {/* Not authorized route */}
+                <Route path="/not-authorized" element={<NotAuthorized />} />
+                
+                {/* Catch all route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Router>
+          </AuthErrorHandler>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
