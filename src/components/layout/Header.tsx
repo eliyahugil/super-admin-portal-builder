@@ -3,6 +3,7 @@ import React from 'react';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { UserProfileMenu } from './UserProfileMenu';
+import { NotificationIcon } from '@/components/modules/shifts/notifications/NotificationIcon';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -79,8 +80,9 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
           </div>
         </div>
 
-        {/* User Profile Menu - Right side */}
-        <div className="flex items-center">
+        {/* Notifications and User Profile Menu - Right side */}
+        <div className="flex items-center gap-2">
+          <NotificationIcon />
           <UserProfileMenu />
         </div>
       </div>
