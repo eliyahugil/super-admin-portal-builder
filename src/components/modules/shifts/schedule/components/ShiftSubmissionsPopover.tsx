@@ -55,6 +55,11 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
 }) => {
   // Filter submissions for the specific date, branch and shift times
   const relevantShifts = useMemo(() => {
+    console.log('🔍 ShiftSubmissionsPopover - Debug info:', { 
+      submissionsCount: submissions.length, 
+      currentShift: currentShift,
+      targetDate: targetDate.toISOString().split('T')[0] 
+    });
     const targetDateStr = targetDate.toISOString().split('T')[0];
     const results: Array<{
       submission: ShiftSubmission;
@@ -77,6 +82,7 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
       submissionShifts.forEach((shift: any) => {
         // Check if this shift matches our target date, time and branch
         if (shift.date === targetDateStr && 
+            currentShift && 
             shift.start_time === currentShift.start_time &&
             shift.end_time === currentShift.end_time &&
             shift.branch_preference === currentShift.branch_name) {
@@ -149,10 +155,12 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              הגשות למשמרת ב{currentShift.branch_name}
+              הגשות למשמרת {currentShift?.branch_name ? `ב${currentShift.branch_name}` : ''}
             </CardTitle>
             <CardDescription className="text-xs">
-              {formatTime(currentShift.start_time)}-{formatTime(currentShift.end_time)} • {formatDate(targetDate)}
+              {currentShift?.start_time && currentShift?.end_time ? 
+                `${formatTime(currentShift.start_time)}-${formatTime(currentShift.end_time)} • ` : ''
+              }{formatDate(targetDate)}
               <br />
               {availableSubmissions.length} זמינים מתוך {relevantShifts.length} הגשות
             </CardDescription>
