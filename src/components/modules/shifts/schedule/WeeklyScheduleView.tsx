@@ -18,6 +18,7 @@ import { EmployeeStatsPanel } from './EmployeeStatsPanel';
 import { ShiftPriorityManager } from './components/ShiftPriorityManager';
 import { ShiftGroupDisplay } from './components/ShiftGroupDisplay';
 import { ShiftSubmissionsPopover } from './components/ShiftSubmissionsPopover';
+import { EmployeeRecommendationEngine } from '../recommendations/EmployeeRecommendationEngine';
 import {
   Tooltip,
   TooltipContent,
@@ -750,18 +751,36 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                               }
                             }}
                           >
-                           {/* Edit, Unassign and Delete buttons - appear on hover */}
-                           <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                             <Button
-                               size="sm"
-                               variant="outline"
-                               className="h-5 w-5 p-0 bg-white hover:bg-blue-50 border-blue-200"
-                               onClick={(e) => {
-                                 e.preventDefault();
-                                 e.stopPropagation();
-                                 onShiftClick(shift);
-                               }}
-                             >
+                            {/* Add Employee Recommendations and other action buttons */}
+                            <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                              {/* Employee Recommendations */}
+                              {!shift.employee_id && (
+                                <EmployeeRecommendationEngine
+                                  shiftId={shift.id}
+                                  shiftTime={`${shift.start_time}-${shift.end_time}`}
+                                  shiftDate={date.toISOString().split('T')[0]}
+                                  weekStartDate={weekDays[0].toISOString().split('T')[0]}
+                                  onEmployeeSelected={(employeeId) => onShiftUpdate(shift.id, { employee_id: employeeId })}
+                                >
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-5 w-5 p-0 bg-white hover:bg-green-50 border-green-200"
+                                  >
+                                    <span className="text-xs">💡</span>
+                                  </Button>
+                                </EmployeeRecommendationEngine>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-5 w-5 p-0 bg-white hover:bg-blue-50 border-blue-200"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  onShiftClick(shift);
+                                }}
+                              >
                                <Edit2 className="h-2.5 w-2.5 text-blue-600" />
                              </Button>
                              {/* Unassign button - only show if employee is assigned */}
