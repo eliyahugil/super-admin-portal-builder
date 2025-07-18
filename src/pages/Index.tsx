@@ -39,16 +39,50 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
+      {/* Header with Manager Login Button */}
+      <div className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="text-lg font-semibold text-gray-900">
+            👨‍💼 מערכת ניהול עסקים
+          </div>
+          <button
+            onClick={() => navigate('/auth?tab=manager')}
+            className="px-4 py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+          >
+            👔 התחברות למנהל
+          </button>
+        </div>
+      </div>
+
       <div className="container mx-auto px-4 py-12">
-        {/* Header */}
+        {/* Main Content for Employee Login */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            👨‍💼 מערכת ניהול מתקדמת לעסקים
+            👨‍💼 כניסה לעובדי החברה
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            פלטפורמה מקיפה לניהול עובדים, אינטגרציות חכמות, CRM מובנה וכלי ניהול משמרות מתקדמים
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
+            הגישה למערכת הניהול, צפייה במשמרות, הגשת בקשות והתקבלות התראות
           </p>
+          
+          {/* Employee Login Section */}
+          <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 mb-12">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+              כניסה כעובד
+            </h2>
+            <div className="space-y-4">
+              <button
+                onClick={() => navigate('/auth?tab=employee')}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors text-lg"
+              >
+                🔐 התחבר כעובד
+              </button>
+              <div className="text-sm text-gray-500">
+                או השתמש בקוד רישום שקיבלת מהמנהל
+              </div>
+            </div>
+          </div>
         </div>
+
         <FeaturesGrid />
         <CallToActionSection
           onAuth={() => navigate('/auth')}

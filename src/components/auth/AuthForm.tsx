@@ -23,10 +23,21 @@ export const AuthForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'employee' | 'manager'>('employee');
   
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Check URL params for tab
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam === 'manager' || tabParam === 'employee') {
+      setActiveTab(tabParam);
+    }
+  }, [location.search]);
+  
   const { 
     isSigningUp, 
     needsEmailVerification, 
@@ -247,225 +258,279 @@ export const AuthForm: React.FC = () => {
             <Building className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            מערכת ניהול עסקית
+            {activeTab === 'employee' ? 'כניסה לעובדים' : 'כניסה למנהלים'}
           </h1>
           <p className="text-gray-600 text-sm sm:text-base mt-2">
-            {isLogin ? 'התחבר לחשבון שלך' : 'צור חשבון חדש'}
+            {activeTab === 'employee' 
+              ? 'התחבר כעובד חברה' 
+              : (isLogin ? 'התחבר לחשבון המנהל' : 'צור חשבון מנהל חדש')
+            }
           </p>
         </div>
 
-        {/* Auth Form */}
-        <Card className="shadow-lg">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="text-xl font-semibold">
-              {forgotPasswordMode ? 'איפוס סיסמה' : (isLogin ? 'התחברות' : 'הרשמה')}
-            </CardTitle>
-            <CardDescription className="text-sm">
-              {forgotPasswordMode 
-                ? 'הכנס את כתובת המייל שלך כדי לקבל קישור לאיפוס סיסמה'
-                : (isLogin 
-                  ? 'הכנס את פרטי החשבון שלך' 
-                  : 'מלא את הפרטים כדי ליצור חשבון חדש. לאחר ההרשמה תקבל מייל אישור.'
-                )
-              }
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            <form onSubmit={forgotPasswordMode ? handleForgotPassword : handleSubmit} className="space-y-4">
-              {!isLogin && !forgotPasswordMode && (
-                <div className="space-y-2">
-                  <Label htmlFor="fullName" className="flex items-center gap-2 text-sm font-medium">
-                    <User className="h-4 w-4" />
-                    שם מלא
-                  </Label>
-                  <Input
-                    id="fullName"
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="הכנס את שמך המלא"
-                    required
-                    dir="rtl"
-                    className="text-right"
-                  />
-                </div>
-              )}
+        {/* Tab Selection */}
+        <div className="flex rounded-lg bg-gray-100 p-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab('employee')}
+            className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
+              activeTab === 'employee'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            👨‍💼 עובד
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('manager')}
+            className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
+              activeTab === 'manager'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            👔 מנהל
+          </button>
+        </div>
 
-              {!isLogin && !forgotPasswordMode && (
+        {/* Employee Tab Content */}
+        {activeTab === 'employee' && (
+          <Card className="shadow-lg">
+            <CardHeader className="text-center pb-4">
+              <CardTitle className="text-xl font-semibold">
+                כניסה כעובד
+              </CardTitle>
+              <CardDescription className="text-sm">
+                התחבר באמצעות הפרטים שקיבלת מהמנהל
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              <Button
+                onClick={() => navigate('/employee-login')}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors text-lg"
+              >
+                🔐 התחבר כעובד
+              </Button>
+              
+              <div className="text-center text-sm text-gray-500">
+                או השתמש בקוד רישום שקיבלת מהמנהל
+              </div>
+              
+              <div className="pt-4 border-t border-gray-200">
+                <p className="text-xs text-gray-500 text-center">
+                  אין לך פרטי התחברות? פנה למנהל שלך
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Manager Tab Content */}
+        {activeTab === 'manager' && (
+          <Card className="shadow-lg">
+            <CardHeader className="text-center pb-4">
+              <CardTitle className="text-xl font-semibold">
+                {forgotPasswordMode ? 'איפוס סיסמה' : (isLogin ? 'התחברות מנהל' : 'הרשמת מנהל')}
+              </CardTitle>
+              <CardDescription className="text-sm">
+                {forgotPasswordMode 
+                  ? 'הכנס את כתובת המייל שלך כדי לקבל קישור לאיפוס סיסמה'
+                  : (isLogin 
+                    ? 'הכנס את פרטי החשבון שלך' 
+                    : 'מלא את הפרטים כדי ליצור חשבון מנהל חדש. לאחר ההרשמה תקבל מייל אישור.'
+                  )
+                }
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent>
+              <form onSubmit={forgotPasswordMode ? handleForgotPassword : handleSubmit} className="space-y-4">
+                {!isLogin && !forgotPasswordMode && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName" className="flex items-center gap-2 text-sm font-medium">
+                      <User className="h-4 w-4" />
+                      שם מלא
+                    </Label>
+                    <Input
+                      id="fullName"
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="הכנס את שמך המלא"
+                      required
+                      dir="rtl"
+                      className="text-right"
+                    />
+                  </div>
+                )}
+
+                {!isLogin && !forgotPasswordMode && (
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium">
+                      <Phone className="h-4 w-4" />
+                      מספר טלפון
+                    </Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="הכנס מספר טלפון"
+                      dir="ltr"
+                      className="text-left"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      לדוגמה: 050-1234567
+                    </p>
+                  </div>
+                )}
+                
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium">
-                    <Phone className="h-4 w-4" />
-                    מספר טלפון
+                  <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium">
+                    <Mail className="h-4 w-4" />
+                    כתובת מייל
                   </Label>
                   <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="הכנס מספר טלפון"
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="example@company.com"
+                    required
                     dir="ltr"
                     className="text-left"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    לדוגמה: 050-1234567
-                  </p>
                 </div>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium">
-                  <Mail className="h-4 w-4" />
-                  כתובת מייל
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="example@company.com"
-                  required
-                  dir="ltr"
-                  className="text-left"
-                />
-              </div>
-              
-              {!forgotPasswordMode && (
-              <div className="space-y-2">
-                <Label htmlFor="password" className="flex items-center gap-2 text-sm font-medium">
-                  <Lock className="h-4 w-4" />
-                  סיסמה
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="הכנס סיסמה"
-                    required
-                    dir="ltr"
-                    className="text-left pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-                {!isLogin && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    הסיסמה חייבת להכיל לפחות 6 תווים
-                  </p>
-                )}
-              </div>
-              )}
-              
-              <Button 
-                type="submit" 
-                className="w-full mt-6" 
-                disabled={(forgotPasswordMode ? resetLoading : (loading || isSigningUp)) || authLoading}
-                size="lg"
-              >
-                {(forgotPasswordMode ? resetLoading : (loading || isSigningUp)) ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>מעבד...</span>
+                
+                {!forgotPasswordMode && (
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="flex items-center gap-2 text-sm font-medium">
+                    <Lock className="h-4 w-4" />
+                    סיסמה
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="הכנס סיסמה"
+                      required
+                      dir="ltr"
+                      className="text-left pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
-                ) : (
-                  forgotPasswordMode ? 'שלח קישור איפוס' : (isLogin ? 'התחבר' : 'הירשם')
+                  {!isLogin && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      הסיסמה חייבת להכיל לפחות 6 תווים
+                    </p>
+                  )}
+                </div>
                 )}
-              </Button>
-            </form>
-            
-            {/* Switch Mode & Forgot Password */}
-            <div className="mt-6 text-center space-y-2">
-              {!forgotPasswordMode ? (
-                <>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full mt-6" 
+                  disabled={(forgotPasswordMode ? resetLoading : (loading || isSigningUp)) || authLoading}
+                  size="lg"
+                >
+                  {(forgotPasswordMode ? resetLoading : (loading || isSigningUp)) ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>מעבד...</span>
+                    </div>
+                  ) : (
+                    forgotPasswordMode ? 'שלח קישור איפוס' : (isLogin ? 'התחבר' : 'הירשם')
+                  )}
+                </Button>
+              </form>
+              
+              {/* Switch Mode & Forgot Password */}
+              <div className="mt-6 text-center space-y-2">
+                {!forgotPasswordMode ? (
+                  <>
+                    <Button
+                      variant="link"
+                      onClick={() => {
+                        setIsLogin(!isLogin);
+                        setEmail('');
+                        setPassword('');
+                        setFullName('');
+                        setPhone('');
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                      disabled={loading || authLoading}
+                    >
+                      {isLogin ? 'אין לך חשבון? הירשם כאן' : 'יש לך חשבון? התחבר כאן'}
+                    </Button>
+                    
+                    {isLogin && (
+                      <div>
+                        <Button
+                          variant="link"
+                          onClick={() => setForgotPasswordMode(true)}
+                          className="text-sm text-gray-600 hover:text-gray-800"
+                          disabled={loading || authLoading}
+                        >
+                          שכחתי סיסמה
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                ) : (
                   <Button
                     variant="link"
                     onClick={() => {
-                      setIsLogin(!isLogin);
+                      setForgotPasswordMode(false);
                       setEmail('');
-                      setPassword('');
-                      setFullName('');
-                      setPhone('');
                     }}
                     className="text-sm text-blue-600 hover:text-blue-800"
-                    disabled={loading || authLoading}
+                    disabled={resetLoading}
                   >
-                    {isLogin ? 'אין לך חשבון? הירשם כאן' : 'יש לך חשבון? התחבר כאן'}
+                    חזרה להתחברות
                   </Button>
-                  
-                  {isLogin && (
-                    <div>
-                      <Button
-                        variant="link"
-                        onClick={() => setForgotPasswordMode(true)}
-                        className="text-sm text-gray-600 hover:text-gray-800"
-                        disabled={loading || authLoading}
-                      >
-                        שכחתי סיסמה
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <Button
-                  variant="link"
-                  onClick={() => {
-                    setForgotPasswordMode(false);
-                    setEmail('');
-                  }}
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                  disabled={resetLoading}
-                >
-                  חזרה להתחברות
-                </Button>
+                )}
+              </div>
+
+              {/* Debug info in development */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-4 p-3 bg-gray-100 rounded text-xs space-y-1">
+                  <div><strong>Debug Info:</strong></div>
+                  <div>User: {user?.email || 'None'}</div>
+                  <div>Profile: {profile?.role || 'None'}</div>
+                  <div>Business ID: {profile?.business_id || 'None'}</div>
+                  <div>Auth Loading: {authLoading ? 'Yes' : 'No'}</div>
+                  <div>Form Loading: {loading ? 'Yes' : 'No'}</div>
+                  <div>Current Path: {location.pathname}</div>
+                  <div>Active Tab: {activeTab}</div>
+                </div>
               )}
-            </div>
-
-            {/* Debug info in development */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-4 p-3 bg-gray-100 rounded text-xs space-y-1">
-                <div><strong>Debug Info:</strong></div>
-                <div>User: {user?.email || 'None'}</div>
-                <div>Profile: {profile?.role || 'None'}</div>
-                <div>Business ID: {profile?.business_id || 'None'}</div>
-                <div>Auth Loading: {authLoading ? 'Yes' : 'No'}</div>
-                <div>Form Loading: {loading ? 'Yes' : 'No'}</div>
-                <div>Current Path: {location.pathname}</div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Employee Login Link */}
-        <div className="text-center">
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Users className="h-5 w-5 text-blue-600" />
-                <h3 className="font-medium text-blue-900">עובד בחברה?</h3>
-              </div>
-              <p className="text-sm text-blue-700 mb-3">
-                התחבר באמצעות אימייל או מספר טלפון
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/employee-login')}
-                className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
-              >
-                התחברות עובדים
-              </Button>
             </CardContent>
           </Card>
+        )}
+
+        {/* Back to Home */}
+        <div className="text-center">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/')}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            ← חזרה לעמוד הבית
+          </Button>
         </div>
 
         {/* Additional Info */}
