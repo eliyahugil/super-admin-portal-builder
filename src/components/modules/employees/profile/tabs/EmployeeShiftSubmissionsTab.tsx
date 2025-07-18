@@ -93,6 +93,69 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
     return uniqueCount > 0 ? `${uniqueCount} משמרות` : 'אין משמרות';
   };
 
+  const renderShiftDetails = (shifts: any) => {
+    if (!shifts || !Array.isArray(shifts)) return null;
+    
+    // Group shifts by date and time to show unique shifts
+    const uniqueShifts = new Map();
+    shifts.forEach((shift: any) => {
+      if (shift.date && shift.start_time && shift.end_time) {
+        const shiftKey = `${shift.date}_${shift.start_time}_${shift.end_time}`;
+        if (!uniqueShifts.has(shiftKey)) {
+          uniqueShifts.set(shiftKey, {
+            ...shift,
+            branches: [shift.branch_preference]
+          });
+        } else {
+          const existing = uniqueShifts.get(shiftKey);
+          if (!existing.branches.includes(shift.branch_preference)) {
+            existing.branches.push(shift.branch_preference);
+          }
+        }
+      }
+    });
+
+    const shiftsArray = Array.from(uniqueShifts.values());
+    
+    return (
+      <div className="mt-3 space-y-2">
+        <div className="text-sm font-medium text-foreground">פירוט המשמרות:</div>
+        <div className="grid gap-2">
+          {shiftsArray.map((shift, index) => (
+            <div key={index} className="bg-muted/50 rounded-lg p-3 text-sm">
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-medium">
+                  {format(new Date(shift.date), 'EEEE dd/MM/yyyy', { locale: he })}
+                </div>
+                <div className="text-muted-foreground">
+                  {shift.start_time} - {shift.end_time}
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                <div className="mb-1">
+                  <span className="font-medium">סניפים: </span>
+                  {shift.branches.join(', ')}
+                </div>
+                {shift.role_preference && (
+                  <div>
+                    <span className="font-medium">תפקיד מועדף: </span>
+                    {shift.role_preference}
+                  </div>
+                )}
+                {shift.notes && (
+                  <div>
+                    <span className="font-medium">הערות: </span>
+                    {shift.notes}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -135,37 +198,42 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
             {submissions.map((submission: ShiftSubmission) => (
               <Card key={submission.id} className="border-l-4 border-l-primary">
                 <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">
-                          שבוע {format(new Date(submission.week_start_date), 'dd/MM/yyyy', { locale: he })} - {format(new Date(submission.week_end_date), 'dd/MM/yyyy', { locale: he })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          הוגש ב-{format(new Date(submission.submitted_at), 'dd/MM/yyyy HH:mm', { locale: he })}
-                        </span>
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium">משמרות: </span>
-                        {formatShifts(submission.shifts)}
-                      </div>
-                      {submission.notes && (
-                        <div className="text-sm">
-                          <span className="font-medium">הערות: </span>
-                          <span className="text-muted-foreground">{submission.notes}</span>
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">
+                            שבוע {format(new Date(submission.week_start_date), 'dd/MM/yyyy', { locale: he })} - {format(new Date(submission.week_end_date), 'dd/MM/yyyy', { locale: he })}
+                          </span>
                         </div>
-                      )}
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            הוגש ב-{format(new Date(submission.submitted_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                          </span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="font-medium">משמרות: </span>
+                          {formatShifts(submission.shifts)}
+                        </div>
+                        {submission.notes && (
+                          <div className="text-sm">
+                            <span className="font-medium">הערות: </span>
+                            <span className="text-muted-foreground">{submission.notes}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(submission.status)}
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                          רגילה
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(submission.status)}
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                        רגילה
-                      </Badge>
-                    </div>
+                    
+                    {/* הצגת פירוט המשמרות */}
+                    {renderShiftDetails(submission.shifts)}
                   </div>
                 </CardContent>
               </Card>
