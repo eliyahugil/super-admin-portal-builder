@@ -136,6 +136,7 @@ export const EmployeeBirthDateUpdate: React.FC<EmployeeBirthDateUpdateProps> = (
                 required
                 dir="ltr"
                 className="text-left"
+                autoComplete="email"
               />
               <p className="text-xs text-muted-foreground">
                 כתובת המייל שלך לקבלת עדכונים והתראות
@@ -155,6 +156,7 @@ export const EmployeeBirthDateUpdate: React.FC<EmployeeBirthDateUpdateProps> = (
                 required
                 max={new Date().toISOString().split('T')[0]}
                 min="1920-01-01"
+                autoComplete="bday"
               />
               <p className="text-xs text-muted-foreground">
                 תאריך הלידה שישמש ליצירת הסיסמה החדשה
