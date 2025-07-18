@@ -227,6 +227,12 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   };
 
   const handleShiftSelection = (shift: ShiftScheduleData, selected: boolean, event?: React.MouseEvent) => {
+    console.log('🔄 handleShiftSelection called:', { 
+      shiftId: shift.id, 
+      selected, 
+      currentSelection: selectedShifts.length,
+      isSelectionModeActive: isSelectionMode 
+    });
     if (selected) {
       setSelectedShifts(prev => [...prev, shift]);
     } else {

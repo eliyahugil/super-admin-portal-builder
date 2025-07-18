@@ -336,6 +336,12 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   };
 
   const handleShiftSelection = (shift: ShiftScheduleData, selected: boolean, event?: React.MouseEvent) => {
+    console.log('🔄 WeeklyScheduleView handleShiftSelection:', { 
+      shiftId: shift.id, 
+      selected, 
+      isSelectionModeLocal: isSelectionMode,
+      hasOnShiftSelection: !!onShiftSelection 
+    });
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -685,12 +691,12 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                        <TooltipProvider key={shift.id}>
                          <Tooltip>
                            <TooltipTrigger asChild>
-                             <div
-                               className={`relative group p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all ${
-                                 hasConflict ? 'border-red-300 bg-red-50' : ''
-                               }`}
-                               onClick={() => onShiftClick(shift)}
-                             >
+                              <div
+                                className={`relative group p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all ${
+                                  hasConflict ? 'border-red-300 bg-red-50' : ''
+                                } ${isSelectionMode && isShiftSelected(shift) ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300' : ''}`}
+                                onClick={(e) => handleShiftCardClick(shift, e)}
+                              >
                                {/* Delete button - appears on hover */}
                                <Button
                                  size="sm"
