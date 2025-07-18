@@ -401,13 +401,25 @@ export const ResponsiveShiftSchedule: React.FC = () => {
         </div>
       )}
 
-      {/* Main Content with Mobile-Optimized Tabs */}
+      {/* Main Content with Mobile-Optimized Tabs - Fixed at top */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 mb-2 h-8 text-xs' : 'grid-cols-2 mb-4'}`}>
-            <TabsTrigger value="schedule" className={isMobile ? 'text-xs px-2' : ''}>לוח משמרות</TabsTrigger>
-            <TabsTrigger value="advanced" className={isMobile ? 'text-xs px-1' : ''}>סידור מתקדם</TabsTrigger>
-          </TabsList>
+          <div className="sticky top-0 z-10 bg-white border-b">
+            <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 h-10 text-sm' : 'grid-cols-2 h-12'} bg-gray-50 rounded-none border-0`}>
+              <TabsTrigger 
+                value="schedule" 
+                className={`${isMobile ? 'text-sm px-3' : 'text-base px-6'} data-[state=active]:bg-white data-[state=active]:shadow-sm`}
+              >
+                📅 לוח משמרות
+              </TabsTrigger>
+              <TabsTrigger 
+                value="advanced" 
+                className={`${isMobile ? 'text-sm px-3' : 'text-base px-6'} data-[state=active]:bg-white data-[state=active]:shadow-sm`}
+              >
+                ⚙️ סידור מתקדם
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
           <TabsContent value="schedule" className="flex-1 flex flex-col min-h-0 overflow-hidden">
             <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
