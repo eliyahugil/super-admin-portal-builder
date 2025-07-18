@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Wand2, CheckCircle, AlertTriangle, Users, Clock } from 'lucide-react';
 import { useEmployeeRecommendations } from '@/hooks/useEmployeeRecommendations';
-import { useAuth } from '@/components/auth/AuthContext';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { toast } from 'sonner';
 
 interface AutoAssignmentResult {
@@ -32,10 +32,10 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<AutoAssignmentResult[]>([]);
-  const { profile } = useAuth();
+  const { businessId } = useCurrentBusiness();
 
   const { data: recommendations, isLoading } = useEmployeeRecommendations(
-    profile?.business_id || '',
+    businessId || '',
     weekStartDate
   );
 
@@ -43,7 +43,7 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
     console.log('🪄 Auto assign clicked!', { 
       recommendations, 
       emptyShifts: emptyShifts.length,
-      businessId: profile?.business_id,
+      businessId,
       weekStartDate 
     });
     
