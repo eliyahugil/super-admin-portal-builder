@@ -742,7 +742,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                               }
                             }}
                           >
-                           {/* Edit and Delete buttons - appear on hover */}
+                           {/* Edit, Unassign and Delete buttons - appear on hover */}
                            <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                              <Button
                                size="sm"
@@ -756,6 +756,36 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                              >
                                <Edit2 className="h-2.5 w-2.5 text-blue-600" />
                              </Button>
+                             {/* Unassign button - only show if employee is assigned */}
+                             {shift.employee_id && (
+                               <Button
+                                 size="sm"
+                                 variant="outline"
+                                 className="h-5 w-5 p-0 bg-white hover:bg-orange-50 border-orange-200"
+                                 onClick={async (e) => {
+                                   e.preventDefault();
+                                   e.stopPropagation();
+                                   
+                                   // Request manager approval
+                                   const managerCode = prompt('🔐 הכנס קוד מנהל לביטול הקצאה:');
+                                   if (managerCode !== '130898') {
+                                     alert('קוד מנהל שגוי');
+                                     return;
+                                   }
+                                   
+                                   if (confirm(`האם להסיר את ${getEmployeeName(shift.employee_id)} מהמשמרת?`)) {
+                                     try {
+                                       await onShiftUpdate(shift.id, { employee_id: null });
+                                       toast.success('העובד הוסר מהמשמרת בהצלחה');
+                                     } catch (error) {
+                                       toast.error('שגיאה בהסרת העובד');
+                                     }
+                                   }
+                                 }}
+                               >
+                                 <User className="h-2.5 w-2.5 text-orange-600" />
+                               </Button>
+                             )}
                              <Button
                                size="sm"
                                variant="destructive"
