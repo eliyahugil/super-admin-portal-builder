@@ -142,23 +142,50 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
   return useQuery({
     queryKey: ['employee-recommendations', businessId, weekStartDate],
     queryFn: async (): Promise<ShiftRecommendationData[]> => {
-      // Fetch employees with their preferences and branch assignments
-      const { data: employees, error: employeesError } = await supabase
-        .from('employees')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          phone,
-          employee_type,
-          weekly_hours_required,
-          employee_default_preferences(*),
-          employee_branch_assignments(*)
-        `)
+      // First, find the active token for this week and business
+      const { data: activeToken, error: tokenError } = await supabase
+        .from('shift_submission_tokens')
+        .select('*')
         .eq('business_id', businessId)
-        .eq('is_active', true);
+        .eq('week_start_date', weekStartDate)
+        .eq('is_active', true)
+        .single();
 
-      if (employeesError) throw employeesError;
+      if (tokenError) {
+        console.log('❌ No active token found for this week:', tokenError);
+        return [];
+      }
+
+      console.log('✅ Found active token:', activeToken);
+
+      // Get all employees who submitted for this token by matching week dates
+      const { data: submissions, error: submissionsError } = await supabase
+        .from('shift_submissions')
+        .select(`
+          employee_id,
+          shifts,
+          employees!inner(
+            id,
+            first_name,
+            last_name,
+            phone,
+            employee_type,
+            weekly_hours_required,
+            employee_default_preferences(*),
+            employee_branch_assignments(*)
+          )
+        `)
+        .eq('week_start_date', weekStartDate);
+
+      if (submissionsError) throw submissionsError;
+
+      console.log('📋 Submissions found:', submissions?.length || 0);
+      console.log('📋 Submissions data:', submissions);
+
+      // Extract unique employees from submissions
+      const employees = submissions?.map(sub => sub.employees).filter(Boolean) || [];
+      
+      console.log('👥 Employees from submissions:', employees?.length || 0);
 
       // Fetch available shifts for the week
       const { data: shifts, error: shiftsError } = await supabase
@@ -168,6 +195,8 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
         .eq('week_start_date', weekStartDate);
 
       if (shiftsError) throw shiftsError;
+
+      console.log('📅 Available shifts found:', shifts?.length || 0);
 
       // Fetch business scheduling rules
       const { data: rules, error: rulesError } = await supabase
@@ -191,6 +220,8 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
         // Sort by match score (highest first)
         employeeRecommendations.sort((a, b) => b.matchScore - a.matchScore);
 
+        console.log(`📊 Shift ${shift.start_time}-${shift.end_time}: ${employeeRecommendations.length} recommendations`);
+
         return {
           shiftId: shift.id,
           shiftTime: `${shift.start_time}-${shift.end_time}`,
@@ -199,6 +230,8 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
           recommendations: employeeRecommendations.slice(0, 5) // Top 5 recommendations
         };
       });
+
+      console.log('🎯 Total recommendations generated:', recommendations.length);
 
       return recommendations;
     },
