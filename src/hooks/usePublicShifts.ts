@@ -102,34 +102,50 @@ export const usePublicShifts = () => {
       expires_at: string;
       max_submissions?: number;
     }) => {
-      // Check if there's an existing active token for this employee/business
+      // Check if there's an existing token for this employee/business (reuse existing token)
+      let existingToken;
       if (params.employee_id) {
-        const { data: existingToken } = await supabase
+        const { data } = await supabase
           .from('shift_submission_tokens')
-          .select('id')
+          .select('*')
           .eq('employee_id', params.employee_id)
           .eq('business_id', params.business_id)
-          .eq('is_active', true)
           .maybeSingle();
-
-        if (existingToken) {
-          throw new Error('יש כבר טוקן פעיל לעובד זה. אנא בטל את הטוקן הקיים לפני יצירת טוקן חדש.');
-        }
+        existingToken = data;
       } else {
-        const { data: existingToken } = await supabase
+        const { data } = await supabase
           .from('shift_submission_tokens')
-          .select('id')
+          .select('*')
           .is('employee_id', null)
           .eq('business_id', params.business_id)
-          .eq('is_active', true)
           .maybeSingle();
-
-        if (existingToken) {
-          throw new Error('יש כבר טוקן כללי פעיל לעסק זה. אנא בטל את הטוקן הקיים לפני יצירת טוקן חדש.');
-        }
+        existingToken = data;
       }
 
-      // Generate a unique token
+      if (existingToken) {
+        // Update existing token with new week dates and activate it
+        const { data, error } = await supabase
+          .from('shift_submission_tokens')
+          .update({
+            week_start_date: params.week_start_date,
+            week_end_date: params.week_end_date,
+            expires_at: params.expires_at,
+            is_active: true,
+            max_submissions: params.max_submissions || 50,
+          })
+          .eq('id', existingToken.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error updating token:', error);
+          throw new Error('שגיאה בעדכון הטוקן');
+        }
+
+        return data as PublicShiftToken;
+      }
+
+      // Generate a new unique token if none exists
       const token = crypto.randomUUID();
       
       const { data, error } = await supabase
@@ -142,6 +158,7 @@ export const usePublicShifts = () => {
           week_end_date: params.week_end_date,
           expires_at: params.expires_at,
           max_submissions: params.max_submissions || 50,
+          is_active: true,
         })
         .select()
         .single();
@@ -149,6 +166,28 @@ export const usePublicShifts = () => {
       if (error) {
         console.error('Error generating token:', error);
         throw new Error('שגיאה ביצירת הטוקן');
+      }
+
+      return data as PublicShiftToken;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['public-tokens'] });
+    },
+  });
+
+  // Toggle token active status (admin only)
+  const toggleTokenStatus = useMutation({
+    mutationFn: async ({ tokenId, isActive }: { tokenId: string; isActive: boolean }) => {
+      const { data, error } = await supabase
+        .from('shift_submission_tokens')
+        .update({ is_active: isActive })
+        .eq('id', tokenId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating token status:', error);
+        throw new Error('שגיאה בעדכון סטטוס הטוקן');
       }
 
       return data as PublicShiftToken;
@@ -272,6 +311,7 @@ export const usePublicShifts = () => {
     useTokenSubmissions,
     submitShifts,
     generateToken,
+    toggleTokenStatus,
     useBusinessTokens,
     useEmployeeActiveToken,
     useTokenAvailableShifts,
