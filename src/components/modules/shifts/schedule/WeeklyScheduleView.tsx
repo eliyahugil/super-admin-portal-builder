@@ -217,8 +217,16 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
       submissionType,
       totalSubmissions: pendingSubmissions.length,
       filteredSubmissions: filteredSubmissions.length,
-      regularSubmissions: pendingSubmissions.filter(s => s.submission_type === 'regular').length,
-      specialSubmissions: pendingSubmissions.filter(s => s.submission_type === 'special').length,
+      regularSubmissions: pendingSubmissions.filter(s => {
+        const shifts = typeof s.shifts === 'string' ? JSON.parse(s.shifts) : s.shifts || [];
+        const hasMatchingDate = shifts.some((shift: any) => shift.date === dateStr);
+        return hasMatchingDate && s.submission_type === 'regular';
+      }).length,
+      specialSubmissions: pendingSubmissions.filter(s => {
+        const shifts = typeof s.shifts === 'string' ? JSON.parse(s.shifts) : s.shifts || [];
+        const hasMatchingDate = shifts.some((shift: any) => shift.date === dateStr);
+        return hasMatchingDate && s.submission_type === 'special';
+      }).length,
       isMobile: window.innerWidth < 768,
       firstSubmission: filteredSubmissions[0] ? {
         id: filteredSubmissions[0].id,
