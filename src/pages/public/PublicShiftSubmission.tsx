@@ -20,6 +20,8 @@ const PublicShiftSubmission: React.FC = () => {
   const { data: tokenData, isLoading: tokenLoading, error: tokenError } = useToken(token || '');
   const [employeeData, setEmployeeData] = useState<any>(null);
   const [employeeLoading, setEmployeeLoading] = useState(false);
+  const [scheduledShifts, setScheduledShifts] = useState<any[]>([]);
+  const [shiftsLoading, setShiftsLoading] = useState(false);
 
   const [formData, setFormData] = useState<PublicShiftForm>({
     employee_name: '',
@@ -65,79 +67,65 @@ const PublicShiftSubmission: React.FC = () => {
     loadEmployeeData();
   }, [tokenData]);
 
-  // Generate available shifts based on employee type and preferences
-  const getAvailableShifts = () => {
-    const shifts: ShiftPreference[] = [];
-    
-    if (!tokenData || !employeeData) return shifts;
-    
-    // Get employee preferences and restrictions
-    const employeeType = employeeData?.employee_type?.toLowerCase() || 'כללי';
-    const preferences = employeeData?.employee_default_preferences?.[0];
-    
-    // Define shift types based on employee type
-    let allowedShiftTypes: string[] = [];
-    if (employeeType.includes('בוקר') || employeeType.includes('morning')) {
-      allowedShiftTypes = ['morning'];
-    } else if (employeeType.includes('ערב') || employeeType.includes('evening')) {
-      allowedShiftTypes = ['evening'];
-    } else if (employeeType.includes('לילה') || employeeType.includes('night')) {
-      allowedShiftTypes = ['night'];
-    } else {
-      // Default for general employees
-      allowedShiftTypes = ['morning', 'evening'];
-    }
+  // Load scheduled shifts for the token's date range
+  useEffect(() => {
+    const loadScheduledShifts = async () => {
+      if (!tokenData?.business_id || !tokenData?.week_start_date || !tokenData?.week_end_date) return;
+      
+      setShiftsLoading(true);
+      try {
+        const { data: shifts, error } = await supabase
+          .from('scheduled_shifts')
+          .select(`
+            id,
+            shift_date,
+            start_time,
+            end_time,
+            role,
+            employee_id,
+            branch_id,
+            status,
+            branch:branches(id, name)
+          `)
+          .eq('business_id', tokenData.business_id)
+          .gte('shift_date', tokenData.week_start_date)
+          .lte('shift_date', tokenData.week_end_date)
+          .eq('is_archived', false)
+          .is('employee_id', null) // Only unassigned shifts
+          .order('shift_date', { ascending: true })
+          .order('start_time', { ascending: true });
 
-    // Use employee preferences if available, otherwise use defaults
-    const availableDays = preferences?.available_days || [0, 1, 2, 3, 4, 5, 6];
-    const employeeShiftTypes = preferences?.shift_types || allowedShiftTypes;
-    
-    // Filter shift types based on employee type
-    const finalShiftTypes = employeeShiftTypes.filter(type => allowedShiftTypes.includes(type));
+        if (error) {
+          console.error('Error loading scheduled shifts:', error);
+          return;
+        }
 
-    // Generate shifts for each day and allowed shift type
-    for (let day = 0; day < 7; day++) {
-      if (availableDays.includes(day)) {
-        finalShiftTypes.forEach(shiftType => {
-          const shiftTimes = getShiftTimes(shiftType);
-          shifts.push({
-            day_of_week: day,
-            shift_type: shiftType as any,
-            start_time: shiftTimes.start,
-            end_time: shiftTimes.end,
-            available: false, // Default to not available, user will select
-          });
-        });
+        console.log('📊 Loaded scheduled shifts for token:', shifts?.length || 0);
+        setScheduledShifts(shifts || []);
+      } catch (error) {
+        console.error('Error loading scheduled shifts:', error);
+      } finally {
+        setShiftsLoading(false);
       }
-    }
+    };
 
-    return shifts;
-  };
+    loadScheduledShifts();
+  }, [tokenData]);
 
-  const getShiftTimes = (shiftType: string) => {
-    switch (shiftType) {
-      case 'morning':
-        return { start: '06:00', end: '14:00' };
-      case 'afternoon':
-        return { start: '14:00', end: '22:00' };
-      case 'evening':
-        return { start: '14:00', end: '22:00' };
-      case 'night':
-        return { start: '22:00', end: '06:00' };
-      default:
-        return { start: '09:00', end: '17:00' };
-    }
-  };
-
-  const handleShiftToggle = (shift: ShiftPreference, available: boolean) => {
+  const handleShiftToggle = (shift: any, available: boolean) => {
     setFormData(prev => {
       const newPreferences = prev.preferences.filter(
-        p => !(p.day_of_week === shift.day_of_week && p.shift_type === shift.shift_type)
+        (p: any) => p.shift_id !== shift.id
       );
 
       if (available) {
         newPreferences.push({
-          ...shift,
+          shift_id: shift.id,
+          shift_date: shift.shift_date,
+          start_time: shift.start_time,
+          end_time: shift.end_time,
+          role: shift.role,
+          branch_name: shift.branch?.name,
           available: true,
         });
       }
@@ -146,21 +134,15 @@ const PublicShiftSubmission: React.FC = () => {
     });
   };
 
-  const availableShifts = tokenData && employeeData ? getAvailableShifts() : [];
-
-  const getDayName = (day: number) => {
+  const getDayName = (dateStr: string) => {
+    const date = new Date(dateStr);
     const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-    return days[day];
+    return days[date.getDay()];
   };
 
-  const getShiftTypeName = (type: string) => {
-    const types = {
-      morning: 'בוקר',
-      afternoon: 'צהריים',
-      evening: 'ערב', 
-      night: 'לילה'
-    };
-    return types[type as keyof typeof types] || type;
+  const getDateDisplay = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return `${date.getDate()}/${date.getMonth() + 1}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -207,7 +189,7 @@ const PublicShiftSubmission: React.FC = () => {
     }
   };
 
-  if (tokenLoading || employeeLoading) {
+  if (tokenLoading || employeeLoading || shiftsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center" dir="rtl">
         <div className="text-center">
@@ -305,27 +287,37 @@ const PublicShiftSubmission: React.FC = () => {
 
               <div>
                 <Label>בחירת משמרות</Label>
-                {availableShifts.length > 0 ? (
+                {scheduledShifts.length > 0 ? (
                   <div className="space-y-3 mt-2">
                     <p className="text-sm text-gray-600">
-                      המשמרות המוצגות מותאמות לסוג העובד שלך. אנא בחר את המשמרות שאתה זמין להן:
+                      המשמרות הבאות זמינות להגשה עבור השבוע שנבחר. אנא בחר את המשמרות שאתה מעוניין לעבד:
                     </p>
                     <div className="grid gap-3">
-                      {availableShifts.map((shift, index) => {
+                      {scheduledShifts.map((shift, index) => {
                         const currentPreference = formData.preferences.find(
-                          p => p.day_of_week === shift.day_of_week && p.shift_type === shift.shift_type
+                          (p: any) => p.shift_id === shift.id
                         );
                         
                         return (
-                          <div key={index} className="border rounded-lg p-3">
+                          <div key={shift.id} className="border rounded-lg p-4 bg-gray-50">
                             <div className="flex items-center justify-between">
-                              <div>
-                                <span className="font-medium">
-                                  {getDayName(shift.day_of_week)} - {getShiftTypeName(shift.shift_type)}
-                                </span>
+                              <div className="space-y-1">
+                                <div className="font-medium text-lg">
+                                  {getDayName(shift.shift_date)} {getDateDisplay(shift.shift_date)}
+                                </div>
                                 <div className="text-sm text-gray-600">
                                   {shift.start_time} - {shift.end_time}
                                 </div>
+                                {shift.branch?.name && (
+                                  <div className="text-sm text-blue-600 font-medium">
+                                    📍 {shift.branch.name}
+                                  </div>
+                                )}
+                                {shift.role && (
+                                  <div className="text-sm text-gray-500">
+                                    תפקיד: {shift.role}
+                                  </div>
+                                )}
                               </div>
                               <div className="flex gap-2">
                                 <Button
@@ -334,15 +326,15 @@ const PublicShiftSubmission: React.FC = () => {
                                   variant={currentPreference?.available ? "default" : "outline"}
                                   onClick={() => handleShiftToggle(shift, true)}
                                 >
-                                  זמין
+                                  מעוניין
                                 </Button>
                                 <Button
                                   type="button"
                                   size="sm"
-                                  variant={currentPreference?.available === false ? "destructive" : "outline"}
+                                  variant={currentPreference && !currentPreference.available ? "destructive" : "outline"}
                                   onClick={() => handleShiftToggle(shift, false)}
                                 >
-                                  לא זמין
+                                  לא מעוניין
                                 </Button>
                               </div>
                             </div>
@@ -353,7 +345,7 @@ const PublicShiftSubmission: React.FC = () => {
                   </div>
                 ) : (
                   <p className="text-gray-500 text-center py-4">
-                    אין משמרות זמינות עבור סוג העובד שלך השבוע.
+                    אין משמרות פנויות להגשה בשבוע זה.
                   </p>
                 )}
               </div>
@@ -373,7 +365,7 @@ const PublicShiftSubmission: React.FC = () => {
             <div className="flex justify-center">
               <Button
                 type="submit"
-                disabled={submitShifts.isPending || availableShifts.length === 0}
+                disabled={submitShifts.isPending || scheduledShifts.length === 0}
                 className="w-full"
               >
                 {submitShifts.isPending ? 'שולח...' : 'שלח הגשה'}

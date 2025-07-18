@@ -23,11 +23,20 @@ export interface PublicShiftSubmission {
 }
 
 export interface ShiftPreference {
-  day_of_week: number;
-  shift_type: 'morning' | 'afternoon' | 'evening' | 'night';
+  // For generic shifts
+  day_of_week?: number;
+  shift_type?: 'morning' | 'afternoon' | 'evening' | 'night';
+  
+  // For existing scheduled shifts
+  shift_id?: string;
+  shift_date?: string;
+  
+  // Common fields
   start_time: string;
   end_time: string;
+  role?: string;
   branch_preference?: string;
+  branch_name?: string;
   available: boolean;
 }
 
