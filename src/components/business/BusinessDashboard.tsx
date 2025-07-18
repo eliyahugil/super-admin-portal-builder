@@ -5,7 +5,7 @@ import { DashboardStats } from './dashboard/DashboardStats';
 import { ManagementToolsSection } from './dashboard/ManagementToolsSection';
 import { RecentActivityCard } from './dashboard/RecentActivityCard';
 import { EmployeeRequestForm } from '@/components/modules/employees/EmployeeRequestForm';
-import { EmployeeRequestsApproval } from '@/components/modules/employees/EmployeeRequestsApproval';
+
 import { useDashboardData } from './dashboard/useDashboardData';
 import { useBusinessModuleEnabled } from '@/hooks/useBusinessModuleEnabled';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -211,12 +211,6 @@ export const BusinessDashboard: React.FC = () => {
 
       <ManagementToolsSection />
 
-      {/* Employee Requests Approval Section - Only for Admins */}
-      {isAdmin && (
-        <section className="mb-8">
-          <EmployeeRequestsApproval />
-        </section>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RecentActivityCard activities={recentActivity} />
