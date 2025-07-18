@@ -663,21 +663,20 @@ const PublicShiftSubmission: React.FC = () => {
                                           }`}
                                           onClick={() => handleShiftToggle(shift, !isSelected)}
                                         >
-                                            <div className="font-semibold">
-                                              {(() => {
-                                                // Handle overnight shifts (crossing midnight)
-                                                const start = shift.start_time;
-                                                const end = shift.end_time;
-                                                const startHour = parseInt(start.split(':')[0]);
-                                                const endHour = parseInt(end.split(':')[0]);
-                                                
-                                                // If shift crosses midnight (start > end), show it correctly
-                                                if (startHour > endHour) {
-                                                  return `${start} - ${end} (+1)`;
-                                                }
-                                                return `${start} - ${end}`;
-                                              })()}
-                                            </div>
+                                             <div className="font-semibold">
+                                               {(() => {
+                                                 // Handle overnight shifts (crossing midnight)
+                                                 const start = shift.start_time;
+                                                 const end = shift.end_time;
+                                                 const startHour = parseInt(start.split(':')[0]);
+                                                 const endHour = parseInt(end.split(':')[0]);
+                                                 
+                                                 console.log(`🕐 Displaying shift: start=${start}, end=${end}, startHour=${startHour}, endHour=${endHour}`);
+                                                 
+                                                 // Always display as start-end regardless of crossing midnight
+                                                 return `${start}-${end}`;
+                                               })()}
+                                             </div>
                                            {shift.branch?.name && (
                                              <div className="text-blue-600 flex items-center gap-1">
                                                📍 {shift.branch.name}
@@ -721,21 +720,16 @@ const PublicShiftSubmission: React.FC = () => {
                                           }`}
                                           onClick={() => handleShiftToggle(shift, !isSelected)}
                                         >
-                                            <div className="font-semibold">
-                                              {(() => {
-                                                // Handle overnight shifts (crossing midnight)
-                                                const start = shift.start_time;
-                                                const end = shift.end_time;
-                                                const startHour = parseInt(start.split(':')[0]);
-                                                const endHour = parseInt(end.split(':')[0]);
-                                                
-                                                // If shift crosses midnight (start > end), show it correctly
-                                                if (startHour > endHour) {
-                                                  return `${start} - ${end} (+1)`;
-                                                }
-                                                return `${start} - ${end}`;
-                                              })()}
-                                            </div>
+                                             <div className="font-semibold">
+                                               {(() => {
+                                                 // Handle overnight shifts (crossing midnight)
+                                                 const start = shift.start_time;
+                                                 const end = shift.end_time;
+                                                 
+                                                 // Always display as start-end regardless of crossing midnight
+                                                 return `${start}-${end}`;
+                                               })()}
+                                             </div>
                                            {shift.branch?.name && (
                                              <div className="text-blue-600 flex items-center gap-1">
                                                📍 {shift.branch.name}
