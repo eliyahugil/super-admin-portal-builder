@@ -287,7 +287,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   // Helper function removed - submissions system no longer exists
 
   return (
-    <div className={`${isMobile ? 'p-2' : 'p-6'} space-y-2 lg:space-y-6 h-full flex flex-col overflow-hidden`} dir="rtl">
+    <div className={`w-full ${isMobile ? 'p-2' : 'p-6'} space-y-2 lg:space-y-6 h-full flex flex-col overflow-hidden`} dir="rtl">
       {/* Mobile optimized header */}
       <div className="flex flex-col space-y-2">
         <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center justify-between'}`}>
