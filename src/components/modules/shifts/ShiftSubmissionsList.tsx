@@ -1,100 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Clock, User, Calendar, CheckCircle, AlertCircle, FileText, ChevronDown, ChevronUp, Edit, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
+import { useShiftSubmissions } from './hooks/useShiftSubmissions';
 
 export const ShiftSubmissionsList: React.FC = () => {
-  const { businessId } = useCurrentBusiness();
   const isMobile = useIsMobile();
-  const [submissions, setSubmissions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
+  const { submissions, isLoading, deleteSubmission: hookDeleteSubmission } = useShiftSubmissions();
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    const fetchSubmissions = async () => {
-      if (!businessId) return;
-
-      setIsLoading(true);
-      try {
-        const supabase = createClient('https://xmhmztipuvzmwgbcovch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtaG16dGlwdXZ6bXdnYmNvdmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMjkzODIsImV4cCI6MjA2NDcwNTM4Mn0.QEugxUTGlJ1rnG8ddf3E6BIpNaiqwkp2ml7MbiUfY9c');
-        
-        // Fetch submissions by joining with employees table to filter by business_id
-        const { data, error } = await supabase
-          .from('shift_submissions')
-          .select(`
-            *,
-            employees!inner(
-              id,
-              first_name,
-              last_name,
-              business_id
-            )
-          `)
-          .eq('employees.business_id', businessId)
-          .order('submitted_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching shift submissions:', error);
-          setError(error);
-        } else {
-          console.log('📊 Fetched submissions count:', data?.length || 0);
-          console.log('📋 Submissions data:', data);
-          setSubmissions(data || []);
-        }
-      } catch (err) {
-        console.error('Error:', err);
-        setError(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSubmissions();
-  }, [businessId]);
-
   const deleteSubmission = async (submissionId: string) => {
-    console.log('🗑️ Attempting to delete submission:', submissionId);
-    
     if (!confirm('האם אתה בטוח שברצונך למחוק את ההגשה לחלוטין? פעולה זו לא ניתנת לביטול.')) {
       return;
     }
 
     try {
-      const supabase = createClient('https://xmhmztipuvzmwgbcovch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtaG16dGlwdXZ6bXdnYmNvdmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMjkzODIsImV4cCI6MjA2NDcwNTM4Mn0.QEugxUTGlJ1rnG8ddf3E6BIpNaiqwkp2ml7MbiUfY9c');
-      
-      console.log('🔄 Executing delete query...');
-      const { error, data } = await supabase
-        .from('shift_submissions')
-        .delete()
-        .eq('id', submissionId)
-        .select();
-
-      console.log('📝 Delete response:', { error, data });
-
-      if (error) {
-        console.error('❌ Error deleting submission:', error);
-        toast.error('שגיאה במחיקת ההגשה: ' + error.message);
-      } else {
-        console.log('✅ Submission deleted successfully');
-        toast.success('ההגשה נמחקה בהצלחה');
-        
-        // Update local state to remove the deleted submission
-        setSubmissions(prev => {
-          const updated = prev.filter(s => s.id !== submissionId);
-          console.log('📊 Updated submissions count:', updated.length);
-          return updated;
-        });
-      }
+      await hookDeleteSubmission(submissionId);
+      toast.success('ההגשה נמחקה בהצלחה');
     } catch (err) {
-      console.error('💥 Unexpected error:', err);
+      console.error('💥 Error deleting submission:', err);
       toast.error('שגיאה במחיקת ההגשה');
     }
   };
@@ -305,15 +234,6 @@ export const ShiftSubmissionsList: React.FC = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
-        <p className="text-destructive">שגיאה בטעינת ההגשות</p>
-      </div>
-    );
-  }
-
   if (!submissions || submissions.length === 0) {
     return (
       <div className="text-center py-8">
@@ -420,18 +340,18 @@ export const ShiftSubmissionsList: React.FC = () => {
 
                       {submission.notes && (
                         <div>
-                          <h4 className="font-medium mb-1">הערות כלליות:</h4>
-                          <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
+                          <h4 className="font-medium mb-2">הערות כלליות:</h4>
+                          <div className="bg-muted p-3 rounded-lg text-sm">
                             {submission.notes}
-                          </p>
+                          </div>
                         </div>
                       )}
 
                       {morningAvailability.length > 0 && (
                         <div>
-                          <h4 className="font-medium mb-1">זמינות בוקר אופציונלית:</h4>
-                          <div className="flex gap-1 flex-wrap">
-                            {morningAvailability.map((day: any) => (
+                          <h4 className="font-medium mb-2">זמינות בוקר אופציונלית:</h4>
+                          <div className="flex gap-2 flex-wrap">
+                            {morningAvailability.map((day: number) => (
                               <Badge key={day} variant="outline" className="text-xs">
                                 יום {day}
                               </Badge>
@@ -439,28 +359,28 @@ export const ShiftSubmissionsList: React.FC = () => {
                           </div>
                         </div>
                       )}
-                    </div>
 
-                    {/* Action buttons for desktop */}
-                    <div className="flex gap-2 pt-4 border-t">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                        onClick={() => editSubmission(submission.id)}
-                      >
-                        <Edit className="h-4 w-4 ml-1" />
-                        ערוך הגשה
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 border-red-200 hover:bg-red-50"
-                        onClick={() => deleteSubmission(submission.id)}
-                      >
-                        <Trash2 className="h-4 w-4 ml-1" />
-                        מחק הגשה
-                      </Button>
+                      {/* Action buttons */}
+                      <div className="flex gap-2 pt-3 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                          onClick={() => editSubmission(submission.id)}
+                        >
+                          <Edit className="h-4 w-4 ml-1" />
+                          ערוך
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 border-red-200 hover:bg-red-50"
+                          onClick={() => deleteSubmission(submission.id)}
+                        >
+                          <Trash2 className="h-4 w-4 ml-1" />
+                          מחק
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

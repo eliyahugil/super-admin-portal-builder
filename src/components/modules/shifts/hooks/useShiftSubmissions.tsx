@@ -12,14 +12,37 @@ export const useShiftSubmissions = () => {
   const { toast } = useToast();
   const { businessId, isLoading } = useBusiness();
 
-  // Shift submissions system has been removed - return empty data
+  // Fetch shift submissions from database
   const { data: submissions, isLoading: submissionsLoading, refetch } = useQuery({
     queryKey: ['shift-submissions', businessId],
     queryFn: async () => {
-      // Shift submission system has been removed
-      return [] as ShiftSubmission[];
+      if (!businessId) return [];
+      
+      console.log('🔄 Fetching submissions from useShiftSubmissions hook...');
+      
+      const { data, error } = await supabase
+        .from('shift_submissions')
+        .select(`
+          *,
+          employees!inner(
+            id,
+            first_name,
+            last_name,
+            business_id
+          )
+        `)
+        .eq('employees.business_id', businessId)
+        .order('submitted_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching submissions:', error);
+        throw error;
+      }
+      
+      console.log('📊 Hook fetched submissions count:', data?.length || 0);
+      return (data || []) as any[];
     },
-    enabled: false, // Disabled since shift submissions are no longer available
+    enabled: !!businessId && !isLoading,
   });
 
   // Get all employees to show missing submissions
@@ -118,6 +141,34 @@ export const useShiftSubmissions = () => {
     employee.employee_id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Delete submission function
+  const deleteSubmission = async (submissionId: string) => {
+    console.log('🗑️ Hook: Attempting to delete submission:', submissionId);
+    
+    try {
+      const { error, data } = await supabase
+        .from('shift_submissions')
+        .delete()
+        .eq('id', submissionId)
+        .select();
+
+      console.log('📝 Hook: Delete response:', { error, data });
+
+      if (error) {
+        console.error('❌ Hook: Error deleting submission:', error);
+        throw error;
+      } else {
+        console.log('✅ Hook: Submission deleted successfully');
+        // Force refetch to update the cache
+        await refetch();
+        return { success: true };
+      }
+    } catch (err) {
+      console.error('💥 Hook: Unexpected error:', err);
+      throw err;
+    }
+  };
+
   return {
     searchTerm,
     setSearchTerm,
@@ -128,6 +179,7 @@ export const useShiftSubmissions = () => {
     parseShifts,
     sendWhatsApp,
     sendReminder,
-    refetch
+    refetch,
+    deleteSubmission
   };
 };
