@@ -697,9 +697,23 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                         return matches;
                       });
                       
-                      // Separate regular and special submissions
-                      const regularSubmissions = shiftSubmissions.filter(s => s.submission_type === 'regular' || !s.submission_type);
-                      const specialSubmissions = shiftSubmissions.filter(s => s.submission_type && s.submission_type !== 'regular');
+                       // Separate regular and special submissions
+                       console.log('🔍 Debugging submissions for shift:', {
+                         shiftTime: `${shift.start_time}-${shift.end_time}`,
+                         totalSubmissions: shiftSubmissions.length,
+                         submissionsData: shiftSubmissions.map(s => ({
+                           id: s.id,
+                           employee: s.employees?.first_name,
+                           submission_type: s.submission_type,
+                           hasSubmissionType: s.hasOwnProperty('submission_type')
+                         }))
+                       });
+                       const regularSubmissions = shiftSubmissions.filter(s => s.submission_type === 'regular' || !s.submission_type);
+                       const specialSubmissions = shiftSubmissions.filter(s => s.submission_type && s.submission_type !== 'regular');
+                       console.log('📊 Filtered submissions:', {
+                         regular: regularSubmissions.length,
+                         special: specialSubmissions.length
+                       });
                     const hasConflict = hasShiftConflict(shift);
 
                         return (

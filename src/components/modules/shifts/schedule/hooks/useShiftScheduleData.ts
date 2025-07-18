@@ -181,7 +181,6 @@ export const useShiftScheduleData = (businessId: string | null) => {
         .from('shift_submissions')
         .select(`
           *,
-          submission_type,
           employees!inner(
             id,
             first_name,
@@ -199,6 +198,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
       }
 
       console.log('✅ Fetched shift submissions:', data?.length || 0);
+      console.log('🔍 Submission types found:', data?.map(s => ({ id: s.id, submission_type: s.submission_type })));
       return data || [];
     },
     enabled: !!businessId,
