@@ -27,6 +27,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { usePublicShifts } from '@/hooks/usePublicShifts';
 
 interface Employee {
   id: string;
@@ -100,7 +101,9 @@ interface Notification {
 }
 
 export const SimpleEmployeeProfile: React.FC = () => {
-  const { employeeId } = useParams<{ employeeId: string }>();
+  const { id: employeeId } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const { useEmployeeActiveToken, useTokenAvailableShifts } = usePublicShifts();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [availableShifts, setAvailableShifts] = useState<AvailableShift[]>([]);
@@ -111,7 +114,12 @@ export const SimpleEmployeeProfile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submittingShift, setSubmittingShift] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('profile');
-  const { toast } = useToast();
+  
+  // Get active token for this employee
+  const { data: activeToken } = useEmployeeActiveToken(employeeId || '');
+  
+  // Get available shifts for the active token
+  const { data: tokenAvailableShifts = [] } = useTokenAvailableShifts(activeToken?.id || '');
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -614,26 +622,65 @@ export const SimpleEmployeeProfile: React.FC = () => {
 
           {/* Available Shifts Tab */}
           <TabsContent value="available" className="space-y-6">
+            {activeToken && (
+              <Card className="border-blue-200 bg-blue-50 mb-4">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-right text-blue-800">
+                    <CheckCircle className="h-5 w-5" />
+                    יש לך טוקן פעיל להגשת משמרות!
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-right space-y-2">
+                    <p className="text-sm text-blue-700">
+                      טוקן פעיל לתקופה: {format(new Date(activeToken.week_start_date), 'dd/MM/yyyy')} - {format(new Date(activeToken.week_end_date), 'dd/MM/yyyy')}
+                    </p>
+                    <p className="text-sm text-blue-700">
+                      תוקף הטוקן עד: {format(new Date(activeToken.expires_at), 'dd/MM/yyyy HH:mm')}
+                    </p>
+                    <div className="pt-2">
+                      <Button 
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={() => {
+                          window.open(`/public/shift-submission/${activeToken.token}`, '_blank');
+                        }}
+                      >
+                        <Send className="h-4 w-4 ml-2" />
+                        כניסה לטופס הגשת משמרות
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-right">
                   <Send className="h-5 w-5" />
-                  משמרות פתוחות להגשה ({availableShifts.length})
+                  משמרות פתוחות להגשה ({tokenAvailableShifts.length || availableShifts.length})
                 </CardTitle>
+                {activeToken && (
+                  <p className="text-sm text-muted-foreground text-right">
+                    המשמרות להלן זמינות להגשה באמצעות הטוקן הפעיל שלך
+                  </p>
+                )}
               </CardHeader>
               <CardContent>
-                {availableShifts.length === 0 ? (
+                {(tokenAvailableShifts.length > 0 ? tokenAvailableShifts : availableShifts).length === 0 ? (
                   <div className="text-center py-8">
                     <Send className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">אין משמרות פתוחות כרגע</p>
+                    <p className="text-muted-foreground">
+                      {activeToken ? 'אין משמרות זמינות לטוקן הפעיל' : 'אין משמרות פתוחות כרגע'}
+                    </p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      משמרות פתוחות יופיעו כאן כשיהיו זמינות
+                      {activeToken ? 'משמרות יופיעו כאן כשיהיו זמינות לתקופת הטוקן' : 'משמרות פתוחות יופיעו כאן כשיהיו זמינות'}
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {availableShifts.map((shift) => (
-                      <div key={shift.id} className="p-4 border rounded-lg">
+                    {(tokenAvailableShifts.length > 0 ? tokenAvailableShifts : availableShifts).map((shift) => (
+                      <div key={shift.id} className={`p-4 border rounded-lg ${activeToken ? 'border-blue-200 bg-blue-50/30' : ''}`}>
                         <div className="flex items-center justify-between mb-3">
                           <div className="text-right flex-1">
                             <h4 className="font-medium text-lg">{shift.shift_name}</h4>
@@ -642,39 +689,61 @@ export const SimpleEmployeeProfile: React.FC = () => {
                             </p>
                             <p className="text-sm text-muted-foreground">
                               <MapPin className="h-3 w-3 inline ml-1" />
-                              {shift.branch_name}
+                              {shift.branches?.name || shift.branch_name}
                             </p>
                           </div>
                           <div className="text-left">
                             <Badge variant="outline">
                               {shift.current_assignments}/{shift.required_employees} עובדים
-                            </Badge>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-muted-foreground">
-                            סוג משמרת: {shift.shift_type}
-                          </div>
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleShiftApplication(shift.id)}
-                            disabled={submittingShift === shift.id}
-                            className="mr-2"
-                          >
-                            {submittingShift === shift.id ? (
-                              <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white ml-2"></div>
-                                מגיש...
-                              </>
-                            ) : (
-                              <>
-                                <Send className="h-4 w-4 ml-2" />
-                                הגש בקשה
-                              </>
-                            )}
-                          </Button>
-                        </div>
+                             </Badge>
+                             {activeToken && (
+                               <Badge className="bg-blue-100 text-blue-800 mr-2">
+                                 זמין לטוקן
+                               </Badge>
+                             )}
+                           </div>
+                         </div>
+                         
+                         {/* Add shift selection for active token */}
+                         <div className="text-sm text-muted-foreground space-y-1">
+                           <p><strong>סוג משמרת:</strong> {shift.shift_type}</p>
+                           <p><strong>דרוש:</strong> {shift.required_employees} עובדים</p>
+                           {shift.notes && <p><strong>הערות:</strong> {shift.notes}</p>}
+                           {activeToken && (
+                             <div className="mt-3 p-2 bg-blue-100 rounded text-blue-800">
+                               <p className="text-xs">
+                                 ⭐ משמרת זו זמינה להגשה באמצעות הטוקן הפעיל שלך
+                               </p>
+                             </div>
+                           )}
+                         </div>
+                         
+                         <div className="flex items-center justify-between mt-3">
+                           <Button 
+                             size="sm" 
+                             onClick={() => handleShiftApplication(shift.id)}
+                             disabled={submittingShift === shift.id || !!activeToken}
+                             className="mr-2"
+                             variant={activeToken ? "outline" : "default"}
+                           >
+                             {submittingShift === shift.id ? (
+                               <>
+                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white ml-2"></div>
+                                 מגיש...
+                               </>
+                             ) : activeToken ? (
+                               <>
+                                 <Send className="h-4 w-4 ml-2" />
+                                 השתמש בטוקן
+                               </>
+                             ) : (
+                               <>
+                                 <Send className="h-4 w-4 ml-2" />
+                                 הגש בקשה
+                               </>
+                             )}
+                           </Button>
+                         </div>
                       </div>
                     ))}
                   </div>

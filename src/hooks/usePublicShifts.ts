@@ -102,6 +102,33 @@ export const usePublicShifts = () => {
       expires_at: string;
       max_submissions?: number;
     }) => {
+      // Check if there's an existing active token for this employee/business
+      if (params.employee_id) {
+        const { data: existingToken } = await supabase
+          .from('shift_submission_tokens')
+          .select('id')
+          .eq('employee_id', params.employee_id)
+          .eq('business_id', params.business_id)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (existingToken) {
+          throw new Error('יש כבר טוקן פעיל לעובד זה. אנא בטל את הטוקן הקיים לפני יצירת טוקן חדש.');
+        }
+      } else {
+        const { data: existingToken } = await supabase
+          .from('shift_submission_tokens')
+          .select('id')
+          .is('employee_id', null)
+          .eq('business_id', params.business_id)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (existingToken) {
+          throw new Error('יש כבר טוקן כללי פעיל לעסק זה. אנא בטל את הטוקן הקיים לפני יצירת טוקן חדש.');
+        }
+      }
+
       // Generate a unique token
       const token = crypto.randomUUID();
       
@@ -155,11 +182,72 @@ export const usePublicShifts = () => {
     });
   };
 
+  // Get active token for a specific employee
+  const useEmployeeActiveToken = (employeeId: string) => {
+    return useQuery({
+      queryKey: ['employeeActiveToken', employeeId],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('shift_submission_tokens')
+          .select('*')
+          .eq('employee_id', employeeId)
+          .eq('is_active', true)
+          .gt('expires_at', new Date().toISOString())
+          .maybeSingle();
+
+        if (error) throw error;
+        return data as PublicShiftToken | null;
+      },
+      enabled: !!employeeId,
+    });
+  };
+
+  // Get available shifts for a token's date range
+  const useTokenAvailableShifts = (tokenId: string) => {
+    return useQuery({
+      queryKey: ['tokenAvailableShifts', tokenId],
+      queryFn: async () => {
+        if (!tokenId) return [];
+
+        // First get the token details
+        const { data: token, error: tokenError } = await supabase
+          .from('shift_submission_tokens')
+          .select('*')
+          .eq('id', tokenId)
+          .single();
+
+        if (tokenError) throw tokenError;
+
+        // Then get available shifts for the token's date range
+        const { data: availableShifts, error: shiftsError } = await supabase
+          .from('available_shifts')
+          .select(`
+            *,
+            branches (
+              id,
+              name
+            )
+          `)
+          .eq('business_id', token.business_id)
+          .gte('week_start_date', token.week_start_date)
+          .lte('week_end_date', token.week_end_date)
+          .order('day_of_week', { ascending: true })
+          .order('start_time', { ascending: true });
+
+        if (shiftsError) throw shiftsError;
+        return availableShifts || [];
+      },
+      enabled: !!tokenId,
+    });
+  };
+
   return {
     useToken,
     useTokenSubmissions,
     submitShifts,
     generateToken,
     useBusinessTokens,
+    useEmployeeActiveToken,
+    useTokenAvailableShifts,
   };
 };
