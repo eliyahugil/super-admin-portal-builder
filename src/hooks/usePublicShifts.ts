@@ -287,8 +287,8 @@ export const usePublicShifts = () => {
             )
           `)
           .eq('business_id', token.business_id)
-          .gte('week_start_date', token.week_start_date)
-          .lte('week_end_date', token.week_end_date)
+          .eq('week_start_date', token.week_start_date)
+          .eq('week_end_date', token.week_end_date)
           .order('day_of_week', { ascending: true })
           .order('start_time', { ascending: true });
 
