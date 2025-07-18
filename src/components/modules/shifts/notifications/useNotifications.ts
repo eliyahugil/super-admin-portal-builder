@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/auth/AuthContext';
 
 interface Notification {
   id: string;
@@ -16,49 +18,67 @@ interface Notification {
 
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { profile } = useAuth();
+
+  // טעינת התראות אמיתיות מהמסד
+  const loadNotifications = async () => {
+    if (!profile?.business_id) return;
+
+    try {
+      // קריאה להגשות משמרות חדשות שעדיין לא נקראו
+      const { data: shiftRequests, error } = await supabase
+        .from('employee_shift_requests')
+        .select(`
+          id,
+          shift_date,
+          start_time,
+          end_time,
+          created_at,
+          status,
+          notes,
+          branch_preference,
+          employees!inner(
+            first_name,
+            last_name,
+            business_id
+          )
+        `)
+        .eq('employees.business_id', profile.business_id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading shift requests:', error);
+        return;
+      }
+
+      // המרת בקשות משמרות להתראות
+      const shiftNotifications: Notification[] = (shiftRequests || []).map(request => ({
+        id: request.id,
+        type: 'shift_submission' as const,
+        title: 'הגשת משמרת חדשה',
+        message: `עובד הגיש בקשה למשמרת`,
+        employeeName: `${request.employees.first_name} ${request.employees.last_name}`,
+        submissionTime: new Date(request.created_at).toLocaleTimeString('he-IL', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }),
+        shiftDate: new Date(request.shift_date).toLocaleDateString('he-IL'),
+        shiftTime: `${request.start_time}-${request.end_time}`,
+        branchName: request.branch_preference || 'לא צוין',
+        isRead: false,
+        createdAt: request.created_at
+      }));
+
+      setNotifications(shiftNotifications);
+    } catch (error) {
+      console.error('Error in loadNotifications:', error);
+    }
+  };
 
   useEffect(() => {
-    // טעינת התראות דמה - יש להחליף בקריאה אמיתית לשרת
-    const mockNotifications: Notification[] = [
-      {
-        id: '1',
-        type: 'shift_submission',
-        title: 'הגשת משמרת חדשה',
-        message: 'עובד הגיש בקשה למשמרת ביום ראשון',
-        employeeName: 'דוד כהן',
-        submissionTime: '14:30',
-        shiftDate: '2024-01-15',
-        shiftTime: '08:00-16:00',
-        branchName: 'סניף מרכז',
-        isRead: false,
-        createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString() // לפני 30 דקות
-      },
-      {
-        id: '2',
-        type: 'shift_submission',
-        title: 'הגשת משמרת נוספת',
-        message: 'עובדת הגישה בקשה למשמרת ערב',
-        employeeName: 'שרה לוי',
-        submissionTime: '13:15',
-        shiftDate: '2024-01-16',
-        shiftTime: '16:00-00:00',
-        branchName: 'סניף צפון',
-        isRead: false,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // לפני שעתיים
-      },
-      {
-        id: '3',
-        type: 'shift_approval',
-        title: 'משמרת אושרה',
-        message: 'משמרת של עובד אושרה למחר',
-        employeeName: 'מיכל רוזן',
-        isRead: true,
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // לפני יום
-      }
-    ];
-
-    setNotifications(mockNotifications);
-  }, []);
+    loadNotifications();
+  }, [profile?.business_id]);
 
   const addNotification = (notification: Omit<Notification, 'id' | 'createdAt'>) => {
     const newNotification: Notification = {
