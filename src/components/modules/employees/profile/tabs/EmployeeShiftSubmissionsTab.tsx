@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Clock, FileText, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CalendarDays, Clock, FileText, Calendar, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import type { Employee } from '@/types/employee';
@@ -36,13 +37,16 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
   employeeId,
   employeeName
 }) => {
-  // Get regular shift submissions (non-special submissions)
-  const { data: submissions, isLoading } = useQuery({
+  const [expandedSubmissions, setExpandedSubmissions] = useState<Set<string>>(new Set());
+
+  // Get regular shift submissions and employee preferences
+  const { data: submissionData, isLoading } = useQuery({
     queryKey: ['employee-regular-submissions', employeeId],
     queryFn: async () => {
-      if (!employeeId) return [];
+      if (!employeeId) return { submissions: [], preferences: [] };
       
-      const { data, error } = await supabase
+      // Get submissions
+      const { data: submissions, error: submissionsError } = await supabase
         .from('shift_submissions')
         .select(`
           *,
@@ -56,12 +60,25 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
         .or('submission_type.eq.regular,submission_type.is.null')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      console.log('📊 Regular submissions for employee:', data?.length || 0);
-      return data || [];
+      if (submissionsError) throw submissionsError;
+
+      // Get employee preferences
+      const { data: preferences, error: preferencesError } = await supabase
+        .from('employee_branch_assignments')
+        .select('shift_types, available_days, is_active')
+        .eq('employee_id', employeeId)
+        .eq('is_active', true);
+
+      if (preferencesError) throw preferencesError;
+
+      console.log('📊 Regular submissions for employee:', submissions?.length || 0);
+      return { submissions: submissions || [], preferences: preferences || [] };
     },
     enabled: !!employeeId,
   });
+
+  const submissions = submissionData?.submissions || [];
+  const preferences = submissionData?.preferences || [];
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -76,6 +93,47 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
     }
   };
 
+  // Helper function to determine shift type from times
+  const getShiftType = (startTime: string, endTime: string): string => {
+    const start = parseInt(startTime.split(':')[0]);
+    
+    if (start >= 6 && start < 14) return 'morning';
+    if (start >= 14 && start < 22) return 'evening';
+    return 'night';
+  };
+
+  // Helper function to check if shift is valid for employee preferences
+  const isValidShiftForEmployee = (shift: any): boolean => {
+    if (!shift.date || !shift.start_time || !shift.end_time) return false;
+    
+    // Get employee's allowed shift types and days
+    const allowedShiftTypes: string[] = [];
+    const allowedDays: number[] = [];
+    
+    preferences.forEach(pref => {
+      if (pref.shift_types && Array.isArray(pref.shift_types)) {
+        pref.shift_types.forEach((type: string) => {
+          if (!allowedShiftTypes.includes(type)) allowedShiftTypes.push(type);
+        });
+      }
+      if (pref.available_days && Array.isArray(pref.available_days)) {
+        pref.available_days.forEach((day: number) => {
+          if (!allowedDays.includes(day)) allowedDays.push(day);
+        });
+      }
+    });
+    
+    // Check shift type
+    const shiftType = getShiftType(shift.start_time, shift.end_time);
+    if (!allowedShiftTypes.includes(shiftType)) return false;
+    
+    // Check day of week
+    const dayOfWeek = new Date(shift.date).getDay();
+    if (!allowedDays.includes(dayOfWeek)) return false;
+    
+    return true;
+  };
+
   // Helper function to check if times overlap
   const timesOverlap = (start1: string, end1: string, start2: string, end2: string): boolean => {
     const s1 = new Date(`2000-01-01T${start1}`);
@@ -86,8 +144,24 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
     return s1 < e2 && s2 < e1;
   };
 
-  const formatShifts = (shifts: any) => {
-    if (!shifts || !Array.isArray(shifts)) return 'לא הוגדר';
+  // Function to separate shifts into regular and special
+  const categorizeShifts = (shifts: any[]) => {
+    const regular: any[] = [];
+    const special: any[] = [];
+    
+    shifts.forEach(shift => {
+      if (isValidShiftForEmployee(shift)) {
+        regular.push(shift);
+      } else {
+        special.push(shift);
+      }
+    });
+    
+    return { regular, special };
+  };
+
+  const formatShiftCount = (shifts: any[]) => {
+    if (!shifts || shifts.length === 0) return '0 משמרות';
     
     // Group by date and handle overlapping shifts
     const shiftsByDate = new Map<string, any[]>();
@@ -118,11 +192,21 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
       totalUniqueShifts += uniqueShifts.length;
     });
     
-    return totalUniqueShifts > 0 ? `${totalUniqueShifts} משמרות` : 'אין משמרות';
+    return `${totalUniqueShifts} משמרות`;
   };
 
-  const renderShiftDetails = (shifts: any) => {
-    if (!shifts || !Array.isArray(shifts)) return null;
+  const toggleExpanded = (submissionId: string) => {
+    const newExpanded = new Set(expandedSubmissions);
+    if (newExpanded.has(submissionId)) {
+      newExpanded.delete(submissionId);
+    } else {
+      newExpanded.add(submissionId);
+    }
+    setExpandedSubmissions(newExpanded);
+  };
+
+  const renderShiftDetails = (shifts: any[], isSpecial: boolean = false) => {
+    if (!shifts || shifts.length === 0) return null;
     
     // Group shifts by date first
     const shiftsByDate = new Map<string, any[]>();
@@ -174,10 +258,22 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
     
     return (
       <div className="mt-3 space-y-2">
-        <div className="text-sm font-medium text-foreground">פירוט המשמרות:</div>
+        <div className="flex items-center gap-2">
+          <div className="text-sm font-medium text-foreground">
+            {isSpecial ? 'משמרות מיוחדות:' : 'משמרות רגילות:'}
+          </div>
+          {isSpecial && <AlertTriangle className="h-4 w-4 text-orange-500" />}
+        </div>
         <div className="grid gap-2">
           {finalShifts.map((shift, index) => (
-            <div key={index} className="bg-muted/50 rounded-lg p-3 text-sm">
+            <div 
+              key={index} 
+              className={`rounded-lg p-3 text-sm ${
+                isSpecial 
+                  ? 'bg-orange-50 border border-orange-200' 
+                  : 'bg-muted/50'
+              }`}
+            >
               <div className="flex items-center justify-between mb-2">
                 <div className="font-medium">
                   {format(new Date(shift.date), 'EEEE dd/MM/yyyy', { locale: he })}
@@ -198,9 +294,29 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
                   </div>
                 )}
                 {shift.notes_list.length > 0 && (
-                  <div>
+                  <div className="mb-1">
                     <span className="font-medium">הערות: </span>
                     {shift.notes_list.join(', ')}
+                  </div>
+                )}
+                {isSpecial && (
+                  <div className="text-orange-600 font-medium">
+                    {(() => {
+                      const shiftType = getShiftType(shift.start_time, shift.end_time);
+                      const dayOfWeek = new Date(shift.date).getDay();
+                      
+                      // Get employee's allowed types
+                      const allowedTypes: string[] = [];
+                      preferences.forEach(pref => {
+                        if (pref.shift_types) allowedTypes.push(...pref.shift_types);
+                      });
+                      
+                      if (!allowedTypes.includes(shiftType)) {
+                        return `מיוחד: עובד מוגדר ל-${allowedTypes.join('/')} אך ביקש ${shiftType === 'morning' ? 'בוקר' : shiftType === 'evening' ? 'ערב' : 'לילה'}`;
+                      }
+                      
+                      return 'מיוחד: לא תואם להגדרות העובד';
+                    })()}
                   </div>
                 )}
               </div>
@@ -250,49 +366,95 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
           </div>
         ) : (
           <div className="space-y-4">
-            {submissions.map((submission: ShiftSubmission) => (
-              <Card key={submission.id} className="border-l-4 border-l-primary">
-                <CardContent className="p-4">
-                  <div className="space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            שבוע {format(new Date(submission.week_start_date), 'dd/MM/yyyy', { locale: he })} - {format(new Date(submission.week_end_date), 'dd/MM/yyyy', { locale: he })}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            הוגש ב-{format(new Date(submission.submitted_at), 'dd/MM/yyyy HH:mm', { locale: he })}
-                          </span>
-                        </div>
-                        <div className="text-sm">
-                          <span className="font-medium">משמרות: </span>
-                          {formatShifts(submission.shifts)}
-                        </div>
-                        {submission.notes && (
-                          <div className="text-sm">
-                            <span className="font-medium">הערות: </span>
-                            <span className="text-muted-foreground">{submission.notes}</span>
+            {submissions.map((submission: ShiftSubmission) => {
+              const { regular: regularShifts, special: specialShifts } = categorizeShifts(submission.shifts || []);
+              const isExpanded = expandedSubmissions.has(submission.id);
+              
+              return (
+                <Card key={submission.id} className="border-l-4 border-l-primary">
+                  <CardContent className="p-4">
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">
+                              שבוע {format(new Date(submission.week_start_date), 'dd/MM/yyyy', { locale: he })} - {format(new Date(submission.week_end_date), 'dd/MM/yyyy', { locale: he })}
+                            </span>
                           </div>
-                        )}
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              הוגש ב-{format(new Date(submission.submitted_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                            </span>
+                          </div>
+                          
+                          {/* Summary of shifts */}
+                          <div className="flex items-center gap-4 text-sm">
+                            {regularShifts.length > 0 && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">רגילות: </span>
+                                <span>{formatShiftCount(regularShifts)}</span>
+                              </div>
+                            )}
+                            {specialShifts.length > 0 && (
+                              <div className="flex items-center gap-1">
+                                <AlertTriangle className="h-4 w-4 text-orange-500" />
+                                <span className="font-medium text-orange-600">מיוחדות: </span>
+                                <span className="text-orange-600">{formatShiftCount(specialShifts)}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {submission.notes && (
+                            <div className="text-sm">
+                              <span className="font-medium">הערות: </span>
+                              <span className="text-muted-foreground">{submission.notes}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {getStatusBadge(submission.status)}
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                            רגילה
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(submission.status)}
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                          רגילה
-                        </Badge>
+                      
+                      {/* Toggle button */}
+                      <div className="flex justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleExpanded(submission.id)}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          {isExpanded ? (
+                            <>
+                              <ChevronUp className="h-4 w-4 mr-2" />
+                              הסתר פירוט
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="h-4 w-4 mr-2" />
+                              הצג פירוט
+                            </>
+                          )}
+                        </Button>
                       </div>
+                      
+                      {/* Detailed view */}
+                      {isExpanded && (
+                        <div className="space-y-4">
+                          {regularShifts.length > 0 && renderShiftDetails(regularShifts, false)}
+                          {specialShifts.length > 0 && renderShiftDetails(specialShifts, true)}
+                        </div>
+                      )}
                     </div>
-                    
-                    {/* הצגת פירוט המשמרות */}
-                    {renderShiftDetails(submission.shifts)}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </CardContent>
