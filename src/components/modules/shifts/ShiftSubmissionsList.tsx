@@ -1,6 +1,5 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, User, Calendar, CheckCircle, AlertCircle, FileText } from 'lucide-react';
@@ -8,62 +7,41 @@ import { format, parseISO } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
-interface ShiftSubmission {
-  id: string;
-  employee_id: string;
-  week_start_date: string;
-  week_end_date: string;
-  shifts: Array<{
-    date: string;
-    start_time: string;
-    end_time: string;
-    branch_preference: string;
-    role_preference?: string;
-    notes?: string;
-    available_shift_id?: string;
-  }>;
-  notes?: string;
-  optional_morning_availability: number[];
-  submitted_at: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  employee?: {
-    first_name: string;
-    last_name: string;
-    employee_id: string;
-  };
-}
-
 export const ShiftSubmissionsList: React.FC = () => {
   const { businessId } = useCurrentBusiness();
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<any>(null);
 
-  const { data: submissions, isLoading, error } = useQuery({
-    queryKey: ['shift-submissions', businessId],
-    queryFn: async () => {
-      if (!businessId) return [];
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      if (!businessId) return;
 
-      const { data, error } = await supabase
-        .from('shift_submissions')
-        .select(`
-          *,
-          employee:employees(
-            first_name,
-            last_name,
-            employee_id
-          )
-        `)
-        .order('submitted_at', { ascending: false });
+      setIsLoading(true);
+      try {
+        const supabase = createClient('https://xmhmztipuvzmwgbcovch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtaG16dGlwdXZ6bXdnYmNvdmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMjkzODIsImV4cCI6MjA2NDcwNTM4Mn0.QEugxUTGlJ1rnG8ddf3E6BIpNaiqwkp2ml7MbiUfY9c');
+        const { data, error } = await supabase
+          .from('shift_submissions')
+          .select('*')
+          .eq('business_id', businessId)
+          .order('submitted_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching shift submissions:', error);
-        throw error;
+        if (error) {
+          console.error('Error fetching shift submissions:', error);
+          setError(error);
+        } else {
+          setSubmissions(data || []);
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        setError(err);
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      return data as ShiftSubmission[];
-    },
-    enabled: !!businessId,
-  });
+    fetchSubmissions();
+  }, [businessId]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -139,101 +117,100 @@ export const ShiftSubmissionsList: React.FC = () => {
       </div>
 
       <div className="grid gap-4">
-        {submissions.map((submission) => (
-          <Card key={submission.id} className="overflow-hidden">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  {submission.employee ? 
-                    `${submission.employee.first_name} ${submission.employee.last_name}` : 
-                    'עובד לא ידוע'
-                  }
-                  {submission.employee?.employee_id && (
-                    <span className="text-sm text-muted-foreground">
-                      (מספר: {submission.employee.employee_id})
-                    </span>
-                  )}
-                </CardTitle>
-                {getStatusBadge(submission.status)}
-              </div>
-              <CardDescription className="flex items-center gap-4 text-sm">
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  שבוע {formatDate(submission.week_start_date)} - {formatDate(submission.week_end_date)}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  הוגש: {formatDateTime(submission.submitted_at)}
-                </span>
-              </CardDescription>
-            </CardHeader>
+        {submissions.map((submission: any) => {
+          const shifts = Array.isArray(submission.shifts) ? submission.shifts : [];
+          const morningAvailability = Array.isArray(submission.optional_morning_availability) 
+            ? submission.optional_morning_availability 
+            : [];
 
-            <CardContent>
-              <div className="space-y-3">
-                <div>
-                  <h4 className="font-medium mb-2">משמרות נבחרות ({submission.shifts.length}):</h4>
-                  <div className="grid gap-2">
-                    {submission.shifts.map((shift, index) => (
-                      <div key={index} className="bg-muted p-3 rounded-lg text-sm">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{formatDate(shift.date)}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span>{shift.start_time} - {shift.end_time}</span>
-                          </div>
-                        </div>
-                        
-                        {shift.branch_preference && (
-                          <div className="mt-1 text-muted-foreground">
-                            📍 {shift.branch_preference}
-                          </div>
-                        )}
-                        
-                        {shift.role_preference && (
-                          <div className="mt-1 text-muted-foreground">
-                            👔 {shift.role_preference}
-                          </div>
-                        )}
-                        
-                        {shift.notes && (
-                          <div className="mt-1 text-muted-foreground">
-                            💬 {shift.notes}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+          return (
+            <Card key={submission.id} className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    עובד אנונימי
+                  </CardTitle>
+                  {getStatusBadge(submission.status)}
                 </div>
+                <CardDescription className="flex items-center gap-4 text-sm">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    שבוע {formatDate(submission.week_start_date)} - {formatDate(submission.week_end_date)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    הוגש: {formatDateTime(submission.submitted_at)}
+                  </span>
+                </CardDescription>
+              </CardHeader>
 
-                {submission.notes && (
+              <CardContent>
+                <div className="space-y-3">
                   <div>
-                    <h4 className="font-medium mb-1">הערות כלליות:</h4>
-                    <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
-                      {submission.notes}
-                    </p>
-                  </div>
-                )}
-
-                {submission.optional_morning_availability.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-1">זמינות בוקר אופציונלית:</h4>
-                    <div className="flex gap-1 flex-wrap">
-                      {submission.optional_morning_availability.map(day => (
-                        <Badge key={day} variant="outline" className="text-xs">
-                          יום {day}
-                        </Badge>
+                    <h4 className="font-medium mb-2">משמרות נבחרות ({shifts.length}):</h4>
+                    <div className="grid gap-2">
+                      {shifts.map((shift: any, index: number) => (
+                        <div key={index} className="bg-muted p-3 rounded-lg text-sm">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{formatDate(shift.date)}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <span>{shift.start_time} - {shift.end_time}</span>
+                            </div>
+                          </div>
+                          
+                          {shift.branch_preference && (
+                            <div className="mt-1 text-muted-foreground">
+                              📍 {shift.branch_preference}
+                            </div>
+                          )}
+                          
+                          {shift.role_preference && (
+                            <div className="mt-1 text-muted-foreground">
+                              👔 {shift.role_preference}
+                            </div>
+                          )}
+                          
+                          {shift.notes && (
+                            <div className="mt-1 text-muted-foreground">
+                              💬 {shift.notes}
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+
+                  {submission.notes && (
+                    <div>
+                      <h4 className="font-medium mb-1">הערות כלליות:</h4>
+                      <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
+                        {submission.notes}
+                      </p>
+                    </div>
+                  )}
+
+                  {morningAvailability.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-1">זמינות בוקר אופציונלית:</h4>
+                      <div className="flex gap-1 flex-wrap">
+                        {morningAvailability.map((day: any) => (
+                          <Badge key={day} variant="outline" className="text-xs">
+                            יום {day}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
