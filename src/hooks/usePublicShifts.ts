@@ -238,6 +238,9 @@ export const usePublicShifts = () => {
         return availableShifts || [];
       },
       enabled: !!tokenId,
+      // Force refetch every time to get latest data
+      staleTime: 0,
+      gcTime: 0,
     });
   };
 
