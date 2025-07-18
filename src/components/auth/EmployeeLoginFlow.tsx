@@ -36,11 +36,24 @@ export const EmployeeLoginFlow: React.FC = () => {
     }
   };
 
-  const handleBirthDateComplete = async () => {
+  const handleBirthDateComplete = async (updatedEmployee: any) => {
+    // Update the current employee state with the updated data
+    setCurrentEmployee(updatedEmployee);
     setShowBirthDateUpdate(false);
-    setCurrentEmployee(null);
-    // Refresh page to show authenticated state
-    window.location.reload();
+    
+    // Create a proper session with the updated employee
+    const newSession = {
+      employee: updatedEmployee,
+      isFirstLogin: false
+    };
+    
+    // Update localStorage
+    localStorage.setItem('employee_session', JSON.stringify(newSession));
+    
+    console.log('✅ Employee session updated with new data:', updatedEmployee);
+    
+    // Show success message and stay on the same page
+    // No need to reload - the component will re-render showing logged-in state
   };
 
   // Show birth date update screen
@@ -49,28 +62,31 @@ export const EmployeeLoginFlow: React.FC = () => {
       <EmployeeBirthDateUpdate
         employeeId={currentEmployee.id}
         employeeName={`${currentEmployee.first_name} ${currentEmployee.last_name}`}
+        employeeEmail={currentEmployee.email}
         onComplete={handleBirthDateComplete}
       />
     );
   }
 
-  // Show authenticated state
-  if (session && !requiresBirthDateUpdate) {
+  // Show authenticated state (either from hook session or updated currentEmployee)
+  const effectiveSession = session || (currentEmployee && !showBirthDateUpdate ? { employee: currentEmployee, isFirstLogin: false } : null);
+  if (effectiveSession && !showBirthDateUpdate) {
     return (
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="text-center">
           <User className="h-12 w-12 text-green-600 mx-auto mb-4" />
           <CardTitle className="text-xl text-green-800">מחובר בהצלחה</CardTitle>
           <p className="text-sm text-muted-foreground">
-            שלום {session.employee.first_name} {session.employee.last_name}
+            שלום {effectiveSession.employee.first_name} {effectiveSession.employee.last_name}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-green-50 p-4 rounded-lg border border-green-200">
             <h4 className="font-medium text-green-800 mb-2">פרטי החיבור:</h4>
             <ul className="text-sm text-green-700 space-y-1">
-              <li>• שם: {session.employee.first_name} {session.employee.last_name}</li>
-              <li>• טלפון: {session.employee.phone}</li>
+              <li>• שם: {effectiveSession.employee.first_name} {effectiveSession.employee.last_name}</li>
+              <li>• טלפון: {effectiveSession.employee.phone}</li>
+              <li>• מייל: {effectiveSession.employee.email || 'לא הוגדר'}</li>
               <li>• סטטוס: מחובר ופעיל</li>
             </ul>
           </div>

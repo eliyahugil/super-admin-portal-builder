@@ -5,20 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Info } from 'lucide-react';
+import { Calendar, Info, Mail } from 'lucide-react';
 
 interface EmployeeBirthDateUpdateProps {
   employeeId: string;
   employeeName: string;
-  onComplete: () => void;
+  employeeEmail: string | null;
+  onComplete: (updatedEmployee: any) => void;
 }
 
 export const EmployeeBirthDateUpdate: React.FC<EmployeeBirthDateUpdateProps> = ({
   employeeId,
   employeeName,
+  employeeEmail,
   onComplete
 }) => {
   const [birthDate, setBirthDate] = useState('');
+  const [email, setEmail] = useState(employeeEmail || '');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,33 +43,49 @@ export const EmployeeBirthDateUpdate: React.FC<EmployeeBirthDateUpdateProps> = (
         return;
       }
 
-      // Update employee birth date and mark as not first login
-      const { error } = await supabase
-        .from('employees')
-        .update({
-          birth_date: birthDate,
-          is_first_login: false,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', employeeId);
-
-      if (error) {
-        console.error('❌ Error updating birth date:', error);
+      // Validate email
+      if (!email || !email.includes('@')) {
         toast({
-          title: 'שגיאה',
-          description: 'לא הצלחנו לעדכן את תאריך הלידה',
+          title: 'מייל לא תקין',
+          description: 'אנא הכנס כתובת מייל תקינה',
           variant: 'destructive',
         });
         return;
       }
 
-      console.log('✅ Birth date updated successfully');
+      console.log('📝 Updating employee with:', { employeeId, birthDate, email });
+
+      // Update employee birth date, email, and mark as not first login
+      const { data, error } = await supabase
+        .from('employees')
+        .update({
+          birth_date: birthDate,
+          email: email,
+          is_first_login: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', employeeId)
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('❌ Error updating employee:', error);
+        toast({
+          title: 'שגיאה',
+          description: 'לא הצלחנו לעדכן את הפרטים',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      console.log('✅ Employee updated successfully:', data);
       toast({
         title: 'עדכון בוצע בהצלחה',
-        description: 'תאריך הלידה נשמר. מעתה הסיסמה שלך תהיה הספרות של תאריך הלידה בפורמט DDMMYY',
+        description: 'הפרטים נשמרו. מעתה הסיסמה שלך תהיה הספרות של תאריך הלידה בפורמט DDMMYY',
       });
 
-      onComplete();
+      // Pass updated employee data back
+      onComplete(data);
 
     } catch (error) {
       console.error('❌ Unexpected error:', error);
@@ -95,16 +114,39 @@ export const EmployeeBirthDateUpdate: React.FC<EmployeeBirthDateUpdateProps> = (
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Calendar className="h-12 w-12 text-primary mx-auto mb-4" />
-          <CardTitle className="text-xl">עדכון תאריך לידה</CardTitle>
+          <CardTitle className="text-xl">השלמת פרטים אישיים</CardTitle>
           <p className="text-sm text-muted-foreground">
-            שלום {employeeName}, נדרש לעדכן את תאריך הלידה שלך
+            שלום {employeeName}, נדרש לעדכן את הפרטים האישיים שלך
           </p>
         </CardHeader>
         
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="birthDate">תאריך לידה</Label>
+              <Label htmlFor="email" className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                כתובת מייל
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
+                dir="ltr"
+                className="text-left"
+              />
+              <p className="text-xs text-muted-foreground">
+                כתובת המייל שלך לקבלת עדכונים והתראות
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="birthDate" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                תאריך לידה
+              </Label>
               <Input
                 id="birthDate"
                 type="date"
