@@ -197,6 +197,11 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   // Get pending submissions for a specific date
   const getPendingSubmissionsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
+    console.log('🔍 getPendingSubmissionsForDate - Debug:', { 
+      dateStr, 
+      totalSubmissions: pendingSubmissions.length,
+      pendingSubmissions: pendingSubmissions.slice(0, 2) // Show first 2 for debugging
+    });
     return pendingSubmissions.filter(submission => {
       const shifts = typeof submission.shifts === 'string' 
         ? JSON.parse(submission.shifts) 
