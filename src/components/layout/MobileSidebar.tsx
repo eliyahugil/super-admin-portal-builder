@@ -113,7 +113,11 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
       category: 'main',
       moduleKey: 'shift_management',
       subItems: [
+        { path: moduleRoutes.shifts.requests, label: 'בקשות משמרת', icon: CheckSquare, moduleKey: 'shift_management' },
+        { path: moduleRoutes.shifts.approval, label: 'אישור משמרות', icon: UserCheck, moduleKey: 'shift_management' },
+        { path: moduleRoutes.shifts.schedule, label: 'לוח משמרות', icon: Calendar, moduleKey: 'shift_management' },
         { path: moduleRoutes.shifts.admin, label: 'כלי מנהל', icon: Settings, moduleKey: 'shift_management' },
+        
       ]
     },
   ];
