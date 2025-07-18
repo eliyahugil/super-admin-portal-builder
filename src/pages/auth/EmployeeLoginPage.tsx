@@ -7,14 +7,14 @@ const EmployeeLoginPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4" dir="rtl">
       <div className="w-full max-w-md">
         <div className="mb-4">
-          <BackButton to="/login" />
+          <BackButton to="/" />
         </div>
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            מערכת ניהול עובדים
+            🔐 התחברות עובדים
           </h1>
           <p className="text-muted-foreground">
-            התחבר באמצעות אימייל או מספר טלפון
+            התחבר באמצעות מספר טלפון וסיסמה אישית
           </p>
         </div>
         

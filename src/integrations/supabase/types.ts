@@ -2410,6 +2410,7 @@ export type Database = {
       employees: {
         Row: {
           address: string | null
+          birth_date: string | null
           business_id: string
           can_choose_unassigned_shifts: boolean | null
           created_at: string | null
@@ -2422,6 +2423,7 @@ export type Database = {
           id_number: string | null
           is_active: boolean | null
           is_archived: boolean
+          is_first_login: boolean
           is_system_user: boolean
           last_name: string
           main_branch_id: string | null
@@ -2438,6 +2440,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          birth_date?: string | null
           business_id: string
           can_choose_unassigned_shifts?: boolean | null
           created_at?: string | null
@@ -2450,6 +2453,7 @@ export type Database = {
           id_number?: string | null
           is_active?: boolean | null
           is_archived?: boolean
+          is_first_login?: boolean
           is_system_user?: boolean
           last_name: string
           main_branch_id?: string | null
@@ -2468,6 +2472,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          birth_date?: string | null
           business_id?: string
           can_choose_unassigned_shifts?: boolean | null
           created_at?: string | null
@@ -2480,6 +2485,7 @@ export type Database = {
           id_number?: string | null
           is_active?: boolean | null
           is_archived?: boolean
+          is_first_login?: boolean
           is_system_user?: boolean
           last_name?: string
           main_branch_id?: string | null
