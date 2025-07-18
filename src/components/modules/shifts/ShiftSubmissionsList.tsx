@@ -45,7 +45,8 @@ export const ShiftSubmissionsList: React.FC = () => {
           console.error('Error fetching shift submissions:', error);
           setError(error);
         } else {
-          console.log('Fetched submissions:', data);
+          console.log('📊 Fetched submissions count:', data?.length || 0);
+          console.log('📋 Submissions data:', data);
           setSubmissions(data || []);
         }
       } catch (err) {
@@ -60,6 +61,8 @@ export const ShiftSubmissionsList: React.FC = () => {
   }, [businessId]);
 
   const deleteSubmission = async (submissionId: string) => {
+    console.log('🗑️ Attempting to delete submission:', submissionId);
+    
     if (!confirm('האם אתה בטוח שברצונך למחוק את ההגשה לחלוטין? פעולה זו לא ניתנת לביטול.')) {
       return;
     }
@@ -67,21 +70,31 @@ export const ShiftSubmissionsList: React.FC = () => {
     try {
       const supabase = createClient('https://xmhmztipuvzmwgbcovch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtaG16dGlwdXZ6bXdnYmNvdmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMjkzODIsImV4cCI6MjA2NDcwNTM4Mn0.QEugxUTGlJ1rnG8ddf3E6BIpNaiqwkp2ml7MbiUfY9c');
       
-      const { error } = await supabase
+      console.log('🔄 Executing delete query...');
+      const { error, data } = await supabase
         .from('shift_submissions')
         .delete()
-        .eq('id', submissionId);
+        .eq('id', submissionId)
+        .select();
+
+      console.log('📝 Delete response:', { error, data });
 
       if (error) {
-        console.error('Error deleting submission:', error);
-        toast.error('שגיאה במחיקת ההגשה');
+        console.error('❌ Error deleting submission:', error);
+        toast.error('שגיאה במחיקת ההגשה: ' + error.message);
       } else {
+        console.log('✅ Submission deleted successfully');
         toast.success('ההגשה נמחקה בהצלחה');
-        // Refresh submissions list
-        setSubmissions(prev => prev.filter(s => s.id !== submissionId));
+        
+        // Update local state to remove the deleted submission
+        setSubmissions(prev => {
+          const updated = prev.filter(s => s.id !== submissionId);
+          console.log('📊 Updated submissions count:', updated.length);
+          return updated;
+        });
       }
     } catch (err) {
-      console.error('Error:', err);
+      console.error('💥 Unexpected error:', err);
       toast.error('שגיאה במחיקת ההגשה');
     }
   };
