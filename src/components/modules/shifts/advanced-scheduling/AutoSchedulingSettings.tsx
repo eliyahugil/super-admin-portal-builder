@@ -72,24 +72,39 @@ export const AutoSchedulingSettings: React.FC = () => {
         optimization_goals: currentSettings.optimization_goals as { priorities: string[] },
         notification_preferences: currentSettings.notification_preferences as { notify_employees: boolean; notify_managers: boolean }
       } as AutoSchedulingSettingsData);
+    } else if (businessId) {
+      // אם אין הגדרות קיימות, אתחל עם business_id נכון
+      setSettings(prev => ({
+        ...prev,
+        business_id: businessId
+      }));
     }
-  }, [currentSettings]);
+  }, [currentSettings, businessId]);
 
   // שמירת הגדרות
   const saveSettingsMutation = useMutation({
     mutationFn: async (newSettings: AutoSchedulingSettingsData) => {
-      console.log('💾 Saving auto scheduling settings:', newSettings);
+      if (!businessId) {
+        throw new Error('Business ID is required');
+      }
+      
+      const settingsToSave = {
+        ...newSettings,
+        business_id: businessId
+      };
+      
+      console.log('💾 Saving auto scheduling settings:', settingsToSave);
       
       if (currentSettings?.id) {
         const { data, error } = await supabase
           .from('auto_scheduling_settings')
           .update({
-            algorithm_type: newSettings.algorithm_type,
-            optimization_goals: newSettings.optimization_goals,
-            auto_schedule_enabled: newSettings.auto_schedule_enabled,
-            schedule_weeks_ahead: newSettings.schedule_weeks_ahead,
-            notification_preferences: newSettings.notification_preferences,
-            conflict_resolution: newSettings.conflict_resolution,
+            algorithm_type: settingsToSave.algorithm_type,
+            optimization_goals: settingsToSave.optimization_goals,
+            auto_schedule_enabled: settingsToSave.auto_schedule_enabled,
+            schedule_weeks_ahead: settingsToSave.schedule_weeks_ahead,
+            notification_preferences: settingsToSave.notification_preferences,
+            conflict_resolution: settingsToSave.conflict_resolution,
             updated_at: new Date().toISOString()
           })
           .eq('id', currentSettings.id)
@@ -103,13 +118,13 @@ export const AutoSchedulingSettings: React.FC = () => {
         const { data, error } = await supabase
           .from('auto_scheduling_settings')
           .insert([{
-            business_id: newSettings.business_id,
-            algorithm_type: newSettings.algorithm_type,
-            optimization_goals: newSettings.optimization_goals,
-            auto_schedule_enabled: newSettings.auto_schedule_enabled,
-            schedule_weeks_ahead: newSettings.schedule_weeks_ahead,
-            notification_preferences: newSettings.notification_preferences,
-            conflict_resolution: newSettings.conflict_resolution
+            business_id: settingsToSave.business_id,
+            algorithm_type: settingsToSave.algorithm_type,
+            optimization_goals: settingsToSave.optimization_goals,
+            auto_schedule_enabled: settingsToSave.auto_schedule_enabled,
+            schedule_weeks_ahead: settingsToSave.schedule_weeks_ahead,
+            notification_preferences: settingsToSave.notification_preferences,
+            conflict_resolution: settingsToSave.conflict_resolution
           }])
           .select()
           .single();
@@ -165,6 +180,14 @@ export const AutoSchedulingSettings: React.FC = () => {
   });
 
   const handleSaveSettings = () => {
+    if (!businessId) {
+      toast({
+        title: "שגיאה",
+        description: "לא נמצא מזהה עסק תקין",
+        variant: "destructive"
+      });
+      return;
+    }
     saveSettingsMutation.mutate(settings);
   };
 
@@ -174,6 +197,10 @@ export const AutoSchedulingSettings: React.FC = () => {
 
   if (isLoading) {
     return <div className="flex justify-center p-8">טוען...</div>;
+  }
+
+  if (!businessId) {
+    return <div className="flex justify-center p-8 text-red-600">שגיאה: לא נמצא מזהה עסק תקין</div>;
   }
 
   return (
