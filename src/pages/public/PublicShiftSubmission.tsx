@@ -381,63 +381,281 @@ const PublicShiftSubmission: React.FC = () => {
                 {scheduledShifts.length > 0 ? (
                   <div className="space-y-3 mt-2">
                     <p className="text-sm text-gray-600">
-                      המשמרות הבאות זמינות להגשה עבור השבוע שנבחר. אנא בחר את המשמרות שאתה מעוניין לעבד:
+                      המשמרות הבאות זמינות להגשה עבור השבוע שנבחר. אנא בחר את המשמרות שאתה מעוניין לעבוד:
                     </p>
-                    <div className="grid gap-3">
-                      {scheduledShifts.map((shift, index) => {
-                        const currentPreference = formData.preferences.find(
-                          (p: any) => p.shift_id === shift.id
-                        );
+                    {/* Weekly Schedule Grid */}
+                    <div className="bg-white border rounded-lg overflow-hidden">
+                      {/* Grid Layout for Desktop */}
+                      <div className="hidden md:block">
+                        {/* Header */}
+                        <div className="grid grid-cols-8 bg-blue-50 border-b">
+                          <div className="p-3 text-sm font-semibold text-gray-700 text-center border-l">יום</div>
+                          <div className="p-3 text-sm font-semibold text-gray-700 text-center border-l col-span-7">משמרות</div>
+                        </div>
                         
-                        return (
-                          <div key={shift.id} className="border rounded-lg p-4 bg-gray-50">
-                            <div className="flex items-center justify-between">
-                              <div className="space-y-1">
-                                <div className="font-medium text-lg">
-                                  {getDayName(shift.shift_date)} {getDateDisplay(shift.shift_date)}
+                        {/* Week Days */}
+                        {(() => {
+                          const weekStart = new Date(tokenData.week_start_date);
+                          const days = [];
+                          for (let i = 0; i < 7; i++) {
+                            const currentDate = new Date(weekStart);
+                            currentDate.setDate(weekStart.getDate() + i);
+                            const dateStr = currentDate.toISOString().split('T')[0];
+                            const dayShifts = scheduledShifts.filter(shift => shift.shift_date === dateStr);
+                            
+                            // Group shifts by type (morning/evening)
+                            const morningShifts = dayShifts.filter(shift => {
+                              const hour = parseInt(shift.start_time.split(':')[0]);
+                              return hour >= 6 && hour < 16;
+                            });
+                            const eveningShifts = dayShifts.filter(shift => {
+                              const hour = parseInt(shift.start_time.split(':')[0]);
+                              return hour >= 16 && hour < 24;
+                            });
+
+                            days.push(
+                              <div key={dateStr} className="grid grid-cols-8 border-b last:border-b-0 min-h-[80px]">
+                                {/* Day Column */}
+                                <div className="p-3 border-l bg-gray-50 flex flex-col justify-center items-center">
+                                  <div className="text-sm font-semibold text-gray-900">{getDayName(dateStr)}</div>
+                                  <div className="text-xs text-gray-600">{getDateDisplay(dateStr)}</div>
                                 </div>
-                                <div className="text-sm text-gray-600">
-                                  {shift.start_time} - {shift.end_time}
+                                
+                                {/* Morning Shifts */}
+                                <div className="col-span-3 p-2 border-l">
+                                  <div className="text-xs font-semibold text-orange-700 mb-2">🌅 בוקר</div>
+                                  <div className="space-y-1">
+                                    {morningShifts.map(shift => {
+                                      const currentPreference = formData.preferences.find(
+                                        (p: any) => p.shift_id === shift.id
+                                      );
+                                      const isSelected = currentPreference?.available;
+                                      
+                                      return (
+                                        <div 
+                                          key={shift.id}
+                                          className={`p-2 rounded border text-xs cursor-pointer transition-all ${
+                                            isSelected 
+                                              ? 'bg-green-100 border-green-300 text-green-800' 
+                                              : 'bg-gray-50 border-gray-200 hover:bg-blue-50 hover:border-blue-300'
+                                          }`}
+                                          onClick={() => handleShiftToggle(shift, !isSelected)}
+                                        >
+                                          <div className="font-semibold">{shift.start_time} - {shift.end_time}</div>
+                                          {shift.branch?.name && (
+                                            <div className="text-blue-600">📍 {shift.branch.name}</div>
+                                          )}
+                                          {shift.role && (
+                                            <div className="text-gray-500">{shift.role}</div>
+                                          )}
+                                          {isSelected && (
+                                            <div className="text-green-700 font-bold mt-1">✓ נבחר</div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                    {morningShifts.length === 0 && (
+                                      <div className="text-xs text-gray-400 p-2">אין משמרות</div>
+                                    )}
+                                  </div>
                                 </div>
-                                {shift.branch?.name && (
-                                  <div className="text-sm text-blue-600 font-medium">
-                                    📍 {shift.branch.name}
+                                
+                                {/* Evening Shifts */}
+                                <div className="col-span-4 p-2">
+                                  <div className="text-xs font-semibold text-purple-700 mb-2">🌆 ערב</div>
+                                  <div className="space-y-1">
+                                    {eveningShifts.map(shift => {
+                                      const currentPreference = formData.preferences.find(
+                                        (p: any) => p.shift_id === shift.id
+                                      );
+                                      const isSelected = currentPreference?.available;
+                                      
+                                      return (
+                                        <div 
+                                          key={shift.id}
+                                          className={`p-2 rounded border text-xs cursor-pointer transition-all ${
+                                            isSelected 
+                                              ? 'bg-green-100 border-green-300 text-green-800' 
+                                              : 'bg-gray-50 border-gray-200 hover:bg-blue-50 hover:border-blue-300'
+                                          }`}
+                                          onClick={() => handleShiftToggle(shift, !isSelected)}
+                                        >
+                                          <div className="font-semibold">{shift.start_time} - {shift.end_time}</div>
+                                          {shift.branch?.name && (
+                                            <div className="text-blue-600">📍 {shift.branch.name}</div>
+                                          )}
+                                          {shift.role && (
+                                            <div className="text-gray-500">{shift.role}</div>
+                                          )}
+                                          {isSelected && (
+                                            <div className="text-green-700 font-bold mt-1">✓ נבחר</div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                    {eveningShifts.length === 0 && (
+                                      <div className="text-xs text-gray-400 p-2">אין משמרות</div>
+                                    )}
                                   </div>
-                                )}
-                                {shift.role && (
-                                  <div className="text-sm text-gray-500">
-                                    תפקיד: {shift.role}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return days;
+                        })()}
+                      </div>
+
+                      {/* Mobile Layout */}
+                      <div className="md:hidden">
+                        <div className="bg-blue-50 p-3 border-b">
+                          <h3 className="text-sm font-semibold text-gray-700">בחירת משמרות לשבוע</h3>
+                        </div>
+                        
+                        {(() => {
+                          const weekStart = new Date(tokenData.week_start_date);
+                          const days = [];
+                          for (let i = 0; i < 7; i++) {
+                            const currentDate = new Date(weekStart);
+                            currentDate.setDate(weekStart.getDate() + i);
+                            const dateStr = currentDate.toISOString().split('T')[0];
+                            const dayShifts = scheduledShifts.filter(shift => shift.shift_date === dateStr);
+                            
+                            if (dayShifts.length === 0) continue;
+                            
+                            // Group shifts by type
+                            const morningShifts = dayShifts.filter(shift => {
+                              const hour = parseInt(shift.start_time.split(':')[0]);
+                              return hour >= 6 && hour < 16;
+                            });
+                            const eveningShifts = dayShifts.filter(shift => {
+                              const hour = parseInt(shift.start_time.split(':')[0]);
+                              return hour >= 16 && hour < 24;
+                            });
+
+                            days.push(
+                              <div key={dateStr} className="border-b last:border-b-0">
+                                {/* Day Header */}
+                                <div className="bg-gray-50 p-3 border-b">
+                                  <div className="flex justify-between items-center">
+                                    <h4 className="font-semibold text-gray-900">{getDayName(dateStr)}</h4>
+                                    <span className="text-sm text-gray-600">{getDateDisplay(dateStr)}</span>
                                   </div>
-                                )}
+                                </div>
+                                
+                                {/* Shifts */}
+                                <div className="p-3 space-y-4">
+                                  {/* Morning Shifts */}
+                                  {morningShifts.length > 0 && (
+                                    <div>
+                                      <div className="text-sm font-semibold text-orange-700 mb-2">🌅 משמרות בוקר</div>
+                                      <div className="space-y-2">
+                                        {morningShifts.map(shift => {
+                                          const currentPreference = formData.preferences.find(
+                                            (p: any) => p.shift_id === shift.id
+                                          );
+                                          const isSelected = currentPreference?.available;
+                                          
+                                          return (
+                                            <div 
+                                              key={shift.id}
+                                              className={`p-3 rounded border cursor-pointer transition-all ${
+                                                isSelected 
+                                                  ? 'bg-green-100 border-green-300 text-green-800' 
+                                                  : 'bg-gray-50 border-gray-200 hover:bg-blue-50 hover:border-blue-300'
+                                              }`}
+                                              onClick={() => handleShiftToggle(shift, !isSelected)}
+                                            >
+                                              <div className="flex justify-between items-start">
+                                                <div>
+                                                  <div className="font-semibold text-base">{shift.start_time} - {shift.end_time}</div>
+                                                  {shift.branch?.name && (
+                                                    <div className="text-blue-600 text-sm mt-1">📍 {shift.branch.name}</div>
+                                                  )}
+                                                  {shift.role && (
+                                                    <div className="text-gray-500 text-sm">{shift.role}</div>
+                                                  )}
+                                                </div>
+                                                {isSelected && (
+                                                  <div className="text-green-700 font-bold">✓</div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Evening Shifts */}
+                                  {eveningShifts.length > 0 && (
+                                    <div>
+                                      <div className="text-sm font-semibold text-purple-700 mb-2">🌆 משמרות ערב</div>
+                                      <div className="space-y-2">
+                                        {eveningShifts.map(shift => {
+                                          const currentPreference = formData.preferences.find(
+                                            (p: any) => p.shift_id === shift.id
+                                          );
+                                          const isSelected = currentPreference?.available;
+                                          
+                                          return (
+                                            <div 
+                                              key={shift.id}
+                                              className={`p-3 rounded border cursor-pointer transition-all ${
+                                                isSelected 
+                                                  ? 'bg-green-100 border-green-300 text-green-800' 
+                                                  : 'bg-gray-50 border-gray-200 hover:bg-blue-50 hover:border-blue-300'
+                                              }`}
+                                              onClick={() => handleShiftToggle(shift, !isSelected)}
+                                            >
+                                              <div className="flex justify-between items-start">
+                                                <div>
+                                                  <div className="font-semibold text-base">{shift.start_time} - {shift.end_time}</div>
+                                                  {shift.branch?.name && (
+                                                    <div className="text-blue-600 text-sm mt-1">📍 {shift.branch.name}</div>
+                                                  )}
+                                                  {shift.role && (
+                                                    <div className="text-gray-500 text-sm">{shift.role}</div>
+                                                  )}
+                                                </div>
+                                                {isSelected && (
+                                                  <div className="text-green-700 font-bold">✓</div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant={currentPreference?.available ? "default" : "outline"}
-                                  onClick={() => handleShiftToggle(shift, true)}
-                                >
-                                  מעוניין
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant={currentPreference && !currentPreference.available ? "destructive" : "outline"}
-                                  onClick={() => handleShiftToggle(shift, false)}
-                                >
-                                  לא מעוניין
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            );
+                          }
+                          return days;
+                        })()}
+                      </div>
                     </div>
+                    
+                    {/* Selected Shifts Summary */}
+                    {formData.preferences.length > 0 && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+                        <h4 className="font-semibold text-green-800 mb-2">משמרות שנבחרו ({formData.preferences.length})</h4>
+                        <div className="space-y-1">
+                          {formData.preferences.map((pref: any, index) => (
+                            <div key={index} className="text-sm text-green-700">
+                              ✓ {getDayName(pref.shift_date)} {getDateDisplay(pref.shift_date)} - {pref.start_time} עד {pref.end_time}
+                              {pref.branch_name && ` | ${pref.branch_name}`}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-4">
-                    אין משמרות פנויות להגשה בשבוע זה.
-                  </p>
+                  <div className="text-center py-8 text-gray-500">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p>אין משמרות זמינות לשבוע זה</p>
+                  </div>
                 )}
               </div>
 
@@ -453,15 +671,13 @@ const PublicShiftSubmission: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex justify-center">
-              <Button
-                type="submit"
-                disabled={submitShifts.isPending || scheduledShifts.length === 0}
-                className="w-full"
-              >
-                {submitShifts.isPending ? 'שולח...' : 'שלח הגשה'}
-              </Button>
-            </div>
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={submitShifts.isPending || formData.preferences.length === 0}
+            >
+              {submitShifts.isPending ? 'שולח...' : 'שלח הגשת משמרות'}
+            </Button>
           </form>
         </div>
       </div>
