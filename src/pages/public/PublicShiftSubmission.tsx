@@ -183,7 +183,7 @@ const PublicShiftSubmission: React.FC = () => {
           console.log('⚠️ No branch assignments or default preferences found - showing all shifts');
         }
 
-        console.log('📊 Loaded scheduled shifts for token:', shifts?.length || 0);
+         console.log('📊 Loaded scheduled shifts for token:', shifts?.length || 0);
          console.log('📊 All shifts details:', shifts?.map(s => ({
            id: s.id, 
            date: s.shift_date, 
@@ -196,9 +196,24 @@ const PublicShiftSubmission: React.FC = () => {
          console.log('📊 Filtered shifts for employee:', filteredShifts.length);
          console.log('📊 Final filtered shifts:', filteredShifts);
          
+         // Get main branch ID for marking primary branch
+         let mainBranchId: string | null = null;
+         if (employeeData.employee_branch_assignments && employeeData.employee_branch_assignments.length > 0) {
+           const activeAssignments = employeeData.employee_branch_assignments.filter((assignment: any) => assignment.is_active);
+           const mainAssignment = activeAssignments
+             .sort((a: any, b: any) => a.priority_order - b.priority_order)[0];
+           mainBranchId = mainAssignment?.branch_id || null;
+         }
+         
+         // Add main branch indicator to filtered shifts
+         const shiftsWithBranchInfo = filteredShifts.map(shift => ({
+           ...shift,
+           isMainBranch: mainBranchId === shift.branch_id
+         }));
+         
          // Store all shifts and filtered shifts separately
          setAllScheduledShifts(shifts || []);
-         setScheduledShifts(filteredShifts);
+         setScheduledShifts(shiftsWithBranchInfo);
       } catch (error) {
         console.error('Error loading scheduled shifts:', error);
       } finally {
@@ -209,7 +224,7 @@ const PublicShiftSubmission: React.FC = () => {
     loadScheduledShifts();
   }, [tokenData, employeeData]);
 
-  // Helper function to check if shifts overlap
+  // Helper function to check if shifts overlap (and if auto-selection makes sense)
   const shiftsOverlap = (shift1: any, shift2: any) => {
     if (shift1.shift_date !== shift2.shift_date) return false;
     
@@ -229,10 +244,18 @@ const PublicShiftSubmission: React.FC = () => {
     const actualEnd1 = end1 < start1 ? end1 + 24 * 60 : end1;
     const actualEnd2 = end2 < start2 ? end2 + 24 * 60 : end2;
     
+    // Check if shifts truly overlap (one starts before the other ends)
     const overlaps = (start1 < actualEnd2 && start2 < actualEnd1);
-    console.log(`🔍 Overlap result: ${overlaps}`);
     
-    return overlaps;
+    // For auto-selection, only select if the second shift can logically follow the first
+    // This means shift1 should end before or when shift2 starts (allowing transition time)
+    const canTransition = actualEnd1 <= start2;
+    
+    console.log(`🔍 Overlap: ${overlaps}, Can transition: ${canTransition}`);
+    
+    // Return true only if they overlap AND it makes sense to auto-select
+    // (i.e., the first shift ends before the second starts, allowing transition)
+    return overlaps && canTransition;
   };
 
   // Get shifts that are not normally available to this employee
@@ -597,13 +620,18 @@ const PublicShiftSubmission: React.FC = () => {
                                           }`}
                                           onClick={() => handleShiftToggle(shift, !isSelected)}
                                         >
-                                          <div className="font-semibold">{shift.start_time} - {shift.end_time}</div>
-                                          {shift.branch?.name && (
-                                            <div className="text-blue-600">📍 {shift.branch.name}</div>
-                                          )}
-                                          {shift.role && (
-                                            <div className="text-gray-500">{shift.role}</div>
-                                          )}
+                                           <div className="font-semibold">{shift.start_time} - {shift.end_time}</div>
+                                           {shift.branch?.name && (
+                                             <div className="text-blue-600 flex items-center gap-1">
+                                               📍 {shift.branch.name}
+                                               {shift.isMainBranch && (
+                                                 <span className="text-orange-600 font-semibold text-xs">(סניף עיקרי)</span>
+                                               )}
+                                             </div>
+                                           )}
+                                           {shift.role && (
+                                             <div className="text-gray-500">{shift.role}</div>
+                                           )}
                                           {isSelected && (
                                             <div className="text-green-700 font-bold mt-1">✓ נבחר</div>
                                           )}
@@ -636,13 +664,18 @@ const PublicShiftSubmission: React.FC = () => {
                                           }`}
                                           onClick={() => handleShiftToggle(shift, !isSelected)}
                                         >
-                                          <div className="font-semibold">{shift.start_time} - {shift.end_time}</div>
-                                          {shift.branch?.name && (
-                                            <div className="text-blue-600">📍 {shift.branch.name}</div>
-                                          )}
-                                          {shift.role && (
-                                            <div className="text-gray-500">{shift.role}</div>
-                                          )}
+                                           <div className="font-semibold">{shift.start_time} - {shift.end_time}</div>
+                                           {shift.branch?.name && (
+                                             <div className="text-blue-600 flex items-center gap-1">
+                                               📍 {shift.branch.name}
+                                               {shift.isMainBranch && (
+                                                 <span className="text-orange-600 font-semibold text-xs">(סניף עיקרי)</span>
+                                               )}
+                                             </div>
+                                           )}
+                                           {shift.role && (
+                                             <div className="text-gray-500">{shift.role}</div>
+                                           )}
                                           {isSelected && (
                                             <div className="text-green-700 font-bold mt-1">✓ נבחר</div>
                                           )}
@@ -724,9 +757,14 @@ const PublicShiftSubmission: React.FC = () => {
                                               <div className="flex justify-between items-start">
                                                 <div>
                                                   <div className="font-semibold text-base">{shift.start_time} - {shift.end_time}</div>
-                                                  {shift.branch?.name && (
-                                                    <div className="text-blue-600 text-sm mt-1">📍 {shift.branch.name}</div>
-                                                  )}
+                                                   {shift.branch?.name && (
+                                                     <div className="text-blue-600 text-sm mt-1 flex items-center gap-1">
+                                                       📍 {shift.branch.name}
+                                                       {shift.isMainBranch && (
+                                                         <span className="text-orange-600 font-semibold text-xs">(סניף עיקרי)</span>
+                                                       )}
+                                                     </div>
+                                                   )}
                                                   {shift.role && (
                                                     <div className="text-gray-500 text-sm">{shift.role}</div>
                                                   )}
@@ -766,9 +804,14 @@ const PublicShiftSubmission: React.FC = () => {
                                               <div className="flex justify-between items-start">
                                                 <div>
                                                   <div className="font-semibold text-base">{shift.start_time} - {shift.end_time}</div>
-                                                  {shift.branch?.name && (
-                                                    <div className="text-blue-600 text-sm mt-1">📍 {shift.branch.name}</div>
-                                                  )}
+                                                   {shift.branch?.name && (
+                                                     <div className="text-blue-600 text-sm mt-1 flex items-center gap-1">
+                                                       📍 {shift.branch.name}
+                                                       {shift.isMainBranch && (
+                                                         <span className="text-orange-600 font-semibold text-xs">(סניף עיקרי)</span>
+                                                       )}
+                                                     </div>
+                                                   )}
                                                   {shift.role && (
                                                     <div className="text-gray-500 text-sm">{shift.role}</div>
                                                   )}
