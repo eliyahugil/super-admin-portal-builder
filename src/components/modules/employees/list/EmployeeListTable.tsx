@@ -63,37 +63,40 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
     firstEmployee: employees[0] ? `${employees[0].first_name} ${employees[0].last_name}` : 'none'
   });
 
-  // Mobile view: show cards in full width container
+  // Mobile view: show cards
   if (isMobile) {
     return (
-      <div 
-        className="w-full bg-background" 
-        dir="rtl"
-      >
-        {/* Select All Header - full width */}
-        <div className="flex items-center justify-between py-3 px-4 bg-muted/30 border-b border-border">
-          <label className="flex items-center gap-3 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={allFilteredSelected}
-              onChange={e => onSelectAll(e.target.checked)}
-              className="w-5 h-5 accent-primary border-2 border-border rounded focus:ring-2 focus:ring-primary/20"
-              aria-label="בחר/י הכל"
-            />
-            <span>בחר/י הכל ({employees.length})</span>
-          </label>
-          <span className="text-xs text-muted-foreground">
-            נבחרו: {selectedEmployees.size}
-          </span>
+      <div className="w-full bg-background min-h-screen" dir="rtl">
+        {/* Header עם מספר עובדים */}
+        <div className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 border-b border-border">
+          <div className="px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={allFilteredSelected}
+                  onChange={e => onSelectAll(e.target.checked)}
+                  className="w-5 h-5 accent-primary border-2 border-muted-foreground/30 rounded-md"
+                  aria-label="בחר/י הכל"
+                />
+                <span className="text-lg font-semibold">
+                  כל העובדים ({employees.length})
+                </span>
+              </div>
+              <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+                נבחרו: {selectedEmployees.size}
+              </div>
+            </div>
+          </div>
         </div>
         
-        {/* Employee List - full width */}
-        <div className="bg-card">
+        {/* רשימת עובדים */}
+        <div className="pb-20">
           {employees.map((employee, index) => (
             <div 
               key={employee.id}
               className="animate-fade-in"
-              style={{ animationDelay: `${index * 30}ms` }}
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               <EmployeeListCard
                 employee={employee}
