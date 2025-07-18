@@ -152,7 +152,10 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
       <Button
         variant={isSelectionMode ? "default" : "outline"}
         size="sm"
-        onClick={() => setIsSelectionMode?.(true)}
+        onClick={() => {
+          console.log('🔄 Selection mode activated!');
+          setIsSelectionMode?.(true);
+        }}
         className={isSelectionMode ? "bg-blue-600 hover:bg-blue-700 text-white" : "border-blue-300 text-blue-700 hover:bg-blue-50"}
       >
         <CheckSquare className="h-4 w-4 mr-2" />

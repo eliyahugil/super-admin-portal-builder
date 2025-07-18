@@ -30,6 +30,13 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
   getStatusColor,
   shiftType
 }) => {
+  // Debug logs
+  console.log('🔍 ShiftDisplayCard render:', {
+    shiftId: shift.id,
+    isSelectionMode,
+    isSelected,
+    hasOnShiftSelection: !!onShiftSelection
+  });
   const handleShiftCardClick = (e: React.MouseEvent) => {
     if (isSelectionMode && onShiftSelection) {
       e.preventDefault();
@@ -81,8 +88,8 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
       className={`relative group p-3 border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 ${
         getShiftTypeColor()
       } ${hasConflict ? 'border-red-300 bg-red-50' : ''} ${
-        isSelectionMode && isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-      }`}
+        isSelectionMode && isSelected ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300 scale-105' : ''
+      } ${isSelectionMode ? 'transform hover:scale-102' : ''}`}
       onClick={handleShiftCardClick}
     >
       {/* סוג משמרת - קטן ובפינה */}
@@ -101,12 +108,15 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
 
       {/* Selection checkbox - appears in selection mode */}
       {isSelectionMode && (
-        <div className="absolute top-2 right-2 z-20">
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={handleShiftSelectionChange}
-            onClick={(e) => e.stopPropagation()}
-          />
+        <div className="absolute top-2 right-2 z-20 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+          <div className={`p-1 rounded-full ${isSelected ? 'bg-blue-600' : 'bg-white shadow-md border-2 border-blue-300'} transition-all duration-200`}>
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={handleShiftSelectionChange}
+              className="h-5 w-5 border-0 data-[state=checked]:bg-transparent data-[state=checked]:text-white"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
         </div>
       )}
       

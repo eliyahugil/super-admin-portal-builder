@@ -239,6 +239,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const handleClearSelection = () => {
     setSelectedShifts([]);
     setIsSelectionMode(false);
+    console.log('🔄 Selection cleared, isSelectionMode:', false, 'selectedShifts:', []);
   };
 
   const handleBulkUpdate = async (updates: Partial<ShiftScheduleData>) => {
