@@ -5,8 +5,6 @@ import { ShiftManagementTabs } from '../shifts/ShiftManagementTabs';
 import { ShiftSchedule } from '../shifts/ShiftSchedule';
 import { AutoShiftAssignment } from '../shifts/AutoShiftAssignment';
 import { VacationRequestSystem } from '../shifts/VacationRequestSystem';
-import { ShiftTokenManagement } from '../shifts/ShiftTokenManagement';
-import { WeeklyTokenManagement } from '../shifts/WeeklyTokenManagement';
 import { QuickRequestRegistration } from '../shifts/QuickRequestRegistration';
 import { UnifiedShiftRequests } from '../shifts/UnifiedShiftRequests';
 import { ShiftSubmissionManager } from '../shifts/ShiftSubmissionManager';
@@ -34,9 +32,8 @@ export const ShiftsModuleRouter: React.FC<Props> = ({ route }) => {
     case 'quick-requests':
       return <QuickRequestRegistration />;
     case 'tokens':
-      return <ShiftTokenManagement />;
     case 'weekly-tokens':
-      return <WeeklyTokenManagement />;
+      return <div className="p-4 text-center">מערכת הטוקנים הוסרה</div>;
     case 'admin':
       return <ShiftManagement />;
     default:

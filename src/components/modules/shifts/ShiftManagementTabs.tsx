@@ -1,8 +1,6 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShiftTokenManagement } from './ShiftTokenManagement';
-import { WeeklyTokenManagement } from './WeeklyTokenManagement';
 import { ShiftSubmissionsDashboard } from './ShiftSubmissionsDashboard';
 import { ShiftApprovalDashboard } from './ShiftApprovalDashboard';
 import { ShiftTemplatesManagement } from './ShiftTemplatesManagement';
@@ -22,11 +20,9 @@ export const ShiftManagementTabs: React.FC = () => {
       </div>
 
       <Tabs defaultValue="templates" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 gap-1">
           <TabsTrigger value="templates" className="text-xs sm:text-sm">תבניות משמרות</TabsTrigger>
           <TabsTrigger value="submissions" className="text-xs sm:text-sm">הגשות משמרות</TabsTrigger>
-          <TabsTrigger value="weekly-tokens" className="text-xs sm:text-sm">טוקנים שבועיים</TabsTrigger>
-          <TabsTrigger value="single-tokens" className="text-xs sm:text-sm">טוקנים יחידים</TabsTrigger>
           <TabsTrigger value="approvals" className="text-xs sm:text-sm">אישור בקשות</TabsTrigger>
         </TabsList>
         
@@ -38,13 +34,6 @@ export const ShiftManagementTabs: React.FC = () => {
           <ShiftSubmissionsDashboard />
         </TabsContent>
         
-        <TabsContent value="weekly-tokens" className="mt-6">
-          <WeeklyTokenManagement />
-        </TabsContent>
-        
-        <TabsContent value="single-tokens" className="mt-6">
-          <ShiftTokenManagement />
-        </TabsContent>
         
         <TabsContent value="approvals" className="mt-6">
           <ShiftApprovalDashboard />

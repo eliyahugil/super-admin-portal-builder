@@ -5,8 +5,8 @@ import { EmployeeNotes } from '../../EmployeeNotes';
 import { EmployeeDocuments } from '../../EmployeeDocuments';
 import { EmployeeBranchAssignments } from '../../EmployeeBranchAssignments';
 import { SalaryHistory } from '../../SalaryHistory';
-import { ShiftSubmissionHistory } from '../../ShiftSubmissionHistory';
-import { EmployeeTokenManager } from '../../EmployeeTokenManager';
+
+
 import { EmployeeCustomFields } from '../../EmployeeCustomFields';
 import { EmployeeShiftSettings } from '../../EmployeeShiftSettings';
 import { EmployeeOverviewTab } from './EmployeeOverviewTab';
@@ -56,16 +56,9 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
       </TabsContent>
 
       <TabsContent value="shifts">
-        <ShiftSubmissionHistory employeeId={employeeId} />
+        <div className="p-4 text-center">היסטוריית הגשות הוסרה</div>
       </TabsContent>
 
-      <TabsContent value="tokens">
-        <EmployeeTokenManager 
-          employeeId={employeeId} 
-          employeeName={employeeName}
-          phone={employee.phone}
-        />
-      </TabsContent>
 
       <TabsContent value="shift-settings">
         <EmployeeShiftSettings employee={employee} onUpdate={onUpdate} />

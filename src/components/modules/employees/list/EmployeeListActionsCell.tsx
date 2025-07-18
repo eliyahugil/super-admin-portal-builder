@@ -3,7 +3,7 @@ import React from "react";
 import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmployeeEditButton } from "../edit/EmployeeEditButton";
-import { EmployeeTokenButton } from "../EmployeeTokenButton";
+
 import { EmployeeArchiveButton } from "../EmployeeArchiveButton";
 import type { Employee } from "@/types/employee";
 import { useNavigate } from "react-router-dom";
@@ -54,14 +54,6 @@ export const EmployeeListActionsCell: React.FC<ActionsCellProps> = ({
         <span>פרופיל</span>
       </Button>
       
-      <EmployeeTokenButton
-        employeeId={employee.id}
-        employeeName={employeeName}
-        phone={employee.phone}
-        email={employee.email}
-        onTokenSent={onRefetch}
-        size="sm"
-      />
       
       <EmployeeEditButton
         employee={employee}

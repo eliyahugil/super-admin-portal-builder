@@ -61,7 +61,7 @@ export const buildMainSidebarMenuItems = (isSuperAdmin: boolean, business?: { id
         { path: moduleRoutes.shifts.approval, label: 'אישור משמרות', icon: UserCheck },
         { path: moduleRoutes.shifts.schedule, label: 'לוח משמרות', icon: Calendar },
         { path: moduleRoutes.shifts.admin, label: 'כלי מנהל', icon: Settings },
-        { path: `${moduleRoutes.shifts.base}/tokens`, label: 'טוקני הגשה', icon: LinkIcon },
+        
       ]
     },
   ];

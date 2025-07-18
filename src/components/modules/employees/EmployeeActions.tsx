@@ -12,7 +12,7 @@ import {
   UserPlus,
   Settings
 } from 'lucide-react';
-import { EmployeeTokenManager } from './EmployeeTokenManager';
+
 
 interface Employee {
   id: string;
@@ -134,13 +134,6 @@ export const EmployeeActions: React.FC<EmployeeActionsProps> = ({
         <FileText className="h-3 w-3" />
       </Button>
 
-      {/* WhatsApp Token Manager */}
-      <EmployeeTokenManager
-        employeeId={employee.id}
-        employeeName={employeeName}
-        phone={employee.phone}
-        onTokenSent={onTokenSent}
-      />
     </div>
   );
 };
