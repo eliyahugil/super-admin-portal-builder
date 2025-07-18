@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { usePublicShifts } from '@/hooks/usePublicShifts';
 import { PublicShiftForm, ShiftPreference } from '@/types/publicShift';
@@ -21,7 +22,9 @@ const PublicShiftSubmission: React.FC = () => {
   const [employeeData, setEmployeeData] = useState<any>(null);
   const [employeeLoading, setEmployeeLoading] = useState(false);
   const [scheduledShifts, setScheduledShifts] = useState<any[]>([]);
+  const [allScheduledShifts, setAllScheduledShifts] = useState<any[]>([]);
   const [shiftsLoading, setShiftsLoading] = useState(false);
+  const [showSpecialShifts, setShowSpecialShifts] = useState<boolean>(false);
 
   const [formData, setFormData] = useState<PublicShiftForm>({
     employee_name: '',
@@ -181,18 +184,21 @@ const PublicShiftSubmission: React.FC = () => {
         }
 
         console.log('📊 Loaded scheduled shifts for token:', shifts?.length || 0);
-        console.log('📊 All shifts details:', shifts?.map(s => ({
-          id: s.id, 
-          date: s.shift_date, 
-          time: `${s.start_time}-${s.end_time}`, 
-          status: s.status,
-          employee_id: s.employee_id,
-          role: s.role,
-          branch: s.branch?.name
-        })));
-        console.log('📊 Filtered shifts for employee:', filteredShifts.length);
-        console.log('📊 Final filtered shifts:', filteredShifts);
-        setScheduledShifts(filteredShifts);
+         console.log('📊 All shifts details:', shifts?.map(s => ({
+           id: s.id, 
+           date: s.shift_date, 
+           time: `${s.start_time}-${s.end_time}`, 
+           status: s.status,
+           employee_id: s.employee_id,
+           role: s.role,
+           branch: s.branch?.name
+         })));
+         console.log('📊 Filtered shifts for employee:', filteredShifts.length);
+         console.log('📊 Final filtered shifts:', filteredShifts);
+         
+         // Store all shifts and filtered shifts separately
+         setAllScheduledShifts(shifts || []);
+         setScheduledShifts(filteredShifts);
       } catch (error) {
         console.error('Error loading scheduled shifts:', error);
       } finally {
@@ -203,14 +209,77 @@ const PublicShiftSubmission: React.FC = () => {
     loadScheduledShifts();
   }, [tokenData, employeeData]);
 
+  // Helper function to check if shifts overlap
+  const shiftsOverlap = (shift1: any, shift2: any) => {
+    if (shift1.shift_date !== shift2.shift_date) return false;
+    
+    const timeToMinutes = (timeStr: string) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+    
+    const start1 = timeToMinutes(shift1.start_time);
+    const end1 = timeToMinutes(shift1.end_time);
+    const start2 = timeToMinutes(shift2.start_time);
+    const end2 = timeToMinutes(shift2.end_time);
+    
+    console.log(`🔍 Checking overlap: ${shift1.start_time}-${shift1.end_time} vs ${shift2.start_time}-${shift2.end_time}`);
+    
+    // Handle overnight shifts
+    const actualEnd1 = end1 < start1 ? end1 + 24 * 60 : end1;
+    const actualEnd2 = end2 < start2 ? end2 + 24 * 60 : end2;
+    
+    const overlaps = (start1 < actualEnd2 && start2 < actualEnd1);
+    console.log(`🔍 Overlap result: ${overlaps}`);
+    
+    return overlaps;
+  };
+
+  // Get shifts that are not normally available to this employee
+  const getSpecialShifts = () => {
+    if (!employeeData || !allScheduledShifts.length) return [];
+    
+    // Get employee's preferred shift types
+    let preferredTypes: string[] = [];
+    
+    if (employeeData.employee_branch_assignments && employeeData.employee_branch_assignments.length > 0) {
+      preferredTypes = employeeData.employee_branch_assignments
+        .filter((assignment: any) => assignment.is_active && assignment.shift_types)
+        .flatMap((assignment: any) => assignment.shift_types || []);
+    } else if (employeeData.employee_default_preferences && employeeData.employee_default_preferences.length > 0) {
+      preferredTypes = employeeData.employee_default_preferences[0].shift_types || [];
+    }
+    
+    console.log('🎯 Employee preferred types:', preferredTypes);
+    
+    const getShiftTypeFromTime = (startTime: string) => {
+      const hour = parseInt(startTime.split(':')[0]);
+      if (hour >= 6 && hour < 12) return 'morning';
+      if (hour >= 12 && hour < 16) return 'afternoon';
+      if (hour >= 16 && hour < 22) return 'evening';
+      return 'night';
+    };
+    
+    // Return shifts that are NOT in the employee's preferred types
+    return allScheduledShifts.filter(shift => {
+      const shiftType = getShiftTypeFromTime(shift.start_time);
+      const isSpecial = !preferredTypes.includes(shiftType);
+      console.log(`🎯 Shift ${shift.id} (${shift.start_time}) type ${shiftType} - Special: ${isSpecial}`);
+      return isSpecial;
+    });
+  };
+
   const handleShiftToggle = (shift: any, available: boolean) => {
+    console.log(`🎯 Toggling shift ${shift.id}: ${available}`);
+    
     setFormData(prev => {
-      const newPreferences = prev.preferences.filter(
+      let newPreferences = prev.preferences.filter(
         (p: any) => p.shift_id !== shift.id
       );
 
       if (available) {
-        newPreferences.push({
+        // Add the main shift
+        const newShift = {
           shift_id: shift.id,
           shift_date: shift.shift_date,
           start_time: shift.start_time,
@@ -218,7 +287,38 @@ const PublicShiftSubmission: React.FC = () => {
           role: shift.role,
           branch_name: shift.branch?.name,
           available: true,
+        };
+        newPreferences.push(newShift);
+
+        // Find and auto-select overlapping shifts
+        const overlappingShifts = allScheduledShifts.filter(otherShift => 
+          otherShift.id !== shift.id && 
+          shiftsOverlap(shift, otherShift) &&
+          !newPreferences.some((p: any) => p.shift_id === otherShift.id)
+        );
+
+        console.log(`🔍 Found ${overlappingShifts.length} overlapping shifts`);
+
+        overlappingShifts.forEach(overlappingShift => {
+          const overlappingPref = {
+            shift_id: overlappingShift.id,
+            shift_date: overlappingShift.shift_date,
+            start_time: overlappingShift.start_time,
+            end_time: overlappingShift.end_time,
+            role: overlappingShift.role,
+            branch_name: overlappingShift.branch?.name,
+            available: true,
+          };
+          newPreferences.push(overlappingPref);
         });
+
+        // Show toast if overlapping shifts were auto-selected
+        if (overlappingShifts.length > 0) {
+          toast({
+            title: 'משמרות חופפות נבחרו אוטומטית',
+            description: `נבחרו ${overlappingShifts.length} משמרות נוספות שחופפות בזמן`,
+          });
+        }
       }
 
       return { ...prev, preferences: newPreferences };
@@ -378,6 +478,21 @@ const PublicShiftSubmission: React.FC = () => {
 
               <div>
                 <Label>בחירת משמרות</Label>
+                
+                {/* Special Shifts Checkbox */}
+                {getSpecialShifts().length > 0 && (
+                  <div className="flex items-center space-x-2 justify-center mt-3 mb-4 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                    <Checkbox 
+                      id="special-shifts"
+                      checked={showSpecialShifts}
+                      onCheckedChange={(checked) => setShowSpecialShifts(checked as boolean)}
+                    />
+                    <label htmlFor="special-shifts" className="text-sm font-medium text-yellow-800">
+                      הצג משמרות מיוחדות ({getSpecialShifts().length} זמינות)
+                    </label>
+                  </div>
+                )}
+                
                 {scheduledShifts.length > 0 ? (
                   <div className="space-y-3 mt-2">
                     <p className="text-sm text-gray-600">
@@ -655,6 +770,164 @@ const PublicShiftSubmission: React.FC = () => {
                   <div className="text-center py-8 text-gray-500">
                     <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                     <p>אין משמרות זמינות לשבוע זה</p>
+                  </div>
+                 )}
+                
+                {/* Special Shifts Section */}
+                {showSpecialShifts && getSpecialShifts().length > 0 && (
+                  <div className="mt-6 space-y-3">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-yellow-800 mb-2 flex items-center gap-2">
+                        ⚠️ הגשה מיוחדת - משמרות מחוץ להעדפות הרגילות
+                      </h4>
+                      <p className="text-sm text-yellow-700">
+                        המשמרות הבאות אינן בסוג המשמרת הרגיל שלך, אך ניתן להגיש אליהן בבקשה מיוחדת:
+                      </p>
+                    </div>
+                    
+                    <div className="bg-white border rounded-lg overflow-hidden border-yellow-300">
+                      {/* Special Shifts Grid */}
+                      <div className="hidden md:block">
+                        {/* Header */}
+                        <div className="grid grid-cols-8 bg-yellow-50 border-b">
+                          <div className="p-3 text-sm font-semibold text-yellow-800 text-center border-l">יום</div>
+                          <div className="p-3 text-sm font-semibold text-yellow-800 text-center border-l col-span-7">משמרות מיוחדות</div>
+                        </div>
+                        
+                        {/* Week Days */}
+                        {(() => {
+                          const weekStart = new Date(tokenData.week_start_date);
+                          const days = [];
+                          const specialShifts = getSpecialShifts();
+                          
+                          for (let i = 0; i < 7; i++) {
+                            const currentDate = new Date(weekStart);
+                            currentDate.setDate(weekStart.getDate() + i);
+                            const dateStr = currentDate.toISOString().split('T')[0];
+                            const daySpecialShifts = specialShifts.filter(shift => shift.shift_date === dateStr);
+                            
+                            days.push(
+                              <div key={dateStr} className="grid grid-cols-8 border-b last:border-b-0 min-h-[60px]">
+                                {/* Day Column */}
+                                <div className="p-3 border-l bg-yellow-50 flex flex-col justify-center items-center">
+                                  <div className="text-sm font-semibold text-gray-900">{getDayName(dateStr)}</div>
+                                  <div className="text-xs text-gray-600">{getDateDisplay(dateStr)}</div>
+                                </div>
+                                
+                                {/* Special Shifts */}
+                                <div className="col-span-7 p-2">
+                                  <div className="space-y-1">
+                                    {daySpecialShifts.map(shift => {
+                                      const currentPreference = formData.preferences.find(
+                                        (p: any) => p.shift_id === shift.id
+                                      );
+                                      const isSelected = currentPreference?.available;
+                                      
+                                      return (
+                                        <div 
+                                          key={shift.id}
+                                          className={`p-2 rounded border text-xs cursor-pointer transition-all ${
+                                            isSelected 
+                                              ? 'bg-yellow-100 border-yellow-400 text-yellow-900' 
+                                              : 'bg-gray-50 border-yellow-200 hover:bg-yellow-50 hover:border-yellow-300'
+                                          }`}
+                                          onClick={() => handleShiftToggle(shift, !isSelected)}
+                                        >
+                                          <div className="font-semibold">{shift.start_time} - {shift.end_time}</div>
+                                          {shift.branch?.name && (
+                                            <div className="text-blue-600">📍 {shift.branch.name}</div>
+                                          )}
+                                          {shift.role && (
+                                            <div className="text-gray-500">{shift.role}</div>
+                                          )}
+                                          <div className="text-yellow-700 text-xs mt-1">⚠️ בקשה מיוחדת</div>
+                                          {isSelected && (
+                                            <div className="text-yellow-800 font-bold mt-1">✓ נבחר למיוחד</div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                    {daySpecialShifts.length === 0 && (
+                                      <div className="text-xs text-gray-400 p-2">אין משמרות מיוחדות</div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return days;
+                        })()}
+                      </div>
+
+                      {/* Mobile Layout for Special Shifts */}
+                      <div className="md:hidden">
+                        {(() => {
+                          const weekStart = new Date(tokenData.week_start_date);
+                          const days = [];
+                          const specialShifts = getSpecialShifts();
+                          
+                          for (let i = 0; i < 7; i++) {
+                            const currentDate = new Date(weekStart);
+                            currentDate.setDate(weekStart.getDate() + i);
+                            const dateStr = currentDate.toISOString().split('T')[0];
+                            const daySpecialShifts = specialShifts.filter(shift => shift.shift_date === dateStr);
+                            
+                            if (daySpecialShifts.length === 0) continue;
+                            
+                            days.push(
+                              <div key={dateStr} className="border-b last:border-b-0">
+                                {/* Day Header */}
+                                <div className="bg-yellow-50 p-3 border-b">
+                                  <div className="flex justify-between items-center">
+                                    <h4 className="font-semibold text-gray-900">{getDayName(dateStr)}</h4>
+                                    <span className="text-sm text-gray-600">{getDateDisplay(dateStr)}</span>
+                                  </div>
+                                </div>
+                                
+                                {/* Special Shifts */}
+                                <div className="p-3 space-y-2">
+                                  {daySpecialShifts.map(shift => {
+                                    const currentPreference = formData.preferences.find(
+                                      (p: any) => p.shift_id === shift.id
+                                    );
+                                    const isSelected = currentPreference?.available;
+                                    
+                                    return (
+                                      <div 
+                                        key={shift.id}
+                                        className={`p-3 rounded border cursor-pointer transition-all ${
+                                          isSelected 
+                                            ? 'bg-yellow-100 border-yellow-400 text-yellow-900' 
+                                            : 'bg-gray-50 border-yellow-200 hover:bg-yellow-50 hover:border-yellow-300'
+                                        }`}
+                                        onClick={() => handleShiftToggle(shift, !isSelected)}
+                                      >
+                                        <div className="flex justify-between items-start">
+                                          <div>
+                                            <div className="font-semibold text-base">{shift.start_time} - {shift.end_time}</div>
+                                            {shift.branch?.name && (
+                                              <div className="text-blue-600 text-sm mt-1">📍 {shift.branch.name}</div>
+                                            )}
+                                            {shift.role && (
+                                              <div className="text-gray-500 text-sm">{shift.role}</div>
+                                            )}
+                                            <div className="text-yellow-700 text-xs mt-1">⚠️ בקשה מיוחדת</div>
+                                          </div>
+                                          {isSelected && (
+                                            <div className="text-yellow-800 font-bold">✓</div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return days;
+                        })()}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
