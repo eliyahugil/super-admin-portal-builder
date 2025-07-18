@@ -50,6 +50,7 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
   weekRange
 }) => {
   const [selectedShifts, setSelectedShifts] = useState<SelectedShift[]>([]);
+  const [selectedSpecialShifts, setSelectedSpecialShifts] = useState<SelectedShift[]>([]);
   const [showSpecialShifts, setShowSpecialShifts] = useState<boolean>(false);
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
     if (weekRange) return weekRange.start;
@@ -233,24 +234,56 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
 
   const getShiftsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
+    return availableShifts.filter(shift => shift.date === dateStr);
+  };
+
+  const getSpecialShiftsForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
     let shifts = availableShifts.filter(shift => shift.date === dateStr);
     
-    // Filter based on employee preference and special shifts checkbox
-    if (!showSpecialShifts) {
-      if (employeePreference === 'evening') {
-        // Evening worker sees only evening and night shifts normally
-        shifts = shifts.filter(shift => 
-          shift.name.includes('ערב') || shift.name.includes('לילה')
-        );
-      } else {
-        // Morning worker sees only morning shifts normally
-        shifts = shifts.filter(shift => 
-          shift.name.includes('בוקר')
-        );
-      }
+    // Return only special shifts (opposite of employee preference)
+    if (employeePreference === 'evening') {
+      return shifts.filter(shift => shift.name.includes('בוקר'));
+    } else {
+      return shifts.filter(shift => shift.name.includes('ערב'));
     }
-    
-    return shifts;
+  };
+
+  const isShiftSelectable = (shift: AvailableShift) => {
+    if (employeePreference === 'evening') {
+      return shift.name.includes('ערב') || shift.name.includes('לילה');
+    } else {
+      return shift.name.includes('בוקר');
+    }
+  };
+
+  const toggleSpecialShiftSelection = (shift: AvailableShift) => {
+    const shiftDate = new Date(shift.date);
+    const isSelected = selectedSpecialShifts.some(s => s.shiftId === shift.id);
+
+    if (isSelected) {
+      setSelectedSpecialShifts(prev => prev.filter(s => s.shiftId !== shift.id));
+    } else {
+      if (shift.current_employees >= shift.max_employees) {
+        toast({
+          title: 'משמרת מלאה',
+          description: 'המשמרת הזו כבר מלאה',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const newShift: SelectedShift = {
+        date: shiftDate,
+        shiftId: shift.id,
+        shiftName: shift.name,
+        startTime: shift.start_time,
+        endTime: shift.end_time,
+        branchName: shift.branch_name,
+      };
+
+      setSelectedSpecialShifts(prev => [...prev, newShift]);
+    }
   };
 
   const isShiftSelected = (shiftId: string) => {
@@ -258,7 +291,9 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
   };
 
   const handleSubmit = () => {
-    if (selectedShifts.length === 0) {
+    const totalShifts = selectedShifts.length + selectedSpecialShifts.length;
+    
+    if (totalShifts === 0) {
       toast({
         title: 'לא נבחרו משמרות',
         description: 'אנא בחר לפחות משמרת אחת לפני השליחה',
@@ -267,7 +302,9 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
       return;
     }
 
-    onSubmit(selectedShifts);
+    // Combine regular and special shifts
+    const allSelectedShifts = [...selectedShifts, ...selectedSpecialShifts];
+    onSubmit(allSelectedShifts);
   };
 
   const formatWeekRange = () => {
@@ -366,14 +403,16 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
                           return (
                             <div
                               key={shift.id}
-                              className={`p-3 rounded-lg border cursor-pointer transition-all relative ${
+                             className={`p-3 rounded-lg border transition-all relative ${
                                 isSelected
                                   ? 'bg-orange-100 border-orange-300 text-orange-800'
                                   : isFull
                                   ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
-                                  : 'bg-white border-orange-200 hover:border-orange-300 hover:bg-orange-50'
-                              }`}
-                              onClick={() => !isFull && toggleShiftSelection(shift)}
+                                  : isShiftSelectable(shift)
+                                  ? 'bg-white border-orange-200 hover:border-orange-300 hover:bg-orange-50 cursor-pointer'
+                                  : 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                               }`}
+                               onClick={() => !isFull && isShiftSelectable(shift) && toggleShiftSelection(shift)}
                             >
                               {isSpecialCase && (
                                 <div className="absolute top-1 right-1">
@@ -432,14 +471,16 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
                           return (
                             <div
                               key={shift.id}
-                              className={`p-3 rounded-lg border cursor-pointer transition-all relative ${
+                              className={`p-3 rounded-lg border transition-all relative ${
                                 isSelected
                                   ? 'bg-blue-100 border-blue-300 text-blue-800'
                                   : isFull
                                   ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
-                                  : 'bg-white border-blue-200 hover:border-blue-300 hover:bg-blue-50'
+                                  : isShiftSelectable(shift)
+                                  ? 'bg-white border-blue-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer'
+                                  : 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed opacity-60'
                               }`}
-                              onClick={() => !isFull && toggleShiftSelection(shift)}
+                              onClick={() => !isFull && isShiftSelectable(shift) && toggleShiftSelection(shift)}
                             >
                               {isSpecialCase && (
                                 <div className="absolute top-1 right-1">
@@ -586,11 +627,129 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
         </Card>
       )}
 
+      {/* Special Shifts Section */}
+      {showSpecialShifts && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              הגשה מיוחדת - משמרות {employeePreference === 'evening' ? 'בוקר' : 'ערב'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+              {weekDates.map((date, index) => {
+                const specialShifts = getSpecialShiftsForDate(date);
+                
+                return (
+                  <div key={date.toISOString()} className="space-y-2">
+                    <div className="text-center text-sm font-medium text-gray-700">
+                      {dayNames[index]} {date.getDate()}
+                    </div>
+                    {specialShifts.length === 0 ? (
+                      <div className="text-center text-xs text-gray-400 py-2">
+                        אין משמרות זמינות
+                      </div>
+                    ) : (
+                      specialShifts.map((shift) => {
+                        const isSelected = selectedSpecialShifts.some(s => s.shiftId === shift.id);
+                        const isFull = shift.current_employees >= shift.max_employees;
+                        const shiftColor = shift.name.includes('בוקר') ? 'orange' : 'blue';
+                        
+                        return (
+                          <div
+                            key={shift.id}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                              isSelected
+                                ? `bg-${shiftColor}-100 border-${shiftColor}-300 text-${shiftColor}-800`
+                                : isFull
+                                ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
+                                : `bg-white border-${shiftColor}-200 hover:border-${shiftColor}-300 hover:bg-${shiftColor}-50`
+                            }`}
+                            onClick={() => !isFull && toggleSpecialShiftSelection(shift)}
+                          >
+                            <div className="space-y-1">
+                              <div className="font-medium text-xs">{shift.name}</div>
+                              <div className="flex items-center gap-1 text-xs text-gray-600">
+                                <Clock className="h-3 w-3" />
+                                <span>{shift.start_time} - {shift.end_time}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1 text-xs text-gray-600">
+                                  <Users className="h-3 w-3" />
+                                  <span>{shift.current_employees}/{shift.max_employees}</span>
+                                </div>
+                                {isSelected && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    נבחר
+                                  </Badge>
+                                )}
+                                {isFull && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    מלא
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Selected Special Shifts Summary */}
+      {selectedSpecialShifts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              משמרות מיוחדות שנבחרו ({selectedSpecialShifts.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {selectedSpecialShifts.map((shift) => (
+                <div
+                  key={shift.shiftId}
+                  className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200"
+                >
+                  <div>
+                    <div className="font-medium text-sm">{shift.shiftName}</div>
+                    <div className="text-xs text-gray-600">
+                      {shift.date.toLocaleDateString('he-IL')} | {shift.startTime} - {shift.endTime}
+                    </div>
+                    <div className="text-xs text-gray-600">{shift.branchName}</div>
+                    <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-300 mt-1">
+                      הגשה מיוחדת
+                    </Badge>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedSpecialShifts(prev => 
+                      prev.filter(s => s.shiftId !== shift.shiftId)
+                    )}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Action Buttons */}
       <div className="flex flex-col md:flex-row gap-4">
         <Button
           onClick={handleSubmit}
-          disabled={selectedShifts.length === 0 || submitting}
+          disabled={(selectedShifts.length === 0 && selectedSpecialShifts.length === 0) || submitting}
           className="flex-1"
           size="lg"
         >
@@ -602,7 +761,7 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
           ) : (
             <>
               <Send className="h-4 w-4 mr-2" />
-              שלח משמרות ({selectedShifts.length})
+              שלח משמרות ({selectedShifts.length + selectedSpecialShifts.length})
             </>
           )}
         </Button>
