@@ -788,6 +788,12 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                   📋 {shiftSubmissions.length} הגשות
                                 </Badge>
                               )}
+                              {/* Debug עבור בדיקה */}
+                              {pendingSubmissions.length > 0 && shiftSubmissions.length === 0 && (
+                                <div className="text-xs text-red-500 bg-red-50 p-1 rounded">
+                                  DEBUG: {pendingSubmissions.length} הגשות קיימות אך לא למשמרת זו
+                                </div>
+                              )}
                            </div>
                        </div>
                      </ShiftSubmissionsPopover>
