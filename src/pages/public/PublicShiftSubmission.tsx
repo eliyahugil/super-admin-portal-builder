@@ -885,7 +885,7 @@ const PublicShiftSubmission: React.FC = () => {
                         <div className="space-y-1">
                           {formData.preferences.map((pref: any, index) => (
                             <div key={index} className="text-sm text-green-700">
-                              ✓ {getDayName(pref.shift_date)} {getDateDisplay(pref.shift_date)} - {pref.start_time} עד {pref.end_time}
+                              ✓ {getDayName(pref.shift_date)} {getDateDisplay(pref.shift_date)} - {pref.start_time}-{pref.end_time}
                               {pref.branch_name && ` | ${pref.branch_name}`}
                             </div>
                           ))}
