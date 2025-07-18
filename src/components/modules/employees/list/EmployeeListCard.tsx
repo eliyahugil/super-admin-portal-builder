@@ -28,75 +28,80 @@ export const EmployeeListCard: React.FC<EmployeeListCardProps> = ({
 }) => {
   return (
     <div
-      className="w-full bg-card border-b border-border py-4 px-4 hover:bg-muted/30 transition-colors animate-fade-in active:bg-muted/50"
+      className="relative w-full bg-background py-4 px-4 border-b border-border/50 hover:bg-muted/20 transition-all duration-200 active:bg-muted/40"
       dir="rtl"
     >
-      {/* Header Row - compact layout */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+      {/* Main Content */}
+      <div className="flex items-start gap-3">
+        {/* Checkbox */}
+        <div className="pt-1">
           <input
             type="checkbox"
             checked={selected}
             onChange={(e) => onSelect(employee.id, e.target.checked)}
-            className="w-5 h-5 accent-primary border-2 border-border rounded focus:ring-2 focus:ring-primary/20"
+            className="w-5 h-5 accent-primary border-2 border-muted-foreground/20 rounded-md focus:ring-2 focus:ring-primary/20 transition-colors"
             aria-label="בחר עובד"
           />
-          <div className="flex-1 min-w-0">
-            <div className="text-base font-semibold text-foreground truncate">
-              {`${employee.first_name} ${employee.last_name}`}
+        </div>
+
+        {/* Employee Info */}
+        <div className="flex-1 min-w-0">
+          {/* Name & Status Row */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-semibold text-foreground truncate">
+                {`${employee.first_name} ${employee.last_name}`}
+              </h3>
+              {employee.employee_id && (
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  מס' עובד: {employee.employee_id}
+                </p>
+              )}
             </div>
-            <div className="text-sm text-muted-foreground truncate">
-              {employee.employee_id ? `מס' עובד: ${employee.employee_id}` : 'מס\' עובד: לא הוגדר'}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <EmployeeListStatusCell isActive={!!employee.is_active} />
+              <EmployeeListActionsCell
+                employee={employee}
+                onDeleteEmployee={onDeleteEmployee}
+                onRefetch={onRefetch}
+                loading={loading}
+              />
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <EmployeeListStatusCell isActive={!!employee.is_active} />
+
+          {/* Contact & Type Info */}
+          <div className="space-y-2 mb-3">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">📱</span>
+                <EmployeeListPhoneCell employee={employee} />
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">👤</span>
+                <EmployeeListTypeCell type={employee.employee_type} />
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Details */}
+          <div className="grid grid-cols-1 gap-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground font-medium min-w-[60px]">סניף:</span>
+              <EmployeeListBranchCell employee={employee} />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground font-medium min-w-[60px]">שעות:</span>
+              <EmployeeListWeeklyHoursCell weeklyHoursRequired={employee.weekly_hours_required} />
+            </div>
+            {employee.email && (
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground font-medium min-w-[60px]">מייל:</span>
+                <span className="text-muted-foreground truncate">{employee.email}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Quick Info Row */}
-      <div className="flex items-center justify-between text-sm mb-3">
-        <div className="flex items-center gap-4 flex-1 min-w-0">
-          {/* Phone */}
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <span>📱</span>
-            <EmployeeListPhoneCell employee={employee} />
-          </div>
-          
-          {/* Employee Type */}
-          <div className="flex items-center gap-1">
-            <span>👤</span>
-            <EmployeeListTypeCell type={employee.employee_type} />
-          </div>
-        </div>
-        
-        {/* Actions - compact */}
-        <div className="flex-shrink-0">
-          <EmployeeListActionsCell
-            employee={employee}
-            onDeleteEmployee={onDeleteEmployee}
-            onRefetch={onRefetch}
-            loading={loading}
-          />
-        </div>
-      </div>
-
-      {/* Additional Info - collapsible */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <div>
-          <span className="font-medium">סניף:</span> <EmployeeListBranchCell employee={employee} />
-        </div>
-        <div>
-          <span className="font-medium">שעות:</span> <EmployeeListWeeklyHoursCell weeklyHoursRequired={employee.weekly_hours_required} />
-        </div>
-        {employee.email && (
-          <div className="col-span-2 truncate">
-            <span className="font-medium">מייל:</span> {employee.email}
-          </div>
-        )}
-      </div>
-
     </div>
   );
 };
