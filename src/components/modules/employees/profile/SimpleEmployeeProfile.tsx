@@ -885,7 +885,7 @@ export const SimpleEmployeeProfile: React.FC = () => {
                           </div>
                           
                           <div className="pt-2 border-t">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between mb-3">
                               <span className="text-sm text-muted-foreground">קוד טוקן:</span>
                               <div className="flex items-center gap-2">
                                 <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
@@ -905,6 +905,18 @@ export const SimpleEmployeeProfile: React.FC = () => {
                                   העתק
                                 </Button>
                               </div>
+                            </div>
+                            
+                            <div className="flex justify-center">
+                              <Button 
+                                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => {
+                                  window.open(`/public/shift-submission/${token.token}`, '_blank');
+                                }}
+                              >
+                                <Send className="h-4 w-4 ml-2" />
+                                כניסה לטופס הגשת משמרות
+                              </Button>
                             </div>
                           </div>
                         </div>
