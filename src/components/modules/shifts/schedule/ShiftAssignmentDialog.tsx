@@ -14,6 +14,7 @@ interface ShiftAssignmentDialogProps {
   onClose: () => void;
   shift: ShiftScheduleData;
   employees: Employee[];
+  allShifts: ShiftScheduleData[]; // All shifts to check for conflicts
   onAssign: (shiftId: string, employeeId: string) => Promise<void>;
   onUnassign: (shiftId: string) => Promise<void>;
 }
@@ -23,6 +24,7 @@ export const ShiftAssignmentDialog: React.FC<ShiftAssignmentDialogProps> = ({
   onClose,
   shift,
   employees,
+  allShifts,
   onAssign,
   onUnassign
 }) => {
@@ -32,11 +34,35 @@ export const ShiftAssignmentDialog: React.FC<ShiftAssignmentDialogProps> = ({
 
   const currentEmployee = employees.find(emp => emp.id === shift.employee_id);
   
+  // Get employees assigned to other branches on the same date
+  const getEmployeesAssignedToOtherBranches = () => {
+    return allShifts
+      .filter(s => 
+        s.shift_date === shift.shift_date && 
+        s.employee_id && 
+        s.branch_id !== shift.branch_id &&
+        s.id !== shift.id // Don't count current shift
+      )
+      .map(s => s.employee_id)
+      .filter(Boolean);
+  };
+  
+  const assignedEmployeeIds = getEmployeesAssignedToOtherBranches();
+  
   const filteredEmployees = employees.filter(employee => {
+    // First check search term
     const fullName = `${employee.first_name} ${employee.last_name}`.toLowerCase();
-    return fullName.includes(searchTerm.toLowerCase()) || 
-           employee.employee_id?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = fullName.includes(searchTerm.toLowerCase()) || 
+                         employee.employee_id?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    return true;
   });
+
+  // Separate available and unavailable employees
+  const availableEmployees = filteredEmployees.filter(emp => !assignedEmployeeIds.includes(emp.id));
+  const unavailableEmployees = filteredEmployees.filter(emp => assignedEmployeeIds.includes(emp.id));
 
   const handleAssign = async () => {
     if (!selectedEmployeeId) {
@@ -146,26 +172,72 @@ export const ShiftAssignmentDialog: React.FC<ShiftAssignmentDialogProps> = ({
                 <SelectValue placeholder="בחר עובד..." />
               </SelectTrigger>
               <SelectContent>
-                {filteredEmployees.length === 0 ? (
+                {availableEmployees.length === 0 && unavailableEmployees.length === 0 ? (
                   <SelectItem value="no_employees" disabled>
                     לא נמצאו עובדים
                   </SelectItem>
                 ) : (
-                  filteredEmployees.map(employee => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{employee.first_name} {employee.last_name}</span>
-                        {employee.employee_id && (
-                          <Badge variant="secondary" className="text-xs">
-                            {employee.employee_id}
-                          </Badge>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))
+                  <>
+                    {/* Available employees */}
+                    {availableEmployees.length > 0 && (
+                      <>
+                        <div className="px-2 py-1 text-xs font-medium text-green-700 bg-green-50 border-b">
+                          זמינים ({availableEmployees.length})
+                        </div>
+                        {availableEmployees.map(employee => (
+                          <SelectItem key={employee.id} value={employee.id}>
+                            <div className="flex items-center gap-2">
+                              <span className="text-green-700">✓</span>
+                              <span>{employee.first_name} {employee.last_name}</span>
+                              {employee.employee_id && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {employee.employee_id}
+                                </Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                    
+                    {/* Unavailable employees */}
+                    {unavailableEmployees.length > 0 && (
+                      <>
+                        <div className="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 border-b">
+                          לא זמינים - משויכים לסניף אחר ({unavailableEmployees.length})
+                        </div>
+                        {unavailableEmployees.map(employee => (
+                          <SelectItem key={employee.id} value={employee.id} disabled>
+                            <div className="flex items-center gap-2 opacity-60">
+                              <span className="text-red-500">✗</span>
+                              <span className="line-through">{employee.first_name} {employee.last_name}</span>
+                              {employee.employee_id && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {employee.employee_id}
+                                </Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                  </>
                 )}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Availability Summary */}
+          <div className="p-3 bg-gray-50 rounded-lg text-sm">
+            <div className="flex justify-between">
+              <span className="text-green-700">✓ זמינים: {availableEmployees.length}</span>
+              <span className="text-red-700">✗ לא זמינים: {unavailableEmployees.length}</span>
+            </div>
+            {unavailableEmployees.length > 0 && (
+              <p className="text-xs text-gray-600 mt-1">
+                עובדים לא זמינים כבר משויכים לסניף אחר באותו תאריך
+              </p>
+            )}
           </div>
 
           {/* Selected Employee Preview */}

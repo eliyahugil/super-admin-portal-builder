@@ -552,6 +552,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           onClose={() => setAssignmentShift(null)}
           shift={assignmentShift}
           employees={employees}
+          allShifts={shifts}
           onAssign={handleAssignEmployee}
           onUnassign={handleUnassignEmployee}
         />
