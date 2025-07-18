@@ -32,10 +32,18 @@ function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // בדיקה ראשונית
+    checkScreenSize();
+    
+    // האזנה לשינויי גודל
+    window.addEventListener('resize', checkScreenSize);
+    
+    // ניקוי
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
   return isMobile;
@@ -69,7 +77,7 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
       <div className="w-full bg-background min-h-screen" dir="rtl">
         {/* Header עם מספר עובדים */}
         <div className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 border-b border-border">
-          <div className="px-4 py-4">
+          <div className="px-3 sm:px-4 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <input
