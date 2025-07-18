@@ -176,17 +176,20 @@ export const useShiftScheduleData = (businessId: string | null) => {
 
       console.log('🔍 Fetching shift submissions for business:', businessId);
 
+      // Join with employees table to filter by business_id
       const { data, error } = await supabase
         .from('shift_submissions')
         .select(`
           *,
-          employee:employees(
+          employees!inner(
             id,
             first_name,
             last_name,
-            employee_id
+            employee_id,
+            business_id
           )
         `)
+        .eq('employees.business_id', businessId)
         .order('submitted_at', { ascending: false });
 
       if (error) {
