@@ -115,7 +115,10 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
               <Plus className="h-4 w-4 ml-2" />
               יצירת משמרות
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsSelectionMode?.(true)}>
+            <DropdownMenuItem 
+              onClick={() => setIsSelectionMode?.(true)}
+              className="text-blue-700 focus:text-blue-800"
+            >
               <CheckSquare className="h-4 w-4 ml-2" />
               עריכה מרובה
             </DropdownMenuItem>
@@ -147,9 +150,10 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
         יצירת משמרות
       </Button>
       <Button
-        variant="outline"
+        variant={isSelectionMode ? "default" : "outline"}
         size="sm"
         onClick={() => setIsSelectionMode?.(true)}
+        className={isSelectionMode ? "bg-blue-600 hover:bg-blue-700 text-white" : "border-blue-300 text-blue-700 hover:bg-blue-50"}
       >
         <CheckSquare className="h-4 w-4 mr-2" />
         עריכה מרובה

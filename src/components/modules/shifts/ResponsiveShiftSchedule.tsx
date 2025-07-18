@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, FileText } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Copy, FileText, CheckSquare } from 'lucide-react';
 import { WeeklyScheduleView } from './schedule/WeeklyScheduleView';
 import { MonthlyScheduleView } from './schedule/MonthlyScheduleView';
 import { YearlyScheduleView } from './schedule/YearlyScheduleView';
@@ -325,6 +326,34 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Selection Mode Banner */}
+      {isSelectionMode && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckSquare className="h-5 w-5 text-blue-600" />
+              <span className="font-medium text-blue-800">מצב בחירה פעיל</span>
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                {selectedShifts.length} משמרות נבחרו
+              </Badge>
+            </div>
+            <Button 
+              onClick={handleClearSelection}
+              variant="ghost"
+              size="sm"
+              className="text-blue-700 hover:text-blue-800"
+            >
+              יציאה ממצב בחירה
+            </Button>
+          </div>
+          {selectedShifts.length === 0 && (
+            <p className="text-sm text-blue-600 mt-2">
+              לחץ על המשמרות כדי לבחור אותן לעריכה גורפת
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Compact Stats Cards for mobile */}
       <ScheduleStats shifts={shifts} isMobile={isMobile} />
