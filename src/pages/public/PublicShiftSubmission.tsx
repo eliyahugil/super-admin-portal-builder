@@ -239,6 +239,20 @@ const PublicShiftSubmission: React.FC = () => {
   const getSpecialShifts = () => {
     if (!employeeData || !allScheduledShifts.length) return [];
     
+    // Get employee's assigned branch IDs
+    let assignedBranchIds: string[] = [];
+    let mainBranchId: string | null = null;
+    
+    if (employeeData.employee_branch_assignments && employeeData.employee_branch_assignments.length > 0) {
+      const activeAssignments = employeeData.employee_branch_assignments.filter((assignment: any) => assignment.is_active);
+      assignedBranchIds = activeAssignments.map((assignment: any) => assignment.branch_id);
+      
+      // Find main branch (highest priority - lowest priority_order number)
+      const mainAssignment = activeAssignments
+        .sort((a: any, b: any) => a.priority_order - b.priority_order)[0];
+      mainBranchId = mainAssignment?.branch_id || null;
+    }
+    
     // Get employee's preferred shift types
     let preferredTypes: string[] = [];
     
@@ -251,6 +265,8 @@ const PublicShiftSubmission: React.FC = () => {
     }
     
     console.log('🎯 Employee preferred types:', preferredTypes);
+    console.log('🎯 Employee assigned branches:', assignedBranchIds);
+    console.log('🎯 Employee main branch:', mainBranchId);
     
     const getShiftTypeFromTime = (startTime: string) => {
       const hour = parseInt(startTime.split(':')[0]);
@@ -260,13 +276,38 @@ const PublicShiftSubmission: React.FC = () => {
       return 'night';
     };
     
-    // Return shifts that are NOT in the employee's preferred types
-    return allScheduledShifts.filter(shift => {
+    // Filter shifts that are NOT in the employee's preferred types AND are in assigned branches
+    let specialShifts = allScheduledShifts.filter(shift => {
       const shiftType = getShiftTypeFromTime(shift.start_time);
-      const isSpecial = !preferredTypes.includes(shiftType);
-      console.log(`🎯 Shift ${shift.id} (${shift.start_time}) type ${shiftType} - Special: ${isSpecial}`);
-      return isSpecial;
+      const isSpecialType = !preferredTypes.includes(shiftType);
+      const isAssignedBranch = assignedBranchIds.length === 0 || assignedBranchIds.includes(shift.branch_id);
+      
+      console.log(`🎯 Shift ${shift.id} (${shift.start_time}) type ${shiftType} - Special type: ${isSpecialType}, Assigned branch: ${isAssignedBranch}`);
+      return isSpecialType && isAssignedBranch;
     });
+    
+    // Sort by main branch first, then by time
+    specialShifts.sort((a, b) => {
+      // Main branch shifts come first
+      if (mainBranchId) {
+        const aIsMain = a.branch_id === mainBranchId;
+        const bIsMain = b.branch_id === mainBranchId;
+        if (aIsMain && !bIsMain) return -1;
+        if (!aIsMain && bIsMain) return 1;
+      }
+      
+      // Then sort by date and time
+      if (a.shift_date !== b.shift_date) {
+        return a.shift_date.localeCompare(b.shift_date);
+      }
+      return a.start_time.localeCompare(b.start_time);
+    });
+    
+    // Add main branch indicator
+    return specialShifts.map(shift => ({
+      ...shift,
+      isMainBranch: mainBranchId === shift.branch_id
+    }));
   };
 
   const handleShiftToggle = (shift: any, available: boolean) => {
@@ -833,14 +874,19 @@ const PublicShiftSubmission: React.FC = () => {
                                           }`}
                                           onClick={() => handleShiftToggle(shift, !isSelected)}
                                         >
-                                          <div className="font-semibold">{shift.start_time} - {shift.end_time}</div>
-                                          {shift.branch?.name && (
-                                            <div className="text-blue-600">📍 {shift.branch.name}</div>
-                                          )}
-                                          {shift.role && (
-                                            <div className="text-gray-500">{shift.role}</div>
-                                          )}
-                                          <div className="text-yellow-700 text-xs mt-1">⚠️ בקשה מיוחדת</div>
+                                           <div className="font-semibold">{shift.start_time} - {shift.end_time}</div>
+                                           {shift.branch?.name && (
+                                             <div className="text-blue-600 flex items-center gap-1">
+                                               📍 {shift.branch.name}
+                                               {shift.isMainBranch && (
+                                                 <span className="text-orange-600 font-semibold text-xs">(סניף עיקרי)</span>
+                                               )}
+                                             </div>
+                                           )}
+                                           {shift.role && (
+                                             <div className="text-gray-500">{shift.role}</div>
+                                           )}
+                                           <div className="text-yellow-700 text-xs mt-1">⚠️ בקשה מיוחדת</div>
                                           {isSelected && (
                                             <div className="text-yellow-800 font-bold mt-1">✓ נבחר למיוחד</div>
                                           )}
@@ -904,14 +950,19 @@ const PublicShiftSubmission: React.FC = () => {
                                       >
                                         <div className="flex justify-between items-start">
                                           <div>
-                                            <div className="font-semibold text-base">{shift.start_time} - {shift.end_time}</div>
-                                            {shift.branch?.name && (
-                                              <div className="text-blue-600 text-sm mt-1">📍 {shift.branch.name}</div>
-                                            )}
-                                            {shift.role && (
-                                              <div className="text-gray-500 text-sm">{shift.role}</div>
-                                            )}
-                                            <div className="text-yellow-700 text-xs mt-1">⚠️ בקשה מיוחדת</div>
+                                             <div className="font-semibold text-base">{shift.start_time} - {shift.end_time}</div>
+                                             {shift.branch?.name && (
+                                               <div className="text-blue-600 text-sm mt-1 flex items-center gap-1">
+                                                 📍 {shift.branch.name}
+                                                 {shift.isMainBranch && (
+                                                   <span className="text-orange-600 font-semibold text-xs">(סניף עיקרי)</span>
+                                                 )}
+                                               </div>
+                                             )}
+                                             {shift.role && (
+                                               <div className="text-gray-500 text-sm">{shift.role}</div>
+                                             )}
+                                             <div className="text-yellow-700 text-xs mt-1">⚠️ בקשה מיוחדת</div>
                                           </div>
                                           {isSelected && (
                                             <div className="text-yellow-800 font-bold">✓</div>
