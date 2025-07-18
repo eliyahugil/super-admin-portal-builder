@@ -736,33 +736,34 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             </div>
                           </div>
                           
-                          {/* סטטוס וקונפליקטים ובקשות - במטה */}
-                          <div className="flex items-center justify-between mt-2 pt-1 border-t border-gray-100">
-                            <div className="flex items-center gap-1">
-                              <Badge variant="secondary" className={`text-xs ${getStatusColor(shift.status || 'pending')}`}>
-                                {shift.status === 'approved' ? 'מאושר' : 
-                                 shift.status === 'pending' ? 'ממתין' :
-                                 shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
-                              </Badge>
-                               {hasConflict && (
-                                 <TooltipProvider>
-                                   <Tooltip>
-                                     <TooltipTrigger asChild>
-                                       <AlertTriangle className="h-3 w-3 text-red-500" />
-                                     </TooltipTrigger>
-                                     <TooltipContent>
-                                       התנגשות עם משמרת אחרת
-                                     </TooltipContent>
-                                   </Tooltip>
-                                 </TooltipProvider>
-                               )}
-                            </div>
-                            {shiftSubmissions.length > 0 && (
-                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                {shiftSubmissions.length} בקשות
-                              </Badge>
-                            )}
-                          </div>
+                           {/* סטטוס וקונפליקטים ובקשות - במטה */}
+                           <div className="flex items-center justify-between mt-2 pt-1 border-t border-gray-100">
+                             <div className="flex items-center gap-1">
+                               <Badge variant="secondary" className={`text-xs ${getStatusColor(shift.status || 'pending')}`}>
+                                 {shift.status === 'approved' ? 'מאושר' : 
+                                  shift.status === 'pending' ? 'ממתין' :
+                                  shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
+                               </Badge>
+                                {hasConflict && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <AlertTriangle className="h-3 w-3 text-red-500" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        התנגשות עם משמרת אחרת
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                             </div>
+                             {/* הצגת מספר הגשות - תמיד נראה */}
+                             {shiftSubmissions.length > 0 && (
+                               <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 cursor-pointer hover:bg-green-100">
+                                 📋 {shiftSubmissions.length}
+                               </Badge>
+                             )}
+                           </div>
                        </div>
                      </ShiftSubmissionsPopover>
                     );
