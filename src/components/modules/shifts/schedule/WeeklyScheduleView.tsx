@@ -659,20 +659,31 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 {/* Shifts */}
                 <div className="space-y-1">
                   {dayShifts.map((shift) => {
-                     // Get submissions for this specific shift by checking shift data
-                     const shiftSubmissions = getPendingSubmissionsForDate(date).filter(submission => {
-                       // Parse shifts from the submission
-                       const shifts = typeof submission.shifts === 'string' 
-                         ? JSON.parse(submission.shifts) 
-                         : submission.shifts || [];
-                       
-                       // Check if any shift in the submission matches this shift's time and branch
-                       return shifts.some((submittedShift: any) => 
-                         submittedShift.start_time === shift.start_time && 
-                         submittedShift.end_time === shift.end_time &&
-                         submittedShift.branch_preference === shift.branch_name
-                       );
-                     });
+                      // Get submissions for this specific shift by checking shift data
+                      const shiftSubmissions = getPendingSubmissionsForDate(date).filter(submission => {
+                        // Parse shifts from the submission
+                        const shifts = typeof submission.shifts === 'string' 
+                          ? JSON.parse(submission.shifts) 
+                          : submission.shifts || [];
+                        
+                        console.log('🔍 Checking submission for shift:', {
+                          shiftId: shift.id,
+                          shiftBranch: shift.branch_name,
+                          shiftTime: `${shift.start_time}-${shift.end_time}`,
+                          submissionShifts: shifts.map(s => ({
+                            branch: s.branch_preference,
+                            time: `${s.start_time}-${s.end_time}`,
+                            date: s.date
+                          }))
+                        });
+                        
+                        // Check if any shift in the submission matches this shift's time and branch
+                        return shifts.some((submittedShift: any) => 
+                          submittedShift.start_time === shift.start_time && 
+                          submittedShift.end_time === shift.end_time &&
+                          submittedShift.branch_preference === shift.branch_name
+                        );
+                      });
                     const hasConflict = hasShiftConflict(shift);
 
                         return (
