@@ -62,34 +62,56 @@ export const usePublicShifts = () => {
     });
   };
 
-  // Submit shifts via public token
+  // Submit shifts via public token using the new edge function
   const submitShifts = useMutation({
     mutationFn: async ({ tokenId, formData }: { tokenId: string; formData: PublicShiftForm }) => {
       console.log('🔥 Starting submission mutation:', { tokenId, formData });
       
-      const { data, error } = await supabase
-        .from('public_shift_submissions')
-        .insert({
-          token_id: tokenId,
-          employee_name: formData.employee_name,
-          phone: formData.phone,
-          shift_preferences: formData.preferences as any,
-          notes: formData.notes,
-        })
-        .select()
+      // Get the token string from the token ID first
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('shift_submission_tokens')
+        .select('token, week_start_date, week_end_date')
+        .eq('id', tokenId)
         .single();
 
-      console.log('🔥 Submission result:', { data, error });
+      if (tokenError || !tokenData) {
+        throw new Error(`שגיאה בקבלת פרטי הטוקן: ${tokenError?.message}`);
+      }
+
+      // Convert shift preferences to the format expected by the edge function
+      const shifts = formData.preferences.map(pref => ({
+        date: pref.shift_date || '',
+        start_time: pref.start_time,
+        end_time: pref.end_time,
+        branch_preference: pref.branch_name || '',
+        role_preference: pref.role,
+        notes: '', // ShiftPreference doesn't have notes, so use empty string
+        available_shift_id: pref.shift_id
+      }));
+
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke('submit-weekly-shifts', {
+        body: {
+          token: tokenData.token,
+          shifts,
+          week_start_date: tokenData.week_start_date,
+          week_end_date: tokenData.week_end_date,
+          notes: formData.notes
+        }
+      });
+
+      console.log('🔥 Edge function result:', { data, error });
 
       if (error) {
-        console.error('Error submitting shifts:', error);
+        console.error('Error submitting shifts via edge function:', error);
         throw new Error(`שגיאה בהגשת המשמרות: ${error.message}`);
       }
 
-      return {
-        ...data,
-        shift_preferences: data.shift_preferences as any
-      } as PublicShiftSubmission;
+      if (!data?.success) {
+        throw new Error(data?.error || 'שגיאה בהגשת המשמרות');
+      }
+
+      return data.submission;
     },
     onSuccess: (_, { tokenId }) => {
       queryClient.invalidateQueries({ queryKey: ['token-submissions', tokenId] });
