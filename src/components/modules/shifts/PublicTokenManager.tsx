@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEmployees } from '@/hooks/useEmployees';
 import { usePublicShifts } from '@/hooks/usePublicShifts';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-import { Copy, Plus, Calendar, Users, Timer, Eye, User, UsersRound } from 'lucide-react';
+import { Copy, Plus, Calendar, Users, Timer, Eye, User, UsersRound, TrendingDown, AlertTriangle } from 'lucide-react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { TokenSubmissionsList } from './TokenSubmissionsList';
@@ -207,7 +207,7 @@ ${url}
   return (
     <div className="space-y-6" dir="rtl">
       <Tabs defaultValue="single" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="single" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             טוקן אישי
@@ -219,6 +219,10 @@ ${url}
           <TabsTrigger value="existing" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             טוקנים קיימים
+          </TabsTrigger>
+          <TabsTrigger value="unused" className="flex items-center gap-2">
+            <TrendingDown className="h-4 w-4" />
+            טוקנים לא מנוצלים
           </TabsTrigger>
         </TabsList>
 
@@ -560,6 +564,254 @@ ${url}
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* Unused Tokens Tab */}
+        <TabsContent value="unused" className="space-y-6">
+          {(() => {
+            // Filter tokens that are underutilized
+            const underutilizedTokens = existingTokens.filter(token => {
+              const currentSubmissions = token.current_submissions || 0;
+              const maxSubmissions = token.max_submissions || 1;
+              const usagePercentage = (currentSubmissions / maxSubmissions) * 100;
+              
+              // Consider tokens with less than 50% usage as underutilized
+              return usagePercentage < 50 && new Date(token.expires_at) > new Date();
+            });
+
+            const expiredUnusedTokens = existingTokens.filter(token => {
+              const currentSubmissions = token.current_submissions || 0;
+              return currentSubmissions === 0 && new Date(token.expires_at) <= new Date();
+            });
+
+            const activeButUnusedTokens = existingTokens.filter(token => {
+              const currentSubmissions = token.current_submissions || 0;
+              return currentSubmissions === 0 && new Date(token.expires_at) > new Date();
+            });
+
+            return (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="border-orange-200 bg-orange-50">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2">
+                        <TrendingDown className="h-5 w-5 text-orange-600" />
+                        <div>
+                          <p className="text-sm text-orange-600">טוקנים לא מנוצלים במלואם</p>
+                          <p className="text-2xl font-bold text-orange-800">{underutilizedTokens.length}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-red-200 bg-red-50">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                        <div>
+                          <p className="text-sm text-red-600">טוקנים שפגו ללא שימוש</p>
+                          <p className="text-2xl font-bold text-red-800">{expiredUnusedTokens.length}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-yellow-200 bg-yellow-50">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2">
+                        <Timer className="h-5 w-5 text-yellow-600" />
+                        <div>
+                          <p className="text-sm text-yellow-600">טוקנים פעילים ללא שימוש</p>
+                          <p className="text-2xl font-bold text-yellow-800">{activeButUnusedTokens.length}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Underutilized Tokens */}
+                {underutilizedTokens.length > 0 && (
+                  <Card className="border-orange-200">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-orange-800">
+                        <TrendingDown className="h-5 w-5" />
+                        טוקנים לא מנוצלים במלואם ({underutilizedTokens.length})
+                      </CardTitle>
+                      <p className="text-sm text-orange-600">טוקנים שהשימוש בהם נמוך מ-50%</p>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {underutilizedTokens.map((token) => {
+                        const currentSubmissions = token.current_submissions || 0;
+                        const maxSubmissions = token.max_submissions || 1;
+                        const usagePercentage = Math.round((currentSubmissions / maxSubmissions) * 100);
+                        const employee = employees.find(emp => emp.id === token.employee_id);
+
+                        return (
+                          <div key={token.id} className="border rounded-lg p-4 bg-orange-50">
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-purple-500" />
+                                  <span className="font-medium">
+                                    {employee ? `${employee.first_name} ${employee.last_name}` : 'טוקן כללי'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-blue-500" />
+                                  <span className="text-sm">
+                                    {format(new Date(token.week_start_date), 'd/M')} - {format(new Date(token.week_end_date), 'd/M')}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-gray-600">
+                                  <div className="flex items-center gap-1">
+                                    <Users className="h-3 w-3" />
+                                    <span>{currentSubmissions}/{maxSubmissions} הגשות ({usagePercentage}%)</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Timer className="h-3 w-3" />
+                                    <span>פג תוקף: {format(new Date(token.expires_at), 'dd/MM HH:mm')}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyTokenUrl(token.token)}
+                                  className="gap-1"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                  העתק קישור
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Active but unused tokens */}
+                {activeButUnusedTokens.length > 0 && (
+                  <Card className="border-yellow-200">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-yellow-800">
+                        <Timer className="h-5 w-5" />
+                        טוקנים פעילים ללא שימוש ({activeButUnusedTokens.length})
+                      </CardTitle>
+                      <p className="text-sm text-yellow-600">טוקנים שטרם נעשה בהם שימוש אבל עדיין תקפים</p>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {activeButUnusedTokens.map((token) => {
+                        const employee = employees.find(emp => emp.id === token.employee_id);
+                        const daysUntilExpiry = Math.ceil((new Date(token.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
+                        return (
+                          <div key={token.id} className="border rounded-lg p-4 bg-yellow-50">
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-purple-500" />
+                                  <span className="font-medium">
+                                    {employee ? `${employee.first_name} ${employee.last_name}` : 'טוקן כללי'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-blue-500" />
+                                  <span className="text-sm">
+                                    {format(new Date(token.week_start_date), 'd/M')} - {format(new Date(token.week_end_date), 'd/M')}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-gray-600">
+                                  <div className="flex items-center gap-1">
+                                    <AlertTriangle className="h-3 w-3" />
+                                    <span>אף הגשה לא בוצעה</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Timer className="h-3 w-3" />
+                                    <span>{daysUntilExpiry > 0 ? `נותרו ${daysUntilExpiry} ימים` : 'פג תוקף היום'}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyTokenUrl(token.token)}
+                                  className="gap-1"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                  העתק קישור
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Expired unused tokens */}
+                {expiredUnusedTokens.length > 0 && (
+                  <Card className="border-red-200">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-red-800">
+                        <AlertTriangle className="h-5 w-5" />
+                        טוקנים שפגו ללא שימוש ({expiredUnusedTokens.length})
+                      </CardTitle>
+                      <p className="text-sm text-red-600">טוקנים שפג תוקפם מבלי שנעשה בהם שימוש</p>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {expiredUnusedTokens.map((token) => {
+                        const employee = employees.find(emp => emp.id === token.employee_id);
+
+                        return (
+                          <div key={token.id} className="border rounded-lg p-4 bg-red-50">
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-purple-500" />
+                                  <span className="font-medium">
+                                    {employee ? `${employee.first_name} ${employee.last_name}` : 'טוקן כללי'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-blue-500" />
+                                  <span className="text-sm">
+                                    {format(new Date(token.week_start_date), 'd/M')} - {format(new Date(token.week_end_date), 'd/M')}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-gray-600">
+                                  <div className="flex items-center gap-1">
+                                    <AlertTriangle className="h-3 w-3" />
+                                    <span>פג תוקף: {format(new Date(token.expires_at), 'dd/MM/yyyy HH:mm')}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* No unused tokens */}
+                {underutilizedTokens.length === 0 && activeButUnusedTokens.length === 0 && expiredUnusedTokens.length === 0 && (
+                  <Card>
+                    <CardContent className="text-center py-8">
+                      <TrendingDown className="h-12 w-12 mx-auto text-green-400 mb-4" />
+                      <h3 className="text-lg font-medium text-green-600 mb-2">כל הטוקנים מנוצלים היטב!</h3>
+                      <p className="text-green-500">אין טוקנים לא מנוצלים כרגע</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            );
+          })()}
         </TabsContent>
       </Tabs>
     </div>
