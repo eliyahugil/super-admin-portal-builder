@@ -10,7 +10,7 @@ import { Settings, Calendar, RefreshCw, ArrowRightLeft } from 'lucide-react';
 export const AdvancedSchedulingDashboard: React.FC = () => {
   return (
     <div className="w-full h-full flex flex-col overflow-hidden" dir="rtl">
-      <div className="flex-shrink-0 p-3 sm:p-6 border-b bg-white">
+      <div className="flex-shrink-0 px-3 py-2 sm:px-6 sm:py-3 border-b bg-white">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">מערכת סידור מתקדמת</h1>
           <p className="text-sm sm:text-base text-gray-600 mt-1">ניהול חכם ואוטומטי של משמרות עבודה</p>
@@ -19,7 +19,7 @@ export const AdvancedSchedulingDashboard: React.FC = () => {
 
       <div className="flex-1 w-full overflow-hidden bg-gray-50">
         <Tabs defaultValue="auto-scheduling" className="w-full h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 flex-shrink-0 mb-4 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 flex-shrink-0 bg-white shadow-sm">
             <TabsTrigger value="auto-scheduling" className="flex items-center gap-1 text-xs sm:text-sm data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
               <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">סידור אוטומטי</span>
