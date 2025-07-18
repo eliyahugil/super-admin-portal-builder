@@ -90,27 +90,32 @@ export const EmployeeLoginFlow: React.FC = () => {
     );
   }
 
-  // Show authenticated state (either from hook session or updated currentEmployee)
+  // Show authenticated state - redirect to profile instead of showing success screen
   const effectiveSession = session || (currentEmployee && !showBirthDateUpdate ? { employee: currentEmployee, isFirstLogin: false } : null);
   if (effectiveSession && !showBirthDateUpdate) {
+    // Auto-redirect to employee profile
+    const employeeId = effectiveSession.employee.id;
+    if (employeeId) {
+      setTimeout(() => {
+        window.location.href = `/modules/employees/profile/${employeeId}`;
+      }, 500); // Small delay to show the redirect message
+    }
+    
     return (
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="text-center">
           <User className="h-12 w-12 text-green-600 mx-auto mb-4" />
-          <CardTitle className="text-xl text-green-800">מחובר בהצלחה</CardTitle>
+          <CardTitle className="text-xl text-green-800">מעביר לפרופיל האישי</CardTitle>
           <p className="text-sm text-muted-foreground">
             שלום {effectiveSession.employee.first_name} {effectiveSession.employee.last_name}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <h4 className="font-medium text-green-800 mb-2">פרטי החיבור:</h4>
-            <ul className="text-sm text-green-700 space-y-1">
-              <li>• שם: {effectiveSession.employee.first_name} {effectiveSession.employee.last_name}</li>
-              <li>• טלפון: {effectiveSession.employee.phone}</li>
-              <li>• מייל: {effectiveSession.employee.email || 'לא הוגדר'}</li>
-              <li>• סטטוס: מחובר ופעיל</li>
-            </ul>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <p className="text-sm text-green-700">מעביר אותך לפרופיל האישי...</p>
+            </div>
           </div>
           
           <Button 
