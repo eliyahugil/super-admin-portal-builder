@@ -46,16 +46,20 @@ export class WeeklyShiftService {
   }
 
   static async submitWeeklyShifts(token: string, submissionData: WeeklySubmissionData): Promise<WeeklyShiftSubmission> {
-    console.log('📤 Submitting weekly shifts with new system:', submissionData);
+    console.log('📤 Submitting weekly shifts with new system:', { token: token.substring(0, 8) + '...', submissionData });
     
     try {
       // Use the edge function for submission instead of the old token system
       const { supabase } = await import('@/integrations/supabase/client');
+      
+      const requestBody = { 
+        token,
+        ...submissionData 
+      };
+      console.log('📤 Edge function request body:', requestBody);
+      
       const { data, error } = await supabase.functions.invoke('submit-weekly-shifts', {
-        body: { 
-          token,
-          ...submissionData 
-        }
+        body: requestBody
       });
 
       if (error) {

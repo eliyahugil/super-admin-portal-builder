@@ -42,7 +42,8 @@ serve(async (req) => {
       token: token?.substring(0, 8) + '...',
       shiftsCount: shifts?.length,
       weekStart: week_start_date,
-      weekEnd: week_end_date
+      weekEnd: week_end_date,
+      requestBody: { token, shifts, week_start_date, week_end_date, notes, optional_morning_availability }
     })
 
     // Validate token and get context
