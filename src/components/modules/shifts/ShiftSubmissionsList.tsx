@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, User, Calendar, CheckCircle, AlertCircle, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Clock, User, Calendar, CheckCircle, AlertCircle, FileText, ChevronDown, ChevronUp, Edit, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
 
 export const ShiftSubmissionsList: React.FC = () => {
   const { businessId } = useCurrentBusiness();
@@ -56,6 +58,40 @@ export const ShiftSubmissionsList: React.FC = () => {
 
     fetchSubmissions();
   }, [businessId]);
+
+  const deleteSubmission = async (submissionId: string) => {
+    if (!confirm('האם אתה בטוח שברצונך למחוק את ההגשה לחלוטין? פעולה זו לא ניתנת לביטול.')) {
+      return;
+    }
+
+    try {
+      const supabase = createClient('https://xmhmztipuvzmwgbcovch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtaG16dGlwdXZ6bXdnYmNvdmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMjkzODIsImV4cCI6MjA2NDcwNTM4Mn0.QEugxUTGlJ1rnG8ddf3E6BIpNaiqwkp2ml7MbiUfY9c');
+      
+      const { error } = await supabase
+        .from('shift_submissions')
+        .delete()
+        .eq('id', submissionId);
+
+      if (error) {
+        console.error('Error deleting submission:', error);
+        toast.error('שגיאה במחיקת ההגשה');
+      } else {
+        toast.success('ההגשה נמחקה בהצלחה');
+        // Refresh submissions list
+        setSubmissions(prev => prev.filter(s => s.id !== submissionId));
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      toast.error('שגיאה במחיקת ההגשה');
+    }
+  };
+
+  const editSubmission = (submissionId: string) => {
+    // TODO: Navigate to edit page or open edit dialog
+    toast.info('עריכת הגשה - בפיתוח');
+    // For now, we'll just show an info message
+    // In the future, this should navigate to an edit form or open a dialog
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -219,6 +255,28 @@ export const ShiftSubmissionsList: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Action buttons */}
+            <div className="flex gap-2 pt-3 border-t border-border/50">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50"
+                onClick={() => editSubmission(submission.id)}
+              >
+                <Edit className="h-4 w-4 ml-1" />
+                ערוך
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                onClick={() => deleteSubmission(submission.id)}
+              >
+                <Trash2 className="h-4 w-4 ml-1" />
+                מחק
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -368,6 +426,28 @@ export const ShiftSubmissionsList: React.FC = () => {
                           </div>
                         </div>
                       )}
+                    </div>
+
+                    {/* Action buttons for desktop */}
+                    <div className="flex gap-2 pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                        onClick={() => editSubmission(submission.id)}
+                      >
+                        <Edit className="h-4 w-4 ml-1" />
+                        ערוך הגשה
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={() => deleteSubmission(submission.id)}
+                      >
+                        <Trash2 className="h-4 w-4 ml-1" />
+                        מחק הגשה
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
