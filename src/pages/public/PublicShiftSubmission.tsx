@@ -103,6 +103,13 @@ const PublicShiftSubmission: React.FC = () => {
           return;
         }
 
+        console.log('🕐 Raw shifts from database:', shifts?.map(s => ({
+          id: s.id,
+          start_time: s.start_time,
+          end_time: s.end_time,
+          display: `${s.start_time}-${s.end_time}`
+        })));
+
         // Helper function to determine shift type based on start time
         const getShiftTypeFromTime = (startTime: string) => {
           const hour = parseInt(startTime.split(':')[0]);
@@ -187,7 +194,7 @@ const PublicShiftSubmission: React.FC = () => {
          console.log('📊 All shifts details:', shifts?.map(s => ({
            id: s.id, 
            date: s.shift_date, 
-           time: `${s.start_time}-${s.end_time}`, 
+            time: `${s.start_time}-${s.end_time}`,
            status: s.status,
            employee_id: s.employee_id,
            role: s.role,
