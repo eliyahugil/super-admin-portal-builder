@@ -928,22 +928,38 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                         📍 {branchName}
                                       </p>
                                       
-                                      {/* Show only regular submissions in this tooltip */}
-                                      <div>
-                                        <p className="text-xs text-blue-700 font-medium mb-1">📋 הגשות רגילות:</p>
-                                        <ul className="text-xs space-y-1 mr-4">
-                                          {regularSubmissions.map((submission, index) => {
-                                            const shifts = typeof submission.shifts === 'string' 
-                                              ? JSON.parse(submission.shifts) 
-                                              : submission.shifts || [];
-                                            return shifts.map((shift: any, shiftIndex: number) => (
-                                              <li key={`${index}-${shiftIndex}`} className="text-blue-600">
-                                                • {submission.employees?.first_name} - {shift.role_preference || 'ללא תפקיד'} ({shift.start_time}-{shift.end_time})
-                                              </li>
-                                            ));
-                                          })}
-                                        </ul>
-                                      </div>
+                                       {/* Enhanced detailed regular submissions info */}
+                                       <div>
+                                         <p className="text-xs text-blue-700 font-medium mb-1">📋 הגשות רגילות:</p>
+                                         <ul className="text-xs space-y-2 mr-4">
+                                           {regularSubmissions.map((submission, index) => {
+                                             const shifts = typeof submission.shifts === 'string' 
+                                               ? JSON.parse(submission.shifts) 
+                                               : submission.shifts || [];
+                                             const employee = submission.employees;
+                                             return shifts.map((shift: any, shiftIndex: number) => (
+                                               <li key={`${index}-${shiftIndex}`} className="bg-blue-50 p-2 rounded border">
+                                                 <div className="font-medium text-blue-800">
+                                                   👤 {employee?.first_name} {employee?.last_name}
+                                                 </div>
+                                                 <div className="text-blue-600 text-xs mt-1">
+                                                   🕐 {shift.start_time}-{shift.end_time} | 💼 {shift.role_preference || 'ללא תפקיד מוגדר'}
+                                                 </div>
+                                                 <div className="text-blue-500 text-xs">
+                                                   📞 {employee?.phone || 'ללא טלפון'} | 
+                                                   ⚡ סוג: {employee?.employee_type || 'רגיל'} |
+                                                   🎯 זמין: {shift.available_days ? 'כן' : 'לא מוגדר'}
+                                                 </div>
+                                                 {employee?.weekly_hours_required && (
+                                                   <div className="text-blue-500 text-xs">
+                                                     ⏰ שעות שבועיות נדרשות: {employee.weekly_hours_required}
+                                                   </div>
+                                                 )}
+                                               </li>
+                                             ));
+                                           })}
+                                         </ul>
+                                       </div>
                                     </div>
                                   ))
                                 ) : (
@@ -978,23 +994,40 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                 // Show only special submissions in tooltip
                                 const specialSubmissions = getPendingSubmissionsForDate(date, 'special');
                                 
-                                return specialSubmissions.length > 0 ? (
-                                  <div>
-                                    <p className="text-xs text-purple-700 font-medium mb-1">⭐ הגשות מיוחדות:</p>
-                                    <ul className="text-xs space-y-1 mr-4">
-                                      {specialSubmissions.map((submission, index) => {
-                                        const shifts = typeof submission.shifts === 'string' 
-                                          ? JSON.parse(submission.shifts) 
-                                          : submission.shifts || [];
-                                        return shifts.map((shift: any, shiftIndex: number) => (
-                                          <li key={`${index}-${shiftIndex}`} className="text-purple-600">
-                                            • {submission.employees?.first_name} - {shift.role_preference || 'ללא תפקיד'} ({shift.start_time}-{shift.end_time})
-                                            <span className="text-xs text-purple-500 mr-2">({submission.submission_type})</span>
-                                          </li>
-                                        ));
-                                      })}
-                                    </ul>
-                                  </div>
+                                 return specialSubmissions.length > 0 ? (
+                                   <div>
+                                     <p className="text-xs text-purple-700 font-medium mb-1">⭐ הגשות מיוחדות:</p>
+                                     <ul className="text-xs space-y-2 mr-4">
+                                       {specialSubmissions.map((submission, index) => {
+                                         const shifts = typeof submission.shifts === 'string' 
+                                           ? JSON.parse(submission.shifts) 
+                                           : submission.shifts || [];
+                                         const employee = submission.employees;
+                                         return shifts.map((shift: any, shiftIndex: number) => (
+                                           <li key={`${index}-${shiftIndex}`} className="bg-purple-50 p-2 rounded border border-purple-200">
+                                             <div className="font-medium text-purple-800">
+                                               ⭐ {employee?.first_name} {employee?.last_name}
+                                             </div>
+                                             <div className="text-purple-600 text-xs mt-1">
+                                               🕐 {shift.start_time}-{shift.end_time} | 💼 {shift.role_preference || 'ללא תפקיד מוגדר'}
+                                             </div>
+                                             <div className="text-purple-500 text-xs">
+                                               📞 {employee?.phone || 'ללא טלפון'} | 
+                                               ⚡ סוג: {employee?.employee_type || 'רגיל'}
+                                             </div>
+                                             <div className="text-purple-600 text-xs font-medium bg-purple-100 px-2 py-1 rounded mt-1">
+                                               🌟 משמרת מיוחדת - לא הסוג הרגיל של העובד
+                                             </div>
+                                             {employee?.weekly_hours_required && (
+                                               <div className="text-purple-500 text-xs">
+                                                 ⏰ שעות שבועיות נדרשות: {employee.weekly_hours_required}
+                                               </div>
+                                             )}
+                                           </li>
+                                         ));
+                                       })}
+                                     </ul>
+                                   </div>
                                 ) : (
                                   <p className="text-xs text-gray-500">אין הגשות מיוחדות</p>
                                 );
