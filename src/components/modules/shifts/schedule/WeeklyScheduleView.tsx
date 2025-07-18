@@ -50,6 +50,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   const [isPublishing, setIsPublishing] = useState(false);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [showPriorityManager, setShowPriorityManager] = useState(false);
+  const [openSubmissionsPopover, setOpenSubmissionsPopover] = useState<string | null>(null);
   
   // Filters state - load from localStorage if available
   const [filters, setFilters] = useState<ShiftFilters>(() => {
@@ -669,21 +670,32 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                      });
                     const hasConflict = hasShiftConflict(shift);
 
-                      return (
-                       <ShiftSubmissionsPopover 
-                         key={shift.id}
-                         submissions={pendingSubmissions}
-                         targetDate={date}
-                         shifts={shifts}
-                         currentShift={shift}
-                         onAssignEmployee={(employeeId) => onShiftUpdate(shift.id, { employee_id: employeeId })}
-                       >
-                         <div
-                           className={`relative group p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all ${
-                             hasConflict ? 'border-red-300 bg-red-50' : ''
-                           } ${isSelectionMode && isShiftSelected(shift) ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300' : ''}`}
-                           onClick={(e) => handleShiftCardClick(shift, e)}
-                         >
+                        return (
+                        <ShiftSubmissionsPopover 
+                          key={shift.id}
+                          submissions={pendingSubmissions}
+                          targetDate={date}
+                          shifts={shifts}
+                          currentShift={shift}
+                          onAssignEmployee={(employeeId) => onShiftUpdate(shift.id, { employee_id: employeeId })}
+                          isOpen={openSubmissionsPopover === shift.id}
+                          onOpenChange={(open) => setOpenSubmissionsPopover(open ? shift.id : null)}
+                        >
+                          <div
+                            className={`relative group p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all ${
+                              hasConflict ? 'border-red-300 bg-red-50' : ''
+                            } ${isSelectionMode && isShiftSelected(shift) ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300' : ''}`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              // Open submissions popover if there are submissions, otherwise handle normal click
+                              if (shiftSubmissions.length > 0) {
+                                setOpenSubmissionsPopover(openSubmissionsPopover === shift.id ? null : shift.id);
+                              } else {
+                                handleShiftCardClick(shift, e);
+                              }
+                            }}
+                          >
                           {/* Delete button - appears on hover */}
                           <Button
                             size="sm"

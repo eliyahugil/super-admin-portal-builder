@@ -43,6 +43,8 @@ interface ShiftSubmissionsPopoverProps {
   shifts: any[]; // All shifts to check for conflicts
   currentShift: any; // The shift we're showing submissions for
   onAssignEmployee?: (employeeId: string) => void;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = ({
@@ -51,7 +53,9 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
   targetDate,
   shifts,
   currentShift,
-  onAssignEmployee
+  onAssignEmployee,
+  isOpen,
+  onOpenChange
 }) => {
   // Filter submissions for the specific date, branch and shift times
   const relevantShifts = useMemo(() => {
@@ -146,7 +150,7 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
   }
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         {children}
       </PopoverTrigger>
