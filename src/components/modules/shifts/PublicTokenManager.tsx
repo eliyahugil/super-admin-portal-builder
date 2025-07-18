@@ -7,17 +7,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { usePublicShifts } from '@/hooks/usePublicShifts';
 import { useBusiness } from '@/hooks/useBusiness';
-import { Copy, Plus, Calendar, Users, Timer } from 'lucide-react';
+import { Copy, Plus, Calendar, Users, Timer, Eye } from 'lucide-react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { TokenSubmissionsList } from './TokenSubmissionsList';
 
 export const PublicTokenManager: React.FC = () => {
   const { toast } = useToast();
   const { businessId } = useBusiness();
-  const { generateToken } = usePublicShifts();
+  const { generateToken, useBusinessTokens } = usePublicShifts();
+  const { data: existingTokens = [] } = useBusinessTokens(businessId || '');
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [newToken, setNewToken] = useState<string | null>(null);
+  const [selectedTokenForView, setSelectedTokenForView] = useState<string | null>(null);
   
   const [tokenForm, setTokenForm] = useState({
     weekOffset: 0, // 0 = this week, 1 = next week, etc.
@@ -156,6 +159,9 @@ ${url}
               value={tokenForm.maxSubmissions}
               onChange={(e) => setTokenForm(prev => ({ ...prev, maxSubmissions: parseInt(e.target.value) || 50 }))}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              מספר העובדים המקסימלי שיוכלו להגיש משמרות באמצעות הטוקן הזה. זה מונע ספאם ומגביל את מספר ההגשות.
+            </p>
           </div>
 
           {/* Generate Button */}
@@ -235,14 +241,91 @@ ${url}
       {/* Instructions */}
       <Card>
         <CardHeader>
+          <CardTitle>הסבר על מספר הגשות מקסימלי</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-gray-600 space-y-2">
+          <p><strong>מספר הגשות מקסימלי</strong> הוא המספר המקסימלי של עובדים שיוכלו להגיש משמרות באמצעות הטוקן.</p>
+          <p>• <strong>למה זה חשוב?</strong> מונע ספאם ומגביל את מספר ההגשות לטוקן אחד</p>
+          <p>• <strong>דוגמה:</strong> אם יש לך 20 עובדים ואתה רוצה לקבל הגשות מכולם, הגדר 20-25 כמספר מקסימלי</p>
+          <p>• <strong>המלצה:</strong> הגדר מספר מעט גבוה מהמספר הצפוי כדי לא לחסום עובדים</p>
+          <p>• לאחר שהטוקן מגיע למספר ההגשות המקסימלי, הוא לא יקבל יותר הגשות</p>
+        </CardContent>
+      </Card>
+
+      {/* Existing Tokens */}
+      {existingTokens.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              טוקנים קיימים ({existingTokens.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {existingTokens.map((token) => (
+              <div key={token.id} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-blue-500" />
+                      <span className="font-medium">
+                        שבוע {format(new Date(token.week_start_date), 'd/M')} - {format(new Date(token.week_end_date), 'd/M')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <Timer className="h-3 w-3" />
+                        <span>פג תוקף: {format(new Date(token.expires_at), 'dd/MM/yyyy HH:mm')}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        <span>{token.current_submissions || 0}/{token.max_submissions || 50} הגשות</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedTokenForView(selectedTokenForView === token.id ? null : token.id)}
+                      className="gap-1"
+                    >
+                      <Eye className="h-3 w-3" />
+                      {selectedTokenForView === token.id ? 'הסתר' : 'הצג'} הגשות
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyTokenUrl(token.token)}
+                      className="gap-1"
+                    >
+                      <Copy className="h-3 w-3" />
+                      העתק קישור
+                    </Button>
+                  </div>
+                </div>
+                
+                {selectedTokenForView === token.id && (
+                  <div className="mt-4">
+                    <TokenSubmissionsList tokenId={token.id} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Instructions */}
+      <Card>
+        <CardHeader>
           <CardTitle>הוראות שימוש</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-gray-600 space-y-2">
           <p>• הטוקן הציבורי מאפשר לעובדים להגיש משמרות ללא התחברות למערכת</p>
           <p>• ניתן לשתף את הקישור ב-WhatsApp או להעתיק אותו</p>
-          <p>• הטוקן יפוג לאחר מספר הימים שנקבע</p>
-          <p>• ניתן לקבוע מספר הגשות מקסימלי למניעת ספאם</p>
-          <p>• כל ההגשות יופיעו במערכת לאישור</p>
+          <p>• הטוקן יפוג לאחר מספר הימים שנקבע או כשמגיעים למספר ההגשות המקסימלי</p>
+          <p>• כל ההגשות יופיעו כאן ובמערכת לאישור והטמעה ללוח הזמנים</p>
         </CardContent>
       </Card>
     </div>

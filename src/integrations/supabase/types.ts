@@ -3319,6 +3319,56 @@ export type Database = {
           },
         ]
       }
+      public_shift_submissions: {
+        Row: {
+          email: string | null
+          employee_name: string
+          id: string
+          is_processed: boolean | null
+          notes: string | null
+          phone: string | null
+          processed_at: string | null
+          processed_by: string | null
+          shift_preferences: Json
+          submitted_at: string | null
+          token_id: string
+        }
+        Insert: {
+          email?: string | null
+          employee_name: string
+          id?: string
+          is_processed?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          shift_preferences: Json
+          submitted_at?: string | null
+          token_id: string
+        }
+        Update: {
+          email?: string | null
+          employee_name?: string
+          id?: string
+          is_processed?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          shift_preferences?: Json
+          submitted_at?: string | null
+          token_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_shift_submissions_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "shift_submission_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_shifts: {
         Row: {
           branch_id: string | null
@@ -3627,6 +3677,66 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_submission_tokens: {
+        Row: {
+          business_id: string
+          created_at: string | null
+          current_submissions: number | null
+          employee_id: string | null
+          expires_at: string
+          id: string
+          is_active: boolean | null
+          max_submissions: number | null
+          token: string
+          updated_at: string | null
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string | null
+          current_submissions?: number | null
+          employee_id?: string | null
+          expires_at: string
+          id?: string
+          is_active?: boolean | null
+          max_submissions?: number | null
+          token: string
+          updated_at?: string | null
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string | null
+          current_submissions?: number | null
+          employee_id?: string | null
+          expires_at?: string
+          id?: string
+          is_active?: boolean | null
+          max_submissions?: number | null
+          token?: string
+          updated_at?: string | null
+          week_end_date?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_submission_tokens_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_submission_tokens_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
