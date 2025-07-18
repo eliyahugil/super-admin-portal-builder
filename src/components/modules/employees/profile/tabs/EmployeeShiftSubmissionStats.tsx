@@ -68,7 +68,7 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
     enabled: !!employeeId,
   });
 
-  // Calculate statistics
+  // Calculate statistics based on real submission data
   const calculateStats = (submissions: ShiftSubmissionStat[]): SubmissionStats => {
     if (!submissions || submissions.length === 0) {
       return {
@@ -86,41 +86,49 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
     const pending = submissions.filter(s => s.status === 'pending').length;
     const rejected = submissions.filter(s => s.status === 'rejected').length;
     
-    // Calculate total shifts requested
+    // Calculate total unique shifts requested (group by date + time, not by branch)
     const totalShifts = submissions.reduce((acc, submission) => {
-      if (!submission.shifts) return acc;
+      if (!submission.shifts || !Array.isArray(submission.shifts)) return acc;
       
-      if (Array.isArray(submission.shifts)) {
-        return acc + submission.shifts.length;
-      }
+      // Group shifts by date and time to count unique shifts (ignoring different branches)
+      const uniqueShifts = new Map();
       
-      if (typeof submission.shifts === 'object') {
-        return acc + Object.keys(submission.shifts).length;
-      }
+      submission.shifts.forEach((shift: any) => {
+        if (shift.date && shift.start_time && shift.end_time) {
+          const shiftKey = `${shift.date}_${shift.start_time}_${shift.end_time}`;
+          uniqueShifts.set(shiftKey, shift);
+        }
+      });
       
-      return acc;
+      return acc + uniqueShifts.size;
     }, 0);
 
-    // Calculate weeks available (assume last 12 weeks for rate calculation)
-    const weeksToCheck = 12;
-    const submissionRate = Math.round((submissions.length / weeksToCheck) * 100);
+    // Calculate weeks available for submission rate
+    const weeksToCheck = submissions.length > 0 ? 12 : 0;
+    const submissionRate = weeksToCheck > 0 ? Math.round((submissions.length / weeksToCheck) * 100) : 0;
 
     // Find most recent submission
     const lastSubmission = submissions.length > 0 
       ? new Date(submissions.sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())[0].submitted_at)
       : undefined;
 
-    // Find most active week (most shifts requested)
+    // Find most active week (most unique shifts requested)
     let mostActiveWeek = '';
     let maxShifts = 0;
     
     submissions.forEach(submission => {
-      let shiftsCount = 0;
-      if (Array.isArray(submission.shifts)) {
-        shiftsCount = submission.shifts.length;
-      } else if (typeof submission.shifts === 'object' && submission.shifts) {
-        shiftsCount = Object.keys(submission.shifts).length;
-      }
+      if (!submission.shifts || !Array.isArray(submission.shifts)) return;
+      
+      // Count unique shifts in this submission
+      const uniqueShifts = new Map();
+      submission.shifts.forEach((shift: any) => {
+        if (shift.date && shift.start_time && shift.end_time) {
+          const shiftKey = `${shift.date}_${shift.start_time}_${shift.end_time}`;
+          uniqueShifts.set(shiftKey, shift);
+        }
+      });
+      
+      const shiftsCount = uniqueShifts.size;
       
       if (shiftsCount > maxShifts) {
         maxShifts = shiftsCount;
@@ -320,8 +328,20 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-xs">
-                      {Array.isArray(submission.shifts) ? submission.shifts.length : 
-                       (typeof submission.shifts === 'object' && submission.shifts ? Object.keys(submission.shifts).length : 0)} משמרות
+                      {(() => {
+                        if (!submission.shifts || !Array.isArray(submission.shifts)) return '0 משמרות';
+                        
+                        // Count unique shifts by date + time
+                        const uniqueShifts = new Map();
+                        submission.shifts.forEach((shift: any) => {
+                          if (shift.date && shift.start_time && shift.end_time) {
+                            const shiftKey = `${shift.date}_${shift.start_time}_${shift.end_time}`;
+                            uniqueShifts.set(shiftKey, shift);
+                          }
+                        });
+                        
+                        return `${uniqueShifts.size} משמרות`;
+                      })()}
                     </Badge>
                     {submission.status === 'approved' && <Badge variant="default" className="bg-green-100 text-green-800 text-xs">מאושר</Badge>}
                     {submission.status === 'pending' && <Badge variant="secondary" className="text-xs">המתנה</Badge>}

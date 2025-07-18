@@ -77,15 +77,20 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
   };
 
   const formatShifts = (shifts: any) => {
-    if (!shifts || typeof shifts !== 'object') return 'לא הוגדר';
+    if (!shifts || !Array.isArray(shifts)) return 'לא הוגדר';
     
-    if (Array.isArray(shifts)) {
-      return shifts.length > 0 ? `${shifts.length} משמרות` : 'אין משמרות';
-    }
+    // Count unique shifts by date + time (ignoring different branches)
+    const uniqueShifts = new Map();
     
-    // If it's an object, try to count properties or show relevant info
-    const keys = Object.keys(shifts);
-    return keys.length > 0 ? `${keys.length} משמרות` : 'אין משמרות';
+    shifts.forEach((shift: any) => {
+      if (shift.date && shift.start_time && shift.end_time) {
+        const shiftKey = `${shift.date}_${shift.start_time}_${shift.end_time}`;
+        uniqueShifts.set(shiftKey, shift);
+      }
+    });
+    
+    const uniqueCount = uniqueShifts.size;
+    return uniqueCount > 0 ? `${uniqueCount} משמרות` : 'אין משמרות';
   };
 
   if (isLoading) {
