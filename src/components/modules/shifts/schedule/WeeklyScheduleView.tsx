@@ -197,10 +197,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   const getPendingSubmissionsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     return pendingSubmissions.filter(submission => {
-      const shifts = typeof submission.shifts === 'string' 
-        ? JSON.parse(submission.shifts) 
-        : submission.shifts || [];
-      return shifts.some((shift: any) => shift.date === dateStr);
+      return submission.shift_date === dateStr;
     });
   };
 
@@ -654,46 +651,21 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 <div className="space-y-1">
                   {dayShifts.map((shift) => {
                     // Get submissions for this specific shift
-                    const getSubmissionsForShift = () => {
-                      const dateStr = date.toISOString().split('T')[0];
-                      return pendingSubmissions.filter(submission => {
-                        const shifts = typeof submission.shifts === 'string' 
-                          ? JSON.parse(submission.shifts) 
-                          : submission.shifts || [];
-                        return shifts.some((s: any) => 
-                          s.date === dateStr && 
-                          s.start_time === shift.start_time && 
-                          s.end_time === shift.end_time &&
-                          s.branch_preference === shift.branch_name
-                        );
-                      }).map(submission => {
-                        const shifts = typeof submission.shifts === 'string' 
-                          ? JSON.parse(submission.shifts) 
-                          : submission.shifts || [];
-                        const relevantShift = shifts.find((s: any) => 
-                          s.date === dateStr && 
-                          s.start_time === shift.start_time && 
-                          s.end_time === shift.end_time &&
-                          s.branch_preference === shift.branch_name
-                        );
-                        return {
-                          ...submission,
-                          employeeName: getEmployeeName(submission.employee_id),
-                          role: relevantShift?.role_preference || 'ללא תפקיד',
-                          isCurrentlyAssigned: shift.employee_id === submission.employee_id
-                        };
-                      });
-                    };
-
-                    const shiftSubmissions = getSubmissionsForShift();
+                    const shiftSubmissions = getPendingSubmissionsForDate(date).filter(submission => {
+                      // Check if submission matches shift time and branch
+                      return submission.start_time === shift.start_time && 
+                             submission.end_time === shift.end_time &&
+                             (!submission.branch_preference || submission.branch_preference === shift.branch_name);
+                    });
                     const hasConflict = hasShiftConflict(shift);
 
-                     return (
+                      return (
                        <ShiftSubmissionsPopover 
                          key={shift.id}
                          submissions={pendingSubmissions}
                          targetDate={date}
                          shiftId={shift.id}
+                         onAssignEmployee={(employeeId) => onShiftUpdate(shift.id, { employee_id: employeeId })}
                        >
                          <div
                            className={`relative group p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all ${
