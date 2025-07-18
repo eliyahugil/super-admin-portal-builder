@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useEmployees } from '@/hooks/useEmployees';
 import { usePublicShifts } from '@/hooks/usePublicShifts';
 import { useBusiness } from '@/hooks/useBusiness';
-import { Copy, Plus, Calendar, Users, Timer, Eye } from 'lucide-react';
+import { Copy, Plus, Calendar, Users, Timer, Eye, User } from 'lucide-react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { TokenSubmissionsList } from './TokenSubmissionsList';
@@ -15,6 +16,7 @@ import { TokenSubmissionsList } from './TokenSubmissionsList';
 export const PublicTokenManager: React.FC = () => {
   const { toast } = useToast();
   const { businessId } = useBusiness();
+  const { data: employees = [] } = useEmployees();
   const { generateToken, useBusinessTokens } = usePublicShifts();
   const { data: existingTokens = [] } = useBusinessTokens(businessId || '');
   
@@ -23,9 +25,10 @@ export const PublicTokenManager: React.FC = () => {
   const [selectedTokenForView, setSelectedTokenForView] = useState<string | null>(null);
   
   const [tokenForm, setTokenForm] = useState({
+    employeeId: '',
     weekOffset: 0, // 0 = this week, 1 = next week, etc.
     expiryDays: 7,
-    maxSubmissions: 50,
+    maxSubmissions: 1, // אישי - רק הגשה אחת לעובד
   });
 
   const getWeekDates = (offset: number = 0) => {
@@ -53,6 +56,7 @@ export const PublicTokenManager: React.FC = () => {
       
       const result = await generateToken.mutateAsync({
         business_id: businessId,
+        employee_id: tokenForm.employeeId,
         week_start_date: format(start, 'yyyy-MM-dd'),
         week_end_date: format(end, 'yyyy-MM-dd'),
         expires_at: expiresAt.toISOString(),
@@ -88,11 +92,13 @@ export const PublicTokenManager: React.FC = () => {
 
   const shareViaWhatsApp = (token: string) => {
     const url = `${window.location.origin}/public/shift-submission/${token}`;
+    const selectedEmployee = employees.find(emp => emp.id === tokenForm.employeeId);
     const { start, end } = getWeekDates(tokenForm.weekOffset);
     
-    const message = `🕐 הגשת משמרות - שבוע ${format(start, 'd/M', { locale: he })} - ${format(end, 'd/M', { locale: he })}
+    const message = `🕐 הגשת משמרות אישית - ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}
+שבוע ${format(start, 'd/M', { locale: he })} - ${format(end, 'd/M', { locale: he })}
 
-🎯 לחץ על הקישור להגשת המשמרות שלך:
+🎯 שלום ${selectedEmployee?.first_name}, לחץ על הקישור להגשת המשמרות שלך:
 ${url}
 
 ⏰ חשוב להגיש עד: ${format(addDays(new Date(), tokenForm.expiryDays), 'dd/MM/yyyy HH:mm', { locale: he })}
@@ -111,11 +117,32 @@ ${url}
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
-            יצירת טוקן ציבורי חדש
+            יצירת טוקן אישי לעובד
           </CardTitle>
+          <p className="text-sm text-gray-600">צור טוקן אישי לעובד ספציפי לביצוע הגשת משמרות</p>
         </CardHeader>
         
         <CardContent className="space-y-4">
+          {/* Employee Selection */}
+          <div>
+            <Label>בחר עובד</Label>
+            <Select
+              value={tokenForm.employeeId}
+              onValueChange={(value) => setTokenForm(prev => ({ ...prev, employeeId: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="בחר עובד..." />
+              </SelectTrigger>
+              <SelectContent>
+                {employees.map((employee) => (
+                  <SelectItem key={employee.id} value={employee.id}>
+                    {employee.first_name} {employee.last_name} - {employee.employee_type || 'עובד כללי'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Week Selection */}
           <div>
             <Label>בחר שבוע</Label>
@@ -155,22 +182,22 @@ ${url}
               id="maxSubmissions"
               type="number"
               min="1"
-              max="200"
+              max="5"
               value={tokenForm.maxSubmissions}
-              onChange={(e) => setTokenForm(prev => ({ ...prev, maxSubmissions: parseInt(e.target.value) || 50 }))}
+              onChange={(e) => setTokenForm(prev => ({ ...prev, maxSubmissions: parseInt(e.target.value) || 1 }))}
             />
             <p className="text-xs text-gray-500 mt-1">
-              מספר העובדים המקסימלי שיוכלו להגיש משמרות באמצעות הטוקן הזה. זה מונע ספאם ומגביל את מספר ההגשות.
+              לטוקן אישי, בדרך כלל 1 הגשה לעובד. ניתן להגדיר יותר אם אתה רוצה לאפשר תיקונים.
             </p>
           </div>
 
           {/* Generate Button */}
           <Button
             onClick={handleGenerateToken}
-            disabled={isGenerating || !businessId}
+            disabled={isGenerating || !businessId || !tokenForm.employeeId}
             className="w-full"
           >
-            {isGenerating ? 'יוצר טוקן...' : 'צור טוקן ציבורי'}
+            {isGenerating ? 'יוצר טוקן...' : 'צור טוקן אישי לעובד'}
           </Button>
         </CardContent>
       </Card>
@@ -265,13 +292,19 @@ ${url}
             {existingTokens.map((token) => (
               <div key={token.id} className="border rounded-lg p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-blue-500" />
-                      <span className="font-medium">
-                        שבוע {format(new Date(token.week_start_date), 'd/M')} - {format(new Date(token.week_end_date), 'd/M')}
-                      </span>
-                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-purple-500" />
+                        <span className="font-medium">
+                          {employees.find(emp => emp.id === token.employee_id)?.first_name} {employees.find(emp => emp.id === token.employee_id)?.last_name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-blue-500" />
+                        <span className="font-medium">
+                          שבוע {format(new Date(token.week_start_date), 'd/M')} - {format(new Date(token.week_end_date), 'd/M')}
+                        </span>
+                      </div>
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <Timer className="h-3 w-3" />
@@ -322,8 +355,10 @@ ${url}
           <CardTitle>הוראות שימוש</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-gray-600 space-y-2">
-          <p>• הטוקן הציבורי מאפשר לעובדים להגיש משמרות ללא התחברות למערכת</p>
-          <p>• ניתן לשתף את הקישור ב-WhatsApp או להעתיק אותו</p>
+          <p>• <strong>טוקן אישי:</strong> כל עובד מקבל טוקן ייחודי המותאם לסוג המשמרת שלו</p>
+          <p>• <strong>הצגה מותאמת:</strong> העובד יראה רק משמרות רלוונטיות לפי סוג העובד (בוקר/ערב/לילה)</p>
+          <p>• <strong>מידע אישי:</strong> הפרטים האישיים של העובד יטענו אוטומטית מהמערכת</p>
+          <p>• ניתן לשתף את הקישור ב-WhatsApp ישירות לעובד הספציפי</p>
           <p>• הטוקן יפוג לאחר מספר הימים שנקבע או כשמגיעים למספר ההגשות המקסימלי</p>
           <p>• כל ההגשות יופיעו כאן ובמערכת לאישור והטמעה ללוח הזמנים</p>
         </CardContent>
