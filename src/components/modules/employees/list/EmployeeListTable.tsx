@@ -67,13 +67,8 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
   if (isMobile) {
     return (
       <div 
-        className="w-full" 
+        className="w-full bg-background pb-4 px-2" 
         dir="rtl"
-        style={{
-          minWidth: 0,
-          maxWidth: '100%',
-          overflowX: 'hidden'
-        }}
       >
         <div className="flex items-center justify-between mb-4 px-1 py-3 bg-muted/30 rounded-lg">
           <label className="flex items-center gap-2 text-sm font-medium">
@@ -115,9 +110,9 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
 
   // Desktop view: table - הנתונים כבר ממוינים לכן אין צורך למיין שוב
   return (
-    <div dir="rtl" className="overflow-x-auto w-full">
-      <Table className="min-w-[750px] sm:min-w-full">
-        <TableHeader>
+    <div dir="rtl" className="overflow-x-auto w-full bg-background">
+      <Table className="min-w-[750px] sm:min-w-full bg-card">
+        <TableHeader className="bg-muted/30">
           <TableRow dir="rtl">
             <TableHead className="w-12 text-right">
               <Checkbox

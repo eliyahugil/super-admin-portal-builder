@@ -54,7 +54,7 @@ export const EmployeesMobileCard: React.FC<EmployeesMobileCardProps> = ({
   const isActive = employee.is_active ?? true;
 
   return (
-    <Card className="w-full shadow-sm hover:shadow-md transition-shadow">
+    <Card className="w-full shadow-sm hover:shadow-md transition-shadow bg-card border-border">
       <CardContent className="p-4" dir="rtl">
         {/* Header with name and status */}
         <div className="flex items-start justify-between mb-3">
