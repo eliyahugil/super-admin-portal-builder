@@ -50,8 +50,12 @@ export const EmployeeLoginFlow: React.FC = () => {
       setCurrentEmployee(result.employee);
       setShowBirthDateUpdate(true);
     } else if (result.success) {
-      // Successful login, redirect or refresh
-      window.location.reload();
+      // Successful login, navigate to employee profile
+      if (result.employee?.id) {
+        window.location.href = `/modules/employees/profile/${result.employee.id}`;
+      } else {
+        window.location.reload();
+      }
     }
   };
 
@@ -62,10 +66,9 @@ export const EmployeeLoginFlow: React.FC = () => {
     setCurrentEmployee(updatedEmployee);
     setShowBirthDateUpdate(false);
     
-    // Force a page refresh or navigate to the employee profile
-    // This ensures the user sees their updated information
+    // Navigate to the employee's profile page
     setTimeout(() => {
-      window.location.reload();
+      window.location.href = `/modules/employees/profile/${updatedEmployee.id}`;
     }, 1000);
   };
 
