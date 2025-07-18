@@ -59,7 +59,8 @@ export const useShiftScheduleData = (businessId: string | null) => {
 
       return (data || []).map(shift => ({
         ...shift,
-        status: parseStatus(shift.status)
+        status: parseStatus(shift.status),
+        branch_name: shift.branch?.name || 'ללא סניף'
       }));
     },
     enabled: !!businessId,
