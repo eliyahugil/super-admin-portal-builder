@@ -349,14 +349,18 @@ export const ResponsiveShiftSchedule: React.FC = () => {
               תבניות משמרות
             </Button>
             
-            {/* Auto Schedule Assistant */}
-            <AutoScheduleAssistant
-              weekStartDate={currentDate.toISOString().split('T')[0]}
-              emptyShifts={shifts.filter(shift => !shift.employee_id)}
-              onShiftUpdate={async (shiftId: string, updates: any) => {
-                await updateShift(shiftId, updates);
+            {/* Simple Auto Assignment Button */}
+            <Button
+              onClick={() => {
+                const emptyShifts = shifts.filter(shift => !shift.employee_id);
+                alert(`מצאתי ${emptyShifts.length} משמרות ריקות!\n\nהמערכת תשבץ עובדים בקרוב...`);
+                console.log('Empty shifts found:', emptyShifts);
               }}
-            />
+              className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white"
+              size={isMobile ? "sm" : "default"}
+            >
+              🪄 שיבוץ אוטומטי ({shifts.filter(shift => !shift.employee_id).length})
+            </Button>
             <Button
               onClick={() => setShowQuickMultiple(true)}
               size={isMobile ? "sm" : "default"}
