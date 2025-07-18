@@ -707,13 +707,13 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                            submission_type: s.submission_type,
                            hasSubmissionType: s.hasOwnProperty('submission_type')
                          }))
-                       });
-                       const regularSubmissions = shiftSubmissions.filter(s => s.submission_type === 'regular' || !s.submission_type);
-                       const specialSubmissions = shiftSubmissions.filter(s => s.submission_type && s.submission_type !== 'regular');
-                       console.log('📊 Filtered submissions:', {
-                         regular: regularSubmissions.length,
-                         special: specialSubmissions.length
-                       });
+                        });
+                        const regularSubmissions = shiftSubmissions.filter(s => s.submission_type === 'regular' || !s.submission_type);
+                        const specialSubmissions = shiftSubmissions.filter(s => s.submission_type && s.submission_type !== 'regular');
+                        console.log('📊 Filtered submissions:', {
+                          regular: regularSubmissions.length,
+                          special: specialSubmissions.length
+                        });
                     const hasConflict = hasShiftConflict(shift);
 
                         return (
@@ -900,7 +900,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                               className="w-full text-xs bg-blue-50 border border-blue-200 text-blue-800 hover:bg-blue-100 transition-colors"
                               onClick={() => onShowPendingSubmissions?.()}
                             >
-                              📋 הגשות רגילות ({getPendingSubmissionsForDate(date, 'regular').length})
+                              👤 הגשות רגילות ({getPendingSubmissionsForDate(date, 'regular').length})
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-md">
@@ -959,7 +959,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                               className="w-full text-xs bg-purple-50 border border-purple-200 text-purple-800 hover:bg-purple-100 transition-colors"
                               onClick={() => onShowPendingSubmissions?.()}
                             >
-                              ⭐ הגשות מיוחדות ({getPendingSubmissionsForDate(date, 'special').length})
+                               ⭐ הגשות מיוחדות ({getPendingSubmissionsForDate(date, 'special').length})
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-md">
