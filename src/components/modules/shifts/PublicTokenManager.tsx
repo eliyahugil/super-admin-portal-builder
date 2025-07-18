@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useEmployees } from '@/hooks/useEmployees';
 import { usePublicShifts } from '@/hooks/usePublicShifts';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { Copy, Plus, Calendar, Users, Timer, Eye, User, UsersRound } from 'lucide-react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -16,8 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const PublicTokenManager: React.FC = () => {
   const { toast } = useToast();
-  const { businessId } = useBusiness();
-  const { data: employees = [] } = useEmployees();
+  const { businessId } = useCurrentBusiness();
+  const { data: employees = [] } = useEmployees(businessId);
   const { generateToken, useBusinessTokens } = usePublicShifts();
   const { data: existingTokens = [] } = useBusinessTokens(businessId || '');
   
