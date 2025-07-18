@@ -6,20 +6,22 @@ import { ShiftSubmissionsList } from '@/components/modules/shifts/ShiftSubmissio
 const ShiftSubmissionPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      {/* כותרת דף קומפקטית למובייל */}
-      <div className="bg-card border-b sticky top-0 z-10 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Send className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">הגשות משמרות</h1>
+      <div className="w-full">
+        {/* כותרת דף */}
+        <div className="bg-card border-b px-4 py-4 md:px-6">
+          <div className="flex items-center gap-2">
+            <Send className="h-5 w-5 text-primary" />
+            <h1 className="text-lg md:text-xl font-semibold">הגשות משמרות</h1>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            צפייה וניהול הגשות משמרות מהעובדים
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          צפייה וניהול הגשות משמרות
-        </p>
-      </div>
-      
-      {/* תוכן הדף */}
-      <div className="pb-20">
-        <ShiftSubmissionsList />
+        
+        {/* תוכן הדף */}
+        <div className="py-4 md:px-6 pb-20">
+          <ShiftSubmissionsList />
+        </div>
       </div>
     </div>
   );
