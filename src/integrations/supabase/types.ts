@@ -3782,6 +3782,56 @@ export type Database = {
           },
         ]
       }
+      shift_submissions: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          notes: string | null
+          optional_morning_availability: number[] | null
+          shifts: Json
+          status: string
+          submitted_at: string
+          updated_at: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          optional_morning_availability?: number[] | null
+          shifts?: Json
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          optional_morning_availability?: number[] | null
+          shifts?: Json
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          week_end_date?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_submissions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_swap_requests: {
         Row: {
           approved_at: string | null
