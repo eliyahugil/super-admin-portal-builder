@@ -488,7 +488,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             </Card>
           </TabsContent>
           
-          <TabsContent value="advanced" className="flex-1 overflow-hidden">
+          <TabsContent value="advanced" className="flex-1 w-full overflow-hidden">
             <AdvancedSchedulingDashboard />
           </TabsContent>
         </Tabs>
