@@ -12,23 +12,14 @@ export const useShiftSubmissions = () => {
   const { toast } = useToast();
   const { businessId, isLoading } = useBusiness();
 
-  // Get shift submissions
+  // Shift submissions system has been removed - return empty data
   const { data: submissions, isLoading: submissionsLoading, refetch } = useQuery({
     queryKey: ['shift-submissions', businessId],
     queryFn: async () => {
-      if (!businessId) return [];
-      const rawData = await WeeklyShiftService.getShiftSubmissionsForBusiness(businessId);
-      
-      // Map the data to ensure employee has the correct id field
-      return rawData.map((submission: any) => ({
-        ...submission,
-        employee: submission.employee ? {
-          ...submission.employee,
-          id: submission.employee.employee_id || submission.employee.id,
-        } : undefined,
-      })) as ShiftSubmission[];
+      // Shift submission system has been removed
+      return [] as ShiftSubmission[];
     },
-    enabled: !!businessId && !isLoading,
+    enabled: false, // Disabled since shift submissions are no longer available
   });
 
   // Get all employees to show missing submissions
@@ -74,48 +65,13 @@ export const useShiftSubmissions = () => {
     });
   };
 
-  // Send reminder to employee
+  // Send reminder to employee - disabled since shift submission system has been removed
   const sendReminder = async (employee: any) => {
-    if (!employee.phone) {
-      toast({
-        title: 'שגיאה',
-        description: 'לא נמצא מספר טלפון לעובד זה',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Create a weekly token for this employee
-    const currentWeek = getWeekDates();
-    
-    try {
-      const token = await WeeklyShiftService.generateWeeklyToken(
-        employee.id,
-        currentWeek.start,
-        currentWeek.end
-      );
-
-      const submissionUrl = `${window.location.origin}/weekly-shift-submission/${token}`;
-      const message = `שלום ${employee.first_name}! 👋\n\nזוהי תזכורת להגיש את המשמרות שלך לשבוע הקרוב.\n\nלחץ כאן כדי להגיש: ${submissionUrl}\n\nצוות הניהול`;
-      
-      const cleanPhone = employee.phone.replace(/[^\d]/g, '');
-      const whatsappPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.slice(1) : cleanPhone;
-      const url = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
-      
-      window.open(url, '_blank');
-      
-      toast({
-        title: 'תזכורת נשלחה',
-        description: `תזכורת נשלחה ל${employee.first_name} ${employee.last_name}`,
-      });
-    } catch (error) {
-      console.error('Error sending reminder:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן לשלוח תזכורת',
-        variant: 'destructive',
-      });
-    }
+    toast({
+      title: 'מערכת לא זמינה',
+      description: 'מערכת הגשת המשמרות הוסרה',
+      variant: 'destructive',
+    });
   };
 
   // Get upcoming week dates (next week as default)
