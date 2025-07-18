@@ -195,24 +195,40 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   };
 
   // Get pending submissions for a specific date
-  const getPendingSubmissionsForDate = (date: Date) => {
+  const getPendingSubmissionsForDate = (date: Date, submissionType?: string) => {
     const dateStr = date.toISOString().split('T')[0];
-    console.log('📱 MOBILE DEBUG - getPendingSubmissionsForDate:', { 
-      dateStr, 
-      totalSubmissions: pendingSubmissions.length,
-      isMobile: window.innerWidth < 768,
-      firstSubmission: pendingSubmissions[0] ? {
-        id: pendingSubmissions[0].id,
-        employee: pendingSubmissions[0].employees?.first_name,
-        shiftsCount: Array.isArray(pendingSubmissions[0].shifts) ? pendingSubmissions[0].shifts.length : 'not array'
-      } : 'no submissions'
-    });
-    return pendingSubmissions.filter(submission => {
+    
+    const filteredSubmissions = pendingSubmissions.filter(submission => {
       const shifts = typeof submission.shifts === 'string' 
         ? JSON.parse(submission.shifts) 
         : submission.shifts || [];
-      return shifts.some((shift: any) => shift.date === dateStr);
+      const hasMatchingDate = shifts.some((shift: any) => shift.date === dateStr);
+      
+      // Filter by submission type if specified
+      if (submissionType) {
+        return hasMatchingDate && submission.submission_type === submissionType;
+      }
+      
+      return hasMatchingDate;
     });
+
+    console.log('📱 MOBILE DEBUG - getPendingSubmissionsForDate:', { 
+      dateStr, 
+      submissionType,
+      totalSubmissions: pendingSubmissions.length,
+      filteredSubmissions: filteredSubmissions.length,
+      regularSubmissions: pendingSubmissions.filter(s => s.submission_type === 'regular').length,
+      specialSubmissions: pendingSubmissions.filter(s => s.submission_type === 'special').length,
+      isMobile: window.innerWidth < 768,
+      firstSubmission: filteredSubmissions[0] ? {
+        id: filteredSubmissions[0].id,
+        employee: filteredSubmissions[0].employees?.first_name,
+        submissionType: filteredSubmissions[0].submission_type,
+        shiftsCount: Array.isArray(filteredSubmissions[0].shifts) ? filteredSubmissions[0].shifts.length : 'not array'
+      } : 'no submissions'
+    });
+    
+    return filteredSubmissions;
   };
 
   // Get detailed submission and assignment data for a specific date
@@ -812,72 +828,117 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   })}
                 </div>
                 
-                {/* Pending submissions */}
-                {getPendingSubmissionsForDate(date).length > 0 && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full text-xs bg-yellow-50 border border-yellow-200 text-yellow-800 hover:bg-yellow-100 transition-colors"
-                          onClick={() => onShowPendingSubmissions?.()}
-                        >
-                          הגשות ממתינות ({getPendingSubmissionsForDate(date).length})
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-md">
-                        <div className="text-right space-y-3">
-                          <p className="font-medium text-sm">סטטוס הגשות לתאריך {date.getDate()}/{date.getMonth() + 1}:</p>
+                {/* Pending submissions - separated by type */}
+                {(getPendingSubmissionsForDate(date, 'regular').length > 0 || getPendingSubmissionsForDate(date, 'special').length > 0) && (
+                  <div className="space-y-1">
+                    {/* Regular submissions */}
+                    {getPendingSubmissionsForDate(date, 'regular').length > 0 && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full text-xs bg-blue-50 border border-blue-200 text-blue-800 hover:bg-blue-100 transition-colors"
+                              onClick={() => onShowPendingSubmissions?.()}
+                            >
+                              📋 הגשות רגילות ({getPendingSubmissionsForDate(date, 'regular').length})
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-md">
+                            <div className="text-right space-y-3">
+                              <p className="font-medium text-sm">הגשות רגילות לתאריך {date.getDate()}/{date.getMonth() + 1}:</p>
                           
-                          {(() => {
-                            const detailedData = getDetailedDataForDate(date);
-                            const branches = Object.keys(detailedData);
-                            
-                            return branches.length > 0 ? (
-                              branches.map((branchName, branchIndex) => (
-                                <div key={branchIndex} className="border-b border-gray-200 pb-2 last:border-b-0 last:pb-0">
-                                  <p className="font-medium text-xs text-blue-700 mb-1">
-                                    📍 {branchName}
-                                  </p>
-                                  
-                                  {/* Assigned shifts */}
-                                  {detailedData[branchName].assigned.length > 0 && (
-                                    <div className="mb-2">
-                                      <p className="text-xs text-green-700 font-medium mb-1">✅ הוקצו:</p>
-                                      <ul className="text-xs space-y-1 mr-4">
-                                        {detailedData[branchName].assigned.map((item, index) => (
-                                          <li key={index} className="text-green-600">
-                                            • {item.employeeName} - {item.role} ({item.startTime}-{item.endTime})
-                                          </li>
-                                        ))}
-                                      </ul>
+                              {(() => {
+                                // Show only regular submissions in tooltip
+                                const regularSubmissions = getPendingSubmissionsForDate(date, 'regular');
+                                const detailedData = getDetailedDataForDate(date);
+                                const branches = Object.keys(detailedData);
+                                
+                                return branches.length > 0 ? (
+                                  branches.map((branchName, branchIndex) => (
+                                    <div key={branchIndex} className="border-b border-gray-200 pb-2 last:border-b-0 last:pb-0">
+                                      <p className="font-medium text-xs text-blue-700 mb-1">
+                                        📍 {branchName}
+                                      </p>
+                                      
+                                      {/* Show only regular submissions in this tooltip */}
+                                      <div>
+                                        <p className="text-xs text-blue-700 font-medium mb-1">📋 הגשות רגילות:</p>
+                                        <ul className="text-xs space-y-1 mr-4">
+                                          {regularSubmissions.map((submission, index) => {
+                                            const shifts = typeof submission.shifts === 'string' 
+                                              ? JSON.parse(submission.shifts) 
+                                              : submission.shifts || [];
+                                            return shifts.map((shift: any, shiftIndex: number) => (
+                                              <li key={`${index}-${shiftIndex}`} className="text-blue-600">
+                                                • {submission.employees?.first_name} - {shift.role_preference || 'ללא תפקיד'} ({shift.start_time}-{shift.end_time})
+                                              </li>
+                                            ));
+                                          })}
+                                        </ul>
+                                      </div>
                                     </div>
-                                  )}
-                                  
-                                  {/* Unassigned shifts */}
-                                  {detailedData[branchName].unassigned.length > 0 && (
-                                    <div>
-                                      <p className="text-xs text-orange-700 font-medium mb-1">⏳ לא הוקצו:</p>
-                                      <ul className="text-xs space-y-1 mr-4">
-                                        {detailedData[branchName].unassigned.map((item, index) => (
-                                          <li key={index} className="text-orange-600">
-                                            • {item.employeeName} - {item.role} ({item.startTime}-{item.endTime})
+                                  ))
+                                ) : (
+                                  <p className="text-xs text-gray-500">אין הגשות רגילות</p>
+                                );
+                              })()}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    
+                    {/* Special submissions */}
+                    {getPendingSubmissionsForDate(date, 'special').length > 0 && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full text-xs bg-purple-50 border border-purple-200 text-purple-800 hover:bg-purple-100 transition-colors"
+                              onClick={() => onShowPendingSubmissions?.()}
+                            >
+                              ⭐ הגשות מיוחדות ({getPendingSubmissionsForDate(date, 'special').length})
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-md">
+                            <div className="text-right space-y-3">
+                              <p className="font-medium text-sm">הגשות מיוחדות לתאריך {date.getDate()}/{date.getMonth() + 1}:</p>
+                              
+                              {(() => {
+                                // Show only special submissions in tooltip
+                                const specialSubmissions = getPendingSubmissionsForDate(date, 'special');
+                                
+                                return specialSubmissions.length > 0 ? (
+                                  <div>
+                                    <p className="text-xs text-purple-700 font-medium mb-1">⭐ הגשות מיוחדות:</p>
+                                    <ul className="text-xs space-y-1 mr-4">
+                                      {specialSubmissions.map((submission, index) => {
+                                        const shifts = typeof submission.shifts === 'string' 
+                                          ? JSON.parse(submission.shifts) 
+                                          : submission.shifts || [];
+                                        return shifts.map((shift: any, shiftIndex: number) => (
+                                          <li key={`${index}-${shiftIndex}`} className="text-purple-600">
+                                            • {submission.employees?.first_name} - {shift.role_preference || 'ללא תפקיד'} ({shift.start_time}-{shift.end_time})
+                                            <span className="text-xs text-purple-500 mr-2">({submission.submission_type})</span>
                                           </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
-                                </div>
-                              ))
-                            ) : (
-                              <p className="text-xs text-gray-500">אין נתונים להצגה</p>
-                            );
-                          })()}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                                        ));
+                                      })}
+                                    </ul>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-gray-500">אין הגשות מיוחדות</p>
+                                );
+                              })()}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
                 )}
                 
                 {/* Add shift area */}

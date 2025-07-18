@@ -181,6 +181,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
         .from('shift_submissions')
         .select(`
           *,
+          submission_type,
           employees!inner(
             id,
             first_name,
