@@ -370,15 +370,20 @@ const PublicShiftSubmission: React.FC = () => {
         newPreferences.push(newShift);
 
         // Find and auto-select shifts that are contained within this shift's time window
-        // Only from the same branch as the selected shift
+        // Only from branches the employee is assigned to
+        const employeeAssignedBranches = employeeData?.employee_branch_assignments
+          ?.filter((assignment: any) => assignment.is_active)
+          ?.map((assignment: any) => assignment.branch_id) || [];
+        
         const containedShifts = allScheduledShifts.filter(otherShift => 
           otherShift.id !== shift.id && 
-          otherShift.branch_id === shift.branch_id && // Same branch only
+          (employeeAssignedBranches.length === 0 || employeeAssignedBranches.includes(otherShift.branch_id)) && // Only assigned branches
           shiftsOverlap(shift, otherShift) &&
           !newPreferences.some((p: any) => p.shift_id === otherShift.id)
         );
 
-        console.log(`🔍 Found ${containedShifts.length} shifts contained within selected shift from same branch`);
+        console.log(`🔍 Employee assigned branches:`, employeeAssignedBranches);
+        console.log(`🔍 Found ${containedShifts.length} shifts contained within selected shift from assigned branches`);
 
         containedShifts.forEach(containedShift => {
           const containedPref = {
