@@ -753,24 +753,19 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                           >
                             {/* Add Employee Recommendations and other action buttons */}
                             <div className="absolute top-1 right-1 flex gap-1 opacity-100 transition-opacity z-10">
-                              {/* Employee Recommendations */}
-                              {!shift.employee_id && (
-                                <EmployeeRecommendationEngine
-                                  shiftId={shift.id}
-                                  shiftTime={`${shift.start_time}-${shift.end_time}`}
-                                  shiftDate={date.toISOString().split('T')[0]}
-                                  weekStartDate={weekDays[0].toISOString().split('T')[0]}
-                                  onEmployeeSelected={(employeeId) => onShiftUpdate(shift.id, { employee_id: employeeId })}
-                                >
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-5 w-5 p-0 bg-white hover:bg-green-50 border-green-200"
-                                  >
-                                    <span className="text-xs">💡</span>
-                                  </Button>
-                                </EmployeeRecommendationEngine>
-                              )}
+                               {/* Employee Recommendations - Simple Button */}
+                               {!shift.employee_id && (
+                                 <Button
+                                   size="sm"
+                                   variant="outline"
+                                   className="h-6 w-6 p-0 bg-yellow-100 hover:bg-yellow-200 border-yellow-300"
+                                   onClick={() => {
+                                     alert(`המלצות עובדים למשמרת ${shift.start_time}-${shift.end_time}`);
+                                   }}
+                                 >
+                                   💡
+                                 </Button>
+                               )}
                               <Button
                                 size="sm"
                                 variant="outline"
