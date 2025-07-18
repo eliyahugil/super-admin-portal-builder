@@ -145,19 +145,104 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
       console.log('🚀 Starting employee recommendations query:', { businessId, weekStartDate });
       
       // First, find the active token for this week and business
+      // Check if the week falls within any active token's range
       const { data: activeToken, error: tokenError } = await supabase
         .from('shift_submission_tokens')
         .select('*')
         .eq('business_id', businessId)
-        .eq('week_start_date', weekStartDate)
         .eq('is_active', true)
+        .lte('week_start_date', weekStartDate)
+        .gte('week_end_date', weekStartDate)
         .single();
 
       console.log('🔍 Token query result:', { activeToken, tokenError });
 
       if (tokenError) {
         console.log('❌ No active token found for this week:', tokenError);
-        return [];
+        // Try to find any token that might have submissions for this week
+        const { data: fallbackToken, error: fallbackError } = await supabase
+          .from('shift_submission_tokens')
+          .select('*')
+          .eq('business_id', businessId)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (fallbackError || !fallbackToken) {
+          console.log('❌ No active tokens found at all');
+          return [];
+        }
+        
+        console.log('🔄 Using fallback token:', fallbackToken);
+        
+        // Use the fallback token for submissions but still filter by weekStartDate
+        const { data: submissions, error: submissionsError } = await supabase
+          .from('shift_submissions')
+          .select(`
+            employee_id,
+            shifts,
+            employees!inner(
+              id,
+              first_name,
+              last_name,
+              phone,
+              employee_type,
+              weekly_hours_required,
+              employee_default_preferences(*),
+              employee_branch_assignments(*)
+            )
+          `)
+          .eq('week_start_date', fallbackToken.week_start_date);
+
+        if (submissionsError) throw submissionsError;
+
+        console.log('📋 Fallback submissions found:', submissions?.length || 0);
+        console.log('📋 Fallback submissions data:', submissions);
+
+        // Extract unique employees from submissions
+        const employees = submissions?.map(sub => sub.employees).filter(Boolean) || [];
+        
+        console.log('👥 Employees from fallback submissions:', employees?.length || 0);
+        
+        
+        // Process employees and shifts for fallback case
+        const fallbackShifts = await supabase
+          .from('available_shifts')
+          .select('*')
+          .eq('business_id', businessId)
+          .eq('week_start_date', weekStartDate);
+
+        if (fallbackShifts.error) throw fallbackShifts.error;
+
+        const fallbackRules = await supabase
+          .from('business_scheduling_rules')
+          .select('*')
+          .eq('business_id', businessId)
+          .eq('is_active', true);
+
+        if (fallbackRules.error) throw fallbackRules.error;
+
+        const currentWeeklyHours: Record<string, number> = {};
+        
+        const fallbackRecommendations: ShiftRecommendationData[] = fallbackShifts.data.map(shift => {
+          const employeeRecommendations = employees.map(employee => 
+            calculateEmployeeScore(employee, shift, fallbackRules.data, currentWeeklyHours)
+          );
+
+          employeeRecommendations.sort((a, b) => b.matchScore - a.matchScore);
+
+          return {
+            shiftId: shift.id,
+            shiftTime: `${shift.start_time}-${shift.end_time}`,
+            date: shift.week_start_date,
+            branchId: shift.branch_id,
+            recommendations: employeeRecommendations.slice(0, 5)
+          };
+        });
+
+        console.log('🎯 Fallback recommendations generated:', fallbackRecommendations.length);
+        return fallbackRecommendations;
       }
 
       console.log('✅ Found active token:', activeToken);
