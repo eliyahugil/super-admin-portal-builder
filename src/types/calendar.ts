@@ -3,7 +3,7 @@ export interface CalendarEvent {
   id: string;
   title: string;
   date: string;
-  type: 'holiday' | 'event';
+  type: 'holiday' | 'event' | 'birthday';
   description?: string;
 }
 

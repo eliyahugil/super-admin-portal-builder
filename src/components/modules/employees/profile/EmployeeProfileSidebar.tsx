@@ -34,7 +34,7 @@ export const EmployeeProfileSidebar: React.FC<Props> = ({ employee }) => {
           <dd><UserStatusBadge isActive={employee.is_active} /></dd>
         </div>
       </dl>
-      <EmployeeDates hire_date={employee.hire_date} termination_date={employee.termination_date} />
+      <EmployeeDates hire_date={employee.hire_date} termination_date={employee.termination_date} birth_date={employee.birth_date} />
     </aside>
   );
 };

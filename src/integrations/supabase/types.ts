@@ -227,6 +227,41 @@ export type Database = {
           },
         ]
       }
+      birthday_notifications: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          message: string
+          notification_date: string
+          sent_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          message: string
+          notification_date: string
+          sent_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          message?: string
+          notification_date?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birthday_notifications_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           address: string | null

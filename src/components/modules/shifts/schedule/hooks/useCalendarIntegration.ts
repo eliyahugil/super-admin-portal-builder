@@ -11,7 +11,7 @@ interface UseCalendarIntegrationParams {
 }
 
 export const useCalendarIntegration = (params: UseCalendarIntegrationParams) => {
-  const { businessId } = params;
+  const { businessId, employees } = params;
 
   // Mock holidays for now - you can integrate with actual API later
   const { data: holidays = [], isLoading: holidaysLoading } = useQuery({
@@ -57,9 +57,31 @@ export const useCalendarIntegration = (params: UseCalendarIntegrationParams) => 
     staleTime: 1000 * 60 * 60, // 1 hour
   });
 
+  // Generate birthday events from employees
+  const birthdayEvents = employees
+    .filter(employee => employee.birth_date && employee.is_active)
+    .map(employee => {
+      if (!employee.birth_date) return null;
+      
+      const birthDate = new Date(employee.birth_date);
+      const currentYear = new Date().getFullYear();
+      const birthdayThisYear = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
+      const birthdayDateString = birthdayThisYear.toISOString().split('T')[0];
+      
+      return {
+        id: `birthday-${employee.id}`,
+        title: `🎂 יום הולדת ${employee.first_name} ${employee.last_name}`,
+        date: birthdayDateString,
+        type: 'birthday' as const,
+        description: `יום הולדת של ${employee.first_name} ${employee.last_name}`
+      };
+    })
+    .filter(Boolean);
+
   // Combine all events
   const combinedEvents = [
     ...calendarEvents,
+    ...birthdayEvents,
     ...holidays.map(holiday => ({
       id: `holiday-${holiday.date}`,
       title: holiday.hebrewName || holiday.name || 'חג',

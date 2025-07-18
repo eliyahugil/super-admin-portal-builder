@@ -12,6 +12,7 @@ export interface Employee {
   employee_id: string;
   is_active?: boolean;
   weekly_hours_required?: number;
+  birth_date?: string | null;
 }
 
 export interface Branch {

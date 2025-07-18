@@ -21,5 +21,10 @@ export const EmployeeListProfileCell: React.FC<ProfileCellProps> = ({ employee }
         התחיל: {new Date(employee.hire_date).toLocaleDateString('he-IL')}
       </div>
     )}
+    {employee.birth_date && (
+      <div className="text-xs text-gray-500 break-words mt-0.5">
+        יום הולדת: {new Date(employee.birth_date).toLocaleDateString('he-IL')}
+      </div>
+    )}
   </div>
 );
