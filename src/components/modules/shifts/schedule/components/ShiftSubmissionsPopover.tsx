@@ -4,7 +4,7 @@ import { he } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, User, MapPin, FileText, Calendar, UserCheck } from 'lucide-react';
+import { Clock, User, MapPin, FileText, Calendar, UserCheck, AlertTriangle } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -40,7 +40,8 @@ interface ShiftSubmissionsPopoverProps {
   children: React.ReactNode;
   submissions: ShiftSubmission[];
   targetDate: Date;
-  shiftId?: string;
+  shifts: any[]; // All shifts to check for conflicts
+  currentShift: any; // The shift we're showing submissions for
   onAssignEmployee?: (employeeId: string) => void;
 }
 
@@ -48,40 +49,64 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
   children,
   submissions,
   targetDate,
-  shiftId,
+  shifts,
+  currentShift,
   onAssignEmployee
 }) => {
-  // Filter submissions for the specific date and extract relevant shifts
+  // Filter submissions for the specific date, branch and shift times
   const relevantShifts = useMemo(() => {
     const targetDateStr = targetDate.toISOString().split('T')[0];
     const results: Array<{
       submission: ShiftSubmission;
       shift: ShiftSubmission['shifts'][0];
+      hasConflict: boolean;
+      isAssigned: boolean;
     }> = [];
 
     submissions.forEach(submission => {
       // Parse shifts if they're stored as JSON string
-      let shifts;
+      let submissionShifts;
       try {
-        shifts = typeof submission.shifts === 'string' 
+        submissionShifts = typeof submission.shifts === 'string' 
           ? JSON.parse(submission.shifts) 
           : submission.shifts || [];
       } catch {
-        shifts = [];
+        submissionShifts = [];
       }
 
-      shifts.forEach((shift: any) => {
-        if (shift.date === targetDateStr) {
-          // If shiftId is provided, only include shifts that match or don't have an ID
-          if (!shiftId || shift.available_shift_id === shiftId || !shift.available_shift_id) {
-            results.push({ submission, shift });
-          }
+      submissionShifts.forEach((shift: any) => {
+        // Check if this shift matches our target date, time and branch
+        if (shift.date === targetDateStr && 
+            shift.start_time === currentShift.start_time &&
+            shift.end_time === currentShift.end_time &&
+            shift.branch_preference === currentShift.branch_name) {
+          
+          // Check if employee has conflict with other scheduled shifts
+          const hasConflict = shifts.some(scheduledShift => {
+            const shiftDate = scheduledShift.shift_date;
+            return shiftDate === targetDateStr &&
+                   scheduledShift.employee_id === submission.employees.id &&
+                   scheduledShift.id !== currentShift.id &&
+                   (
+                     (scheduledShift.start_time <= shift.start_time && scheduledShift.end_time > shift.start_time) ||
+                     (scheduledShift.start_time < shift.end_time && scheduledShift.end_time >= shift.end_time) ||
+                     (scheduledShift.start_time >= shift.start_time && scheduledShift.end_time <= shift.end_time)
+                   );
+          });
+
+          // Check if employee is already assigned to this shift
+          const isAssigned = currentShift.employee_id === submission.employees.id;
+
+          results.push({ submission, shift, hasConflict, isAssigned });
         }
       });
     });
 
     return results;
-  }, [submissions, targetDate, shiftId]);
+  }, [submissions, targetDate, shifts, currentShift]);
+
+  // Count only non-conflicted submissions
+  const availableSubmissions = relevantShifts.filter(item => !item.hasConflict);
 
   const getStatusBadge = (status?: string) => {
     switch (status) {
@@ -124,28 +149,44 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              הגשות ליום {formatDate(targetDate)}
+              הגשות למשמרת ב{currentShift.branch_name}
             </CardTitle>
             <CardDescription className="text-xs">
-              {relevantShifts.length} עובדים הגישו בקשות
+              {formatTime(currentShift.start_time)}-{formatTime(currentShift.end_time)} • {formatDate(targetDate)}
+              <br />
+              {availableSubmissions.length} זמינים מתוך {relevantShifts.length} הגשות
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 max-h-96 overflow-y-auto">
-            {relevantShifts.map(({ submission, shift }, index) => (
+            {relevantShifts.map(({ submission, shift, hasConflict, isAssigned }, index) => (
               <div 
                 key={`${submission.id}-${index}`}
-                className="border rounded-lg p-3 bg-gray-50/50 space-y-2 hover:bg-gray-100/50 transition-colors"
+                className={`border rounded-lg p-3 space-y-2 transition-colors ${
+                  hasConflict 
+                    ? 'bg-red-50/50 border-red-200 opacity-60' 
+                    : isAssigned
+                      ? 'bg-green-50/50 border-green-200'
+                      : 'bg-gray-50/50 hover:bg-gray-100/50'
+                }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium text-sm">
+                    <User className={`h-4 w-4 ${hasConflict ? 'text-red-500' : 'text-muted-foreground'}`} />
+                    <span className={`font-medium text-sm ${hasConflict ? 'line-through' : ''}`}>
                       {submission.employees.first_name} {submission.employees.last_name}
                     </span>
                     {submission.employees.employee_id && (
                       <span className="text-xs text-muted-foreground">
                         ({submission.employees.employee_id})
                       </span>
+                    )}
+                    {hasConflict && (
+                      <AlertTriangle className="h-3 w-3 text-red-500" />
+                    )}
+                    {isAssigned && (
+                      <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
+                        מוקצה
+                      </Badge>
                     )}
                   </div>
                   {getStatusBadge(submission.status)}
@@ -157,12 +198,10 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
                     <span>{formatTime(shift.start_time)} - {formatTime(shift.end_time)}</span>
                   </div>
                   
-                  {shift.branch_preference && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3 text-muted-foreground" />
-                      <span className="truncate">{shift.branch_preference}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3 text-muted-foreground" />
+                    <span className="truncate">{shift.branch_preference}</span>
+                  </div>
                 </div>
 
                 {shift.role_preference && (
@@ -178,12 +217,18 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
                   </div>
                 )}
 
+                {hasConflict && (
+                  <div className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
+                    ⚠️ העובד כבר מוקצה למשמרת אחרת באותן השעות
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-muted-foreground">
                     הוגש: {format(parseISO(submission.submitted_at), 'dd/MM HH:mm', { locale: he })}
                   </div>
                   
-                  {onAssignEmployee && (
+                  {onAssignEmployee && !hasConflict && !isAssigned && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -192,6 +237,17 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
                     >
                       <UserCheck className="h-3 w-3 mr-1" />
                       שייך למשמרת
+                    </Button>
+                  )}
+                  
+                  {isAssigned && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-xs bg-green-50"
+                      disabled
+                    >
+                      ✓ מוקצה
                     </Button>
                   )}
                 </div>

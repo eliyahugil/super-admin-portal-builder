@@ -674,7 +674,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                          key={shift.id}
                          submissions={pendingSubmissions}
                          targetDate={date}
-                         shiftId={shift.id}
+                         shifts={shifts}
+                         currentShift={shift}
                          onAssignEmployee={(employeeId) => onShiftUpdate(shift.id, { employee_id: employeeId })}
                        >
                          <div
