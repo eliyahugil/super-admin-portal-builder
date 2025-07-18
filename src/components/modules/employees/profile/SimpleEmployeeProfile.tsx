@@ -160,11 +160,12 @@ export const SimpleEmployeeProfile: React.FC = () => {
           setShifts(mappedShifts);
         }
 
-        // Fetch available shifts for next week (shifts that employee can apply for)
+        // Fetch available shifts for current and next weeks (shifts that employee can apply for)
+        const currentDate = new Date();
         const nextWeekStart = new Date();
-        nextWeekStart.setDate(nextWeekStart.getDate() + 1);
+        nextWeekStart.setDate(currentDate.getDate() - 1); // Start from yesterday to include today
         const nextWeekEnd = new Date();
-        nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
+        nextWeekEnd.setDate(currentDate.getDate() + 14); // Look ahead 2 weeks
 
         const { data: availableShiftsData } = await supabase
           .from('available_shifts')
