@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { CreateEmployeeDialog } from './CreateEmployeeDialog';
 import { 
   Users, 
   Archive, 
@@ -13,6 +14,8 @@ import {
   UserX
 } from 'lucide-react';
 
+import { useBranches } from '@/hooks/useBranches';
+
 interface ModernEmployeeHeaderProps {
   businessId: string;
   currentView: 'active' | 'inactive' | 'archived';
@@ -20,6 +23,7 @@ interface ModernEmployeeHeaderProps {
   totalActiveEmployees: number;
   totalInactiveEmployees: number;
   totalArchivedEmployees: number;
+  onRefetch?: () => void;
 }
 
 export const ModernEmployeeHeader: React.FC<ModernEmployeeHeaderProps> = ({
@@ -29,7 +33,12 @@ export const ModernEmployeeHeader: React.FC<ModernEmployeeHeaderProps> = ({
   totalActiveEmployees,
   totalInactiveEmployees,
   totalArchivedEmployees,
+  onRefetch,
 }) => {
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  
+  // Fetch branches for the dialog
+  const { data: branches = [] } = useBranches(businessId);
   const handleExport = () => {
     // TODO: Implement export functionality
     console.log('Export employees');
@@ -145,6 +154,7 @@ export const ModernEmployeeHeader: React.FC<ModernEmployeeHeaderProps> = ({
             <Button
               className="btn-primary hover-lift col-span-2 sm:col-span-1 text-xs sm:text-sm"
               size="sm"
+              onClick={() => setShowCreateDialog(true)}
             >
               <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               עובד חדש
@@ -174,6 +184,16 @@ export const ModernEmployeeHeader: React.FC<ModernEmployeeHeaderProps> = ({
           </div>
         </div>
       </CardContent>
+      
+      <CreateEmployeeDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSuccess={() => {
+          setShowCreateDialog(false);
+          onRefetch?.();
+        }}
+        branches={branches}
+      />
     </Card>
   );
 };

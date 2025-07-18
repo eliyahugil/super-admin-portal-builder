@@ -114,6 +114,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
         totalActiveEmployees={stats.activeEmployees}
         totalInactiveEmployees={stats.inactiveEmployees}
         totalArchivedEmployees={stats.archivedEmployees}
+        onRefetch={handleRefetch}
       />
 
       <ModernEmployeeStatsCards
