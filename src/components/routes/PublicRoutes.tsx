@@ -3,7 +3,7 @@ import React, { Suspense, lazy } from 'react';
 import { Route } from 'react-router-dom';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { SignDocumentPage } from '@/components/modules/employees/SignDocumentPage';
-import { QuickAddEmployeePage } from '@/pages/QuickAddEmployeePage';
+import QuickAddEmployeePage from '@/pages/QuickAddEmployeePage';
 
 const QuickRegistrationPage = lazy(() => import('@/pages/QuickRegistrationPage').then(m => ({ default: m.QuickRegistrationPage })));
 const EmployeeLoginPage = lazy(() => import('@/pages/auth/EmployeeLoginPage'));

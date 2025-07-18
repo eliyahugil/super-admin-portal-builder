@@ -122,25 +122,8 @@ export const BusinessSettingsMain: React.FC = () => {
         }
         setModules(moduleData || []);
 
-        // Fetch schedule configuration
-        const { data: scheduleData, error: scheduleError } = await supabase
-          .from('shift_token_schedules')
-          .select('*')
-          .eq('business_id', effectiveBusinessId)
-          .maybeSingle();
-
-        if (scheduleError) {
-          console.error('Error fetching schedule:', scheduleError);
-          throw scheduleError;
-        }
-        if (scheduleData) {
-          setSchedule({
-            send_day: scheduleData.send_day,
-            send_time: scheduleData.send_time,
-            channel_type: scheduleData.channel_type,
-            is_active: scheduleData.is_active
-          });
-        }
+        // Schedule configuration removed - token system no longer exists
+        console.log('Schedule configuration removed due to token system removal');
       } catch (error) {
         console.error('Error fetching business settings:', error);
         toast({
@@ -230,39 +213,7 @@ export const BusinessSettingsMain: React.FC = () => {
     }
   };
 
-  const updateSchedule = async (updates: Partial<ScheduleConfig>) => {
-    if (!effectiveBusinessId) return;
-
-    const newSchedule = { ...schedule, ...updates };
-    
-    try {
-      const { error } = await supabase
-        .from('shift_token_schedules')
-        .upsert({
-          business_id: effectiveBusinessId,
-          ...newSchedule,
-          updated_at: new Date().toISOString(),
-        }, { 
-          onConflict: 'business_id' 
-        });
-
-      if (error) throw error;
-
-      setSchedule(newSchedule);
-      
-      toast({
-        title: 'עודכן בהצלחה',
-        description: 'הגדרות התזמון נשמרו',
-      });
-    } catch (error) {
-      console.error('Error updating schedule:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן לעדכן את הגדרות התזמון',
-        variant: 'destructive',
-      });
-    }
-  };
+  // Schedule update removed - token system no longer exists
 
   if (loading) {
     return (
@@ -463,75 +414,7 @@ export const BusinessSettingsMain: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Schedule Configuration Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            תזמון שליחת טוקני משמרות
-          </CardTitle>
-          <CardDescription>הגדר מתי לשלוח טוקני משמרות לעובדים</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>יום שליחה</Label>
-              <Select 
-                value={schedule.send_day} 
-                onValueChange={(value) => updateSchedule({ send_day: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Sunday">ראשון</SelectItem>
-                  <SelectItem value="Monday">שני</SelectItem>
-                  <SelectItem value="Tuesday">שלישי</SelectItem>
-                  <SelectItem value="Wednesday">רביעי</SelectItem>
-                  <SelectItem value="Thursday">חמישי</SelectItem>
-                  <SelectItem value="Friday">שישי</SelectItem>
-                  <SelectItem value="Saturday">שבת</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>שעת שליחה</Label>
-              <Input
-                type="time"
-                value={schedule.send_time}
-                onChange={(e) => updateSchedule({ send_time: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>ערוץ שליחה</Label>
-            <Select 
-              value={schedule.channel_type} 
-              onValueChange={(value) => updateSchedule({ channel_type: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="whatsapp">WhatsApp רגיל</SelectItem>
-                <SelectItem value="whatsapp_api">WhatsApp Business API</SelectItem>
-                <SelectItem value="email">אימייל</SelectItem>
-                <SelectItem value="link">קישור בלבד</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center justify-between p-3 border rounded-lg">
-            <span className="font-medium">שליחה אוטומטית פעילה</span>
-            <Switch
-              checked={schedule.is_active}
-              onCheckedChange={(value) => updateSchedule({ is_active: value })}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Schedule Configuration Card - Removed due to token system removal */}
     </div>
   );
 };

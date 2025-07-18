@@ -41,7 +41,7 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { DeviceIndicator } from '@/components/shared/DeviceIndicator';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { format } from 'date-fns';
-import { ShiftSubmissionCalendarView } from './ShiftSubmissionCalendarView';
+// Removed import - ShiftSubmissionCalendarView no longer exists
 import { useToast } from '@/hooks/use-toast';
 import { 
   fetchShiftRequests, 
@@ -239,7 +239,9 @@ export const UnifiedShiftRequests: React.FC = () => {
         </TabsList>
 
         <TabsContent value="calendar" className="mt-4">
-          <ShiftSubmissionCalendarView />
+          <div className="text-center py-8 text-gray-500">
+            <p>תצוגת לוח שנה זמנית לא זמינה</p>
+          </div>
         </TabsContent>
 
         <TabsContent value="view" className="mt-4 space-y-4">

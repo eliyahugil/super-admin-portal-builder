@@ -13,7 +13,7 @@ import EmployeeRequestsPage from '@/pages/business/employees/EmployeeRequestsPag
 import EmployeeChatPage from '@/pages/business/employees/EmployeeChatPage';
 import EmployeeTasksPage from '@/pages/business/employees/EmployeeTasksPage';
 import { BusinessSettings } from '@/components/modules/settings/BusinessSettings';
-import { ShiftTokenSchedulePage } from '@/components/modules/settings/ShiftTokenSchedulePage';
+// Removed import - ShiftTokenSchedulePage no longer exists
 import { BusinessMultiManagement } from '@/components/modules/settings/BusinessMultiManagement';
 import EmployeeImportPage from '@/pages/business/employees/EmployeeImportPage';
 import EmployeeDuplicateManagerPage from '@/pages/business/employees/EmployeeDuplicateManagerPage';
@@ -156,13 +156,7 @@ export const ModuleRoutes = () => (
       </ProtectedRoute>
     } />
 
-    <Route path="/modules/settings/shift-schedule" element={
-      <ProtectedRoute>
-        <AppLayout>
-          <ShiftTokenSchedulePage />
-        </AppLayout>
-      </ProtectedRoute>
-    } />
+    {/* Shift schedule route removed - token system no longer exists */}
 
     <Route path="/modules/settings/advanced" element={
       <ProtectedRoute>

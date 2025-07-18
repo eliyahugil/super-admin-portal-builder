@@ -262,15 +262,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
 
   const isLoading = loading || calendarLoading;
 
-  // Helper function to parse shifts data for pending submissions dialog
-  const parseShifts = (shiftsData: any) => {
-    if (!shiftsData) return [];
-    try {
-      return Array.isArray(shiftsData) ? shiftsData : [];
-    } catch {
-      return [];
-    }
-  };
+  // Helper function removed - submissions system no longer exists
 
   return (
     <div className={`${isMobile ? 'p-2' : 'p-6'} space-y-2 lg:space-y-6 h-full flex flex-col overflow-hidden`} dir="rtl">
@@ -386,7 +378,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                      holidays={holidays}
                      shabbatTimes={shabbatTimes}
                      calendarEvents={combinedEvents}
-                      pendingSubmissions={pendingSubmissions}
+                      pendingSubmissions={[]}
                       businessId={businessId}
                       onShiftClick={handleShiftClick}
                       onShiftUpdate={updateShift}
@@ -528,14 +520,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
         />
       )}
 
-      {showPendingSubmissionsDialog && (
-        <PendingSubmissionsDialog
-          isOpen={showPendingSubmissionsDialog}
-          onClose={() => setShowPendingSubmissionsDialog(false)}
-          submissions={pendingSubmissions}
-          parseShifts={parseShifts}
-        />
-      )}
+      {/* Pending submissions dialog removed - submissions system no longer exists */}
     </div>
   );
 };

@@ -1,209 +1,114 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus, CheckCircle, AlertCircle, Loader } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { CheckCircle, XCircle, Loader2, User, Phone, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-export const QuickAddEmployeePage: React.FC = () => {
+const QuickAddEmployeePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [loading, setLoading] = useState(false);
+  const token = searchParams.get('token');
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
-  const [tokenData, setTokenData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [businessInfo, setBusinessInfo] = useState<any>(null);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
+    email: '',
     phone: '',
-    email: ''
+    employee_type: 'hourly',
+    notes: '',
   });
-
-  const token = searchParams.get('token');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (token) {
-      validateToken();
-    } else {
-      setTokenValid(false);
-    }
-  }, [token]);
-
-  const validateToken = async () => {
-    try {
-      console.log('🔍 Validating token:', token);
-      
+    const checkToken = async () => {
       if (!token) {
         console.log('❌ No token provided');
         setTokenValid(false);
         return;
       }
 
-      // Check token in database instead of localStorage
-      const { data: tokenRecord, error } = await supabase
-        .from('employee_quick_add_tokens')
-        .select('*')
-        .eq('token', token)
-        .eq('is_used', false)
-        .single();
-
-      if (error || !tokenRecord) {
-        console.log('❌ Token not found in database:', error);
-        setTokenValid(false);
-        toast({
-          title: 'טוקן לא תקין',
-          description: 'הטוקן אינו תקין או לא קיים',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      console.log('📄 Token record found:', tokenRecord);
-
-      // Check if token is expired
-      const expiresAt = new Date(tokenRecord.expires_at);
-      const now = new Date();
-      console.log('⏰ Checking expiry:', { expiresAt, now, expired: expiresAt < now });
-      
-      if (expiresAt < now) {
-        setTokenValid(false);
-        toast({
-          title: 'טוקן פג תוקף',
-          description: 'הטוקן פג תוקף, אנא בקש טוקן חדש',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // Check if token is already used
-      if (tokenRecord.is_used) {
-        console.log('❌ Token already used');
-        setTokenValid(false);
-        toast({
-          title: 'טוקן נוצל',
-          description: 'הטוקן כבר נוצל להוספת עובד',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      console.log('✅ Token is valid');
-      setTokenData(tokenRecord);
-      setTokenValid(true);
-    } catch (error) {
-      console.error('Error validating token:', error);
+      console.log('⚠️ Quick add token system has been removed');
       setTokenValid(false);
       toast({
-        title: 'שגיאה',
-        description: 'אירעה שגיאה בבדיקת הטוקן',
+        title: 'מערכת לא פעילה',
+        description: 'מערכת הוספת עובדים מהירה הוסרה מהמערכת',
         variant: 'destructive',
       });
-    }
-  };
+      setLoading(false);
+    };
+
+    checkToken();
+  }, [token, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tokenData || !tokenValid) return;
+    if (!tokenValid || !businessInfo) return;
 
-    setLoading(true);
+    setSubmitting(true);
     try {
-      // Add employee to database
-      const { error: employeeError } = await supabase
-        .from('employees')
-        .insert({
-          business_id: tokenData.business_id,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          phone: formData.phone,
-          email: formData.email,
-          employee_type: 'permanent',
-          is_active: true,
-          is_archived: false,
-          created_at: new Date().toISOString()
-        });
-
-      if (employeeError) {
-        console.error('Error adding employee:', employeeError);
-        toast({
-          title: 'שגיאה',
-          description: 'אירעה שגיאה בהוספת העובד',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // Mark token as used in database
-      const { error: updateError } = await supabase
-        .from('employee_quick_add_tokens')
-        .update({ 
-          is_used: true, 
-          used_at: new Date().toISOString() 
-        })
-        .eq('token', token);
-
-      if (updateError) {
-        console.error('Error updating token:', updateError);
-      }
-
+      console.log('⚠️ Quick add functionality has been removed');
       toast({
-        title: 'הצלחה!',
-        description: `העובד ${formData.first_name} ${formData.last_name} נוסף בהצלחה למערכת`,
+        title: 'מערכת לא פעילה',
+        description: 'מערכת הוספת עובדים מהירה הוסרה מהמערכת',
+        variant: 'destructive',
       });
-
-      // Reset form
-      setFormData({
-        first_name: '',
-        last_name: '',
-        phone: '',
-        email: ''
-      });
-      
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
-      
     } catch (error) {
-      console.error('Error in handleSubmit:', error);
+      console.error('Error:', error);
       toast({
         title: 'שגיאה',
-        description: 'אירעה שגיאה בהוספת העובד',
+        description: 'אירעה שגיאה בתהליך ההוספה',
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  if (tokenValid === null) {
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
-          <CardContent className="p-6 text-center">
-            <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p>בודק תוקף הטוקן...</p>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center space-x-2">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+              <span className="text-gray-600">בודק תוקף הטוקן...</span>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (!tokenValid) {
+  if (tokenValid === false) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
-          <CardContent className="p-6 text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">טוקן לא תקין</h2>
-            <p className="text-muted-foreground mb-4">
-              הטוקן אינו תקין, פג תוקף או כבר נוצל.
-            </p>
-            <Button onClick={() => navigate('/')} variant="outline">
-              חזרה לעמוד הבית
-            </Button>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">מערכת לא פעילה</h2>
+              <p className="text-gray-600 mb-4">
+                מערכת הוספת עובדים מהירה הוסרה מהמערכת
+              </p>
+              <Button onClick={() => navigate('/')} className="w-full">
+                חזרה לדף הבית
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -211,91 +116,152 @@ export const QuickAddEmployeePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4" dir="rtl">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-2xl mx-auto">
         <Card>
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="p-3 bg-primary/10 rounded-full">
-                <UserPlus className="h-8 w-8 text-primary" />
+          <CardHeader>
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-6 w-6 text-green-500" />
+              <div>
+                <CardTitle>הוספת עובד חדש</CardTitle>
+                <CardDescription>
+                  {businessInfo?.name && `עסק: ${businessInfo.name}`}
+                </CardDescription>
               </div>
             </div>
-            <CardTitle className="text-xl">הוספת עובד מהירה</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              מלא את הפרטים הבסיסיים להוספת עובד חדש
-            </p>
           </CardHeader>
+
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="first_name">שם פרטי *</Label>
-                <Input
-                  id="first_name"
-                  value={formData.first_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-                  placeholder="הכנס שם פרטי"
-                  required
-                />
+            <Alert className="mb-6">
+              <AlertDescription>
+                ⚠️ מערכת הוספת עובדים מהירה הוסרה מהמערכת. 
+                אנא פנה למנהל המערכת להוספת עובדים חדשים.
+              </AlertDescription>
+            </Alert>
+
+            <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name">שם פרטי *</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="first_name"
+                      value={formData.first_name}
+                      onChange={(e) => handleInputChange('first_name', e.target.value)}
+                      required
+                      className="pl-10"
+                      placeholder="הזן שם פרטי"
+                      disabled
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="last_name">שם משפחה *</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="last_name"
+                      value={formData.last_name}
+                      onChange={(e) => handleInputChange('last_name', e.target.value)}
+                      required
+                      className="pl-10"
+                      placeholder="הזן שם משפחה"
+                      disabled
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="last_name">שם משפחה *</Label>
-                <Input
-                  id="last_name"
-                  value={formData.last_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                  placeholder="הכנס שם משפחה"
-                  required
-                />
+                <Label htmlFor="email">כתובת דוא"ל</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    className="pl-10"
+                    placeholder="example@email.com"
+                    disabled
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">טלפון</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="הכנס מספר טלפון"
-                />
+                <Label htmlFor="phone">מספר טלפון</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    className="pl-10"
+                    placeholder="050-1234567"
+                    disabled
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">אימייל</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="הכנס כתובת אימייל"
+                <Label htmlFor="employee_type">סוג עובד</Label>
+                <Select value={formData.employee_type} onValueChange={(value) => handleInputChange('employee_type', value)} disabled>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hourly">שכיר לפי שעה</SelectItem>
+                    <SelectItem value="monthly">שכיר חודשי</SelectItem>
+                    <SelectItem value="contractor">קבלן</SelectItem>
+                    <SelectItem value="intern">מתמחה</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">הערות נוספות</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                  placeholder="הערות נוספות על העובד..."
+                  className="min-h-[80px]"
+                  disabled
                 />
               </div>
 
-              <div className="pt-4">
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? (
+              <div className="flex space-x-4 pt-4">
+                <Button
+                  type="submit"
+                  disabled={submitting || !tokenValid}
+                  className="flex-1"
+                >
+                  {submitting ? (
                     <>
-                      <Loader className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       מוסיף עובד...
                     </>
                   ) : (
-                    <>
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      הוסף עובד
-                    </>
+                    'הוסף עובד'
                   )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/')}
+                  className="flex-1"
+                >
+                  ביטול
                 </Button>
               </div>
             </form>
-
-            <div className="mt-6 p-3 bg-blue-50 rounded-md border border-blue-200">
-              <p className="text-xs text-blue-700">
-                <strong>הערה:</strong> העובד יווסף עם פרטים בסיסיים. ניתן לעדכן פרטים נוספים במערכת הניהול.
-              </p>
-            </div>
           </CardContent>
         </Card>
       </div>
     </div>
   );
 };
+
+export default QuickAddEmployeePage;

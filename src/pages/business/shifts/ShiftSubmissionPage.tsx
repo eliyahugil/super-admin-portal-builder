@@ -1,36 +1,33 @@
-
 import React from 'react';
-import { ShiftSubmissionManager } from '@/components/modules/shifts/ShiftSubmissionManager';
-import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 const ShiftSubmissionPage: React.FC = () => {
-  const { loading, error } = useCurrentBusiness();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center" dir="rtl">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">טוען...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center" dir="rtl">
-        <div className="text-center">
-          <div className="text-red-600 mb-2">שגיאה בטעינת העסק</div>
-          <p className="text-gray-600">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50" dir="rtl">
-      <ShiftSubmissionManager />
+    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
+      <div className="max-w-4xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Info className="h-6 w-6" />
+              הגשת משמרות
+            </CardTitle>
+            <CardDescription>
+              מערכת הגשת משמרות שבועיות
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                מערכת הגשת המשמרות השבועיות הוסרה מהמערכת. 
+                כעת ניהול המשמרות מתבצע דרך לוח המשמרות הראשי.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

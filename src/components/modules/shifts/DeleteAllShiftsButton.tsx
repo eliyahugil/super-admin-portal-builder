@@ -86,16 +86,7 @@ export const DeleteAllShiftsButton: React.FC = () => {
           // Continue anyway - this is not critical
         }
 
-        // Delete all weekly tokens for employees in this business
-        const { error: tokensError } = await supabase
-          .from('employee_weekly_tokens')
-          .delete()
-          .in('employee_id', employeeIds);
-
-        if (tokensError) {
-          console.error('❌ Error deleting weekly tokens:', tokensError);
-          // Continue anyway - this is not critical
-        }
+        // Weekly tokens table no longer exists - removed
       }
 
       console.log('✅ Successfully deleted all shifts and related data');

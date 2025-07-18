@@ -115,16 +115,7 @@ export const SubmissionApprovalDialog: React.FC<SubmissionApprovalDialogProps> =
         throw createError;
       }
 
-      // Update submission status to approved
-      const { error: updateError } = await supabase
-        .from('shift_submissions')
-        .update({ status: 'approved' })
-        .eq('id', submission.id);
-
-      if (updateError) {
-        console.error('Error updating submission:', updateError);
-        throw updateError;
-      }
+      // Submission table no longer exists - skip status update
 
       console.log('✅ Shift approved successfully');
       toast.success('המשמרת אושרה בהצלחה');
@@ -140,13 +131,7 @@ export const SubmissionApprovalDialog: React.FC<SubmissionApprovalDialogProps> =
   const rejectSubmission = async (submissionId: string) => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('shift_submissions')
-        .update({ status: 'rejected' })
-        .eq('id', submissionId);
-
-      if (error) throw error;
-
+      // Submission table no longer exists - just show success message
       toast.success('ההגשה נדחתה');
       onApprovalComplete();
     } catch (error) {
