@@ -60,21 +60,22 @@ export const ShiftSubmissionsList: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'submitted':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-          <AlertCircle className="w-3 h-3 mr-1" />
+        return <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
+          <AlertCircle className="w-3 h-3 ml-1" />
           הוגש
         </Badge>;
       case 'approved':
-        return <Badge variant="default" className="bg-green-100 text-green-800">
-          <CheckCircle className="w-3 h-3 mr-1" />
+        return <Badge variant="default" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800">
+          <CheckCircle className="w-3 h-3 ml-1" />
           אושר
         </Badge>;
       case 'rejected':
-        return <Badge variant="destructive">
+        return <Badge variant="destructive" className="bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800">
+          <AlertCircle className="w-3 h-3 ml-1" />
           דחוי
         </Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="border-muted-foreground/20">{status}</Badge>;
     }
   };
 
@@ -112,16 +113,18 @@ export const ShiftSubmissionsList: React.FC = () => {
     const isExpanded = expandedCards.has(submission.id);
     
     return (
-      <div className="bg-card border rounded-lg shadow-sm mb-3 overflow-hidden">
+      <div className="bg-card border border-border rounded-lg shadow-sm mb-3 overflow-hidden">
         {/* Header - always visible */}
         <div 
-          className="p-3 cursor-pointer"
+          className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
           onClick={() => toggleCardExpansion(submission.id)}
         >
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="font-medium text-sm truncate">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <User className="h-4 w-4 text-primary" />
+              </div>
+              <span className="font-semibold text-foreground truncate">
                 {submission.employees?.first_name && submission.employees?.last_name 
                   ? `${submission.employees.first_name} ${submission.employees.last_name}`
                   : 'עובד אנונימי'
@@ -130,16 +133,18 @@ export const ShiftSubmissionsList: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {getStatusBadge(submission.status)}
-              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
+                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {formatDate(submission.week_start_date)} - {formatDate(submission.week_end_date)}
-            </span>
-            <Badge variant="outline" className="text-xs h-5 px-2">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <span>{formatDate(submission.week_start_date)} - {formatDate(submission.week_end_date)}</span>
+            </div>
+            <Badge variant="outline" className="text-xs px-2 py-1 bg-muted/50">
               {shifts.length} משמרות
             </Badge>
           </div>
@@ -147,33 +152,43 @@ export const ShiftSubmissionsList: React.FC = () => {
 
         {/* Expandable content */}
         {isExpanded && (
-          <div className="border-t bg-muted/30 p-3 space-y-3 animate-accordion-down">
+          <div className="border-t bg-muted/20 p-4 space-y-4 animate-accordion-down">
             {/* Submission time */}
-            <div className="text-xs text-muted-foreground flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              הוגש: {formatDateTime(submission.submitted_at)}
+            <div className="text-sm text-muted-foreground flex items-center gap-2 pb-2 border-b border-border/50">
+              <Clock className="h-4 w-4" />
+              <span>הוגש: {formatDateTime(submission.submitted_at)}</span>
             </div>
 
             {/* Shifts */}
-            <div className="space-y-2">
-              <h4 className="font-medium text-sm">משמרות נבחרות:</h4>
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm text-foreground border-b border-border/50 pb-1">משמרות נבחרות</h4>
               {shifts.map((shift: any, index: number) => (
-                <div key={index} className="bg-background p-2 rounded text-xs space-y-1">
+                <div key={index} className="bg-card border border-border rounded-md p-3 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">{formatDate(shift.date)}</span>
-                    <span className="text-muted-foreground">{shift.start_time} - {shift.end_time}</span>
+                    <span className="font-medium text-foreground">{formatDate(shift.date)}</span>
+                    <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded">
+                      {shift.start_time} - {shift.end_time}
+                    </span>
                   </div>
                   
                   {shift.branch_preference && (
-                    <div className="text-muted-foreground">📍 {shift.branch_preference}</div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <span className="text-blue-600">📍</span>
+                      <span>{shift.branch_preference}</span>
+                    </div>
                   )}
                   
                   {shift.role_preference && (
-                    <div className="text-muted-foreground">👔 {shift.role_preference}</div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <span className="text-purple-600">👔</span>
+                      <span>{shift.role_preference}</span>
+                    </div>
                   )}
                   
                   {shift.notes && (
-                    <div className="text-muted-foreground bg-muted p-1 rounded">💬 {shift.notes}</div>
+                    <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded border border-border/50 leading-relaxed">
+                      <span className="text-green-600">💬</span> {shift.notes}
+                    </div>
                   )}
                 </div>
               ))}
@@ -181,11 +196,27 @@ export const ShiftSubmissionsList: React.FC = () => {
 
             {/* General notes */}
             {submission.notes && (
-              <div>
-                <h4 className="font-medium text-sm mb-1">הערות כלליות:</h4>
-                <p className="text-xs text-muted-foreground bg-background p-2 rounded leading-relaxed">
-                  {submission.notes}
-                </p>
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm text-foreground border-b border-border/50 pb-1">הערות כלליות</h4>
+                <div className="bg-card border border-border p-3 rounded-md">
+                  <p className="text-sm text-foreground leading-relaxed">
+                    {submission.notes}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Morning availability */}
+            {Array.isArray(submission.optional_morning_availability) && submission.optional_morning_availability.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm text-foreground border-b border-border/50 pb-1">זמינות בוקר אופציונלית</h4>
+                <div className="flex gap-2 flex-wrap">
+                  {submission.optional_morning_availability.map((day: any) => (
+                    <Badge key={day} variant="outline" className="text-xs px-2 py-1 bg-orange-50 text-orange-700 border-orange-200">
+                      יום {day}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -222,22 +253,22 @@ export const ShiftSubmissionsList: React.FC = () => {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-4xl mx-auto">
       {/* Header */}
-      <div className={`flex items-center justify-between mb-4 ${isMobile ? 'px-3' : ''}`}>
-        <h2 className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+      <div className={`flex items-center justify-between mb-6 ${isMobile ? 'px-4' : 'px-2'}`}>
+        <h2 className={`font-bold text-foreground ${isMobile ? 'text-xl' : 'text-2xl'}`}>
           הגשות משמרות
         </h2>
-        <Badge variant="outline" className="text-xs px-2 py-1">
-          {submissions.length}
+        <Badge variant="outline" className="text-sm px-3 py-1 bg-primary/10 text-primary border-primary/20">
+          {submissions.length} הגשות
         </Badge>
       </div>
 
       {/* Content */}
-      <div className={isMobile ? 'px-3' : ''}>
+      <div className={isMobile ? 'px-4' : 'px-2'}>
         {isMobile ? (
           // Mobile view - compact cards
-          <div className="space-y-0">
+          <div className="space-y-3">
             {submissions.map((submission: any) => (
               <MobileSubmissionCard key={submission.id} submission={submission} />
             ))}
