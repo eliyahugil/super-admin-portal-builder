@@ -98,10 +98,11 @@ export const AuthForm: React.FC = () => {
       businessId: profile.business_id
     });
     
-    // Check if user has business access or is super admin
-    if (profile.role === 'super_admin') {
-      console.log('AuthForm - Redirecting super admin to /admin');
+    // FORCE eligil1308@gmail.com to be super admin - NO EXCEPTIONS!
+    if (profile.email === 'eligil1308@gmail.com' || profile.role === 'super_admin') {
+      console.log('AuthForm - FORCING super admin access for:', profile.email);
       navigate('/admin', { replace: true });
+      return;
     } else if (profile.business_id) {
       console.log('AuthForm - User has business access, redirecting to modules');
       navigate('/modules/employees', { replace: true });
