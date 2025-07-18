@@ -56,15 +56,6 @@ export const useArchivedEmployees = (selectedBusinessId?: string | null) => {
               address
             )
           ),
-          weekly_tokens:employee_weekly_tokens(
-            id,
-            token,
-            week_start_date,
-            week_end_date,
-            is_active,
-            created_at,
-            expires_at
-          ),
           employee_notes:employee_notes(
             id,
             content,

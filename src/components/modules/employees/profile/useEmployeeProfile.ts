@@ -83,15 +83,6 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
               address
             )
           ),
-          weekly_tokens:employee_weekly_tokens(
-            id,
-            token,
-            week_start_date,
-            week_end_date,
-            is_active,
-            created_at,
-            expires_at
-          ),
           employee_notes:employee_notes(
             id,
             content,
@@ -175,8 +166,7 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
         hasEmail: !!normalizedEmployee.email,
         type: normalizedEmployee.employee_type,
         hasBranchAssignments: normalizedEmployee.branch_assignments?.length || 0,
-        hasNotes: normalizedEmployee.employee_notes?.length || 0,
-        hasTokens: normalizedEmployee.weekly_tokens?.length || 0
+        hasNotes: normalizedEmployee.employee_notes?.length || 0
       });
 
       setEmployee(normalizedEmployee);
