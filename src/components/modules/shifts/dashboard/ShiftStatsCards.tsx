@@ -19,22 +19,35 @@ export const ShiftStatsCards: React.FC<ShiftStatsCardsProps> = ({ submissions })
     s.submission_type && s.submission_type !== 'regular'
   ) || [];
 
-  // ספירת משמרות ייחודיות - לפי עובד ותאריכי שבוע (לא לפי כמות הגשות)
-  const uniqueRegularShifts = regularSubmissions.reduce((acc, submission) => {
-    const key = `${submission.employee_id}-${submission.week_start_date}-${submission.week_end_date}`;
-    if (!acc.has(key)) {
-      acc.set(key, submission);
-    }
-    return acc;
-  }, new Map()).size;
+  // פונקציה לספירת משמרות ייחודיות בתוך הגשות
+  const countUniqueShifts = (submissions: ShiftSubmission[]) => {
+    const uniqueShifts = new Set<string>();
+    
+    submissions.forEach(submission => {
+      if (submission.shifts) {
+        try {
+          const shiftsData = typeof submission.shifts === 'string' 
+            ? JSON.parse(submission.shifts) 
+            : submission.shifts;
+          
+          if (Array.isArray(shiftsData)) {
+            shiftsData.forEach((shift: any) => {
+              // יצירת מפתח ייחודי לכל משמרת: עובד + תאריך + שעות
+              const shiftKey = `${submission.employee_id}-${shift.date}-${shift.start_time}-${shift.end_time}`;
+              uniqueShifts.add(shiftKey);
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing shifts data:', error);
+        }
+      }
+    });
+    
+    return uniqueShifts.size;
+  };
 
-  const uniqueSpecialShifts = specialSubmissions.reduce((acc, submission) => {
-    const key = `${submission.employee_id}-${submission.week_start_date}-${submission.week_end_date}`;
-    if (!acc.has(key)) {
-      acc.set(key, submission);
-    }
-    return acc;
-  }, new Map()).size;
+  const uniqueRegularShifts = countUniqueShifts(regularSubmissions);
+  const uniqueSpecialShifts = countUniqueShifts(specialSubmissions);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
