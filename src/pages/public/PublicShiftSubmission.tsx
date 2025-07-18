@@ -109,43 +109,75 @@ const PublicShiftSubmission: React.FC = () => {
           return 'night';
         };
 
+        console.log('👤 Employee data:', {
+          id: employeeData.id,
+          name: `${employeeData.first_name} ${employeeData.last_name}`,
+          branchAssignments: employeeData.employee_branch_assignments?.length || 0,
+          defaultPreferences: employeeData.employee_default_preferences?.length || 0
+        });
+
         // Filter shifts based on employee's branch assignments and shift type preferences
         let filteredShifts = shifts || [];
+        console.log('🔍 Starting with shifts count:', filteredShifts.length);
         
         if (employeeData.employee_branch_assignments && employeeData.employee_branch_assignments.length > 0) {
+          console.log('📍 Employee has branch assignments:', employeeData.employee_branch_assignments);
+          
           // Get employee's assigned branch IDs
           const assignedBranchIds = employeeData.employee_branch_assignments
             .filter(assignment => assignment.is_active)
             .map(assignment => assignment.branch_id);
+          
+          console.log('📍 Active assigned branch IDs:', assignedBranchIds);
           
           // Get employee's preferred shift types from assignments
           const preferredShiftTypes = employeeData.employee_branch_assignments
             .filter(assignment => assignment.is_active && assignment.shift_types)
             .flatMap(assignment => assignment.shift_types || []);
           
+          console.log('⏰ Preferred shift types from assignments:', preferredShiftTypes);
+          
           // Filter shifts by assigned branches
           if (assignedBranchIds.length > 0) {
+            const beforeBranchFilter = filteredShifts.length;
             filteredShifts = filteredShifts.filter(shift => 
               assignedBranchIds.includes(shift.branch_id)
             );
+            console.log(`📍 After branch filter: ${beforeBranchFilter} → ${filteredShifts.length} shifts`);
+            console.log('📍 Remaining shifts after branch filter:', filteredShifts.map(s => ({
+              id: s.id,
+              branch_id: s.branch_id,
+              branch_name: s.branch?.name,
+              role: s.role
+            })));
           }
           
           // Filter shifts by preferred shift types if available
           if (preferredShiftTypes.length > 0) {
+            const beforeTypeFilter = filteredShifts.length;
             filteredShifts = filteredShifts.filter(shift => {
               const shiftType = getShiftTypeFromTime(shift.start_time);
+              console.log(`⏰ Shift ${shift.id} (${shift.start_time}) → type: ${shiftType}, included: ${preferredShiftTypes.includes(shiftType)}`);
               return preferredShiftTypes.includes(shiftType);
             });
+            console.log(`⏰ After shift type filter: ${beforeTypeFilter} → ${filteredShifts.length} shifts`);
           }
         } else if (employeeData.employee_default_preferences && employeeData.employee_default_preferences.length > 0) {
+          console.log('⚙️ Using default preferences:', employeeData.employee_default_preferences[0]);
+          
           // Fallback to default preferences if no branch assignments
           const defaultPrefs = employeeData.employee_default_preferences[0];
           if (defaultPrefs.shift_types && defaultPrefs.shift_types.length > 0) {
+            const beforeTypeFilter = filteredShifts.length;
             filteredShifts = filteredShifts.filter(shift => {
               const shiftType = getShiftTypeFromTime(shift.start_time);
+              console.log(`⏰ Default filter - Shift ${shift.id} (${shift.start_time}) → type: ${shiftType}, included: ${defaultPrefs.shift_types.includes(shiftType)}`);
               return defaultPrefs.shift_types.includes(shiftType);
             });
+            console.log(`⏰ After default shift type filter: ${beforeTypeFilter} → ${filteredShifts.length} shifts`);
           }
+        } else {
+          console.log('⚠️ No branch assignments or default preferences found - showing all shifts');
         }
 
         console.log('📊 Loaded scheduled shifts for token:', shifts?.length || 0);
