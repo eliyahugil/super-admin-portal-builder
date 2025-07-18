@@ -34,20 +34,19 @@ export const ShiftAssignmentDialog: React.FC<ShiftAssignmentDialogProps> = ({
 
   const currentEmployee = employees.find(emp => emp.id === shift.employee_id);
   
-  // Get employees assigned to other branches on the same date
-  const getEmployeesAssignedToOtherBranches = () => {
+  // Get employees already assigned to ANY shift on the same date
+  const getEmployeesAssignedToOtherShifts = () => {
     return allShifts
       .filter(s => 
         s.shift_date === shift.shift_date && 
         s.employee_id && 
-        s.branch_id !== shift.branch_id &&
         s.id !== shift.id // Don't count current shift
       )
       .map(s => s.employee_id)
       .filter(Boolean);
   };
   
-  const assignedEmployeeIds = getEmployeesAssignedToOtherBranches();
+  const assignedEmployeeIds = getEmployeesAssignedToOtherShifts();
   
   const filteredEmployees = employees.filter(employee => {
     // First check search term
@@ -204,7 +203,7 @@ export const ShiftAssignmentDialog: React.FC<ShiftAssignmentDialogProps> = ({
                     {unavailableEmployees.length > 0 && (
                       <>
                         <div className="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 border-b">
-                          לא זמינים - משויכים לסניף אחר ({unavailableEmployees.length})
+                          לא זמינים - כבר משויכים למשמרת אחרת ({unavailableEmployees.length})
                         </div>
                         {unavailableEmployees.map(employee => (
                           <SelectItem key={employee.id} value={employee.id} disabled>
@@ -235,7 +234,7 @@ export const ShiftAssignmentDialog: React.FC<ShiftAssignmentDialogProps> = ({
             </div>
             {unavailableEmployees.length > 0 && (
               <p className="text-xs text-gray-600 mt-1">
-                עובדים לא זמינים כבר משויכים לסניף אחר באותו תאריך
+                עובדים לא זמינים כבר משויכים למשמרת אחרת באותו תאריך
               </p>
             )}
           </div>
