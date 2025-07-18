@@ -1,6 +1,5 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { EmployeeRowActions } from './row/EmployeeRowActions';
 import { useNavigate } from 'react-router-dom';
 import { Phone, Mail, User, Building2, Clock } from 'lucide-react';
@@ -54,8 +53,7 @@ export const EmployeesMobileCard: React.FC<EmployeesMobileCardProps> = ({
   const isActive = employee.is_active ?? true;
 
   return (
-    <Card className="w-full shadow-sm hover:shadow-md transition-shadow bg-card border-border">
-      <CardContent className="p-4" dir="rtl">
+    <div className="w-full border-b border-border py-4 px-4 hover:bg-muted/30 transition-colors active:bg-muted/50" dir="rtl">
         {/* Header with name and status */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
@@ -117,8 +115,7 @@ export const EmployeesMobileCard: React.FC<EmployeesMobileCardProps> = ({
         {/* Actions */}
         <div className="flex justify-end pt-2 border-t border-border">
           <EmployeeRowActions employee={employee} onTokenSent={onRefetch} />
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

@@ -29,15 +29,25 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
       </CardHeader>
       <CardContent>
         {isMobile ? (
-          <div className="space-y-3" dir="rtl">
-            {employees.map((employee) => (
-              <EmployeesMobileCard
-                key={employee.id}
-                employee={employee}
-                onRefetch={onRefetch}
-                showBranch={showBranchFilter}
-              />
-            ))}
+          <div className="bg-background" dir="rtl">
+            {/* Header */}
+            <div className="py-3 px-4 bg-muted/30 border-b border-border">
+              <div className="text-sm font-medium text-foreground">
+                רשימת עובדים ({employees.length})
+              </div>
+            </div>
+            
+            {/* Employee List */}
+            <div className="bg-card">
+              {employees.map((employee) => (
+                <EmployeesMobileCard
+                  key={employee.id}
+                  employee={employee}
+                  onRefetch={onRefetch}
+                  showBranch={showBranchFilter}
+                />
+              ))}
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">

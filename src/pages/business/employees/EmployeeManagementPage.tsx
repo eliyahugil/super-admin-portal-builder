@@ -5,11 +5,9 @@ import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 const EmployeeManagementPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      <div className="container-mobile max-w-7xl mx-auto py-6">
-        {/* Employee Management Component - לא מעביר selectedBusinessId כדי שיקח מהקונטקסט */}
-        <EmployeeManagement />
-      </div>
+    <div className="min-h-screen bg-background w-full" dir="rtl">
+      {/* Employee Management Component - לא מעביר selectedBusinessId כדי שיקח מהקונטקסט */}
+      <EmployeeManagement />
     </div>
   );
 };

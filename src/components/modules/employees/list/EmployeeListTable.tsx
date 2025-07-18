@@ -67,11 +67,12 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
   if (isMobile) {
     return (
       <div 
-        className="w-full bg-background pb-4 px-2" 
+        className="w-full bg-background" 
         dir="rtl"
       >
-        <div className="flex items-center justify-between mb-4 px-1 py-3 bg-muted/30 rounded-lg">
-          <label className="flex items-center gap-2 text-sm font-medium">
+        {/* Select All Header - full width */}
+        <div className="flex items-center justify-between py-3 px-4 bg-muted/30 border-b border-border">
+          <label className="flex items-center gap-3 text-sm font-medium">
             <input
               type="checkbox"
               checked={allFilteredSelected}
@@ -86,12 +87,13 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
           </span>
         </div>
         
-        <div className="space-y-3">
+        {/* Employee List - full width */}
+        <div className="bg-card">
           {employees.map((employee, index) => (
             <div 
               key={employee.id}
               className="animate-fade-in"
-              style={{ animationDelay: `${index * 50}ms` }}
+              style={{ animationDelay: `${index * 30}ms` }}
             >
               <EmployeeListCard
                 employee={employee}

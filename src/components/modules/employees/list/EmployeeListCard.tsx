@@ -28,99 +28,75 @@ export const EmployeeListCard: React.FC<EmployeeListCardProps> = ({
 }) => {
   return (
     <div
-      className="w-full bg-card border border-border rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow animate-fade-in"
+      className="w-full bg-card border-b border-border py-4 px-4 hover:bg-muted/30 transition-colors animate-fade-in active:bg-muted/50"
       dir="rtl"
     >
-      {/* Header: checkbox, name and status */}
-      <div className="flex items-start justify-between mb-4 gap-3">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
+      {/* Header Row - compact layout */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <input
             type="checkbox"
             checked={selected}
             onChange={(e) => onSelect(employee.id, e.target.checked)}
-            className="mt-1 w-5 h-5 accent-primary border-2 border-border rounded focus:ring-2 focus:ring-primary/20"
+            className="w-5 h-5 accent-primary border-2 border-border rounded focus:ring-2 focus:ring-primary/20"
             aria-label="בחר עובד"
           />
           <div className="flex-1 min-w-0">
-            <div className="text-lg font-semibold text-foreground break-words leading-tight">
+            <div className="text-base font-semibold text-foreground truncate">
               {`${employee.first_name} ${employee.last_name}`}
             </div>
-            {employee.email && (
-              <div className="text-sm text-muted-foreground mt-1 break-words">
-                {employee.email}
-              </div>
-            )}
+            <div className="text-sm text-muted-foreground truncate">
+              {employee.employee_id ? `מס' עובד: ${employee.employee_id}` : 'מס\' עובד: לא הוגדר'}
+            </div>
           </div>
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <EmployeeListStatusCell isActive={!!employee.is_active} />
         </div>
       </div>
 
-      {/* Employee details in grid format for better mobile layout */}
-      <div className="grid grid-cols-1 gap-3 mb-4">
-        {/* Employee ID */}
-        <div className="flex items-center justify-between py-2 border-b border-border/50">
-          <span className="text-sm font-medium text-muted-foreground">מספר עובד</span>
-          <span className="text-sm font-semibold text-foreground">
-            {employee.employee_id || (
-              <span className="text-muted-foreground font-normal">לא הוגדר</span>
-            )}
-          </span>
-        </div>
-
-        {/* Phone */}
-        <div className="flex items-center justify-between py-2 border-b border-border/50">
-          <span className="text-sm font-medium text-muted-foreground">טלפון</span>
-          <div className="text-sm">
+      {/* Quick Info Row */}
+      <div className="flex items-center justify-between text-sm mb-3">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          {/* Phone */}
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <span>📱</span>
             <EmployeeListPhoneCell employee={employee} />
           </div>
-        </div>
-
-        {/* Employee Type */}
-        <div className="flex items-center justify-between py-2 border-b border-border/50">
-          <span className="text-sm font-medium text-muted-foreground">סוג עובד</span>
-          <div className="text-sm">
+          
+          {/* Employee Type */}
+          <div className="flex items-center gap-1">
+            <span>👤</span>
             <EmployeeListTypeCell type={employee.employee_type} />
           </div>
         </div>
-
-        {/* Branch */}
-        <div className="flex items-center justify-between py-2 border-b border-border/50">
-          <span className="text-sm font-medium text-muted-foreground">סניף ראשי</span>
-          <div className="text-sm">
-            <EmployeeListBranchCell employee={employee} />
-          </div>
+        
+        {/* Actions - compact */}
+        <div className="flex-shrink-0">
+          <EmployeeListActionsCell
+            employee={employee}
+            onDeleteEmployee={onDeleteEmployee}
+            onRefetch={onRefetch}
+            loading={loading}
+          />
         </div>
+      </div>
 
-        {/* Weekly Hours */}
-        <div className="flex items-center justify-between py-2 border-b border-border/50">
-          <span className="text-sm font-medium text-muted-foreground">שעות שבועיות</span>
-          <div className="text-sm">
-            <EmployeeListWeeklyHoursCell weeklyHoursRequired={employee.weekly_hours_required} />
-          </div>
+      {/* Additional Info - collapsible */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <div>
+          <span className="font-medium">סניף:</span> <EmployeeListBranchCell employee={employee} />
         </div>
-
-        {/* Hire Date */}
-        {employee.hire_date && (
-          <div className="flex items-center justify-between py-2 border-b border-border/50">
-            <span className="text-sm font-medium text-muted-foreground">תאריך תחילה</span>
-            <span className="text-sm font-semibold text-foreground">
-              {new Date(employee.hire_date).toLocaleDateString("he-IL")}
-            </span>
+        <div>
+          <span className="font-medium">שעות:</span> <EmployeeListWeeklyHoursCell weeklyHoursRequired={employee.weekly_hours_required} />
+        </div>
+        {employee.email && (
+          <div className="col-span-2 truncate">
+            <span className="font-medium">מייל:</span> {employee.email}
           </div>
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex justify-end pt-3 border-t border-border">
-        <EmployeeListActionsCell
-          employee={employee}
-          onDeleteEmployee={onDeleteEmployee}
-          onRefetch={onRefetch}
-          loading={loading}
-        />
-      </div>
     </div>
   );
 };
