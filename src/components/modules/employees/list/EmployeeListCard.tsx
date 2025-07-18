@@ -28,7 +28,7 @@ export const EmployeeListCard: React.FC<EmployeeListCardProps> = ({
 }) => {
   return (
     <div
-      className="bg-card mx-2 sm:mx-4 my-2 sm:my-3 p-3 sm:p-4 rounded-xl border border-border shadow-sm hover:shadow-md transition-all duration-200"
+      className="bg-card w-full m-0 p-4 border-b border-border hover:bg-muted/20 transition-all duration-200"
       dir="rtl"
     >
       {/* כותרת - שם העובד עם סטטוס */}
