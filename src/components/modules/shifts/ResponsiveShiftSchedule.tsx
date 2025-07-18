@@ -95,7 +95,9 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     shabbatTimesCount: shabbatTimes.length,
     loading: loading || calendarLoading,
     error: error?.message || null,
-    activeTab
+    activeTab,
+    isSelectionMode,
+    selectedShiftsCount: selectedShifts.length
   });
 
   // Handle retry for errors

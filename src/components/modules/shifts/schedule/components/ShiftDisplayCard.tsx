@@ -38,16 +38,20 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
     hasOnShiftSelection: !!onShiftSelection
   });
   const handleShiftCardClick = (e: React.MouseEvent) => {
+    console.log('👆 Shift card clicked:', { shiftId: shift.id, isSelectionMode, isSelected });
     if (isSelectionMode && onShiftSelection) {
       e.preventDefault();
       e.stopPropagation();
+      console.log('📋 Toggling selection for shift:', shift.id);
       onShiftSelection(shift, !isSelected, e);
     } else {
+      console.log('🔓 Opening shift details for:', shift.id);
       onShiftClick(shift);
     }
   };
 
   const handleShiftSelectionChange = (checked: boolean) => {
+    console.log('☑️ Checkbox changed:', { shiftId: shift.id, checked });
     if (onShiftSelection) {
       const mockEvent = {
         preventDefault: () => {},
