@@ -38,6 +38,8 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
   // Debug logs
   console.log('🔍 ShiftDisplayCard render:', {
     shiftId: shift.id,
+    startTime: shift.start_time,
+    endTime: shift.end_time,
     isSelectionMode,
     isSelected,
     hasOnShiftSelection: !!onShiftSelection
@@ -92,14 +94,23 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
     }
   };
 
+  // פונקציה להצגת השעות בסדר הנכון
+  const getFormattedTimeRange = () => {
+    const startTime = shift.start_time;
+    const endTime = shift.end_time;
+    
+    // ודא שהשעות מוצגות בסדר הנכון: התחלה - סיום
+    return `${startTime} - ${endTime}`;
+  };
+
   const getShiftTooltipContent = () => {
     return (
       <div className="space-y-2 max-w-xs" dir="rtl">
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          <span className="font-medium">זמנים:</span>
-          <span>{shift.start_time} - {shift.end_time}</span>
-        </div>
+         <div className="flex items-center gap-2">
+           <Clock className="h-4 w-4" />
+           <span className="font-medium">זמנים:</span>
+           <span>{getFormattedTimeRange()}</span>
+         </div>
         
         {shift.branch_name && (
           <div className="flex items-center gap-2">
@@ -220,12 +231,12 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
         )}
         
         {/* שעות משמרת - שני */}
-        <div className="flex items-center justify-center">
-          <Badge variant="outline" className="bg-white border-2 font-medium px-3 py-1 shadow-sm">
-            <Clock className="h-3 w-3 ml-1" />
-            {shift.start_time} - {shift.end_time}
-          </Badge>
-        </div>
+         <div className="flex items-center justify-center">
+           <Badge variant="outline" className="bg-white border-2 font-medium px-3 py-1 shadow-sm">
+             <Clock className="h-3 w-3 ml-1" />
+             {getFormattedTimeRange()}
+           </Badge>
+         </div>
         
       {/* עובד מוקצה או לא מוקצה - שלישי */}
         <div className="flex items-center justify-center">
