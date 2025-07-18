@@ -666,24 +666,25 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                           ? JSON.parse(submission.shifts) 
                           : submission.shifts || [];
                         
-                        console.log('🔍 Checking submission for shift:', {
-                          shiftId: shift.id,
-                          shiftBranch: shift.branch_name,
-                          shiftTime: `${shift.start_time}-${shift.end_time}`,
-                          submissionShifts: shifts.map(s => ({
-                            branch: s.branch_preference,
-                            time: `${s.start_time}-${s.end_time}`,
-                            date: s.date
-                          }))
-                        });
-                        
                         // Check if any shift in the submission matches this shift's time and branch
-                        return shifts.some((submittedShift: any) => 
+                        const matches = shifts.some((submittedShift: any) => 
                           submittedShift.start_time === shift.start_time && 
                           submittedShift.end_time === shift.end_time &&
                           submittedShift.branch_preference === shift.branch_name
                         );
+                        
+                        return matches;
                       });
+                      
+                      // Debug log for mobile
+                      if (shiftSubmissions.length > 0) {
+                        console.log('📱 Mobile shift submissions found:', {
+                          shiftId: shift.id,
+                          branch: shift.branch_name,
+                          time: `${shift.start_time}-${shift.end_time}`,
+                          submissionsCount: shiftSubmissions.length
+                        });
+                      }
                     const hasConflict = hasShiftConflict(shift);
 
                         return (
