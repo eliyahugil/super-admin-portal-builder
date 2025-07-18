@@ -260,7 +260,7 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
                   </p>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-3">
                 {isLoading ? (
                   <div className="text-center text-sm text-gray-500 py-4">
                     טוען משמרות...
@@ -270,52 +270,197 @@ export const ShiftSubmissionCalendar: React.FC<ShiftSubmissionCalendarProps> = (
                     אין משמרות זמינות
                   </div>
                 ) : (
-                  dayShifts.map((shift) => {
-                    const isSelected = isShiftSelected(shift.id);
-                    const isFull = shift.current_employees >= shift.max_employees;
-                    
-                    return (
-                      <div
-                        key={shift.id}
-                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                          isSelected
-                            ? 'bg-blue-100 border-blue-300 text-blue-800'
-                            : isFull
-                            ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
-                            : 'bg-white border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                        }`}
-                        onClick={() => !isFull && toggleShiftSelection(shift)}
-                      >
-                        <div className="space-y-1">
-                          <div className="font-medium text-sm">{shift.name}</div>
-                          <div className="flex items-center gap-1 text-xs text-gray-600">
-                            <Clock className="h-3 w-3" />
-                            <span>{shift.start_time} - {shift.end_time}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-gray-600">
-                            <MapPin className="h-3 w-3" />
-                            <span>{shift.branch_name}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1 text-xs text-gray-600">
-                              <Users className="h-3 w-3" />
-                              <span>{shift.current_employees}/{shift.max_employees}</span>
-                            </div>
-                            {isSelected && (
-                              <Badge variant="secondary" className="text-xs">
-                                נבחר
-                              </Badge>
-                            )}
-                            {isFull && (
-                              <Badge variant="destructive" className="text-xs">
-                                מלא
-                              </Badge>
-                            )}
-                          </div>
+                  <>
+                    {/* Morning Shifts */}
+                    {dayShifts.filter(s => s.name.includes('בוקר')).length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                          משמרות בוקר
                         </div>
+                        {dayShifts.filter(s => s.name.includes('בוקר')).map((shift) => {
+                          const isSelected = isShiftSelected(shift.id);
+                          const isFull = shift.current_employees >= shift.max_employees;
+                          // For demo purposes, assume some employees are primarily evening workers
+                          // In real app, this would come from employee preferences data
+                          const isSpecialCase = Math.random() > 0.7; // 30% chance this is special case
+                          
+                          return (
+                            <div
+                              key={shift.id}
+                              className={`p-3 rounded-lg border cursor-pointer transition-all relative ${
+                                isSelected
+                                  ? 'bg-orange-100 border-orange-300 text-orange-800'
+                                  : isFull
+                                  ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
+                                  : 'bg-white border-orange-200 hover:border-orange-300 hover:bg-orange-50'
+                              }`}
+                              onClick={() => !isFull && toggleShiftSelection(shift)}
+                            >
+                              {isSpecialCase && (
+                                <div className="absolute top-1 right-1">
+                                  <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-300">
+                                    מיוחד
+                                  </Badge>
+                                </div>
+                              )}
+                              <div className="space-y-1">
+                                <div className="font-medium text-sm">{shift.name}</div>
+                                <div className="flex items-center gap-1 text-xs text-gray-600">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{shift.start_time} - {shift.end_time}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-gray-600">
+                                  <MapPin className="h-3 w-3" />
+                                  <span>{shift.branch_name}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1 text-xs text-gray-600">
+                                    <Users className="h-3 w-3" />
+                                    <span>{shift.current_employees}/{shift.max_employees}</span>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    {isSelected && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        נבחר
+                                      </Badge>
+                                    )}
+                                    {isFull && (
+                                      <Badge variant="destructive" className="text-xs">
+                                        מלא
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })
+                    )}
+
+                    {/* Evening Shifts */}
+                    {dayShifts.filter(s => s.name.includes('ערב')).length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                          משמרות ערב
+                        </div>
+                        {dayShifts.filter(s => s.name.includes('ערב')).map((shift) => {
+                          const isSelected = isShiftSelected(shift.id);
+                          const isFull = shift.current_employees >= shift.max_employees;
+                          // For demo purposes, assume some employees are primarily morning workers
+                          const isSpecialCase = Math.random() > 0.6; // 40% chance this is special case
+                          
+                          return (
+                            <div
+                              key={shift.id}
+                              className={`p-3 rounded-lg border cursor-pointer transition-all relative ${
+                                isSelected
+                                  ? 'bg-blue-100 border-blue-300 text-blue-800'
+                                  : isFull
+                                  ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
+                                  : 'bg-white border-blue-200 hover:border-blue-300 hover:bg-blue-50'
+                              }`}
+                              onClick={() => !isFull && toggleShiftSelection(shift)}
+                            >
+                              {isSpecialCase && (
+                                <div className="absolute top-1 right-1">
+                                  <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-300">
+                                    מיוחד
+                                  </Badge>
+                                </div>
+                              )}
+                              <div className="space-y-1">
+                                <div className="font-medium text-sm">{shift.name}</div>
+                                <div className="flex items-center gap-1 text-xs text-gray-600">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{shift.start_time} - {shift.end_time}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-gray-600">
+                                  <MapPin className="h-3 w-3" />
+                                  <span>{shift.branch_name}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1 text-xs text-gray-600">
+                                    <Users className="h-3 w-3" />
+                                    <span>{shift.current_employees}/{shift.max_employees}</span>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    {isSelected && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        נבחר
+                                      </Badge>
+                                    )}
+                                    {isFull && (
+                                      <Badge variant="destructive" className="text-xs">
+                                        מלא
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Night Shifts */}
+                    {dayShifts.filter(s => s.name.includes('לילה')).length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                          משמרות לילה
+                        </div>
+                        {dayShifts.filter(s => s.name.includes('לילה')).map((shift) => {
+                          const isSelected = isShiftSelected(shift.id);
+                          const isFull = shift.current_employees >= shift.max_employees;
+                          
+                          return (
+                            <div
+                              key={shift.id}
+                              className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                                isSelected
+                                  ? 'bg-purple-100 border-purple-300 text-purple-800'
+                                  : isFull
+                                  ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
+                                  : 'bg-white border-purple-200 hover:border-purple-300 hover:bg-purple-50'
+                              }`}
+                              onClick={() => !isFull && toggleShiftSelection(shift)}
+                            >
+                              <div className="space-y-1">
+                                <div className="font-medium text-sm">{shift.name}</div>
+                                <div className="flex items-center gap-1 text-xs text-gray-600">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{shift.start_time} - {shift.end_time}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-gray-600">
+                                  <MapPin className="h-3 w-3" />
+                                  <span>{shift.branch_name}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1 text-xs text-gray-600">
+                                    <Users className="h-3 w-3" />
+                                    <span>{shift.current_employees}/{shift.max_employees}</span>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    {isSelected && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        נבחר
+                                      </Badge>
+                                    )}
+                                    {isFull && (
+                                      <Badge variant="destructive" className="text-xs">
+                                        מלא
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
