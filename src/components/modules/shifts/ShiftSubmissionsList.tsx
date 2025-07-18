@@ -119,15 +119,17 @@ export const ShiftSubmissionsList: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4 p-2 sm:p-0">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <h2 className="text-xl sm:text-2xl font-bold">הגשות משמרות</h2>
-        <Badge variant="outline" className="text-sm w-fit">
-          {submissions.length} הגשות
+    <div className="space-y-3 px-1">
+      {/* כותרת קומפקטית למובייל */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold">הגשות משמרות</h2>
+        <Badge variant="outline" className="text-xs px-2 py-1">
+          {submissions.length}
         </Badge>
       </div>
 
-      <div className="grid gap-3 sm:gap-4">
+      {/* רשימת הגשות - אופטימיזציה למובייל */}
+      <div className="space-y-3">
         {submissions.map((submission: any) => {
           const shifts = Array.isArray(submission.shifts) ? submission.shifts : [];
           const morningAvailability = Array.isArray(submission.optional_morning_availability) 
@@ -135,91 +137,98 @@ export const ShiftSubmissionsList: React.FC = () => {
             : [];
 
           return (
-            <Card key={submission.id} className="overflow-hidden">
-              <CardHeader className="pb-3 px-3 sm:px-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                    <User className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                    <span className="truncate">
-                      {submission.employees?.first_name && submission.employees?.last_name 
-                        ? `${submission.employees.first_name} ${submission.employees.last_name}`
-                        : 'עובד אנונימי'
-                      }
-                    </span>
-                  </CardTitle>
-                  {getStatusBadge(submission.status)}
+            <Card key={submission.id} className="mx-1 shadow-sm">
+              {/* כותרת העובד והסטטוס */}
+              <CardHeader className="pb-2 px-3 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <CardTitle className="text-sm flex items-center gap-2 mb-1">
+                      <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="font-medium">
+                        {submission.employees?.first_name && submission.employees?.last_name 
+                          ? `${submission.employees.first_name} ${submission.employees.last_name}`
+                          : 'עובד אנונימי'
+                        }
+                      </span>
+                    </CardTitle>
+                    {/* תאריכי השבוע */}
+                    <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      <Calendar className="h-3 w-3" />
+                      {formatDate(submission.week_start_date)} - {formatDate(submission.week_end_date)}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {getStatusBadge(submission.status)}
+                    <div className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatDateTime(submission.submitted_at)}
+                    </div>
+                  </div>
                 </div>
-                <CardDescription className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">
-                      שבוע {formatDate(submission.week_start_date)} - {formatDate(submission.week_end_date)}
-                    </span>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-4 w-4 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">
-                      הוגש: {formatDateTime(submission.submitted_at)}
-                    </span>
-                  </span>
-                </CardDescription>
               </CardHeader>
 
-              <CardContent className="px-3 sm:px-6">
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="font-medium mb-2 text-sm sm:text-base">משמרות נבחרות ({shifts.length}):</h4>
-                    <div className="grid gap-2">
-                      {shifts.map((shift: any, index: number) => (
-                        <div key={index} className="bg-muted p-2 sm:p-3 rounded-lg text-sm">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                              <span className="font-medium text-xs sm:text-sm">{formatDate(shift.date)}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                              <span className="text-xs sm:text-sm">{shift.start_time} - {shift.end_time}</span>
-                            </div>
-                          </div>
-                          
+              <CardContent className="px-3 py-2">
+                {/* משמרות נבחרות - תצוגה קומפקטית */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-sm">משמרות נבחרות</h4>
+                    <Badge variant="secondary" className="text-xs h-5 px-2">
+                      {shifts.length}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {shifts.map((shift: any, index: number) => (
+                      <div key={index} className="bg-muted/50 p-2 rounded-md">
+                        {/* תאריך ושעות */}
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium">{formatDate(shift.date)}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {shift.start_time} - {shift.end_time}
+                          </span>
+                        </div>
+                        
+                        {/* פרטים נוספים */}
+                        <div className="space-y-1">
                           {shift.branch_preference && (
-                            <div className="mt-1 text-muted-foreground text-xs sm:text-sm">
+                            <div className="text-xs text-muted-foreground">
                               📍 {shift.branch_preference}
                             </div>
                           )}
                           
                           {shift.role_preference && (
-                            <div className="mt-1 text-muted-foreground text-xs sm:text-sm">
+                            <div className="text-xs text-muted-foreground">
                               👔 {shift.role_preference}
                             </div>
                           )}
                           
                           {shift.notes && (
-                            <div className="mt-1 text-muted-foreground text-xs sm:text-sm break-words">
+                            <div className="text-xs text-muted-foreground bg-background p-1 rounded text-right">
                               💬 {shift.notes}
                             </div>
                           )}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
 
+                  {/* הערות כלליות */}
                   {submission.notes && (
-                    <div>
-                      <h4 className="font-medium mb-1 text-sm sm:text-base">הערות כלליות:</h4>
-                      <p className="text-xs sm:text-sm text-muted-foreground bg-muted p-2 rounded break-words">
+                    <div className="mt-3 pt-2 border-t">
+                      <h4 className="font-medium text-sm mb-1">הערות כלליות</h4>
+                      <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded text-right leading-relaxed">
                         {submission.notes}
                       </p>
                     </div>
                   )}
 
+                  {/* זמינות בוקר */}
                   {morningAvailability.length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-1 text-sm sm:text-base">זמינות בוקר אופציונלית:</h4>
+                    <div className="mt-3 pt-2 border-t">
+                      <h4 className="font-medium text-sm mb-2">זמינות בוקר אופציונלית</h4>
                       <div className="flex gap-1 flex-wrap">
                         {morningAvailability.map((day: any) => (
-                          <Badge key={day} variant="outline" className="text-xs">
+                          <Badge key={day} variant="outline" className="text-xs h-6 px-2">
                             יום {day}
                           </Badge>
                         ))}

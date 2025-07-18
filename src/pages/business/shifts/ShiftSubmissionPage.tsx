@@ -5,22 +5,21 @@ import { ShiftSubmissionsList } from '@/components/modules/shifts/ShiftSubmissio
 
 const ShiftSubmissionPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 lg:p-6" dir="rtl">
-      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-        <Card>
-          <CardHeader className="px-3 py-4 sm:px-6 sm:py-6">
-            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-              <Send className="h-5 w-5 sm:h-6 sm:w-6" />
-              הגשות משמרות
-            </CardTitle>
-            <CardDescription className="text-sm sm:text-base">
-              צפייה וניהול הגשות משמרות שהתקבלו מהעובדים
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-0 sm:px-6">
-            <ShiftSubmissionsList />
-          </CardContent>
-        </Card>
+    <div className="min-h-screen bg-background" dir="rtl">
+      {/* כותרת דף קומפקטית למובייל */}
+      <div className="bg-card border-b sticky top-0 z-10 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Send className="h-5 w-5 text-primary" />
+          <h1 className="text-lg font-semibold">הגשות משמרות</h1>
+        </div>
+        <p className="text-sm text-muted-foreground mt-1">
+          צפייה וניהול הגשות משמרות
+        </p>
+      </div>
+      
+      {/* תוכן הדף */}
+      <div className="pb-20">
+        <ShiftSubmissionsList />
       </div>
     </div>
   );
