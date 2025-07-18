@@ -3791,6 +3791,7 @@ export type Database = {
           optional_morning_availability: number[] | null
           shifts: Json
           status: string
+          submission_type: string | null
           submitted_at: string
           updated_at: string
           week_end_date: string
@@ -3804,6 +3805,7 @@ export type Database = {
           optional_morning_availability?: number[] | null
           shifts?: Json
           status?: string
+          submission_type?: string | null
           submitted_at?: string
           updated_at?: string
           week_end_date: string
@@ -3817,6 +3819,7 @@ export type Database = {
           optional_morning_availability?: number[] | null
           shifts?: Json
           status?: string
+          submission_type?: string | null
           submitted_at?: string
           updated_at?: string
           week_end_date?: string

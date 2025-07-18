@@ -681,15 +681,9 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                         return matches;
                       });
                       
-                      // Debug log for mobile
-                      if (shiftSubmissions.length > 0) {
-                        console.log('📱 Mobile shift submissions found:', {
-                          shiftId: shift.id,
-                          branch: shift.branch_name,
-                          time: `${shift.start_time}-${shift.end_time}`,
-                          submissionsCount: shiftSubmissions.length
-                        });
-                      }
+                      // Separate regular and special submissions
+                      const regularSubmissions = shiftSubmissions.filter(s => s.submission_type === 'regular' || !s.submission_type);
+                      const specialSubmissions = shiftSubmissions.filter(s => s.submission_type && s.submission_type !== 'regular');
                     const hasConflict = hasShiftConflict(shift);
 
                         return (
@@ -779,26 +773,38 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                   </TooltipProvider>
                                 )}
                              </div>
-                              {/* הצגת מספר הגשות - תמיד נראה */}
-                              {shiftSubmissions.length > 0 && (
-                                <Badge 
-                                  variant="outline" 
-                                  className="text-xs bg-blue-50 text-blue-700 border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setOpenSubmissionsPopover(openSubmissionsPopover === shift.id ? null : shift.id);
-                                  }}
-                                >
-                                  📋 {shiftSubmissions.length} הגשות
-                                </Badge>
-                              )}
-                              {/* Debug עבור בדיקה */}
-                              {pendingSubmissions.length > 0 && shiftSubmissions.length === 0 && (
-                                <div className="text-xs text-red-500 bg-red-50 p-1 rounded">
-                                  DEBUG: {pendingSubmissions.length} הגשות קיימות אך לא למשמרת זו
-                                </div>
-                              )}
+                              {/* הצגת מספר הגשות - ספירה נפרדת לרגילות ומיוחדות */}
+                              <div className="flex gap-1">
+                                {/* הגשות רגילות */}
+                                {regularSubmissions.length > 0 && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs bg-blue-50 text-blue-700 border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setOpenSubmissionsPopover(openSubmissionsPopover === shift.id ? null : shift.id);
+                                    }}
+                                  >
+                                    📋 {regularSubmissions.length}
+                                  </Badge>
+                                )}
+                                
+                                {/* הגשות מיוחדות */}
+                                {specialSubmissions.length > 0 && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs bg-purple-50 text-purple-700 border-purple-200 cursor-pointer hover:bg-purple-100 transition-colors"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setOpenSubmissionsPopover(openSubmissionsPopover === shift.id ? null : shift.id);
+                                    }}
+                                  >
+                                    ⭐ {specialSubmissions.length}
+                                  </Badge>
+                                )}
+                              </div>
                            </div>
                        </div>
                      </ShiftSubmissionsPopover>
