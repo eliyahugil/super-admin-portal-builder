@@ -149,7 +149,15 @@ const PublicShiftSubmission: React.FC = () => {
         }
 
         console.log('📊 Loaded scheduled shifts for token:', shifts?.length || 0);
-        console.log('📊 All shifts:', shifts);
+        console.log('📊 All shifts details:', shifts?.map(s => ({
+          id: s.id, 
+          date: s.shift_date, 
+          time: `${s.start_time}-${s.end_time}`, 
+          status: s.status,
+          employee_id: s.employee_id,
+          role: s.role,
+          branch: s.branch?.name
+        })));
         console.log('📊 Filtered shifts for employee:', filteredShifts.length);
         console.log('📊 Final filtered shifts:', filteredShifts);
         setScheduledShifts(filteredShifts);
