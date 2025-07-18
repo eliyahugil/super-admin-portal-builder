@@ -4670,6 +4670,10 @@ export type Database = {
         }
         Returns: Json
       }
+      toggle_token_status: {
+        Args: { token_id_param: string; new_status: boolean }
+        Returns: undefined
+      }
       update_table: {
         Args: { table_name: string; set_clause: string; where_clause: string }
         Returns: Json

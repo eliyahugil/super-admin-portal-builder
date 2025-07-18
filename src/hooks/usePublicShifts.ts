@@ -175,22 +175,18 @@ export const usePublicShifts = () => {
     },
   });
 
-  // Toggle token active status (admin only)
+  // Toggle token status (admin only)
   const toggleTokenStatus = useMutation({
     mutationFn: async ({ tokenId, isActive }: { tokenId: string; isActive: boolean }) => {
-      const { data, error } = await supabase
-        .from('shift_submission_tokens')
-        .update({ is_active: isActive })
-        .eq('id', tokenId)
-        .select()
-        .single();
+      const { error } = await supabase.rpc('toggle_token_status', {
+        token_id_param: tokenId,
+        new_status: isActive
+      });
 
       if (error) {
-        console.error('Error updating token status:', error);
-        throw new Error('שגיאה בעדכון סטטוס הטוקן');
+        console.error('Error toggling token status:', error);
+        throw new Error('שגיאה בשינוי סטטוס הטוקן');
       }
-
-      return data as PublicShiftToken;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['public-tokens'] });
