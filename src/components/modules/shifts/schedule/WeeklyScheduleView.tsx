@@ -753,20 +753,23 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                           >
                             {/* Add Employee Recommendations and other action buttons */}
                             <div className="absolute top-1 right-1 flex gap-1 opacity-100 transition-opacity z-10">
-                               {/* Employee Recommendations - Working Button */}
+                               {/* Employee Recommendations - Full System */}
                                {!shift.employee_id && (
-                                 <Button
-                                   size="sm"
-                                   variant="outline"
-                                   className="h-6 w-6 p-0 bg-yellow-100 hover:bg-yellow-200 border-yellow-300 font-bold"
-                                   onClick={(e) => {
-                                     e.stopPropagation();
-                                     console.log('Recommendation button clicked for shift:', shift.id);
-                                     alert(`📋 המלצות למשמרת ${shift.start_time}-${shift.end_time}\n\n💡 הכפתור עובד! עכשיו נוסיף את המערכת המלאה...`);
-                                   }}
+                                 <EmployeeRecommendationEngine
+                                   shiftId={shift.id}
+                                   shiftTime={`${shift.start_time}-${shift.end_time}`}
+                                   shiftDate={date.toISOString().split('T')[0]}
+                                   weekStartDate={weekDays[0].toISOString().split('T')[0]}
+                                   onEmployeeSelected={(employeeId) => onShiftUpdate(shift.id, { employee_id: employeeId })}
                                  >
-                                   💡
-                                 </Button>
+                                   <Button
+                                     size="sm"
+                                     variant="outline"
+                                     className="h-6 w-6 p-0 bg-yellow-100 hover:bg-yellow-200 border-yellow-300 font-bold"
+                                   >
+                                     💡
+                                   </Button>
+                                 </EmployeeRecommendationEngine>
                                )}
                               <Button
                                 size="sm"
