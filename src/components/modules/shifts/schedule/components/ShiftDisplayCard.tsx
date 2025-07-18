@@ -2,7 +2,8 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Clock, User, MapPin, Trash2, AlertTriangle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Clock, User, MapPin, Trash2, AlertTriangle, UserCheck, FileText } from 'lucide-react';
 import type { ShiftScheduleData } from '../types';
 
 interface ShiftDisplayCardProps {
@@ -16,6 +17,8 @@ interface ShiftDisplayCardProps {
   getEmployeeName: (employeeId: string) => string;
   getStatusColor: (status: string) => string;
   shiftType: 'morning' | 'evening' | 'night';
+  hasSubmissions?: boolean;
+  submissionsCount?: number;
 }
 
 export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
@@ -28,7 +31,9 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
   onDeleteShift,
   getEmployeeName,
   getStatusColor,
-  shiftType
+  shiftType,
+  hasSubmissions = false,
+  submissionsCount = 0
 }) => {
   // Debug logs
   console.log('🔍 ShiftDisplayCard render:', {
@@ -87,15 +92,82 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
     }
   };
 
+  const getShiftTooltipContent = () => {
+    return (
+      <div className="space-y-2 max-w-xs" dir="rtl">
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4" />
+          <span className="font-medium">זמנים:</span>
+          <span>{shift.start_time} - {shift.end_time}</span>
+        </div>
+        
+        {shift.branch_name && (
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            <span className="font-medium">סניף:</span>
+            <span>{shift.branch_name}</span>
+          </div>
+        )}
+        
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4" />
+          <span className="font-medium">עובד:</span>
+          <span>{shift.employee_id ? getEmployeeName(shift.employee_id) : 'לא מוקצה'}</span>
+        </div>
+        
+        {shift.role && (
+          <div className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4" />
+            <span className="font-medium">תפקיד:</span>
+            <span>{shift.role}</span>
+          </div>
+        )}
+        
+        {hasSubmissions && (
+          <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-200">
+            <FileText className="h-4 w-4 text-green-600" />
+            <span className="font-medium text-green-700">הגשות משמרות:</span>
+            <Badge className="bg-green-100 text-green-800 border-green-300">
+              {submissionsCount} הגשות
+            </Badge>
+          </div>
+        )}
+        
+        <div className="border-t pt-2">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">סטטוס:</span>
+            <Badge variant="secondary" className={`${getStatusColor(shift.status || 'pending')} text-xs`}>
+              {shift.status === 'approved' ? 'מאושר' : 
+               shift.status === 'pending' ? 'ממתין לאישור' :
+               shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
+            </Badge>
+          </div>
+        </div>
+        
+        {hasConflict && (
+          <div className="flex items-center gap-2 p-2 bg-red-50 rounded border border-red-200">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <span className="text-red-600 font-medium">זוהתה התנגשות בזמנים!</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div
-      className={`relative group p-3 border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 ${
-        getShiftTypeColor()
-      } ${hasConflict ? 'border-red-300 bg-red-50' : ''} ${
-        isSelectionMode && isSelected ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300 scale-105' : ''
-      } ${isSelectionMode ? 'transform hover:scale-102' : ''}`}
-      onClick={handleShiftCardClick}
-    >
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div
+            className={`relative group p-3 border rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 ${
+              getShiftTypeColor()
+            } ${hasConflict ? 'border-red-300 bg-red-50' : ''} ${
+              isSelectionMode && isSelected ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300 scale-105' : ''
+            } ${isSelectionMode ? 'transform hover:scale-102' : ''} ${
+              hasSubmissions ? 'ring-2 ring-green-400 bg-green-50 border-green-300' : ''
+            }`}
+            onClick={handleShiftCardClick}
+          >
       {/* סוג משמרת - קטן ובפינה */}
       <div className="absolute top-1 left-1">
         <Badge 
@@ -155,7 +227,7 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
           </Badge>
         </div>
         
-        {/* עובד מוקצה או לא מוקצה - שלישי */}
+      {/* עובד מוקצה או לא מוקצה - שלישי */}
         <div className="flex items-center justify-center">
           {shift.employee_id ? (
             <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 px-3 py-1 shadow-sm">
@@ -169,6 +241,16 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
             </Badge>
           )}
         </div>
+
+        {/* אינדיקטור הגשות משמרות */}
+        {hasSubmissions && (
+          <div className="flex items-center justify-center">
+            <Badge className="bg-green-600 text-white px-2 py-1 text-xs shadow-sm animate-pulse">
+              <FileText className="h-3 w-3 ml-1" />
+              {submissionsCount} הגשות
+            </Badge>
+          </div>
+        )}
 
         {/* תפקיד - אם קיים */}
         {shift.role && (
@@ -194,6 +276,12 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
           </div>
         )}
       </div>
-    </div>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="bg-white border shadow-lg max-w-sm">
+          {getShiftTooltipContent()}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
