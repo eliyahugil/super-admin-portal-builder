@@ -391,8 +391,11 @@ export const QuickRequestRegistration: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>נושא *</Label>
+                <Label htmlFor="subject">נושא *</Label>
                 <Input
+                  id="subject"
+                  name="subject"
+                  autoComplete="off"
                   placeholder="נושא הבקשה..."
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
@@ -401,8 +404,11 @@ export const QuickRequestRegistration: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>פירוט</Label>
+              <Label htmlFor="description">פירוט</Label>
               <Textarea
+                id="description"
+                name="description"
+                autoComplete="off"
                 placeholder="פרט את הבקשה..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -430,6 +436,9 @@ export const QuickRequestRegistration: React.FC = () => {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
+            id="search-requests"
+            name="search"
+            autoComplete="off"
             placeholder="חפש לפי עובד או נושא..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

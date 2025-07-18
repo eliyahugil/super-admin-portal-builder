@@ -370,7 +370,9 @@ ${url}
                 <Label htmlFor="expiryDays">תוקף הטוקן (ימים)</Label>
                 <Input
                   id="expiryDays"
+                  name="expiryDays"
                   type="number"
+                  autoComplete="off"
                   min="1"
                   max="30"
                   value={tokenForm.expiryDays}
@@ -382,7 +384,9 @@ ${url}
                 <Label htmlFor="maxSubmissions">מספר הגשות מקסימלי</Label>
                 <Input
                   id="maxSubmissions"
+                  name="maxSubmissions"
                   type="number"
+                  autoComplete="off"
                   min="1"
                   max="5"
                   value={tokenForm.maxSubmissions}
@@ -465,7 +469,9 @@ ${url}
                   <Label htmlFor="startDate">תאריך התחלה</Label>
                   <Input
                     id="startDate"
+                    name="startDate"
                     type="date"
+                    autoComplete="off"
                     value={bulkTokenForm.startDate}
                     onChange={(e) => setBulkTokenForm(prev => ({ ...prev, startDate: e.target.value }))}
                   />
@@ -474,7 +480,9 @@ ${url}
                   <Label htmlFor="endDate">תאריך סיום</Label>
                   <Input
                     id="endDate"
+                    name="endDate"
                     type="date"
+                    autoComplete="off"
                     value={bulkTokenForm.endDate}
                     onChange={(e) => setBulkTokenForm(prev => ({ ...prev, endDate: e.target.value }))}
                   />
@@ -505,7 +513,9 @@ ${url}
                   <Label htmlFor="bulkExpiryDays">תוקף הטוקן (ימים)</Label>
                   <Input
                     id="bulkExpiryDays"
+                    name="bulkExpiryDays"
                     type="number"
+                    autoComplete="off"
                     min="1"
                     max="30"
                     value={bulkTokenForm.expiryDays}
@@ -516,7 +526,9 @@ ${url}
                   <Label htmlFor="bulkMaxSubmissions">מספר הגשות מקסימלי</Label>
                   <Input
                     id="bulkMaxSubmissions"
+                    name="bulkMaxSubmissions"
                     type="number"
+                    autoComplete="off"
                     min="1"
                     max="5"
                     value={bulkTokenForm.maxSubmissions}

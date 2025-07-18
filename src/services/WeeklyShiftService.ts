@@ -46,8 +46,34 @@ export class WeeklyShiftService {
   }
 
   static async submitWeeklyShifts(token: string, submissionData: WeeklySubmissionData): Promise<WeeklyShiftSubmission> {
-    console.log('⚠️ Weekly shift submission system has been removed');
-    throw new Error('Weekly shift submission system is no longer available');
+    console.log('📤 Submitting weekly shifts with new system:', submissionData);
+    
+    try {
+      // Use the edge function for submission instead of the old token system
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.functions.invoke('submit-weekly-shifts', {
+        body: { 
+          token,
+          ...submissionData 
+        }
+      });
+
+      if (error) {
+        console.error('❌ Edge function error:', error);
+        throw new Error(`שגיאה בשליחת המשמרות: ${error.message}`);
+      }
+
+      if (!data?.success) {
+        console.error('❌ Submission failed:', data);
+        throw new Error(data?.error || 'שגיאה בשליחת המשמרות');
+      }
+
+      console.log('✅ Weekly shifts submitted successfully:', data);
+      return data.submission;
+    } catch (error: any) {
+      console.error('💥 Weekly shift submission error:', error);
+      throw new Error(error.message || 'שגיאה בשליחת משמרות השבוע');
+    }
   }
 
   static async getSubmissionByToken(token: string): Promise<WeeklyShiftSubmission | null> {

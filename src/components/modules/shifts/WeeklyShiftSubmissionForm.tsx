@@ -424,6 +424,8 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                   <Label htmlFor="notes">הערות נוספות (אופציונלי)</Label>
                   <Textarea
                     id="notes"
+                    name="notes"
+                    autoComplete="off"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="הוסף הערות או בקשות מיוחדות..."
