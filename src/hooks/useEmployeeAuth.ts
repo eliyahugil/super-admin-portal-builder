@@ -10,6 +10,7 @@ interface Employee {
   business_id: string;
   birth_date: string | null;
   is_first_login: boolean;
+  email?: string | null;
 }
 
 interface EmployeeSession {
@@ -145,18 +146,25 @@ export const useEmployeeAuth = () => {
     }
   };
 
-  // Complete first login by updating birth date
-  const completeBirthDateUpdate = async (employeeId: string, birthDate: string): Promise<boolean> => {
+  // Complete first login by updating birth date and email
+  const completeBirthDateUpdate = async (employeeId: string, birthDate: string, email?: string): Promise<boolean> => {
     setLoading(true);
     
     try {
+      const updateData: any = {
+        birth_date: birthDate,
+        is_first_login: false,
+        updated_at: new Date().toISOString()
+      };
+
+      // Add email if provided
+      if (email) {
+        updateData.email = email;
+      }
+
       const { error } = await supabase
         .from('employees')
-        .update({
-          birth_date: birthDate,
-          is_first_login: false,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', employeeId);
 
       if (error) {
@@ -169,8 +177,13 @@ export const useEmployeeAuth = () => {
         const updatedEmployee = { 
           ...session.employee, 
           birth_date: birthDate, 
-          is_first_login: false 
+          is_first_login: false
         };
+
+        // Add email if provided
+        if (email) {
+          updatedEmployee.email = email;
+        }
         const updatedSession: EmployeeSession = {
           employee: updatedEmployee,
           isFirstLogin: false

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +22,25 @@ export const EmployeeLoginFlow: React.FC = () => {
     requiresBirthDateUpdate 
   } = useEmployeeAuth();
 
+  // Update the session state when localStorage changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      // Force a re-render by checking the session
+      const stored = localStorage.getItem('employee_session');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setCurrentEmployee(parsed.employee);
+        } catch (error) {
+          console.error('Failed to parse stored session:', error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -37,23 +56,17 @@ export const EmployeeLoginFlow: React.FC = () => {
   };
 
   const handleBirthDateComplete = async (updatedEmployee: any) => {
+    console.log('✅ Birth date update completed with:', updatedEmployee);
+    
     // Update the current employee state with the updated data
     setCurrentEmployee(updatedEmployee);
     setShowBirthDateUpdate(false);
     
-    // Create a proper session with the updated employee
-    const newSession = {
-      employee: updatedEmployee,
-      isFirstLogin: false
-    };
-    
-    // Update localStorage
-    localStorage.setItem('employee_session', JSON.stringify(newSession));
-    
-    console.log('✅ Employee session updated with new data:', updatedEmployee);
-    
-    // Show success message and stay on the same page
-    // No need to reload - the component will re-render showing logged-in state
+    // Force a page refresh or navigate to the employee profile
+    // This ensures the user sees their updated information
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   };
 
   // Show birth date update screen
@@ -129,6 +142,7 @@ export const EmployeeLoginFlow: React.FC = () => {
               required
               dir="ltr"
               className="text-left"
+              autoComplete="tel"
             />
             <p className="text-xs text-muted-foreground">
               הכנס מספר בפורמט ישראלי (לדוגמה: 050-1234567)
@@ -149,6 +163,7 @@ export const EmployeeLoginFlow: React.FC = () => {
               required
               dir="ltr"
               className="text-left"
+              autoComplete="current-password"
             />
           </div>
 

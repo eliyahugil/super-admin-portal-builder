@@ -72,13 +72,35 @@ export const EmployeeBirthDateUpdate: React.FC<EmployeeBirthDateUpdateProps> = (
         console.error('❌ Error updating employee:', error);
         toast({
           title: 'שגיאה',
-          description: 'לא הצלחנו לעדכן את הפרטים',
+          description: 'לא הצלחנו לעדכן את הפרטים: ' + error.message,
           variant: 'destructive',
         });
         return;
       }
 
       console.log('✅ Employee updated successfully:', data);
+      
+      // Update the session in localStorage immediately
+      const currentSession = localStorage.getItem('employee_session');
+      if (currentSession) {
+        try {
+          const session = JSON.parse(currentSession);
+          session.employee = {
+            ...session.employee,
+            birth_date: birthDate,
+            email: email,
+            is_first_login: false
+          };
+          session.isFirstLogin = false;
+          localStorage.setItem('employee_session', JSON.stringify(session));
+          console.log('✅ Session updated in localStorage:', session);
+          console.log('📧 Updated email in session:', session.employee.email);
+          console.log('🎂 Updated birth_date in session:', session.employee.birth_date);
+        } catch (error) {
+          console.error('❌ Error updating session:', error);
+        }
+      }
+
       toast({
         title: 'עדכון בוצע בהצלחה',
         description: 'הפרטים נשמרו. מעתה הסיסמה שלך תהיה הספרות של תאריך הלידה בפורמט DDMMYY',
