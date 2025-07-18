@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShiftApprovalDashboard } from './ShiftApprovalDashboard';
 import { ShiftTemplatesManagement } from './ShiftTemplatesManagement';
 import { DeleteAllShiftsButton } from './DeleteAllShiftsButton';
+import { PublicTokenManager } from './PublicTokenManager';
 
 export const ShiftManagementTabs: React.FC = () => {
   return (
@@ -20,8 +21,9 @@ export const ShiftManagementTabs: React.FC = () => {
       </div>
 
       <Tabs defaultValue="templates" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 gap-1">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1">
           <TabsTrigger value="templates" className="text-xs sm:text-sm">תבניות משמרות</TabsTrigger>
+          <TabsTrigger value="public-tokens" className="text-xs sm:text-sm">טוקנים ציבוריים</TabsTrigger>
           <TabsTrigger value="submissions" className="text-xs sm:text-sm">הגשות משמרות</TabsTrigger>
           <TabsTrigger value="approvals" className="text-xs sm:text-sm">אישור בקשות</TabsTrigger>
         </TabsList>
@@ -30,8 +32,12 @@ export const ShiftManagementTabs: React.FC = () => {
           <ShiftTemplatesManagement />
         </TabsContent>
         
+        <TabsContent value="public-tokens" className="mt-6">
+          <PublicTokenManager />
+        </TabsContent>
+        
         <TabsContent value="submissions" className="mt-6">
-          <div className="p-4 text-center">מערכת הגשת משמרות הוסרה</div>
+          <div className="p-4 text-center">מערכת הגשת משמרות הוסרה - השתמש בטוקנים ציבוריים</div>
         </TabsContent>
         
         

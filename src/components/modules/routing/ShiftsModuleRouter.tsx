@@ -20,7 +20,8 @@ export const ShiftsModuleRouter: React.FC<Props> = ({ route }) => {
     case 'schedule':
       return <ShiftSchedule />;
     case 'submission':
-      return <div className="p-4 text-center">מערכת הגשת משמרות הוסרה</div>;
+    case 'public-tokens':
+      return <div className="p-4 text-center">מערכת הגשת משמרות הוסרה - השתמש בטוקנים ציבוריים</div>;
     case 'auto-assignment':
       return <AutoShiftAssignment />;
     case 'vacation-requests':
