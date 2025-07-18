@@ -28,13 +28,8 @@ export const EmployeeListCard: React.FC<EmployeeListCardProps> = ({
 }) => {
   return (
     <div
-      className="w-full bg-white border border-gray-200 rounded-lg shadow-sm p-4 mb-3"
+      className="w-full bg-card border border-border rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow animate-fade-in"
       dir="rtl"
-      style={{
-        minWidth: 0,
-        maxWidth: '100%',
-        overflowX: 'hidden'
-      }}
     >
       {/* Header: checkbox, name and status */}
       <div className="flex items-start justify-between mb-4 gap-3">
@@ -43,15 +38,15 @@ export const EmployeeListCard: React.FC<EmployeeListCardProps> = ({
             type="checkbox"
             checked={selected}
             onChange={(e) => onSelect(employee.id, e.target.checked)}
-            className="mt-1 w-5 h-5 accent-blue-600 border-2 border-gray-300 rounded"
+            className="mt-1 w-5 h-5 accent-primary border-2 border-border rounded focus:ring-2 focus:ring-primary/20"
             aria-label="בחר עובד"
           />
           <div className="flex-1 min-w-0">
-            <div className="text-lg font-bold text-gray-900 break-words leading-tight">
+            <div className="text-lg font-semibold text-foreground break-words leading-tight">
               {`${employee.first_name} ${employee.last_name}`}
             </div>
             {employee.email && (
-              <div className="text-base text-gray-600 mt-1 break-words">
+              <div className="text-sm text-muted-foreground mt-1 break-words">
                 {employee.email}
               </div>
             )}
@@ -62,57 +57,63 @@ export const EmployeeListCard: React.FC<EmployeeListCardProps> = ({
         </div>
       </div>
 
-      {/* Employee details in clear rows */}
-      <div className="space-y-4">
-        <div className="border-b border-gray-100 pb-3">
-          <div className="text-base font-medium text-gray-500 mb-1">מספר עובד</div>
-          <div className="text-lg font-semibold text-gray-900">
+      {/* Employee details in grid format for better mobile layout */}
+      <div className="grid grid-cols-1 gap-3 mb-4">
+        {/* Employee ID */}
+        <div className="flex items-center justify-between py-2 border-b border-border/50">
+          <span className="text-sm font-medium text-muted-foreground">מספר עובד</span>
+          <span className="text-sm font-semibold text-foreground">
             {employee.employee_id || (
-              <span className="text-gray-400 font-normal">לא הוגדר</span>
+              <span className="text-muted-foreground font-normal">לא הוגדר</span>
             )}
-          </div>
+          </span>
         </div>
 
-        <div className="border-b border-gray-100 pb-3">
-          <div className="text-base font-medium text-gray-500 mb-1">טלפון</div>
-          <div className="text-lg">
+        {/* Phone */}
+        <div className="flex items-center justify-between py-2 border-b border-border/50">
+          <span className="text-sm font-medium text-muted-foreground">טלפון</span>
+          <div className="text-sm">
             <EmployeeListPhoneCell employee={employee} />
           </div>
         </div>
 
-        <div className="border-b border-gray-100 pb-3">
-          <div className="text-base font-medium text-gray-500 mb-1">סוג עובד</div>
-          <div className="text-lg">
+        {/* Employee Type */}
+        <div className="flex items-center justify-between py-2 border-b border-border/50">
+          <span className="text-sm font-medium text-muted-foreground">סוג עובד</span>
+          <div className="text-sm">
             <EmployeeListTypeCell type={employee.employee_type} />
           </div>
         </div>
 
-        <div className="border-b border-gray-100 pb-3">
-          <div className="text-base font-medium text-gray-500 mb-1">סניף ראשי</div>
-          <div className="text-lg">
+        {/* Branch */}
+        <div className="flex items-center justify-between py-2 border-b border-border/50">
+          <span className="text-sm font-medium text-muted-foreground">סניף ראשי</span>
+          <div className="text-sm">
             <EmployeeListBranchCell employee={employee} />
           </div>
         </div>
 
-        <div className="border-b border-gray-100 pb-3">
-          <div className="text-base font-medium text-gray-500 mb-1">שעות שבועיות</div>
-          <div className="text-lg">
+        {/* Weekly Hours */}
+        <div className="flex items-center justify-between py-2 border-b border-border/50">
+          <span className="text-sm font-medium text-muted-foreground">שעות שבועיות</span>
+          <div className="text-sm">
             <EmployeeListWeeklyHoursCell weeklyHoursRequired={employee.weekly_hours_required} />
           </div>
         </div>
 
+        {/* Hire Date */}
         {employee.hire_date && (
-          <div className="border-b border-gray-100 pb-3">
-            <div className="text-base font-medium text-gray-500 mb-1">תאריך תחילה</div>
-            <div className="text-lg font-semibold text-gray-900">
+          <div className="flex items-center justify-between py-2 border-b border-border/50">
+            <span className="text-sm font-medium text-muted-foreground">תאריך תחילה</span>
+            <span className="text-sm font-semibold text-foreground">
               {new Date(employee.hire_date).toLocaleDateString("he-IL")}
-            </div>
+            </span>
           </div>
         )}
       </div>
 
       {/* Actions */}
-      <div className="mt-4 pt-4 border-t border-gray-100">
+      <div className="flex justify-end pt-3 border-t border-border">
         <EmployeeListActionsCell
           employee={employee}
           onDeleteEmployee={onDeleteEmployee}

@@ -75,30 +75,38 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
           overflowX: 'hidden'
         }}
       >
-        <div className="flex items-center justify-between mb-4 px-1">
-          <label className="flex items-center gap-2 text-lg">
+        <div className="flex items-center justify-between mb-4 px-1 py-3 bg-muted/30 rounded-lg">
+          <label className="flex items-center gap-2 text-sm font-medium">
             <input
               type="checkbox"
               checked={allFilteredSelected}
               onChange={e => onSelectAll(e.target.checked)}
-              className="w-5 h-5 accent-blue-600"
+              className="w-5 h-5 accent-primary border-2 border-border rounded focus:ring-2 focus:ring-primary/20"
               aria-label="בחר/י הכל"
             />
-            <span>בחר/י הכל</span>
+            <span>בחר/י הכל ({employees.length})</span>
           </label>
+          <span className="text-xs text-muted-foreground">
+            נבחרו: {selectedEmployees.size}
+          </span>
         </div>
         
         <div className="space-y-3">
-          {employees.map(employee => (
-            <EmployeeListCard
+          {employees.map((employee, index) => (
+            <div 
               key={employee.id}
-              employee={employee}
-              selected={selectedEmployees.has(employee.id)}
-              onSelect={onSelectEmployee}
-              onDeleteEmployee={onDeleteEmployee}
-              onRefetch={onRefetch}
-              loading={loading}
-            />
+              className="animate-fade-in"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <EmployeeListCard
+                employee={employee}
+                selected={selectedEmployees.has(employee.id)}
+                onSelect={onSelectEmployee}
+                onDeleteEmployee={onDeleteEmployee}
+                onRefetch={onRefetch}
+                loading={loading}
+              />
+            </div>
           ))}
         </div>
       </div>
@@ -126,7 +134,7 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
         </TableHeader>
         <TableBody>
           {employees.map((employee) => (
-            <TableRow key={employee.id} className="hover:bg-gray-50" dir="rtl">
+            <TableRow key={employee.id} className="hover:bg-muted/50" dir="rtl">
               <TableCell>
                 <Checkbox
                   checked={selectedEmployees.has(employee.id)}
@@ -140,7 +148,7 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
               </TableCell>
               <TableCell>
                 {employee.employee_id || (
-                  <span className="text-gray-400 text-sm">לא הוגדר</span>
+                  <span className="text-muted-foreground text-sm">לא הוגדר</span>
                 )}
               </TableCell>
               <TableCell>
@@ -159,7 +167,7 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
                 <EmployeeListStatusCell isActive={!!employee.is_active} />
               </TableCell>
               <TableCell>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   {new Date(employee.created_at).toLocaleDateString('he-IL')}
                 </span>
               </TableCell>
