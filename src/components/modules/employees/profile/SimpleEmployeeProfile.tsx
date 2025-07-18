@@ -176,7 +176,6 @@ export const SimpleEmployeeProfile: React.FC = () => {
         const nextWeekEnd = new Date();
         nextWeekEnd.setDate(currentDate.getDate() + 14); // Look ahead 2 weeks
 
-        // Get shifts from available_shifts table
         const { data: availableShiftsData } = await supabase
           .from('available_shifts')
           .select(`
@@ -189,22 +188,6 @@ export const SimpleEmployeeProfile: React.FC = () => {
           .lte('week_end_date', nextWeekEnd.toISOString().split('T')[0])
           .order('week_start_date', { ascending: true });
 
-        // Get unassigned shifts from scheduled_shifts table
-        const { data: unassignedShiftsData } = await supabase
-          .from('scheduled_shifts')
-          .select(`
-            *,
-            branch:branches(name)
-          `)
-          .eq('business_id', employeeData.business_id)
-          .is('employee_id', null)
-          .gte('shift_date', nextWeekStart.toISOString().split('T')[0])
-          .lte('shift_date', nextWeekEnd.toISOString().split('T')[0])
-          .order('shift_date', { ascending: true });
-
-        const allAvailableShifts: AvailableShift[] = [];
-
-        // Map available_shifts data
         if (availableShiftsData) {
           const mappedAvailableShifts: AvailableShift[] = availableShiftsData.map(shift => ({
             id: shift.id,
@@ -218,27 +201,8 @@ export const SimpleEmployeeProfile: React.FC = () => {
             current_assignments: shift.current_assignments || 0,
             day_of_week: shift.day_of_week
           }));
-          allAvailableShifts.push(...mappedAvailableShifts);
+          setAvailableShifts(mappedAvailableShifts);
         }
-
-        // Map unassigned scheduled_shifts data
-        if (unassignedShiftsData) {
-          const mappedUnassignedShifts: AvailableShift[] = unassignedShiftsData.map(shift => ({
-            id: shift.id,
-            shift_name: shift.role || 'משמרת',
-            shift_date: shift.shift_date,
-            start_time: shift.start_time,
-            end_time: shift.end_time,
-            shift_type: shift.priority || 'general',
-            branch_name: shift.branch?.name || 'לא הוגדר',
-            required_employees: 1,
-            current_assignments: 0,
-            day_of_week: new Date(shift.shift_date).getDay()
-          }));
-          allAvailableShifts.push(...mappedUnassignedShifts);
-        }
-
-        setAvailableShifts(allAvailableShifts);
 
         // Fetch documents
         const { data: docsData } = await supabase
