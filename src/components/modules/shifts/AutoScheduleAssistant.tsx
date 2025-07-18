@@ -40,7 +40,17 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
   );
 
   const handleAutoAssign = async () => {
-    if (!recommendations || emptyShifts.length === 0) return;
+    console.log('🪄 Auto assign clicked!', { 
+      recommendations, 
+      emptyShifts: emptyShifts.length,
+      businessId: profile?.business_id,
+      weekStartDate 
+    });
+    
+    if (!recommendations || emptyShifts.length === 0) {
+      console.log('❌ Cannot proceed:', { recommendations: !!recommendations, emptyShifts: emptyShifts.length });
+      return;
+    }
 
     setIsProcessing(true);
     const assignmentResults: AutoAssignmentResult[] = [];
