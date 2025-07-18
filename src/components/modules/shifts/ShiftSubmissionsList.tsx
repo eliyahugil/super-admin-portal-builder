@@ -119,15 +119,15 @@ export const ShiftSubmissionsList: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">הגשות משמרות</h2>
-        <Badge variant="outline" className="text-sm">
+    <div className="space-y-4 p-2 sm:p-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <h2 className="text-xl sm:text-2xl font-bold">הגשות משמרות</h2>
+        <Badge variant="outline" className="text-sm w-fit">
           {submissions.length} הגשות
         </Badge>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-3 sm:gap-4">
         {submissions.map((submission: any) => {
           const shifts = Array.isArray(submission.shifts) ? submission.shifts : [];
           const morningAvailability = Array.isArray(submission.optional_morning_availability) 
@@ -136,61 +136,67 @@ export const ShiftSubmissionsList: React.FC = () => {
 
           return (
             <Card key={submission.id} className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    {submission.employees?.first_name && submission.employees?.last_name 
-                      ? `${submission.employees.first_name} ${submission.employees.last_name}`
-                      : 'עובד אנונימי'
-                    }
+              <CardHeader className="pb-3 px-3 sm:px-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <User className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                    <span className="truncate">
+                      {submission.employees?.first_name && submission.employees?.last_name 
+                        ? `${submission.employees.first_name} ${submission.employees.last_name}`
+                        : 'עובד אנונימי'
+                      }
+                    </span>
                   </CardTitle>
                   {getStatusBadge(submission.status)}
                 </div>
-                <CardDescription className="flex items-center gap-4 text-sm">
+                <CardDescription className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
                   <span className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    שבוע {formatDate(submission.week_start_date)} - {formatDate(submission.week_end_date)}
+                    <Calendar className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm">
+                      שבוע {formatDate(submission.week_start_date)} - {formatDate(submission.week_end_date)}
+                    </span>
                   </span>
                   <span className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    הוגש: {formatDateTime(submission.submitted_at)}
+                    <Clock className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm">
+                      הוגש: {formatDateTime(submission.submitted_at)}
+                    </span>
                   </span>
                 </CardDescription>
               </CardHeader>
 
-              <CardContent>
+              <CardContent className="px-3 sm:px-6">
                 <div className="space-y-3">
                   <div>
-                    <h4 className="font-medium mb-2">משמרות נבחרות ({shifts.length}):</h4>
+                    <h4 className="font-medium mb-2 text-sm sm:text-base">משמרות נבחרות ({shifts.length}):</h4>
                     <div className="grid gap-2">
                       {shifts.map((shift: any, index: number) => (
-                        <div key={index} className="bg-muted p-3 rounded-lg text-sm">
-                          <div className="flex items-center justify-between">
+                        <div key={index} className="bg-muted p-2 sm:p-3 rounded-lg text-sm">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0">
                             <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{formatDate(shift.date)}</span>
+                              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="font-medium text-xs sm:text-sm">{formatDate(shift.date)}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span>{shift.start_time} - {shift.end_time}</span>
+                              <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="text-xs sm:text-sm">{shift.start_time} - {shift.end_time}</span>
                             </div>
                           </div>
                           
                           {shift.branch_preference && (
-                            <div className="mt-1 text-muted-foreground">
+                            <div className="mt-1 text-muted-foreground text-xs sm:text-sm">
                               📍 {shift.branch_preference}
                             </div>
                           )}
                           
                           {shift.role_preference && (
-                            <div className="mt-1 text-muted-foreground">
+                            <div className="mt-1 text-muted-foreground text-xs sm:text-sm">
                               👔 {shift.role_preference}
                             </div>
                           )}
                           
                           {shift.notes && (
-                            <div className="mt-1 text-muted-foreground">
+                            <div className="mt-1 text-muted-foreground text-xs sm:text-sm break-words">
                               💬 {shift.notes}
                             </div>
                           )}
@@ -201,8 +207,8 @@ export const ShiftSubmissionsList: React.FC = () => {
 
                   {submission.notes && (
                     <div>
-                      <h4 className="font-medium mb-1">הערות כלליות:</h4>
-                      <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
+                      <h4 className="font-medium mb-1 text-sm sm:text-base">הערות כלליות:</h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground bg-muted p-2 rounded break-words">
                         {submission.notes}
                       </p>
                     </div>
@@ -210,7 +216,7 @@ export const ShiftSubmissionsList: React.FC = () => {
 
                   {morningAvailability.length > 0 && (
                     <div>
-                      <h4 className="font-medium mb-1">זמינות בוקר אופציונלית:</h4>
+                      <h4 className="font-medium mb-1 text-sm sm:text-base">זמינות בוקר אופציונלית:</h4>
                       <div className="flex gap-1 flex-wrap">
                         {morningAvailability.map((day: any) => (
                           <Badge key={day} variant="outline" className="text-xs">

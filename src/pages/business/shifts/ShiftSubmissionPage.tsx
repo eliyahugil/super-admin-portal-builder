@@ -5,19 +5,19 @@ import { ShiftSubmissionsList } from '@/components/modules/shifts/ShiftSubmissio
 
 const ShiftSubmissionPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 lg:p-6" dir="rtl">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Send className="h-6 w-6" />
+          <CardHeader className="px-3 py-4 sm:px-6 sm:py-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Send className="h-5 w-5 sm:h-6 sm:w-6" />
               הגשות משמרות
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm sm:text-base">
               צפייה וניהול הגשות משמרות שהתקבלו מהעובדים
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-0 sm:px-6">
             <ShiftSubmissionsList />
           </CardContent>
         </Card>
