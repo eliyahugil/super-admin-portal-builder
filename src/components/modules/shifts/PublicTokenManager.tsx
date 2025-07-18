@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEmployees } from '@/hooks/useEmployees';
 import { usePublicShifts } from '@/hooks/usePublicShifts';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-import { Copy, Plus, Calendar, Users, Timer, Eye, User, UsersRound, TrendingDown, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Copy, Plus, Calendar, Users, Timer, Eye, User, UsersRound, TrendingDown, AlertTriangle, RotateCcw, Power } from 'lucide-react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { TokenSubmissionsList } from './TokenSubmissionsList';
@@ -19,7 +19,7 @@ export const PublicTokenManager: React.FC = () => {
   const { toast } = useToast();
   const { businessId } = useCurrentBusiness();
   const { data: employees = [] } = useEmployees(businessId);
-  const { generateToken, useBusinessTokens, resetAllTokens } = usePublicShifts();
+  const { generateToken, useBusinessTokens, resetAllTokens, toggleTokenStatus } = usePublicShifts();
   const { data: existingTokens = [] } = useBusinessTokens(businessId || '');
   
   const [isResetting, setIsResetting] = useState(false);
@@ -203,6 +203,26 @@ ${url}
 
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
+  };
+
+  const handleToggleTokenStatus = async (tokenId: string, currentStatus: boolean) => {
+    const newStatus = !currentStatus;
+    
+    try {
+      await toggleTokenStatus.mutateAsync({ tokenId, isActive: newStatus });
+      
+      toast({
+        title: newStatus ? 'טוקן הופעל בהצלחה!' : 'טוקן בוטל בהצלחה!',
+        description: newStatus ? 'העובד יוכל להשתמש בקישור' : 'העובד לא יוכל יותר להשתמש בקישור',
+      });
+    } catch (error) {
+      console.error('Error toggling token status:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'אירעה שגיאה בשינוי סטטוס הטוקן',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleResetAllTokens = async () => {
@@ -577,6 +597,14 @@ ${url}
                           <span className="font-medium">
                             {employees.find(emp => emp.id === token.employee_id)?.first_name} {employees.find(emp => emp.id === token.employee_id)?.last_name}
                           </span>
+                          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            token.is_active 
+                              ? 'bg-green-100 text-green-800 border border-green-200' 
+                              : 'bg-red-100 text-red-800 border border-red-200'
+                          }`}>
+                            <Power className="h-3 w-3 mr-1" />
+                            {token.is_active ? 'פעיל' : 'לא פעיל'}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-blue-500" />
@@ -596,6 +624,16 @@ ${url}
                         </div>
                       </div>
                       <div className="flex gap-2">
+                        <Button
+                          variant={token.is_active ? "destructive" : "default"}
+                          size="sm"
+                          onClick={() => handleToggleTokenStatus(token.id, token.is_active)}
+                          className="gap-1"
+                          disabled={toggleTokenStatus.isPending}
+                        >
+                          <Power className="h-3 w-3" />
+                          {token.is_active ? 'כבה' : 'הפעל'}
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
