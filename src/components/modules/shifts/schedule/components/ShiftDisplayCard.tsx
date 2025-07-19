@@ -23,6 +23,7 @@ interface ShiftDisplayCardProps {
   weekStartDate?: string;
   onAssignEmployee?: (employeeId: string, shiftId: string) => void;
   employees?: Array<{ id: string; first_name: string; last_name: string; }>;
+  onOpenPendingSubmissions?: () => void;
 }
 
 export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
@@ -40,7 +41,8 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
   submissionsCount = 0,
   weekStartDate,
   onAssignEmployee,
-  employees = []
+  employees = [],
+  onOpenPendingSubmissions
 }) => {
   // פונקציה לבדיקה אם יש הקצאות שלא מולאו
   const getUnassignedCount = () => {
@@ -476,10 +478,22 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
           )}
         </div>
 
-        {/* אינדיקטור הגשות משמרות */}
+        {/* אינדיקטור הגשות משמרות - לחיץ */}
         {hasSubmissions && (
           <div className="flex items-center justify-center">
-            <Badge className="bg-green-600 text-white px-2 py-1 text-xs shadow-sm animate-pulse">
+            <Badge 
+              className="bg-green-600 text-white px-2 py-1 text-xs shadow-sm animate-pulse cursor-pointer hover:bg-green-700 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onOpenPendingSubmissions) {
+                  onOpenPendingSubmissions();
+                } else {
+                  // Fallback - call global function if it exists
+                  const event = new CustomEvent('openPendingSubmissions');
+                  window.dispatchEvent(event);
+                }
+              }}
+            >
               <FileText className="h-3 w-3 ml-1" />
               {submissionsCount} הגשות
             </Badge>

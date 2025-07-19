@@ -33,6 +33,7 @@ import { useNotifications } from './notifications/useNotifications';
 import { ParallelScheduleView } from './schedule/ParallelScheduleView';
 import { GroupedByBranchView } from './schedule/components/GroupedByBranchView';
 import type { ScheduleView, ShiftScheduleData, CreateShiftData } from './schedule/types';
+import { useEffect } from 'react';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
   const isMobile = useIsMobile();
@@ -343,6 +344,19 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       throw error;
     }
   };
+
+  // Add event listener for pending submissions dialog
+  useEffect(() => {
+    const handleOpenPendingSubmissions = () => {
+      setShowPendingSubmissionsDialog(true);
+    };
+
+    window.addEventListener('openPendingSubmissions', handleOpenPendingSubmissions);
+    
+    return () => {
+      window.removeEventListener('openPendingSubmissions', handleOpenPendingSubmissions);
+    };
+  }, []);
 
   // Helper function removed - submissions system no longer exists
 

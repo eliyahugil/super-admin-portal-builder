@@ -19,6 +19,7 @@ interface GroupedShiftDisplayProps {
   hasShiftConflict: (shift: ShiftScheduleData) => boolean;
   isShiftSelected: (shift: ShiftScheduleData) => boolean;
   pendingSubmissions?: Array<any>;
+  onOpenPendingSubmissions?: () => void;
 }
 
 interface GroupedShifts {
@@ -40,7 +41,8 @@ export const GroupedShiftDisplay: React.FC<GroupedShiftDisplayProps> = ({
   getStatusColor,
   hasShiftConflict,
   isShiftSelected,
-  pendingSubmissions = []
+  pendingSubmissions = [],
+  onOpenPendingSubmissions
 }) => {
   // קיבוץ משמרות לפי סניף ושעות
   const groupShiftsByBranchAndTime = (): GroupedShifts => {
@@ -209,6 +211,7 @@ export const GroupedShiftDisplay: React.FC<GroupedShiftDisplayProps> = ({
                             hasSubmissions={hasSubmissions}
                             submissionsCount={submissionsCount}
                             employees={employees}
+                            onOpenPendingSubmissions={onOpenPendingSubmissions}
                           />
                         );
                       })}
