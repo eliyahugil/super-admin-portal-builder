@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Wand2, CheckCircle, AlertTriangle, Users, Clock, RefreshCw, Undo2 } from 'lucide-react';
+import { Wand2, CheckCircle, AlertTriangle, Users, Clock, RefreshCw, Undo2, Settings } from 'lucide-react';
 import { useEmployeeRecommendations } from '@/hooks/useEmployeeRecommendations';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,12 +23,14 @@ interface AutoScheduleAssistantProps {
   weekStartDate: string;
   emptyShifts: any[];
   onShiftUpdate: (shiftId: string, updates: any) => Promise<void>;
+  onOpenSettings?: () => void;
 }
 
 export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
   weekStartDate,
   emptyShifts,
-  onShiftUpdate
+  onShiftUpdate,
+  onOpenSettings
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -263,7 +265,7 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
           {results.length === 0 ? (
             <div className="text-center space-y-4">
               <p className="text-gray-600">
-                המערכת תציג המלצות לכל העובדים ותשבץ אוטומטית את המתאימים ביותר:
+                המערכת תציג המלצות לכל העובדים ותשבץ אוטומטית את המתאימים ביותר לפי הגדרות הסידור:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <div className="flex items-center gap-2">
@@ -293,6 +295,19 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   רענן המלצות
+                </Button>
+                
+                <Button 
+                  onClick={() => {
+                    setIsOpen(false);
+                    onOpenSettings?.();
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  הגדרות סידור
                 </Button>
                 
                 <Button 

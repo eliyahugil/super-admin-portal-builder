@@ -170,7 +170,8 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
           employee_branch_assignments(*)
         `)
         .eq('business_id', businessId)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .eq('is_archived', false);
 
       if (employeesError) throw employeesError;
       
