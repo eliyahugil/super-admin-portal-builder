@@ -29,6 +29,7 @@ import { AutoScheduleAssistant } from './AutoScheduleAssistant';
 import { AdvancedSchedulingDashboard } from './advanced-scheduling/AdvancedSchedulingDashboard';
 import { NotificationsPanel } from './notifications/NotificationsPanel';
 import { useNotifications } from './notifications/useNotifications';
+import { ParallelScheduleView } from './schedule/ParallelScheduleView';
 import type { ScheduleView, ShiftScheduleData, CreateShiftData } from './schedule/types';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
@@ -448,16 +449,22 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
           <div className="sticky top-0 z-10 bg-white border-b">
-            <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 h-10 text-sm' : 'grid-cols-2 h-12'} bg-gray-50 rounded-none border-0`}>
+            <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3 h-10 text-sm' : 'grid-cols-3 h-12'} bg-gray-50 rounded-none border-0`}>
               <TabsTrigger 
                 value="schedule" 
-                className={`${isMobile ? 'text-sm px-3' : 'text-base px-6'} data-[state=active]:bg-white data-[state=active]:shadow-sm`}
+                className={`${isMobile ? 'text-sm px-2' : 'text-base px-4'} data-[state=active]:bg-white data-[state=active]:shadow-sm`}
               >
                 📅 לוח משמרות
               </TabsTrigger>
               <TabsTrigger 
+                value="parallel" 
+                className={`${isMobile ? 'text-sm px-2' : 'text-base px-4'} data-[state=active]:bg-white data-[state=active]:shadow-sm`}
+              >
+                🔗 תצוגה מקבילה
+              </TabsTrigger>
+              <TabsTrigger 
                 value="advanced" 
-                className={`${isMobile ? 'text-sm px-3' : 'text-base px-6'} data-[state=active]:bg-white data-[state=active]:shadow-sm`}
+                className={`${isMobile ? 'text-sm px-2' : 'text-base px-4'} data-[state=active]:bg-white data-[state=active]:shadow-sm`}
               >
                 ⚙️ סידור מתקדם
               </TabsTrigger>
@@ -541,6 +548,28 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="parallel" className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <ParallelScheduleView
+              shifts={shifts}
+              employees={employees}
+              branches={branches}
+              currentDate={currentDate}
+              holidays={holidays}
+              shabbatTimes={shabbatTimes}
+              calendarEvents={combinedEvents}
+              pendingSubmissions={pendingSubmissions}
+              businessId={businessId}
+              onShiftClick={handleShiftClick}
+              onShiftUpdate={updateShift}
+              onAddShift={handleAddShift}
+              onShiftDelete={deleteShift}
+              isSelectionMode={isSelectionMode}
+              selectedShifts={selectedShifts}
+              onShiftSelection={handleShiftSelection}
+              onShowPendingSubmissions={() => setShowPendingSubmissionsDialog(true)}
+            />
           </TabsContent>
           
           <TabsContent value="advanced" className="flex-1 w-full overflow-hidden">
