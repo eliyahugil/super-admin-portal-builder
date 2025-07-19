@@ -117,6 +117,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
   const shiftSubmissions = getSubmissionsForShift();
 
   const handleUpdate = async () => {
+    alert('handleUpdate started!');
     console.log('🚀 handleUpdate STARTED!');
     console.log('💾 Updating shift with data:', editData);
     console.log('🔢 Required employees being saved:', editData.required_employees);
@@ -131,10 +132,13 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
     
     setIsUpdating(true);
     try {
+      alert('Before onUpdate call');
       await onUpdate(shift.id, editData);
+      alert('After onUpdate call - success!');
       console.log('✅ Shift updated successfully');
       setIsEditing(false);
     } catch (error) {
+      alert('Error in onUpdate: ' + error);
       console.error('❌ Error updating shift:', error);
       toast.error('שגיאה בעדכון המשמרת: ' + (error as Error).message);
     } finally {
