@@ -118,6 +118,8 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
 
   const handleUpdate = async () => {
     console.log('💾 Updating shift with data:', editData);
+    console.log('🔢 Required employees being saved:', editData.required_employees);
+    console.log('🧑‍💼 Shift assignments being saved:', editData.shift_assignments);
     setIsUpdating(true);
     try {
       await onUpdate(shift.id, editData);

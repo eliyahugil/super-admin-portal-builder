@@ -297,8 +297,10 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       // שמירת הקצאות עובדים כשמעדכנים ידנית
       if (updates.shift_assignments !== undefined) {
         updateData.shift_assignments = updates.shift_assignments;
-        console.log('💼 Updating shift assignments:', updates.shift_assignments);
+        console.log('💼 Updating shift assignments manually:', updates.shift_assignments);
       }
+
+      console.log('📊 Final updateData being sent to Supabase:', updateData);
 
       if (updates.priority !== undefined) {
         updateData.priority = updates.priority || 'normal';
