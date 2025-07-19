@@ -141,6 +141,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
           employee_type,
           hire_date,
           is_active,
+          is_archived,
           weekly_hours_required,
           notes,
           created_at,
@@ -148,6 +149,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
         `)
         .eq('business_id', businessId)
         .eq('is_active', true)
+        .eq('is_archived', false)
         .order('first_name', { ascending: true });
 
       if (error) {

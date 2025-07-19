@@ -48,11 +48,13 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
               first_name,
               last_name,
               business_id,
-              is_active
+              is_active,
+              is_archived
             )
           `)
           .eq('employees.business_id', businessId)
           .eq('employees.is_active', true)
+          .eq('employees.is_archived', false)
           .gte('submitted_at', weekRange.start.toISOString())
           .lte('submitted_at', weekRange.end.toISOString());
 
@@ -72,8 +74,11 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
   const calculateEmployeeStats = (): EmployeeStats[] => {
     const stats: EmployeeStats[] = [];
     
-    // סינון רק עובדים פעילים
-    const activeEmployees = employees.filter(employee => employee.is_active === true);
+    // סינון רק עובדים פעילים ולא מארכיון
+    const activeEmployees = employees.filter(employee => 
+      employee.is_active === true && 
+      employee.is_archived === false
+    );
     
     activeEmployees.forEach(employee => {
       const employeeShifts = shifts.filter(shift => 

@@ -11,6 +11,7 @@ export interface Employee {
   business_id: string;
   employee_id: string;
   is_active?: boolean;
+  is_archived?: boolean;
   weekly_hours_required?: number;
   birth_date?: string | null;
 }
