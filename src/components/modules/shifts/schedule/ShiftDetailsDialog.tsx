@@ -703,20 +703,14 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
                   onClick={async () => {
-                    alert('כפתור השמירה נלחץ!');
-                    
                     try {
-                      alert('editData: ' + JSON.stringify(editData));
                       console.log('=== SAVE BUTTON CLICKED ===');
                       console.log('editData before save:', editData);
                       console.log('required_employees:', editData.required_employees);
                       
                       setIsUpdating(true);
-                      
-                      alert('קורא לפונקציית השמירה...');
                       await onUpdate(shift.id, editData);
                       
-                      alert('שמירה הושלמה בהצלחה!');
                       console.log('=== SAVE COMPLETED - CLOSING EDIT ===');
                       setIsEditing(false);
                       
@@ -726,10 +720,14 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                         await onRefresh();
                       }
                       
+                      // Close the dialog completely after successful save
+                      setTimeout(() => {
+                        onClose();
+                      }, 100);
+                      
                       toast.success('המשמרת נשמרה בהצלחה');
                       
                     } catch (error) {
-                      alert('שגיאה בשמירה: ' + error);
                       console.error('Save error:', error);
                       toast.error('שגיאה בשמירה: ' + error);
                     } finally {
