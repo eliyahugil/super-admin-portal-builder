@@ -179,6 +179,33 @@ export const AutoShiftAssignment: React.FC = () => {
     );
   };
 
+  const handleChangeAssignment = async (shiftId: string, currentEmployeeId: string, newEmployeeId: string) => {
+    try {
+      // עדכון התוצאה במצב המקומי
+      setLastResult((prev: any) => ({
+        ...prev,
+        assignments: prev.assignments.map((assignment: any) => 
+          assignment.shift_id === shiftId 
+            ? { ...assignment, employee_id: newEmployeeId } 
+            : assignment
+        )
+      }));
+
+      toast({
+        title: 'השיוך עודכן',
+        description: 'השיוך עודכן בהצלחה במצב הצגה. לשמירה סופית, הפעל שוב את השיוך במצב אוטומטי.',
+        variant: 'default'
+      });
+    } catch (error) {
+      console.error('שגיאה בעדכון השיוך:', error);
+      toast({
+        title: 'שגיאה בעדכון השיוך',
+        description: 'לא הצלחנו לעדכן את השיוך',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const getAssignmentRatio = () => {
     return Math.round((stats.assignedShifts / stats.totalShifts) * 100);
   };
@@ -362,8 +389,34 @@ export const AutoShiftAssignment: React.FC = () => {
                 <h4 className="font-medium mb-2">שיוכים שבוצעו ({lastResult.assignments.length})</h4>
                 <div className="max-h-32 overflow-y-auto space-y-1">
                   {lastResult.assignments.slice(0, 5).map((assignment: any, index: number) => (
-                    <div key={index} className="text-sm p-2 bg-green-50 rounded border">
-                      <div className="font-medium">משמרת {assignment.shift_id.slice(-8)}</div>
+                    <div key={index} className="text-sm p-3 bg-green-50 rounded border">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="font-medium">משמרת {assignment.shift_id.slice(-8)}</div>
+                        {assignment.alternativeOptions && assignment.alternativeOptions.length > 0 && (
+                          <Select
+                            defaultValue={assignment.employee_id}
+                            onValueChange={(newEmployeeId) => handleChangeAssignment(assignment.shift_id, assignment.employee_id, newEmployeeId)}
+                          >
+                            <SelectTrigger className="w-32 h-6 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white border shadow-lg z-50">
+                              <SelectItem value={assignment.employee_id}>
+                                <div className="text-xs">
+                                  {assignment.employee_name} (נוכחי)
+                                </div>
+                              </SelectItem>
+                              {assignment.alternativeOptions.map((alt: any) => (
+                                <SelectItem key={alt.employee_id} value={alt.employee_id}>
+                                  <div className="text-xs">
+                                    {alt.employee_name} ({alt.match_score}%)
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
                       <div className="text-gray-600">{assignment.reasoning}</div>
                       <div className="text-xs text-green-600">ציון: {assignment.confidence_score}</div>
                     </div>
