@@ -307,6 +307,9 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         console.log('🔥 Setting priority to:', updateData.priority);
       }
 
+      console.log('📊 Final updateData being sent to Supabase:', updateData);
+      console.log('📊 Updating shift with ID:', shiftId);
+
       const { data, error } = await supabase
         .from('scheduled_shifts')
         .update(updateData)
@@ -319,7 +322,8 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         throw error;
       }
 
-      console.log('✅ Shift updated successfully:', data);
+      console.log('✅ Shift updated successfully in DB:', data);
+      console.log('✅ Updated required_employees value:', data.required_employees);
       
       // אם שיוך עובד הצליח, רשום בלוג
       if (updates.employee_id) {
@@ -341,8 +345,10 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('🔄 Mutation success - invalidating queries for businessId:', businessId);
       queryClient.invalidateQueries({ queryKey: ['schedule-shifts', businessId] });
+      console.log('📈 Query invalidated, data should refresh now');
     }
   });
 
