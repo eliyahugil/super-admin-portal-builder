@@ -310,93 +310,102 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
            </Badge>
          </div>
         
-      {/* הקצאות עובדים - תצוגה מפורטת */}
-        <div className="flex flex-col items-center gap-1 w-full">
+      {/* הקצאות עובדים - תצוגה מרוכזת ויפה */}
+        <div className="flex flex-col items-center gap-2 w-full">
           {hasAssignedEmployee() ? (
-            <div className="w-full space-y-1">
-              {/* כותרת הקצאות */}
-              <div className="text-center text-xs font-medium text-gray-600 mb-1">
-                הקצאות ({shift.required_employees || 1} נדרשים)
-              </div>
-              
+            <div className="w-full space-y-2">
               {/* עובד ראשי מוקצה */}
               {shift.employee_id && (
                 <div className="flex justify-center">
-                  <Badge 
-                    variant="secondary" 
-                    className={`px-3 py-1 shadow-sm font-medium ${
-                      shift.status === 'approved' 
-                        ? 'bg-green-100 text-green-800 border-green-300' 
-                        : 'bg-yellow-100 text-yellow-800 border-yellow-300'
-                    }`}
-                  >
-                    <User className="h-3 w-3 ml-1" />
-                    {getEmployeeName(shift.employee_id)}
-                    <span className="mr-1 text-xs">(ראשי)</span>
-                  </Badge>
+                  <div className={`px-3 py-2 rounded-lg font-medium text-sm shadow-sm border-2 ${
+                    shift.status === 'approved' 
+                      ? 'bg-green-100 text-green-800 border-green-300' 
+                      : 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                  }`}>
+                    <div className="flex items-center gap-1">
+                      <User className="h-4 w-4" />
+                      {getEmployeeName(shift.employee_id)}
+                    </div>
+                  </div>
                 </div>
               )}
               
-              {/* הקצאות נוספות */}
+              {/* הקצאות נוספות במקרה של מספר עובדים */}
               {((shift as any).shift_assignments || [])
                 .filter((assignment: any) => assignment.employee_id && assignment.employee_id !== shift.employee_id)
                 .map((assignment: any, index: number) => {
                   const assignedEmployee = employees.find(emp => emp.id === assignment.employee_id);
                   return (
                     <div key={assignment.id || index} className="flex justify-center">
-                      <Badge 
-                        variant="secondary" 
-                        className="px-2 py-1 text-xs bg-blue-100 text-blue-800 border-blue-300"
-                      >
-                        <User className="h-3 w-3 ml-1" />
+                      <div className="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs">
+                        <User className="h-3 w-3 inline ml-1" />
                         {assignedEmployee ? `${assignedEmployee.first_name} ${assignedEmployee.last_name}` : 'לא ידוע'}
-                        <span className="mr-1">({assignment.type || 'תגבור'})</span>
-                      </Badge>
+                      </div>
                     </div>
                   );
                 })}
               
-              {/* הקצאות ללא עובד מוקצה */}
-              {((shift as any).shift_assignments || [])
-                .filter((assignment: any) => !assignment.employee_id)
-                .map((assignment: any, index: number) => (
-                  <div key={`unassigned-${assignment.id || index}`} className="flex justify-center">
-                    <Badge 
-                      variant="outline" 
-                      className="bg-orange-50 text-orange-700 border-orange-200 px-2 py-1 text-xs"
-                    >
-                      <User className="h-3 w-3 ml-1" />
-                      לא מוקצה ({assignment.type || 'תגבור'})
-                    </Badge>
-                  </div>
-                ))}
+              {/* מצב הקצאה */}
+              <div className="flex justify-center">
+                <div className={`px-2 py-1 rounded text-xs font-medium ${
+                  shift.status === 'approved' 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-yellow-500 text-white'
+                }`}>
+                  {shift.status === 'approved' ? 'מאושר' : 'ממתין לאישור'}
+                </div>
+              </div>
               
-              {/* עמדות חסרות לגמרי */}
+              {/* הקצאות ללא עובד או עמדות חסרות */}
               {(() => {
                 const requiredEmployees = shift.required_employees || 1;
-                const currentAssignments = ((shift as any).shift_assignments || []).length;
-                const missingAssignments = Math.max(0, requiredEmployees - currentAssignments);
+                const assignedCount = (shift.employee_id ? 1 : 0) + 
+                  ((shift as any).shift_assignments || []).filter((a: any) => a.employee_id).length;
+                const unassignedCount = ((shift as any).shift_assignments || []).filter((a: any) => !a.employee_id).length;
+                const missingCount = Math.max(0, requiredEmployees - assignedCount - unassignedCount);
                 
-                return Array.from({ length: missingAssignments }, (_, index) => (
-                  <div key={`missing-${index}`} className="flex justify-center">
-                    <Badge 
-                      variant="outline" 
-                      className="bg-red-50 text-red-700 border-red-200 px-2 py-1 text-xs"
-                    >
-                      <User className="h-3 w-3 ml-1" />
-                      דרושה הקצאה
-                    </Badge>
-                  </div>
-                ));
+                if (unassignedCount > 0 || missingCount > 0) {
+                  return (
+                    <div className="flex justify-center gap-1">
+                      {unassignedCount > 0 && (
+                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300 text-xs">
+                          {unassignedCount} לא מוקצה
+                        </Badge>
+                      )}
+                      {missingCount > 0 && (
+                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 text-xs">
+                          {missingCount} חסר
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
               })()}
             </div>
           ) : (
             <div className="w-full space-y-2">
               {/* משמרת ללא עובדים מוקצים */}
               <div className="flex justify-center">
-                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-3 py-1 shadow-sm">
-                  <User className="h-3 w-3 ml-1" />
-                  לא מוקצה ({shift.required_employees || 1} נדרשים)
+                <div className="px-3 py-2 bg-gray-100 text-gray-600 border-2 border-gray-200 rounded-lg text-sm font-medium">
+                  <div className="flex items-center gap-1">
+                    <User className="h-4 w-4" />
+                    אינה מאוישת
+                  </div>
+                </div>
+              </div>
+              
+              {/* סטטוס ממתין */}
+              <div className="flex justify-center">
+                <div className="px-2 py-1 bg-yellow-500 text-white rounded text-xs font-medium">
+                  ממתין לאישור הקצאה
+                </div>
+              </div>
+              
+              {/* מספר עמדות נדרשות */}
+              <div className="flex justify-center">
+                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300 text-xs">
+                  {shift.required_employees || 1} עמדות נדרשות
                 </Badge>
               </div>
               
@@ -416,7 +425,7 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
                       className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 text-xs px-2 py-1"
                     >
                       <Lightbulb className="h-3 w-3" />
-                      המלצות
+                      המלצות עובדים
                     </Button>
                   </EmployeeRecommendationEngine>
                 </div>
