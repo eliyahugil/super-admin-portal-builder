@@ -103,6 +103,11 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
     // Sort shifts within each day by start time then end time
     Object.values(grouped).forEach(branchGroup => {
       Object.values(branchGroup.days).forEach(dayShifts => {
+        if (dayShifts.length > 0) {
+          console.log('🔍 Before sorting shifts for day:', dayShifts[0].shift_date, 
+            dayShifts.map(s => `${s.start_time}-${s.end_time} (${s.employee_id ? 'assigned' : 'unassigned'})`));
+        }
+        
         dayShifts.sort((a, b) => {
           const parseTime = (timeStr: string) => {
             if (!timeStr) return 0;
@@ -112,6 +117,14 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
           
           const startA = parseTime(a.start_time || '00:00');
           const startB = parseTime(b.start_time || '00:00');
+          
+          console.log('⏰ Comparing times:', {
+            shiftA: `${a.start_time}-${a.end_time}`,
+            shiftB: `${b.start_time}-${b.end_time}`,
+            startA: startA,
+            startB: startB,
+            result: startA - startB
+          });
           
           // מיון לפי שעת התחלה קודם
           if (startA !== startB) {
@@ -124,6 +137,11 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
           
           return endB - endA; // הארוכה קודם
         });
+        
+        if (dayShifts.length > 0) {
+          console.log('✅ After sorting shifts for day:', dayShifts[0].shift_date, 
+            dayShifts.map(s => `${s.start_time}-${s.end_time} (${s.employee_id ? 'assigned' : 'unassigned'})`));
+        }
       });
     });
     
