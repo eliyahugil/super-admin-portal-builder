@@ -19,22 +19,38 @@ function parsePriority(priority: string | null): ShiftPriority {
 }
 
 function parseShiftAssignments(assignments: any): { id: string; type: "חובה" | "תגבור"; employee_id: string; position: number; is_required: boolean; }[] {
-  if (!assignments) return [];
+  console.log('🔄 parseShiftAssignments called with:', {
+    assignments,
+    assignmentsType: typeof assignments,
+    isArray: Array.isArray(assignments),
+    isNull: assignments === null,
+    isUndefined: assignments === undefined
+  });
+  
+  if (!assignments) {
+    console.log('📝 parseShiftAssignments: returning empty array (no assignments)');
+    return [];
+  }
   
   // If it's a string, parse it
   if (typeof assignments === 'string') {
     try {
-      return JSON.parse(assignments);
-    } catch {
+      const parsed = JSON.parse(assignments);
+      console.log('📝 parseShiftAssignments: parsed from string:', parsed);
+      return parsed;
+    } catch (error) {
+      console.log('❌ parseShiftAssignments: failed to parse string:', error);
       return [];
     }
   }
   
   // If it's already an array, return it
   if (Array.isArray(assignments)) {
+    console.log('📝 parseShiftAssignments: returning array as-is:', assignments);
     return assignments;
   }
   
+  console.log('📝 parseShiftAssignments: returning empty array (unknown type)');
   return [];
 }
 

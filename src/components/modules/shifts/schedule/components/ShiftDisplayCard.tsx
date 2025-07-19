@@ -61,14 +61,18 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
     const shiftAssignments = (shift as any).shift_assignments || [];
     return shift.employee_id || shiftAssignments.some((assignment: any) => assignment.employee_id);
   };
-  // Debug logs
-  console.log('🔍 ShiftDisplayCard render:', {
+  // Debug logs for assignments
+  console.log('🔍 ShiftDisplayCard assignments debug:', {
     shiftId: shift.id,
     startTime: shift.start_time,
     endTime: shift.end_time,
-    isSelectionMode,
-    isSelected,
-    hasOnShiftSelection: !!onShiftSelection
+    employeeId: shift.employee_id,
+    shiftAssignments: (shift as any).shift_assignments,
+    shiftAssignmentsLength: ((shift as any).shift_assignments || []).length,
+    requiredEmployees: shift.required_employees,
+    employeesAvailable: employees.length,
+    employeesList: employees.map(emp => ({ id: emp.id, name: `${emp.first_name} ${emp.last_name}` })),
+    rawShiftData: shift
   });
   const handleShiftCardClick = (e: React.MouseEvent) => {
     console.log('👆 Shift card clicked:', { shiftId: shift.id, isSelectionMode, isSelected });
