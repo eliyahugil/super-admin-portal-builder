@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { supabase } from '@/integrations/supabase/client';
 import { WeeklyShiftService } from '@/services/WeeklyShiftService';
 import { ShiftSubmission, ShiftEntry } from '../types';
@@ -10,7 +10,7 @@ import { getUpcomingWeekDates } from '@/lib/dateUtils';
 export const useShiftSubmissions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
-  const { businessId, isLoading } = useBusiness();
+  const { businessId } = useCurrentBusiness();
 
   // Fetch shift submissions from database
   const { data: submissions, isLoading: submissionsLoading, refetch } = useQuery({
@@ -46,7 +46,7 @@ export const useShiftSubmissions = () => {
       console.log('📄 First submission sample:', data?.[0]);
       return (data || []) as any[];
     },
-    enabled: !!businessId && !isLoading,
+    enabled: !!businessId,
   });
 
   // Get all employees to show missing submissions
@@ -64,7 +64,7 @@ export const useShiftSubmissions = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!businessId && !isLoading,
+    enabled: !!businessId,
   });
 
   // WhatsApp functions
@@ -179,7 +179,7 @@ export const useShiftSubmissions = () => {
     submissions,
     allEmployees,
     dashboardData: filteredData,
-    isLoading: isLoading || submissionsLoading,
+    isLoading: submissionsLoading,
     parseShifts,
     sendWhatsApp,
     sendReminder,
