@@ -283,10 +283,10 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
           const existingAssignment = currentAssignments[i];
           assignments.push({
             id: existingAssignment?.id || crypto.randomUUID(),
-            type: i === 0 ? 'חובה' : 'תגבור', // הראשון חובה, השאר תגבור
+            type: existingAssignment?.type || (i === 0 ? 'חובה' : 'תגבור'),
             employee_id: existingAssignment?.employee_id || null,
             position: i + 1,
-            is_required: i === 0 // הראשון חובה
+            is_required: existingAssignment?.is_required !== undefined ? existingAssignment.is_required : (i === 0)
           });
         }
         
@@ -296,7 +296,7 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         const firstAssignment = assignments[0];
         updateData.employee_id = firstAssignment?.employee_id || null;
         
-        console.log('🔢 Created assignments:', assignments);
+        console.log('🔢 Created assignments for required_employees update:', assignments);
         console.log('👤 Main employee_id set to:', updateData.employee_id);
       }
 
@@ -312,6 +312,22 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         
         console.log('💼 Updating shift assignments manually:', updates.shift_assignments);
         console.log('👤 Main employee_id updated to:', updateData.employee_id);
+      }
+
+      // אם אין shift_assignments אבל יש required_employees > 1, צור הקצאות ריקות
+      if (!updateData.shift_assignments && updateData.required_employees > 1) {
+        const assignments = [];
+        for (let i = 0; i < updateData.required_employees; i++) {
+          assignments.push({
+            id: crypto.randomUUID(),
+            type: i === 0 ? 'חובה' : 'תגבור',
+            employee_id: i === 0 ? updateData.employee_id : null,
+            position: i + 1,
+            is_required: i === 0
+          });
+        }
+        updateData.shift_assignments = assignments;
+        console.log('🆕 Created new assignments for existing shift:', assignments);
       }
 
       console.log('📊 Final updateData being sent to Supabase:', updateData);

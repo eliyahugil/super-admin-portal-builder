@@ -61,14 +61,27 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
     const shiftAssignments = (shift as any).shift_assignments || [];
     return shift.employee_id || shiftAssignments.some((assignment: any) => assignment.employee_id);
   };
-  // Debug logs for assignments
+  // Debug logs for assignments - עם alert כדי שנראה בוודאות
+  const assignmentsData = (shift as any).shift_assignments;
+  
+  if (shift.id === 'f2ee861e-7a60-423a-a59b-a046880680a3') {
+    alert('בדיקת הקצאות למשמרת: ' + JSON.stringify({
+      shiftId: shift.id,
+      employeeId: shift.employee_id,
+      requiredEmployees: shift.required_employees,
+      assignmentsData: assignmentsData,
+      assignmentsType: typeof assignmentsData,
+      assignmentsLength: Array.isArray(assignmentsData) ? assignmentsData.length : 'לא מערך'
+    }, null, 2));
+  }
+  
   console.log('🔍 ShiftDisplayCard assignments debug:', {
     shiftId: shift.id,
     startTime: shift.start_time,
     endTime: shift.end_time,
     employeeId: shift.employee_id,
-    shiftAssignments: (shift as any).shift_assignments,
-    shiftAssignmentsLength: ((shift as any).shift_assignments || []).length,
+    shiftAssignments: assignmentsData,
+    shiftAssignmentsLength: Array.isArray(assignmentsData) ? assignmentsData.length : 'לא מערך',
     requiredEmployees: shift.required_employees,
     employeesAvailable: employees.length,
     employeesList: employees.map(emp => ({ id: emp.id, name: `${emp.first_name} ${emp.last_name}` })),
