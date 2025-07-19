@@ -3,7 +3,42 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
+/* תיקון רקע Google Maps מציק */
+body {
+  background: #ffffff !important;
+}
+
+#root {
+  background: #ffffff !important;
+}
+
+/* מניעת רכיבי מפה מלהופיע */
+div[id*="google"] {
+  display: none !important;
+}
+
+div[class*="gm-"] {
+  display: none !important;
+}
+
+.gm-style {
+  display: none !important;
+}
+
+/* וידוא שהאפליקציה תמיד על רקע לבן */
+.app-container,
+.main-content,
+[data-testid="app-container"] {
+  background: #ffffff !important;
+  position: relative;
+  z-index: 1000;
+}
+
+/* מניעת overflow מבעיתי ברקע */
+body, html {
+  overflow-x: hidden;
+  background-color: #ffffff !important;
+}
   :root {
     /* Modern Blue & Teal Theme - נעים לעיניים */
     --background: 220 18% 97%;

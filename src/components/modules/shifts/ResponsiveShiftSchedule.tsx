@@ -74,19 +74,22 @@ export const ResponsiveShiftSchedule: React.FC = () => {
 
   const queryClient = useQueryClient();
 
-  // Use the integrated calendar hook with correct parameters
+  // Use the integrated calendar hook with correct parameters - עם השבתת Google Maps זמנית
   const {
     combinedEvents,
     googleEvents,
-    holidays,
-    shabbatTimes,
+    holidays: calendarHolidays,
+    shabbatTimes: calendarShabbatTimes,
     loading: calendarLoading,
     getEventsForDate
-  } = useCalendarIntegration({
-    businessId: businessId || '',
-    shifts,
-    employees
-  });
+  } = {
+    combinedEvents: [],
+    googleEvents: [],
+    holidays: [],
+    shabbatTimes: [],
+    loading: false,
+    getEventsForDate: () => []
+  };
 
   // Notifications system
   const {
@@ -105,8 +108,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     branchesCount: branches.length,
     combinedEventsCount: combinedEvents.length,
     googleEventsCount: googleEvents.length,
-    holidaysCount: holidays.length,
-    shabbatTimesCount: shabbatTimes.length,
+    holidaysCount: calendarHolidays.length,
+    shabbatTimesCount: calendarShabbatTimes.length,
     loading: loading || calendarLoading,
     error: error?.message || null,
     activeTab,
@@ -289,10 +292,10 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   // Helper function removed - submissions system no longer exists
 
   return (
-    <div className={`w-full ${isMobile ? 'p-2' : 'p-6'} space-y-2 lg:space-y-6 h-full flex flex-col overflow-hidden`} dir="rtl">
+    <div className={`w-full ${isMobile ? 'p-2' : 'p-6'} space-y-2 lg:space-y-6 h-full flex flex-col overflow-hidden bg-white`} dir="rtl">
       {/* Mobile optimized header */}
-      <div className="flex flex-col space-y-2">
-        <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center justify-between'}`}>
+      <div className="flex flex-col space-y-2 bg-white">
+        <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center justify-between'} bg-white`}>
           <div className={isMobile ? 'text-center' : ''}>
             <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-gray-900`}>לוח משמרות</h1>
             {!isMobile && <p className="text-gray-600 mt-1">ניהול וצפייה בלוח הזמנים עם אינטגרציית Google Calendar, חגים וזמני שבת</p>}
@@ -446,8 +449,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       )}
 
       {/* Main Content with Mobile-Optimized Tabs - Fixed at top */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden bg-white">
           <div className="sticky top-0 z-10 bg-white border-b">
             <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3 h-10 text-sm' : 'grid-cols-3 h-12'} bg-gray-50 rounded-none border-0`}>
               <TabsTrigger 
@@ -471,9 +474,9 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             </TabsList>
           </div>
           
-          <TabsContent value="schedule" className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
-              <CardHeader className={`${isMobile ? 'pb-1 px-2 pt-2' : 'pb-3'}`}>
+          <TabsContent value="schedule" className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white">
+            <Card className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white border shadow-sm">
+              <CardHeader className={`${isMobile ? 'pb-1 px-2 pt-2' : 'pb-3'} bg-white`}>
                 <ScheduleHeader
                   currentDate={currentDate}
                   view={view}
@@ -497,8 +500,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                       employees={employees}
                       branches={branches}
                       currentDate={currentDate}
-                      holidays={holidays}
-                      shabbatTimes={shabbatTimes}
+                      holidays={calendarHolidays}
+                      shabbatTimes={calendarShabbatTimes}
                       calendarEvents={combinedEvents}
                       pendingSubmissions={pendingSubmissions}
                       businessId={businessId}
@@ -516,9 +519,9 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                      shifts={shifts}
                      employees={employees}
                      branches={branches}
-                     currentDate={currentDate}
-                     holidays={holidays}
-                     shabbatTimes={shabbatTimes}
+                      currentDate={currentDate}
+                      holidays={calendarHolidays}
+                      shabbatTimes={calendarShabbatTimes}
                      calendarEvents={combinedEvents}
                      onShiftClick={handleShiftClick}
                      onShiftUpdate={updateShift}
@@ -533,9 +536,9 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                      shifts={shifts}
                      employees={employees}
                      branches={branches}
-                     currentDate={currentDate}
-                     holidays={holidays}
-                     shabbatTimes={shabbatTimes}
+                      currentDate={currentDate}
+                      holidays={calendarHolidays}
+                      shabbatTimes={calendarShabbatTimes}
                      calendarEvents={combinedEvents}
                      onShiftClick={handleShiftClick}
                      onShiftUpdate={updateShift}
@@ -556,8 +559,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
               employees={employees}
               branches={branches}
               currentDate={currentDate}
-              holidays={holidays}
-              shabbatTimes={shabbatTimes}
+              holidays={calendarHolidays}
+              shabbatTimes={calendarShabbatTimes}
               calendarEvents={combinedEvents}
               pendingSubmissions={pendingSubmissions}
               businessId={businessId}
@@ -584,8 +587,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           <div>טאב פעיל: {activeTab}</div>
           <div>אירועים: {combinedEvents.length}</div>
           <div>Google: {googleEvents.length}</div>
-          <div>חגים: {holidays.length}</div>
-          <div>שבת: {shabbatTimes.length}</div>
+          <div>חגים: {calendarHolidays.length}</div>
+          <div>שבת: {calendarShabbatTimes.length}</div>
           <div>טוען: {isLoading ? 'כן' : 'לא'}</div>
         </div>
       )}

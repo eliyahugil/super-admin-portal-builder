@@ -184,10 +184,10 @@ export const ParallelScheduleView: React.FC<ShiftScheduleViewProps> = (props) =>
   };
 
   return (
-    <div className="flex flex-col space-y-4 h-full overflow-hidden" dir="rtl">
+    <div className="flex flex-col space-y-4 h-full overflow-hidden bg-white" dir="rtl">
       {/* בקרות בחירת תצוגה */}
       {!maximizedView && (
-        <Card className="flex-shrink-0">
+        <Card className="flex-shrink-0 bg-white border shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -227,10 +227,10 @@ export const ParallelScheduleView: React.FC<ShiftScheduleViewProps> = (props) =>
       )}
 
       {/* תצוגות מקביליות או ממוקסמת */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden bg-white">
         {maximizedView ? (
-          <Card className="h-full flex flex-col">
-            <CardHeader className="pb-2 flex-shrink-0">
+          <Card className="h-full flex flex-col bg-white border shadow-sm">
+            <CardHeader className="pb-2 flex-shrink-0 bg-white">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">
                   {availableViews.find(v => v.id === maximizedView)?.name}
@@ -245,7 +245,7 @@ export const ParallelScheduleView: React.FC<ShiftScheduleViewProps> = (props) =>
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0 overflow-hidden p-0">
+            <CardContent className="flex-1 min-h-0 overflow-hidden p-0 bg-white">
               <CompactShiftView
                 {...props}
                 viewType={maximizedView as 'week' | 'month'}
@@ -253,7 +253,7 @@ export const ParallelScheduleView: React.FC<ShiftScheduleViewProps> = (props) =>
             </CardContent>
           </Card>
         ) : selectedViews.length > 0 ? (
-          <div className={`grid ${getGridCols()} gap-4 h-full`}>
+          <div className={`grid ${getGridCols()} gap-4 h-full bg-white`}>
             {selectedViews.map(viewId => {
               const view = availableViews.find(v => v.id === viewId);
               if (!view) return null;
@@ -261,8 +261,8 @@ export const ParallelScheduleView: React.FC<ShiftScheduleViewProps> = (props) =>
               const Icon = view.icon;
 
               return (
-                <Card key={viewId} className="flex flex-col min-h-0 overflow-hidden">
-                  <CardHeader className="pb-2 flex-shrink-0">
+                <Card key={viewId} className="flex flex-col min-h-0 overflow-hidden bg-white border shadow-sm">
+                  <CardHeader className="pb-2 flex-shrink-0 bg-white">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Icon className="h-4 w-4 text-blue-600" />
@@ -288,7 +288,7 @@ export const ParallelScheduleView: React.FC<ShiftScheduleViewProps> = (props) =>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="flex-1 min-h-0 overflow-hidden p-0">
+                  <CardContent className="flex-1 min-h-0 overflow-hidden p-0 bg-white">
                     <CompactShiftView
                       {...props}
                       viewType={viewId as 'week' | 'month'}
@@ -300,7 +300,7 @@ export const ParallelScheduleView: React.FC<ShiftScheduleViewProps> = (props) =>
             })}
           </div>
         ) : (
-          <Card className="h-full flex items-center justify-center">
+          <Card className="h-full flex items-center justify-center bg-white border shadow-sm">
             <div className="text-center py-8">
               <LayoutGrid className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">בחר תצוגות להצגה מקבילה</p>
