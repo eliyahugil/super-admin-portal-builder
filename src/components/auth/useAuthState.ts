@@ -45,7 +45,22 @@ export const useAuthState = () => {
               return;
             }
 
+            console.log('🔄 Auth state changed:', event, {
+              hasSession: !!newSession,
+              userEmail: newSession?.user?.email || 'no session'
+            });
+
             handleAuthStateChange(event, newSession);
+            
+            // Handle specific events
+            if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !newSession) {
+              console.log('🚪 User signed out or token refresh failed, clearing state');
+              if (isMounted) {
+                setProfile(null);
+                setLoading(false);
+              }
+              return;
+            }
             
             if (newSession?.user) {
               console.log('👤 User detected, fetching profile...');
