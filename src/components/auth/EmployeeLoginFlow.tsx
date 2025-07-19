@@ -55,10 +55,10 @@ export const EmployeeLoginFlow: React.FC = () => {
       // Successful login, navigate to employee profile with React Router
       setTimeout(() => {
         if (result.employee?.id) {
-          navigate(`/modules/employees/profile/${result.employee.id}`);
+          navigate(`/employee/profile/${result.employee.id}`);
         } else if (session?.employee?.id) {
           // Fallback to session employee id if available
-          navigate(`/modules/employees/profile/${session.employee.id}`);
+          navigate(`/employee/profile/${session.employee.id}`);
         } else {
           // Force page reload if no employee id available
           window.location.reload();
@@ -76,7 +76,7 @@ export const EmployeeLoginFlow: React.FC = () => {
     
     // Navigate to the employee's profile page using React Router
     setTimeout(() => {
-      navigate(`/modules/employees/profile/${updatedEmployee.id}`);
+      navigate(`/employee/profile/${updatedEmployee.id}`);
     }, 1000);
   };
 
@@ -99,7 +99,7 @@ export const EmployeeLoginFlow: React.FC = () => {
     const employeeId = effectiveSession.employee.id;
     if (employeeId) {
       setTimeout(() => {
-        navigate(`/modules/employees/profile/${employeeId}`);
+        navigate(`/employee/profile/${employeeId}`);
       }, 500); // Small delay to show the redirect message
     }
     
