@@ -58,7 +58,7 @@ const calculateEmployeeScore = (
   }
 
   // 2. Check day availability 
-  const shiftDayOfWeek = new Date(shift.date || shift.week_start_date).getDay();
+  const shiftDayOfWeek = new Date(shift.shift_date || shift.date).getDay();
   const availableDays = preferences.available_days || [0, 1, 2, 3, 4, 5, 6];
   const availabilityMatch = availableDays.includes(shiftDayOfWeek);
   
@@ -222,16 +222,18 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
         console.log('👥 Fallback to all employees:', employees.length);
       }
 
-      // Fetch available shifts for the week
+      // Fetch empty scheduled shifts for the week
       const { data: shifts, error: shiftsError } = await supabase
-        .from('available_shifts')
+        .from('scheduled_shifts')
         .select('*')
         .eq('business_id', businessId)
-        .eq('week_start_date', weekStartDate);
+        .gte('shift_date', weekStartDate)
+        .lt('shift_date', new Date(new Date(weekStartDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        .is('employee_id', null);
 
       if (shiftsError) throw shiftsError;
 
-      console.log('📅 Available shifts found:', shifts?.length || 0);
+      console.log('📅 Empty scheduled shifts found:', shifts?.length || 0);
 
       // Fetch business scheduling rules
       const { data: rules, error: rulesError } = await supabase
@@ -260,7 +262,7 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
         return {
           shiftId: shift.id,
           shiftTime: `${shift.start_time}-${shift.end_time}`,
-          date: shift.week_start_date,
+          date: shift.shift_date,
           branchId: shift.branch_id,
           recommendations: validRecommendations.slice(0, 5) // Top 5 valid recommendations
         };
