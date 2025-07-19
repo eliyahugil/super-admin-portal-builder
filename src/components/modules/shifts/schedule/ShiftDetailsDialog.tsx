@@ -483,10 +483,24 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                     size="sm"
                     onClick={() => {
                       console.log('🔽 Decreasing required_employees from:', editData.required_employees);
-                      setEditData(prev => ({ 
-                        ...prev, 
-                        required_employees: Math.max(1, prev.required_employees - 1) 
-                      }));
+                      const newCount = Math.max(1, editData.required_employees - 1);
+                      
+                      setEditData(prev => {
+                        const currentAssignments = [...(prev.shift_assignments || [])];
+                        
+                        // Remove extra assignments if needed
+                        while (currentAssignments.length > newCount) {
+                          currentAssignments.pop();
+                        }
+                        
+                        console.log('🔽 New assignments array:', currentAssignments);
+                        
+                        return { 
+                          ...prev, 
+                          required_employees: newCount,
+                          shift_assignments: currentAssignments
+                        };
+                      });
                     }}
                     disabled={editData.required_employees <= 1}
                   >
@@ -501,10 +515,30 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                     size="sm"
                     onClick={() => {
                       console.log('🔼 Increasing required_employees from:', editData.required_employees);
-                      setEditData(prev => ({ 
-                        ...prev, 
-                        required_employees: Math.min(20, prev.required_employees + 1) 
-                      }));
+                      const newCount = Math.min(20, editData.required_employees + 1);
+                      
+                      setEditData(prev => {
+                        const currentAssignments = [...(prev.shift_assignments || [])];
+                        
+                        // Add new assignments if needed
+                        while (currentAssignments.length < newCount) {
+                          currentAssignments.push({
+                            id: crypto.randomUUID(),
+                            type: currentAssignments.length === 0 ? 'חובה' : 'תגבור',
+                            employee_id: null,
+                            position: currentAssignments.length + 1,
+                            is_required: currentAssignments.length === 0
+                          });
+                        }
+                        
+                        console.log('🔼 New assignments array:', currentAssignments);
+                        
+                        return { 
+                          ...prev, 
+                          required_employees: newCount,
+                          shift_assignments: currentAssignments
+                        };
+                      });
                     }}
                     disabled={editData.required_employees >= 20}
                   >
