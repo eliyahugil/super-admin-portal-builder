@@ -89,7 +89,7 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
       }
     });
     
-    // Sort shifts within each day by start time
+    // Sort shifts within each day by start time then end time
     Object.values(grouped).forEach(branchGroup => {
       Object.values(branchGroup.days).forEach(dayShifts => {
         dayShifts.sort((a, b) => {
@@ -98,7 +98,20 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
             const [hours, minutes] = timeStr.split(':').map(num => parseInt(num) || 0);
             return hours * 60 + minutes;
           };
-          return parseTime(a.start_time || '00:00') - parseTime(b.start_time || '00:00');
+          
+          const startA = parseTime(a.start_time || '00:00');
+          const startB = parseTime(b.start_time || '00:00');
+          
+          // מיון לפי שעת התחלה קודם
+          if (startA !== startB) {
+            return startA - startB;
+          }
+          
+          // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (הקצרה קודם)
+          const endA = parseTime(a.end_time || '23:59');
+          const endB = parseTime(b.end_time || '23:59');
+          
+          return endA - endB;
         });
       });
     });

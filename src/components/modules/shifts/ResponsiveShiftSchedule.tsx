@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +33,6 @@ import { useNotifications } from './notifications/useNotifications';
 import { ParallelScheduleView } from './schedule/ParallelScheduleView';
 import { GroupedByBranchView } from './schedule/components/GroupedByBranchView';
 import type { ScheduleView, ShiftScheduleData, CreateShiftData } from './schedule/types';
-import { useEffect } from 'react';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
   const isMobile = useIsMobile();
