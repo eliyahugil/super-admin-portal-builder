@@ -69,7 +69,12 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
   };
 
   const getShiftTypeColor = () => {
-    // אם המשמרת מאוישת (יש עובד מוקצה), החזר צבע צהוב
+    // אם המשמרת מאוישת ומאושרת, החזר צבע ירוק
+    if (shift.employee_id && shift.status === 'approved') {
+      return 'border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 via-green-25 to-white hover:from-green-100 border-green-300';
+    }
+    
+    // אם המשמרת מאוישת אבל לא מאושרת, החזר צבע צהוב
     if (shift.employee_id) {
       return 'border-l-4 border-l-yellow-500 bg-gradient-to-r from-yellow-50 via-yellow-25 to-white hover:from-yellow-100 border-yellow-300';
     }
@@ -126,15 +131,43 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
           </div>
         )}
         
-        <div className={`flex items-center gap-2 ${shift.employee_id ? 'p-2 bg-yellow-50 rounded border border-yellow-200' : ''}`}>
-          <User className={`h-4 w-4 ${shift.employee_id ? 'text-yellow-700' : ''}`} />
-          <span className={`font-medium ${shift.employee_id ? 'text-yellow-800' : ''}`}>עובד:</span>
-          <span className={shift.employee_id ? 'text-yellow-800 font-semibold' : ''}>
+        <div className={`flex items-center gap-2 ${
+          shift.employee_id 
+            ? shift.status === 'approved'
+              ? 'p-2 bg-green-50 rounded border border-green-200'
+              : 'p-2 bg-yellow-50 rounded border border-yellow-200'
+            : ''
+        }`}>
+          <User className={`h-4 w-4 ${
+            shift.employee_id 
+              ? shift.status === 'approved' 
+                ? 'text-green-700' 
+                : 'text-yellow-700'
+              : ''
+          }`} />
+          <span className={`font-medium ${
+            shift.employee_id 
+              ? shift.status === 'approved' 
+                ? 'text-green-800' 
+                : 'text-yellow-800'
+              : ''
+          }`}>עובד:</span>
+          <span className={
+            shift.employee_id 
+              ? shift.status === 'approved' 
+                ? 'text-green-800 font-semibold' 
+                : 'text-yellow-800 font-semibold'
+              : ''
+          }>
             {shift.employee_id ? getEmployeeName(shift.employee_id) : 'לא מוקצה'}
           </span>
           {shift.employee_id && (
-            <Badge className="bg-yellow-600 text-white text-xs">
-              ✓ מאויש
+            <Badge className={
+              shift.status === 'approved' 
+                ? 'bg-green-600 text-white text-xs' 
+                : 'bg-yellow-600 text-white text-xs'
+            }>
+              {shift.status === 'approved' ? '✓ מאושר' : '⏳ ממתין לאישור'}
             </Badge>
           )}
         </div>
@@ -254,7 +287,14 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
       {/* עובד מוקצה או לא מוקצה - שלישי */}
         <div className="flex items-center justify-center">
           {shift.employee_id ? (
-            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-300 px-3 py-1 shadow-sm font-medium">
+            <Badge 
+              variant="secondary" 
+              className={`px-3 py-1 shadow-sm font-medium ${
+                shift.status === 'approved' 
+                  ? 'bg-green-100 text-green-800 border-green-300' 
+                  : 'bg-yellow-100 text-yellow-800 border-yellow-300'
+              }`}
+            >
               <User className="h-3 w-3 ml-1" />
               {getEmployeeName(shift.employee_id)}
             </Badge>
