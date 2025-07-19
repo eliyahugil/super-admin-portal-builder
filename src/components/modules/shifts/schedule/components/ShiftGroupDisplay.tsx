@@ -126,17 +126,29 @@ export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
 
                 const startA = parseTime(a.start_time || '00:00');
                 const startB = parseTime(b.start_time || '00:00');
-                
-                // מיון לפי שעת התחלה קודם
-                if (startA.totalMinutes !== startB.totalMinutes) {
-                  return startA.totalMinutes - startB.totalMinutes;
-                }
-                
-                // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (המשמרת הארוכה יותר קודם)
                 const endA = parseTime(a.end_time || '23:59');
                 const endB = parseTime(b.end_time || '23:59');
                 
-                return endB.totalMinutes - endA.totalMinutes; // הארוכה קודם
+                console.log('🔄 Sorting shifts:', {
+                  shiftA: `${a.start_time}-${a.end_time}`,
+                  shiftB: `${b.start_time}-${b.end_time}`,
+                  startA: startA.totalMinutes,
+                  startB: startB.totalMinutes,
+                  endA: endA.totalMinutes,
+                  endB: endB.totalMinutes
+                });
+                
+                // מיון לפי שעת התחלה קודם
+                if (startA.totalMinutes !== startB.totalMinutes) {
+                  const result = startA.totalMinutes - startB.totalMinutes;
+                  console.log('📊 Sort by start time result:', result);
+                  return result;
+                }
+                
+                // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (המשמרת הארוכה יותר קודם)
+                const result = endB.totalMinutes - endA.totalMinutes; // הארוכה קודם
+                console.log('📊 Sort by end time result (longer first):', result);
+                return result;
               })
               .map((shift) => (
                 <ShiftDisplayCard
