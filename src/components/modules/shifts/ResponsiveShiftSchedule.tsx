@@ -727,10 +727,13 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           shift={selectedShift}
           employees={employees}
           branches={branches}
+          shifts={shifts}
+          pendingSubmissions={pendingSubmissions as any[]}
           onClose={() => setSelectedShift(null)}
           onUpdate={handleShiftUpdate}
           onDelete={handleShiftDelete}
           onAssignEmployee={(shift) => setAssignmentShift(shift)}
+          onSubmissionUpdate={async () => { await refetchShifts(); }}
           onRefresh={async () => { await refetchShifts(); }}
         />
       )}

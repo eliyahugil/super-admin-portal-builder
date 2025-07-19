@@ -210,10 +210,8 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
       const isSelected = isShiftSelected(shift);
       onShiftSelection(shift, !isSelected, e);
     } else {
-      // פותח את הגשות ממתינות במקום dialog פרטי של המשמרת
-      if (onOpenSubmissions) {
-        onOpenSubmissions();
-      }
+      // פותח את פרטי המשמרת עם הגשות רלוונטיות
+      onShiftClick(shift);
     }
   };
 
