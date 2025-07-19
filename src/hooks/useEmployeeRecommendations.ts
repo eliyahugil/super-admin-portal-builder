@@ -182,8 +182,11 @@ const calculateShiftDuration = (startTime: string, endTime: string): number => {
 };
 
 export const useEmployeeRecommendations = (businessId: string, weekStartDate: string) => {
+  // Get current score weights to include in query key for cache invalidation
+  const currentWeights = getSavedScoreWeights();
+  
   return useQuery({
-    queryKey: ['employee-recommendations', businessId, weekStartDate],
+    queryKey: ['employee-recommendations', businessId, weekStartDate, currentWeights],
     queryFn: async (): Promise<ShiftRecommendationData[]> => {
       console.log('🚀 Starting employee recommendations query:', { businessId, weekStartDate });
       

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, RotateCcw, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface SchedulingScoreSettingsProps {
   open: boolean;
@@ -31,6 +32,7 @@ export const SchedulingScoreSettings: React.FC<SchedulingScoreSettingsProps> = (
   open,
   onOpenChange
 }) => {
+  const queryClient = useQueryClient();
   const [weights, setWeights] = useState<ScoreWeights>(DEFAULT_WEIGHTS);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -49,11 +51,18 @@ export const SchedulingScoreSettings: React.FC<SchedulingScoreSettingsProps> = (
   };
 
   const handleSave = () => {
-    // כאן נשמור את ההגדרות - לעתיד ניתן לשמור ב-local storage או בדטאבייס
+    // שמירת ההגדרות
     console.log('🔧 Saving score weights:', weights);
     localStorage.setItem('schedulingScoreWeights', JSON.stringify(weights));
+    
+    // הרענון של כל הqueries הקשורות להמלצות עובדים
+    queryClient.invalidateQueries({ 
+      queryKey: ['employee-recommendations'],
+      exact: false 
+    });
+    
     setHasChanges(false);
-    toast.success('הגדרות הסידור נשמרו בהצלחה');
+    toast.success('הגדרות הסידור נשמרו בהצלחה - ההמלצות יתרעננו');
     onOpenChange(false);
   };
 
