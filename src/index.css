@@ -161,7 +161,7 @@ body, html {
     --sidebar-ring: 213 94% 68%;
   }
 
-@layer base {
+  /* Base styles */
   * {
     @apply border-border;
   }
