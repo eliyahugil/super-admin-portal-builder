@@ -700,9 +700,18 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               {/* Edit Actions */}
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
-                  onClick={() => {
-                    alert('Button clicked - editData: ' + JSON.stringify(editData));
-                    handleUpdate();
+                  onClick={async () => {
+                    try {
+                      alert('Starting direct save...');
+                      setIsUpdating(true);
+                      await onUpdate(shift.id, editData);
+                      alert('Direct save SUCCESS!');
+                      setIsEditing(false);
+                    } catch (error) {
+                      alert('Direct save ERROR: ' + error);
+                    } finally {
+                      setIsUpdating(false);
+                    }
                   }} 
                   disabled={isUpdating} 
                   className="w-full sm:w-auto"
