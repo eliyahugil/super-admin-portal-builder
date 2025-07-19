@@ -310,80 +310,119 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
            </Badge>
          </div>
         
-      {/* עובד מוקצה או לא מוקצה - שלישי */}
-        <div className="flex items-center justify-center">
+      {/* הקצאות עובדים - תצוגה מפורטת */}
+        <div className="flex flex-col items-center gap-1 w-full">
           {hasAssignedEmployee() ? (
-            <div className="space-y-1">
+            <div className="w-full space-y-1">
+              {/* כותרת הקצאות */}
+              <div className="text-center text-xs font-medium text-gray-600 mb-1">
+                הקצאות ({shift.required_employees || 1} נדרשים)
+              </div>
+              
               {/* עובד ראשי מוקצה */}
               {shift.employee_id && (
-                <Badge 
-                  variant="secondary" 
-                  className={`px-3 py-1 shadow-sm font-medium ${
-                    shift.status === 'approved' 
-                      ? 'bg-green-100 text-green-800 border-green-300' 
-                      : 'bg-yellow-100 text-yellow-800 border-yellow-300'
-                  }`}
-                >
-                  <User className="h-3 w-3 ml-1" />
-                  {getEmployeeName(shift.employee_id)}
-                </Badge>
+                <div className="flex justify-center">
+                  <Badge 
+                    variant="secondary" 
+                    className={`px-3 py-1 shadow-sm font-medium ${
+                      shift.status === 'approved' 
+                        ? 'bg-green-100 text-green-800 border-green-300' 
+                        : 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                    }`}
+                  >
+                    <User className="h-3 w-3 ml-1" />
+                    {getEmployeeName(shift.employee_id)}
+                    <span className="mr-1 text-xs">(ראשי)</span>
+                  </Badge>
+                </div>
               )}
               
               {/* הקצאות נוספות */}
-              {((shift as any).shift_assignments || []).map((assignment: any, index: number) => {
-                if (!assignment.employee_id || assignment.employee_id === shift.employee_id) return null;
-                const assignedEmployee = employees.find(emp => emp.id === assignment.employee_id);
-                return (
-                  <Badge 
-                    key={assignment.id || index}
-                    variant="secondary" 
-                    className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 border-blue-300"
-                  >
-                    <User className="h-2 w-2 ml-1" />
-                    {assignedEmployee ? `${assignedEmployee.first_name} ${assignedEmployee.last_name}` : 'לא מוקצה'}
-                    <span className="mr-1">({assignment.type})</span>
-                  </Badge>
-                );
-              })}
+              {((shift as any).shift_assignments || [])
+                .filter((assignment: any) => assignment.employee_id && assignment.employee_id !== shift.employee_id)
+                .map((assignment: any, index: number) => {
+                  const assignedEmployee = employees.find(emp => emp.id === assignment.employee_id);
+                  return (
+                    <div key={assignment.id || index} className="flex justify-center">
+                      <Badge 
+                        variant="secondary" 
+                        className="px-2 py-1 text-xs bg-blue-100 text-blue-800 border-blue-300"
+                      >
+                        <User className="h-3 w-3 ml-1" />
+                        {assignedEmployee ? `${assignedEmployee.first_name} ${assignedEmployee.last_name}` : 'לא ידוע'}
+                        <span className="mr-1">({assignment.type || 'תגבור'})</span>
+                      </Badge>
+                    </div>
+                  );
+                })}
               
-              {/* הצגת עמדות שלא מולאו */}
-              {getUnassignedCount() > 0 && (
-                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-2 py-0.5 text-xs">
-                  <User className="h-2 w-2 ml-1" />
-                  {getUnassignedCount()} לא מוקצה
-                </Badge>
-              )}
+              {/* הקצאות ללא עובד מוקצה */}
+              {((shift as any).shift_assignments || [])
+                .filter((assignment: any) => !assignment.employee_id)
+                .map((assignment: any, index: number) => (
+                  <div key={`unassigned-${assignment.id || index}`} className="flex justify-center">
+                    <Badge 
+                      variant="outline" 
+                      className="bg-orange-50 text-orange-700 border-orange-200 px-2 py-1 text-xs"
+                    >
+                      <User className="h-3 w-3 ml-1" />
+                      לא מוקצה ({assignment.type || 'תגבור'})
+                    </Badge>
+                  </div>
+                ))}
+              
+              {/* עמדות חסרות לגמרי */}
+              {(() => {
+                const requiredEmployees = shift.required_employees || 1;
+                const currentAssignments = ((shift as any).shift_assignments || []).length;
+                const missingAssignments = Math.max(0, requiredEmployees - currentAssignments);
+                
+                return Array.from({ length: missingAssignments }, (_, index) => (
+                  <div key={`missing-${index}`} className="flex justify-center">
+                    <Badge 
+                      variant="outline" 
+                      className="bg-red-50 text-red-700 border-red-200 px-2 py-1 text-xs"
+                    >
+                      <User className="h-3 w-3 ml-1" />
+                      דרושה הקצאה
+                    </Badge>
+                  </div>
+                ));
+              })()}
             </div>
-            ) : (
-              <div className="space-y-2">
+          ) : (
+            <div className="w-full space-y-2">
+              {/* משמרת ללא עובדים מוקצים */}
+              <div className="flex justify-center">
                 <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-3 py-1 shadow-sm">
                   <User className="h-3 w-3 ml-1" />
                   לא מוקצה ({shift.required_employees || 1} נדרשים)
                 </Badge>
-               
-               {/* כפתור המלצות למשמרות ריקות */}
-               {weekStartDate && onAssignEmployee && (
-                 <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-                   <EmployeeRecommendationEngine
-                     shiftId={shift.id}
-                     shiftTime={getFormattedTimeRange()}
-                     shiftDate={shift.shift_date}
-                     weekStartDate={weekStartDate}
-                     onEmployeeSelected={onAssignEmployee}
-                   >
-                     <Button 
-                       size="sm" 
-                       variant="outline" 
-                       className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 text-xs px-2 py-1"
-                     >
-                       <Lightbulb className="h-3 w-3" />
-                       המלצות
-                     </Button>
-                   </EmployeeRecommendationEngine>
-                 </div>
-               )}
-             </div>
-           )}
+              </div>
+              
+              {/* כפתור המלצות למשמרות ריקות */}
+              {weekStartDate && onAssignEmployee && (
+                <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+                  <EmployeeRecommendationEngine
+                    shiftId={shift.id}
+                    shiftTime={getFormattedTimeRange()}
+                    shiftDate={shift.shift_date}
+                    weekStartDate={weekStartDate}
+                    onEmployeeSelected={onAssignEmployee}
+                  >
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 text-xs px-2 py-1"
+                    >
+                      <Lightbulb className="h-3 w-3" />
+                      המלצות
+                    </Button>
+                  </EmployeeRecommendationEngine>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* אינדיקטור הגשות משמרות */}
