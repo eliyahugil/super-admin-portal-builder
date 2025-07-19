@@ -692,6 +692,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
           shifts={shifts}
           employees={employees}
           weekRange={{ start: weekDays[0], end: weekDays[6] }}
+          businessId={businessId}
           className="mb-4"
         />
       )}

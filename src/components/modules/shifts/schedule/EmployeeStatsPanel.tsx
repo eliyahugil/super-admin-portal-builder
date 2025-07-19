@@ -22,6 +22,7 @@ interface EmployeeStatsPanelProps {
   shifts: ShiftScheduleData[];
   employees: Employee[];
   weekRange: { start: Date; end: Date };
+  businessId: string; // הוספנו business_id
   className?: string;
 }
 
@@ -29,6 +30,7 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
   shifts,
   employees,
   weekRange,
+  businessId, // הוספנו business_id
   className = ''
 }) => {
   const [submissionsData, setSubmissionsData] = useState<any[]>([]);
@@ -49,6 +51,7 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
               is_active
             )
           `)
+          .eq('employees.business_id', businessId)
           .eq('employees.is_active', true)
           .gte('submitted_at', weekRange.start.toISOString())
           .lte('submitted_at', weekRange.end.toISOString());
@@ -56,6 +59,7 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
         if (error) {
           console.error('Error fetching submissions:', error);
         } else {
+          console.log('✅ Fetched submissions for business:', businessId, 'Count:', data?.length || 0);
           setSubmissionsData(data || []);
         }
       } catch (error) {
@@ -64,7 +68,7 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
     };
 
     fetchSubmissions();
-  }, [weekRange]);
+  }, [weekRange, businessId]); // הוספנו businessId ל-dependencies
   const calculateEmployeeStats = (): EmployeeStats[] => {
     const stats: EmployeeStats[] = [];
     
