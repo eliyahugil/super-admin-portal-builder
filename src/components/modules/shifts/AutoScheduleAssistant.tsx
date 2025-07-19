@@ -123,6 +123,12 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
           
           if (availableRecommendation) {
             try {
+              // ⚠️ CRITICAL VALIDATION: וידוא שיש branch_id לפני יצירת המשמרת
+              if (!shiftRecommendation.branchId) {
+                console.error(`🚨 ERROR: ניסיון ליצור משמרת ללא סניף עבור ${shiftRecommendation.shiftTime}`);
+                throw new Error('לא ניתן ליצור משמרת ללא סניף');
+              }
+              
               // צריך ליצור את המשמרת בטבלת scheduled_shifts
               const { data: newShift, error: createError } = await supabase
                 .from('scheduled_shifts')
@@ -132,7 +138,7 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
                   start_time: shiftRecommendation.shiftTime.split('-')[0],
                   end_time: shiftRecommendation.shiftTime.split('-')[1],
                   employee_id: availableRecommendation.employeeId,
-                  branch_id: shiftRecommendation.branchId || null,
+                  branch_id: shiftRecommendation.branchId, // הסרתי את ה-|| null
                   status: 'scheduled'
                 })
                 .select()
@@ -152,7 +158,7 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
                 success: true
               });
               
-              console.log(`✅ שובץ בהצלחה: ${availableRecommendation.employeeName} למשמרת ${shiftRecommendation.shiftTime} (${availableRecommendation.matchScore}%)`);
+              console.log(`✅ שובץ בהצלחה: ${availableRecommendation.employeeName} למשמרת ${shiftRecommendation.shiftTime} בסניף ${shiftRecommendation.branchId} (${availableRecommendation.matchScore}%)`);
             } catch (error) {
               console.error('שגיאה ביצירת משמרת:', error);
               assignmentResults.push({
@@ -162,7 +168,7 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
                 employeeName: '',
                 matchScore: 0,
                 success: false,
-                reason: 'שגיאה ביצירת המשמרת'
+                reason: error instanceof Error ? error.message : 'שגיאה ביצירת המשמרת'
               });
             }
           } else {

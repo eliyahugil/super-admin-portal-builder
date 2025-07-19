@@ -259,14 +259,20 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
         latestSubmissions.forEach(submission => {
           if (submission.shifts && Array.isArray(submission.shifts)) {
             submission.shifts.forEach((shift: any) => {
+              // ⚠️ CRITICAL FIX: רק משמרות עם branch_id יועברו הלאה
+              if (!shift.branch_id) {
+                console.warn(`🚨 דילוג על משמרת ללא סניף: ${shift.date} ${shift.start_time}-${shift.end_time}`);
+                return; // דלג על משמרות ללא סניף
+              }
+              
               // קח משמרות מכל השבועות, לא רק מהשבוע הנוכחי
               allSubmissionShifts.push({
                 ...shift,
-                id: `${shift.date}-${shift.start_time}-${shift.end_time}-${shift.branch_id || 'default'}`,
+                id: `${shift.date}-${shift.start_time}-${shift.end_time}-${shift.branch_id}`,
                 shift_date: shift.date,
                 start_time: shift.start_time,
                 end_time: shift.end_time,
-                branch_id: shift.branch_id
+                branch_id: shift.branch_id // וידוא שיש branch_id
               });
             });
           }
@@ -276,8 +282,8 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
       // Remove duplicates by creating unique shift identifier
       const uniqueShiftsMap = new Map();
       allSubmissionShifts.forEach(shift => {
-        const key = `${shift.shift_date}-${shift.start_time}-${shift.end_time}-${shift.branch_id || 'default'}`;
-        if (!uniqueShiftsMap.has(key)) {
+        const key = `${shift.shift_date}-${shift.start_time}-${shift.end_time}-${shift.branch_id}`;
+        if (!uniqueShiftsMap.has(key) && shift.branch_id) { // וידוא נוסף שיש branch_id
           uniqueShiftsMap.set(key, shift);
         }
       });
