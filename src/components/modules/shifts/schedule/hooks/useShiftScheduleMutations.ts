@@ -272,8 +272,7 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       }
 
       if (updates.required_employees !== undefined) {
-        const newRequiredEmployees = Math.max(1, updates.required_employees || 1);
-        updateData.required_employees = newRequiredEmployees;
+        updateData.required_employees = Math.max(1, parseInt(String(updates.required_employees)) || 1);
         console.log('🔢 Setting required_employees to:', updateData.required_employees);
       }
 
