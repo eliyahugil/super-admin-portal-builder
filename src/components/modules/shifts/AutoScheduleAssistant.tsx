@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Wand2, CheckCircle, AlertTriangle, Users, Clock, RefreshCw, Undo2 } from 'lucide-react';
 import { useEmployeeRecommendations } from '@/hooks/useEmployeeRecommendations';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface AutoAssignmentResult {
@@ -80,8 +81,9 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
       weekStartDate 
     });
     
-    if (!recommendations || emptyShifts.length === 0) {
-      console.log('❌ Cannot proceed:', { recommendations: !!recommendations, emptyShifts: emptyShifts.length });
+    if (!recommendations || recommendations.length === 0) {
+      console.log('❌ Cannot proceed: no recommendations found');
+      toast.error('לא נמצאו המלצות למשמרות');
       return;
     }
 
@@ -89,48 +91,63 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
     const assignmentResults: AutoAssignmentResult[] = [];
 
     try {
+      // במקום לעבור על emptyShifts, נעבור על ההמלצות שנמצאו
       const assignedEmployees = new Set<string>(); // מעקב אחר עובדים שכבר שובצו
       
-      for (const shift of emptyShifts) {
-        const shiftRecommendations = recommendations.find(r => r.shiftId === shift.id);
-        
-        if (shiftRecommendations && shiftRecommendations.recommendations.length > 0) {
-          // מציאת המלצה שלא שובצה עדיין - נוריד את דרישת הציון המינימלי
-          const availableRecommendation = shiftRecommendations.recommendations.find(r => 
+      for (const shiftRecommendation of recommendations) {
+        if (shiftRecommendation.recommendations.length > 0) {
+          // מציאת המלצה שלא שובצה עדיין
+          const availableRecommendation = shiftRecommendation.recommendations.find(r => 
             r.matchScore >= 30 && !assignedEmployees.has(r.employeeId)
           );
           
           if (availableRecommendation) {
             try {
-              await onShiftUpdate(shift.id, { employee_id: availableRecommendation.employeeId });
+              // צריך ליצור את המשמרת בטבלת scheduled_shifts
+              const { data: newShift, error: createError } = await supabase
+                .from('scheduled_shifts')
+                .insert({
+                  business_id: businessId,
+                  shift_date: shiftRecommendation.date,
+                  start_time: shiftRecommendation.shiftTime.split('-')[0],
+                  end_time: shiftRecommendation.shiftTime.split('-')[1],
+                  employee_id: availableRecommendation.employeeId,
+                  branch_id: shiftRecommendation.branchId || null,
+                  status: 'scheduled'
+                })
+                .select()
+                .single();
+
+              if (createError) throw createError;
               
               // סימון שהעובד שובץ
               assignedEmployees.add(availableRecommendation.employeeId);
               
               assignmentResults.push({
-                shiftId: shift.id,
-                shiftTime: `${shift.start_time}-${shift.end_time}`,
+                shiftId: newShift.id,
+                shiftTime: shiftRecommendation.shiftTime,
                 employeeId: availableRecommendation.employeeId,
                 employeeName: availableRecommendation.employeeName,
                 matchScore: availableRecommendation.matchScore,
                 success: true
               });
               
-              console.log(`✅ שובץ בהצלחה: ${availableRecommendation.employeeName} למשמרת ${shift.start_time}-${shift.end_time} (${availableRecommendation.matchScore}%)`);
+              console.log(`✅ שובץ בהצלחה: ${availableRecommendation.employeeName} למשמרת ${shiftRecommendation.shiftTime} (${availableRecommendation.matchScore}%)`);
             } catch (error) {
+              console.error('שגיאה ביצירת משמרת:', error);
               assignmentResults.push({
-                shiftId: shift.id,
-                shiftTime: `${shift.start_time}-${shift.end_time}`,
+                shiftId: shiftRecommendation.shiftId,
+                shiftTime: shiftRecommendation.shiftTime,
                 employeeId: '',
                 employeeName: '',
                 matchScore: 0,
                 success: false,
-                reason: 'שגיאה בשיבוץ'
+                reason: 'שגיאה ביצירת המשמרת'
               });
             }
           } else {
             // בדיקה מדוע לא נמצא עובד מתאים
-            const allRecommendations = shiftRecommendations.recommendations;
+            const allRecommendations = shiftRecommendation.recommendations;
             const lowScoreCount = allRecommendations.filter(r => r.matchScore < 30).length;
             const alreadyAssignedCount = allRecommendations.filter(r => assignedEmployees.has(r.employeeId)).length;
             const totalRecommendations = allRecommendations.length;
@@ -146,11 +163,11 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
               reason = `${alreadyAssignedCount} מהעובדים המתאימים כבר שובצו למשמרות אחרות`;
             }
             
-            console.log(`❌ לא שובץ: משמרת ${shift.start_time}-${shift.end_time} - ${reason}`);
+            console.log(`❌ לא שובץ: משמרת ${shiftRecommendation.shiftTime} - ${reason}`);
             
             assignmentResults.push({
-              shiftId: shift.id,
-              shiftTime: `${shift.start_time}-${shift.end_time}`,
+              shiftId: shiftRecommendation.shiftId,
+              shiftTime: shiftRecommendation.shiftTime,
               employeeId: '',
               employeeName: '',
               matchScore: 0,
@@ -160,8 +177,8 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
           }
         } else {
           assignmentResults.push({
-            shiftId: shift.id,
-            shiftTime: `${shift.start_time}-${shift.end_time}`,
+            shiftId: shiftRecommendation.shiftId,
+            shiftTime: shiftRecommendation.shiftTime,
             employeeId: '',
             employeeName: '',
             matchScore: 0,
@@ -185,7 +202,13 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
     }
   };
 
-  if (isLoading || emptyShifts.length === 0) {
+  if (isLoading) {
+    return null;
+  }
+
+  // הצג את הכפתור אם יש המלצות או משמרות ריקות
+  const hasContent = (recommendations && recommendations.length > 0) || emptyShifts.length > 0;
+  if (!hasContent) {
     return null;
   }
 
@@ -196,7 +219,7 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
           <Wand2 className="h-4 w-4" />
           שיבוץ אוטומטי חכם
           <Badge className="bg-white text-purple-700 ml-1">
-            {emptyShifts.length} משמרות
+            {recommendations?.length || emptyShifts.length} משמרות
           </Badge>
         </Button>
       </DialogTrigger>

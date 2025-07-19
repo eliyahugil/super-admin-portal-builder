@@ -161,96 +161,88 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
     queryFn: async (): Promise<ShiftRecommendationData[]> => {
       console.log('🚀 Starting employee recommendations query:', { businessId, weekStartDate });
       
-      // First, find submissions for this exact week
-      const { data: submissionsForWeek, error: submissionsError } = await supabase
+      // פשוט נקח את כל העובדים הפעילים של העסק
+      const { data: allEmployees, error: employeesError } = await supabase
+        .from('employees')
+        .select(`
+          *,
+          employee_default_preferences(*),
+          employee_branch_assignments(*)
+        `)
+        .eq('business_id', businessId)
+        .eq('is_active', true);
+
+      if (employeesError) throw employeesError;
+      
+      const employees = allEmployees || [];
+      console.log('👥 Active employees found:', employees.length);
+      
+      // נמצא את כל ההגשות הקיימות כדי ליצור משמרות מהן
+      const { data: latestSubmissions, error: submissionsError } = await supabase
         .from('shift_submissions')
         .select(`
           employee_id,
           shifts,
+          week_start_date,
+          submission_type,
           employees!inner(
             id,
             first_name,
-            last_name,
-            phone,
-            employee_type,
-            weekly_hours_required,
-            employee_default_preferences(*),
-            employee_branch_assignments(*)
+            last_name
           )
         `)
-        .eq('week_start_date', weekStartDate);
+        .eq('employees.business_id', businessId)
+        .order('week_start_date', { ascending: false })
+        .limit(50);
 
       if (submissionsError) throw submissionsError;
+      
+      console.log('📋 Latest submissions found:', latestSubmissions?.length || 0);
 
-      console.log('📋 Direct submissions found for week:', submissionsForWeek?.length || 0);
+      // Find shifts from submissions that need assignment
+      const weekEndDate = new Date(new Date(weekStartDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      console.log('🔍 Looking for shifts between:', weekStartDate, 'and', weekEndDate);
 
-      let employees: any[] = [];
-
-      if (submissionsForWeek && submissionsForWeek.length > 0) {
-        // Found submissions for this exact week
-        employees = submissionsForWeek.map(sub => sub.employees).filter(Boolean);
-        console.log('👥 Employees from direct submissions:', employees.length);
-      } else {
-        // No submissions for this week, try to find the latest submissions from any week
-        console.log('❌ No submissions for this week, trying to find latest submissions...');
-        
-        const { data: latestSubmissions, error: latestError } = await supabase
-          .from('shift_submissions')
-          .select(`
-            employee_id,
-            shifts,
-            week_start_date,
-            employees!inner(
-              id,
-              first_name,
-              last_name,
-              phone,
-              employee_type,
-              weekly_hours_required,
-              employee_default_preferences(*),
-              employee_branch_assignments(*)
-            )
-          `)
-          .order('week_start_date', { ascending: false })
-          .limit(20);
-
-        if (latestError) throw latestError;
-
-        employees = latestSubmissions?.map(sub => sub.employees).filter(Boolean) || [];
-        console.log('👥 Employees from latest submissions:', employees.length);
+      // Get all unique shifts from submissions
+      const allSubmissionShifts: any[] = [];
+      if (latestSubmissions && latestSubmissions.length > 0) {
+        latestSubmissions.forEach(submission => {
+          if (submission.shifts && Array.isArray(submission.shifts)) {
+            submission.shifts.forEach((shift: any) => {
+              // קח משמרות מכל השבועות, לא רק מהשבוע הנוכחי
+              allSubmissionShifts.push({
+                ...shift,
+                id: `${shift.date}-${shift.start_time}-${shift.end_time}-${shift.branch_id || 'default'}`,
+                shift_date: shift.date,
+                start_time: shift.start_time,
+                end_time: shift.end_time,
+                branch_id: shift.branch_id
+              });
+            });
+          }
+        });
       }
 
-      // If still no employees, fallback to all employees in the business
-      if (employees.length === 0) {
-        console.log('❌ No submissions found, falling back to all employees');
-        
-        const { data: allEmployees, error: employeesError } = await supabase
-          .from('employees')
-          .select(`
-            *,
-            employee_default_preferences(*),
-            employee_branch_assignments(*)
-          `)
-          .eq('business_id', businessId)
-          .eq('is_active', true);
+      // Remove duplicates by creating unique shift identifier
+      const uniqueShiftsMap = new Map();
+      allSubmissionShifts.forEach(shift => {
+        const key = `${shift.shift_date}-${shift.start_time}-${shift.end_time}-${shift.branch_id || 'default'}`;
+        if (!uniqueShiftsMap.has(key)) {
+          uniqueShiftsMap.set(key, shift);
+        }
+      });
 
-        if (employeesError) throw employeesError;
-        employees = allEmployees || [];
-        console.log('👥 Fallback to all employees:', employees.length);
+      const shifts = Array.from(uniqueShiftsMap.values());
+      console.log('📅 Unique shifts found from submissions:', shifts.length);
+      
+      if (shifts.length > 0) {
+        console.log('🔍 Sample shifts:', shifts.slice(0, 3).map(s => ({
+          date: s.shift_date,
+          time: `${s.start_time}-${s.end_time}`,
+          branch: s.branch_id
+        })));
       }
-
-      // Fetch empty scheduled shifts for the week
-      const { data: shifts, error: shiftsError } = await supabase
-        .from('scheduled_shifts')
-        .select('*')
-        .eq('business_id', businessId)
-        .gte('shift_date', weekStartDate)
-        .lt('shift_date', new Date(new Date(weekStartDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-        .is('employee_id', null);
-
-      if (shiftsError) throw shiftsError;
-
-      console.log('📅 Empty scheduled shifts found:', shifts?.length || 0);
 
       // Fetch business scheduling rules
       const { data: rules, error: rulesError } = await supabase
