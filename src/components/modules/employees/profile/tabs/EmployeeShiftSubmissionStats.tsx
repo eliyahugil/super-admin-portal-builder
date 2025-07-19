@@ -42,10 +42,12 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
   employeeName
 }) => {
   // Get all shift submissions for this employee and their preferences
-  const { data: submissions, isLoading } = useQuery({
+  const { data: submissions, isLoading, refetch } = useQuery({
     queryKey: ['employee-submission-stats', employeeId],
     queryFn: async () => {
       if (!employeeId) return { submissions: [], preferences: [] };
+      
+      console.log('🔄 Fetching employee submission stats for:', employeeId);
       
       // Get submissions
       const { data: submissionsData, error: submissionsError } = await supabase
@@ -62,7 +64,10 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
         .eq('employee_id', employeeId)
         .order('week_start_date', { ascending: false });
 
-      if (submissionsError) throw submissionsError;
+      if (submissionsError) {
+        console.error('❌ Error fetching submissions:', submissionsError);
+        throw submissionsError;
+      }
 
       // Get employee preferences and assignments
       const { data: preferencesData, error: preferencesError } = await supabase
@@ -71,9 +76,12 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
         .eq('employee_id', employeeId)
         .eq('is_active', true);
 
-      if (preferencesError) throw preferencesError;
+      if (preferencesError) {
+        console.error('❌ Error fetching preferences:', preferencesError);
+        throw preferencesError;
+      }
 
-      console.log('📊 Submissions and preferences:', { 
+      console.log('✅ Submissions and preferences loaded:', { 
         submissions: submissionsData?.length || 0,
         preferences: preferencesData 
       });
@@ -84,6 +92,9 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
       };
     },
     enabled: !!employeeId,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 60 * 1000, // Refetch every minute
+    refetchOnWindowFocus: true,
   });
 
   // Helper function to determine shift type from times
