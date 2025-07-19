@@ -69,14 +69,14 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
   };
 
   const getShiftTypeColor = () => {
-    // אם המשמרת מאוישת ומאושרת, החזר צבע ירוק
+    // אם המשמרת מאוישת ומאושרת, החזר רקע ירוק מלא
     if (shift.employee_id && shift.status === 'approved') {
-      return 'border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 via-green-25 to-white hover:from-green-100 border-green-300';
+      return 'border-l-4 border-l-green-600 bg-green-100 hover:bg-green-150 border-green-400';
     }
     
-    // אם המשמרת מאוישת אבל לא מאושרת, החזר צבע צהוב
+    // אם המשמרת מאוישת אבל לא מאושרת, החזר רקע צהוב מלא
     if (shift.employee_id) {
-      return 'border-l-4 border-l-yellow-500 bg-gradient-to-r from-yellow-50 via-yellow-25 to-white hover:from-yellow-100 border-yellow-300';
+      return 'border-l-4 border-l-yellow-600 bg-yellow-100 hover:bg-yellow-150 border-yellow-400';
     }
     
     // אם המשמרת לא מאוישת, השתמש בצבעים לפי סוג המשמרת
