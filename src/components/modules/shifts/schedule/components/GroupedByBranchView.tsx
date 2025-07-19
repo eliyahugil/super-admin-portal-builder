@@ -47,6 +47,14 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
   pendingSubmissions = [],
   onOpenSubmissions
 }) => {
+  console.log('🔄 GroupedByBranchView - Props received:', {
+    shiftsCount: shifts.length,
+    employeesCount: employees.length,
+    branchesCount: branches.length,
+    pendingSubmissionsCount: pendingSubmissions.length,
+    pendingSubmissionsData: pendingSubmissions,
+    hasOnOpenSubmissions: !!onOpenSubmissions
+  });
   // Generate week days starting from Sunday
   const weekDays = useMemo(() => {
     const startOfWeek = new Date(currentDate);
@@ -156,6 +164,13 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
 
   // Group pending submissions by branch and date
   const groupedSubmissions = useMemo(() => {
+    console.log('🔄 GroupedByBranchView - Processing pending submissions:', {
+      pendingSubmissionsCount: pendingSubmissions.length,
+      pendingSubmissions: pendingSubmissions,
+      branchesCount: branches.length,
+      weekDaysCount: weekDays.length
+    });
+
     const grouped: { [branchId: string]: { [date: string]: any[] } } = {};
     
     branches.forEach(branch => {
@@ -167,21 +182,35 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
     });
 
     pendingSubmissions.forEach(submission => {
+      console.log('🔄 Processing submission:', submission);
+      
       if (submission.shift_requests && submission.shift_requests.length > 0) {
         submission.shift_requests.forEach((request: any) => {
+          console.log('🔄 Processing shift request:', request);
+          
           if (request.branch_id && grouped[request.branch_id]) {
             const dateStr = request.shift_date;
+            console.log('🔄 Adding submission to branch:', request.branch_id, 'date:', dateStr);
+            
             if (grouped[request.branch_id][dateStr]) {
               grouped[request.branch_id][dateStr].push({
                 ...submission,
                 shiftRequest: request
               });
+              console.log('✅ Successfully added submission to grouped data');
+            } else {
+              console.warn('⚠️ Date not found in grouped structure:', dateStr);
             }
+          } else {
+            console.warn('⚠️ Branch not found or invalid:', request.branch_id);
           }
         });
+      } else {
+        console.warn('⚠️ Submission has no shift_requests:', submission);
       }
     });
 
+    console.log('📊 Final grouped submissions:', grouped);
     return grouped;
   }, [pendingSubmissions, branches, weekDays]);
 
