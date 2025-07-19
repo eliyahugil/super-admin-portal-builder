@@ -74,22 +74,13 @@ export const ResponsiveShiftSchedule: React.FC = () => {
 
   const queryClient = useQueryClient();
 
-  // Use the integrated calendar hook with correct parameters - עם השבתת Google Maps זמנית
-  const {
-    combinedEvents,
-    googleEvents,
-    holidays: calendarHolidays,
-    shabbatTimes: calendarShabbatTimes,
-    loading: calendarLoading,
-    getEventsForDate
-  } = {
-    combinedEvents: [],
-    googleEvents: [],
-    holidays: [],
-    shabbatTimes: [],
-    loading: false,
-    getEventsForDate: () => []
-  };
+  // Google Maps ו-Calendar integration מושבתים לחלוטין במודול משמרות
+  const combinedEvents: any[] = [];
+  const googleEvents: any[] = [];
+  const calendarHolidays: any[] = [];
+  const calendarShabbatTimes: any[] = [];
+  const calendarLoading = false;
+  const getEventsForDate = () => [];
 
   // Notifications system
   const {

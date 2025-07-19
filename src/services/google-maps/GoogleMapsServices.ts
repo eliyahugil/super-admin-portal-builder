@@ -10,43 +10,9 @@ export class GoogleMapsServices {
   private mapDiv: HTMLDivElement | null = null;
 
   async initializeServices(): Promise<void> {
-    // If already initialized, use global instances
-    if (globalAutocompletService && globalPlacesService) {
-      console.log('Using existing Google Maps services');
-      this.autocompleteService = globalAutocompletService;
-      this.placesService = globalPlacesService;
-      this.mapDiv = globalMapDiv;
-      return;
-    }
-
-    // Create services only once
-    if (!globalAutocompletService) {
-      console.log('Creating AutocompleteService...');
-      globalAutocompletService = new google.maps.places.AutocompleteService();
-    }
-    
-    if (!globalPlacesService) {
-      console.log('Creating PlacesService...');
-      // Create a hidden div for the PlacesService only once
-      if (!globalMapDiv) {
-        globalMapDiv = document.createElement('div');
-        globalMapDiv.style.display = 'none';
-        document.body.appendChild(globalMapDiv);
-      }
-      
-      const map = new google.maps.Map(globalMapDiv, {
-        center: { lat: 31.7683, lng: 35.2137 }, // Jerusalem coordinates
-        zoom: 13
-      });
-      globalPlacesService = new google.maps.places.PlacesService(map);
-    }
-    
-    // Assign global instances to class properties
-    this.autocompleteService = globalAutocompletService;
-    this.placesService = globalPlacesService;
-    this.mapDiv = globalMapDiv;
-    
-    console.log('✅ Google Maps services initialized successfully');
+    console.log('⚠️ Google Maps services initialization disabled for shifts module');
+    // Services are disabled to prevent background white div creation
+    return;
   }
 
   getAutocompleteService(): google.maps.places.AutocompleteService | null {
