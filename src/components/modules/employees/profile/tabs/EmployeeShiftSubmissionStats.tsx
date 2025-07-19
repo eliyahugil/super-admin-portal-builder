@@ -217,8 +217,8 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
     // Count approved shifts from scheduled_shifts table  
     const approvedScheduledShifts = approvedShiftsData?.length || 0;
     
-    // Total approved = submissions with approved status + (if there are approved scheduled shifts, add them)
-    const totalApproved = approvedSubmissions + (approvedScheduledShifts > 0 ? 1 : 0);
+    // Total approved = approved submissions + each approved scheduled shift counted separately
+    const totalApproved = approvedSubmissions + approvedScheduledShifts;
     
     const pending = submissionsData.filter(s => s.status === 'pending' || s.status === 'submitted').length;
     const rejected = submissionsData.filter(s => s.status === 'rejected').length;
