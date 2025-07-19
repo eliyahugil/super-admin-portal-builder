@@ -34,7 +34,7 @@ import type { ScheduleView, ShiftScheduleData, CreateShiftData } from './schedul
 
 export const ResponsiveShiftSchedule: React.FC = () => {
   const isMobile = useIsMobile();
-  const [view, setView] = useState<ScheduleView>('week');
+  const [view, setView] = useState<ScheduleView>('month');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showQuickMultiple, setShowQuickMultiple] = useState(false);
