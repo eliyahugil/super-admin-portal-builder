@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -120,6 +120,56 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
     refetchInterval: 60 * 1000, // Refetch every minute
     refetchOnWindowFocus: true,
   });
+
+  // Add real-time updates with Supabase
+  useEffect(() => {
+    if (!employeeId) return;
+
+    console.log('🔄 Setting up real-time subscriptions for employee:', employeeId);
+
+    // Listen to changes in shift_submissions table
+    const submissionsChannel = supabase
+      .channel('shift_submissions_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'shift_submissions',
+          filter: `employee_id=eq.${employeeId}`
+        },
+        (payload) => {
+          console.log('🔄 Shift submissions changed:', payload);
+          refetch(); // Refresh data when submissions change
+        }
+      )
+      .subscribe();
+
+    // Listen to changes in scheduled_shifts table  
+    const shiftsChannel = supabase
+      .channel('scheduled_shifts_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public', 
+          table: 'scheduled_shifts',
+          filter: `employee_id=eq.${employeeId}`
+        },
+        (payload) => {
+          console.log('🔄 Scheduled shifts changed:', payload);
+          refetch(); // Refresh data when scheduled shifts change
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions
+    return () => {
+      console.log('🔄 Cleaning up real-time subscriptions');
+      supabase.removeChannel(submissionsChannel);
+      supabase.removeChannel(shiftsChannel);
+    };
+  }, [employeeId, refetch]);
 
   // Helper function to determine shift type from times
   const getShiftType = (startTime: string, endTime: string): string => {
@@ -515,6 +565,33 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {/* Show approved shifts */}
+            {submissions && submissions.approvedShifts && submissions.approvedShifts.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium mb-2">משמרות מאושרות ({submissions.approvedShifts.length})</h4>
+                <div className="space-y-2">
+                  {submissions.approvedShifts.slice(0, 5).map((shift: any) => (
+                    <div key={shift.id} className="flex items-center justify-between p-2 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium">
+                          {format(new Date(shift.shift_date), 'dd/MM/yyyy', { locale: he })}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {shift.start_time} - {shift.end_time} {shift.role && `• ${shift.role}`}
+                        </div>
+                      </div>
+                      <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
+                        מאושר
+                      </Badge>
+                    </div>
+                  ))}
+                  {submissions.approvedShifts.length > 5 && (
+                    <p className="text-xs text-muted-foreground">ועוד {submissions.approvedShifts.length - 5} משמרות...</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Show pending/submitted shifts */}
             {submissions && submissions.submissions && submissions.submissions.length > 0 && (
               <div>
