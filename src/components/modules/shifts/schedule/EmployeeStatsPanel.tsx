@@ -83,7 +83,7 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
     activeEmployees.forEach(employee => {
       const employeeShifts = shifts.filter(shift => 
         shift.employee_id === employee.id && 
-        shift.status === 'approved' &&
+        // כולל כל המשמרות שמוקצות לעובד, לא רק מאושרות
         !shift.is_archived
       );
       
