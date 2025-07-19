@@ -10,8 +10,8 @@ interface EmployeeStats {
   employeeId: string;
   employeeName: string;
   assignedShifts: number;
-  submittedShifts: number;  // כמות ההגשות שהעובד הגיש
-  requestedShifts: number;  // כמות המשמרות שביקש בהגשות
+  submittedShifts: number;  // כמות ההגשות (documents) שהעובד הגיש
+  requestedShifts: number;  // כמות המשמרות הייחודיות שביקש בהגשות (קיבוץ לפי תאריך+שעות)
   totalHours: number;
   status: 'over' | 'under' | 'exact';
   shifts: ShiftScheduleData[];
@@ -264,13 +264,15 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
               <div className="text-2xl font-bold text-green-600">
                 {employeeStats.reduce((total, emp) => total + emp.submittedShifts, 0)}
               </div>
-              <div className="text-sm text-green-700">סה"כ הגשות</div>
+              <div className="text-sm text-green-700">סה"כ מסמכי הגשות</div>
+              <div className="text-xs text-green-600">כמות ההגשות שנשלחו</div>
             </div>
             <div className="text-center p-3 bg-purple-50 rounded-lg">
               <div className="text-2xl font-bold text-purple-600">
                 {employeeStats.reduce((total, emp) => total + emp.requestedShifts, 0)}
               </div>
               <div className="text-sm text-purple-700">סה"כ בקשות למשמרות</div>
+              <div className="text-xs text-purple-600">משמרות ייחודיות (תאריך+שעות)</div>
             </div>
             <div className="text-center p-3 bg-orange-50 rounded-lg">
               <div className="text-2xl font-bold text-orange-600">
@@ -326,11 +328,11 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
                     <div className="flex gap-4 text-sm">
                       <div className="text-center">
                         <div className="font-bold text-blue-600">{employee.submittedShifts}</div>
-                        <div className="text-gray-600">הגשות</div>
+                        <div className="text-gray-600">מסמכי הגשות</div>
                       </div>
                       <div className="text-center">
                         <div className="font-bold text-purple-600">{employee.requestedShifts}</div>
-                        <div className="text-gray-600">בקשות</div>
+                        <div className="text-gray-600">בקשות ייחודיות</div>
                       </div>
                       <div className="text-center">
                         <div className="font-bold text-green-600">{employee.assignedShifts}</div>
