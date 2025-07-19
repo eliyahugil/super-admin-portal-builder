@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Wand2, CheckCircle, AlertTriangle, Users, Clock } from 'lucide-react';
+import { Wand2, CheckCircle, AlertTriangle, Users, Clock, RefreshCw, Undo2 } from 'lucide-react';
 import { useEmployeeRecommendations } from '@/hooks/useEmployeeRecommendations';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { toast } from 'sonner';
@@ -31,6 +31,7 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [results, setResults] = useState<AutoAssignmentResult[]>([]);
   const { businessId } = useCurrentBusiness();
 
@@ -38,12 +39,38 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
     businessId, 
     weekStartDate, 
     emptyShiftsCount: emptyShifts.length 
-  });
+   });
 
-  const { data: recommendations, isLoading } = useEmployeeRecommendations(
+  const { data: recommendations, isLoading, refetch } = useEmployeeRecommendations(
     businessId || '',
     weekStartDate
   );
+
+  const handleRefresh = async () => {
+    console.log('🔄 Refreshing recommendations...');
+    await refetch();
+    toast.success('ההמלצות עודכנו');
+  };
+
+  const handleCancelAssignments = async () => {
+    if (results.length === 0) return;
+    
+    setIsCancelling(true);
+    try {
+      const successfulAssignments = results.filter(r => r.success);
+      
+      for (const assignment of successfulAssignments) {
+        await onShiftUpdate(assignment.shiftId, { employee_id: null });
+      }
+      
+      setResults([]);
+      toast.success(`${successfulAssignments.length} שיבוצים בוטלו בהצלחה`);
+    } catch (error) {
+      toast.error('שגיאה בביטול השיבוצים');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   const handleAutoAssign = async () => {
     console.log('🪄 Auto assign clicked!', { 
@@ -206,24 +233,36 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
                 </div>
               </div>
               
-              <Button 
-                onClick={handleAutoAssign}
-                disabled={isProcessing}
-                className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-                size="lg"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    מבצע שיבוץ...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="h-4 w-4 mr-2" />
-                    התחל שיבוץ אוטומטי
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-3 justify-center">
+                <Button 
+                  onClick={handleRefresh}
+                  variant="outline"
+                  size="sm"
+                  className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  רענן המלצות
+                </Button>
+                
+                <Button 
+                  onClick={handleAutoAssign}
+                  disabled={isProcessing}
+                  className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                  size="lg"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      מבצע שיבוץ...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      התחל שיבוץ אוטומטי
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           ) : (
             /* Results */
@@ -275,6 +314,27 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
                     </div>
                   </div>
                 ))}
+              </div>
+              
+              <div className="flex justify-center mt-4">
+                <Button 
+                  onClick={handleCancelAssignments}
+                  disabled={isCancelling}
+                  variant="outline"
+                  className="border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  {isCancelling ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600 mr-2"></div>
+                      מבטל שיבוצים...
+                    </>
+                  ) : (
+                    <>
+                      <Undo2 className="h-4 w-4 mr-2" />
+                      בטל את כל השיבוצים
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           )}
