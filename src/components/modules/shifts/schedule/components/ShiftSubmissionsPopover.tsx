@@ -59,16 +59,6 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
 }) => {
   // Filter submissions for the specific date, branch and shift times
   const relevantShifts = useMemo(() => {
-    console.log('🔍 ShiftSubmissionsPopover - Debug info:', { 
-      submissionsCount: submissions.length, 
-      currentShift: currentShift,
-      targetDate: targetDate.toISOString().split('T')[0],
-      submissions: submissions.map(s => ({
-        id: s.id,
-        employeeName: `${s.employees?.first_name} ${s.employees?.last_name}`,
-        shifts: typeof s.shifts === 'string' ? JSON.parse(s.shifts) : s.shifts
-      }))
-    });
     const targetDateStr = targetDate.toISOString().split('T')[0];
     const results: Array<{
       submission: ShiftSubmission;
@@ -89,20 +79,8 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
       }
 
       submissionShifts.forEach((shift: any) => {
-        console.log('🔍 Checking submission shift:', {
-          shiftDate: shift.date,
-          targetDate: targetDateStr,
-          shiftTime: `${shift.start_time}-${shift.end_time}`,
-          currentShiftTime: currentShift ? `${currentShift.start_time}-${currentShift.end_time}` : 'null',
-          shiftBranch: shift.branch_preference,
-          currentShiftBranch: currentShift?.branch_name,
-          employeeName: `${submission.employees?.first_name} ${submission.employees?.last_name}`
-        });
-
         // Check if this shift matches our target date and has overlapping time window in the same branch
         if (shift.date === targetDateStr && currentShift) {
-          console.log('✅ Date matches, checking branch and time...');
-          
           // Check if the shift is in the same branch (compare branch name or find matching branch)
           const isSameBranch = shift.branch_preference === currentShift.branch_name ||
             (currentShift.branch_id && shifts.find(s => s.branch_id === currentShift.branch_id)?.branch_name === shift.branch_preference);
@@ -116,15 +94,7 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
           // Time overlap logic: check if submission time window overlaps with current shift
           const hasTimeOverlap = (submissionStart <= currentEnd && submissionEnd >= currentStart);
           
-          console.log('🔍 Branch and time check:', {
-            isSameBranch,
-            hasTimeOverlap,
-            submissionTime: `${submissionStart}-${submissionEnd}`,
-            currentShiftTime: `${currentStart}-${currentEnd}`
-          });
-          
           if (isSameBranch && hasTimeOverlap) {
-            console.log('✅ Found matching submission!');
             // Check if employee has conflict with other scheduled shifts
           const hasConflict = shifts.some(scheduledShift => {
             const shiftDate = scheduledShift.shift_date;
@@ -142,16 +112,11 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
           const isAssigned = currentShift.employee_id === submission.employees.id;
 
             results.push({ submission, shift, hasConflict, isAssigned });
-          } else {
-            console.log('❌ No match - branch or time mismatch');
           }
-        } else {
-          console.log('❌ Date or currentShift mismatch');
         }
       });
     });
 
-    console.log('🔍 Final results:', results.length, 'relevant shifts found');
     return results;
   }, [submissions, targetDate, shifts, currentShift]);
 

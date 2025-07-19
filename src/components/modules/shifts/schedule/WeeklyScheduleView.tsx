@@ -768,12 +768,6 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                   {dayShifts.map((shift) => {
                       // Get submissions for this specific shift by checking shift data
                       const shiftSubmissions = getPendingSubmissionsForDate(date).filter(submission => {
-                        console.log('🔍 Checking submission for shift:', {
-                          shiftTime: `${shift.start_time}-${shift.end_time}`,
-                          shiftBranch: shift.branch_name,
-                          submissionEmployee: `${submission.employees?.first_name} ${submission.employees?.last_name}`
-                        });
-
                         // Parse shifts from the submission
                         const shifts = typeof submission.shifts === 'string' 
                           ? JSON.parse(submission.shifts) 
@@ -781,13 +775,6 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                         
                         // Check if any shift in the submission overlaps with this shift's time and is in same branch
                         const matches = shifts.some((submittedShift: any) => {
-                          console.log('🔍 Checking submitted shift:', {
-                            submittedTime: `${submittedShift.start_time}-${submittedShift.end_time}`,
-                            submittedBranch: submittedShift.branch_preference,
-                            currentShiftTime: `${shift.start_time}-${shift.end_time}`,
-                            currentShiftBranch: shift.branch_name
-                          });
-
                           // Check branch match
                           const isSameBranch = submittedShift.branch_preference === shift.branch_name;
                           
@@ -799,17 +786,9 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                           
                           const hasTimeOverlap = (submissionStart <= currentEnd && submissionEnd >= currentStart);
                           
-                          console.log('🔍 Match check:', {
-                            isSameBranch,
-                            hasTimeOverlap,
-                            submissionTime: `${submissionStart}-${submissionEnd}`,
-                            currentTime: `${currentStart}-${currentEnd}`
-                          });
-                          
                           return isSameBranch && hasTimeOverlap;
                         });
                         
-                        console.log('🔍 Final match result:', matches);
                         return matches;
                       });
                       
