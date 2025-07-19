@@ -65,7 +65,8 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
     role: shift.role || '',
     branch_id: shift.branch_id || '',
     employee_id: shift.employee_id || '',
-    required_employees: shift.required_employees || 1
+    required_employees: shift.required_employees || 1,
+    shift_assignments: (shift as any).shift_assignments || []
   });
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -494,27 +495,79 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                 </div>
               </div>
 
-              {/* Edit Employee Assignment */}
-              <div className="space-y-2">
-                <Label>עובד מוקצה</Label>
-                <Select 
-                  value={editData.employee_id || 'no_employee'} 
-                  onValueChange={(value) => 
-                    setEditData(prev => ({ ...prev, employee_id: value === 'no_employee' ? '' : value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="בחר עובד..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="no_employee">ללא עובד מוקצה</SelectItem>
-                    {employees.map(employee => (
-                      <SelectItem key={employee.id} value={employee.id}>
-                        {employee.first_name} {employee.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Edit Employee Assignments - Multiple based on required_employees */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">הקצאות עובדים</Label>
+                {Array.from({ length: editData.required_employees }, (_, index) => {
+                  const assignmentType = index === 0 ? 'חובה' : 'תגבור';
+                  const assignmentNumber = index + 1;
+                  
+                  return (
+                    <div key={index} className="space-y-2 p-3 bg-gray-50 rounded-lg border">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">
+                          עובד מוקצה {assignmentNumber}
+                        </Label>
+                        <Badge variant={index === 0 ? "default" : "secondary"} className="text-xs">
+                          {assignmentType}
+                        </Badge>
+                      </div>
+                      <Select 
+                        value={
+                          editData.shift_assignments && editData.shift_assignments[index]?.employee_id 
+                            ? editData.shift_assignments[index].employee_id 
+                            : (index === 0 ? editData.employee_id || 'no_employee' : 'no_employee')
+                        } 
+                        onValueChange={(value) => {
+                          const employeeId = value === 'no_employee' ? null : value;
+                          
+                          // Update assignments array
+                          setEditData(prev => {
+                            const newAssignments = [...(prev.shift_assignments || [])];
+                            
+                            // Ensure we have enough assignments
+                            while (newAssignments.length <= index) {
+                              newAssignments.push({
+                                id: crypto.randomUUID(),
+                                type: newAssignments.length === 0 ? 'חובה' : 'תגבור',
+                                employee_id: null,
+                                position: newAssignments.length + 1,
+                                is_required: newAssignments.length === 0
+                              });
+                            }
+                            
+                            // Update the specific assignment
+                            newAssignments[index] = {
+                              ...newAssignments[index],
+                              employee_id: employeeId
+                            };
+                            
+                            // Also update the main employee_id for backward compatibility (first assignment)
+                            const newEmployeeId = index === 0 ? employeeId : prev.employee_id;
+                            
+                            return { 
+                              ...prev, 
+                              employee_id: newEmployeeId,
+                              shift_assignments: newAssignments
+                            };
+                          });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="בחר עובד..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white shadow-lg border z-50">
+                          <SelectItem value="no_employee">ללא עובד מוקצה</SelectItem>
+                          {employees.map(employee => (
+                            <SelectItem key={employee.id} value={employee.id}>
+                              {employee.first_name} {employee.last_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Edit Branch */}
