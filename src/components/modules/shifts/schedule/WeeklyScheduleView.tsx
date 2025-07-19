@@ -773,12 +773,21 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                           ? JSON.parse(submission.shifts) 
                           : submission.shifts || [];
                         
-                        // Check if any shift in the submission matches this shift's time and branch
-                        const matches = shifts.some((submittedShift: any) => 
-                          submittedShift.start_time === shift.start_time && 
-                          submittedShift.end_time === shift.end_time &&
-                          submittedShift.branch_preference === shift.branch_name
-                        );
+                        // Check if any shift in the submission overlaps with this shift's time and is in same branch
+                        const matches = shifts.some((submittedShift: any) => {
+                          // Check branch match
+                          const isSameBranch = submittedShift.branch_preference === shift.branch_name;
+                          
+                          // Check time overlap: submitted shift overlaps with current shift
+                          const submissionStart = submittedShift.start_time;
+                          const submissionEnd = submittedShift.end_time;
+                          const currentStart = shift.start_time;
+                          const currentEnd = shift.end_time;
+                          
+                          const hasTimeOverlap = (submissionStart <= currentEnd && submissionEnd >= currentStart);
+                          
+                          return isSameBranch && hasTimeOverlap;
+                        });
                         
                         return matches;
                       });
@@ -820,12 +829,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              // Open submissions popover if there are submissions, otherwise handle normal click
-                              if (shiftSubmissions.length > 0) {
-                                setOpenSubmissionsPopover(openSubmissionsPopover === shift.id ? null : shift.id);
-                              } else {
-                                handleShiftCardClick(shift, e);
-                              }
+                              // Always allow opening the popover to show submissions or empty state
+                              setOpenSubmissionsPopover(openSubmissionsPopover === shift.id ? null : shift.id);
                             }}
                           >
                             {/* Add Employee Recommendations and other action buttons */}
