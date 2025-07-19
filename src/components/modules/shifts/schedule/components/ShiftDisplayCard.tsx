@@ -469,7 +469,7 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
                       className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 text-xs px-2 py-1"
                     >
                       <Lightbulb className="h-3 w-3" />
-                      המלצות עובדים
+                      שיוך מהיר
                     </Button>
                   </EmployeeRecommendationEngine>
                 </div>
