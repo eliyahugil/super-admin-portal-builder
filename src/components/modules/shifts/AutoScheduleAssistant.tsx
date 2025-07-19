@@ -95,9 +95,9 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
         const shiftRecommendations = recommendations.find(r => r.shiftId === shift.id);
         
         if (shiftRecommendations && shiftRecommendations.recommendations.length > 0) {
-          // מציאת המלצה שלא שובצה עדיין עם ציון גבוה
+          // מציאת המלצה שלא שובצה עדיין - נוריד את דרישת הציון המינימלי
           const availableRecommendation = shiftRecommendations.recommendations.find(r => 
-            r.matchScore >= 60 && !assignedEmployees.has(r.employeeId)
+            r.matchScore >= 30 && !assignedEmployees.has(r.employeeId)
           );
           
           if (availableRecommendation) {
@@ -131,16 +131,19 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
           } else {
             // בדיקה מדוע לא נמצא עובד מתאים
             const allRecommendations = shiftRecommendations.recommendations;
-            const lowScoreCount = allRecommendations.filter(r => r.matchScore < 60).length;
+            const lowScoreCount = allRecommendations.filter(r => r.matchScore < 30).length;
             const alreadyAssignedCount = allRecommendations.filter(r => assignedEmployees.has(r.employeeId)).length;
+            const totalRecommendations = allRecommendations.length;
             
             let reason = 'אין עובד מתאים';
             if (alreadyAssignedCount > 0 && lowScoreCount > 0) {
-              reason = `${alreadyAssignedCount} עובדים כבר שובצו, ${lowScoreCount} עם ציון נמוך מ-60%`;
+              reason = `${alreadyAssignedCount} עובדים כבר שובצו, ${lowScoreCount} עם ציון נמוך מ-30%`;
+            } else if (alreadyAssignedCount === totalRecommendations) {
+              reason = `כל ${alreadyAssignedCount} העובדים הזמינים כבר שובצו למשמרות אחרות`;
+            } else if (lowScoreCount === totalRecommendations) {
+              reason = `${lowScoreCount} עובדים זמינים אבל כולם עם ציון נמוך מ-30%`;
             } else if (alreadyAssignedCount > 0) {
-              reason = `${alreadyAssignedCount} העובדים המתאימים כבר שובצו למשמרות אחרות`;
-            } else if (lowScoreCount > 0) {
-              reason = `${lowScoreCount} עובדים זמינים אבל עם ציון נמוך מ-60%`;
+              reason = `${alreadyAssignedCount} מהעובדים המתאימים כבר שובצו למשמרות אחרות`;
             }
             
             console.log(`❌ לא שובץ: משמרת ${shift.start_time}-${shift.end_time} - ${reason}`);
