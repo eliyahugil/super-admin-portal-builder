@@ -515,29 +515,33 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Show approved shifts */}
-            {submissions && submissions.approvedShifts && submissions.approvedShifts.length > 0 && (
+            {/* Show pending/submitted shifts */}
+            {submissions && submissions.submissions && submissions.submissions.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium mb-2">משמרות מאושרות ({submissions.approvedShifts.length})</h4>
+                <h4 className="text-sm font-medium mb-2">הגשות בהמתנה</h4>
                 <div className="space-y-2">
-                  {submissions.approvedShifts.slice(0, 5).map((shift: any) => (
-                    <div key={shift.id} className="flex items-center justify-between p-2 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="space-y-1">
-                        <div className="text-sm font-medium">
-                          {format(new Date(shift.shift_date), 'dd/MM/yyyy', { locale: he })}
+                  {submissions.submissions
+                    .filter(sub => sub.status === 'submitted' || sub.status === 'pending')
+                    .slice(0, 3).map((submission) => {
+                      // Count shifts in this submission
+                      const shiftsCount = Array.isArray(submission.shifts) ? submission.shifts.length : 0;
+                      
+                      return (
+                        <div key={submission.id} className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="space-y-1">
+                            <div className="text-sm font-medium">
+                              שבוע {format(new Date(submission.week_start_date), 'dd/MM', { locale: he })} - {format(new Date(submission.week_end_date), 'dd/MM', { locale: he })}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              הוגש: {format(new Date(submission.submitted_at), 'dd/MM/yyyy HH:mm', { locale: he })} • {shiftsCount} משמרות
+                            </div>
+                          </div>
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                            {submission.status === 'submitted' ? 'נשלח' : 'בהמתנה'}
+                          </Badge>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {shift.start_time} - {shift.end_time} {shift.role && `• ${shift.role}`}
-                        </div>
-                      </div>
-                      <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
-                        מאושר
-                      </Badge>
-                    </div>
-                  ))}
-                  {submissions.approvedShifts.length > 5 && (
-                    <p className="text-xs text-muted-foreground">ועוד {submissions.approvedShifts.length - 5} משמרות...</p>
-                  )}
+                      );
+                    })}
                 </div>
               </div>
             )}
