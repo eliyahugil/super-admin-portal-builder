@@ -591,6 +591,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             isShiftSelected={isShiftSelected}
                             weekStartDate={weekDays[0].toISOString().split('T')[0]}
                             onAssignEmployee={handleAssignEmployee}
+                            employees={employees}
                           />
                           
                           {/* Night shifts */}
@@ -609,6 +610,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             isShiftSelected={isShiftSelected}
                             weekStartDate={weekDays[0].toISOString().split('T')[0]}
                             onAssignEmployee={handleAssignEmployee}
+                            employees={employees}
                           />
                         </div>
                       );

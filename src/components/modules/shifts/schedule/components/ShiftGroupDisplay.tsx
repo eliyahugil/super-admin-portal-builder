@@ -17,6 +17,7 @@ interface ShiftGroupDisplayProps {
   isShiftSelected: (shift: ShiftScheduleData) => boolean;
   weekStartDate?: string;
   onAssignEmployee?: (employeeId: string, shiftId: string) => void;
+  employees?: Array<{ id: string; first_name: string; last_name: string; }>;
 }
 
 export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
@@ -33,7 +34,8 @@ export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
   hasShiftConflict,
   isShiftSelected,
   weekStartDate,
-  onAssignEmployee
+  onAssignEmployee,
+  employees = []
 }) => {
   if (shifts.length === 0) return null;
 
@@ -151,6 +153,7 @@ export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
                   shiftType={shiftType}
                   weekStartDate={weekStartDate}
                   onAssignEmployee={onAssignEmployee}
+                  employees={employees}
                 />
               ))}
           </div>

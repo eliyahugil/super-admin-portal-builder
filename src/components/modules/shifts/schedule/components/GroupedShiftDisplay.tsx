@@ -208,6 +208,7 @@ export const GroupedShiftDisplay: React.FC<GroupedShiftDisplayProps> = ({
                             shiftType={shiftType}
                             hasSubmissions={hasSubmissions}
                             submissionsCount={submissionsCount}
+                            employees={employees}
                           />
                         );
                       })}

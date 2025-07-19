@@ -22,6 +22,7 @@ interface ShiftDisplayCardProps {
   submissionsCount?: number;
   weekStartDate?: string;
   onAssignEmployee?: (employeeId: string, shiftId: string) => void;
+  employees?: Array<{ id: string; first_name: string; last_name: string; }>;
 }
 
 export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
@@ -38,8 +39,28 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
   hasSubmissions = false,
   submissionsCount = 0,
   weekStartDate,
-  onAssignEmployee
+  onAssignEmployee,
+  employees = []
 }) => {
+  // פונקציה לבדיקה אם יש הקצאות שלא מולאו
+  const getUnassignedCount = () => {
+    const requiredEmployees = shift.required_employees || 1;
+    const shiftAssignments = (shift as any).shift_assignments || [];
+    
+    // ספירת הקצאות שלא מולאו (ללא employee_id)
+    const unassignedCount = shiftAssignments.filter((assignment: any) => !assignment.employee_id).length;
+    
+    // אם יש פחות הקצאות מהנדרש, זה אומר שחסרות הקצאות
+    const missingAssignments = Math.max(0, requiredEmployees - shiftAssignments.length);
+    
+    return unassignedCount + missingAssignments;
+  };
+
+  // פונקציה לבדיקה אם יש עובד מוקצה
+  const hasAssignedEmployee = () => {
+    const shiftAssignments = (shift as any).shift_assignments || [];
+    return shift.employee_id || shiftAssignments.some((assignment: any) => assignment.employee_id);
+  };
   // Debug logs
   console.log('🔍 ShiftDisplayCard render:', {
     shiftId: shift.id,
@@ -291,24 +312,54 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
         
       {/* עובד מוקצה או לא מוקצה - שלישי */}
         <div className="flex items-center justify-center">
-          {shift.employee_id ? (
-            <Badge 
-              variant="secondary" 
-              className={`px-3 py-1 shadow-sm font-medium ${
-                shift.status === 'approved' 
-                  ? 'bg-green-100 text-green-800 border-green-300' 
-                  : 'bg-yellow-100 text-yellow-800 border-yellow-300'
-              }`}
-            >
-              <User className="h-3 w-3 ml-1" />
-              {getEmployeeName(shift.employee_id)}
-            </Badge>
-           ) : (
-             <div className="space-y-2">
-               <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-3 py-1 shadow-sm">
-                 <User className="h-3 w-3 ml-1" />
-                 לא מוקצה
-               </Badge>
+          {hasAssignedEmployee() ? (
+            <div className="space-y-1">
+              {/* עובד ראשי מוקצה */}
+              {shift.employee_id && (
+                <Badge 
+                  variant="secondary" 
+                  className={`px-3 py-1 shadow-sm font-medium ${
+                    shift.status === 'approved' 
+                      ? 'bg-green-100 text-green-800 border-green-300' 
+                      : 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                  }`}
+                >
+                  <User className="h-3 w-3 ml-1" />
+                  {getEmployeeName(shift.employee_id)}
+                </Badge>
+              )}
+              
+              {/* הקצאות נוספות */}
+              {((shift as any).shift_assignments || []).map((assignment: any, index: number) => {
+                if (!assignment.employee_id || assignment.employee_id === shift.employee_id) return null;
+                const assignedEmployee = employees.find(emp => emp.id === assignment.employee_id);
+                return (
+                  <Badge 
+                    key={assignment.id || index}
+                    variant="secondary" 
+                    className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 border-blue-300"
+                  >
+                    <User className="h-2 w-2 ml-1" />
+                    {assignedEmployee ? `${assignedEmployee.first_name} ${assignedEmployee.last_name}` : 'לא מוקצה'}
+                    <span className="mr-1">({assignment.type})</span>
+                  </Badge>
+                );
+              })}
+              
+              {/* הצגת עמדות שלא מולאו */}
+              {getUnassignedCount() > 0 && (
+                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-2 py-0.5 text-xs">
+                  <User className="h-2 w-2 ml-1" />
+                  {getUnassignedCount()} לא מוקצה
+                </Badge>
+              )}
+            </div>
+            ) : (
+              <div className="space-y-2">
+                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-3 py-1 shadow-sm">
+                  <User className="h-3 w-3 ml-1" />
+                  לא מוקצה ({shift.required_employees || 1} נדרשים)
+                </Badge>
                
                {/* כפתור המלצות למשמרות ריקות */}
                {weekStartDate && onAssignEmployee && (
