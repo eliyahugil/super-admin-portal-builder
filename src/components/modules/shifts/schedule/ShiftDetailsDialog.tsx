@@ -792,7 +792,10 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => {
+                    alert('נכנס למצב עריכה!');
+                    setIsEditing(true);
+                  }}
                   className="text-xs text-blue-600 hover:text-blue-800"
                 >
                   ערוך כמות
@@ -877,7 +880,10 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <Button
                   variant="outline"
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => {
+                    alert('נכנס למצב עריכה כללי!');
+                    setIsEditing(true);
+                  }}
                   className="w-full sm:w-auto"
                 >
                   <Edit className="h-3 w-3 mr-1" />
