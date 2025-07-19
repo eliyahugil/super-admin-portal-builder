@@ -23,6 +23,7 @@ interface EmployeeStatsPanelProps {
   employees: Employee[];
   weekRange: { start: Date; end: Date };
   businessId: string;
+  branches?: any[]; // הוספתי נתוני סניפים
   className?: string;
 }
 
@@ -31,6 +32,7 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
   employees,
   weekRange,
   businessId,
+  branches = [],
   className = ''
 }) => {
   console.log('📊 EmployeeStatsPanel - Props received:', {
@@ -76,12 +78,14 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
   const calculateEmployeeStats = (): EmployeeStats[] => {
     console.log('📊 Calculating employee stats with:', {
       submissionsCount: submissionsData.length,
-      submissionsData: submissionsData
+      submissionsData: submissionsData,
+      shiftsCount: shifts.length
     });
 
     const activeEmployees = employees.filter(emp => emp.is_active && !emp.is_archived);
     
     return activeEmployees.map(employee => {
+      // משמרות שבפועל הוקצו לעובד
       const employeeShifts = shifts.filter(shift => shift.employee_id === employee.id);
       
       // מציאת הגשות העובד
@@ -89,16 +93,57 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
         submission.employee_id === employee.id
       );
       
-      // ספירת כמות המשמרות שביקש בכל ההגשות
-      const requestedShiftsCount = employeeSubmissions.reduce((total, submission) => {
-        return total + (submission.shifts ? submission.shifts.length : 0);
-      }, 0);
+      // ספירת כמות המשמרות שביקש בכל ההגשות (מתוך מערך shifts בכל הגשה)
+      const requestedShiftsDetails = employeeSubmissions.flatMap(submission => 
+        submission.shifts || []
+      );
+      
+      console.log(`📊 Employee ${employee.first_name} ${employee.last_name}:`, {
+        employeeShifts: employeeShifts,
+        employeeSubmissions: employeeSubmissions,
+        requestedShiftsDetails: requestedShiftsDetails
+      });
+      
+      // חישוב כמה מהבקשות התממשו - בדיקה מדויקת לפי תאריך, זמן וסניף
+      const successfulRequests = requestedShiftsDetails.filter(request => {
+        return employeeShifts.some(shift => {
+          const matchDate = shift.shift_date === request.date;
+          const matchTime = shift.start_time === request.start_time && shift.end_time === request.end_time;
+          
+          // בדיקת סניף - נשווה לפי שם הסניף או ID
+          const matchBranch = shift.branch_id ? 
+            // אם יש branch_id במשמרת, נחפש את הסניף המתאים
+            branches.some(branch => 
+              branch.id === shift.branch_id && 
+              (branch.name === request.branch_preference || branch.id === request.branch_preference)
+            ) :
+            // אם אין branch_id, נשווה רק לפי שם
+            request.branch_preference;
+            
+          const isMatch = matchDate && matchTime && matchBranch;
+          
+          if (isMatch) {
+            console.log(`✅ Match found for ${employee.first_name}:`, {
+              requestDate: request.date,
+              shiftDate: shift.shift_date,
+              requestTime: `${request.start_time}-${request.end_time}`,
+              shiftTime: `${shift.start_time}-${shift.end_time}`,
+              requestBranch: request.branch_preference,
+              shiftBranchId: shift.branch_id
+            });
+          }
+          
+          return isMatch;
+        });
+      });
       
       const assignedShifts = employeeShifts.length;
       const submittedShiftsCount = employeeSubmissions.length; // כמות ההגשות
+      const requestedShiftsCount = requestedShiftsDetails.length; // כמות הבקשות
+      const successfulShiftsCount = successfulRequests.length; // כמות הבקשות שהתממשו
       
       const submissionSuccessRate = requestedShiftsCount > 0 
-        ? Math.round((assignedShifts / requestedShiftsCount) * 100)
+        ? Math.round((successfulShiftsCount / requestedShiftsCount) * 100)
         : 0;
       
       const totalHours = employeeShifts.reduce((total, shift) => {
@@ -127,7 +172,12 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
         submissionSuccessRate
       };
 
-      console.log(`📊 Stats for ${stats.employeeName}:`, stats);
+      console.log(`📊 Final stats for ${stats.employeeName}:`, {
+        ...stats,
+        successfulShiftsCount,
+        requestedShiftsDetails: requestedShiftsDetails.length
+      });
+      
       return stats;
     }).sort((a, b) => a.employeeName.localeCompare(b.employeeName, 'he'));
   };

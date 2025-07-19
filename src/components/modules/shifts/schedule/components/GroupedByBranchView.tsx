@@ -266,6 +266,7 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
       <EmployeeStatsPanel 
         shifts={shifts}
         employees={employees}
+        branches={branches}
         weekRange={{
           start: weekDays[0],
           end: weekDays[6]
