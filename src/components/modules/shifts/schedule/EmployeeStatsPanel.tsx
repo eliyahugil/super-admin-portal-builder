@@ -88,6 +88,17 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
       // משמרות שבפועל הוקצו לעובד
       const employeeShifts = shifts.filter(shift => shift.employee_id === employee.id);
       
+      // קיבוץ משמרות לפי תאריך ושעות (משמרות באותן שעות נחשבות כמשמרת אחת)
+      const uniqueShiftSlots = employeeShifts.reduce((acc, shift) => {
+        const key = `${shift.shift_date}-${shift.start_time}-${shift.end_time}`;
+        if (!acc[key]) {
+          acc[key] = shift;
+        }
+        return acc;
+      }, {} as Record<string, ShiftScheduleData>);
+      
+      const uniqueShifts = Object.values(uniqueShiftSlots);
+      
       // מציאת הגשות העובד
       const employeeSubmissions = submissionsData.filter(submission => 
         submission.employee_id === employee.id
@@ -98,15 +109,34 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
         submission.shifts || []
       );
       
+      // קיבוץ בקשות לפי תאריך ושעות
+      const uniqueRequestedSlots = requestedShiftsDetails.reduce((acc, request: any) => {
+        if (request && request.date && request.start_time && request.end_time) {
+          const key = `${request.date}-${request.start_time}-${request.end_time}`;
+          if (!acc[key]) {
+            acc[key] = request;
+          }
+        }
+        return acc;
+      }, {} as Record<string, any>);
+      
+      const uniqueRequests = Object.values(uniqueRequestedSlots);
+      
       console.log(`📊 Employee ${employee.first_name} ${employee.last_name}:`, {
-        employeeShifts: employeeShifts,
-        employeeSubmissions: employeeSubmissions,
-        requestedShiftsDetails: requestedShiftsDetails
+        totalShifts: employeeShifts.length,
+        uniqueShifts: uniqueShifts.length,
+        employeeSubmissions: employeeSubmissions.length,
+        totalRequests: requestedShiftsDetails.length,
+        uniqueRequests: uniqueRequests.length
       });
       
       // חישוב כמה מהבקשות התממשו - בדיקה מדויקת לפי תאריך, זמן וסניף
-      const successfulRequests = requestedShiftsDetails.filter(request => {
-        return employeeShifts.some(shift => {
+      const successfulRequests = uniqueRequests.filter((request: any) => {
+        if (!request || !request.date || !request.start_time || !request.end_time) {
+          return false;
+        }
+        
+        return uniqueShifts.some(shift => {
           const matchDate = shift.shift_date === request.date;
           const matchTime = shift.start_time === request.start_time && shift.end_time === request.end_time;
           
@@ -137,9 +167,9 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
         });
       });
       
-      const assignedShifts = employeeShifts.length;
+      const assignedShifts = uniqueShifts.length; // ספירת משמרות ייחודיות
       const submittedShiftsCount = employeeSubmissions.length; // כמות ההגשות
-      const requestedShiftsCount = requestedShiftsDetails.length; // כמות הבקשות
+      const requestedShiftsCount = uniqueRequests.length; // כמות הבקשות הייחודיות
       const successfulShiftsCount = successfulRequests.length; // כמות הבקשות שהתממשו
       
       const submissionSuccessRate = requestedShiftsCount > 0 
