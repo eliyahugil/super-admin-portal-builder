@@ -686,7 +686,14 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
 
               {/* Edit Actions */}
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button onClick={handleUpdate} disabled={isUpdating} className="w-full sm:w-auto">
+                <Button 
+                  onClick={() => {
+                    console.log('🖱️ Save button clicked!');
+                    handleUpdate();
+                  }} 
+                  disabled={isUpdating} 
+                  className="w-full sm:w-auto"
+                >
                   {isUpdating ? 'שומר...' : 'שמור שינויים'}
                 </Button>
                 <Button variant="outline" onClick={() => setIsEditing(false)} className="w-full sm:w-auto">
