@@ -246,6 +246,10 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
     onShiftUpdate(shiftId, { employee_id: employeeId });
   };
 
+  const handleUnassign = (shiftId: string) => {
+    onShiftUpdate(shiftId, { employee_id: null });
+  };
+
   // Hebrew day names
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -383,16 +387,15 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
                                 </div>
                               </div>
                               
-                              {/* Auto Assignment Helper for unassigned shifts */}
-                              {!shift.employee_id && (
-                                <AutoAssignmentHelper
-                                  shift={shift}
-                                  employees={employees}
-                                  existingShifts={shifts}
-                                  pendingSubmissions={pendingSubmissions}
-                                  onAutoAssign={handleAutoAssign}
-                                />
-                              )}
+                              {/* Auto Assignment Helper for all shifts */}
+                              <AutoAssignmentHelper
+                                shift={shift}
+                                employees={employees}
+                                existingShifts={shifts}
+                                pendingSubmissions={pendingSubmissions}
+                                onAutoAssign={handleAutoAssign}
+                                onUnassign={handleUnassign}
+                              />
                             </div>
                           ))}
                           

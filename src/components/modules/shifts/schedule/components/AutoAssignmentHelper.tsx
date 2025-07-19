@@ -11,6 +11,7 @@ interface AutoAssignmentHelperProps {
   existingShifts: ShiftScheduleData[];
   pendingSubmissions: any[];
   onAutoAssign: (shiftId: string, employeeId: string) => void;
+  onUnassign?: (shiftId: string) => void;
 }
 
 export const AutoAssignmentHelper: React.FC<AutoAssignmentHelperProps> = ({
@@ -18,7 +19,8 @@ export const AutoAssignmentHelper: React.FC<AutoAssignmentHelperProps> = ({
   employees,
   existingShifts,
   pendingSubmissions,
-  onAutoAssign
+  onAutoAssign,
+  onUnassign
 }) => {
   console.log('⚡ AutoAssignmentHelper rendered for shift:', {
     shiftId: shift.id,
@@ -81,9 +83,50 @@ export const AutoAssignmentHelper: React.FC<AutoAssignmentHelperProps> = ({
   };
 
   const eligibleEmployees = getEligibleEmployees();
+  
+  // אם יש עובד מוקצה למשמרת - הצג אפשרות למחוק
+  if (shift.employee_id) {
+    const assignedEmployee = employees.find(emp => emp.id === shift.employee_id);
+    const employeeName = assignedEmployee 
+      ? `${assignedEmployee.first_name} ${assignedEmployee.last_name}`
+      : 'עובד לא ידוע';
 
-  // אם המשמרת כבר מוקצית או אין עובדים זכאים
-  if (shift.employee_id || eligibleEmployees.length === 0) {
+    return (
+      <Card className="border-red-200 bg-red-50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2 text-red-800">
+            <User className="h-4 w-4" />
+            עובד מוקצה
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-red-200">
+            <div className="flex items-center gap-2">
+              <User className="h-3 w-3 text-gray-500" />
+              <span className="text-sm font-medium">{employeeName}</span>
+              <Badge variant="secondary" className="text-xs bg-red-50 text-red-700">
+                מוקצה
+              </Badge>
+            </div>
+            
+            {onUnassign && (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => onUnassign(shift.id)}
+                className="h-7 text-xs"
+              >
+                מחק שיוך
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // אם אין עובדים זכאים
+  if (eligibleEmployees.length === 0) {
     return null;
   }
 
