@@ -98,22 +98,22 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     let filteredShifts = shifts.filter(shift => shift.shift_date === dateStr);
     
     // Apply filters
-    if (filters.type === 'branch' && filters.branchId) {
-      filteredShifts = filteredShifts.filter(shift => shift.branch_id === filters.branchId);
+    if (localFilters.type === 'branch' && localFilters.branchId) {
+      filteredShifts = filteredShifts.filter(shift => shift.branch_id === localFilters.branchId);
     }
     
-    if (filters.type === 'employee' && filters.employeeId) {
-      filteredShifts = filteredShifts.filter(shift => shift.employee_id === filters.employeeId);
+    if (localFilters.type === 'employee' && localFilters.employeeId) {
+      filteredShifts = filteredShifts.filter(shift => shift.employee_id === localFilters.employeeId);
     }
     
-    if (filters.type === 'role' && filters.roleFilter) {
-      filteredShifts = filteredShifts.filter(shift => shift.role === filters.roleFilter);
+    if (localFilters.type === 'role' && localFilters.roleFilter) {
+      filteredShifts = filteredShifts.filter(shift => shift.role === localFilters.roleFilter);
     }
     
-    if (filters.timeFilter !== 'all') {
+    if (localFilters.timeFilter !== 'all') {
       filteredShifts = filteredShifts.filter(shift => {
         const startHour = parseInt(shift.start_time?.split(':')[0] || '0');
-        switch (filters.timeFilter) {
+        switch (localFilters.timeFilter) {
           case 'morning': return startHour >= 6 && startHour < 14;
           case 'evening': return startHour >= 14 && startHour < 22;
           case 'night': return startHour >= 22 || startHour < 6;
@@ -640,7 +640,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     <div className="h-full flex flex-col" dir="rtl">
       {/* Filters Toolbar */}
       <ShiftFiltersToolbar
-        filters={filters}
+        filters={localFilters}
         onFiltersChange={handleFiltersChange}
         employees={employees}
         branches={branches}
