@@ -89,25 +89,34 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
     const assignmentResults: AutoAssignmentResult[] = [];
 
     try {
+      const assignedEmployees = new Set<string>(); // מעקב אחר עובדים שכבר שובצו
+      
       for (const shift of emptyShifts) {
         const shiftRecommendations = recommendations.find(r => r.shiftId === shift.id);
         
         if (shiftRecommendations && shiftRecommendations.recommendations.length > 0) {
-          // Get the top recommendation with score > 60
-          const topRecommendation = shiftRecommendations.recommendations.find(r => r.matchScore >= 60);
+          // מציאת המלצה שלא שובצה עדיין עם ציון גבוה
+          const availableRecommendation = shiftRecommendations.recommendations.find(r => 
+            r.matchScore >= 60 && !assignedEmployees.has(r.employeeId)
+          );
           
-          if (topRecommendation) {
+          if (availableRecommendation) {
             try {
-              await onShiftUpdate(shift.id, { employee_id: topRecommendation.employeeId });
+              await onShiftUpdate(shift.id, { employee_id: availableRecommendation.employeeId });
+              
+              // סימון שהעובד שובץ
+              assignedEmployees.add(availableRecommendation.employeeId);
               
               assignmentResults.push({
                 shiftId: shift.id,
                 shiftTime: `${shift.start_time}-${shift.end_time}`,
-                employeeId: topRecommendation.employeeId,
-                employeeName: topRecommendation.employeeName,
-                matchScore: topRecommendation.matchScore,
+                employeeId: availableRecommendation.employeeId,
+                employeeName: availableRecommendation.employeeName,
+                matchScore: availableRecommendation.matchScore,
                 success: true
               });
+              
+              console.log(`✅ שובץ בהצלחה: ${availableRecommendation.employeeName} למשמרת ${shift.start_time}-${shift.end_time} (${availableRecommendation.matchScore}%)`);
             } catch (error) {
               assignmentResults.push({
                 shiftId: shift.id,
@@ -120,6 +129,22 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
               });
             }
           } else {
+            // בדיקה מדוע לא נמצא עובד מתאים
+            const allRecommendations = shiftRecommendations.recommendations;
+            const lowScoreCount = allRecommendations.filter(r => r.matchScore < 60).length;
+            const alreadyAssignedCount = allRecommendations.filter(r => assignedEmployees.has(r.employeeId)).length;
+            
+            let reason = 'אין עובד מתאים';
+            if (alreadyAssignedCount > 0 && lowScoreCount > 0) {
+              reason = `${alreadyAssignedCount} עובדים כבר שובצו, ${lowScoreCount} עם ציון נמוך מ-60%`;
+            } else if (alreadyAssignedCount > 0) {
+              reason = `${alreadyAssignedCount} העובדים המתאימים כבר שובצו למשמרות אחרות`;
+            } else if (lowScoreCount > 0) {
+              reason = `${lowScoreCount} עובדים זמינים אבל עם ציון נמוך מ-60%`;
+            }
+            
+            console.log(`❌ לא שובץ: משמרת ${shift.start_time}-${shift.end_time} - ${reason}`);
+            
             assignmentResults.push({
               shiftId: shift.id,
               shiftTime: `${shift.start_time}-${shift.end_time}`,
@@ -127,7 +152,7 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
               employeeName: '',
               matchScore: 0,
               success: false,
-              reason: 'אין עובד מתאים (ציון נמוך מ-60%)'
+              reason: reason
             });
           }
         } else {

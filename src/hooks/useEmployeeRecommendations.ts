@@ -258,6 +258,18 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
         const validRecommendations = employeeRecommendations.filter(rec => rec.matchScore >= 30);
 
         console.log(`📊 Shift ${shift.start_time}-${shift.end_time}: ${validRecommendations.length} valid recommendations`);
+        
+        // הדפסת פרטי ההמלצות לדיבוג
+        if (validRecommendations.length > 0) {
+          console.log(`🔍 Top recommendations for ${shift.start_time}-${shift.end_time}:`, 
+            validRecommendations.slice(0, 3).map(r => ({
+              name: r.employeeName,
+              score: r.matchScore,
+              reasons: r.reasons,
+              warnings: r.warnings
+            }))
+          );
+        }
 
         return {
           shiftId: shift.id,
