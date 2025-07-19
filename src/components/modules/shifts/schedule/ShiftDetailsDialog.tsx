@@ -43,6 +43,7 @@ interface ShiftDetailsDialogProps {
   onDelete: (shiftId: string) => Promise<void>;
   onAssignEmployee: (shift: ShiftScheduleData) => void;
   onSubmissionUpdate?: () => void;
+  onRefresh?: () => Promise<void>; // Add optional refresh function
 }
 
 export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
@@ -55,7 +56,8 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
   onUpdate,
   onDelete,
   onAssignEmployee,
-  onSubmissionUpdate
+  onSubmissionUpdate,
+  onRefresh
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -702,13 +704,27 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                 <Button 
                   onClick={async () => {
                     try {
-                      alert('Starting direct save...');
+                      console.log('=== SAVE BUTTON CLICKED ===');
+                      console.log('editData before save:', editData);
+                      console.log('required_employees:', editData.required_employees);
+                      
                       setIsUpdating(true);
                       await onUpdate(shift.id, editData);
-                      alert('Direct save SUCCESS!');
+                      
+                      console.log('=== SAVE COMPLETED - CLOSING EDIT ===');
                       setIsEditing(false);
+                      
+                      // Force refresh the page data
+                      if (onRefresh) {
+                        console.log('=== REFRESHING DATA ===');
+                        await onRefresh();
+                      }
+                      
+                      toast.success('המשמרת נשמרה בהצלחה');
+                      
                     } catch (error) {
-                      alert('Direct save ERROR: ' + error);
+                      console.error('Save error:', error);
+                      toast.error('שגיאה בשמירה: ' + error);
                     } finally {
                       setIsUpdating(false);
                     }

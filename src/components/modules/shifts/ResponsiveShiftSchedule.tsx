@@ -684,6 +684,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           onUpdate={handleShiftUpdate}
           onDelete={handleShiftDelete}
           onAssignEmployee={(shift) => setAssignmentShift(shift)}
+          onRefresh={async () => { await refetchShifts(); }}
         />
       )}
 
