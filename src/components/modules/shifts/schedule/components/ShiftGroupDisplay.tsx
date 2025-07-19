@@ -115,8 +115,24 @@ export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
           <div className="space-y-2">
             {shiftsByBranch[branchName]
               .sort((a, b) => {
-                // מיון לפי שעת התחלה
-                return (a.start_time || '').localeCompare(b.start_time || '');
+                // מיון מדויק לפי שעת התחלה ואז שעת סיום
+                const timeA = (a.start_time || '00:00').split(':').map(n => parseInt(n));
+                const timeB = (b.start_time || '00:00').split(':').map(n => parseInt(n));
+                
+                const minutesA = timeA[0] * 60 + (timeA[1] || 0);
+                const minutesB = timeB[0] * 60 + (timeB[1] || 0);
+                
+                if (minutesA !== minutesB) {
+                  return minutesA - minutesB;
+                }
+                
+                // אם השעות זהות, מיין לפי שעת סיום
+                const endTimeA = (a.end_time || '23:59').split(':').map(n => parseInt(n));
+                const endTimeB = (b.end_time || '23:59').split(':').map(n => parseInt(n));
+                const endMinutesA = endTimeA[0] * 60 + (endTimeA[1] || 0);
+                const endMinutesB = endTimeB[0] * 60 + (endTimeB[1] || 0);
+                
+                return endMinutesA - endMinutesB;
               })
               .map((shift) => (
                 <ShiftDisplayCard

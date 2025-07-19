@@ -19,6 +19,14 @@ export const useShiftTableSorting = (filteredShifts: ShiftData[]) => {
           break;
         case 'shift_date':
           compareValue = new Date(a.shift_date).getTime() - new Date(b.shift_date).getTime();
+          // אם התאריכים זהים, מיין לפי שעת התחלה
+          if (compareValue === 0) {
+            const timeA = (a.start_time || '00:00').split(':').map(n => parseInt(n));
+            const timeB = (b.start_time || '00:00').split(':').map(n => parseInt(n));
+            const minutesA = timeA[0] * 60 + (timeA[1] || 0);
+            const minutesB = timeB[0] * 60 + (timeB[1] || 0);
+            compareValue = minutesA - minutesB;
+          }
           break;
         case 'status':
           compareValue = a.status.localeCompare(b.status);
