@@ -19,13 +19,23 @@ export const useShiftTableSorting = (filteredShifts: ShiftData[]) => {
           break;
         case 'shift_date':
           compareValue = new Date(a.shift_date).getTime() - new Date(b.shift_date).getTime();
-          // אם התאריכים זהים, מיין לפי שעת התחלה
+          // אם התאריכים זהים, מיין לפי שעת התחלה ואז לפי משך המשמרת
           if (compareValue === 0) {
             const timeA = (a.start_time || '00:00').split(':').map(n => parseInt(n));
             const timeB = (b.start_time || '00:00').split(':').map(n => parseInt(n));
             const minutesA = timeA[0] * 60 + (timeA[1] || 0);
             const minutesB = timeB[0] * 60 + (timeB[1] || 0);
-            compareValue = minutesA - minutesB;
+            
+            // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (המשמרת הארוכה קודם)
+            if (minutesA === minutesB) {
+              const endTimeA = (a.end_time || '23:59').split(':').map(n => parseInt(n));
+              const endTimeB = (b.end_time || '23:59').split(':').map(n => parseInt(n));
+              const endMinutesA = endTimeA[0] * 60 + (endTimeA[1] || 0);
+              const endMinutesB = endTimeB[0] * 60 + (endTimeB[1] || 0);
+              compareValue = endMinutesB - endMinutesA; // הארוכה קודם
+            } else {
+              compareValue = minutesA - minutesB;
+            }
           }
           break;
         case 'status':
