@@ -1,18 +1,21 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Clock, AlertTriangle, CheckCircle, TrendingUp, TrendingDown } from 'lucide-react';
+import { User, Clock, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, FileText, Send } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import type { ShiftScheduleData, Employee } from './types';
 
 interface EmployeeStats {
   employeeId: string;
   employeeName: string;
   assignedShifts: number;
+  submittedShifts: number;  // הוספנו - כמות המשמרות שהגיש
   requiredShifts: number;
   totalHours: number;
   status: 'over' | 'under' | 'exact';
   shifts: ShiftScheduleData[];
+  submissionSuccessRate: number; // אחוז הצלחה של הגשות
 }
 
 interface EmployeeStatsPanelProps {
@@ -28,6 +31,38 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
   weekRange,
   className = ''
 }) => {
+  const [submissionsData, setSubmissionsData] = useState<any[]>([]);
+
+  // שליפת נתוני הגשות משמרות
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('shift_submissions')
+          .select(`
+            *,
+            employees!inner(
+              id,
+              first_name,
+              last_name,
+              business_id
+            )
+          `)
+          .gte('submitted_at', weekRange.start.toISOString())
+          .lte('submitted_at', weekRange.end.toISOString());
+
+        if (error) {
+          console.error('Error fetching submissions:', error);
+        } else {
+          setSubmissionsData(data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching submissions:', error);
+      }
+    };
+
+    fetchSubmissions();
+  }, [weekRange]);
   const calculateEmployeeStats = (): EmployeeStats[] => {
     const stats: EmployeeStats[] = [];
     
@@ -38,6 +73,18 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
         !shift.is_archived
       );
       
+      // חישוב נתוני הגשות עבור העובד
+      const employeeSubmissions = submissionsData.filter(submission => 
+        submission.employees?.id === employee.id
+      );
+      
+      // חישוב אחוז הצלחה - כמה מהמשמרות שהגיש הוא קיבל
+      const submittedShiftsCount = employeeSubmissions.length;
+      const assignedShifts = employeeShifts.length;
+      const submissionSuccessRate = submittedShiftsCount > 0 
+        ? Math.round((assignedShifts / submittedShiftsCount) * 100) 
+        : 0;
+      
       const totalHours = employeeShifts.reduce((total, shift) => {
         const startTime = new Date(`2000-01-01T${shift.start_time}`);
         const endTime = new Date(`2000-01-01T${shift.end_time}`);
@@ -46,7 +93,6 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
       }, 0);
       
       const requiredShifts = employee.weekly_hours_required || 0;
-      const assignedShifts = employeeShifts.length;
       
       let status: 'over' | 'under' | 'exact' = 'exact';
       if (assignedShifts > requiredShifts) status = 'over';
@@ -56,10 +102,12 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
         employeeId: employee.id,
         employeeName: `${employee.first_name} ${employee.last_name}`,
         assignedShifts,
+        submittedShifts: submittedShiftsCount,
         requiredShifts,
         totalHours,
         status,
-        shifts: employeeShifts
+        shifts: employeeShifts,
+        submissionSuccessRate
       });
     });
     
@@ -146,27 +194,57 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
         {/* Employee List */}
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {employeeStats.map((stat) => (
-            <div key={stat.employeeId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <User className="h-4 w-4 text-gray-500" />
-                <span className="font-medium">{stat.employeeName}</span>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="text-sm text-gray-600">
-                  <Clock className="h-3 w-3 inline ml-1" />
-                  {stat.totalHours.toFixed(1)} שעות
-                </div>
-                
-                <div className="text-sm">
-                  <span className="font-medium">{stat.assignedShifts}</span>
-                  <span className="text-gray-500"> / {stat.requiredShifts}</span>
+            <div key={stat.employeeId} className="p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <User className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">{stat.employeeName}</span>
                 </div>
                 
                 <Badge className={getStatusColor(stat.status)} variant="outline">
                   {getStatusIcon(stat.status)}
                   <span className="mr-1">{getStatusText(stat.status)}</span>
                 </Badge>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                {/* משמרות שקיבל */}
+                <div className="text-center p-2 bg-green-50 rounded border border-green-200">
+                  <div className="font-medium text-green-700">{stat.assignedShifts}</div>
+                  <div className="text-xs text-green-600">משמרות שקיבל</div>
+                </div>
+                
+                {/* משמרות שהגיש */}
+                <div className="text-center p-2 bg-blue-50 rounded border border-blue-200">
+                  <div className="font-medium text-blue-700">{stat.submittedShifts}</div>
+                  <div className="text-xs text-blue-600">משמרות שהגיש</div>
+                </div>
+                
+                {/* אחוז הצלחה */}
+                <div className="text-center p-2 bg-purple-50 rounded border border-purple-200">
+                  <div className="font-medium text-purple-700">{stat.submissionSuccessRate}%</div>
+                  <div className="text-xs text-purple-600">אחוז הצלחה</div>
+                </div>
+                
+                {/* שעות עבודה */}
+                <div className="text-center p-2 bg-orange-50 rounded border border-orange-200">
+                  <div className="font-medium text-orange-700">{stat.totalHours.toFixed(1)}</div>
+                  <div className="text-xs text-orange-600">שעות עבודה</div>
+                </div>
+              </div>
+              
+              {/* קו נתונים נוסף */}
+              <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-600 flex items-center justify-between">
+                <span>נדרשות: {stat.requiredShifts} משמרות</span>
+                {stat.submittedShifts > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Send className="h-3 w-3" />
+                    {stat.submittedShifts > stat.assignedShifts ? 
+                      `עודף ${stat.submittedShifts - stat.assignedShifts} הגשות` : 
+                      'כל ההגשות התקבלו'
+                    }
+                  </span>
+                )}
               </div>
             </div>
           ))}
