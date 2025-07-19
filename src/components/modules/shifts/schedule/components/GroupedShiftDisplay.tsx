@@ -185,11 +185,11 @@ export const GroupedShiftDisplay: React.FC<GroupedShiftDisplayProps> = ({
                           return startA.totalMinutes - startB.totalMinutes;
                         }
                         
-                        // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (הקצרה קודם)
+                        // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (הארוכה קודם)
                         const endA = parseTime(a.end_time || '23:59');
                         const endB = parseTime(b.end_time || '23:59');
                         
-                        return endA.totalMinutes - endB.totalMinutes;
+                        return endB.totalMinutes - endA.totalMinutes;
                       })
                       .map(shift => {
                         const { hasSubmissions, submissionsCount } = getShiftSubmissions(shift);
