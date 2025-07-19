@@ -86,7 +86,6 @@ const CompactShiftView: React.FC<CompactViewProps> = ({
         <div className="p-2 space-y-2">
           {Object.entries(groupedShifts)
             .sort(([a], [b]) => a.localeCompare(b))
-            .slice(0, viewType === 'week' ? 7 : 30) // הגבלת כמות
             .map(([date, dayShifts]) => (
               <div key={date} className="border rounded-lg p-2 bg-white">
                 {/* כותרת התאריך */}
@@ -101,7 +100,7 @@ const CompactShiftView: React.FC<CompactViewProps> = ({
 
                 {/* רשימת המשמרות */}
                 <div className="grid gap-1">
-                  {dayShifts.slice(0, 4).map(shift => ( // מקסימום 4 משמרות לתאריך
+                  {dayShifts.map(shift => (
                     <div
                       key={shift.id}
                       className={`p-2 rounded text-xs border transition-colors cursor-pointer ${
@@ -138,11 +137,6 @@ const CompactShiftView: React.FC<CompactViewProps> = ({
                       </div>
                     </div>
                   ))}
-                  {dayShifts.length > 4 && (
-                    <div className="text-center text-xs text-gray-500 py-1">
-                      +{dayShifts.length - 4} משמרות נוספות
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
