@@ -344,10 +344,23 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
                       <div className="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs">
                         <User className="h-3 w-3 inline ml-1" />
                         {assignedEmployee ? `${assignedEmployee.first_name} ${assignedEmployee.last_name}` : 'לא ידוע'}
+                        {assignment.type && <span className="mr-1">({assignment.type})</span>}
                       </div>
                     </div>
                   );
                 })}
+              
+              {/* הקצאות ללא עובד מוקצה */}
+              {((shift as any).shift_assignments || [])
+                .filter((assignment: any) => !assignment.employee_id)
+                .map((assignment: any, index: number) => (
+                  <div key={`unassigned-${assignment.id || index}`} className="flex justify-center">
+                    <div className="px-2 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded text-xs">
+                      <User className="h-3 w-3 inline ml-1" />
+                      לא מוקצה {assignment.type && `(${assignment.type})`}
+                    </div>
+                  </div>
+                ))}
               
               {/* מצב הקצאה */}
               <div className="flex justify-center">
@@ -360,7 +373,7 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
                 </div>
               </div>
               
-              {/* הקצאות ללא עובד או עמדות חסרות */}
+              {/* הקצאות חסרות */}
               {(() => {
                 const requiredEmployees = shift.required_employees || 1;
                 const assignedCount = (shift.employee_id ? 1 : 0) + 
@@ -368,19 +381,13 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
                 const unassignedCount = ((shift as any).shift_assignments || []).filter((a: any) => !a.employee_id).length;
                 const missingCount = Math.max(0, requiredEmployees - assignedCount - unassignedCount);
                 
-                if (unassignedCount > 0 || missingCount > 0) {
+                if (missingCount > 0) {
                   return (
-                    <div className="flex justify-center gap-1">
-                      {unassignedCount > 0 && (
-                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300 text-xs">
-                          {unassignedCount} לא מוקצה
-                        </Badge>
-                      )}
-                      {missingCount > 0 && (
-                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 text-xs">
-                          {missingCount} חסר
-                        </Badge>
-                      )}
+                    <div className="flex justify-center">
+                      <div className="px-2 py-1 bg-red-50 text-red-700 border border-red-200 rounded text-xs">
+                        <User className="h-3 w-3 inline ml-1" />
+                        {missingCount} עמדות חסרות
+                      </div>
                     </div>
                   );
                 }
