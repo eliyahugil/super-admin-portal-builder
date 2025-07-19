@@ -165,7 +165,26 @@ export const GroupedShiftDisplay: React.FC<GroupedShiftDisplayProps> = ({
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     {shiftsInSlot
-                      .sort((a, b) => a.start_time.localeCompare(b.start_time))
+                      .sort((a, b) => {
+                        // מיון לפי שעת התחלה ואז שעת סיום
+                        const timeA = a.start_time.split(':').map(n => parseInt(n));
+                        const timeB = b.start_time.split(':').map(n => parseInt(n));
+                        
+                        const minutesA = timeA[0] * 60 + timeA[1];
+                        const minutesB = timeB[0] * 60 + timeB[1];
+                        
+                        if (minutesA !== minutesB) {
+                          return minutesA - minutesB;
+                        }
+                        
+                        // אם השעות זהות, מיין לפי שעת סיום
+                        const endTimeA = a.end_time.split(':').map(n => parseInt(n));
+                        const endTimeB = b.end_time.split(':').map(n => parseInt(n));
+                        const endMinutesA = endTimeA[0] * 60 + endTimeA[1];
+                        const endMinutesB = endTimeB[0] * 60 + endTimeB[1];
+                        
+                        return endMinutesA - endMinutesB;
+                      })
                       .map(shift => {
                         const { hasSubmissions, submissionsCount } = getShiftSubmissions(shift);
                         const shiftType = timeSlot as 'morning' | 'evening' | 'night';
