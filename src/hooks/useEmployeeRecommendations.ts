@@ -34,6 +34,8 @@ const calculateEmployeeScore = (
   const reasons: string[] = [];
   const warnings: string[] = [];
 
+  console.log(`\n🧮 מחשב ציון לעובד: ${employee.first_name} ${employee.last_name || ''} למשמרת ${shift.start_time}-${shift.end_time}`);
+
   // Parse employee preferences
   const preferences = employee.employee_default_preferences?.[0] || {};
   const branchAssignments = employee.employee_branch_assignments || [];
@@ -51,38 +53,45 @@ const calculateEmployeeScore = (
   const shiftTypeMatch = prefersThisShiftType;
   
   if (prefersThisShiftType) {
-    score += 30;
-    reasons.push(`✅ מעדיף משמרות ${isMorningShift ? 'בוקר' : 'ערב'}`);
+    score += 50; // הכי הרבה נקודות לסוג משמרת!
+    reasons.push(`✅ מעדיף משמרות ${isMorningShift ? 'בוקר' : 'ערב'} (+50)`);
+    console.log(`  ✅ סוג משמרת: +50 נקודות (מעדיף ${isMorningShift ? 'בוקר' : 'ערב'})`);
   } else {
-    warnings.push(`⚠️ לא מעדיף משמרות ${isMorningShift ? 'בוקר' : 'ערב'}`);
+    warnings.push(`⚠️ לא מעדיף משמרות ${isMorningShift ? 'בוקר' : 'ערב'} (+0)`);
+    console.log(`  ❌ סוג משמרת: +0 נקודות (לא מעדיף ${isMorningShift ? 'בוקר' : 'ערב'})`);
   }
 
-  // 2. Check day availability 
-  const shiftDayOfWeek = new Date(shift.shift_date || shift.date).getDay();
-  const availableDays = preferences.available_days || [0, 1, 2, 3, 4, 5, 6];
-  const availabilityMatch = availableDays.includes(shiftDayOfWeek);
-  
-  if (availabilityMatch) {
-    score += 25;
-    reasons.push('✅ זמין ביום זה');
-  } else {
-    warnings.push('❌ לא זמין ביום זה');
-  }
-
-  // 3. Check branch assignment
+  // 2. Check branch assignment (עדיפות גבוהה!)
   const shiftBranchId = shift.branch_id;
   const branchMatch = !shiftBranchId || branchAssignments.some((ba: any) => 
     ba.branch_id === shiftBranchId && ba.is_active
   );
   
   if (branchMatch && shiftBranchId) {
-    score += 20;
-    reasons.push('✅ משויך לסניף זה');
+    score += 35; // עדיפות גבוהה לסניף מוקצה
+    reasons.push('✅ משויך לסניף זה (+35)');
+    console.log(`  ✅ סניף: +35 נקודות (משויך לסניף)`);
   } else if (!shiftBranchId) {
-    score += 10;
-    reasons.push('ℹ️ משמרת כללית (ללא סניף)');
+    score += 20; // משמרת כללית
+    reasons.push('ℹ️ משמרת כללית (+20)');
+    console.log(`  ℹ️ סניף: +20 נקודות (משמרת כללית)`);
   } else {
-    warnings.push('⚠️ לא משויך לסניף זה');
+    warnings.push('⚠️ לא משויך לסניף זה (+0)');
+    console.log(`  ❌ סניף: +0 נקודות (לא משויך לסניף זה)`);
+  }
+
+  // 3. Check day availability 
+  const shiftDayOfWeek = new Date(shift.shift_date || shift.date).getDay();
+  const availableDays = preferences.available_days || [0, 1, 2, 3, 4, 5, 6];
+  const availabilityMatch = availableDays.includes(shiftDayOfWeek);
+  
+  if (availabilityMatch) {
+    score += 20;
+    reasons.push('✅ זמין ביום זה (+20)');
+    console.log(`  ✅ זמינות יום: +20 נקודות (זמין ביום ${shiftDayOfWeek})`);
+  } else {
+    warnings.push('❌ לא זמין ביום זה (+0)');
+    console.log(`  ❌ זמינות יום: +0 נקודות (לא זמין ביום ${shiftDayOfWeek})`);
   }
 
   // 4. Check weekly hours status
@@ -96,21 +105,29 @@ const calculateEmployeeScore = (
   if (projectedHours < requiredWeeklyHours) {
     weeklyHoursStatus = 'under';
     score += 15;
-    reasons.push(`✅ צריך עוד ${requiredWeeklyHours - projectedHours} שעות השבוע`);
+    reasons.push(`✅ צריך עוד ${requiredWeeklyHours - projectedHours} שעות השבוע (+15)`);
+    console.log(`  ✅ שעות שבועיות: +15 נקודות (צריך עוד ${requiredWeeklyHours - projectedHours} שעות)`);
   } else if (projectedHours <= requiredWeeklyHours + 5) {
     weeklyHoursStatus = 'normal';
     score += 10;
-    reasons.push('✅ כמות שעות תקינה');
+    reasons.push('✅ כמות שעות תקינה (+10)');
+    console.log(`  ✅ שעות שבועיות: +10 נקודות (כמות תקינה)`);
   } else {
     weeklyHoursStatus = 'over';
-    warnings.push(`⚠️ יחרוג ב-${projectedHours - requiredWeeklyHours} שעות`);
+    warnings.push(`⚠️ יחרוג ב-${projectedHours - requiredWeeklyHours} שעות (+0)`);
+    console.log(`  ❌ שעות שבועיות: +0 נקודות (יחרוג ב-${projectedHours - requiredWeeklyHours} שעות)`);
   }
 
   // 5. Check employee type preference
   if (employee.employee_type === 'regular') {
     score += 5;
-    reasons.push('✅ עובד קבוע');
+    reasons.push('✅ עובד קבוע (+5)');
+    console.log(`  ✅ סוג עובד: +5 נקודות (עובד קבוע)`);
+  } else {
+    console.log(`  ℹ️ סוג עובד: +0 נקודות (לא קבוע)`);
   }
+
+  console.log(`  🎯 ציון סופי: ${Math.min(100, score)} נקודות`);
 
   // Determine priority
   const isHighPriority = score >= 70 && warnings.length <= 1;
