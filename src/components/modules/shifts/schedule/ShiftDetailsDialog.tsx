@@ -738,23 +738,53 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
                 </Button>
               </div>
 
-              {/* Employee Display */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-600" />
-                  <span>
-                    {employee ? `${employee.first_name} ${employee.last_name}` : 'לא מוקצה עובד'}
-                  </span>
-                </div>
-                {!employee && (
+              {/* Employee Assignments Display */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">עובדים מוקצים</Label>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    onClick={() => onAssignEmployee(shift)}
+                    onClick={() => setIsEditing(true)}
+                    className="text-xs text-blue-600 hover:text-blue-800"
                   >
-                    <UserPlus className="h-3 w-3 mr-1" />
-                    הקצה עובד
+                    ערוך הקצאות
                   </Button>
+                </div>
+                
+                {/* Display all assignments */}
+                {((shift as any).shift_assignments && (shift as any).shift_assignments.length > 0) ? (
+                  <div className="space-y-2">
+                    {(shift as any).shift_assignments.map((assignment: any, index: number) => {
+                      const assignedEmployee = employees.find(emp => emp.id === assignment.employee_id);
+                      return (
+                        <div key={assignment.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-gray-600" />
+                            <span className="font-medium">
+                              {assignedEmployee ? `${assignedEmployee.first_name} ${assignedEmployee.last_name}` : 'לא מוקצה עובד'}
+                            </span>
+                          </div>
+                          <Badge variant={assignment.type === 'חובה' ? "default" : "secondary"} className="text-xs">
+                            {assignment.type || 'חובה'}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  // Fallback to old single employee display
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-gray-600" />
+                      <span className="font-medium">
+                        {employee ? `${employee.first_name} ${employee.last_name}` : 'לא מוקצה עובד'}
+                      </span>
+                    </div>
+                    <Badge variant="default" className="text-xs">
+                      חובה
+                    </Badge>
+                  </div>
                 )}
               </div>
 
