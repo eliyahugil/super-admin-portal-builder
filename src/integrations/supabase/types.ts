@@ -3421,7 +3421,11 @@ export type Database = {
           is_archived: boolean
           is_assigned: boolean | null
           is_new: boolean | null
+          manager_override: boolean | null
           notes: string | null
+          override_at: string | null
+          override_by: string | null
+          override_reason: string | null
           priority: string | null
           required_employees: number | null
           role: string | null
@@ -3442,7 +3446,11 @@ export type Database = {
           is_archived?: boolean
           is_assigned?: boolean | null
           is_new?: boolean | null
+          manager_override?: boolean | null
           notes?: string | null
+          override_at?: string | null
+          override_by?: string | null
+          override_reason?: string | null
           priority?: string | null
           required_employees?: number | null
           role?: string | null
@@ -3463,7 +3471,11 @@ export type Database = {
           is_archived?: boolean
           is_assigned?: boolean | null
           is_new?: boolean | null
+          manager_override?: boolean | null
           notes?: string | null
+          override_at?: string | null
+          override_by?: string | null
+          override_reason?: string | null
           priority?: string | null
           required_employees?: number | null
           role?: string | null
