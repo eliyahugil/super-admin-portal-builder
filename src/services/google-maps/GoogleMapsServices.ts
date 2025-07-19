@@ -16,10 +16,12 @@ export class GoogleMapsServices {
   }
 
   getAutocompleteService(): google.maps.places.AutocompleteService | null {
-    return this.autocompleteService;
+    console.log('⚠️ AutocompleteService disabled for shifts module');
+    return null;
   }
 
   getPlacesService(): google.maps.places.PlacesService | null {
-    return this.placesService;
+    console.log('⚠️ PlacesService disabled for shifts module');
+    return null;
   }
 }

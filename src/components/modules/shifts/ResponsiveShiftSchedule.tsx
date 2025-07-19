@@ -74,13 +74,25 @@ export const ResponsiveShiftSchedule: React.FC = () => {
 
   const queryClient = useQueryClient();
 
-  // Google Maps ו-Calendar integration מושבתים לחלוטין במודול משמרות
-  const combinedEvents: any[] = [];
-  const googleEvents: any[] = [];
-  const calendarHolidays: any[] = [];
-  const calendarShabbatTimes: any[] = [];
-  const calendarLoading = false;
-  const getEventsForDate = () => [];
+  // Calendar integration מושבת, אבל משאיר את הפונקציונליות הבסיסית
+  const {
+    combinedEvents = [],
+    googleEvents = [],
+    holidays: calendarHolidays = [],
+    shabbatTimes: calendarShabbatTimes = [],
+    loading: calendarLoading = false,
+    getEventsForDate = () => []
+  } = (() => {
+    // מחזיר ערכי ברירת מחדל ללא אינטגרציה עם Google Maps
+    return {
+      combinedEvents: [],
+      googleEvents: [],
+      holidays: [],
+      shabbatTimes: [],
+      loading: false,
+      getEventsForDate: () => []
+    };
+  })();
 
   // Notifications system
   const {
@@ -91,6 +103,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     deleteNotification,
     addShiftSubmissionNotification
   } = useNotifications();
+
+  const isLoading = loading || calendarLoading;
 
   console.log('📊 ResponsiveShiftSchedule - Current state:', {
     businessId,
@@ -105,7 +119,12 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     error: error?.message || null,
     activeTab,
     isSelectionMode,
-    selectedShiftsCount: selectedShifts.length
+    selectedShiftsCount: selectedShifts.length,
+    view,
+    isLoading,
+    currentDate: currentDate.toISOString(),
+    hasCurrentDate: !!currentDate,
+    filtersActive: JSON.stringify(filters)
   });
 
   // Handle retry for errors
@@ -278,7 +297,6 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     }
   };
 
-  const isLoading = loading || calendarLoading;
 
   // Helper function removed - submissions system no longer exists
 
