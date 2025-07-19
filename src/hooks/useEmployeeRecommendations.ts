@@ -190,24 +190,7 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
     queryFn: async (): Promise<ShiftRecommendationData[]> => {
       console.log('🚀 Starting employee recommendations query:', { businessId, weekStartDate });
       
-      // פשוט נקח את כל העובדים הפעילים של העסק
-      const { data: allEmployees, error: employeesError } = await supabase
-        .from('employees')
-        .select(`
-          *,
-          employee_default_preferences(*),
-          employee_branch_assignments(*)
-        `)
-        .eq('business_id', businessId)
-        .eq('is_active', true)
-        .eq('is_archived', false);
-
-      if (employeesError) throw employeesError;
-      
-      const employees = allEmployees || [];
-      console.log('👥 Active employees found:', employees.length);
-      
-      // נמצא את כל ההגשות הקיימות כדי ליצור משמרות מהן
+      // קודם נמצא את כל ההגשות כדי לדעת איזה עובדים הגישו בכלל
       const { data: latestSubmissions, error: submissionsError } = await supabase
         .from('shift_submissions')
         .select(`
@@ -218,7 +201,8 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
           employees!inner(
             id,
             first_name,
-            last_name
+            last_name,
+            business_id
           )
         `)
         .eq('employees.business_id', businessId)
@@ -228,6 +212,41 @@ export const useEmployeeRecommendations = (businessId: string, weekStartDate: st
       if (submissionsError) throw submissionsError;
       
       console.log('📋 Latest submissions found:', latestSubmissions?.length || 0);
+
+      // חילוץ רשימת עובדים שהגישו הגשות
+      const employeesWithSubmissions = new Set<string>();
+      if (latestSubmissions && latestSubmissions.length > 0) {
+        latestSubmissions.forEach(submission => {
+          employeesWithSubmissions.add(submission.employee_id);
+        });
+      }
+
+      console.log('👥 Employees with submissions:', employeesWithSubmissions.size);
+
+      if (employeesWithSubmissions.size === 0) {
+        console.log('❌ No employees with submissions found');
+        return [];
+      }
+      
+      // עכשיו נקח רק את העובדים שהגישו הגשות
+      const { data: allEmployees, error: employeesError } = await supabase
+        .from('employees')
+        .select(`
+          *,
+          employee_default_preferences(*),
+          employee_branch_assignments(*)
+        `)
+        .eq('business_id', businessId)
+        .eq('is_active', true)
+        .eq('is_archived', false)
+        .in('id', Array.from(employeesWithSubmissions));
+
+      if (employeesError) throw employeesError;
+      
+      const employees = allEmployees || [];
+      console.log('👥 Active employees with submissions found:', employees.length);
+      
+      console.log('📋 Using same submissions data for shifts generation');
 
       // Find shifts from submissions that need assignment
       const weekEndDate = new Date(new Date(weekStartDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];

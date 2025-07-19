@@ -94,11 +94,29 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
 
     try {
       // במקום לעבור על emptyShifts, נעבור על ההמלצות שנמצאו
-      const assignedEmployees = new Set<string>(); // מעקב אחר עובדים שכבר שובצו
+      const assignedEmployees = new Set<string>(); // מעקב אחר עובדים שכבר שובצו במערכת בכללותה
+      
+      // בדיקה אילו עובדים כבר מוקצים למשמרות במערכת
+      const { data: existingShifts } = await supabase
+        .from('scheduled_shifts')
+        .select('employee_id, shift_date, start_time, end_time')
+        .eq('business_id', businessId)
+        .gte('shift_date', weekStartDate)
+        .not('employee_id', 'is', null);
+      
+      if (existingShifts) {
+        existingShifts.forEach(shift => {
+          if (shift.employee_id) {
+            assignedEmployees.add(shift.employee_id);
+          }
+        });
+      }
+      
+      console.log('👥 עובדים כבר מוקצים למשמרות קיימות:', assignedEmployees.size);
       
       for (const shiftRecommendation of recommendations) {
         if (shiftRecommendation.recommendations.length > 0) {
-          // מציאת המלצה שלא שובצה עדיין
+          // מציאת המלצה שלא שובצה עדיין (לא בכלל למשמרות כלשהן)
           const availableRecommendation = shiftRecommendation.recommendations.find(r => 
             r.matchScore >= 30 && !assignedEmployees.has(r.employeeId)
           );
@@ -155,14 +173,16 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
             const totalRecommendations = allRecommendations.length;
             
             let reason = 'אין עובד מתאים';
-            if (alreadyAssignedCount > 0 && lowScoreCount > 0) {
+            if (totalRecommendations === 0) {
+              reason = 'אין עובדים שהגישו הגשות למשמרת זו';
+            } else if (alreadyAssignedCount > 0 && lowScoreCount > 0) {
               reason = `${alreadyAssignedCount} עובדים כבר שובצו, ${lowScoreCount} עם ציון נמוך מ-30%`;
             } else if (alreadyAssignedCount === totalRecommendations) {
-              reason = `כל ${alreadyAssignedCount} העובדים הזמינים כבר שובצו למשמרות אחרות`;
+              reason = `כל ${alreadyAssignedCount} העובדים הזמינים כבר שובצו למשמרות`;
             } else if (lowScoreCount === totalRecommendations) {
               reason = `${lowScoreCount} עובדים זמינים אבל כולם עם ציון נמוך מ-30%`;
             } else if (alreadyAssignedCount > 0) {
-              reason = `${alreadyAssignedCount} מהעובדים המתאימים כבר שובצו למשמרות אחרות`;
+              reason = `${alreadyAssignedCount} מהעובדים המתאימים כבר שובצו למשמרות`;
             }
             
             console.log(`❌ לא שובץ: משמרת ${shiftRecommendation.shiftTime} - ${reason}`);
@@ -178,6 +198,7 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
             });
           }
         } else {
+          // אין המלצות כלל למשמרת זו
           assignmentResults.push({
             shiftId: shiftRecommendation.shiftId,
             shiftTime: shiftRecommendation.shiftTime,
@@ -185,7 +206,7 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
             employeeName: '',
             matchScore: 0,
             success: false,
-            reason: 'אין עובדים זמינים'
+            reason: 'אין עובדים שהגישו הגשות למשמרת זו'
           });
         }
       }
