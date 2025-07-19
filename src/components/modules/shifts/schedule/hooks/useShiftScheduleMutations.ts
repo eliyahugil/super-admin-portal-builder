@@ -7,35 +7,51 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
   const queryClient = useQueryClient();
   const { logActivity } = useActivityLogger();
 
-  // Check for duplicate shifts before creation
-  const checkForDuplicates = async (shiftData: CreateShiftData) => {
-    console.log('🔍 Checking for duplicates:', shiftData);
+  // Check for overlapping shifts for the same employee
+  const checkForOverlappingShifts = async (shiftData: CreateShiftData) => {
+    console.log('🔍 Checking for overlapping shifts:', shiftData);
+    
+    // Only check if there's an employee assigned
+    if (!shiftData.employee_id) {
+      console.log('✅ No employee assigned, no overlap check needed');
+      return false;
+    }
     
     const { data: existingShifts, error } = await supabase
       .from('scheduled_shifts')
       .select('id, shift_date, start_time, end_time, employee_id, branch_id, is_archived')
       .eq('business_id', businessId)
+      .eq('employee_id', shiftData.employee_id)
       .eq('shift_date', shiftData.shift_date)
-      .eq('start_time', shiftData.start_time)
-      .eq('end_time', shiftData.end_time)
-      .eq('is_archived', false); // רק משמרות לא מוקפאות
+      .eq('is_archived', false);
 
     if (error) {
-      console.error('Error checking for duplicates:', error);
+      console.error('Error checking for overlapping shifts:', error);
       return false;
     }
 
-    console.log('🔍 Found existing shifts:', existingShifts);
+    console.log('🔍 Found existing shifts for employee:', existingShifts);
 
-    // Check for exact duplicates - only if employee AND branch are the same
-    const exactDuplicates = existingShifts?.filter(shift => 
-      shift.employee_id === shiftData.employee_id &&
-      shift.branch_id === shiftData.branch_id &&
-      shift.employee_id !== null // רק אם יש עובד מוקצה
-    );
+    // Check for time overlaps
+    const overlappingShifts = existingShifts?.filter(shift => {
+      const newStart = shiftData.start_time;
+      const newEnd = shiftData.end_time;
+      const existingStart = shift.start_time;
+      const existingEnd = shift.end_time;
+      
+      // Check if times overlap
+      return (
+        // New shift starts during existing shift
+        (newStart >= existingStart && newStart < existingEnd) ||
+        // New shift ends during existing shift  
+        (newEnd > existingStart && newEnd <= existingEnd) ||
+        // New shift completely contains existing shift
+        (newStart <= existingStart && newEnd >= existingEnd)
+      );
+    });
 
-    console.log('🔍 Exact duplicates found:', exactDuplicates);
-    return exactDuplicates && exactDuplicates.length > 0;
+    console.log('🔍 Overlapping shifts found:', overlappingShifts);
+    return overlappingShifts && overlappingShifts.length > 0;
   };
 
   const createShift = useMutation({
@@ -48,17 +64,17 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         throw new Error('Business ID is required');
       }
 
-      // Check for duplicates
-      const isDuplicate = await checkForDuplicates(shiftData);
-      if (isDuplicate) {
-        const errorMsg = `Duplicate shift detected for ${shiftData.shift_date} ${shiftData.start_time}-${shiftData.end_time}`;
+      // Check for overlapping shifts
+      const hasOverlap = await checkForOverlappingShifts(shiftData);
+      if (hasOverlap) {
+        const errorMsg = `Overlapping shift detected for employee ${shiftData.employee_id} on ${shiftData.shift_date} ${shiftData.start_time}-${shiftData.end_time}`;
         console.warn('⚠️', errorMsg);
         
-        // Log the duplicate attempt
+        // Log the overlap attempt
         await logActivity({
-          action: 'duplicate_shift_prevented',
+          action: 'overlapping_shift_prevented',
           target_type: 'shift',
-          target_id: 'duplicate_prevention',
+          target_id: 'overlap_prevention',
           details: {
             shift_date: shiftData.shift_date,
             start_time: shiftData.start_time,
@@ -69,7 +85,7 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
           }
         });
         
-        throw new Error('משמרת זהה כבר קיימת עבור התאריך והשעות הנבחרים');
+        throw new Error('העובד כבר משויך למשמרת חופפת באותו תאריך. לא ניתן לשייך עובד לשתי משמרות חופפות.');
       }
 
       const insertData = {
@@ -146,9 +162,9 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
     }) => {
       console.log('🔄 Updating shift:', shiftId, updates);
 
-      // אם מנסים לשייך עובד, בודק אם יש קונפליקט
+      // אם מנסים לשייך עובד, בודק אם יש חופפות
       if (updates.employee_id && businessId) {
-        console.log('🔍 Checking for employee assignment conflicts...');
+        console.log('🔍 Checking for overlapping shifts on update...');
         
         // קבל פרטי המשמרת הנוכחית
         const { data: currentShift, error: shiftError } = await supabase
@@ -162,42 +178,60 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
           throw shiftError;
         }
 
-        // בדיקה לקונפליקטים - עובד באותו יום באותו סניף
-        const { data: conflictingShifts, error: conflictError } = await supabase
+        // Use the current times or the updated times
+        const shiftDate = currentShift.shift_date;
+        const startTime = updates.start_time || currentShift.start_time;
+        const endTime = updates.end_time || currentShift.end_time;
+
+        // בדיקה לחופפות זמן עם משמרות אחרות של אותו עובד
+        const { data: overlappingShifts, error: conflictError } = await supabase
           .from('scheduled_shifts')
           .select('id, shift_date, start_time, end_time, branch_id')
           .eq('business_id', businessId)
           .eq('employee_id', updates.employee_id)
-          .eq('shift_date', currentShift.shift_date)
-          .eq('branch_id', currentShift.branch_id)
+          .eq('shift_date', shiftDate)
           .eq('is_archived', false)
           .neq('id', shiftId); // לא כולל את המשמרת הנוכחית
 
         if (conflictError) {
-          console.error('❌ Error checking conflicts:', conflictError);
+          console.error('❌ Error checking overlaps:', conflictError);
           throw conflictError;
         }
 
-        if (conflictingShifts && conflictingShifts.length > 0) {
-          console.warn('⚠️ Employee assignment conflict detected:', {
+        // Check for time overlaps
+        const timeOverlaps = overlappingShifts?.filter(shift => {
+          // Check if times overlap
+          return (
+            // New shift starts during existing shift
+            (startTime >= shift.start_time && startTime < shift.end_time) ||
+            // New shift ends during existing shift  
+            (endTime > shift.start_time && endTime <= shift.end_time) ||
+            // New shift completely contains existing shift
+            (startTime <= shift.start_time && endTime >= shift.end_time)
+          );
+        });
+
+        if (timeOverlaps && timeOverlaps.length > 0) {
+          console.warn('⚠️ Employee overlapping shift detected:', {
             employeeId: updates.employee_id,
-            date: currentShift.shift_date,
-            branchId: currentShift.branch_id,
-            conflictingShifts
+            date: shiftDate,
+            newTime: `${startTime}-${endTime}`,
+            overlappingShifts: timeOverlaps
           });
 
           // אם אין קוד מנהל או הקוד שגוי
           if (!managerOverrideCode || managerOverrideCode !== '130898') {
             // רישום התראה בלוג הפעילות
             await logActivity({
-              action: 'employee_double_assignment_blocked',
+              action: 'overlapping_shift_update_blocked',
               target_type: 'shift',
               target_id: shiftId,
               details: {
                 employee_id: updates.employee_id,
-                shift_date: currentShift.shift_date,
-                branch_id: currentShift.branch_id,
-                conflicting_shifts: conflictingShifts,
+                shift_date: shiftDate,
+                new_start_time: startTime,
+                new_end_time: endTime,
+                overlapping_shifts: timeOverlaps,
                 attempted_at: new Date().toISOString(),
                 warning_level: 'high',
                 override_attempted: !!managerOverrideCode,
@@ -205,27 +239,28 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
               }
             });
 
-            const conflictTimes = conflictingShifts.map(s => `${s.start_time}-${s.end_time}`).join(', ');
-            const error = new Error(`⚠️ אזהרה: העובד כבר משויך למשמרת באותו יום באותו סניף (${conflictTimes}). לא ניתן לשייך עובד לשתי משמרות באותו יום באותו סניף.`);
+            const overlapTimes = timeOverlaps.map(s => `${s.start_time}-${s.end_time}`).join(', ');
+            const error = new Error(`⚠️ אזהרה: העובד כבר משויך למשמרת חופפת באותו תאריך (${overlapTimes}). לא ניתן לשייך עובד לשתי משמרות חופפות.`);
             (error as any).code = 'MANAGER_OVERRIDE_REQUIRED';
             (error as any).conflictData = {
-              conflictingShifts,
+              overlappingShifts: timeOverlaps,
               currentShift,
               employeeId: updates.employee_id
             };
             throw error;
           } else {
             // קוד מנהל נכון - אישור עקיפה
-            console.log('✅ Manager override code accepted - allowing double assignment');
+            console.log('✅ Manager override code accepted - allowing overlapping assignment');
             await logActivity({
-              action: 'employee_double_assignment_approved_with_override',
+              action: 'overlapping_shift_approved_with_override',
               target_type: 'shift',
               target_id: shiftId,
               details: {
                 employee_id: updates.employee_id,
-                shift_date: currentShift.shift_date,
-                branch_id: currentShift.branch_id,
-                conflicting_shifts: conflictingShifts,
+                shift_date: shiftDate,
+                new_start_time: startTime,
+                new_end_time: endTime,
+                overlapping_shifts: timeOverlaps,
                 approved_at: new Date().toISOString(),
                 warning_level: 'critical',
                 override_used: true,
