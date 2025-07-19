@@ -301,7 +301,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   // Helper function removed - submissions system no longer exists
 
   return (
-    <div className={`w-full ${isMobile ? 'p-2' : 'p-6'} space-y-2 lg:space-y-6 h-full flex flex-col overflow-hidden bg-white`} dir="rtl">
+    <div className={`w-full ${isMobile ? 'p-2' : 'p-6'} space-y-2 lg:space-y-6 h-full flex flex-col bg-white`} dir="rtl">
       {/* Mobile optimized header */}
       <div className="flex flex-col space-y-2 bg-white">
         <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center justify-between'} bg-white`}>
@@ -458,8 +458,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       )}
 
       {/* Main Content with Mobile-Optimized Tabs - Fixed at top */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white">
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden bg-white">
+      <div className="flex-1 flex flex-col min-h-0 bg-white">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col bg-white">
           <div className="sticky top-0 z-10 bg-white border-b">
             <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3 h-10 text-sm' : 'grid-cols-3 h-12'} bg-gray-50 rounded-none border-0`}>
               <TabsTrigger 
@@ -483,8 +483,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             </TabsList>
           </div>
           
-          <TabsContent value="schedule" className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white">
-            <Card className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white border shadow-sm">
+          <TabsContent value="schedule" className="flex-1 flex flex-col min-h-0 bg-white">
+            <Card className="flex-1 flex flex-col min-h-0 bg-white border shadow-sm">
               <CardHeader className={`${isMobile ? 'pb-1 px-2 pt-2' : 'pb-3'} bg-white`}>
                 <ScheduleHeader
                   currentDate={currentDate}
@@ -495,7 +495,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                 />
               </CardHeader>
               
-              <CardContent className={`flex-1 flex flex-col min-h-0 overflow-hidden ${isMobile ? 'p-0' : 'p-0'}`}>
+              <CardContent className={`flex-1 flex flex-col min-h-0 ${isMobile ? 'p-0' : 'p-0'}`}>
                 {isLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="text-center">
@@ -562,7 +562,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             </Card>
           </TabsContent>
           
-          <TabsContent value="parallel" className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <TabsContent value="parallel" className="flex-1 flex flex-col min-h-0">
             <ParallelScheduleView
               shifts={shifts}
               employees={employees}
@@ -584,7 +584,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             />
           </TabsContent>
           
-          <TabsContent value="advanced" className="flex-1 w-full overflow-hidden">
+          <TabsContent value="advanced" className="flex-1 w-full">
             <AdvancedSchedulingDashboard />
           </TabsContent>
         </Tabs>

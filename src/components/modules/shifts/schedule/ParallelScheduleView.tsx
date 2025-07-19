@@ -178,7 +178,7 @@ export const ParallelScheduleView: React.FC<ShiftScheduleViewProps> = (props) =>
   };
 
   return (
-    <div className="flex flex-col space-y-4 h-full overflow-hidden bg-white" dir="rtl">
+    <div className="flex flex-col space-y-4 h-full bg-white" dir="rtl">
       {/* בקרות בחירת תצוגה */}
       {!maximizedView && (
         <Card className="flex-shrink-0 bg-white border shadow-sm">
@@ -221,7 +221,7 @@ export const ParallelScheduleView: React.FC<ShiftScheduleViewProps> = (props) =>
       )}
 
       {/* תצוגות מקביליות או ממוקסמת */}
-      <div className="flex-1 min-h-0 overflow-hidden bg-white">
+      <div className="flex-1 min-h-0 bg-white">
         {maximizedView ? (
           <Card className="h-full flex flex-col bg-white border shadow-sm">
             <CardHeader className="pb-2 flex-shrink-0 bg-white">
@@ -239,7 +239,7 @@ export const ParallelScheduleView: React.FC<ShiftScheduleViewProps> = (props) =>
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0 overflow-hidden p-0 bg-white">
+            <CardContent className="flex-1 min-h-0 p-0 bg-white">
               <CompactShiftView
                 {...props}
                 viewType={maximizedView as 'week' | 'month'}
@@ -255,7 +255,7 @@ export const ParallelScheduleView: React.FC<ShiftScheduleViewProps> = (props) =>
               const Icon = view.icon;
 
               return (
-                <Card key={viewId} className="flex flex-col min-h-0 overflow-hidden bg-white border shadow-sm">
+                <Card key={viewId} className="flex flex-col min-h-0 bg-white border shadow-sm">
                   <CardHeader className="pb-2 flex-shrink-0 bg-white">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -282,7 +282,7 @@ export const ParallelScheduleView: React.FC<ShiftScheduleViewProps> = (props) =>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="flex-1 min-h-0 overflow-hidden p-0 bg-white">
+                  <CardContent className="flex-1 min-h-0 p-0 bg-white">
                     <CompactShiftView
                       {...props}
                       viewType={viewId as 'week' | 'month'}
