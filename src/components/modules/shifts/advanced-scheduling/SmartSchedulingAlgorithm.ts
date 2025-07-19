@@ -57,12 +57,12 @@ export class SmartSchedulingAlgorithm {
   async loadData(weekStartDate: string, weekEndDate: string) {
     console.log('🔄 טוען נתונים לאלגוריתם החכם...');
     
-    // טעינת עובדים
+    // טעינת עובדים עם הגדרות אופציונליות (לא חובה)
     const { data: employeesData, error: employeesError } = await supabase
       .from('employees')
       .select(`
         *,
-        employee_branch_assignments!inner(
+        employee_branch_assignments(
           branch_id,
           role_name,
           available_days,
@@ -76,6 +76,8 @@ export class SmartSchedulingAlgorithm {
 
     if (employeesError) throw employeesError;
     this.employees = employeesData || [];
+    
+    console.log(`📊 נטענו ${this.employees.length} עובדים מהעסק (כולל אלה ללא הגדרות סניף)`);
 
     // טעינת משמרות נדרשות
     const { data: shiftsData, error: shiftsError } = await supabase
@@ -106,7 +108,7 @@ export class SmartSchedulingAlgorithm {
     // בניית העדפות עובדים
     this.buildEmployeePreferences();
     
-    console.log(`✅ נטענו ${this.employees.length} עובדים ו-${this.shifts.length} משמרות`);
+    console.log(`✅ נטענו ${this.employees.length} עובדים ו-${this.shifts.length} משמרות נדרשות`);
   }
 
   private calculateShiftDate(weekStart: string, dayOfWeek: number): string {
