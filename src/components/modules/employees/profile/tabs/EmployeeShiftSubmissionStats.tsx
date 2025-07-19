@@ -188,7 +188,13 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
     const pending = submissionsData.filter(s => s.status === 'pending' || s.status === 'submitted').length;
     const rejected = submissionsData.filter(s => s.status === 'rejected').length;
     
-    console.log('📊 Status counts:', { approved, pending, rejected });
+    console.log('📊 Status counts:', { 
+      approved, 
+      pending, 
+      rejected,
+      totalSubmissions: submissionsData.length,
+      allStatuses: submissionsData.map(s => s.status)
+    });
     
     // Calculate total valid unique shifts requested - group by date and overlapping times
     const totalShifts = submissionsData.reduce((acc, submission) => {
