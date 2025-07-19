@@ -84,14 +84,23 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
       }
 
       submissionShifts.forEach((shift: any) => {
-        // Check if this shift matches our target date, time and branch
-        if (shift.date === targetDateStr && 
-            currentShift && 
-            shift.start_time === currentShift.start_time &&
-            shift.end_time === currentShift.end_time &&
-            shift.branch_preference === currentShift.branch_name) {
+        // Check if this shift matches our target date and has overlapping time window in the same branch
+        if (shift.date === targetDateStr && currentShift) {
+          // Check if the shift is in the same branch (compare branch name or find matching branch)
+          const isSameBranch = shift.branch_preference === currentShift.branch_name ||
+            (currentShift.branch_id && shifts.find(s => s.branch_id === currentShift.branch_id)?.branch_name === shift.branch_preference);
           
-          // Check if employee has conflict with other scheduled shifts
+          // Check if the submitted shift time overlaps with or is contained within the current shift time
+          const submissionStart = shift.start_time;
+          const submissionEnd = shift.end_time;
+          const currentStart = currentShift.start_time;
+          const currentEnd = currentShift.end_time;
+          
+          // Time overlap logic: check if submission time window overlaps with current shift
+          const hasTimeOverlap = (submissionStart <= currentEnd && submissionEnd >= currentStart);
+          
+          if (isSameBranch && hasTimeOverlap) {
+            // Check if employee has conflict with other scheduled shifts
           const hasConflict = shifts.some(scheduledShift => {
             const shiftDate = scheduledShift.shift_date;
             return shiftDate === targetDateStr &&
@@ -107,7 +116,8 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
           // Check if employee is already assigned to this shift
           const isAssigned = currentShift.employee_id === submission.employees.id;
 
-          results.push({ submission, shift, hasConflict, isAssigned });
+            results.push({ submission, shift, hasConflict, isAssigned });
+          }
         }
       });
     });
