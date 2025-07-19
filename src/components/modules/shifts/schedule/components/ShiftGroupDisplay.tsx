@@ -115,24 +115,26 @@ export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
           <div className="space-y-2">
             {shiftsByBranch[branchName]
               .sort((a, b) => {
-                // מיון מדויק לפי שעת התחלה ואז שעת סיום
-                const timeA = (a.start_time || '00:00').split(':').map(n => parseInt(n));
-                const timeB = (b.start_time || '00:00').split(':').map(n => parseInt(n));
+                // פונקציה לחילוץ שעה ודקות
+                const parseTime = (timeStr: string) => {
+                  if (!timeStr) return { hours: 0, minutes: 0, totalMinutes: 0 };
+                  const [hours, minutes] = timeStr.split(':').map(num => parseInt(num) || 0);
+                  return { hours, minutes, totalMinutes: hours * 60 + minutes };
+                };
+
+                const startA = parseTime(a.start_time || '00:00');
+                const startB = parseTime(b.start_time || '00:00');
                 
-                const minutesA = timeA[0] * 60 + (timeA[1] || 0);
-                const minutesB = timeB[0] * 60 + (timeB[1] || 0);
-                
-                if (minutesA !== minutesB) {
-                  return minutesA - minutesB;
+                // מיון לפי שעת התחלה קודם
+                if (startA.totalMinutes !== startB.totalMinutes) {
+                  return startA.totalMinutes - startB.totalMinutes;
                 }
                 
-                // אם השעות זהות, מיין לפי שעת סיום
-                const endTimeA = (a.end_time || '23:59').split(':').map(n => parseInt(n));
-                const endTimeB = (b.end_time || '23:59').split(':').map(n => parseInt(n));
-                const endMinutesA = endTimeA[0] * 60 + (endTimeA[1] || 0);
-                const endMinutesB = endTimeB[0] * 60 + (endTimeB[1] || 0);
+                // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (המשמרת הקצרה יותר קודם)
+                const endA = parseTime(a.end_time || '23:59');
+                const endB = parseTime(b.end_time || '23:59');
                 
-                return endMinutesA - endMinutesB;
+                return endA.totalMinutes - endB.totalMinutes;
               })
               .map((shift) => (
                 <ShiftDisplayCard
