@@ -3425,6 +3425,7 @@ export type Database = {
           priority: string | null
           required_employees: number | null
           role: string | null
+          shift_assignments: Json | null
           shift_date: string
           shift_template_id: string | null
           start_time: string | null
@@ -3445,6 +3446,7 @@ export type Database = {
           priority?: string | null
           required_employees?: number | null
           role?: string | null
+          shift_assignments?: Json | null
           shift_date: string
           shift_template_id?: string | null
           start_time?: string | null
@@ -3465,6 +3467,7 @@ export type Database = {
           priority?: string | null
           required_employees?: number | null
           role?: string | null
+          shift_assignments?: Json | null
           shift_date?: string
           shift_template_id?: string | null
           start_time?: string | null

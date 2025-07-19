@@ -272,9 +272,26 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       }
 
       if (updates.required_employees !== undefined) {
-        const newValue = Math.max(1, parseInt(String(updates.required_employees)) || 1);
-        updateData.required_employees = newValue;
-        console.log('🔢 Original value:', updates.required_employees, 'New value:', newValue, 'Type:', typeof newValue);
+        const newRequiredCount = Math.max(1, parseInt(String(updates.required_employees)) || 1);
+        updateData.required_employees = newRequiredCount;
+        
+        // יצירת הקצאות אוטומטית לפי מספר העובדים הנדרש
+        const currentAssignments = updateData.shift_assignments || [];
+        const assignments = [];
+        
+        for (let i = 0; i < newRequiredCount; i++) {
+          const existingAssignment = currentAssignments[i];
+          assignments.push({
+            id: existingAssignment?.id || crypto.randomUUID(),
+            type: i === 0 ? 'חובה' : 'תגבור', // הראשון חובה, השאר תגבור
+            employee_id: existingAssignment?.employee_id || null,
+            position: i + 1,
+            is_required: i === 0 // הראשון חובה
+          });
+        }
+        
+        updateData.shift_assignments = assignments;
+        console.log('🔢 Created assignments:', assignments);
       }
 
       if (updates.priority !== undefined) {
