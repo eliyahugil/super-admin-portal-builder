@@ -23,10 +23,14 @@ export const ScheduleStats: React.FC<ScheduleStatsProps> = ({ shifts, isMobile, 
   const pendingShifts = shifts.filter(s => s.status === 'pending').length;
   const assignedShifts = shifts.filter(s => s.employee_id && s.employee_id !== '').length;
   
-  // Calculate submission statistics
+  // Calculate submission statistics from actual submissions data
   const totalSubmissions = pendingSubmissions.length;
+  
+  // Calculate total shift requests from submissions properly
   const totalShiftRequests = pendingSubmissions.reduce((total, submission) => {
-    return total + (submission.shift_requests?.length || 0);
+    // Each submission has a shifts array with requested shifts
+    const shiftsInSubmission = submission.shifts || [];
+    return total + shiftsInSubmission.length;
   }, 0);
 
   console.log('📊 ScheduleStats calculated:', {
@@ -35,7 +39,12 @@ export const ScheduleStats: React.FC<ScheduleStatsProps> = ({ shifts, isMobile, 
     pendingShifts,
     assignedShifts,
     totalSubmissions,
-    totalShiftRequests
+    totalShiftRequests,
+    submissionDetails: pendingSubmissions.map(s => ({
+      id: s.id,
+      shiftsCount: (s.shifts || []).length,
+      shifts: s.shifts
+    }))
   });
 
   const stats = [
