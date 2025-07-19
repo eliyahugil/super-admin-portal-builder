@@ -166,24 +166,28 @@ export const GroupedShiftDisplay: React.FC<GroupedShiftDisplayProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     {shiftsInSlot
                       .sort((a, b) => {
-                        // מיון לפי שעת התחלה ואז שעת סיום
-                        const timeA = a.start_time.split(':').map(n => parseInt(n));
-                        const timeB = b.start_time.split(':').map(n => parseInt(n));
+                        // פונקציה משופרת למיון לפי שעות
+                        const parseTime = (timeStr: string) => {
+                          if (!timeStr) return { hours: 0, minutes: 0, totalMinutes: 0 };
+                          const parts = timeStr.split(':');
+                          const hours = parseInt(parts[0]) || 0;
+                          const minutes = parseInt(parts[1]) || 0;
+                          return { hours, minutes, totalMinutes: hours * 60 + minutes };
+                        };
+
+                        const startA = parseTime(a.start_time || '00:00');
+                        const startB = parseTime(b.start_time || '00:00');
                         
-                        const minutesA = timeA[0] * 60 + timeA[1];
-                        const minutesB = timeB[0] * 60 + timeB[1];
-                        
-                        if (minutesA !== minutesB) {
-                          return minutesA - minutesB;
+                        // מיון לפי שעת התחלה קודם
+                        if (startA.totalMinutes !== startB.totalMinutes) {
+                          return startA.totalMinutes - startB.totalMinutes;
                         }
                         
-                        // אם השעות זהות, מיין לפי שעת סיום
-                        const endTimeA = a.end_time.split(':').map(n => parseInt(n));
-                        const endTimeB = b.end_time.split(':').map(n => parseInt(n));
-                        const endMinutesA = endTimeA[0] * 60 + endTimeA[1];
-                        const endMinutesB = endTimeB[0] * 60 + endTimeB[1];
+                        // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (המשמרת הקצרה יותר קודם)
+                        const endA = parseTime(a.end_time || '23:59');
+                        const endB = parseTime(b.end_time || '23:59');
                         
-                        return endMinutesA - endMinutesB;
+                        return endA.totalMinutes - endB.totalMinutes;
                       })
                       .map(shift => {
                         const { hasSubmissions, submissionsCount } = getShiftSubmissions(shift);

@@ -126,8 +126,25 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
       const branchComparison = (a.branch_name || '').localeCompare(b.branch_name || '', 'he');
       if (branchComparison !== 0) return branchComparison;
       
-      // Then sort by start time
-      return (a.start_time || '').localeCompare(b.start_time || '');
+      // Then sort by start time using proper time parsing
+      const parseTime = (timeStr: string) => {
+        if (!timeStr) return 0;
+        const [hours, minutes] = timeStr.split(':').map(num => parseInt(num) || 0);
+        return hours * 60 + minutes;
+      };
+
+      const startA = parseTime(a.start_time || '00:00');
+      const startB = parseTime(b.start_time || '00:00');
+      
+      if (startA !== startB) {
+        return startA - startB;
+      }
+      
+      // If start times are equal, sort by end time (shorter shifts first)
+      const endA = parseTime(a.end_time || '23:59');
+      const endB = parseTime(b.end_time || '23:59');
+      
+      return endA - endB;
     });
   };
 
