@@ -237,24 +237,24 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
           {results.length === 0 ? (
             <div className="text-center space-y-4">
               <p className="text-gray-600">
-                המערכת תשבץ אוטומטית את העובד הטוב ביותר לכל משמרת על סמך:
+                המערכת תציג המלצות לכל העובדים ותשבץ אוטומטית את המתאימים ביותר:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  העדפות סוג משמרת (בוקר/ערב)
+                  סוג משמרת (50 נקודות)
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  זמינות בימים
+                  סניף מוקצה (35 נקודות)
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  השיוך לסניף
+                  זמינות בימים (20 נקודות)
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  מאזן שעות שבועיות
+                  מאזן שעות שבועיות (10-15 נקודות)
                 </div>
               </div>
               
@@ -288,6 +288,77 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
                   )}
                 </Button>
               </div>
+              
+              {/* הצגת כל ההמלצות */}
+              {recommendations && recommendations.length > 0 && (
+                <div className="mt-6 space-y-4">
+                  <h3 className="font-bold text-lg">כל ההמלצות לכל המשמרות:</h3>
+                  
+                  {recommendations.map((shiftRec, index) => (
+                    <Card key={index} className="border-2">
+                      <CardContent className="p-4">
+                        <div className="mb-3 pb-2 border-b border-gray-200">
+                          <h4 className="font-bold text-blue-600 text-lg">
+                            משמרת: {shiftRec.shiftTime}
+                          </h4>
+                          <p className="text-sm text-gray-600">תאריך: {shiftRec.date}</p>
+                        </div>
+                        
+                        {shiftRec.recommendations.length > 0 ? (
+                          <div className="space-y-2 max-h-60 overflow-y-auto">
+                            {shiftRec.recommendations.map((emp, empIndex) => (
+                              <div 
+                                key={empIndex} 
+                                className={`p-3 rounded border ${
+                                  emp.matchScore >= 70 
+                                    ? 'bg-green-50 border-green-300' 
+                                    : emp.matchScore >= 50
+                                    ? 'bg-yellow-50 border-yellow-300'
+                                    : 'bg-red-50 border-red-300'
+                                }`}
+                              >
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="font-medium text-gray-900">
+                                    {emp.employeeName}
+                                  </div>
+                                  <Badge 
+                                    className={
+                                      emp.matchScore >= 70 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : emp.matchScore >= 50
+                                        ? 'bg-yellow-100 text-yellow-800'
+                                        : 'bg-red-100 text-red-800'
+                                    }
+                                  >
+                                    {emp.matchScore}%
+                                  </Badge>
+                                </div>
+                                
+                                <div className="text-xs space-y-1">
+                                  {emp.reasons.map((reason, reasonIndex) => (
+                                    <div key={reasonIndex} className="text-green-700">
+                                      {reason}
+                                    </div>
+                                  ))}
+                                  {emp.warnings.map((warning, warningIndex) => (
+                                    <div key={warningIndex} className="text-red-600">
+                                      {warning}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center text-gray-500 py-4">
+                            אין עובדים זמינים למשמרת זו
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             /* Results */
