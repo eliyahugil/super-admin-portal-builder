@@ -16,7 +16,7 @@ interface PendingSubmission {
   week_start_date: string;
   week_end_date: string;
   notes?: string;
-  employee?: {
+  employees?: {
     first_name: string;
     last_name: string;
     business_id: string;
@@ -82,8 +82,14 @@ export const PendingSubmissionsDialog: React.FC<PendingSubmissionsDialogProps> =
         <div className="space-y-4">
           {submissions.map((submission) => {
             const shifts = parseShifts(submission.shifts);
-            const employeeName = submission.employee 
-              ? `${submission.employee.first_name} ${submission.employee.last_name}`
+            console.log('🔍 PendingSubmissionsDialog submission:', {
+              id: submission.id,
+              employee_id: submission.employee_id,
+              employees: submission.employees,
+              hasEmployeeData: !!submission.employees
+            });
+            const employeeName = submission.employees 
+              ? `${submission.employees.first_name} ${submission.employees.last_name}`
               : 'עובד לא ידוע';
 
             return (
@@ -98,12 +104,12 @@ export const PendingSubmissionsDialog: React.FC<PendingSubmissionsDialogProps> =
                       <Badge variant="outline" className="text-xs">
                         {formatDate(submission.week_start_date)} - {formatDate(submission.week_end_date)}
                       </Badge>
-                      {sendWhatsApp && submission.employee?.phone && (
+                      {sendWhatsApp && submission.employees?.phone && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => sendWhatsApp(
-                            submission.employee?.phone,
+                            submission.employees?.phone,
                             employeeName,
                             submission.week_start_date,
                             submission.week_end_date
