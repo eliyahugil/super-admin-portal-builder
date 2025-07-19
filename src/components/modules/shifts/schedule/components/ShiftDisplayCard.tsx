@@ -69,6 +69,12 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
   };
 
   const getShiftTypeColor = () => {
+    // אם המשמרת מאוישת (יש עובד מוקצה), החזר צבע צהוב
+    if (shift.employee_id) {
+      return 'border-l-4 border-l-yellow-500 bg-gradient-to-r from-yellow-50 via-yellow-25 to-white hover:from-yellow-100 border-yellow-300';
+    }
+    
+    // אם המשמרת לא מאוישת, השתמש בצבעים לפי סוג המשמרת
     switch (shiftType) {
       case 'morning':
         return 'border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50 via-amber-25 to-white hover:from-amber-100';
@@ -120,10 +126,17 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
           </div>
         )}
         
-        <div className="flex items-center gap-2">
-          <User className="h-4 w-4" />
-          <span className="font-medium">עובד:</span>
-          <span>{shift.employee_id ? getEmployeeName(shift.employee_id) : 'לא מוקצה'}</span>
+        <div className={`flex items-center gap-2 ${shift.employee_id ? 'p-2 bg-yellow-50 rounded border border-yellow-200' : ''}`}>
+          <User className={`h-4 w-4 ${shift.employee_id ? 'text-yellow-700' : ''}`} />
+          <span className={`font-medium ${shift.employee_id ? 'text-yellow-800' : ''}`}>עובד:</span>
+          <span className={shift.employee_id ? 'text-yellow-800 font-semibold' : ''}>
+            {shift.employee_id ? getEmployeeName(shift.employee_id) : 'לא מוקצה'}
+          </span>
+          {shift.employee_id && (
+            <Badge className="bg-yellow-600 text-white text-xs">
+              ✓ מאויש
+            </Badge>
+          )}
         </div>
         
         {shift.role && (
@@ -241,7 +254,7 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
       {/* עובד מוקצה או לא מוקצה - שלישי */}
         <div className="flex items-center justify-center">
           {shift.employee_id ? (
-            <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 px-3 py-1 shadow-sm">
+            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-300 px-3 py-1 shadow-sm font-medium">
               <User className="h-3 w-3 ml-1" />
               {getEmployeeName(shift.employee_id)}
             </Badge>

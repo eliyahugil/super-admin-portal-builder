@@ -397,6 +397,41 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       {/* Compact Stats Cards for mobile */}
       <ScheduleStats shifts={shifts} isMobile={isMobile} />
 
+      {/* Quick Branch Filter - Always visible for easy access */}
+      <div className="bg-white border rounded-lg p-3 shadow-sm">
+        <div className="flex items-center gap-4 flex-wrap">
+          <span className="text-sm font-medium text-gray-700">סינון מהיר לפי סניף:</span>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => updateFilters({ ...filters, branch: 'all' })}
+              className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                filters.branch === 'all' 
+                  ? 'bg-blue-600 text-white shadow-sm' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              כל הסניפים ({shifts.length})
+            </button>
+            {branches.map(branch => {
+              const branchShiftsCount = shifts.filter(s => s.branch_id === branch.id).length;
+              return (
+                <button
+                  key={branch.id}
+                  onClick={() => updateFilters({ ...filters, branch: branch.id })}
+                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    filters.branch === branch.id 
+                      ? 'bg-blue-600 text-white shadow-sm' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {branch.name} ({branchShiftsCount})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Compact Filters for mobile */}
       {showFilters && (
         <div className={isMobile ? 'pb-2' : ''}>
