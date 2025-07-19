@@ -294,6 +294,12 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         console.log('🔢 Created assignments:', assignments);
       }
 
+      // שמירת הקצאות עובדים כשמעדכנים ידנית
+      if (updates.shift_assignments !== undefined) {
+        updateData.shift_assignments = updates.shift_assignments;
+        console.log('💼 Updating shift assignments:', updates.shift_assignments);
+      }
+
       if (updates.priority !== undefined) {
         updateData.priority = updates.priority || 'normal';
         console.log('🔥 Setting priority to:', updateData.priority);

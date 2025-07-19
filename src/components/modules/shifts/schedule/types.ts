@@ -42,6 +42,13 @@ export interface ShiftScheduleData {
   is_archived: boolean;
   required_employees?: number;
   priority?: 'critical' | 'normal' | 'backup';
+  shift_assignments?: Array<{
+    id: string;
+    type: 'חובה' | 'תגבור';
+    employee_id: string | null;
+    position: number;
+    is_required: boolean;
+  }>;
   created_at: string;
   updated_at: string;
   branch_name?: string;
@@ -50,7 +57,7 @@ export interface ShiftScheduleData {
 
 export type ScheduleView = 'week' | 'month' | 'year';
 
-export type CreateShiftData = Pick<ShiftScheduleData, 'shift_date' | 'start_time' | 'end_time' | 'employee_id' | 'branch_id' | 'role' | 'notes' | 'status' | 'shift_template_id' | 'required_employees' | 'priority'>;
+export type CreateShiftData = Pick<ShiftScheduleData, 'shift_date' | 'start_time' | 'end_time' | 'employee_id' | 'branch_id' | 'role' | 'notes' | 'status' | 'shift_template_id' | 'required_employees' | 'priority' | 'shift_assignments'>;
 
 export interface ScheduleFiltersType {
   status: 'all' | 'pending' | 'approved' | 'rejected' | 'completed';
