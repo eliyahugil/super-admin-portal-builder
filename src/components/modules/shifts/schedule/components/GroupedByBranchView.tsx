@@ -107,11 +107,11 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
             return startA - startB;
           }
           
-          // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (הקצרה קודם)
+          // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (הארוכה קודם)
           const endA = parseTime(a.end_time || '23:59');
           const endB = parseTime(b.end_time || '23:59');
           
-          return endA - endB;
+          return endB - endA; // הארוכה קודם
         });
       });
     });
