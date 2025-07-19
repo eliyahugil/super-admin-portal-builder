@@ -52,8 +52,6 @@ export const createEmployeesMenuItems = (business: { id: string } | undefined): 
       moduleKey: 'shift_management',
       subItems: [
         { path: moduleRoutes.shifts.submission, label: 'הגשת משמרות', icon: Send, moduleKey: 'shift_management' },
-        { path: moduleRoutes.shifts.requests, label: 'בקשות משמרת', icon: CheckSquare, moduleKey: 'shift_management' },
-        { path: moduleRoutes.shifts.approval, label: 'אישור משמרות', icon: UserCheck, moduleKey: 'shift_management' },
         { path: moduleRoutes.shifts.schedule, label: 'לוח משמרות', icon: Calendar, moduleKey: 'shift_management' },
         { path: moduleRoutes.shifts.admin, label: 'כלי מנהל', icon: Settings, moduleKey: 'shift_management' },
       ]
