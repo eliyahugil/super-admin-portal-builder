@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Clock, User, Plus, FileText, Users } from 'lucide-react';
+import { ScheduleStats } from './ScheduleStats';
 
 import type { ShiftScheduleData, Employee, Branch } from '../types';
 
@@ -213,6 +214,9 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
           {branches.length} סניפים, {shifts.length} משמרות
         </Badge>
       </div>
+
+      {/* Statistics Panel */}
+      <ScheduleStats shifts={shifts} isMobile={false} />
 
       {/* Headers with days */}
       <div className="grid grid-cols-8 gap-2 mb-4">
