@@ -155,9 +155,8 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
     return format(date, 'dd/MM/yyyy', { locale: he });
   };
 
-  if (relevantShifts.length === 0) {
-    return <>{children}</>;
-  }
+  // Always show the popover, even if no relevant shifts exist
+  const hasRelevantSubmissions = relevantShifts.length > 0;
 
   return (
     <Popover open={isOpen} onOpenChange={onOpenChange}>
@@ -180,7 +179,14 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 max-h-96 overflow-y-auto">
-            {relevantShifts.map(({ submission, shift, hasConflict, isAssigned }, index) => (
+            {!hasRelevantSubmissions ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">אין הגשות זמינות למשמרת זו</p>
+                <p className="text-xs mt-1">הגשות יוצגו כאן אם יהיו זמינות</p>
+              </div>
+            ) : (
+              relevantShifts.map(({ submission, shift, hasConflict, isAssigned }, index) => (
               <div 
                 key={`${submission.id}-${index}`}
                 className={`border rounded-lg p-3 space-y-2 transition-colors ${
@@ -274,7 +280,8 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
                   )}
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
       </PopoverContent>
