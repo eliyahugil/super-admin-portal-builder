@@ -166,7 +166,7 @@ export const GroupedShiftDisplay: React.FC<GroupedShiftDisplayProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     {shiftsInSlot
                       .sort((a, b) => {
-                        // פונקציה משופרת למיון לפי שעות
+                        // פונקציה למיון לפי שעות
                         const parseTime = (timeStr: string) => {
                           if (!timeStr) return { hours: 0, minutes: 0, totalMinutes: 0 };
                           const parts = timeStr.split(':');
@@ -183,11 +183,11 @@ export const GroupedShiftDisplay: React.FC<GroupedShiftDisplayProps> = ({
                           return startA.totalMinutes - startB.totalMinutes;
                         }
                         
-                        // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (המשמרת הארוכה יותר קודם - חובה עד 16:00 לפני תגבור עד 14:00)
+                        // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (הקצרה קודם)
                         const endA = parseTime(a.end_time || '23:59');
                         const endB = parseTime(b.end_time || '23:59');
                         
-                        return endB.totalMinutes - endA.totalMinutes; // הפוך - הארוכה קודם
+                        return endA.totalMinutes - endB.totalMinutes;
                       })
                       .map(shift => {
                         const { hasSubmissions, submissionsCount } = getShiftSubmissions(shift);
