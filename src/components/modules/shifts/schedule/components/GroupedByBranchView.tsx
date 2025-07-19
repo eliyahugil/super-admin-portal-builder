@@ -245,7 +245,7 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
       </div>
 
       {/* Statistics Panel */}
-      <ScheduleStats shifts={shifts} isMobile={false} />
+      <ScheduleStats shifts={shifts} isMobile={false} pendingSubmissions={pendingSubmissions} />
 
       {/* Headers with days */}
       <div className="grid grid-cols-8 gap-2 mb-4">

@@ -1,19 +1,26 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Users, CheckCircle, AlertCircle } from 'lucide-react';
+import { Clock, Users, CheckCircle, AlertCircle, FileText, UserCheck } from 'lucide-react';
 import type { ShiftScheduleData } from '../types';
 
 interface ScheduleStatsProps {
   shifts: ShiftScheduleData[];
   isMobile: boolean;
+  pendingSubmissions?: any[];
 }
 
-export const ScheduleStats: React.FC<ScheduleStatsProps> = ({ shifts, isMobile }) => {
+export const ScheduleStats: React.FC<ScheduleStatsProps> = ({ shifts, isMobile, pendingSubmissions = [] }) => {
   const totalShifts = shifts.length;
   const approvedShifts = shifts.filter(s => s.status === 'approved').length;
   const pendingShifts = shifts.filter(s => s.status === 'pending').length;
   const assignedShifts = shifts.filter(s => s.employee_id && s.employee_id !== '').length;
+  
+  // Calculate submission statistics
+  const totalSubmissions = pendingSubmissions.length;
+  const totalShiftRequests = pendingSubmissions.reduce((total, submission) => {
+    return total + (submission.shift_requests?.length || 0);
+  }, 0);
 
   const stats = [
     {
@@ -39,6 +46,18 @@ export const ScheduleStats: React.FC<ScheduleStatsProps> = ({ shifts, isMobile }
       value: assignedShifts,
       icon: Users,
       color: 'text-purple-600 bg-purple-50'
+    },
+    {
+      title: 'הגשות ממתינות',
+      value: totalSubmissions,
+      icon: FileText,
+      color: 'text-orange-600 bg-orange-50'
+    },
+    {
+      title: 'בקשות למשמרות',
+      value: totalShiftRequests,
+      icon: UserCheck,
+      color: 'text-cyan-600 bg-cyan-50'
     }
   ];
 
@@ -65,7 +84,7 @@ export const ScheduleStats: React.FC<ScheduleStatsProps> = ({ shifts, isMobile }
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       {stats.map((stat, index) => (
         <Card key={index}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

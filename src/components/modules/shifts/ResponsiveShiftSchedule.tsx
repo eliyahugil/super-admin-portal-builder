@@ -465,7 +465,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       )}
 
       {/* Compact Stats Cards for mobile */}
-      <ScheduleStats shifts={shifts} isMobile={isMobile} />
+      <ScheduleStats shifts={shifts} isMobile={isMobile} pendingSubmissions={pendingSubmissions} />
 
       {/* Quick Branch Filter - Always visible for easy access */}
       <div className="bg-white border rounded-lg p-3 shadow-sm">
