@@ -2,12 +2,40 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 type ShiftStatus = "pending" | "approved" | "rejected" | "completed";
+type ShiftPriority = "critical" | "normal" | "backup";
 
 function parseStatus(status: string | null): ShiftStatus {
   if (status === "pending" || status === "approved" || status === "rejected" || status === "completed") {
     return status;
   }
   return "pending"; // Default fallback
+}
+
+function parsePriority(priority: string | null): ShiftPriority {
+  if (priority === "critical" || priority === "normal" || priority === "backup") {
+    return priority;
+  }
+  return "normal"; // Default fallback
+}
+
+function parseShiftAssignments(assignments: any): { id: string; type: "חובה" | "תגבור"; employee_id: string; position: number; is_required: boolean; }[] {
+  if (!assignments) return [];
+  
+  // If it's a string, parse it
+  if (typeof assignments === 'string') {
+    try {
+      return JSON.parse(assignments);
+    } catch {
+      return [];
+    }
+  }
+  
+  // If it's already an array, return it
+  if (Array.isArray(assignments)) {
+    return assignments;
+  }
+  
+  return [];
 }
 
 export const useShiftScheduleData = (businessId: string | null) => {
@@ -42,6 +70,9 @@ export const useShiftScheduleData = (businessId: string | null) => {
           created_at,
           updated_at,
           is_new,
+          required_employees,
+          shift_assignments,
+          priority,
           employee:employees(id, first_name, last_name, phone, business_id),
           branch:branches(id, name, business_id)
         `)
@@ -60,6 +91,8 @@ export const useShiftScheduleData = (businessId: string | null) => {
       return (data || []).map(shift => ({
         ...shift,
         status: parseStatus(shift.status),
+        priority: parsePriority(shift.priority),
+        shift_assignments: parseShiftAssignments(shift.shift_assignments),
         branch_name: shift.branch?.name || 'ללא סניף'
       }));
     },
