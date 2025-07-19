@@ -130,7 +130,7 @@ export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
                   return startA.totalMinutes - startB.totalMinutes;
                 }
                 
-                // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (המשמרת הארוכה יותר קודם - חובה לפני תגבור)
+                // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (המשמרת הארוכה יותר קודם - חובה עד 16:00 לפני תגבור עד 14:00)
                 const endA = parseTime(a.end_time || '23:59');
                 const endB = parseTime(b.end_time || '23:59');
                 

@@ -140,7 +140,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
         return startA - startB;
       }
       
-      // If start times are equal, sort by end time (longer shifts first - חובה לפני תגבור)
+      // If start times are equal, sort by end time (longer shifts first - חובה עד 16:00 לפני תגבור עד 14:00)
       const endA = parseTime(a.end_time || '23:59');
       const endB = parseTime(b.end_time || '23:59');
       
