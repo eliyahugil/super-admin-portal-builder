@@ -10,8 +10,8 @@ interface EmployeeStats {
   employeeId: string;
   employeeName: string;
   assignedShifts: number;
-  submittedShifts: number;  // הוספנו - כמות המשמרות שהגיש
-  requiredShifts: number;
+  submittedShifts: number;  // כמות ההגשות שהעובד הגיש
+  requestedShifts: number;  // כמות המשמרות שביקש בהגשות
   totalHours: number;
   status: 'over' | 'under' | 'exact';
   shifts: ShiftScheduleData[];
@@ -22,7 +22,7 @@ interface EmployeeStatsPanelProps {
   shifts: ShiftScheduleData[];
   employees: Employee[];
   weekRange: { start: Date; end: Date };
-  businessId: string; // הוספנו business_id
+  businessId: string;
   className?: string;
 }
 
@@ -30,247 +30,278 @@ export const EmployeeStatsPanel: React.FC<EmployeeStatsPanelProps> = ({
   shifts,
   employees,
   weekRange,
-  businessId, // הוספנו business_id
+  businessId,
   className = ''
 }) => {
+  console.log('📊 EmployeeStatsPanel - Props received:', {
+    shiftsCount: shifts.length,
+    employeesCount: employees.length,
+    weekRange,
+    businessId
+  });
+
   const [submissionsData, setSubmissionsData] = useState<any[]>([]);
 
   // שליפת נתוני הגשות משמרות
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
-        const { data, error } = await supabase
+        console.log('📊 Fetching submissions for businessId:', businessId, 'weekRange:', weekRange);
+
+        const { data: submissionsData, error } = await supabase
           .from('shift_submissions')
-          .select(`
-            *,
-            employees!inner(
-              id,
-              first_name,
-              last_name,
-              business_id,
-              is_active,
-              is_archived
-            )
-          `)
-          .eq('employees.business_id', businessId)
-          .eq('employees.is_active', true)
-          .eq('employees.is_archived', false)
-          .gte('submitted_at', weekRange.start.toISOString())
-          .lte('submitted_at', weekRange.end.toISOString());
+          .select('*')
+          .gte('week_start_date', weekRange.start.toISOString().split('T')[0])
+          .lte('week_end_date', weekRange.end.toISOString().split('T')[0]);
 
         if (error) {
-          console.error('Error fetching submissions:', error);
+          console.error('❌ Error fetching submissions:', error);
+          setSubmissionsData([]);
         } else {
-          console.log('✅ Fetched submissions for business:', businessId, 'Count:', data?.length || 0);
-          setSubmissionsData(data || []);
+          console.log('✅ Found submissions data:', submissionsData);
+          setSubmissionsData(submissionsData || []);
         }
       } catch (error) {
-        console.error('Error fetching submissions:', error);
+        console.error('❌ Error in fetchSubmissions:', error);
+        setSubmissionsData([]);
       }
     };
 
-    fetchSubmissions();
-  }, [weekRange, businessId]); // הוספנו businessId ל-dependencies
+    if (businessId && weekRange.start && weekRange.end) {
+      fetchSubmissions();
+    }
+  }, [businessId, weekRange]);
+
+  // חישוב סטטיסטיקות עובדים
   const calculateEmployeeStats = (): EmployeeStats[] => {
-    const stats: EmployeeStats[] = [];
+    console.log('📊 Calculating employee stats with:', {
+      submissionsCount: submissionsData.length,
+      submissionsData: submissionsData
+    });
+
+    const activeEmployees = employees.filter(emp => emp.is_active && !emp.is_archived);
     
-    // סינון רק עובדים פעילים ולא מארכיון
-    const activeEmployees = employees.filter(employee => 
-      employee.is_active === true && 
-      employee.is_archived === false
-    );
-    
-    activeEmployees.forEach(employee => {
-      const employeeShifts = shifts.filter(shift => 
-        shift.employee_id === employee.id && 
-        // כולל כל המשמרות שמוקצות לעובד, לא רק מאושרות
-        !shift.is_archived
-      );
+    return activeEmployees.map(employee => {
+      const employeeShifts = shifts.filter(shift => shift.employee_id === employee.id);
       
-      // חישוב נתוני הגשות עבור העובד
+      // מציאת הגשות העובד
       const employeeSubmissions = submissionsData.filter(submission => 
-        submission.employees?.id === employee.id
+        submission.employee_id === employee.id
       );
       
-      // חישוב אחוז הצלחה - כמה מהמשמרות שהגיש הוא קיבל
-      const submittedShiftsCount = employeeSubmissions.length;
+      // ספירת כמות המשמרות שביקש בכל ההגשות
+      const requestedShiftsCount = employeeSubmissions.reduce((total, submission) => {
+        return total + (submission.shifts ? submission.shifts.length : 0);
+      }, 0);
+      
       const assignedShifts = employeeShifts.length;
-      const submissionSuccessRate = submittedShiftsCount > 0 
-        ? Math.round((assignedShifts / submittedShiftsCount) * 100) 
+      const submittedShiftsCount = employeeSubmissions.length; // כמות ההגשות
+      
+      const submissionSuccessRate = requestedShiftsCount > 0 
+        ? Math.round((assignedShifts / requestedShiftsCount) * 100)
         : 0;
       
       const totalHours = employeeShifts.reduce((total, shift) => {
-        const startTime = new Date(`2000-01-01T${shift.start_time}`);
-        const endTime = new Date(`2000-01-01T${shift.end_time}`);
-        const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
-        return total + hours;
+        if (shift.start_time && shift.end_time) {
+          const start = new Date(`2000-01-01T${shift.start_time}`);
+          const end = new Date(`2000-01-01T${shift.end_time}`);
+          return total + ((end.getTime() - start.getTime()) / (1000 * 60 * 60));
+        }
+        return total;
       }, 0);
       
-      const requiredShifts = employee.weekly_hours_required || 0;
-      
-      let status: 'over' | 'under' | 'exact' = 'exact';
-      if (assignedShifts > requiredShifts) status = 'over';
-      else if (assignedShifts < requiredShifts) status = 'under';
-      
-      stats.push({
+      const requiredHours = employee.weekly_hours_required || 40;
+      const status: 'over' | 'under' | 'exact' = 
+        totalHours > requiredHours ? 'over' :
+        totalHours < requiredHours ? 'under' : 'exact';
+
+      const stats = {
         employeeId: employee.id,
         employeeName: `${employee.first_name} ${employee.last_name}`,
         assignedShifts,
         submittedShifts: submittedShiftsCount,
-        requiredShifts,
-        totalHours,
+        requestedShifts: requestedShiftsCount,
+        totalHours: Math.round(totalHours * 10) / 10,
         status,
         shifts: employeeShifts,
         submissionSuccessRate
-      });
-    });
-    
-    return stats.sort((a, b) => a.employeeName.localeCompare(b.employeeName, 'he'));
+      };
+
+      console.log(`📊 Stats for ${stats.employeeName}:`, stats);
+      return stats;
+    }).sort((a, b) => a.employeeName.localeCompare(b.employeeName, 'he'));
   };
 
   const employeeStats = calculateEmployeeStats();
-  const overWorkedEmployees = employeeStats.filter(stat => stat.status === 'over');
-  const underWorkedEmployees = employeeStats.filter(stat => stat.status === 'under');
-  const perfectEmployees = employeeStats.filter(stat => stat.status === 'exact');
 
-  const getStatusIcon = (status: 'over' | 'under' | 'exact') => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'over': return <TrendingUp className="h-4 w-4 text-red-500" />;
-      case 'under': return <TrendingDown className="h-4 w-4 text-orange-500" />;
+      case 'over': return <TrendingUp className="h-4 w-4 text-orange-500" />;
+      case 'under': return <TrendingDown className="h-4 w-4 text-red-500" />;
       case 'exact': return <CheckCircle className="h-4 w-4 text-green-500" />;
+      default: return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  const getStatusColor = (status: 'over' | 'under' | 'exact') => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'over': return 'bg-red-50 text-red-700 border-red-200';
-      case 'under': return 'bg-orange-50 text-orange-700 border-orange-200';
-      case 'exact': return 'bg-green-50 text-green-700 border-green-200';
+      case 'over': return 'border-orange-200 bg-orange-50';
+      case 'under': return 'border-red-200 bg-red-50';
+      case 'exact': return 'border-green-200 bg-green-50';
+      default: return 'border-gray-200 bg-gray-50';
     }
   };
 
-  const getStatusText = (status: 'over' | 'under' | 'exact') => {
+  const getStatusText = (status: string) => {
     switch (status) {
-      case 'over': return 'יותר מדי';
-      case 'under': return 'פחות מדי';
-      case 'exact': return 'מושלם';
+      case 'over': return 'מעל הנדרש';
+      case 'under': return 'מתחת לנדרש';
+      case 'exact': return 'בדיוק כנדרש';
+      default: return 'לא ידוע';
     }
   };
+
+  const overWorkedEmployees = employeeStats.filter(emp => emp.status === 'over');
+  const underWorkedEmployees = employeeStats.filter(emp => emp.status === 'under');
 
   return (
-    <Card className={className} dir="rtl">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <User className="h-5 w-5" />
-          סטטיסטיקות עובדים
-          <Badge variant="outline" className="mr-auto">
-            {weekRange.start.toLocaleDateString('he-IL')} - {weekRange.end.toLocaleDateString('he-IL')}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center p-3 bg-red-50 rounded-lg">
-            <div className="text-2xl font-bold text-red-600">{overWorkedEmployees.length}</div>
-            <div className="text-sm text-red-700">יותר מדי משמרות</div>
-          </div>
-          <div className="text-center p-3 bg-orange-50 rounded-lg">
-            <div className="text-2xl font-bold text-orange-600">{underWorkedEmployees.length}</div>
-            <div className="text-sm text-orange-700">פחות מדי משמרות</div>
-          </div>
-          <div className="text-center p-3 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">{perfectEmployees.length}</div>
-            <div className="text-sm text-green-700">מספר מושלם</div>
-          </div>
-        </div>
-
-        {/* Alerts for problematic assignments */}
-        {overWorkedEmployees.length > 0 && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-            <AlertDescription className="text-red-700">
-              {overWorkedEmployees.length} עובדים קיבלו יותר משמרות מהמוגדר
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {underWorkedEmployees.length > 0 && (
-          <Alert className="border-orange-200 bg-orange-50">
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
-            <AlertDescription className="text-orange-700">
-              {underWorkedEmployees.length} עובדים קיבלו פחות משמרות מהמוגדר
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Employee List */}
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          {employeeStats.map((stat) => (
-            <div key={stat.employeeId} className="p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">{stat.employeeName}</span>
-                </div>
-                
-                <Badge className={getStatusColor(stat.status)} variant="outline">
-                  {getStatusIcon(stat.status)}
-                  <span className="mr-1">{getStatusText(stat.status)}</span>
-                </Badge>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                {/* משמרות שקיבל */}
-                <div className="text-center p-2 bg-green-50 rounded border border-green-200">
-                  <div className="font-medium text-green-700">{stat.assignedShifts}</div>
-                  <div className="text-xs text-green-600">משמרות שקיבל</div>
-                </div>
-                
-                {/* משמרות שהגיש */}
-                <div className="text-center p-2 bg-blue-50 rounded border border-blue-200">
-                  <div className="font-medium text-blue-700">{stat.submittedShifts}</div>
-                  <div className="text-xs text-blue-600">משמרות שהגיש</div>
-                </div>
-                
-                {/* אחוז הצלחה */}
-                <div className="text-center p-2 bg-purple-50 rounded border border-purple-200">
-                  <div className="font-medium text-purple-700">{stat.submissionSuccessRate}%</div>
-                  <div className="text-xs text-purple-600">אחוז הצלחה</div>
-                </div>
-                
-                {/* שעות עבודה */}
-                <div className="text-center p-2 bg-orange-50 rounded border border-orange-200">
-                  <div className="font-medium text-orange-700">{stat.totalHours.toFixed(1)}</div>
-                  <div className="text-xs text-orange-600">שעות עבודה</div>
-                </div>
-              </div>
-              
-              {/* קו נתונים נוסף */}
-              <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-600 flex items-center justify-between">
-                <span>נדרשות: {stat.requiredShifts} משמרות</span>
-                {stat.submittedShifts > 0 && (
-                  <span className="flex items-center gap-1">
-                    <Send className="h-3 w-3" />
-                    {stat.submittedShifts > stat.assignedShifts ? 
-                      `עודף ${stat.submittedShifts - stat.assignedShifts} הגשות` : 
-                      'כל ההגשות התקבלו'
-                    }
-                  </span>
-                )}
-              </div>
+    <div className={`space-y-4 ${className}`}>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5 text-blue-600" />
+            סטטיסטיקות עובדים לשבוע
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* סיכום כללי */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{employeeStats.length}</div>
+              <div className="text-sm text-blue-700">סה"כ עובדים פעילים</div>
             </div>
-          ))}
-        </div>
-
-        {employeeStats.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <User className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-            <p>אין עובדים עם משמרות השבוע</p>
+            <div className="text-center p-3 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">
+                {employeeStats.reduce((total, emp) => total + emp.submittedShifts, 0)}
+              </div>
+              <div className="text-sm text-green-700">סה"כ הגשות</div>
+            </div>
+            <div className="text-center p-3 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">
+                {employeeStats.reduce((total, emp) => total + emp.requestedShifts, 0)}
+              </div>
+              <div className="text-sm text-purple-700">סה"כ בקשות למשמרות</div>
+            </div>
+            <div className="text-center p-3 bg-orange-50 rounded-lg">
+              <div className="text-2xl font-bold text-orange-600">
+                {employeeStats.reduce((total, emp) => total + emp.assignedShifts, 0)}
+              </div>
+              <div className="text-sm text-orange-700">סה"כ משמרות שוצבו</div>
+            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {/* התראות */}
+          {(overWorkedEmployees.length > 0 || underWorkedEmployees.length > 0) && (
+            <div className="mb-6 space-y-2">
+              {overWorkedEmployees.length > 0 && (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>{overWorkedEmployees.length} עובדים</strong> עובדים מעל השעות הנדרשות: {' '}
+                    {overWorkedEmployees.map(emp => emp.employeeName).join(', ')}
+                  </AlertDescription>
+                </Alert>
+              )}
+              {underWorkedEmployees.length > 0 && (
+                <Alert variant="destructive">
+                  <TrendingDown className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>{underWorkedEmployees.length} עובדים</strong> עובדים מתחת לשעות הנדרשות: {' '}
+                    {underWorkedEmployees.map(emp => emp.employeeName).join(', ')}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+
+          {/* רשימת עובדים */}
+          {employeeStats.length > 0 ? (
+            <div className="space-y-3">
+              {employeeStats.map((employee) => (
+                <div
+                  key={employee.employeeId}
+                  className={`p-4 rounded-lg border-2 ${getStatusColor(employee.status)}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(employee.status)}
+                        <span className="font-semibold text-lg">{employee.employeeName}</span>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {getStatusText(employee.status)}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex gap-4 text-sm">
+                      <div className="text-center">
+                        <div className="font-bold text-blue-600">{employee.submittedShifts}</div>
+                        <div className="text-gray-600">הגשות</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-bold text-purple-600">{employee.requestedShifts}</div>
+                        <div className="text-gray-600">בקשות</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-bold text-green-600">{employee.assignedShifts}</div>
+                        <div className="text-gray-600">שוצבו</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-bold text-orange-600">{employee.totalHours}ש'</div>
+                        <div className="text-gray-600">סה"כ שעות</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-bold text-teal-600">{employee.submissionSuccessRate}%</div>
+                        <div className="text-gray-600">אחוז הצלחה</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* פירוט משמרות */}
+                  {employee.shifts.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="text-sm text-gray-600 mb-2">
+                        משמרות שוצבו ({employee.shifts.length}):
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {employee.shifts.slice(0, 5).map((shift, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {new Date(shift.shift_date).toLocaleDateString('he-IL', { 
+                              weekday: 'short', 
+                              day: 'numeric',
+                              month: 'numeric'
+                            })} {shift.start_time}-{shift.end_time}
+                          </Badge>
+                        ))}
+                        {employee.shifts.length > 5 && (
+                          <span className="text-xs text-gray-500">
+                            ועוד {employee.shifts.length - 5}...
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>אין עובדים עם משמרות השבוע</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
