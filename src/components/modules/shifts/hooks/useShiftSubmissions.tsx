@@ -148,6 +148,7 @@ export const useShiftSubmissions = () => {
   // Delete submission function
   const deleteSubmission = async (submissionId: string) => {
     console.log('🗑️ Hook: Attempting to delete submission:', submissionId);
+    console.log('🏢 Hook: Current businessId:', businessId);
     
     try {
       const { error, data } = await supabase
