@@ -413,6 +413,54 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     }
   };
 
+  const handleAssignEmployee = async (employeeId: string, shiftId: string) => {
+    try {
+      // מצא את המשמרת
+      const shift = shifts.find(s => s.id === shiftId);
+      if (!shift) {
+        toast.error('משמרת לא נמצאה');
+        return;
+      }
+
+      // מצא את העובד
+      const employee = employees.find(e => e.id === employeeId);
+      if (!employee) {
+        toast.error('עובד לא נמצא');
+        return;
+      }
+
+      // בצע הקצאה
+      const { error } = await supabase
+        .from('scheduled_shifts')
+        .insert({
+          business_id: businessId,
+          employee_id: employeeId,
+          shift_date: shift.shift_date,
+          start_time: shift.start_time,
+          end_time: shift.end_time,
+          branch_id: shift.branch_id,
+          status: 'approved',
+          notes: 'הוקצה באמצעות מנוע המלצות'
+        });
+
+      if (error) {
+        console.error('Error assigning employee:', error);
+        toast.error('שגיאה בהקצאת העובד');
+        return;
+      }
+
+      toast.success(`העובד ${employee.first_name} ${employee.last_name} הוקצה למשמרת בהצלחה`);
+      
+      // רענן את הנתונים
+      if (onShiftUpdate) {
+        await onShiftUpdate(shiftId, { employee_id: employeeId });
+      }
+    } catch (error) {
+      console.error('Error assigning employee:', error);
+      toast.error('שגיאה בהקצאת העובד');
+    }
+  };
+
   // Hebrew day names - ordered from Sunday to Saturday for RTL display
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -506,6 +554,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             getStatusColor={getStatusColor}
                             hasShiftConflict={hasShiftConflict}
                             isShiftSelected={isShiftSelected}
+                            weekStartDate={weekDays[0].toISOString().split('T')[0]}
+                            onAssignEmployee={handleAssignEmployee}
                           />
                           
                           {/* Evening shifts */}
@@ -522,6 +572,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             getStatusColor={getStatusColor}
                             hasShiftConflict={hasShiftConflict}
                             isShiftSelected={isShiftSelected}
+                            weekStartDate={weekDays[0].toISOString().split('T')[0]}
+                            onAssignEmployee={handleAssignEmployee}
                           />
                           
                           {/* Night shifts */}
@@ -538,6 +590,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             getStatusColor={getStatusColor}
                             hasShiftConflict={hasShiftConflict}
                             isShiftSelected={isShiftSelected}
+                            weekStartDate={weekDays[0].toISOString().split('T')[0]}
+                            onAssignEmployee={handleAssignEmployee}
                           />
                         </div>
                       );

@@ -3,7 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Clock, User, MapPin, Trash2, AlertTriangle, UserCheck, FileText } from 'lucide-react';
+import { Clock, User, MapPin, Trash2, AlertTriangle, UserCheck, FileText, Lightbulb } from 'lucide-react';
+import { EmployeeRecommendationEngine } from '../../recommendations/EmployeeRecommendationEngine';
 import type { ShiftScheduleData } from '../types';
 
 interface ShiftDisplayCardProps {
@@ -19,6 +20,8 @@ interface ShiftDisplayCardProps {
   shiftType: 'morning' | 'evening' | 'night';
   hasSubmissions?: boolean;
   submissionsCount?: number;
+  weekStartDate?: string;
+  onAssignEmployee?: (employeeId: string, shiftId: string) => void;
 }
 
 export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
@@ -33,7 +36,9 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
   getStatusColor,
   shiftType,
   hasSubmissions = false,
-  submissionsCount = 0
+  submissionsCount = 0,
+  weekStartDate,
+  onAssignEmployee
 }) => {
   // Debug logs
   console.log('🔍 ShiftDisplayCard render:', {
@@ -298,12 +303,36 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
               <User className="h-3 w-3 ml-1" />
               {getEmployeeName(shift.employee_id)}
             </Badge>
-          ) : (
-            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-3 py-1 shadow-sm">
-              <User className="h-3 w-3 ml-1" />
-              לא מוקצה
-            </Badge>
-          )}
+           ) : (
+             <div className="space-y-2">
+               <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 px-3 py-1 shadow-sm">
+                 <User className="h-3 w-3 ml-1" />
+                 לא מוקצה
+               </Badge>
+               
+               {/* כפתור המלצות למשמרות ריקות */}
+               {weekStartDate && onAssignEmployee && (
+                 <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+                   <EmployeeRecommendationEngine
+                     shiftId={shift.id}
+                     shiftTime={getFormattedTimeRange()}
+                     shiftDate={shift.shift_date}
+                     weekStartDate={weekStartDate}
+                     onEmployeeSelected={onAssignEmployee}
+                   >
+                     <Button 
+                       size="sm" 
+                       variant="outline" 
+                       className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 text-xs px-2 py-1"
+                     >
+                       <Lightbulb className="h-3 w-3" />
+                       המלצות
+                     </Button>
+                   </EmployeeRecommendationEngine>
+                 </div>
+               )}
+             </div>
+           )}
         </div>
 
         {/* אינדיקטור הגשות משמרות */}
