@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Clock, User, Plus } from 'lucide-react';
+import { MapPin, Clock, User, Plus, FileText, Users } from 'lucide-react';
 
 import type { ShiftScheduleData, Employee, Branch } from '../types';
 
@@ -138,6 +138,37 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
     });
   };
 
+  // Group pending submissions by branch and date
+  const groupedSubmissions = useMemo(() => {
+    const grouped: { [branchId: string]: { [date: string]: any[] } } = {};
+    
+    branches.forEach(branch => {
+      grouped[branch.id] = {};
+      weekDays.forEach(day => {
+        const dateStr = day.toISOString().split('T')[0];
+        grouped[branch.id][dateStr] = [];
+      });
+    });
+
+    pendingSubmissions.forEach(submission => {
+      if (submission.shift_requests && submission.shift_requests.length > 0) {
+        submission.shift_requests.forEach((request: any) => {
+          if (request.branch_id && grouped[request.branch_id]) {
+            const dateStr = request.shift_date;
+            if (grouped[request.branch_id][dateStr]) {
+              grouped[request.branch_id][dateStr].push({
+                ...submission,
+                shiftRequest: request
+              });
+            }
+          }
+        });
+      }
+    });
+
+    return grouped;
+  }, [pendingSubmissions, branches, weekDays]);
+
   const isShiftSelected = (shift: ShiftScheduleData) => {
     return selectedShifts.some(s => s.id === shift.id);
   };
@@ -219,12 +250,12 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
                     </Button>
                   </div>
 
-                  {/* Day columns */}
-                  {weekDays.map((day) => {
-                    const dateStr = day.toISOString().split('T')[0];
-                    const dayShifts = branchGroup.days[dateStr] || [];
-                    
-                    return (
+                   {weekDays.map((day) => {
+                     const dateStr = day.toISOString().split('T')[0];
+                     const dayShifts = branchGroup.days[dateStr] || [];
+                     const daySubmissions = groupedSubmissions[branchId]?.[dateStr] || [];
+                     
+                     return (
                       <div key={dateStr} className="space-y-1 min-h-[60px]">
                         {dayShifts.map((shift) => (
                           <div
@@ -265,20 +296,56 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
                               </Badge>
                             </div>
                           </div>
-                        ))}
-                        
-                        {/* Add shift button for empty days */}
-                        {dayShifts.length === 0 && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onAddShift(day)}
-                            className="w-full h-10 border-2 border-dashed border-gray-300 hover:border-blue-400 text-gray-500 hover:text-blue-600"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
+                         ))}
+                         
+                         {/* Display pending submissions */}
+                         {daySubmissions.map((submission, index) => (
+                           <div
+                             key={`submission-${submission.id}-${index}`}
+                             className="p-2 bg-purple-50 border border-purple-200 rounded-lg shadow-sm text-xs"
+                           >
+                             {/* Submission indicator */}
+                             <div className="flex items-center justify-center gap-1 mb-1">
+                               <FileText className="h-3 w-3 text-purple-600" />
+                               <span className="font-medium text-purple-700">
+                                 הגשה ממתינה
+                               </span>
+                             </div>
+                             
+                             {/* Employee name */}
+                             <div className="text-center mb-1">
+                               <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-[10px] px-1 py-0.5">
+                                 <User className="h-2 w-2 mr-1" />
+                                 {getEmployeeName(submission.employee_id)?.split(' ')[0] || 'לא ידוע'}
+                               </Badge>
+                             </div>
+                             
+                             {/* Shift details from request */}
+                             {submission.shiftRequest && (
+                               <div className="text-center">
+                                 <div className="text-[9px] text-purple-600 mb-1">
+                                   {submission.shiftRequest.start_time}-{submission.shiftRequest.end_time}
+                                 </div>
+                                 <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 text-[9px] px-1 py-0.5">
+                                   {submission.shiftRequest.role || 'כללי'}
+                                 </Badge>
+                               </div>
+                             )}
+                           </div>
+                         ))}
+                         
+                         {/* Add shift button for empty days */}
+                         {dayShifts.length === 0 && daySubmissions.length === 0 && (
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             onClick={() => onAddShift(day)}
+                             className="w-full h-10 border-2 border-dashed border-gray-300 hover:border-blue-400 text-gray-500 hover:text-blue-600"
+                           >
+                             <Plus className="h-3 w-3" />
+                           </Button>
+                         )}
+                       </div>
                     );
                   })}
                 </div>
@@ -301,6 +368,10 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
               </Badge>
               <Badge variant="secondary" className="bg-orange-50 text-orange-700">
                 {shifts.filter(s => !s.employee_id).length} לא מוקצות
+              </Badge>
+              <Badge variant="secondary" className="bg-purple-50 text-purple-700">
+                <FileText className="h-3 w-3 mr-1" />
+                {pendingSubmissions.length} הגשות ממתינות
               </Badge>
             </div>
             <div className="text-sm text-gray-600">
