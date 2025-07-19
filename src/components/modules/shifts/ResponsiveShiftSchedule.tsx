@@ -115,6 +115,19 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     addShiftSubmissionNotification
   } = useNotifications();
 
+  // Add event listener for pending submissions dialog
+  useEffect(() => {
+    const handleOpenPendingSubmissions = () => {
+      setShowPendingSubmissionsDialog(true);
+    };
+
+    window.addEventListener('openPendingSubmissions', handleOpenPendingSubmissions);
+    
+    return () => {
+      window.removeEventListener('openPendingSubmissions', handleOpenPendingSubmissions);
+    };
+  }, []);
+
   const isLoading = loading || calendarLoading;
 
   console.log('📊 ResponsiveShiftSchedule - Current state:', {
@@ -343,21 +356,6 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       throw error;
     }
   };
-
-  // Add event listener for pending submissions dialog
-  useEffect(() => {
-    const handleOpenPendingSubmissions = () => {
-      setShowPendingSubmissionsDialog(true);
-    };
-
-    window.addEventListener('openPendingSubmissions', handleOpenPendingSubmissions);
-    
-    return () => {
-      window.removeEventListener('openPendingSubmissions', handleOpenPendingSubmissions);
-    };
-  }, []);
-
-  // Helper function removed - submissions system no longer exists
 
   return (
     <div className={`w-full ${isMobile ? 'p-2' : 'p-6'} space-y-2 lg:space-y-6 h-full flex flex-col bg-white`} dir="rtl">
