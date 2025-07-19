@@ -20,6 +20,7 @@ import { ShiftGroupDisplay } from './components/ShiftGroupDisplay';
 import { ShiftSubmissionsPopover } from './components/ShiftSubmissionsPopover';
 import { EmployeeRecommendationEngine } from '../recommendations/EmployeeRecommendationEngine';
 import { AutoScheduleAssistant } from '../AutoScheduleAssistant';
+import { GroupedByBranchView } from './components/GroupedByBranchView';
 import {
   Tooltip,
   TooltipContent,
@@ -37,6 +38,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   calendarEvents,
   pendingSubmissions = [],
   businessId,
+  
   onShiftClick,
   onShiftUpdate,
   onAddShift,
@@ -55,7 +57,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   const [openSubmissionsPopover, setOpenSubmissionsPopover] = useState<string | null>(null);
   
   // Filters state - load from localStorage if available
-  const [filters, setFilters] = useState<ShiftFilters>(() => {
+  const [localFilters, setLocalFilters] = useState<ShiftFilters>(() => {
     try {
       const saved = localStorage.getItem('shift-schedule-filters');
       return saved ? JSON.parse(saved) : {
@@ -170,7 +172,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
 
   // Save filters to localStorage
   const handleFiltersChange = (newFilters: ShiftFilters) => {
-    setFilters(newFilters);
+    setLocalFilters(newFilters);
     try {
       localStorage.setItem('shift-schedule-filters', JSON.stringify(newFilters));
     } catch (error) {
@@ -181,7 +183,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   // Save preferences function
   const handleSavePreferences = () => {
     try {
-      localStorage.setItem('shift-schedule-filters', JSON.stringify(filters));
+      localStorage.setItem('shift-schedule-filters', JSON.stringify(localFilters));
       toast.success('העדפות התצוגה נשמרו בהצלחה');
     } catch (error) {
       toast.error('שגיאה בשמירת העדפות');

@@ -31,6 +31,7 @@ import { AdvancedSchedulingDashboard } from './advanced-scheduling/AdvancedSched
 import { NotificationsPanel } from './notifications/NotificationsPanel';
 import { useNotifications } from './notifications/useNotifications';
 import { ParallelScheduleView } from './schedule/ParallelScheduleView';
+import { GroupedByBranchView } from './schedule/components/GroupedByBranchView';
 import type { ScheduleView, ShiftScheduleData, CreateShiftData } from './schedule/types';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
@@ -458,7 +459,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       {/* Quick Branch Filter - Always visible for easy access */}
       <div className="bg-white border rounded-lg p-3 shadow-sm">
         <div className="flex items-center gap-4 flex-wrap">
-          <span className="text-sm font-medium text-gray-700">סינון מהיר לפי סניף:</span>
+          <span className="text-sm font-medium text-gray-700">תצוגת סניפים:</span>
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => updateFilters({ ...filters, branch: 'all' })}
@@ -468,7 +469,17 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              כל הסניפים ({shifts.length})
+              כל הסניפים יחד ({shifts.length})
+            </button>
+            <button
+              onClick={() => setView(view === 'grouped' ? 'week' : 'grouped')}
+              className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                view === 'grouped' 
+                  ? 'bg-green-600 text-white shadow-sm' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              תצוגה מקובצת לפי סניפים
             </button>
             {branches.map(branch => {
               const branchShiftsCount = shifts.filter(s => s.branch_id === branch.id).length;
@@ -549,26 +560,41 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                     </div>
                   </div>
                   ) : view === 'week' ? (
-                    <WeeklyScheduleView
-                      shifts={shifts}
-                      employees={employees}
-                      branches={branches}
-                      currentDate={currentDate}
-                      holidays={calendarHolidays}
-                      shabbatTimes={calendarShabbatTimes}
-                      calendarEvents={combinedEvents}
-                      pendingSubmissions={pendingSubmissions}
-                      businessId={businessId}
-                      onShiftClick={handleShiftClick}
-                      onShiftUpdate={updateShift}
-                      onAddShift={handleAddShift}
-                      onShiftDelete={deleteShift}
-                      isSelectionMode={isSelectionMode}
-                      selectedShifts={selectedShifts}
-                      onShiftSelection={handleShiftSelection}
-                      onShowPendingSubmissions={() => setShowPendingSubmissionsDialog(true)}
-                   />
-                 ) : view === 'month' ? (
+                     <WeeklyScheduleView
+                       shifts={shifts}
+                       employees={employees}
+                       branches={branches}
+                       currentDate={currentDate}
+                       holidays={calendarHolidays}
+                       shabbatTimes={calendarShabbatTimes}
+                       calendarEvents={combinedEvents}
+                       pendingSubmissions={pendingSubmissions}
+                       businessId={businessId}
+                       onShiftClick={handleShiftClick}
+                       onShiftUpdate={updateShift}
+                       onAddShift={handleAddShift}
+                       onShiftDelete={deleteShift}
+                       isSelectionMode={isSelectionMode}
+                       selectedShifts={selectedShifts}
+                       onShiftSelection={handleShiftSelection}
+                       onShowPendingSubmissions={() => setShowPendingSubmissionsDialog(true)}
+                    />
+                   ) : view === 'grouped' ? (
+                     <GroupedByBranchView
+                       shifts={shifts}
+                       employees={employees}
+                       branches={branches}
+                       currentDate={currentDate}
+                       onShiftClick={handleShiftClick}
+                       onShiftUpdate={updateShift}
+                       onAddShift={handleAddShift}
+                       onShiftDelete={deleteShift}
+                       isSelectionMode={isSelectionMode}
+                       selectedShifts={selectedShifts}
+                       onShiftSelection={handleShiftSelection}
+                       pendingSubmissions={pendingSubmissions}
+                     />
+                   ) : view === 'month' ? (
                    <MonthlyScheduleView
                      shifts={shifts}
                      employees={employees}

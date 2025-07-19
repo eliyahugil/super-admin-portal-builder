@@ -56,7 +56,7 @@ export interface ShiftScheduleData {
   role_preference?: string;
 }
 
-export type ScheduleView = 'week' | 'month' | 'year';
+export type ScheduleView = 'week' | 'month' | 'year' | 'grouped';
 
 export type CreateShiftData = Pick<ShiftScheduleData, 'shift_date' | 'start_time' | 'end_time' | 'employee_id' | 'branch_id' | 'role' | 'notes' | 'status' | 'shift_template_id' | 'required_employees' | 'priority' | 'shift_assignments'>;
 
@@ -83,6 +83,7 @@ export interface ShiftScheduleViewProps {
   calendarEvents: CalendarEvent[];
   pendingSubmissions?: any[];
   businessId?: string | null;
+  
   onShiftClick: (shift: ShiftScheduleData) => void;
   onShiftUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => Promise<void>;
   onAddShift: (date: Date) => void;
