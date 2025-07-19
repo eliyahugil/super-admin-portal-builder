@@ -20,6 +20,15 @@ export const AutoAssignmentHelper: React.FC<AutoAssignmentHelperProps> = ({
   pendingSubmissions,
   onAutoAssign
 }) => {
+  console.log('⚡ AutoAssignmentHelper rendered for shift:', {
+    shiftId: shift.id,
+    shiftDate: shift.shift_date,
+    shiftTime: `${shift.start_time}-${shift.end_time}`,
+    employeesCount: employees.length,
+    pendingSubmissionsCount: pendingSubmissions.length,
+    hasEmployee: !!shift.employee_id
+  });
+
   // מציאת עובדים שהגישו בקשה למשמרת זו
   const getEligibleEmployees = () => {
     const eligible: Array<{

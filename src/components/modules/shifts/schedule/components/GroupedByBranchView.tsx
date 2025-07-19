@@ -132,6 +132,7 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
 
   const getEmployeeName = (employeeId: string) => {
     const employee = employees.find(emp => emp.id === employeeId);
+    console.log('👤 GroupedByBranchView getEmployeeName:', { employeeId, foundEmployee: employee, allEmployeesCount: employees.length });
     return employee ? `${employee.first_name} ${employee.last_name}` : 'לא מוקצה';
   };
 

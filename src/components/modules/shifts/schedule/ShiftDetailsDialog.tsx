@@ -126,6 +126,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
 
   const getEmployeeName = (employeeId: string) => {
     const employee = employees.find(emp => emp.id === employeeId);
+    console.log('🔍 getEmployeeName called with:', { employeeId, foundEmployee: employee, allEmployees: employees.length });
     return employee ? `${employee.first_name} ${employee.last_name}` : 'לא ידוע';
   };
 
