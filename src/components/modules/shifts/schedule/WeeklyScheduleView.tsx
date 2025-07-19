@@ -648,7 +648,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
         </Card>
       )}
       
-      <div className="grid grid-cols-7 gap-2 flex-1" style={{ direction: 'rtl' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1 lg:gap-2 flex-1" style={{ direction: 'rtl' }}>
         {weekDays.map((date, index) => {
           const dayShifts = getShiftsForDate(date);
           const dayHolidays = getHolidaysForDate(date);
@@ -658,21 +658,21 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
 
           return (
             <Card key={date.toISOString()} className={`flex flex-col min-h-0 ${isToday ? 'ring-2 ring-blue-500' : ''}`}>
-              <CardHeader className="pb-2">
-                <CardTitle className={`text-sm font-medium text-center ${isWeekend ? 'text-blue-600' : ''}`}>
+              <CardHeader className="pb-2 px-1 lg:px-3">
+                <CardTitle className={`text-xs lg:text-sm font-medium text-center ${isWeekend ? 'text-blue-600' : ''}`}>
                   <div className="flex flex-col items-center">
-                    <span>{dayNames[index]}</span>
-                    <span className={`text-lg ${isToday ? 'font-bold text-blue-600' : ''}`}>
+                    <span className="text-xs lg:text-sm">{dayNames[index]}</span>
+                    <span className={`text-sm lg:text-lg ${isToday ? 'font-bold text-blue-600' : ''}`}>
                       {date.getDate()}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-[10px] lg:text-xs text-gray-500">
                       {date.toLocaleDateString('he-IL', { month: 'short' })}
                     </span>
                   </div>
                 </CardTitle>
               </CardHeader>
               
-              <CardContent className="flex-1 p-2 space-y-2">
+              <CardContent className="flex-1 p-1 lg:p-2 space-y-1 lg:space-y-2">
                 {/* Holidays */}
                 {dayHolidays.length > 0 && (
                   <HolidayIndicator holidays={dayHolidays} variant="badge" />
@@ -772,25 +772,25 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                    </Button>
                                  </EmployeeRecommendationEngine>
                                )}
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-5 w-5 p-0 bg-white hover:bg-blue-50 border-blue-200"
-                                onClick={(e) => {
+                               <Button
+                                 size="sm"
+                                 variant="outline"
+                                 className="h-4 w-4 lg:h-5 lg:w-5 p-0 bg-white hover:bg-blue-50 border-blue-200"
+                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
                                   onShiftClick(shift);
                                 }}
                               >
-                               <Edit2 className="h-2.5 w-2.5 text-blue-600" />
+                               <Edit2 className="h-2 w-2 lg:h-2.5 lg:w-2.5 text-blue-600" />
                              </Button>
                              {/* Unassign button - only show if employee is assigned */}
                              {shift.employee_id && (
-                               <Button
-                                 size="sm"
-                                 variant="outline"
-                                 className="h-5 w-5 p-0 bg-white hover:bg-orange-50 border-orange-200"
-                                 onClick={async (e) => {
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-4 w-4 lg:h-5 lg:w-5 p-0 bg-white hover:bg-orange-50 border-orange-200"
+                                  onClick={async (e) => {
                                    e.preventDefault();
                                    e.stopPropagation();
                                    
@@ -811,13 +811,13 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                                    }
                                  }}
                                >
-                                 <User className="h-2.5 w-2.5 text-orange-600" />
+                                 <User className="h-2 w-2 lg:h-2.5 lg:w-2.5 text-orange-600" />
                                </Button>
                              )}
-                             <Button
-                               size="sm"
-                               variant="destructive"
-                               className="h-5 w-5 p-0"
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-4 w-4 lg:h-5 lg:w-5 p-0"
                                onClick={(e) => handleDeleteShift(shift.id, e)}
                              >
                                <Trash2 className="h-2.5 w-2.5" />
@@ -843,11 +843,11 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             {/* עובד מוקצה או לא מוקצה */}
                             <div className="text-center">
                               {shift.employee_id ? (
-                                <Badge variant="secondary" className="bg-green-50 text-green-700 text-xs px-2 py-0.5">
+                                <Badge variant="secondary" className="bg-green-50 text-green-700 text-[9px] lg:text-xs px-1 lg:px-2 py-0.5">
                                   {getEmployeeName(shift.employee_id).split(' ')[0]}
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs px-2 py-0.5">
+                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-[9px] lg:text-xs px-1 lg:px-2 py-0.5">
                                   לא מוקצה
                                 </Badge>
                               )}
@@ -857,7 +857,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                            {/* סטטוס וקונפליקטים ובקשות - במטה */}
                            <div className="flex items-center justify-between mt-2 pt-1 border-t border-gray-100">
                              <div className="flex items-center gap-1">
-                               <Badge variant="secondary" className={`text-xs ${getStatusColor(shift.status || 'pending')}`}>
+                               <Badge variant="secondary" className={`text-[9px] lg:text-xs ${getStatusColor(shift.status || 'pending')}`}>
                                  {shift.status === 'approved' ? 'מאושר' : 
                                   shift.status === 'pending' ? 'ממתין' :
                                   shift.status === 'rejected' ? 'נדחה' : 'הושלם'}

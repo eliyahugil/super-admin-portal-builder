@@ -173,8 +173,12 @@ export const ParallelScheduleView: React.FC<ShiftScheduleViewProps> = (props) =>
   const getGridCols = () => {
     if (maximizedView) return 'grid-cols-1';
     const count = selectedViews.length;
-    if (isMobile || count === 1) return 'grid-cols-1';
-    return count === 2 ? 'grid-cols-2' : 'grid-cols-3';
+    
+    // רספונסיבי מתקדם בהתאם לכמות התצוגות וגודל המסך
+    if (count === 1) return 'grid-cols-1';
+    if (count === 2) return 'grid-cols-1 lg:grid-cols-2';
+    if (count === 3) return 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3';
+    return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
   };
 
   return (

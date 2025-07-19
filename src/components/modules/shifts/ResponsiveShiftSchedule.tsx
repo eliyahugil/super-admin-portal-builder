@@ -306,8 +306,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
       <div className="flex flex-col space-y-2 bg-white">
         <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center justify-between'} bg-white`}>
           <div className={isMobile ? 'text-center' : ''}>
-            <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-gray-900`}>לוח משמרות</h1>
-            {!isMobile && <p className="text-gray-600 mt-1">ניהול וצפייה בלוח הזמנים עם אינטגרציית Google Calendar, חגים וזמני שבת</p>}
+            <h1 className={`${isMobile ? 'text-lg' : 'text-2xl lg:text-3xl'} font-bold text-gray-900`}>לוח משמרות</h1>
+            {!isMobile && <p className="text-sm lg:text-base text-gray-600 mt-1">ניהול וצפייה בלוח הזמנים עם אינטגרציית Google Calendar, חגים וזמני שבת</p>}
           </div>
           
           <div className="flex items-center gap-3">
