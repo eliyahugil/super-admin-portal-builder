@@ -15,6 +15,7 @@ import { PendingSubmissionsDialog } from './schedule/PendingSubmissionsDialog';
 import { ShiftTemplatesApplyDialog } from './schedule/components/ShiftTemplatesApplyDialog';
 import { BulkEditShiftsDialog } from './schedule/BulkEditShiftsDialog';
 import { ScheduleErrorBoundary } from './schedule/ScheduleErrorBoundary';
+import { ManagerOverrideDialog } from './schedule/components/ManagerOverrideDialog';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
 import { useCalendarIntegration } from './schedule/hooks/useCalendarIntegration';
 import { useQueryClient } from '@tanstack/react-query';
@@ -53,6 +54,15 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   
   // Pending submissions dialog state
   const [showPendingSubmissionsDialog, setShowPendingSubmissionsDialog] = useState(false);
+  
+  // Manager override dialog state
+  const [showManagerOverrideDialog, setShowManagerOverrideDialog] = useState(false);
+  const [managerOverrideData, setManagerOverrideData] = useState<{
+    shiftId: string;
+    updates: Partial<ShiftScheduleData>;
+    conflictDetails: any;
+    employeeName: string;
+  } | null>(null);
 
   const {
     currentDate,
@@ -234,8 +244,27 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   };
 
   const handleAssignEmployee = async (shiftId: string, employeeId: string) => {
-    await updateShift(shiftId, { employee_id: employeeId });
-    setAssignmentShift(null);
+    try {
+      await updateShift(shiftId, { employee_id: employeeId });
+      setAssignmentShift(null);
+    } catch (error: any) {
+      console.error('Error assigning employee:', error);
+      
+      // אם זה קונפליקט שדורש אישור מנהל
+      if (error.code === 'MANAGER_OVERRIDE_REQUIRED') {
+        setManagerOverrideData({
+          shiftId,
+          updates: { employee_id: employeeId },
+          conflictDetails: error.conflictData,
+          employeeName: employees.find(emp => emp.id === employeeId)?.first_name + ' ' + 
+                       employees.find(emp => emp.id === employeeId)?.last_name
+        });
+        setShowManagerOverrideDialog(true);
+      } else {
+        // שגיאה אחרת - הצג הודעה רגילה
+        throw error;
+      }
+    }
   };
 
   const handleUnassignEmployee = async (shiftId: string) => {
@@ -297,6 +326,22 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     }
   };
 
+  const handleManagerOverride = async (code: string) => {
+    if (!managerOverrideData) return;
+    
+    try {
+      await updateShift(
+        managerOverrideData.shiftId, 
+        managerOverrideData.updates, 
+        code
+      );
+      setAssignmentShift(null);
+      setManagerOverrideData(null);
+    } catch (error) {
+      console.error('Manager override failed:', error);
+      throw error;
+    }
+  };
 
   // Helper function removed - submissions system no longer exists
 
@@ -674,6 +719,26 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           employees={employees}
           branches={branches}
           onUpdate={handleBulkUpdate}
+        />
+      )}
+
+      {/* Manager Override Dialog */}
+      {showManagerOverrideDialog && managerOverrideData && (
+        <ManagerOverrideDialog
+          isOpen={showManagerOverrideDialog}
+          onClose={() => {
+            setShowManagerOverrideDialog(false);
+            setManagerOverrideData(null);
+          }}
+          onConfirm={handleManagerOverride}
+          conflictDetails={{
+            employeeName: managerOverrideData.employeeName,
+            currentShiftTime: managerOverrideData.conflictDetails?.currentShift?.start_time + '-' + 
+                             managerOverrideData.conflictDetails?.currentShift?.end_time,
+            conflictingShifts: managerOverrideData.conflictDetails?.conflictingShifts,
+            date: managerOverrideData.conflictDetails?.currentShift?.shift_date,
+            branchName: branches.find(b => b.id === managerOverrideData.conflictDetails?.currentShift?.branch_id)?.name
+          }}
         />
       )}
 

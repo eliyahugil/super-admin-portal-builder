@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
@@ -140,7 +139,11 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
   });
 
   const updateShift = useMutation({
-    mutationFn: async ({ shiftId, updates }: { shiftId: string; updates: Partial<ShiftScheduleData> }) => {
+    mutationFn: async ({ shiftId, updates, managerOverrideCode }: { 
+      shiftId: string; 
+      updates: Partial<ShiftScheduleData>; 
+      managerOverrideCode?: string 
+    }) => {
       console.log('🔄 Updating shift:', shiftId, updates);
 
       // אם מנסים לשייך עובד, בודק אם יש קונפליקט
@@ -183,23 +186,53 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
             conflictingShifts
           });
 
-          // רישום התראה בלוג הפעילות
-          await logActivity({
-            action: 'employee_double_assignment_blocked',
-            target_type: 'shift',
-            target_id: shiftId,
-            details: {
-              employee_id: updates.employee_id,
-              shift_date: currentShift.shift_date,
-              branch_id: currentShift.branch_id,
-              conflicting_shifts: conflictingShifts,
-              attempted_at: new Date().toISOString(),
-              warning_level: 'high'
-            }
-          });
+          // אם אין קוד מנהל או הקוד שגוי
+          if (!managerOverrideCode || managerOverrideCode !== '130898') {
+            // רישום התראה בלוג הפעילות
+            await logActivity({
+              action: 'employee_double_assignment_blocked',
+              target_type: 'shift',
+              target_id: shiftId,
+              details: {
+                employee_id: updates.employee_id,
+                shift_date: currentShift.shift_date,
+                branch_id: currentShift.branch_id,
+                conflicting_shifts: conflictingShifts,
+                attempted_at: new Date().toISOString(),
+                warning_level: 'high',
+                override_attempted: !!managerOverrideCode,
+                override_success: false
+              }
+            });
 
-          const conflictTimes = conflictingShifts.map(s => `${s.start_time}-${s.end_time}`).join(', ');
-          throw new Error(`⚠️ אזהרה: העובד כבר משויך למשמרת באותו יום באותו סניף (${conflictTimes}). לא ניתן לשייך עובד לשתי משמרות באותו יום באותו סניף.`);
+            const conflictTimes = conflictingShifts.map(s => `${s.start_time}-${s.end_time}`).join(', ');
+            const error = new Error(`⚠️ אזהרה: העובד כבר משויך למשמרת באותו יום באותו סניף (${conflictTimes}). לא ניתן לשייך עובד לשתי משמרות באותו יום באותו סניף.`);
+            (error as any).code = 'MANAGER_OVERRIDE_REQUIRED';
+            (error as any).conflictData = {
+              conflictingShifts,
+              currentShift,
+              employeeId: updates.employee_id
+            };
+            throw error;
+          } else {
+            // קוד מנהל נכון - אישור עקיפה
+            console.log('✅ Manager override code accepted - allowing double assignment');
+            await logActivity({
+              action: 'employee_double_assignment_approved_with_override',
+              target_type: 'shift',
+              target_id: shiftId,
+              details: {
+                employee_id: updates.employee_id,
+                shift_date: currentShift.shift_date,
+                branch_id: currentShift.branch_id,
+                conflicting_shifts: conflictingShifts,
+                approved_at: new Date().toISOString(),
+                warning_level: 'critical',
+                override_used: true,
+                manager_code_used: '130898'
+              }
+            });
+          }
         }
       }
 
@@ -274,7 +307,8 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
             branch_id: data.branch_id,
             start_time: data.start_time,
             end_time: data.end_time,
-            assigned_at: new Date().toISOString()
+            assigned_at: new Date().toISOString(),
+            override_used: !!managerOverrideCode
           }
         });
       }
@@ -333,8 +367,8 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       console.log('🚀 Starting shift creation process...');
       await createShift.mutateAsync(shiftData);
     },
-    updateShift: async (shiftId: string, updates: Partial<ShiftScheduleData>) => {
-      await updateShift.mutateAsync({ shiftId, updates });
+    updateShift: async (shiftId: string, updates: Partial<ShiftScheduleData>, managerOverrideCode?: string) => {
+      await updateShift.mutateAsync({ shiftId, updates, managerOverrideCode });
     },
     deleteShift: async (shiftId: string) => {
       await deleteShift.mutateAsync(shiftId);
