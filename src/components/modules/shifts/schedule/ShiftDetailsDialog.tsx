@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Clock, User, MapPin, Edit, Trash2, UserPlus, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -499,72 +500,128 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
               <div className="space-y-3">
                 <Label className="text-base font-semibold">הקצאות עובדים</Label>
                 {Array.from({ length: editData.required_employees }, (_, index) => {
-                  const assignmentType = index === 0 ? 'חובה' : 'תגבור';
+                  const currentAssignment = editData.shift_assignments?.[index];
+                  const assignmentType = currentAssignment?.type || (index === 0 ? 'חובה' : 'תגבור');
                   const assignmentNumber = index + 1;
                   
                   return (
-                    <div key={index} className="space-y-2 p-3 bg-gray-50 rounded-lg border">
+                    <div key={index} className="space-y-3 p-3 bg-gray-50 rounded-lg border">
                       <div className="flex items-center justify-between">
                         <Label className="text-sm font-medium">
                           עובד מוקצה {assignmentNumber}
                         </Label>
-                        <Badge variant={index === 0 ? "default" : "secondary"} className="text-xs">
+                      </div>
+                      
+                      {/* Assignment Type Selection */}
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-gray-600">סוג ההקצאה</Label>
+                        <RadioGroup
+                          value={assignmentType}
+                          onValueChange={(value: 'חובה' | 'תגבור') => {
+                            setEditData(prev => {
+                              const newAssignments = [...(prev.shift_assignments || [])];
+                              
+                              // Ensure we have enough assignments
+                              while (newAssignments.length <= index) {
+                                newAssignments.push({
+                                  id: crypto.randomUUID(),
+                                  type: 'חובה',
+                                  employee_id: null,
+                                  position: newAssignments.length + 1,
+                                  is_required: true
+                                });
+                              }
+                              
+                              // Update the assignment type
+                              newAssignments[index] = {
+                                ...newAssignments[index],
+                                type: value,
+                                is_required: value === 'חובה'
+                              };
+                              
+                              return { 
+                                ...prev, 
+                                shift_assignments: newAssignments
+                              };
+                            });
+                          }}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="חובה" id={`mandatory-${index}`} />
+                            <Label htmlFor={`mandatory-${index}`} className="text-sm">חובה</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="תגבור" id={`reinforcement-${index}`} />
+                            <Label htmlFor={`reinforcement-${index}`} className="text-sm">תגבור</Label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+                      
+                      {/* Employee Selection */}
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-gray-600">בחירת עובד</Label>
+                        <Select 
+                          value={
+                            editData.shift_assignments && editData.shift_assignments[index]?.employee_id 
+                              ? editData.shift_assignments[index].employee_id 
+                              : (index === 0 ? editData.employee_id || 'no_employee' : 'no_employee')
+                          } 
+                          onValueChange={(value) => {
+                            const employeeId = value === 'no_employee' ? null : value;
+                            
+                            // Update assignments array
+                            setEditData(prev => {
+                              const newAssignments = [...(prev.shift_assignments || [])];
+                              
+                              // Ensure we have enough assignments
+                              while (newAssignments.length <= index) {
+                                newAssignments.push({
+                                  id: crypto.randomUUID(),
+                                  type: newAssignments.length === 0 ? 'חובה' : 'תגבור',
+                                  employee_id: null,
+                                  position: newAssignments.length + 1,
+                                  is_required: newAssignments.length === 0
+                                });
+                              }
+                              
+                              // Update the specific assignment
+                              newAssignments[index] = {
+                                ...newAssignments[index],
+                                employee_id: employeeId
+                              };
+                              
+                              // Also update the main employee_id for backward compatibility (first assignment)
+                              const newEmployeeId = index === 0 ? employeeId : prev.employee_id;
+                              
+                              return { 
+                                ...prev, 
+                                employee_id: newEmployeeId,
+                                shift_assignments: newAssignments
+                              };
+                            });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="בחר עובד..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white shadow-lg border z-50">
+                            <SelectItem value="no_employee">ללא עובד מוקצה</SelectItem>
+                            {employees.map(employee => (
+                              <SelectItem key={employee.id} value={employee.id}>
+                                {employee.first_name} {employee.last_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {/* Visual indicator */}
+                      <div className="flex justify-end">
+                        <Badge variant={assignmentType === 'חובה' ? "default" : "secondary"} className="text-xs">
                           {assignmentType}
                         </Badge>
                       </div>
-                      <Select 
-                        value={
-                          editData.shift_assignments && editData.shift_assignments[index]?.employee_id 
-                            ? editData.shift_assignments[index].employee_id 
-                            : (index === 0 ? editData.employee_id || 'no_employee' : 'no_employee')
-                        } 
-                        onValueChange={(value) => {
-                          const employeeId = value === 'no_employee' ? null : value;
-                          
-                          // Update assignments array
-                          setEditData(prev => {
-                            const newAssignments = [...(prev.shift_assignments || [])];
-                            
-                            // Ensure we have enough assignments
-                            while (newAssignments.length <= index) {
-                              newAssignments.push({
-                                id: crypto.randomUUID(),
-                                type: newAssignments.length === 0 ? 'חובה' : 'תגבור',
-                                employee_id: null,
-                                position: newAssignments.length + 1,
-                                is_required: newAssignments.length === 0
-                              });
-                            }
-                            
-                            // Update the specific assignment
-                            newAssignments[index] = {
-                              ...newAssignments[index],
-                              employee_id: employeeId
-                            };
-                            
-                            // Also update the main employee_id for backward compatibility (first assignment)
-                            const newEmployeeId = index === 0 ? employeeId : prev.employee_id;
-                            
-                            return { 
-                              ...prev, 
-                              employee_id: newEmployeeId,
-                              shift_assignments: newAssignments
-                            };
-                          });
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="בחר עובד..." />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white shadow-lg border z-50">
-                          <SelectItem value="no_employee">ללא עובד מוקצה</SelectItem>
-                          {employees.map(employee => (
-                            <SelectItem key={employee.id} value={employee.id}>
-                              {employee.first_name} {employee.last_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                     </div>
                   );
                 })}
