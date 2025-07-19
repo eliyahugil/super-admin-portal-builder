@@ -81,7 +81,14 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
         </div>
       </div>
       
-      <div className={`flex items-center gap-2 ${isMobile ? 'justify-center' : ''}`}>
+      <div className={`flex items-center gap-2 ${isMobile ? 'justify-center flex-wrap' : ''}`}>
+        <Button
+          variant={view === 'grouped' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setView('grouped')}
+        >
+          📊 לפי סניפים
+        </Button>
         <Button
           variant={view === 'week' ? 'default' : 'outline'}
           size="sm"

@@ -32,11 +32,13 @@ import { NotificationsPanel } from './notifications/NotificationsPanel';
 import { useNotifications } from './notifications/useNotifications';
 import { ParallelScheduleView } from './schedule/ParallelScheduleView';
 import { GroupedByBranchView } from './schedule/components/GroupedByBranchView';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import type { ScheduleView, ShiftScheduleData, CreateShiftData } from './schedule/types';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
   const isMobile = useIsMobile();
-  const [view, setView] = useState<ScheduleView>('month');
+  const { preferences, loading: preferencesLoading } = useUserPreferences();
+  const [view, setView] = useState<ScheduleView>('grouped'); // התחלה עם תצוגה מקובצת
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showQuickMultiple, setShowQuickMultiple] = useState(false);
@@ -114,6 +116,13 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     deleteNotification,
     addShiftSubmissionNotification
   } = useNotifications();
+
+  // טעינת הגדרות ברירת מחדל של המשתמש
+  useEffect(() => {
+    if (!preferencesLoading && preferences.defaultScheduleView) {
+      setView(preferences.defaultScheduleView);
+    }
+  }, [preferences, preferencesLoading]);
 
   // Add event listener for pending submissions dialog
   useEffect(() => {
