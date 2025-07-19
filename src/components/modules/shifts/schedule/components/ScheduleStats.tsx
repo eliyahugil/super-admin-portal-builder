@@ -11,6 +11,13 @@ interface ScheduleStatsProps {
 }
 
 export const ScheduleStats: React.FC<ScheduleStatsProps> = ({ shifts, isMobile, pendingSubmissions = [] }) => {
+  console.log('📊 ScheduleStats rendering with:', {
+    shiftsCount: shifts.length,
+    isMobile,
+    pendingSubmissionsCount: pendingSubmissions.length,
+    pendingSubmissions: pendingSubmissions
+  });
+
   const totalShifts = shifts.length;
   const approvedShifts = shifts.filter(s => s.status === 'approved').length;
   const pendingShifts = shifts.filter(s => s.status === 'pending').length;
@@ -21,6 +28,15 @@ export const ScheduleStats: React.FC<ScheduleStatsProps> = ({ shifts, isMobile, 
   const totalShiftRequests = pendingSubmissions.reduce((total, submission) => {
     return total + (submission.shift_requests?.length || 0);
   }, 0);
+
+  console.log('📊 ScheduleStats calculated:', {
+    totalShifts,
+    approvedShifts,
+    pendingShifts,
+    assignedShifts,
+    totalSubmissions,
+    totalShiftRequests
+  });
 
   const stats = [
     {
@@ -63,41 +79,47 @@ export const ScheduleStats: React.FC<ScheduleStatsProps> = ({ shifts, isMobile, 
 
   if (isMobile) {
     return (
-      <div className="grid grid-cols-2 gap-3">
-        {stats.map((stat, index) => (
-          <Card key={index} className="p-3">
-            <CardContent className="p-0">
-              <div className="flex items-center space-x-3 space-x-reverse">
-                <div className={`p-2 rounded-full ${stat.color}`}>
-                  <stat.icon className="h-4 w-4" />
+      <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm mb-4">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3 text-right">סטטיסטיקות</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {stats.map((stat, index) => (
+            <Card key={index} className="p-3 border border-gray-200">
+              <CardContent className="p-0">
+                <div className="flex items-center space-x-3 space-x-reverse">
+                  <div className={`p-2 rounded-full ${stat.color}`}>
+                    <stat.icon className="h-4 w-4" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-xs text-gray-600">{stat.title}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xl font-bold">{stat.value}</p>
-                  <p className="text-xs text-gray-600">{stat.title}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-      {stats.map((stat, index) => (
-        <Card key={index}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-            <div className={`p-2 rounded-full ${stat.color}`}>
-              <stat.icon className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stat.value}</div>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm mb-6">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4 text-right">סטטיסטיקות משמרות</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        {stats.map((stat, index) => (
+          <Card key={index} className="border border-gray-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700">{stat.title}</CardTitle>
+              <div className={`p-2 rounded-full ${stat.color}`}>
+                <stat.icon className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
