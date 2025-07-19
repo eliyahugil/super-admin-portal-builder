@@ -23,6 +23,26 @@ export interface ShiftRecommendationData {
   recommendations: EmployeeRecommendation[];
 }
 
+// Function to get saved score weights from localStorage
+const getSavedScoreWeights = () => {
+  try {
+    const saved = localStorage.getItem('schedulingScoreWeights');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (error) {
+    console.warn('Error loading saved score weights:', error);
+  }
+  
+  // Default weights if nothing saved
+  return {
+    shiftType: 50,
+    branchAssignment: 35,
+    dayAvailability: 20,
+    weeklyHours: 15
+  };
+};
+
 // Calculate employee recommendation score for a specific shift
 const calculateEmployeeScore = (
   employee: any,
@@ -34,7 +54,11 @@ const calculateEmployeeScore = (
   const reasons: string[] = [];
   const warnings: string[] = [];
 
+  // Get saved score weights
+  const weights = getSavedScoreWeights();
+
   console.log(`\n🧮 מחשב ציון לעובד: ${employee.first_name} ${employee.last_name || ''} למשמרת ${shift.start_time}-${shift.end_time}`);
+  console.log('📊 משקלי נקודות:', weights);
 
   // Parse employee preferences
   const preferences = employee.employee_default_preferences?.[0] || {};
@@ -53,9 +77,9 @@ const calculateEmployeeScore = (
   const shiftTypeMatch = prefersThisShiftType;
   
   if (prefersThisShiftType) {
-    score += 50; // הכי הרבה נקודות לסוג משמרת!
-    reasons.push(`✅ מעדיף משמרות ${isMorningShift ? 'בוקר' : 'ערב'} (+50)`);
-    console.log(`  ✅ סוג משמרת: +50 נקודות (מעדיף ${isMorningShift ? 'בוקר' : 'ערב'})`);
+    score += weights.shiftType;
+    reasons.push(`✅ מעדיף משמרות ${isMorningShift ? 'בוקר' : 'ערב'} (+${weights.shiftType})`);
+    console.log(`  ✅ סוג משמרת: +${weights.shiftType} נקודות (מעדיף ${isMorningShift ? 'בוקר' : 'ערב'})`);
   } else {
     warnings.push(`⚠️ לא מעדיף משמרות ${isMorningShift ? 'בוקר' : 'ערב'} (+0)`);
     console.log(`  ❌ סוג משמרת: +0 נקודות (לא מעדיף ${isMorningShift ? 'בוקר' : 'ערב'})`);
@@ -68,13 +92,14 @@ const calculateEmployeeScore = (
   );
   
   if (branchMatch && shiftBranchId) {
-    score += 35; // עדיפות גבוהה לסניף מוקצה
-    reasons.push('✅ משויך לסניף זה (+35)');
-    console.log(`  ✅ סניף: +35 נקודות (משויך לסניף)`);
+    score += weights.branchAssignment;
+    reasons.push(`✅ משויך לסניף זה (+${weights.branchAssignment})`);
+    console.log(`  ✅ סניף: +${weights.branchAssignment} נקודות (משויך לסניף)`);
   } else if (!shiftBranchId) {
-    score += 20; // משמרת כללית
-    reasons.push('ℹ️ משמרת כללית (+20)');
-    console.log(`  ℹ️ סניף: +20 נקודות (משמרת כללית)`);
+    const generalScore = Math.round(weights.branchAssignment * 0.6); // 60% מהנקודות למשמרת כללית
+    score += generalScore;
+    reasons.push(`ℹ️ משמרת כללית (+${generalScore})`);
+    console.log(`  ℹ️ סניף: +${generalScore} נקודות (משמרת כללית)`);
   } else {
     warnings.push('⚠️ לא משויך לסניף זה (+0)');
     console.log(`  ❌ סניף: +0 נקודות (לא משויך לסניף זה)`);
@@ -86,9 +111,9 @@ const calculateEmployeeScore = (
   const availabilityMatch = availableDays.includes(shiftDayOfWeek);
   
   if (availabilityMatch) {
-    score += 20;
-    reasons.push('✅ זמין ביום זה (+20)');
-    console.log(`  ✅ זמינות יום: +20 נקודות (זמין ביום ${shiftDayOfWeek})`);
+    score += weights.dayAvailability;
+    reasons.push(`✅ זמין ביום זה (+${weights.dayAvailability})`);
+    console.log(`  ✅ זמינות יום: +${weights.dayAvailability} נקודות (זמין ביום ${shiftDayOfWeek})`);
   } else {
     warnings.push('❌ לא זמין ביום זה (+0)');
     console.log(`  ❌ זמינות יום: +0 נקודות (לא זמין ביום ${shiftDayOfWeek})`);
@@ -104,14 +129,15 @@ const calculateEmployeeScore = (
   
   if (projectedHours < requiredWeeklyHours) {
     weeklyHoursStatus = 'under';
-    score += 15;
-    reasons.push(`✅ צריך עוד ${requiredWeeklyHours - projectedHours} שעות השבוע (+15)`);
-    console.log(`  ✅ שעות שבועיות: +15 נקודות (צריך עוד ${requiredWeeklyHours - projectedHours} שעות)`);
+    score += weights.weeklyHours;
+    reasons.push(`✅ צריך עוד ${requiredWeeklyHours - projectedHours} שעות השבוע (+${weights.weeklyHours})`);
+    console.log(`  ✅ שעות שבועיות: +${weights.weeklyHours} נקודות (צריך עוד ${requiredWeeklyHours - projectedHours} שעות)`);
   } else if (projectedHours <= requiredWeeklyHours + 5) {
     weeklyHoursStatus = 'normal';
-    score += 10;
-    reasons.push('✅ כמות שעות תקינה (+10)');
-    console.log(`  ✅ שעות שבועיות: +10 נקודות (כמות תקינה)`);
+    const normalScore = Math.round(weights.weeklyHours * 0.67); // 67% מהנקודות לכמות תקינה
+    score += normalScore;
+    reasons.push(`✅ כמות שעות תקינה (+${normalScore})`);
+    console.log(`  ✅ שעות שבועיות: +${normalScore} נקודות (כמות תקינה)`);
   } else {
     weeklyHoursStatus = 'over';
     warnings.push(`⚠️ יחרוג ב-${projectedHours - requiredWeeklyHours} שעות (+0)`);
