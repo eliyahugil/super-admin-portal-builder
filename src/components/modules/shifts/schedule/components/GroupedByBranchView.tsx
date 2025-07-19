@@ -102,45 +102,57 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
     
     // Sort shifts within each day by start time then end time
     Object.values(grouped).forEach(branchGroup => {
-      Object.values(branchGroup.days).forEach(dayShifts => {
-        if (dayShifts.length > 0) {
-          console.log('🔍 Before sorting shifts for day:', dayShifts[0].shift_date, 
-            dayShifts.map(s => `${s.start_time}-${s.end_time} (${s.employee_id ? 'assigned' : 'unassigned'})`));
+      Object.values(branchGroup.days).forEach((dayShifts, dayIndex) => {
+        if (dayShifts.length > 1) {
+          console.log('🔍 BEFORE SORTING - Day shifts:', dayShifts.map(s => 
+            `${s.start_time}-${s.end_time} (ID: ${s.id.slice(0,8)})`
+          ));
         }
         
         dayShifts.sort((a, b) => {
+          // Enhanced time parsing with validation
           const parseTime = (timeStr: string) => {
-            if (!timeStr) return 0;
-            const [hours, minutes] = timeStr.split(':').map(num => parseInt(num) || 0);
-            return hours * 60 + minutes;
+            if (!timeStr || typeof timeStr !== 'string') {
+              console.warn('❌ Invalid time string:', timeStr);
+              return 0;
+            }
+            
+            const parts = timeStr.split(':');
+            if (parts.length !== 2) {
+              console.warn('❌ Invalid time format:', timeStr);
+              return 0;
+            }
+            
+            const hours = parseInt(parts[0]) || 0;
+            const minutes = parseInt(parts[1]) || 0;
+            const totalMinutes = hours * 60 + minutes;
+            
+            return totalMinutes;
           };
           
-          const startA = parseTime(a.start_time || '00:00');
-          const startB = parseTime(b.start_time || '00:00');
+          const startA = parseTime(a.start_time);
+          const startB = parseTime(b.start_time);
           
-          console.log('⏰ Comparing times:', {
-            shiftA: `${a.start_time}-${a.end_time}`,
-            shiftB: `${b.start_time}-${b.end_time}`,
-            startA: startA,
-            startB: startB,
-            result: startA - startB
-          });
-          
-          // מיון לפי שעת התחלה קודם
+          // Primary sort: by start time (earliest first)
           if (startA !== startB) {
-            return startA - startB;
+            const result = startA - startB;
+            console.log(`⏰ Sorting: ${a.start_time}(${startA}) vs ${b.start_time}(${startB}) = ${result}`);
+            return result;
           }
           
-          // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (הארוכה קודם)
-          const endA = parseTime(a.end_time || '23:59');
-          const endB = parseTime(b.end_time || '23:59');
+          // Secondary sort: if start times are identical, sort by end time (longer shifts first)
+          const endA = parseTime(a.end_time);
+          const endB = parseTime(b.end_time);
+          const endResult = endB - endA;
           
-          return endB - endA; // הארוכה קודם
+          console.log(`🕐 Same start time, sorting by end: ${a.end_time}(${endA}) vs ${b.end_time}(${endB}) = ${endResult}`);
+          return endResult;
         });
         
-        if (dayShifts.length > 0) {
-          console.log('✅ After sorting shifts for day:', dayShifts[0].shift_date, 
-            dayShifts.map(s => `${s.start_time}-${s.end_time} (${s.employee_id ? 'assigned' : 'unassigned'})`));
+        if (dayShifts.length > 1) {
+          console.log('✅ AFTER SORTING - Day shifts:', dayShifts.map(s => 
+            `${s.start_time}-${s.end_time} (ID: ${s.id.slice(0,8)})`
+          ));
         }
       });
     });
