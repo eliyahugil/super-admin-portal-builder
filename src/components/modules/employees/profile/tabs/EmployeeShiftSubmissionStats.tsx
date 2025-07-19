@@ -45,7 +45,7 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
   const { data: submissions, isLoading, refetch } = useQuery({
     queryKey: ['employee-submission-stats', employeeId],
     queryFn: async () => {
-      if (!employeeId) return { submissions: [], preferences: [] };
+      if (!employeeId) return { submissions: [], approvedShifts: [], preferences: [] };
       
       console.log('🔄 Fetching employee submission stats for:', employeeId);
       
@@ -142,19 +142,19 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
 
   // Helper function to check if shift is valid for employee
   const isValidShiftForEmployee = (shift: any, allowedShiftTypes: string[], allowedDays: number[]): boolean => {
-    if (!shift.date || !shift.start_time || !shift.end_time) return false;
+    if (!shift.date && !shift.shift_date) return false;
+    if (!shift.start_time || !shift.end_time) return false;
     
     // Check shift type
     const shiftType = getShiftType(shift.start_time, shift.end_time);
-    if (!allowedShiftTypes.includes(shiftType)) {
-      console.log(`❌ Shift type ${shiftType} not allowed for employee. Allowed: ${allowedShiftTypes.join(', ')}`);
+    if (allowedShiftTypes.length > 0 && !allowedShiftTypes.includes(shiftType)) {
       return false;
     }
     
     // Check day of week
-    const dayOfWeek = new Date(shift.date).getDay();
-    if (!allowedDays.includes(dayOfWeek)) {
-      console.log(`❌ Day ${dayOfWeek} not allowed for employee. Allowed: ${allowedDays.join(', ')}`);
+    const date = shift.date || shift.shift_date;
+    const dayOfWeek = new Date(date).getDay();
+    if (allowedDays.length > 0 && !allowedDays.includes(dayOfWeek)) {
       return false;
     }
     
@@ -165,20 +165,23 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
   const calculateStats = (submissionsData: ShiftSubmissionStat[], approvedShiftsData: any[], preferencesData: any[]): SubmissionStats => {
     console.log('📊 calculateStats called with:', {
       submissionsCount: submissionsData?.length || 0,
-      submissionsData: submissionsData,
+      approvedShiftsCount: approvedShiftsData?.length || 0,
       preferencesCount: preferencesData?.length || 0
     });
 
     if (!submissionsData || submissionsData.length === 0) {
-      console.log('❌ No submissions data found');
+      // Check if there are approved shifts even without submissions
+      const hasApprovedShifts = approvedShiftsData && approvedShiftsData.length > 0;
+      console.log('❌ No submissions data found, but checking approved shifts:', hasApprovedShifts);
+      
       return {
-        totalSubmissions: 0,
-        approvedSubmissions: 0,
+        totalSubmissions: hasApprovedShifts ? 1 : 0, // If there are approved shifts, count as 1 submission
+        approvedSubmissions: hasApprovedShifts ? 1 : 0,
         pendingSubmissions: 0,
         rejectedSubmissions: 0,
-        totalShiftsRequested: 0,
-        averageShiftsPerWeek: 0,
-        submissionRate: 0,
+        totalShiftsRequested: approvedShiftsData?.length || 0,
+        averageShiftsPerWeek: approvedShiftsData?.length || 0,
+        submissionRate: hasApprovedShifts ? 100 : 0,
       };
     }
 
@@ -214,8 +217,8 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
     // Count approved shifts from scheduled_shifts table  
     const approvedScheduledShifts = approvedShiftsData?.length || 0;
     
-    // Total approved = submissions with approved status + approved scheduled shifts
-    const totalApproved = approvedSubmissions + (approvedScheduledShifts > 0 ? 1 : 0); // If there are approved shifts, count as 1 approved submission
+    // Total approved = submissions with approved status + (if there are approved scheduled shifts, add them)
+    const totalApproved = approvedSubmissions + (approvedScheduledShifts > 0 ? 1 : 0);
     
     const pending = submissionsData.filter(s => s.status === 'pending' || s.status === 'submitted').length;
     const rejected = submissionsData.filter(s => s.status === 'rejected').length;
@@ -270,6 +273,9 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
       
       return acc + dateShiftCount;
     }, 0);
+
+    // Add approved scheduled shifts to total shifts requested
+    const totalShiftsIncludingApproved = totalShifts + approvedScheduledShifts;
 
     // Calculate weeks available for submission rate
     const weeksToCheck = submissionsData.length > 0 ? 12 : 0;
@@ -326,17 +332,17 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
 
     console.log('📊 Final stats:', {
       totalSubmissions: submissionsData.length,
-      totalValidShifts: totalShifts,
-      averageValidShiftsPerWeek: submissionsData.length > 0 ? Math.round((totalShifts / submissionsData.length) * 10) / 10 : 0
+      totalValidShifts: totalShiftsIncludingApproved,
+      averageValidShiftsPerWeek: submissionsData.length > 0 ? Math.round((totalShiftsIncludingApproved / submissionsData.length) * 10) / 10 : 0
     });
 
     return {
-      totalSubmissions: submissionsData.length,
+      totalSubmissions: submissionsData.length + (approvedScheduledShifts > 0 ? 1 : 0), // Include approved shifts as submissions
       approvedSubmissions: totalApproved,
       pendingSubmissions: pending,
       rejectedSubmissions: rejected,
-      totalShiftsRequested: totalShifts,
-      averageShiftsPerWeek: submissionsData.length > 0 ? Math.round((totalShifts / submissionsData.length) * 10) / 10 : 0,
+      totalShiftsRequested: totalShiftsIncludingApproved,
+      averageShiftsPerWeek: submissionsData.length > 0 ? Math.round((totalShiftsIncludingApproved / submissionsData.length) * 10) / 10 : totalShiftsIncludingApproved,
       submissionRate: Math.min(submissionRate, 100),
       lastSubmission,
       mostActiveWeek: mostActiveWeek || 'לא נמצא',
@@ -449,7 +455,7 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
             <div className="flex items-center justify-between">
               <span className="text-sm">בהמתנה</span>
               <div className="flex items-center gap-2">
-                <Badge variant="secondary">{stats.pendingSubmissions}</Badge>
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800">{stats.pendingSubmissions}</Badge>
                 <span className="text-sm text-muted-foreground">
                   ({stats.totalSubmissions > 0 ? Math.round((stats.pendingSubmissions / stats.totalSubmissions) * 100) : 0}%)
                 </span>
@@ -503,93 +509,74 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarDays className="h-5 w-5" />
-            הגשות אחרונות
+            הגשות ומשמרות אחרונות
           </CardTitle>
-          <CardDescription>5 ההגשות האחרונות של {employeeName}</CardDescription>
+          <CardDescription>הגשות אחרונות ומשמרות מאושרות של {employeeName}</CardDescription>
         </CardHeader>
         <CardContent>
-          {submissions && submissions.submissions.length > 0 ? (
-            <div className="space-y-3">
-              {submissions.submissions.slice(0, 5).map((submission) => {
-                // Count valid shifts for this employee - handle overlapping shifts
-                const validShiftsCount = (() => {
-                  if (!submission.shifts || !Array.isArray(submission.shifts)) return 0;
-                  
-                  // Get employee's allowed shift types and days
-                  const allowedShiftTypes: string[] = [];
-                  const allowedDays: number[] = [];
-                  
-                  submissions.preferences.forEach(pref => {
-                    if (pref.shift_types && Array.isArray(pref.shift_types)) {
-                      pref.shift_types.forEach((type: string) => {
-                        if (!allowedShiftTypes.includes(type)) allowedShiftTypes.push(type);
-                      });
-                    }
-                    if (pref.available_days && Array.isArray(pref.available_days)) {
-                      pref.available_days.forEach((day: number) => {
-                        if (!allowedDays.includes(day)) allowedDays.push(day);
-                      });
-                    }
-                  });
-                  
-                  // Group by date and handle overlapping shifts
-                  const shiftsByDate = new Map<string, any[]>();
-                  
-                  submission.shifts.forEach((shift: any) => {
-                    if (shift.date && shift.start_time && shift.end_time) {
-                      if (isValidShiftForEmployee(shift, allowedShiftTypes, allowedDays)) {
-                        if (!shiftsByDate.has(shift.date)) {
-                          shiftsByDate.set(shift.date, []);
-                        }
-                        shiftsByDate.get(shift.date)!.push(shift);
-                      }
-                    }
-                  });
-                  
-                  let totalUniqueShifts = 0;
-                  shiftsByDate.forEach((shifts) => {
-                    const uniqueShifts: any[] = [];
-                    
-                    shifts.forEach((shift) => {
-                      const overlapsWithExisting = uniqueShifts.some(existingShift => 
-                        timesOverlap(shift.start_time, shift.end_time, existingShift.start_time, existingShift.end_time)
-                      );
-                      
-                      if (!overlapsWithExisting) {
-                        uniqueShifts.push(shift);
-                      }
-                    });
-                    
-                    totalUniqueShifts += uniqueShifts.length;
-                  });
-                  
-                  return totalUniqueShifts;
-                })();
-
-                return (
-                  <div key={submission.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium">
-                        שבוע {format(new Date(submission.week_start_date), 'dd/MM', { locale: he })} - {format(new Date(submission.week_end_date), 'dd/MM', { locale: he })}
+          <div className="space-y-4">
+            {/* Show approved shifts */}
+            {submissions && submissions.approvedShifts && submissions.approvedShifts.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium mb-2">משמרות מאושרות ({submissions.approvedShifts.length})</h4>
+                <div className="space-y-2">
+                  {submissions.approvedShifts.slice(0, 5).map((shift: any) => (
+                    <div key={shift.id} className="flex items-center justify-between p-2 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium">
+                          {format(new Date(shift.shift_date), 'dd/MM/yyyy', { locale: he })}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {shift.start_time} - {shift.end_time} {shift.role && `• ${shift.role}`}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        הוגש: {format(new Date(submission.submitted_at), 'dd/MM/yyyy HH:mm', { locale: he })}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {validShiftsCount} משמרות תקינות
+                      <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
+                        מאושר
                       </Badge>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">אין הגשות להצגה</p>
-            </div>
-          )}
+                  ))}
+                  {submissions.approvedShifts.length > 5 && (
+                    <p className="text-xs text-muted-foreground">ועוד {submissions.approvedShifts.length - 5} משמרות...</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Show submissions */}
+            {submissions && submissions.submissions.length > 0 ? (
+              <div>
+                <h4 className="text-sm font-medium mb-2">הגשות אחרונות</h4>
+                <div className="space-y-3">
+                  {submissions.submissions.slice(0, 3).map((submission) => (
+                    <div key={submission.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium">
+                          שבוע {format(new Date(submission.week_start_date), 'dd/MM', { locale: he })} - {format(new Date(submission.week_end_date), 'dd/MM', { locale: he })}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          הוגש: {format(new Date(submission.submitted_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={submission.status === 'approved' ? 'default' : submission.status === 'rejected' ? 'destructive' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {submission.status === 'approved' ? 'מאושר' : 
+                           submission.status === 'rejected' ? 'נדחה' : 
+                           submission.status === 'submitted' ? 'נשלח' : 'בהמתנה'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">אין הגשות להצגה</p>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
