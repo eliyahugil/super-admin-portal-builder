@@ -83,6 +83,7 @@ export const AuthForm: React.FC = () => {
     // Only redirect if we have both user and profile
     if (!user || !profile) {
       console.log('AuthForm - Missing user or profile:', { hasUser: !!user, hasProfile: !!profile });
+      console.log('AuthForm - Rendering auth form');
       return;
     }
 
@@ -242,12 +243,6 @@ export const AuthForm: React.FC = () => {
     );
   }
 
-  // EMERGENCY FIX: Force eligil1308@gmail.com to admin immediately
-  if (user && profile && profile.email === 'eligil1308@gmail.com') {
-    console.log('EMERGENCY: Forcing admin access for eligil1308@gmail.com');
-    window.location.href = '/admin';
-    return null;
-  }
 
   // If user is authenticated but has no business access, show simple access request form
   // BUT NOT for super_admin or if email is eligil1308@gmail.com
