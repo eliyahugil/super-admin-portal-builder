@@ -143,6 +143,66 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
     mutationFn: async ({ shiftId, updates }: { shiftId: string; updates: Partial<ShiftScheduleData> }) => {
       console.log('🔄 Updating shift:', shiftId, updates);
 
+      // אם מנסים לשייך עובד, בודק אם יש קונפליקט
+      if (updates.employee_id && businessId) {
+        console.log('🔍 Checking for employee assignment conflicts...');
+        
+        // קבל פרטי המשמרת הנוכחית
+        const { data: currentShift, error: shiftError } = await supabase
+          .from('scheduled_shifts')
+          .select('shift_date, branch_id, start_time, end_time')
+          .eq('id', shiftId)
+          .single();
+
+        if (shiftError) {
+          console.error('❌ Error getting current shift:', shiftError);
+          throw shiftError;
+        }
+
+        // בדיקה לקונפליקטים - עובד באותו יום באותו סניף
+        const { data: conflictingShifts, error: conflictError } = await supabase
+          .from('scheduled_shifts')
+          .select('id, shift_date, start_time, end_time, branch_id')
+          .eq('business_id', businessId)
+          .eq('employee_id', updates.employee_id)
+          .eq('shift_date', currentShift.shift_date)
+          .eq('branch_id', currentShift.branch_id)
+          .eq('is_archived', false)
+          .neq('id', shiftId); // לא כולל את המשמרת הנוכחית
+
+        if (conflictError) {
+          console.error('❌ Error checking conflicts:', conflictError);
+          throw conflictError;
+        }
+
+        if (conflictingShifts && conflictingShifts.length > 0) {
+          console.warn('⚠️ Employee assignment conflict detected:', {
+            employeeId: updates.employee_id,
+            date: currentShift.shift_date,
+            branchId: currentShift.branch_id,
+            conflictingShifts
+          });
+
+          // רישום התראה בלוג הפעילות
+          await logActivity({
+            action: 'employee_double_assignment_blocked',
+            target_type: 'shift',
+            target_id: shiftId,
+            details: {
+              employee_id: updates.employee_id,
+              shift_date: currentShift.shift_date,
+              branch_id: currentShift.branch_id,
+              conflicting_shifts: conflictingShifts,
+              attempted_at: new Date().toISOString(),
+              warning_level: 'high'
+            }
+          });
+
+          const conflictTimes = conflictingShifts.map(s => `${s.start_time}-${s.end_time}`).join(', ');
+          throw new Error(`⚠️ אזהרה: העובד כבר משויך למשמרת באותו יום באותו סניף (${conflictTimes}). לא ניתן לשייך עובד לשתי משמרות באותו יום באותו סניף.`);
+        }
+      }
+
       const updateData: any = {};
       
       if (updates.employee_id !== undefined) {
@@ -201,6 +261,24 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       }
 
       console.log('✅ Shift updated successfully:', data);
+      
+      // אם שיוך עובד הצליח, רשום בלוג
+      if (updates.employee_id) {
+        await logActivity({
+          action: 'employee_assigned_to_shift',
+          target_type: 'shift',
+          target_id: shiftId,
+          details: {
+            employee_id: updates.employee_id,
+            shift_date: data.shift_date,
+            branch_id: data.branch_id,
+            start_time: data.start_time,
+            end_time: data.end_time,
+            assigned_at: new Date().toISOString()
+          }
+        });
+      }
+      
       return data;
     },
     onSuccess: () => {
