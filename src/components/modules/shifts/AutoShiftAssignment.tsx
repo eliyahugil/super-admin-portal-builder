@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -255,7 +256,7 @@ export const AutoShiftAssignment: React.FC = () => {
             </SelectContent>
           </Select>
           
-          <Select value={assignmentMode} onValueChange={(value: any) => setAssignmentMode(value)}>
+           <Select value={assignmentMode} onValueChange={(value: any) => setAssignmentMode(value)}>
             <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
@@ -284,6 +285,59 @@ export const AutoShiftAssignment: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* הגדרות כמויות משמרות לפי עובדים */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            הגדרות כמויות משמרות לפי עובדים
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox id="use-employee-hours" />
+              <label htmlFor="use-employee-hours" className="text-sm font-medium">
+                התאמה לשעות שבועיות נדרשות
+              </label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="balance-workload" />
+              <label htmlFor="balance-workload" className="text-sm font-medium">
+                איזון עומס עבודה בין עובדים
+              </label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="respect-preferences" />
+              <label htmlFor="respect-preferences" className="text-sm font-medium">
+                כבוד להעדפות עובדים
+              </label>
+            </div>
+          </div>
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-2">מגבלות שעות עבודה</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">מינימום שעות לעובד בשבוע</label>
+                <input 
+                  type="number" 
+                  className="w-full mt-1 px-3 py-2 border rounded-md" 
+                  placeholder="0" 
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">מקסימום שעות לעובד בשבוע</label>
+                <input 
+                  type="number" 
+                  className="w-full mt-1 px-3 py-2 border rounded-md" 
+                  placeholder="50" 
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* סטטיסטיקות כלליות */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -444,6 +498,31 @@ export const AutoShiftAssignment: React.FC = () => {
                 </div>
               </div>
             </div>
+            
+            {/* המלצות למשמרות לא משויכות */}
+            {lastResult.statistics.total_shifts > lastResult.assignments.length && (
+              <div className="pt-4 border-t">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  המלצות למשמרות לא משויכות ({lastResult.statistics.total_shifts - lastResult.assignments.length})
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* כאן נציג דמה של משמרות לא משויכות - יש לעדכן באלגוריתם */}
+                  <div className="p-3 bg-orange-50 rounded border border-orange-200">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-medium text-orange-800">משמרת ללא שיוך</div>
+                        <div className="text-sm text-orange-600">08:00 - 16:00 | בוקר</div>
+                      </div>
+                      <Button size="sm" variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        <Brain className="h-3 w-3 mr-1" />
+                        המלצות
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="pt-4 border-t">
               <div className="flex justify-between items-center">
