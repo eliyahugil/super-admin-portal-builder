@@ -1,11 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useActivityLogger } from '@/hooks/useActivityLogger';
 import type { ShiftScheduleData, CreateShiftData } from '../types';
 
 export const useShiftScheduleMutations = (businessId: string | null) => {
   const queryClient = useQueryClient();
-  const { logActivity } = useActivityLogger();
 
   // Check for overlapping shifts for the same employee
   const checkForOverlappingShifts = async (shiftData: CreateShiftData) => {
@@ -71,18 +69,13 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         console.warn('⚠️', errorMsg);
         
         // Log the overlap attempt
-        await logActivity({
-          action: 'overlapping_shift_prevented',
-          target_type: 'shift',
-          target_id: 'overlap_prevention',
-          details: {
-            shift_date: shiftData.shift_date,
-            start_time: shiftData.start_time,
-            end_time: shiftData.end_time,
-            employee_id: shiftData.employee_id,
-            branch_id: shiftData.branch_id,
-            prevented_at: new Date().toISOString()
-          }
+        console.log('🚫 Overlap prevented for:', {
+          shift_date: shiftData.shift_date,
+          start_time: shiftData.start_time,
+          end_time: shiftData.end_time,
+          employee_id: shiftData.employee_id,
+          branch_id: shiftData.branch_id,
+          prevented_at: new Date().toISOString()
         });
         
         throw new Error('העובד כבר משויך למשמרת חופפת באותו תאריך. לא ניתן לשייך עובד לשתי משמרות חופפות.');
@@ -121,23 +114,18 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       console.log('✅ Shift created successfully:', data);
       
       // Log the successful creation with detailed information
-      await logActivity({
-        action: 'shift_created',
-        target_type: 'shift',
-        target_id: data.id,
-        details: {
-          shift_date: data.shift_date,
-          start_time: data.start_time,
-          end_time: data.end_time,
-          employee_id: data.employee_id,
-          branch_id: data.branch_id,
-          role: data.role,
-          status: data.status,
-          is_assigned: data.is_assigned,
-          business_id: businessId,
-          created_at: new Date().toISOString(),
-          creation_method: 'form_submission'
-        }
+      console.log('✅ Shift created with details:', {
+        shift_date: data.shift_date,
+        start_time: data.start_time,
+        end_time: data.end_time,
+        employee_id: data.employee_id,
+        branch_id: data.branch_id,
+        role: data.role,
+        status: data.status,
+        is_assigned: data.is_assigned,
+        business_id: businessId,
+        created_at: new Date().toISOString(),
+        creation_method: 'form_submission'
       });
       
       return data;
@@ -222,21 +210,16 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
           // אם אין קוד מנהל או הקוד שגוי
           if (!managerOverrideCode || managerOverrideCode !== '130898') {
             // רישום התראה בלוג הפעילות
-            await logActivity({
-              action: 'overlapping_shift_update_blocked',
-              target_type: 'shift',
-              target_id: shiftId,
-              details: {
-                employee_id: updates.employee_id,
-                shift_date: shiftDate,
-                new_start_time: startTime,
-                new_end_time: endTime,
-                overlapping_shifts: timeOverlaps,
-                attempted_at: new Date().toISOString(),
-                warning_level: 'high',
-                override_attempted: !!managerOverrideCode,
-                override_success: false
-              }
+            console.log('🚫 Overlapping shift update blocked:', {
+              employee_id: updates.employee_id,
+              shift_date: shiftDate,
+              new_start_time: startTime,
+              new_end_time: endTime,
+              overlapping_shifts: timeOverlaps,
+              attempted_at: new Date().toISOString(),
+              warning_level: 'high',
+              override_attempted: !!managerOverrideCode,
+              override_success: false
             });
 
             const overlapTimes = timeOverlaps.map(s => `${s.start_time}-${s.end_time}`).join(', ');
@@ -251,22 +234,6 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
           } else {
             // קוד מנהל נכון - אישור עקיפה
             console.log('✅ Manager override code accepted - allowing overlapping assignment');
-            await logActivity({
-              action: 'overlapping_shift_approved_with_override',
-              target_type: 'shift',
-              target_id: shiftId,
-              details: {
-                employee_id: updates.employee_id,
-                shift_date: shiftDate,
-                new_start_time: startTime,
-                new_end_time: endTime,
-                overlapping_shifts: timeOverlaps,
-                approved_at: new Date().toISOString(),
-                warning_level: 'critical',
-                override_used: true,
-                manager_code_used: '130898'
-              }
-            });
           }
         }
       }
@@ -390,21 +357,40 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       console.log('✅ Shift updated successfully in DB:', data);
       console.log('✅ Updated required_employees value:', data.required_employees);
       
-      // אם שיוך עובד הצליח, רשום בלוג
+      // אם שיוך עובד הצליח, מחק את הבקשות שלו לאותו יום ורשום בלוג
       if (updates.employee_id) {
-        await logActivity({
-          action: 'employee_assigned_to_shift',
-          target_type: 'shift',
-          target_id: shiftId,
-          details: {
-            employee_id: updates.employee_id,
-            shift_date: data.shift_date,
-            branch_id: data.branch_id,
-            start_time: data.start_time,
-            end_time: data.end_time,
-            assigned_at: new Date().toISOString(),
-            override_used: !!managerOverrideCode
+        const employeeId = updates.employee_id;
+        const shiftDate = data.shift_date;
+        
+        // מחיקת כל הבקשות להגשת משמרות של העובד לאותו יום
+        console.log('🗑️ מוחק בקשות משמרת לעובד', employeeId, 'לתאריך', shiftDate);
+        
+        try {
+          const { error: deleteError } = await (supabase as any)
+            .from('employee_shift_requests')
+            .delete()
+            .eq('employee_id', employeeId)
+            .eq('request_date', shiftDate);
+            
+          if (deleteError) {
+            console.error('❌ שגיאה במחיקת בקשות המשמרת:', deleteError);
+          } else {
+            console.log('✅ בקשות המשמרת נמחקו בהצלחה לעובד', employeeId, 'לתאריך', shiftDate);
           }
+        } catch (error) {
+          console.error('❌ שגיאה כללית במחיקת בקשות:', error);
+        }
+        
+        // רישום בלוג פעילות
+        console.log('📝 Employee assigned to shift:', {
+          employee_id: employeeId,
+          shift_date: shiftDate,
+          branch_id: data.branch_id,
+          start_time: data.start_time,
+          end_time: data.end_time,
+          assigned_at: new Date().toISOString(),
+          override_used: !!managerOverrideCode,
+          shift_requests_deleted: true
         });
       }
       
@@ -442,15 +428,10 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
 
       // Log the deletion
       if (shiftDetails) {
-        await logActivity({
-          action: 'shift_deleted',
-          target_type: 'shift',
-          target_id: shiftId,
-          details: {
-            deleted_shift: shiftDetails,
-            deleted_at: new Date().toISOString(),
-            deletion_method: 'user_action'
-          }
+        console.log('📝 Shift deleted:', {
+          deleted_shift: shiftDetails,
+          deleted_at: new Date().toISOString(),
+          deletion_method: 'user_action'
         });
       }
     },
