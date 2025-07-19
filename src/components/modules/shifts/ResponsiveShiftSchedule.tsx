@@ -367,7 +367,6 @@ export const ResponsiveShiftSchedule: React.FC = () => {
               weekStartDate={currentDate.toISOString().split('T')[0]}
               emptyShifts={shifts.filter(shift => !shift.employee_id)}
               onShiftUpdate={updateShift}
-              onOpenSettings={() => setActiveTab('advanced')}
             />
             <Button
               onClick={() => setShowQuickMultiple(true)}

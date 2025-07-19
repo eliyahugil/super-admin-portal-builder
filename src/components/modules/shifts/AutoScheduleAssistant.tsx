@@ -8,6 +8,7 @@ import { useEmployeeRecommendations } from '@/hooks/useEmployeeRecommendations';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { SchedulingScoreSettings } from './SchedulingScoreSettings';
 
 interface AutoAssignmentResult {
   shiftId: string;
@@ -23,19 +24,18 @@ interface AutoScheduleAssistantProps {
   weekStartDate: string;
   emptyShifts: any[];
   onShiftUpdate: (shiftId: string, updates: any) => Promise<void>;
-  onOpenSettings?: () => void;
 }
 
 export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
   weekStartDate,
   emptyShifts,
-  onShiftUpdate,
-  onOpenSettings
+  onShiftUpdate
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [results, setResults] = useState<AutoAssignmentResult[]>([]);
+  const [showSettings, setShowSettings] = useState(false);
   const { businessId } = useCurrentBusiness();
 
   console.log('🔧 AutoScheduleAssistant rendered with:', { 
@@ -298,10 +298,7 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
                 </Button>
                 
                 <Button 
-                  onClick={() => {
-                    setIsOpen(false);
-                    onOpenSettings?.();
-                  }}
+                  onClick={() => setShowSettings(true)}
                   variant="outline"
                   size="sm"
                   className="border-gray-300 text-gray-600 hover:bg-gray-50"
@@ -477,6 +474,12 @@ export const AutoScheduleAssistant: React.FC<AutoScheduleAssistantProps> = ({
           )}
         </div>
       </DialogContent>
+      
+      {/* Settings Dialog */}
+      <SchedulingScoreSettings 
+        open={showSettings}
+        onOpenChange={setShowSettings}
+      />
     </Dialog>
   );
 };
