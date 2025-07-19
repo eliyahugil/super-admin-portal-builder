@@ -335,20 +335,38 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
               )}
               
               {/* הקצאות נוספות במקרה של מספר עובדים */}
-              {((shift as any).shift_assignments || [])
-                .filter((assignment: any) => assignment.employee_id && assignment.employee_id !== shift.employee_id)
-                .map((assignment: any, index: number) => {
+              {(() => {
+                const additionalAssignments = ((shift as any).shift_assignments || [])
+                  .filter((assignment: any) => assignment.employee_id && assignment.employee_id !== shift.employee_id);
+                
+                console.log('🔍 Additional assignments debug:', {
+                  shiftId: shift.id,
+                  shiftEmployeeId: shift.employee_id,
+                  allAssignments: (shift as any).shift_assignments,
+                  filteredAssignments: additionalAssignments,
+                  additionalCount: additionalAssignments.length
+                });
+                
+                return additionalAssignments.map((assignment: any, index: number) => {
                   const assignedEmployee = employees.find(emp => emp.id === assignment.employee_id);
+                  console.log('👤 Rendering additional assignment:', {
+                    assignmentId: assignment.id,
+                    employeeId: assignment.employee_id,
+                    foundEmployee: assignedEmployee,
+                    assignmentType: assignment.type
+                  });
+                  
                   return (
                     <div key={assignment.id || index} className="flex justify-center">
                       <div className="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs">
                         <User className="h-3 w-3 inline ml-1" />
-                        {assignedEmployee ? `${assignedEmployee.first_name} ${assignedEmployee.last_name}` : 'לא ידוע'}
+                        {assignedEmployee ? `${assignedEmployee.first_name} ${assignedEmployee.last_name}` : "לא ידוע"}
                         {assignment.type && <span className="mr-1">({assignment.type})</span>}
                       </div>
                     </div>
                   );
-                })}
+                });
+              })()}
               
               {/* הקצאות ללא עובד מוקצה */}
               {((shift as any).shift_assignments || [])
