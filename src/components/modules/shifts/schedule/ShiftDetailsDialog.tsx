@@ -117,9 +117,18 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
   const shiftSubmissions = getSubmissionsForShift();
 
   const handleUpdate = async () => {
+    console.log('🚀 handleUpdate STARTED!');
     console.log('💾 Updating shift with data:', editData);
     console.log('🔢 Required employees being saved:', editData.required_employees);
     console.log('🧑‍💼 Shift assignments being saved:', editData.shift_assignments);
+    
+    // בדיקה שהנתונים תקינים
+    if (!editData.required_employees || editData.required_employees < 1) {
+      console.error('❌ Invalid required_employees:', editData.required_employees);
+      toast.error('מספר עובדים נדרש חייב להיות לפחות 1');
+      return;
+    }
+    
     setIsUpdating(true);
     try {
       await onUpdate(shift.id, editData);
@@ -127,7 +136,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
       setIsEditing(false);
     } catch (error) {
       console.error('❌ Error updating shift:', error);
-      toast.error('שגיאה בעדכון המשמרת');
+      toast.error('שגיאה בעדכון המשמרת: ' + (error as Error).message);
     } finally {
       setIsUpdating(false);
     }
