@@ -69,6 +69,28 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
         throw submissionsError;
       }
 
+      // Get approved scheduled shifts for this employee
+      const { data: approvedShifts, error: shiftsError } = await supabase
+        .from('scheduled_shifts')
+        .select(`
+          id,
+          shift_date,
+          start_time,
+          end_time,
+          status,
+          created_at,
+          branch_id,
+          role
+        `)
+        .eq('employee_id', employeeId)
+        .eq('status', 'approved')
+        .order('shift_date', { ascending: false });
+
+      if (shiftsError) {
+        console.error('❌ Error fetching approved shifts:', shiftsError);
+        throw shiftsError;
+      }
+
       // Get employee preferences and assignments
       const { data: preferencesData, error: preferencesError } = await supabase
         .from('employee_branch_assignments')
@@ -83,11 +105,13 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
 
       console.log('✅ Submissions and preferences loaded:', { 
         submissions: submissionsData?.length || 0,
+        approvedShifts: approvedShifts?.length || 0,
         preferences: preferencesData 
       });
       
       return { 
         submissions: submissionsData || [], 
+        approvedShifts: approvedShifts || [],
         preferences: preferencesData || [] 
       };
     },
@@ -137,8 +161,8 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
     return true;
   };
 
-  // Calculate statistics based on real submission data and employee preferences
-  const calculateStats = (submissionsData: ShiftSubmissionStat[], preferencesData: any[]): SubmissionStats => {
+  // Calculate statistics based on real submission data, approved shifts, and employee preferences
+  const calculateStats = (submissionsData: ShiftSubmissionStat[], approvedShiftsData: any[], preferencesData: any[]): SubmissionStats => {
     console.log('📊 calculateStats called with:', {
       submissionsCount: submissionsData?.length || 0,
       submissionsData: submissionsData,
@@ -181,15 +205,25 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
 
     console.log('👤 Employee preferences:', { allowedShiftTypes, allowedDays });
 
-    const approved = submissionsData.filter(s => {
+    // Count approved submissions from shift_submissions table
+    const approvedSubmissions = submissionsData.filter(s => {
       console.log(`📊 Checking submission ${s.id}: status = "${s.status}"`);
       return s.status === 'approved';
     }).length;
+    
+    // Count approved shifts from scheduled_shifts table  
+    const approvedScheduledShifts = approvedShiftsData?.length || 0;
+    
+    // Total approved = submissions with approved status + approved scheduled shifts
+    const totalApproved = approvedSubmissions + (approvedScheduledShifts > 0 ? 1 : 0); // If there are approved shifts, count as 1 approved submission
+    
     const pending = submissionsData.filter(s => s.status === 'pending' || s.status === 'submitted').length;
     const rejected = submissionsData.filter(s => s.status === 'rejected').length;
     
     console.log('📊 Status counts:', { 
-      approved, 
+      approvedSubmissions,
+      approvedScheduledShifts,
+      totalApproved,
       pending, 
       rejected,
       totalSubmissions: submissionsData.length,
@@ -298,7 +332,7 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
 
     return {
       totalSubmissions: submissionsData.length,
-      approvedSubmissions: approved,
+      approvedSubmissions: totalApproved,
       pendingSubmissions: pending,
       rejectedSubmissions: rejected,
       totalShiftsRequested: totalShifts,
@@ -309,7 +343,7 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
     };
   };
 
-  const stats = submissions ? calculateStats(submissions.submissions, submissions.preferences) : null;
+  const stats = submissions ? calculateStats(submissions.submissions, submissions.approvedShifts || [], submissions.preferences) : null;
 
   if (isLoading) {
     return (
