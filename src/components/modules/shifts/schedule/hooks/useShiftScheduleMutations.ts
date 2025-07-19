@@ -276,7 +276,7 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         updateData.required_employees = newRequiredCount;
         
         // יצירת הקצאות אוטומטית לפי מספר העובדים הנדרש
-        const currentAssignments = updateData.shift_assignments || [];
+        const currentAssignments = updates.shift_assignments || updateData.shift_assignments || [];
         const assignments = [];
         
         for (let i = 0; i < newRequiredCount; i++) {
@@ -291,13 +291,27 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         }
         
         updateData.shift_assignments = assignments;
+        
+        // עדכון employee_id הראשי לפי ההקצאה הראשונה
+        const firstAssignment = assignments[0];
+        updateData.employee_id = firstAssignment?.employee_id || null;
+        
         console.log('🔢 Created assignments:', assignments);
+        console.log('👤 Main employee_id set to:', updateData.employee_id);
       }
 
       // שמירת הקצאות עובדים כשמעדכנים ידנית
       if (updates.shift_assignments !== undefined) {
         updateData.shift_assignments = updates.shift_assignments;
+        
+        // עדכון employee_id הראשי לפי ההקצאה הראשונה
+        const firstAssignment = updates.shift_assignments?.[0];
+        if (firstAssignment) {
+          updateData.employee_id = firstAssignment.employee_id || null;
+        }
+        
         console.log('💼 Updating shift assignments manually:', updates.shift_assignments);
+        console.log('👤 Main employee_id updated to:', updateData.employee_id);
       }
 
       console.log('📊 Final updateData being sent to Supabase:', updateData);

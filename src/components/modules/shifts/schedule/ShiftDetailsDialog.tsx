@@ -69,7 +69,20 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({
     branch_id: shift.branch_id || '',
     employee_id: shift.employee_id || '',
     required_employees: shift.required_employees || 1,
-    shift_assignments: (shift as any).shift_assignments || []
+    shift_assignments: (() => {
+      const existingAssignments = (shift as any).shift_assignments || [];
+      if (existingAssignments.length === 0 && shift.employee_id) {
+        // אם אין הקצאות אבל יש עובד ראשי, צור הקצאה ראשונה
+        return [{
+          id: crypto.randomUUID(),
+          type: 'חובה',
+          employee_id: shift.employee_id,
+          position: 1,
+          is_required: true
+        }];
+      }
+      return existingAssignments;
+    })()
   });
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
