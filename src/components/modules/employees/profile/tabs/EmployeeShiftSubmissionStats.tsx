@@ -139,7 +139,14 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
 
   // Calculate statistics based on real submission data and employee preferences
   const calculateStats = (submissionsData: ShiftSubmissionStat[], preferencesData: any[]): SubmissionStats => {
+    console.log('📊 calculateStats called with:', {
+      submissionsCount: submissionsData?.length || 0,
+      submissionsData: submissionsData,
+      preferencesCount: preferencesData?.length || 0
+    });
+
     if (!submissionsData || submissionsData.length === 0) {
+      console.log('❌ No submissions data found');
       return {
         totalSubmissions: 0,
         approvedSubmissions: 0,
@@ -174,9 +181,14 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
 
     console.log('👤 Employee preferences:', { allowedShiftTypes, allowedDays });
 
-    const approved = submissionsData.filter(s => s.status === 'approved').length;
-    const pending = submissionsData.filter(s => s.status === 'pending').length;
+    const approved = submissionsData.filter(s => {
+      console.log(`📊 Checking submission ${s.id}: status = "${s.status}"`);
+      return s.status === 'approved';
+    }).length;
+    const pending = submissionsData.filter(s => s.status === 'pending' || s.status === 'submitted').length;
     const rejected = submissionsData.filter(s => s.status === 'rejected').length;
+    
+    console.log('📊 Status counts:', { approved, pending, rejected });
     
     // Calculate total valid unique shifts requested - group by date and overlapping times
     const totalShifts = submissionsData.reduce((acc, submission) => {
