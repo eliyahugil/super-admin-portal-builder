@@ -67,6 +67,17 @@ export const ShiftSubmissionsPopover: React.FC<ShiftSubmissionsPopoverProps> = (
       isAssigned: boolean;
     }> = [];
 
+    console.log('🔍 ShiftSubmissionsPopover Debug:', {
+      targetDateStr,
+      currentShift: {
+        start_time: currentShift?.start_time,
+        end_time: currentShift?.end_time,
+        branch_name: currentShift?.branch_name,
+        branch_id: currentShift?.branch_id
+      },
+      submissionsCount: submissions.length
+    });
+
     submissions.forEach(submission => {
       // Parse shifts if they're stored as JSON string
       let submissionShifts;
