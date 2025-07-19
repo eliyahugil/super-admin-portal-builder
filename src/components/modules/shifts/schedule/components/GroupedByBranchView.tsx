@@ -19,6 +19,7 @@ interface GroupedByBranchViewProps {
   selectedShifts?: ShiftScheduleData[];
   onShiftSelection?: (shift: ShiftScheduleData, selected: boolean, event?: React.MouseEvent) => void;
   pendingSubmissions?: any[];
+  onOpenSubmissions?: () => void;
 }
 
 interface GroupedShifts {
@@ -42,7 +43,8 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
   isSelectionMode = false,
   selectedShifts = [],
   onShiftSelection,
-  pendingSubmissions = []
+  pendingSubmissions = [],
+  onOpenSubmissions
 }) => {
   // Generate week days starting from Sunday
   const weekDays = useMemo(() => {
@@ -302,7 +304,8 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
                          {daySubmissions.map((submission, index) => (
                            <div
                              key={`submission-${submission.id}-${index}`}
-                             className="p-2 bg-purple-50 border border-purple-200 rounded-lg shadow-sm text-xs"
+                             className="p-2 bg-purple-50 border border-purple-200 rounded-lg shadow-sm text-xs cursor-pointer hover:bg-purple-100 hover:border-purple-300 transition-all"
+                             onClick={() => onOpenSubmissions && onOpenSubmissions()}
                            >
                              {/* Submission indicator */}
                              <div className="flex items-center justify-center gap-1 mb-1">
@@ -331,6 +334,11 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
                                  </Badge>
                                </div>
                              )}
+                             
+                             {/* Click instruction */}
+                             <div className="text-center mt-1">
+                               <span className="text-[8px] text-purple-500">לחץ לפתיחת חלון שיבוץ</span>
+                             </div>
                            </div>
                          ))}
                          
@@ -369,7 +377,11 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
               <Badge variant="secondary" className="bg-orange-50 text-orange-700">
                 {shifts.filter(s => !s.employee_id).length} לא מוקצות
               </Badge>
-              <Badge variant="secondary" className="bg-purple-50 text-purple-700">
+              <Badge 
+                variant="secondary" 
+                className="bg-purple-50 text-purple-700 cursor-pointer hover:bg-purple-100 transition-colors"
+                onClick={() => onOpenSubmissions && onOpenSubmissions()}
+              >
                 <FileText className="h-3 w-3 mr-1" />
                 {pendingSubmissions.length} הגשות ממתינות
               </Badge>

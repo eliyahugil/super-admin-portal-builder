@@ -579,22 +579,23 @@ export const ResponsiveShiftSchedule: React.FC = () => {
                        onShiftSelection={handleShiftSelection}
                        onShowPendingSubmissions={() => setShowPendingSubmissionsDialog(true)}
                     />
-                   ) : view === 'grouped' ? (
-                     <GroupedByBranchView
-                       shifts={shifts}
-                       employees={employees}
-                       branches={branches}
-                       currentDate={currentDate}
-                       onShiftClick={handleShiftClick}
-                       onShiftUpdate={updateShift}
-                       onAddShift={handleAddShift}
-                       onShiftDelete={deleteShift}
-                       isSelectionMode={isSelectionMode}
-                       selectedShifts={selectedShifts}
-                       onShiftSelection={handleShiftSelection}
-                       pendingSubmissions={pendingSubmissions}
-                     />
-                   ) : view === 'month' ? (
+                    ) : view === 'grouped' ? (
+                      <GroupedByBranchView
+                        shifts={shifts}
+                        employees={employees}
+                        branches={branches}
+                        currentDate={currentDate}
+                        onShiftClick={handleShiftClick}
+                        onShiftUpdate={updateShift}
+                        onAddShift={handleAddShift}
+                        onShiftDelete={deleteShift}
+                        isSelectionMode={isSelectionMode}
+                        selectedShifts={selectedShifts}
+                        onShiftSelection={handleShiftSelection}
+                        pendingSubmissions={pendingSubmissions}
+                        onOpenSubmissions={() => setShowPendingSubmissionsDialog(true)}
+                      />
+                    ) : view === 'month' ? (
                    <MonthlyScheduleView
                      shifts={shifts}
                      employees={employees}
@@ -766,6 +767,28 @@ export const ResponsiveShiftSchedule: React.FC = () => {
             date: managerOverrideData.conflictDetails?.currentShift?.shift_date,
             branchName: branches.find(b => b.id === managerOverrideData.conflictDetails?.currentShift?.branch_id)?.name
           }}
+        />
+      )}
+
+      {/* Pending Submissions Dialog */}
+      {showPendingSubmissionsDialog && (
+        <PendingSubmissionsDialog
+          isOpen={showPendingSubmissionsDialog}
+          onClose={() => setShowPendingSubmissionsDialog(false)}
+          submissions={pendingSubmissions}
+          parseShifts={(shiftsData: any) => {
+            // Parse the shifts data
+            if (!shiftsData || !shiftsData.shift_requests) return [];
+            return shiftsData.shift_requests.map((request: any) => ({
+              id: request.id || crypto.randomUUID(),
+              time: `${request.start_time}-${request.end_time}`,
+              role: request.role,
+              branch_id: request.branch_id,
+              shift_date: request.shift_date,
+              notes: request.notes
+            }));
+          }}
+          sendWhatsApp={undefined}
         />
       )}
 
