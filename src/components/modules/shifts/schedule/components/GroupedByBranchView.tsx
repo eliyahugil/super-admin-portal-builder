@@ -2,8 +2,10 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Clock, User, Plus, FileText, Users, Edit } from 'lucide-react';
+import { MapPin, Clock, User, Plus, FileText, Users, Edit, Zap } from 'lucide-react';
 import { ScheduleStats } from './ScheduleStats';
+import { EmployeeStatsPanel } from '../EmployeeStatsPanel';
+import { AutoAssignmentHelper } from './AutoAssignmentHelper';
 
 import type { ShiftScheduleData, Employee, Branch } from '../types';
 
@@ -239,6 +241,10 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
     onShiftClick(shift);
   };
 
+  const handleAutoAssign = (shiftId: string, employeeId: string) => {
+    onShiftUpdate(shiftId, { employee_id: employeeId });
+  };
+
   // Hebrew day names
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -255,6 +261,17 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
 
       {/* Statistics Panel */}
       <ScheduleStats shifts={shifts} isMobile={false} pendingSubmissions={pendingSubmissions} />
+      
+      {/* Employee Statistics Panel */}
+      <EmployeeStatsPanel 
+        shifts={shifts}
+        employees={employees}
+        weekRange={{
+          start: weekDays[0],
+          end: weekDays[6]
+        }}
+        businessId={shifts[0]?.business_id || ''}
+      />
 
       {/* Headers with days */}
       <div className="grid grid-cols-8 gap-2 mb-4">
@@ -312,113 +329,125 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
                      const dayShifts = branchGroup.days[dateStr] || [];
                      const daySubmissions = groupedSubmissions[branchId]?.[dateStr] || [];
                      
-                     return (
-                       <div key={dateStr} className="space-y-1 min-h-[60px]">
-                         {dayShifts.map((shift) => (
-                           <div
-                             key={shift.id}
-                             className={`relative p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all text-xs group ${
-                               hasShiftConflict(shift) ? 'border-red-300 bg-red-50' : ''
-                             } ${isSelectionMode && isShiftSelected(shift) ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300' : ''}`}
-                             onClick={(e) => handleShiftClick(shift, e)}
-                           >
-                             {/* כפתור עריכה בריחוף */}
-                             <Button
-                               size="sm"
-                               variant="ghost"
-                               className="absolute top-1 left-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-gray-100 shadow-sm z-10"
-                               onClick={(e) => handleEditShift(shift, e)}
-                             >
-                               <Edit className="h-3 w-3" />
-                             </Button>
+                      return (
+                        <div key={dateStr} className="space-y-1 min-h-[60px]">
+                          {dayShifts.map((shift) => (
+                            <div key={shift.id} className="space-y-2">
+                              <div
+                                className={`relative p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all text-xs group ${
+                                  hasShiftConflict(shift) ? 'border-red-300 bg-red-50' : ''
+                                } ${isSelectionMode && isShiftSelected(shift) ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300' : ''}`}
+                                onClick={(e) => handleShiftClick(shift, e)}
+                              >
+                                {/* כפתור עריכה בריחוף */}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="absolute top-1 left-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-gray-100 shadow-sm z-10"
+                                  onClick={(e) => handleEditShift(shift, e)}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
 
-                             {/* Time */}
-                             <div className="flex items-center justify-center gap-1 mb-1">
-                               <Clock className="h-3 w-3 text-gray-500" />
-                               <span className="font-medium text-gray-700">
-                                 {shift.start_time}-{shift.end_time}
-                               </span>
-                             </div>
-                             
-                             {/* Employee or unassigned */}
-                             <div className="text-center">
-                               {shift.employee_id ? (
-                                 <Badge variant="secondary" className="bg-green-50 text-green-700 text-[10px] px-1 py-0.5">
-                                   <User className="h-2 w-2 mr-1" />
-                                   {getEmployeeName(shift.employee_id).split(' ')[0]}
-                                 </Badge>
-                               ) : (
-                                 <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-[10px] px-1 py-0.5">
-                                   לא מוקצה
-                                 </Badge>
-                               )}
-                             </div>
-                             
-                             {/* Status */}
-                             <div className="text-center mt-1">
-                               <Badge variant="secondary" className={`text-[9px] ${getStatusColor(shift.status || 'pending')}`}>
-                                 {shift.status === 'approved' ? 'מאושר' : 
-                                  shift.status === 'pending' ? 'ממתין' :
-                                  shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
-                               </Badge>
-                             </div>
-                           </div>
-                         ))}
-                         
-                         {/* Display pending submissions */}
-                         {daySubmissions.map((submission, index) => (
-                           <div
-                             key={`submission-${submission.id}-${index}`}
-                             className="p-2 bg-purple-50 border border-purple-200 rounded-lg shadow-sm text-xs cursor-pointer hover:bg-purple-100 hover:border-purple-300 transition-all"
-                             onClick={() => onOpenSubmissions && onOpenSubmissions()}
-                           >
-                             {/* Submission indicator */}
-                             <div className="flex items-center justify-center gap-1 mb-1">
-                               <FileText className="h-3 w-3 text-purple-600" />
-                               <span className="font-medium text-purple-700">
-                                 הגשה ממתינה
-                               </span>
-                             </div>
-                             
-                             {/* Employee name */}
-                             <div className="text-center mb-1">
-                               <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-[10px] px-1 py-0.5">
-                                 <User className="h-2 w-2 mr-1" />
-                                 {getEmployeeName(submission.employee_id)?.split(' ')[0] || 'לא ידוע'}
-                               </Badge>
-                             </div>
-                             
-                             {/* Shift details from request */}
-                             {submission.shiftRequest && (
-                               <div className="text-center">
-                                 <div className="text-[9px] text-purple-600 mb-1">
-                                   {submission.shiftRequest.start_time}-{submission.shiftRequest.end_time}
-                                 </div>
-                                 <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 text-[9px] px-1 py-0.5">
-                                   {submission.shiftRequest.role || 'כללי'}
-                                 </Badge>
-                               </div>
-                             )}
-                             
-                             {/* Click instruction */}
-                             <div className="text-center mt-1">
-                               <span className="text-[8px] text-purple-500">לחץ לפתיחת חלון שיבוץ</span>
-                             </div>
-                           </div>
-                         ))}
-                         
-                         {/* Add shift button for empty days */}
-                         {dayShifts.length === 0 && daySubmissions.length === 0 && (
-                           <Button
-                             size="sm"
-                             variant="ghost"
-                             onClick={() => onAddShift(day)}
-                             className="w-full h-10 border-2 border-dashed border-gray-300 hover:border-blue-400 text-gray-500 hover:text-blue-600"
-                           >
-                             <Plus className="h-3 w-3" />
-                           </Button>
-                         )}
-                       </div>
+                                {/* Time */}
+                                <div className="flex items-center justify-center gap-1 mb-1">
+                                  <Clock className="h-3 w-3 text-gray-500" />
+                                  <span className="font-medium text-gray-700">
+                                    {shift.start_time}-{shift.end_time}
+                                  </span>
+                                </div>
+                                
+                                {/* Employee or unassigned */}
+                                <div className="text-center">
+                                  {shift.employee_id ? (
+                                    <Badge variant="secondary" className="bg-green-50 text-green-700 text-[10px] px-1 py-0.5">
+                                      <User className="h-2 w-2 mr-1" />
+                                      {getEmployeeName(shift.employee_id).split(' ')[0]}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-[10px] px-1 py-0.5">
+                                      לא מוקצה
+                                    </Badge>
+                                  )}
+                                </div>
+                                
+                                {/* Status */}
+                                <div className="text-center mt-1">
+                                  <Badge variant="secondary" className={`text-[9px] ${getStatusColor(shift.status || 'pending')}`}>
+                                    {shift.status === 'approved' ? 'מאושר' : 
+                                     shift.status === 'pending' ? 'ממתין' :
+                                     shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
+                                  </Badge>
+                                </div>
+                              </div>
+                              
+                              {/* Auto Assignment Helper for unassigned shifts */}
+                              {!shift.employee_id && (
+                                <AutoAssignmentHelper
+                                  shift={shift}
+                                  employees={employees}
+                                  existingShifts={shifts}
+                                  pendingSubmissions={pendingSubmissions}
+                                  onAutoAssign={handleAutoAssign}
+                                />
+                              )}
+                            </div>
+                          ))}
+                          
+                          {/* Display pending submissions */}
+                          {daySubmissions.map((submission, index) => (
+                            <div
+                              key={`submission-${submission.id}-${index}`}
+                              className="p-2 bg-purple-50 border border-purple-200 rounded-lg shadow-sm text-xs cursor-pointer hover:bg-purple-100 hover:border-purple-300 transition-all"
+                              onClick={() => onOpenSubmissions && onOpenSubmissions()}
+                            >
+                              {/* Submission indicator */}
+                              <div className="flex items-center justify-center gap-1 mb-1">
+                                <FileText className="h-3 w-3 text-purple-600" />
+                                <span className="font-medium text-purple-700">
+                                  הגשה ממתינה
+                                </span>
+                              </div>
+                              
+                              {/* Employee name */}
+                              <div className="text-center mb-1">
+                                <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-[10px] px-1 py-0.5">
+                                  <User className="h-2 w-2 mr-1" />
+                                  {getEmployeeName(submission.employee_id)?.split(' ')[0] || 'לא ידוע'}
+                                </Badge>
+                              </div>
+                              
+                              {/* Shift details from request */}
+                              {submission.shiftRequest && (
+                                <div className="text-center">
+                                  <div className="text-[9px] text-purple-600 mb-1">
+                                    {submission.shiftRequest.start_time}-{submission.shiftRequest.end_time}
+                                  </div>
+                                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 text-[9px] px-1 py-0.5">
+                                    {submission.shiftRequest.role || 'כללי'}
+                                  </Badge>
+                                </div>
+                              )}
+                              
+                              {/* Click instruction */}
+                              <div className="text-center mt-1">
+                                <span className="text-[8px] text-purple-500">לחץ לפתיחת חלון שיבוץ</span>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {/* Add shift button for empty days */}
+                          {dayShifts.length === 0 && daySubmissions.length === 0 && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onAddShift(day)}
+                              className="w-full h-10 border-2 border-dashed border-gray-300 hover:border-blue-400 text-gray-500 hover:text-blue-600"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
                     );
                   })}
                 </div>
