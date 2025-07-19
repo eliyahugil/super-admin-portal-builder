@@ -272,8 +272,54 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       }
 
       if (updates.required_employees !== undefined) {
-        updateData.required_employees = Math.max(1, updates.required_employees || 1);
+        const newRequiredEmployees = Math.max(1, updates.required_employees || 1);
+        updateData.required_employees = newRequiredEmployees;
         console.log('🔢 Setting required_employees to:', updateData.required_employees);
+        
+        // אם הגדלנו את מספר העובדים הנדרשים, נוצר משמרות נוספות
+        if (newRequiredEmployees > 1) {
+          // קבל פרטי המשמרת הנוכחית
+          const { data: currentShift } = await supabase
+            .from('scheduled_shifts')
+            .select('*')
+            .eq('id', shiftId)
+            .single();
+            
+          if (currentShift) {
+            const existingShiftsCount = await supabase
+              .from('scheduled_shifts')
+              .select('id')
+              .eq('business_id', businessId)
+              .eq('shift_date', currentShift.shift_date)
+              .eq('start_time', currentShift.start_time)
+              .eq('end_time', currentShift.end_time)
+              .eq('branch_id', currentShift.branch_id)
+              .eq('is_archived', false);
+              
+            const currentCount = existingShiftsCount.data?.length || 1;
+            const additionalShiftsNeeded = newRequiredEmployees - currentCount;
+            
+            // יצירת משמרות נוספות
+            for (let i = 0; i < additionalShiftsNeeded; i++) {
+              await supabase
+                .from('scheduled_shifts')
+                .insert({
+                  business_id: businessId,
+                  shift_date: currentShift.shift_date,
+                  start_time: currentShift.start_time,
+                  end_time: currentShift.end_time,
+                  branch_id: currentShift.branch_id,
+                  role: currentShift.role,
+                  notes: currentShift.notes + ` (עובד ${currentCount + i + 1})`,
+                  status: 'pending',
+                  is_assigned: false,
+                  employee_id: null,
+                  required_employees: 1,
+                  priority: currentShift.priority
+                });
+            }
+          }
+        }
       }
 
       if (updates.priority !== undefined) {
