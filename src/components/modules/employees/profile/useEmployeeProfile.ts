@@ -189,11 +189,27 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
       hasProfile: !!profile,
       profileRole: profile?.role,
       businessId,
-      isSuperAdmin
+      isSuperAdmin,
+      loadingState: loading
     });
     
+    // If no businessId, stop loading and show error
+    if (profile && !businessId && !isSuperAdmin) {
+      console.log('❌ Regular user without businessId - stopping load');
+      setLoading(false);
+      toast({
+        title: 'שגיאת גישה',
+        description: 'לא ניתן לגשת לפרופיל עובד ללא עסק מוקצה',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     if (profile && businessId) {
+      console.log('✅ Profile and businessId available, fetching employee');
       fetchEmployee();
+    } else {
+      console.log('⏳ Waiting for profile or businessId...');
     }
   }, [employeeId, profile?.id, businessId, profile?.role]);
 
