@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Clock, User, Plus, FileText, Users } from 'lucide-react';
+import { MapPin, Clock, User, Plus, FileText, Users, Edit } from 'lucide-react';
 import { ScheduleStats } from './ScheduleStats';
 
 import type { ShiftScheduleData, Employee, Branch } from '../types';
@@ -226,8 +226,17 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
       const isSelected = isShiftSelected(shift);
       onShiftSelection(shift, !isSelected, e);
     } else {
-      onShiftClick(shift);
+      // פותח את הגשות ממתינות במקום dialog פרטי של המשמרת
+      if (onOpenSubmissions) {
+        onOpenSubmissions();
+      }
     }
+  };
+
+  const handleEditShift = (shift: ShiftScheduleData, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onShiftClick(shift);
   };
 
   // Hebrew day names
@@ -304,46 +313,56 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
                      const daySubmissions = groupedSubmissions[branchId]?.[dateStr] || [];
                      
                      return (
-                      <div key={dateStr} className="space-y-1 min-h-[60px]">
-                        {dayShifts.map((shift) => (
-                          <div
-                            key={shift.id}
-                            className={`p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all text-xs ${
-                              hasShiftConflict(shift) ? 'border-red-300 bg-red-50' : ''
-                            } ${isSelectionMode && isShiftSelected(shift) ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300' : ''}`}
-                            onClick={(e) => handleShiftClick(shift, e)}
-                          >
-                            {/* Time */}
-                            <div className="flex items-center justify-center gap-1 mb-1">
-                              <Clock className="h-3 w-3 text-gray-500" />
-                              <span className="font-medium text-gray-700">
-                                {shift.start_time}-{shift.end_time}
-                              </span>
-                            </div>
-                            
-                            {/* Employee or unassigned */}
-                            <div className="text-center">
-                              {shift.employee_id ? (
-                                <Badge variant="secondary" className="bg-green-50 text-green-700 text-[10px] px-1 py-0.5">
-                                  <User className="h-2 w-2 mr-1" />
-                                  {getEmployeeName(shift.employee_id).split(' ')[0]}
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-[10px] px-1 py-0.5">
-                                  לא מוקצה
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            {/* Status */}
-                            <div className="text-center mt-1">
-                              <Badge variant="secondary" className={`text-[9px] ${getStatusColor(shift.status || 'pending')}`}>
-                                {shift.status === 'approved' ? 'מאושר' : 
-                                 shift.status === 'pending' ? 'ממתין' :
-                                 shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
-                              </Badge>
-                            </div>
-                          </div>
+                       <div key={dateStr} className="space-y-1 min-h-[60px]">
+                         {dayShifts.map((shift) => (
+                           <div
+                             key={shift.id}
+                             className={`relative p-2 bg-white border rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all text-xs group ${
+                               hasShiftConflict(shift) ? 'border-red-300 bg-red-50' : ''
+                             } ${isSelectionMode && isShiftSelected(shift) ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300' : ''}`}
+                             onClick={(e) => handleShiftClick(shift, e)}
+                           >
+                             {/* כפתור עריכה בריחוף */}
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               className="absolute top-1 left-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-gray-100 shadow-sm z-10"
+                               onClick={(e) => handleEditShift(shift, e)}
+                             >
+                               <Edit className="h-3 w-3" />
+                             </Button>
+
+                             {/* Time */}
+                             <div className="flex items-center justify-center gap-1 mb-1">
+                               <Clock className="h-3 w-3 text-gray-500" />
+                               <span className="font-medium text-gray-700">
+                                 {shift.start_time}-{shift.end_time}
+                               </span>
+                             </div>
+                             
+                             {/* Employee or unassigned */}
+                             <div className="text-center">
+                               {shift.employee_id ? (
+                                 <Badge variant="secondary" className="bg-green-50 text-green-700 text-[10px] px-1 py-0.5">
+                                   <User className="h-2 w-2 mr-1" />
+                                   {getEmployeeName(shift.employee_id).split(' ')[0]}
+                                 </Badge>
+                               ) : (
+                                 <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-[10px] px-1 py-0.5">
+                                   לא מוקצה
+                                 </Badge>
+                               )}
+                             </div>
+                             
+                             {/* Status */}
+                             <div className="text-center mt-1">
+                               <Badge variant="secondary" className={`text-[9px] ${getStatusColor(shift.status || 'pending')}`}>
+                                 {shift.status === 'approved' ? 'מאושר' : 
+                                  shift.status === 'pending' ? 'ממתין' :
+                                  shift.status === 'rejected' ? 'נדחה' : 'הושלם'}
+                               </Badge>
+                             </div>
+                           </div>
                          ))}
                          
                          {/* Display pending submissions */}
