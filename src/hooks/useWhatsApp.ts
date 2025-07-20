@@ -142,7 +142,7 @@ export const useWhatsApp = (businessId: string) => {
     fetchSessions();
 
     const channel = supabase
-      .channel('whatsapp-sessions-changes')
+      .channel(`whatsapp-sessions-${businessId}`)
       .on(
         'postgres_changes',
         {
