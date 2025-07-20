@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, sessionId, businessId, phoneNumber, message } = await req.json();
+    const { action, sessionId, business_id, businessId, phone_number, phoneNumber, message } = await req.json();
     
     // Initialize Supabase client
     const supabase = createClient(
@@ -21,18 +21,23 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log(`WhatsApp Manager - Action: ${action}, SessionId: ${sessionId}`);
+    const finalBusinessId = business_id || businessId;
+    const finalPhoneNumber = phone_number || phoneNumber;
+    
+    console.log(`WhatsApp Manager - Action: ${action}, BusinessId: ${finalBusinessId}`);
 
     switch (action) {
       case 'create_session':
         // Create or update WhatsApp session
+        const sessionIdToUse = sessionId || crypto.randomUUID();
         const { data: sessionData, error: sessionError } = await supabase
           .from('whatsapp_sessions')
           .upsert({
-            id: sessionId,
-            business_id: businessId,
-            phone_number: phoneNumber,
+            id: sessionIdToUse,
+            business_id: finalBusinessId,
+            phone_number: finalPhoneNumber,
             connection_status: 'connecting',
+            qr_code: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IndoaXRlIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9ImJsYWNrIj7Xp9eV16gg0YIt0L7Ui9ecINec15nXqNeq15XXqdeR0ZjXqNeY0LzXnteYPC90ZXh0Pgo8L3N2Zz4K', // Placeholder QR code
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
@@ -135,7 +140,7 @@ serve(async (req) => {
 
       case 'send_message':
         // Log message sending attempt
-        console.log(`Sending message to ${phoneNumber}: ${message}`);
+        console.log(`Sending message to ${finalPhoneNumber}: ${message}`);
         
         // Here you would integrate with your WhatsApp Web API
         // For now, we'll just log and return success
@@ -144,7 +149,7 @@ serve(async (req) => {
           JSON.stringify({ 
             success: true, 
             message: 'Message queued for sending',
-            recipient: phoneNumber,
+            recipient: finalPhoneNumber,
             content: message 
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -155,7 +160,7 @@ serve(async (req) => {
         const { data: businessSessions, error: listError } = await supabase
           .from('whatsapp_sessions')
           .select('*')
-          .eq('business_id', businessId)
+          .eq('business_id', finalBusinessId)
           .order('created_at', { ascending: false });
 
         if (listError) {
