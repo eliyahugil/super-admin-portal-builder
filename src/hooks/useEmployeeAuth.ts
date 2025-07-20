@@ -52,7 +52,9 @@ export const useEmployeeAuth = () => {
     try {
       console.log('🔐 Attempting employee login with phone:', phone);
 
-      // Find employee by phone
+      // Find employee by phone - with detailed logging
+      console.log('📞 Searching for phone:', phone, 'type:', typeof phone);
+      
       const { data: employee, error } = await supabase
         .from('employees')
         .select('*')
@@ -61,8 +63,29 @@ export const useEmployeeAuth = () => {
         .eq('is_archived', false)
         .maybeSingle();
 
-      if (error || !employee) {
-        console.error('❌ Employee not found:', error);
+      console.log('🔍 Query result:', { employee, error, dataType: typeof employee });
+
+      if (error) {
+        console.error('❌ Database error:', error);
+        toast({
+          title: 'שגיאה במסד הנתונים',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return { success: false };
+      }
+
+      if (!employee) {
+        console.error('❌ Employee not found for phone:', phone);
+        
+        // Let's try a broader search to debug
+        const { data: allEmployees } = await supabase
+          .from('employees')
+          .select('phone, first_name, last_name, is_active, is_archived')
+          .like('phone', `%${phone.slice(-7)}%`);
+          
+        console.log('🔍 Similar phones found:', allEmployees);
+        
         toast({
           title: 'מספר טלפון לא נמצא',
           description: 'מספר הטלפון לא רשום במערכת',
