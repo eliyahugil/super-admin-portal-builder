@@ -30,16 +30,31 @@ serve(async (req) => {
       case 'create_session':
         // Create or update WhatsApp session
         const sessionIdToUse = sessionId || crypto.randomUUID();
+        
+        // First check if session already exists for this business
+        const { data: existingSession } = await supabase
+          .from('whatsapp_sessions')
+          .select('*')
+          .eq('business_id', finalBusinessId)
+          .eq('connection_status', 'connecting')
+          .single();
+
+        if (existingSession) {
+          // Return existing session
+          return new Response(
+            JSON.stringify({ success: true, session: existingSession }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
         const { data: sessionData, error: sessionError } = await supabase
           .from('whatsapp_sessions')
-          .upsert({
+          .insert({
             id: sessionIdToUse,
             business_id: finalBusinessId,
             phone_number: finalPhoneNumber,
             connection_status: 'connecting',
-            qr_code: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IndoaXRlIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9ImJsYWNrIj7Xp9eV16gg0YIt0L7Ui9ecINec15nXqNeq15XXqdeR0ZjXqNeY0LzXnteYPC90ZXh0Pgo8L3N2Zz4K', // Placeholder QR code
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            qr_code: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IndoaXRlIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9ImJsYWNrIj5RUiBDb2RlIEZvciBXaGF0c0FwcDwvdGV4dD4KPC9zdmc+', // Placeholder QR code with visible text
           })
           .select()
           .single();
