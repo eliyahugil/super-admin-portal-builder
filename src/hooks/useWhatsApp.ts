@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface WhatsAppSession {
   id: string;
@@ -19,6 +20,7 @@ export const useWhatsApp = (businessId: string) => {
   const [sessions, setSessions] = useState<WhatsAppSession[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   const sessionId = `whatsapp-${businessId}`;
 
@@ -139,9 +141,17 @@ export const useWhatsApp = (businessId: string) => {
 
   // Subscribe to real-time updates
   useEffect(() => {
+    if (!businessId) return;
+    
     fetchSessions();
 
-    const channel = supabase
+    // Clean up existing channel first
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    channelRef.current = supabase
       .channel(`whatsapp-sessions-${businessId}`)
       .on(
         'postgres_changes',
@@ -158,7 +168,10 @@ export const useWhatsApp = (businessId: string) => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [businessId]);
 
