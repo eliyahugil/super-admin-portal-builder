@@ -18,6 +18,7 @@ import { EmployeeSalaryTab } from './EmployeeSalaryTab';
 import { EmployeeAttendanceTab } from './EmployeeAttendanceTab';
 import { EmployeeShiftSubmissionsTab } from './EmployeeShiftSubmissionsTab';
 import { EmployeeShiftSubmissionStats } from './EmployeeShiftSubmissionStats';
+import { EmployeeProfileScheduleTab } from '../schedule/EmployeeProfileScheduleTab';
 import type { Employee } from '@/types/employee';
 
 interface EmployeeTabsContentProps {
@@ -51,6 +52,10 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
 
       <TabsContent value="branches">
         <EmployeeBranchAssignmentsTab employee={employee} employeeId={employeeId} />
+      </TabsContent>
+
+      <TabsContent value="schedule">
+        <EmployeeProfileScheduleTab employee={employee} />
       </TabsContent>
 
       <TabsContent value="attendance">

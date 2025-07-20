@@ -6,6 +6,7 @@ import {
   Building, 
   Clock, 
   Calendar, 
+  CalendarDays,
   KeyRound, 
   DollarSign, 
   Settings, 
@@ -55,6 +56,12 @@ export const getAvailableTabs = (employee: Employee): TabItem[] => {
       icon: Building,
       badge: branchAssignments > 0 ? branchAssignments : undefined,
       description: 'הקצאות סניפים ותפקידים'
+    },
+    { 
+      id: 'schedule', 
+      label: 'סידור שבועי', 
+      icon: CalendarDays,
+      description: 'תצוגת סידור שבועי אישי וכללי'
     },
     { 
       id: 'attendance', 

@@ -28,6 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { usePublicShifts } from '@/hooks/usePublicShifts';
+import { EmployeeScheduleView } from './schedule/EmployeeScheduleView';
 
 interface Employee {
   id: string;
@@ -391,8 +392,9 @@ export const SimpleEmployeeProfile: React.FC = () => {
 
         {/* Main Content with Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-7 gap-1">
+          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8 gap-1">
             <TabsTrigger value="profile" className="text-xs sm:text-sm">פרטים אישיים</TabsTrigger>
+            <TabsTrigger value="schedule" className="text-xs sm:text-sm">סידור שבועי</TabsTrigger>
             <TabsTrigger value="shifts" className="text-xs sm:text-sm">המשמרות שלי</TabsTrigger>
             <TabsTrigger value="available" className="text-xs sm:text-sm">משמרות פתוחות</TabsTrigger>
             <TabsTrigger value="tokens" className="text-xs sm:text-sm">טוקנים פעילים</TabsTrigger>
@@ -563,6 +565,11 @@ export const SimpleEmployeeProfile: React.FC = () => {
                 </Card>
               )}
             </div>
+          </TabsContent>
+
+          {/* Weekly Schedule Tab */}
+          <TabsContent value="schedule" className="space-y-6">
+            <EmployeeScheduleView employee={employee} />
           </TabsContent>
 
           {/* My Shifts Tab */}
