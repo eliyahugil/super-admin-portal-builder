@@ -12,8 +12,8 @@ export const WhatsAppConnection: React.FC = () => {
   const { currentSession, isConnected, loading, createSession } = useWhatsAppContext();
 
   const handleConnect = async () => {
-    if (!phoneNumber.trim()) return;
-    await createSession(phoneNumber);
+    // אפשר חיבור גם בלי מספר טלפון
+    await createSession(phoneNumber.trim() || undefined);
   };
 
   const getStatusColor = () => {
@@ -92,23 +92,26 @@ export const WhatsAppConnection: React.FC = () => {
         {!isConnected && (
           <div className="space-y-3">
             <div>
-              <Label htmlFor="phone">מספר טלפון (כולל קידומת מדינה)</Label>
+              <Label htmlFor="phone">מספר טלפון (אופציונלי - כולל קידומת מדינה)</Label>
               <Input
                 id="phone"
                 type="tel"
-                placeholder="972501234567"
+                placeholder="972501234567 (אופציונלי)"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 className="mt-1"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                ניתן להשאיר ריק ולהתחבר באמצעות קוד QR בלבד
+              </p>
             </div>
             <Button 
               onClick={handleConnect} 
-              disabled={!phoneNumber.trim()}
+              disabled={loading}
               className="w-full"
             >
               <MessageSquare className="h-4 w-4 mr-2" />
-              התחבר ל-WhatsApp
+              {loading ? 'מתחבר...' : 'התחבר ל-WhatsApp'}
             </Button>
           </div>
         )}
