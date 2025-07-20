@@ -54,7 +54,23 @@ serve(async (req) => {
             business_id: finalBusinessId,
             phone_number: finalPhoneNumber,
             connection_status: 'connecting',
-            qr_code: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IndoaXRlIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9ImJsYWNrIj5RUiBDb2RlIEZvciBXaGF0c0FwcDwvdGV4dD4KPC9zdmc+', // Placeholder QR code with visible text
+            qr_code: 'data:image/svg+xml;base64,' + btoa(`<svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
+              <rect width="256" height="256" fill="white"/>
+              <rect x="20" y="20" width="40" height="40" fill="black"/>
+              <rect x="80" y="20" width="20" height="20" fill="black"/>
+              <rect x="120" y="20" width="20" height="20" fill="black"/>
+              <rect x="160" y="20" width="20" height="20" fill="black"/>
+              <rect x="200" y="20" width="40" height="40" fill="black"/>
+              <rect x="20" y="40" width="20" height="20" fill="white"/>
+              <rect x="40" y="40" width="20" height="20" fill="white"/>
+              <rect x="80" y="40" width="40" height="40" fill="black"/>
+              <rect x="140" y="40" width="20" height="20" fill="black"/>
+              <rect x="180" y="40" width="20" height="20" fill="white"/>
+              <rect x="200" y="40" width="20" height="20" fill="white"/>
+              <rect x="220" y="40" width="20" height="20" fill="white"/>
+              <text x="128" y="140" text-anchor="middle" font-family="Arial" font-size="12" fill="black">Demo QR Code</text>
+              <text x="128" y="160" text-anchor="middle" font-family="Arial" font-size="10" fill="gray">Scan with WhatsApp</text>
+            </svg>`), // Enhanced placeholder QR code
           })
           .select()
           .single();
