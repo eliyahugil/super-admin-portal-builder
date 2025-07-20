@@ -59,7 +59,7 @@ export const useEmployeeAuth = () => {
         .eq('phone', phone)
         .eq('is_active', true)
         .eq('is_archived', false)
-        .single();
+        .maybeSingle();
 
       if (error || !employee) {
         console.error('❌ Employee not found:', error);
