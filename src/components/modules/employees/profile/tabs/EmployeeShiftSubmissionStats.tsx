@@ -129,7 +129,7 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
 
     // Listen to changes in shift_submissions table
     const submissionsChannel = supabase
-      .channel('shift_submissions_changes')
+      .channel(`shift_submissions_${employeeId}`)
       .on(
         'postgres_changes',
         {
@@ -147,7 +147,7 @@ export const EmployeeShiftSubmissionStats: React.FC<EmployeeShiftSubmissionStats
 
     // Listen to changes in scheduled_shifts table  
     const shiftsChannel = supabase
-      .channel('scheduled_shifts_changes')
+      .channel(`scheduled_shifts_${employeeId}`)
       .on(
         'postgres_changes',
         {

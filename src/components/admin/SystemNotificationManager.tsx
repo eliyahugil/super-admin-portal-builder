@@ -66,7 +66,7 @@ export const SystemNotificationManager: React.FC = () => {
   // Listen for new access requests
   useEffect(() => {
     const channel = supabase
-      .channel('access_requests_notifications')
+      .channel(`access_requests_notifications_${Date.now()}`)
       .on(
         'postgres_changes',
         {

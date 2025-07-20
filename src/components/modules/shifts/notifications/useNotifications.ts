@@ -83,7 +83,7 @@ export const useNotifications = () => {
     if (!profile?.business_id) return;
     
     const channel = supabase
-      .channel('shift-submissions')
+      .channel(`shift-submissions-${profile.business_id}`)
       .on(
         'postgres_changes',
         {
