@@ -38,7 +38,7 @@ export const WhatsAppIntegrationForm: React.FC<WhatsAppIntegrationFormProps> = (
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <WhatsAppConnection />
+          {businessId && <WhatsAppConnection businessId={businessId} />}
         </CardContent>
       </Card>
     </div>

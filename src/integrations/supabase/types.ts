@@ -4621,6 +4621,53 @@ export type Database = {
           },
         ]
       }
+      whatsapp_sessions: {
+        Row: {
+          business_id: string
+          connection_status: string
+          created_at: string
+          device_name: string | null
+          id: string
+          last_connected_at: string | null
+          last_error: string | null
+          phone_number: string | null
+          qr_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          connection_status?: string
+          created_at?: string
+          device_name?: string | null
+          id: string
+          last_connected_at?: string | null
+          last_error?: string | null
+          phone_number?: string | null
+          qr_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          connection_status?: string
+          created_at?: string
+          device_name?: string | null
+          id?: string
+          last_connected_at?: string | null
+          last_error?: string | null
+          phone_number?: string | null
+          qr_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_sessions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
