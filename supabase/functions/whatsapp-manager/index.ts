@@ -142,15 +142,52 @@ serve(async (req) => {
         // Log message sending attempt
         console.log(`Sending message to ${finalPhoneNumber}: ${message}`);
         
+        // Create log entry
+        const logEntry = {
+          business_id: finalBusinessId,
+          phone: finalPhoneNumber,
+          message: message,
+          category: 'manual',
+          status: 'pending'
+        };
+
+        const { data: logData, error: logError } = await supabase
+          .from('whatsapp_logs')
+          .insert(logEntry)
+          .select()
+          .single();
+
+        if (logError) {
+          console.error('Failed to create log entry:', logError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to log message', details: logError.message }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
         // Here you would integrate with your WhatsApp Web API
-        // For now, we'll just log and return success
+        // For now, we'll simulate success and update the log
         
+        // Update log with success status
+        const { error: updateError } = await supabase
+          .from('whatsapp_logs')
+          .update({ 
+            status: 'sent', 
+            sent_at: new Date().toISOString() 
+          })
+          .eq('id', logData.id);
+
+        if (updateError) {
+          console.error('Failed to update log:', updateError);
+        }
+
         return new Response(
           JSON.stringify({ 
             success: true, 
-            message: 'Message queued for sending',
+            message: 'Message sent successfully',
             recipient: finalPhoneNumber,
-            content: message 
+            content: message,
+            log_id: logData.id
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );

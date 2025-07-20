@@ -1,9 +1,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Smartphone, MessageSquare, BarChart3 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Smartphone, MessageSquare, BarChart3, Send, Users, History } from 'lucide-react';
 import { WhatsAppConnection } from './WhatsAppConnection';
 import { WhatsAppMessenger } from './WhatsAppMessenger';
+import { WhatsAppBulkSender } from './WhatsAppBulkSender';
+import { WhatsAppLogsViewer } from './WhatsAppLogsViewer';
 import { WhatsAppProvider, useWhatsAppContext } from '@/context/WhatsAppContext';
 
 interface Props {
@@ -11,7 +14,7 @@ interface Props {
   businessName: string;
 }
 
-const WhatsAppDashboardContent: React.FC<{ businessName: string }> = ({ businessName }) => {
+const WhatsAppDashboardContent: React.FC<{ businessName: string; businessId: string }> = ({ businessName, businessId }) => {
   const { sessions, isConnected } = useWhatsAppContext();
 
   const getQuickStats = () => {
@@ -81,63 +84,43 @@ const WhatsAppDashboardContent: React.FC<{ businessName: string }> = ({ business
         </Card>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Connection Management */}
-        <WhatsAppConnection />
+      {/* Tabs for different features */}
+      <Tabs defaultValue="connection" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="connection" className="flex items-center gap-2">
+            <Smartphone className="h-4 w-4" />
+            חיבור
+          </TabsTrigger>
+          <TabsTrigger value="messaging" className="flex items-center gap-2">
+            <Send className="h-4 w-4" />
+            הודעות
+          </TabsTrigger>
+          <TabsTrigger value="bulk" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            שליחה מרוכזת
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            היסטוריה
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Message Sender */}
-        <WhatsAppMessenger />
-      </div>
+        <TabsContent value="connection" className="space-y-4">
+          <WhatsAppConnection />
+        </TabsContent>
 
-      {/* Sessions List */}
-      {sessions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>היסטוריית סשנים</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {sessions.map((session) => (
-                <div 
-                  key={session.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{session.id}</p>
-                      <Badge 
-                        variant={
-                          session.connection_status === 'connected' ? 'default' :
-                          session.connection_status === 'connecting' ? 'secondary' : 'destructive'
-                        }
-                      >
-                        {session.connection_status}
-                      </Badge>
-                    </div>
-                    {session.phone_number && (
-                      <p className="text-sm text-muted-foreground">
-                        {session.phone_number}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      נוצר: {new Date(session.created_at).toLocaleString('he-IL')}
-                    </p>
-                  </div>
-                  
-                  <div className="text-right">
-                    {session.last_connected_at && (
-                      <p className="text-xs text-muted-foreground">
-                        התחבר: {new Date(session.last_connected_at).toLocaleString('he-IL')}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        <TabsContent value="messaging" className="space-y-4">
+          <WhatsAppMessenger />
+        </TabsContent>
+
+        <TabsContent value="bulk" className="space-y-4">
+          <WhatsAppBulkSender businessId={businessId} />
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-4">
+          <WhatsAppLogsViewer businessId={businessId} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
@@ -145,7 +128,7 @@ const WhatsAppDashboardContent: React.FC<{ businessName: string }> = ({ business
 export const WhatsAppDashboard: React.FC<Props> = ({ businessId, businessName }) => {
   return (
     <WhatsAppProvider businessId={businessId}>
-      <WhatsAppDashboardContent businessName={businessName} />
+      <WhatsAppDashboardContent businessName={businessName} businessId={businessId} />
     </WhatsAppProvider>
   );
 };

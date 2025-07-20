@@ -4561,6 +4561,56 @@ export type Database = {
           },
         ]
       }
+      whatsapp_logs: {
+        Row: {
+          business_id: string
+          category: string
+          created_at: string
+          error: string | null
+          id: string
+          message: string
+          phone: string
+          sent_at: string | null
+          session_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          category?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          message: string
+          phone: string
+          sent_at?: string | null
+          session_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          category?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          message?: string
+          phone?: string
+          sent_at?: string | null
+          session_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_messages: {
         Row: {
           business_id: string
