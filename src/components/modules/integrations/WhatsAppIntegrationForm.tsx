@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Smartphone, Wifi } from 'lucide-react';
 import { WhatsAppConnection } from '@/components/whatsapp/WhatsAppConnection';
+import { WhatsAppProvider } from '@/context/WhatsAppContext';
 
 interface WhatsAppIntegrationFormProps {
   businessId?: string;
@@ -38,7 +39,11 @@ export const WhatsAppIntegrationForm: React.FC<WhatsAppIntegrationFormProps> = (
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {businessId && <WhatsAppConnection businessId={businessId} />}
+          {businessId && (
+            <WhatsAppProvider businessId={businessId}>
+              <WhatsAppConnection />
+            </WhatsAppProvider>
+          )}
         </CardContent>
       </Card>
     </div>

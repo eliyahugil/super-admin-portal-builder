@@ -6,21 +6,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MessageSquare, Send, Users, User, Building, Calendar } from 'lucide-react';
-import { useWhatsApp } from '@/hooks/useWhatsApp';
-
-interface Props {
-  businessId: string;
-}
+import { useWhatsAppContext } from '@/context/WhatsAppContext';
 
 type MessageCategory = 'custom' | 'employees' | 'customers' | 'partners' | 'events';
 
-export const WhatsAppMessenger: React.FC<Props> = ({ businessId }) => {
+export const WhatsAppMessenger: React.FC = () => {
   const [category, setCategory] = useState<MessageCategory>('custom');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   
-  const { isConnected, sendMessage } = useWhatsApp(businessId);
+  const { isConnected, sendMessage } = useWhatsAppContext();
 
   const handleSend = async () => {
     if (!phoneNumber.trim() || !message.trim()) return;

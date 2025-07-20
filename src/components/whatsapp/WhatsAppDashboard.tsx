@@ -4,15 +4,15 @@ import { Badge } from '@/components/ui/badge';
 import { Smartphone, MessageSquare, BarChart3 } from 'lucide-react';
 import { WhatsAppConnection } from './WhatsAppConnection';
 import { WhatsAppMessenger } from './WhatsAppMessenger';
-import { useWhatsApp } from '@/hooks/useWhatsApp';
+import { WhatsAppProvider, useWhatsAppContext } from '@/context/WhatsAppContext';
 
 interface Props {
   businessId: string;
   businessName: string;
 }
 
-export const WhatsAppDashboard: React.FC<Props> = ({ businessId, businessName }) => {
-  const { sessions, isConnected } = useWhatsApp(businessId);
+const WhatsAppDashboardContent: React.FC<{ businessName: string }> = ({ businessName }) => {
+  const { sessions, isConnected } = useWhatsAppContext();
 
   const getQuickStats = () => {
     return {
@@ -84,10 +84,10 @@ export const WhatsAppDashboard: React.FC<Props> = ({ businessId, businessName })
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Connection Management */}
-        <WhatsAppConnection businessId={businessId} />
+        <WhatsAppConnection />
 
         {/* Message Sender */}
-        <WhatsAppMessenger businessId={businessId} />
+        <WhatsAppMessenger />
       </div>
 
       {/* Sessions List */}
@@ -139,5 +139,13 @@ export const WhatsAppDashboard: React.FC<Props> = ({ businessId, businessName })
         </Card>
       )}
     </div>
+  );
+};
+
+export const WhatsAppDashboard: React.FC<Props> = ({ businessId, businessName }) => {
+  return (
+    <WhatsAppProvider businessId={businessId}>
+      <WhatsAppDashboardContent businessName={businessName} />
+    </WhatsAppProvider>
   );
 };

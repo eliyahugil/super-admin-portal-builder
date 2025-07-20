@@ -3,15 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Smartphone, Send } from 'lucide-react';
-import { useWhatsApp } from '@/hooks/useWhatsApp';
 import { useNavigate } from 'react-router-dom';
+import { WhatsAppProvider, useWhatsAppContext } from '@/context/WhatsAppContext';
 
 interface Props {
   businessId: string;
 }
 
-export const WhatsAppQuickAccess: React.FC<Props> = ({ businessId }) => {
-  const { isConnected, sessions } = useWhatsApp(businessId);
+const WhatsAppQuickAccessContent: React.FC = () => {
+  const { isConnected, sessions } = useWhatsAppContext();
   const navigate = useNavigate();
 
   const handleOpenWhatsApp = () => {
@@ -56,5 +56,13 @@ export const WhatsAppQuickAccess: React.FC<Props> = ({ businessId }) => {
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+export const WhatsAppQuickAccess: React.FC<Props> = ({ businessId }) => {
+  return (
+    <WhatsAppProvider businessId={businessId}>
+      <WhatsAppQuickAccessContent />
+    </WhatsAppProvider>
   );
 };

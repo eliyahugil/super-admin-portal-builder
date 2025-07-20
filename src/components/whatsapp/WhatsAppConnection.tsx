@@ -5,15 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Smartphone, Wifi, WifiOff, QrCode, MessageSquare } from 'lucide-react';
-import { useWhatsApp } from '@/hooks/useWhatsApp';
+import { useWhatsAppContext } from '@/context/WhatsAppContext';
 
-interface Props {
-  businessId: string;
-}
-
-export const WhatsAppConnection: React.FC<Props> = ({ businessId }) => {
+export const WhatsAppConnection: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const { currentSession, isConnected, loading, createSession } = useWhatsApp(businessId);
+  const { currentSession, isConnected, loading, createSession } = useWhatsAppContext();
 
   const handleConnect = async () => {
     if (!phoneNumber.trim()) return;
