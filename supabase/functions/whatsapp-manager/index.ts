@@ -169,7 +169,7 @@ serve(async (req) => {
         // For now, we'll simulate success and update the log
         
         // Update log with success status
-        const { error: updateError } = await supabase
+        const { error: logUpdateError } = await supabase
           .from('whatsapp_logs')
           .update({ 
             status: 'sent', 
@@ -177,8 +177,8 @@ serve(async (req) => {
           })
           .eq('id', logData.id);
 
-        if (updateError) {
-          console.error('Failed to update log:', updateError);
+        if (logUpdateError) {
+          console.error('Failed to update log:', logUpdateError);
         }
 
         return new Response(
