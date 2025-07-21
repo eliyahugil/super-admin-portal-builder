@@ -203,18 +203,21 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
                 </Badge>
               </div>
               
+              {/* Employee info - always show when available */}
+              {shift.employee && (
+                <div className="flex items-center gap-2 mb-2">
+                  <User className="h-3 w-3 text-blue-600" />
+                  <span className="font-medium text-blue-800 text-sm">
+                    {shift.employee.first_name} {shift.employee.last_name}
+                  </span>
+                </div>
+              )}
+              
               <div className="space-y-1 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-3 w-3" />
                   <span>{shift.branch?.name}</span>
                 </div>
-                
-                {showEmployeeName && shift.employee && (
-                  <div className="flex items-center gap-2">
-                    <User className="h-3 w-3" />
-                    <span>{shift.employee.first_name} {shift.employee.last_name}</span>
-                  </div>
-                )}
                 
                 {shift.notes && (
                   <div className="text-xs mt-2 p-2 bg-muted rounded">
@@ -229,7 +232,7 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
     );
   };
 
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)).reverse();
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)); // ראשון עד שבת בסדר נכון
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newWeek = new Date(currentWeek);
