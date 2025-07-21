@@ -328,6 +328,10 @@ export const SimpleEmployeeProfile: React.FC = () => {
 
       if (uploadError) throw uploadError;
 
+      // Get current user for uploaded_by field
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error('לא ניתן לזהות את המשתמש המחובר');
+
       // Save file record to database
       const { error: dbError } = await supabase
         .from('employee_files')
@@ -339,7 +343,7 @@ export const SimpleEmployeeProfile: React.FC = () => {
           file_size: file.size,
           file_type: file.type,
           approval_status: 'pending',
-          uploaded_by: employee.id,
+          uploaded_by: user.id, // Use authenticated user ID
           is_visible_to_employee: true
         });
 
@@ -842,15 +846,6 @@ export const SimpleEmployeeProfile: React.FC = () => {
                       type="file"
                       className="hidden"
                       accept="*/*"
-                      onClick={(e) => {
-                        // Check if user is authenticated
-                        const currentUser = supabase.auth.getUser();
-                        if (!currentUser) {
-                          e.preventDefault();
-                          alert('יש להתחבר למערכת כדי להעלות קבצים');
-                          return;
-                        }
-                      }}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
