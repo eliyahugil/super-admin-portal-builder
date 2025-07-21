@@ -328,8 +328,13 @@ export const SimpleEmployeeProfile: React.FC = () => {
 
       if (uploadError) throw uploadError;
 
-      // Save file record to database - use the employee's ID as uploader
-      // since this is being uploaded through the employee's profile
+      // Get current authenticated user ID for uploaded_by field
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('אין משתמש מחובר');
+      }
+
+      // Save file record to database
       const { error: dbError } = await supabase
         .from('employee_files')
         .insert({
@@ -340,7 +345,7 @@ export const SimpleEmployeeProfile: React.FC = () => {
           file_size: file.size,
           file_type: file.type,
           approval_status: 'pending',
-          uploaded_by: employee.id, // Use employee ID for now
+          uploaded_by: user.id, // Use authenticated user ID
           is_visible_to_employee: true
         });
 
