@@ -125,7 +125,10 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
           // Secondary sort: if start times are identical, sort by end time (longer shifts first)
           const endA = parseTime(a.end_time);
           const endB = parseTime(b.end_time);
-          return endB - endA;
+          // Calculate duration for proper sorting (longer shifts first)
+          const durationA = endA - startA;
+          const durationB = endB - startB;
+          return durationB - durationA;
         });
       });
     });
@@ -308,12 +311,12 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
                               
                               {/* Employee assignment */}
                               <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-gray-500" />
-                                  <span className="text-sm text-gray-700">
-                                    {shift.employee_id ? getEmployeeName(shift.employee_id) : 'לא משוייך'}
-                                  </span>
-                                </div>
+                                 <div className="flex items-center gap-2">
+                                   <User className="h-4 w-4 text-gray-500" />
+                                   <span className="text-sm font-medium text-gray-900">
+                                     {shift.employee_id ? getEmployeeName(shift.employee_id) : 'לא משוייך'}
+                                   </span>
+                                 </div>
                                 {shift.employee_id && (
                                   <Button
                                     size="sm"
@@ -409,12 +412,13 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
 
       {/* Desktop Layout - Grid */}
       <div className="hidden md:block">
-        {/* Headers with days */}
-        <div className="grid grid-cols-8 gap-2 mb-4">
+        {/* Headers with days - RTL order */}
+        <div className="grid grid-cols-8 gap-2 mb-4" dir="rtl">
           <div className="font-semibold text-center text-gray-700 border-b pb-2">
             סניף
           </div>
-          {weekDays.map((day, index) => {
+          {weekDays.slice().reverse().map((day, reverseIndex) => {
+            const index = 6 - reverseIndex; // Get original index for weekend check
             const isToday = day.toDateString() === new Date().toDateString();
             const isWeekend = index === 5 || index === 6;
             
@@ -460,7 +464,7 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
                       </Button>
                     </div>
 
-                    {weekDays.map((day) => {
+                    {weekDays.slice().reverse().map((day) => {
                       const dateStr = day.toISOString().split('T')[0];
                       const dayShifts = branchGroup.days[dateStr] || [];
                       const daySubmissions = groupedSubmissions[branchId]?.[dateStr] || [];
@@ -512,19 +516,24 @@ export const GroupedByBranchView: React.FC<GroupedByBranchViewProps> = ({
                                   </span>
                                 </div>
                                 
-                                {/* Employee or unassigned */}
-                                <div className="text-center">
-                                  {shift.employee_id ? (
-                                    <Badge variant="secondary" className="bg-green-50 text-green-700 text-[10px] px-1 py-0.5">
-                                      <User className="h-2 w-2 mr-1" />
-                                      {getEmployeeName(shift.employee_id).split(' ')[0]}
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-[10px] px-1 py-0.5">
-                                      לא מוקצה
-                                    </Badge>
-                                  )}
-                                </div>
+                                 {/* Employee or unassigned */}
+                                 <div className="text-center">
+                                   {shift.employee_id ? (
+                                     <div className="space-y-1">
+                                       <Badge variant="secondary" className="bg-green-50 text-green-700 text-[10px] px-1 py-0.5">
+                                         <User className="h-2 w-2 mr-1" />
+                                         מוקצה
+                                       </Badge>
+                                       <div className="text-[9px] text-gray-700 font-medium break-words">
+                                         {getEmployeeName(shift.employee_id)}
+                                       </div>
+                                     </div>
+                                   ) : (
+                                     <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-[10px] px-1 py-0.5">
+                                       לא מוקצה
+                                     </Badge>
+                                   )}
+                                 </div>
                                 
                                 {/* Status */}
                                 <div className="text-center mt-1">
