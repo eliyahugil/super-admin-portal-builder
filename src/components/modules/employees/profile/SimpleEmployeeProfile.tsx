@@ -102,7 +102,7 @@ interface Notification {
 }
 
 export const SimpleEmployeeProfile: React.FC = () => {
-  const { id: employeeId } = useParams<{ id: string }>();
+  const { employeeId } = useParams<{ employeeId: string }>();
   const { toast } = useToast();
   const { useEmployeeActiveToken, useTokenAvailableShifts } = usePublicShifts();
   const [employee, setEmployee] = useState<Employee | null>(null);
