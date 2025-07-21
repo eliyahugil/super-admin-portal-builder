@@ -201,47 +201,62 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
       );
     }
 
+    // Group shifts by branch
+    const shiftsByBranch = dayShifts.reduce((acc, shift) => {
+      const branchId = shift.branch_id || shift.branches?.id;
+      const branchName = shift.branches?.name || shift.branch?.name || 'לא מוגדר';
+      
+      if (!acc[branchId]) {
+        acc[branchId] = {
+          branchName,
+          shifts: []
+        };
+      }
+      acc[branchId].shifts.push(shift);
+      return acc;
+    }, {} as Record<string, { branchName: string; shifts: ScheduledShift[] }>);
+
     return (
-      <div className="space-y-2">
-        {dayShifts.map((shift) => (
-          <Card key={shift.id} className="border-l-4 border-l-primary">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">
-                    {shift.start_time} - {shift.end_time}
-                  </span>
-                </div>
-                <Badge className={getStatusColor(shift.status)}>
-                  {getStatusText(shift.status)}
-                </Badge>
-              </div>
-              
-              {/* Employee info - always show when available */}
-              {(shift.employees || shift.employee) && (
-                <div className="flex items-center gap-2 mb-2">
-                  <User className="h-3 w-3 text-blue-600" />
-                  <span className="font-medium text-blue-800 text-sm">
-                    {shift.employees?.first_name || shift.employee?.first_name} {shift.employees?.last_name || shift.employee?.last_name}
-                  </span>
-                </div>
-              )}
-              
-              <div className="space-y-1 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-3 w-3" />
-                  <span>{shift.branches?.name || shift.branch?.name}</span>
-                </div>
-                
-                {shift.notes && (
-                  <div className="text-xs mt-2 p-2 bg-muted rounded">
-                    {shift.notes}
+      <div className="space-y-3">
+        {Object.entries(shiftsByBranch).map(([branchId, { branchName, shifts }]) => (
+          <div key={branchId} className="space-y-2">
+            <div className="text-xs font-medium text-muted-foreground border-b border-muted pb-1">
+              {branchName}
+            </div>
+            {shifts.map((shift) => (
+              <Card key={shift.id} className="border-l-4 border-l-primary">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">
+                        {shift.start_time} - {shift.end_time}
+                      </span>
+                    </div>
+                    <Badge className={getStatusColor(shift.status)}>
+                      {getStatusText(shift.status)}
+                    </Badge>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  
+                  {/* Employee info - always show when available */}
+                  {(shift.employees || shift.employee) && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <User className="h-3 w-3 text-blue-600" />
+                      <span className="font-medium text-blue-800 text-sm">
+                        {shift.employees?.first_name || shift.employee?.first_name} {shift.employees?.last_name || shift.employee?.last_name}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {shift.notes && (
+                    <div className="text-xs mt-2 p-2 bg-muted rounded">
+                      {shift.notes}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         ))}
       </div>
     );
