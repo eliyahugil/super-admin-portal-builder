@@ -92,6 +92,7 @@ interface EmployeeFile {
   created_at: string;
   file_path: string;
   is_visible_to_employee: boolean;
+  approval_status: string;
 }
 
 interface Notification {
@@ -306,6 +307,66 @@ export const SimpleEmployeeProfile: React.FC = () => {
       });
     } finally {
       setSubmittingShift(null);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (!employee) return;
+
+    try {
+      // Create unique filename
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${file.name}`;
+      const filePath = `employee-files/${employee.business_id}/${employee.id}/${fileName}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('employee-files')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Save file record to database
+      const { error: dbError } = await supabase
+        .from('employee_files')
+        .insert({
+          employee_id: employee.id,
+          business_id: employee.business_id,
+          file_name: file.name,
+          file_path: filePath,
+          file_size: file.size,
+          file_type: file.type,
+          approval_status: 'pending',
+          uploaded_by: employee.id,
+          is_visible_to_employee: true
+        });
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: 'הקובץ הועלה בהצלחה',
+        description: 'הקובץ נשלח לאישור המנהל',
+      });
+
+      // Refresh files list
+      const { data: filesData } = await supabase
+        .from('employee_files')
+        .select('*')
+        .eq('employee_id', employee.id)
+        .eq('is_visible_to_employee', true)
+        .order('created_at', { ascending: false });
+
+      if (filesData) {
+        setFiles(filesData);
+      }
+
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן להעלות את הקובץ. נסה שוב מאוחר יותר.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -782,7 +843,7 @@ export const SimpleEmployeeProfile: React.FC = () => {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          alert(`נבחר קובץ: ${file.name} - הקובץ יישלח לאישור המנהל`);
+                          handleFileUpload(file);
                         }
                       }}
                     />
@@ -790,39 +851,69 @@ export const SimpleEmployeeProfile: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {documents.length === 0 ? (
+                {documents.length === 0 && files.filter(f => f.approval_status === 'pending').length === 0 ? (
                   <div className="text-center py-8">
                     <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">אין מסמכים זמינים</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {documents.map((doc) => (
-                      <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-5 w-5 text-primary flex-shrink-0" />
-                          <div className="text-right">
-                            <p className="font-medium">{doc.document_name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {doc.document_type} • {format(new Date(doc.created_at), 'dd/MM/yyyy')}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={getStatusColor(doc.status)}>
-                            {doc.status}
-                          </Badge>
-                          {doc.file_url && (
-                            <Button size="sm" variant="outline" asChild>
-                              <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
-                                צפייה
-                              </a>
-                            </Button>
-                          )}
+                  <div className="space-y-4">
+                    {/* Show pending files */}
+                    {files.filter(f => f.approval_status === 'pending').length > 0 && (
+                      <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
+                        <h4 className="font-medium text-yellow-800 mb-3 text-right">קבצים ממתינים לאישור ({files.filter(f => f.approval_status === 'pending').length})</h4>
+                        <div className="space-y-2">
+                          {files.filter(f => f.approval_status === 'pending').map((file) => (
+                            <div key={file.id} className="flex items-center justify-between p-3 bg-white rounded border">
+                              <div className="flex items-center gap-3">
+                                <Upload className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+                                <div className="text-right">
+                                  <p className="font-medium">{file.file_name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    הועלה ב-{format(new Date(file.created_at), 'dd/MM/yyyy HH:mm')}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge className="bg-yellow-100 text-yellow-800">
+                                ממתין לאישור
+                              </Badge>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    )}
+
+                    {/* Show approved documents */}
+                    {documents.length > 0 && (
+                      <div className="space-y-3">
+                        {documents.map((doc) => (
+                          <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <FileText className="h-5 w-5 text-primary flex-shrink-0" />
+                              <div className="text-right">
+                                <p className="font-medium">{doc.document_name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {doc.document_type} • {format(new Date(doc.created_at), 'dd/MM/yyyy')}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={getStatusColor(doc.status)}>
+                                {doc.status}
+                              </Badge>
+                              {doc.file_url && (
+                                <Button size="sm" variant="outline" asChild>
+                                  <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
+                                    צפייה
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                   </div>
                 )}
               </CardContent>
             </Card>
