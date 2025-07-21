@@ -156,6 +156,7 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
 
   const getStatusText = (status: string) => {
     switch (status) {
+      case 'approved':
       case 'confirmed': return 'מאושר';
       case 'pending': return 'בהמתנה';
       case 'cancelled': return 'מבוטל';
