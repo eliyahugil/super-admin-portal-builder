@@ -147,14 +147,36 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
       case 'confirmed': return 'מאושר';
       case 'pending': return 'בהמתנה';
       case 'cancelled': return 'מבוטל';
-      default: return 'לא ידוע';
+      default: return 'לא מוקצה';
     }
   };
 
   const renderDayShifts = (date: Date, shiftsData: ScheduledShift[], showEmployeeName = false) => {
     const dayShifts = shiftsData.filter(shift => 
       isSameDay(new Date(shift.shift_date), date)
-    );
+    ).sort((a, b) => {
+      // Parse time function
+      const parseTime = (timeStr: string) => {
+        if (!timeStr) return 0;
+        const [hours, minutes] = timeStr.split(':').map(num => parseInt(num) || 0);
+        return hours * 60 + minutes;
+      };
+
+      const startA = parseTime(a.start_time);
+      const startB = parseTime(b.start_time);
+      
+      if (startA !== startB) {
+        return startA - startB; // Earlier shifts first
+      }
+      
+      // If start times are equal, longer shifts first
+      const endA = parseTime(a.end_time);
+      const endB = parseTime(b.end_time);
+      const durationA = endA - startA;
+      const durationB = endB - startB;
+      
+      return durationB - durationA; // Longer shifts first
+    });
 
     if (dayShifts.length === 0) {
       return (
@@ -207,7 +229,7 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
     );
   };
 
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)).reverse();
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newWeek = new Date(currentWeek);
@@ -294,7 +316,7 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
         </TabsList>
 
         <TabsContent value="personal" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4" dir="rtl">
             {weekDays.map((day, index) => (
               <Card key={index} className="min-h-[200px]">
                 <CardHeader className="pb-2">
@@ -315,7 +337,7 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
         </TabsContent>
 
         <TabsContent value="all" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4" dir="rtl">
             {weekDays.map((day, index) => (
               <Card key={index} className="min-h-[200px]">
                 <CardHeader className="pb-2">
