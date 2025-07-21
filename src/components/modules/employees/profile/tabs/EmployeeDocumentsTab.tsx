@@ -34,9 +34,29 @@ export const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
       {/* Signed documents and signature status */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            מסמכים שנשלחו לחתימה
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              מסמכים שנשלחו לחתימה
+            </div>
+            <label htmlFor="fileUploadNew" className="cursor-pointer">
+              <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm">
+                <Upload className="h-4 w-4" />
+                העלה קובץ חדש
+              </div>
+              <input
+                id="fileUploadNew"
+                type="file"
+                className="hidden"
+                accept="*/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    alert(`נבחר קובץ: ${file.name}`);
+                  }
+                }}
+              />
+            </label>
           </CardTitle>
         </CardHeader>
         <CardContent>
