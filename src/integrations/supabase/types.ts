@@ -1769,44 +1769,62 @@ export type Database = {
       }
       employee_files: {
         Row: {
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
           business_id: string
           created_at: string | null
           employee_id: string
+          extracted_data: Json | null
           file_name: string
           file_path: string
           file_size: number | null
           file_type: string | null
           folder_id: string | null
           id: string
+          is_auto_extracted: boolean | null
           is_visible_to_employee: boolean
+          rejection_reason: string | null
           uploaded_at: string | null
           uploaded_by: string
         }
         Insert: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           business_id: string
           created_at?: string | null
           employee_id: string
+          extracted_data?: Json | null
           file_name: string
           file_path: string
           file_size?: number | null
           file_type?: string | null
           folder_id?: string | null
           id?: string
+          is_auto_extracted?: boolean | null
           is_visible_to_employee?: boolean
+          rejection_reason?: string | null
           uploaded_at?: string | null
           uploaded_by: string
         }
         Update: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           business_id?: string
           created_at?: string | null
           employee_id?: string
+          extracted_data?: Json | null
           file_name?: string
           file_path?: string
           file_size?: number | null
           file_type?: string | null
           folder_id?: string | null
           id?: string
+          is_auto_extracted?: boolean | null
           is_visible_to_employee?: boolean
+          rejection_reason?: string | null
           uploaded_at?: string | null
           uploaded_by?: string
         }
@@ -2550,6 +2568,53 @@ export type Database = {
             columns: ["main_branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      file_approval_notifications: {
+        Row: {
+          business_id: string
+          created_at: string
+          employee_id: string
+          file_id: string
+          id: string
+          is_read: boolean | null
+          manager_id: string
+          message: string | null
+          notification_type: string
+          read_at: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          employee_id: string
+          file_id: string
+          id?: string
+          is_read?: boolean | null
+          manager_id: string
+          message?: string | null
+          notification_type?: string
+          read_at?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          employee_id?: string
+          file_id?: string
+          id?: string
+          is_read?: boolean | null
+          manager_id?: string
+          message?: string | null
+          notification_type?: string
+          read_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_approval_notifications_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "employee_files"
             referencedColumns: ["id"]
           },
         ]
@@ -4723,6 +4788,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_employee_file: {
+        Args: {
+          file_id_param: string
+          approval_status_param: string
+          rejection_reason_param?: string
+        }
+        Returns: boolean
+      }
       check_business_module_access: {
         Args: { business_id_param: string; module_key_param: string }
         Returns: boolean

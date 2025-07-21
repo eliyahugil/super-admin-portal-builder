@@ -7,6 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileApprovalCard } from './files/FileApprovalCard';
+import { FileDataExtractor } from './files/FileDataExtractor';
 import { 
   FolderOpen, 
   FolderPlus, 
@@ -23,7 +26,10 @@ import {
   FolderIcon,
   Edit3,
   GripVertical,
-  Search
+  Search,
+  Clock,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { FilePreviewModal } from './files/FilePreviewModal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -59,12 +65,14 @@ interface EmployeeAdvancedFileManagerProps {
   employee: Employee;
   employeeId: string;
   employeeName: string;
+  showApprovalSystem?: boolean;
 }
 
 export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerProps> = ({
   employee,
   employeeId,
-  employeeName
+  employeeName,
+  showApprovalSystem = false
 }) => {
   const { profile } = useAuth();
   const { toast } = useToast();
@@ -513,6 +521,167 @@ export const EmployeeAdvancedFileManager: React.FC<EmployeeAdvancedFileManagerPr
   };
 
   const isLoading = foldersLoading || filesLoading;
+
+  // שליפת קבצים עם סטטוס אישור אם מערכת האישורים מופעלת
+  const { data: filesWithApproval, isLoading: approvalFilesLoading } = useQuery({
+    queryKey: ['employee-files-with-approval', employeeId, currentFolder],
+    queryFn: async (): Promise<(FileData & { approval_status?: string; extracted_data?: any })[]> => {
+      if (!showApprovalSystem) return [];
+      
+      let query = supabase
+        .from('employee_files')
+        .select(`
+          id,
+          file_name,
+          file_path,
+          file_size,
+          file_type,
+          folder_id,
+          is_visible_to_employee,
+          created_at,
+          uploaded_at,
+          uploaded_by,
+          approval_status,
+          extracted_data
+        `)
+        .eq('employee_id', employeeId);
+
+      if (currentFolder === null) {
+        query = query.is('folder_id', null);
+      } else {
+        query = query.eq('folder_id', currentFolder);
+      }
+
+      query = query.order('file_name');
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: showApprovalSystem,
+  });
+
+  if (showApprovalSystem) {
+    return (
+      <div className="space-y-6" dir="rtl">
+        <Tabs defaultValue="files" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="files" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              ניהול קבצים רגיל
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              קבצים לאישור
+              {filesWithApproval?.filter(f => f.approval_status === 'pending').length > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {filesWithApproval.filter(f => f.approval_status === 'pending').length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="approved" className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              קבצים מאושרים
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="files" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FolderOpen className="h-5 w-5" />
+                  ניהול קבצים רגיל
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* כאן יהיה התוכן הרגיל של ניהול הקבצים */}
+                <p className="text-muted-foreground">
+                  מערכת ניהול קבצים רגילה ללא מערכת אישורים
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="pending" className="mt-6">
+            <div className="space-y-4">
+              {approvalFilesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <span className="mr-2">טוען קבצים...</span>
+                </div>
+              ) : (
+                <>
+                  {filesWithApproval?.filter(f => f.approval_status === 'pending').map((file) => (
+                    <FileApprovalCard
+                      key={file.id}
+                      file={{
+                        ...file,
+                        approval_status: file.approval_status as 'pending' | 'approved' | 'rejected',
+                        employee: {
+                          id: employeeId,
+                          first_name: employee.first_name || '',
+                          last_name: employee.last_name || ''
+                        }
+                      }}
+                    />
+                  ))}
+                  {filesWithApproval?.filter(f => f.approval_status === 'pending').length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-medium mb-2">אין קבצים ממתינים לאישור</h3>
+                      <p>כל הקבצים כבר אושרו או נדחו</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="approved" className="mt-6">
+            <div className="space-y-4">
+              {filesWithApproval?.filter(f => f.approval_status === 'approved').map((file) => (
+                <div key={file.id} className="space-y-4">
+                  <FileApprovalCard
+                    file={{
+                      ...file,
+                      approval_status: file.approval_status as 'pending' | 'approved' | 'rejected',
+                      employee: {
+                        id: employeeId,
+                        first_name: employee.first_name || '',
+                        last_name: employee.last_name || ''
+                      }
+                    }}
+                  />
+                  {file.extracted_data && Object.keys(file.extracted_data).length > 0 && (
+                    <FileDataExtractor
+                      file={{
+                        id: file.id,
+                        file_name: file.file_name,
+                        extracted_data: file.extracted_data,
+                        is_auto_extracted: true,
+                        created_at: file.created_at
+                      }}
+                      onApplyToProfile={(data) => {
+                        console.log('Applying data to profile:', data);
+                        // כאן נוסיף לוגיקה להעברת הנתונים לפרופיל העובד
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+              {filesWithApproval?.filter(f => f.approval_status === 'approved').length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CheckCircle2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-medium mb-2">אין קבצים מאושרים</h3>
+                  <p>לא נמצאו קבצים שאושרו</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
 
   return (
     <Card>

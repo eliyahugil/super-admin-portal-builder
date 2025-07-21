@@ -49,12 +49,12 @@ export const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
 
       <Separator />
 
-      {/* File management with folders */}
+      {/* File management with approval system */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FolderOpen className="h-5 w-5" />
-            ניהול קבצים ותיקיות
+            ניהול קבצים עם מערכת אישורים
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -62,6 +62,7 @@ export const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
             employee={employee}
             employeeId={employeeId}
             employeeName={employeeName}
+            showApprovalSystem={true}
           />
         </CardContent>
       </Card>
