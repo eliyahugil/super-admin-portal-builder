@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, MapPin, Users, Eye, User, ChevronDown, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, Eye, User, ChevronDown, ChevronRight, Grid3X3, List } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -47,6 +47,7 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [employeeBranches, setEmployeeBranches] = useState<Branch[]>([]);
   const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 });
   const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 0 });
@@ -462,15 +463,99 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
         </TabsList>
 
         <TabsContent value="personal" className="mt-4">
-          <div className="space-y-4" dir="rtl">
-            {employeeBranches.map((branch) => renderBranchShifts(branch, shifts))}
+          <div className="mb-4 flex justify-end gap-2">
+            <Button
+              variant={viewMode === 'calendar' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('calendar')}
+              className="flex items-center gap-2"
+            >
+              <Grid3X3 className="h-4 w-4" />
+              לוח שנה
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="flex items-center gap-2"
+            >
+              <List className="h-4 w-4" />
+              רשימה
+            </Button>
           </div>
+
+          {viewMode === 'calendar' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4" dir="rtl">
+              {weekDays.map((day, index) => (
+                <Card key={index} className="min-h-[200px]">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-center">
+                      {format(day, 'EEEE', { locale: he })}
+                      <br />
+                      <span className="text-xs font-normal text-muted-foreground">
+                        {format(day, 'dd/MM', { locale: he })}
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2">
+                    {renderDayShifts(day, shifts)}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4" dir="rtl">
+              {employeeBranches.map((branch) => renderBranchShifts(branch, shifts))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="all" className="mt-4">
-          <div className="space-y-4" dir="rtl">
-            {employeeBranches.map((branch) => renderBranchShifts(branch, allShifts))}
+          <div className="mb-4 flex justify-end gap-2">
+            <Button
+              variant={viewMode === 'calendar' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('calendar')}
+              className="flex items-center gap-2"
+            >
+              <Grid3X3 className="h-4 w-4" />
+              לוח שנה
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="flex items-center gap-2"
+            >
+              <List className="h-4 w-4" />
+              רשימה
+            </Button>
           </div>
+
+          {viewMode === 'calendar' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4" dir="rtl">
+              {weekDays.map((day, index) => (
+                <Card key={index} className="min-h-[200px]">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-center">
+                      {format(day, 'EEEE', { locale: he })}
+                      <br />
+                      <span className="text-xs font-normal text-muted-foreground">
+                        {format(day, 'dd/MM', { locale: he })}
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2">
+                    {renderDayShifts(day, allShifts, true)}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4" dir="rtl">
+              {employeeBranches.map((branch) => renderBranchShifts(branch, allShifts))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
