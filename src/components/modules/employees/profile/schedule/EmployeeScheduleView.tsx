@@ -31,7 +31,9 @@ interface ScheduledShift {
   employee_id?: string;
   branch_id: string;
   employee?: Employee;
+  employees?: Employee; // Support both singular and plural from Supabase
   branch?: Branch;
+  branches?: Branch;   // Support both singular and plural from Supabase
 }
 
 interface EmployeeScheduleViewProps {
@@ -214,11 +216,11 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
               </div>
               
               {/* Employee info - always show when available */}
-              {shift.employee && (
+              {(shift.employees || shift.employee) && (
                 <div className="flex items-center gap-2 mb-2">
                   <User className="h-3 w-3 text-blue-600" />
                   <span className="font-medium text-blue-800 text-sm">
-                    {shift.employee.first_name} {shift.employee.last_name}
+                    {shift.employees?.first_name || shift.employee?.first_name} {shift.employees?.last_name || shift.employee?.last_name}
                   </span>
                 </div>
               )}
@@ -226,7 +228,7 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
               <div className="space-y-1 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-3 w-3" />
-                  <span>{shift.branch?.name}</span>
+                  <span>{shift.branches?.name || shift.branch?.name}</span>
                 </div>
                 
                 {shift.notes && (
