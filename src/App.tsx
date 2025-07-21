@@ -36,8 +36,8 @@ function App() {
               <Routes>
                 {PublicRoutes()}
                 {MainRoutes()}
-                {BusinessRoutes()}
                 {ModuleRoutes()}
+                {BusinessRoutes()}
                 {AdminRoutes()}
                 
                 {/* Not authorized route */}
