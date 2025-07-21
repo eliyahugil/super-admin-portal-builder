@@ -314,10 +314,11 @@ export const SimpleEmployeeProfile: React.FC = () => {
     if (!employee) return;
 
     try {
-      // Create unique filename
+      // Create unique filename without Hebrew characters
       const fileExtension = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${file.name}`;
-      const filePath = `employee-files/${employee.business_id}/${employee.id}/${fileName}`;
+      const timestamp = Date.now();
+      const cleanFileName = `file_${timestamp}.${fileExtension}`;
+      const filePath = `employee-files/${employee.business_id}/${employee.id}/${cleanFileName}`;
 
       // Upload file to storage
       const { error: uploadError } = await supabase.storage
