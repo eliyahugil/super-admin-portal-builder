@@ -86,10 +86,34 @@ export const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
             </TabsContent>
 
             <TabsContent value="pending" className="mt-6">
-              <div className="text-center py-8 text-muted-foreground">
-                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">אין קבצים ממתינים לאישור</h3>
-                <p>כאשר עובדים יעלו קבצים, הם יופיעו כאן לאישור</p>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">קבצים ממתינים לאישור מנהל</h3>
+                  <label htmlFor="fileUploadApproval" className="cursor-pointer">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                      <Upload className="h-4 w-4" />
+                      העלה קובץ לאישור
+                    </div>
+                    <input
+                      id="fileUploadApproval"
+                      type="file"
+                      className="hidden"
+                      accept="*/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          console.log('File selected for approval:', file.name);
+                          // כאן נוסיף את הלוגיקה להעלאת הקובץ
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-medium mb-2">אין קבצים ממתינים לאישור</h3>
+                  <p>השתמש בכפתור למעלה כדי להעלות קובץ שיצטרך אישור מהמנהל</p>
+                </div>
               </div>
             </TabsContent>
 
