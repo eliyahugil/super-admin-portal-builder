@@ -842,6 +842,15 @@ export const SimpleEmployeeProfile: React.FC = () => {
                       type="file"
                       className="hidden"
                       accept="*/*"
+                      onClick={(e) => {
+                        // Check if user is authenticated
+                        const currentUser = supabase.auth.getUser();
+                        if (!currentUser) {
+                          e.preventDefault();
+                          alert('יש להתחבר למערכת כדי להעלות קבצים');
+                          return;
+                        }
+                      }}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
