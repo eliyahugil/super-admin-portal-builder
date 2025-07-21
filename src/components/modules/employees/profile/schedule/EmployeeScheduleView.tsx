@@ -54,6 +54,7 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
 
   // Fetch employee's branch assignments
   const fetchEmployeeBranches = async () => {
+    console.log('🔍 Starting fetchEmployeeBranches for employee:', employee.id);
     try {
       const { data, error } = await supabase
         .from('employee_branch_assignments')
@@ -64,24 +65,41 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
         .eq('employee_id', employee.id)
         .eq('is_active', true);
 
-      if (error) throw error;
+      console.log('📊 Branch assignments query result:', { data, error });
+
+      if (error) {
+        console.error('❌ Error in fetchEmployeeBranches:', error);
+        throw error;
+      }
       
       const branches = data?.map(item => item.branches).filter(Boolean) || [];
+      console.log('✅ Processed branches:', branches);
       setEmployeeBranches(branches);
+      
+      // If no branches found, stop loading immediately
+      if (branches.length === 0) {
+        console.log('⚠️ No branches found for employee, stopping loading');
+        setLoading(false);
+      }
     } catch (error) {
-      console.error('Error fetching employee branches:', error);
+      console.error('💥 Error fetching employee branches:', error);
+      setLoading(false); // Stop loading on error
     }
   };
 
   // Fetch shifts for the week
   const fetchShifts = async () => {
+    console.log('🔄 Starting fetchShifts, loading set to true');
     setLoading(true);
     try {
       const branchIds = employeeBranches.map(b => b.id);
+      console.log('📋 Branch IDs for query:', branchIds);
       
       if (branchIds.length === 0) {
+        console.log('⚠️ No branch IDs found, setting empty arrays');
         setShifts([]);
         setAllShifts([]);
+        setLoading(false);
         return;
       }
 
