@@ -1,8 +1,9 @@
-
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { FileText, FolderOpen } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileText, FolderOpen, Clock, CheckCircle2, Upload } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { EmployeeTemplateSelector } from '../../EmployeeTemplateSelector';
 import { EmployeeDocuments } from '../../EmployeeDocuments';
 import { EmployeeAdvancedFileManager } from '../../EmployeeAdvancedFileManager';
@@ -49,13 +50,59 @@ export const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
 
       <Separator />
 
-      {/* File management with tabs */}
-      <EmployeeAdvancedFileManager
-        employee={employee}
-        employeeId={employeeId}
-        employeeName={employeeName}
-        showApprovalSystem={true}
-      />
+      {/* NEW: File management with approval system */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FolderOpen className="h-5 w-5" />
+            ניהול קבצים עם מערכת אישורים
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="regular" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="regular" className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4" />
+                קבצים רגילים
+              </TabsTrigger>
+              <TabsTrigger value="pending" className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                ממתין לאישור
+                <Badge variant="secondary" className="ml-1">0</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="approved" className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                מאושרים
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="regular" className="mt-6">
+              <EmployeeAdvancedFileManager
+                employee={employee}
+                employeeId={employeeId}
+                employeeName={employeeName}
+                showApprovalSystem={false}
+              />
+            </TabsContent>
+
+            <TabsContent value="pending" className="mt-6">
+              <div className="text-center py-8 text-muted-foreground">
+                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">אין קבצים ממתינים לאישור</h3>
+                <p>כאשר עובדים יעלו קבצים, הם יופיעו כאן לאישור</p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="approved" className="mt-6">
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">אין קבצים מאושרים</h3>
+                <p>קבצים שיאושרו יופיעו כאן עם נתונים שחולצו</p>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };
