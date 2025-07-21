@@ -166,10 +166,19 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
     }
   };
 
-  const renderDayShifts = (date: Date, shiftsData: ScheduledShift[], showEmployeeName = false) => {
-    const dayShifts = shiftsData.filter(shift => 
+  const renderDayShifts = (date: Date, shiftsData: ScheduledShift[], branchId?: string) => {
+    let dayShifts = shiftsData.filter(shift => 
       isSameDay(new Date(shift.shift_date), date)
-    ).sort((a, b) => {
+    );
+
+    // If branchId is provided, filter by branch
+    if (branchId) {
+      dayShifts = dayShifts.filter(shift => 
+        shift.branch_id === branchId || shift.branches?.id === branchId
+      );
+    }
+
+    dayShifts = dayShifts.sort((a, b) => {
       // Parse time function
       const parseTime = (timeStr: string) => {
         if (!timeStr) return 0;
@@ -201,75 +210,80 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
       );
     }
 
-    // Group shifts by branch
-    const shiftsByBranch = dayShifts.reduce((acc, shift) => {
-      const branchId = shift.branch_id || shift.branches?.id;
-      const branchName = shift.branches?.name || shift.branch?.name || 'לא מוגדר';
-      
-      if (!acc[branchId]) {
-        acc[branchId] = {
-          branchName,
-          shifts: []
-        };
-      }
-      acc[branchId].shifts.push(shift);
-      return acc;
-    }, {} as Record<string, { branchName: string; shifts: ScheduledShift[] }>);
-
     return (
-      <div className="space-y-4">
-        {Object.entries(shiftsByBranch).map(([branchId, { branchName, shifts }], index) => (
-          <div key={branchId} className="relative">
-            <div className="bg-muted/30 rounded-lg p-3 border-2 border-muted">
-              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-primary/20">
-                <MapPin className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-primary text-sm">
-                  {branchName}
-                </span>
-                <Badge variant="outline" className="text-xs">
-                  {shifts.length} משמרות
+      <div className="space-y-2">
+        {dayShifts.map((shift) => (
+          <Card key={shift.id} className="border-l-4 border-l-primary">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium text-sm">
+                    {shift.start_time} - {shift.end_time}
+                  </span>
+                </div>
+                <Badge className={getStatusColor(shift.status)}>
+                  {getStatusText(shift.status)}
                 </Badge>
               </div>
               
-              <div className="space-y-2">
-                {shifts.map((shift) => (
-                  <Card key={shift.id} className="border-l-4 border-l-primary bg-background">
-                    <CardContent className="p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium text-sm">
-                            {shift.start_time} - {shift.end_time}
-                          </span>
-                        </div>
-                        <Badge className={getStatusColor(shift.status)}>
-                          {getStatusText(shift.status)}
-                        </Badge>
-                      </div>
-                      
-                      {/* Employee info - always show when available */}
-                      {(shift.employees || shift.employee) && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <User className="h-3 w-3 text-blue-600" />
-                          <span className="font-medium text-blue-800 text-sm">
-                            {shift.employees?.first_name || shift.employee?.first_name} {shift.employees?.last_name || shift.employee?.last_name}
-                          </span>
-                        </div>
-                      )}
-                      
-                      {shift.notes && (
-                        <div className="text-xs mt-2 p-2 bg-muted rounded">
-                          {shift.notes}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </div>
+              {/* Employee info - always show when available */}
+              {(shift.employees || shift.employee) && (
+                <div className="flex items-center gap-2 mb-2">
+                  <User className="h-3 w-3 text-blue-600" />
+                  <span className="font-medium text-blue-800 text-sm">
+                    {shift.employees?.first_name || shift.employee?.first_name} {shift.employees?.last_name || shift.employee?.last_name}
+                  </span>
+                </div>
+              )}
+              
+              {shift.notes && (
+                <div className="text-xs mt-2 p-2 bg-muted rounded">
+                  {shift.notes}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         ))}
       </div>
+    );
+  };
+
+  const renderCalendarForBranch = (branch: Branch, shiftsData: ScheduledShift[]) => {
+    return (
+      <Card key={branch.id} className="mb-6">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <MapPin className="h-5 w-5 text-primary" />
+            {branch.name}
+            {branch.address && (
+              <span className="text-sm text-muted-foreground font-normal">
+                - {branch.address}
+              </span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4" dir="rtl">
+            {weekDays.map((day, index) => (
+              <Card key={index} className="min-h-[200px]">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-center">
+                    {format(day, 'EEEE', { locale: he })}
+                    <br />
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {format(day, 'dd/MM', { locale: he })}
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-2">
+                  {renderDayShifts(day, shiftsData, branch.id)}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     );
   };
 
@@ -511,23 +525,8 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
           </div>
 
           {viewMode === 'calendar' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4" dir="rtl">
-              {weekDays.map((day, index) => (
-                <Card key={index} className="min-h-[200px]">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-center">
-                      {format(day, 'EEEE', { locale: he })}
-                      <br />
-                      <span className="text-xs font-normal text-muted-foreground">
-                        {format(day, 'dd/MM', { locale: he })}
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-2">
-                    {renderDayShifts(day, shifts)}
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="space-y-6" dir="rtl">
+              {employeeBranches.map((branch) => renderCalendarForBranch(branch, shifts))}
             </div>
           ) : (
             <div className="space-y-4" dir="rtl">
@@ -559,23 +558,8 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
           </div>
 
           {viewMode === 'calendar' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4" dir="rtl">
-              {weekDays.map((day, index) => (
-                <Card key={index} className="min-h-[200px]">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-center">
-                      {format(day, 'EEEE', { locale: he })}
-                      <br />
-                      <span className="text-xs font-normal text-muted-foreground">
-                        {format(day, 'dd/MM', { locale: he })}
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-2">
-                    {renderDayShifts(day, allShifts, true)}
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="space-y-6" dir="rtl">
+              {employeeBranches.map((branch) => renderCalendarForBranch(branch, allShifts))}
             </div>
           ) : (
             <div className="space-y-4" dir="rtl">
