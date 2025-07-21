@@ -98,7 +98,7 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
 
       if (employeeError) throw employeeError;
 
-      // Fetch all shifts in employee's branches
+      // Fetch all shifts in employee's branches for "all shifts" view
       const { data: branchShifts, error: branchError } = await supabase
         .from('scheduled_shifts')
         .select(`
@@ -112,7 +112,17 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
         .order('shift_date')
         .order('start_time');
 
-      if (branchError) throw branchError;
+      if (branchError) {
+        console.error('Error fetching branch shifts:', branchError);
+        throw branchError;
+      }
+
+      console.log('✅ Fetched data successfully:', {
+        employeeShifts: employeeShifts?.length || 0,
+        branchShifts: branchShifts?.length || 0,
+        weekStart: format(weekStart, 'yyyy-MM-dd'),
+        weekEnd: format(weekEnd, 'yyyy-MM-dd')
+      });
 
       setShifts(employeeShifts || []);
       setAllShifts(branchShifts || []);
