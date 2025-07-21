@@ -22,7 +22,8 @@ import {
   Home,
   Baby,
   Send,
-  CheckCircle
+  CheckCircle,
+  Upload
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -763,9 +764,29 @@ export const SimpleEmployeeProfile: React.FC = () => {
           <TabsContent value="documents" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-right">
-                  <FileText className="h-5 w-5" />
-                  מסמכים ({documents.length})
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    מסמכים ({documents.length})
+                  </div>
+                  <label htmlFor="fileUploadPersonal" className="cursor-pointer">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm">
+                      <Upload className="h-4 w-4" />
+                      העלה קובץ אישי
+                    </div>
+                    <input
+                      id="fileUploadPersonal"
+                      type="file"
+                      className="hidden"
+                      accept="*/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          alert(`נבחר קובץ: ${file.name} - הקובץ יישלח לאישור המנהל`);
+                        }
+                      }}
+                    />
+                  </label>
                 </CardTitle>
               </CardHeader>
               <CardContent>
