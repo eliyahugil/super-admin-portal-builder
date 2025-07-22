@@ -2033,6 +2033,209 @@ export type Database = {
           },
         ]
       }
+      employee_registration_notifications: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          notification_type: string
+          registration_request_id: string
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          notification_type: string
+          registration_request_id: string
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          notification_type?: string
+          registration_request_id?: string
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_registration_notification_registration_request_id_fkey"
+            columns: ["registration_request_id"]
+            isOneToOne: false
+            referencedRelation: "employee_registration_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_registration_notifications_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_registration_requests: {
+        Row: {
+          additional_documents: Json | null
+          address: string | null
+          agreements_signed: Json | null
+          approved_at: string | null
+          approved_by: string | null
+          birth_date: string
+          branch_assignment_notes: string | null
+          business_id: string
+          created_at: string
+          digital_signatures: Json | null
+          email: string
+          first_name: string
+          id: string
+          id_document_url: string | null
+          id_number: string
+          last_name: string
+          notes: string | null
+          phone: string | null
+          preferred_branches: Json | null
+          rejection_reason: string | null
+          shift_preferences: Json | null
+          status: string
+          submitted_at: string
+          token_id: string
+          updated_at: string
+        }
+        Insert: {
+          additional_documents?: Json | null
+          address?: string | null
+          agreements_signed?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          birth_date: string
+          branch_assignment_notes?: string | null
+          business_id: string
+          created_at?: string
+          digital_signatures?: Json | null
+          email: string
+          first_name: string
+          id?: string
+          id_document_url?: string | null
+          id_number: string
+          last_name: string
+          notes?: string | null
+          phone?: string | null
+          preferred_branches?: Json | null
+          rejection_reason?: string | null
+          shift_preferences?: Json | null
+          status?: string
+          submitted_at?: string
+          token_id: string
+          updated_at?: string
+        }
+        Update: {
+          additional_documents?: Json | null
+          address?: string | null
+          agreements_signed?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          birth_date?: string
+          branch_assignment_notes?: string | null
+          business_id?: string
+          created_at?: string
+          digital_signatures?: Json | null
+          email?: string
+          first_name?: string
+          id?: string
+          id_document_url?: string | null
+          id_number?: string
+          last_name?: string
+          notes?: string | null
+          phone?: string | null
+          preferred_branches?: Json | null
+          rejection_reason?: string | null
+          shift_preferences?: Json | null
+          status?: string
+          submitted_at?: string
+          token_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_registration_requests_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_registration_requests_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "employee_registration_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_registration_tokens: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          current_registrations: number
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_registrations: number | null
+          title: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          current_registrations?: number
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_registrations?: number | null
+          title: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          current_registrations?: number
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_registrations?: number | null
+          title?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_registration_tokens_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_requests: {
         Row: {
           created_at: string | null
