@@ -28,7 +28,7 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   return (
     <div className="w-full mb-6" dir="rtl">
       {/* Mobile: Horizontal scrollable tabs */}
-      <div className="block md:hidden">
+      <div className="block sm:hidden">
         <div className="overflow-x-auto scrollbar-hide">
           <div className="flex gap-2 min-w-max px-4 pb-3 border-b border-muted">
             {availableTabs.map((tab) => {
@@ -69,7 +69,7 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
       </div>
 
       {/* Desktop: Multi-row wrapped tabs */}
-      <div className="hidden md:block">
+      <div className="hidden sm:block">
         <div className="flex flex-wrap gap-2 pb-3 border-b border-muted">
           {availableTabs.map((tab) => {
             const isActive = activeTab === tab.id;
