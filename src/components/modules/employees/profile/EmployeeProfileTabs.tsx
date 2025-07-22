@@ -23,9 +23,9 @@ export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({ employ
   });
 
   return (
-    <div className="flex-1 w-full overflow-hidden">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="w-full">
+    <div className="flex-1 w-full min-h-0 overflow-visible">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
+        <div className="w-full flex-shrink-0">
           <EmployeeTabsList 
             availableTabs={availableTabs}
             setActiveTab={setActiveTab}
@@ -33,7 +33,7 @@ export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({ employ
           />
         </div>
 
-        <div className="w-full">
+        <div className="w-full flex-1 min-h-0 overflow-auto">
           <EmployeeTabsContent
             employee={employee}
             employeeId={employeeId}

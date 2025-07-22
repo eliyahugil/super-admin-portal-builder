@@ -129,7 +129,9 @@ export const EmployeeProfilePage: React.FC = () => {
           <CardContent className="p-3 sm:p-6">
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-6" dir="rtl">
               <EmployeeProfileSidebar employee={employee} />
-              <EmployeeProfileTabs employee={employee} employeeId={employeeId!} />
+              <div className="flex-1 min-h-0">
+                <EmployeeProfileTabs employee={employee} employeeId={employeeId!} />
+              </div>
             </div>
           </CardContent>
         </Card>
