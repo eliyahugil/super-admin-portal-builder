@@ -464,8 +464,27 @@ export const SimpleEmployeeProfile: React.FC = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
           {/* Mobile: Large buttons with icons */}
           <div className="block sm:hidden mb-4">
-            <div className="w-full overflow-x-auto pb-2">
-              <div className="flex gap-2 px-2" style={{ minWidth: 'max-content' }}>
+            <div className="relative">
+              {/* Left fade indicator */}
+              <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none"></div>
+              
+              {/* Right fade indicator */}
+              <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none"></div>
+              
+              {/* Scroll arrows */}
+              <div className="absolute left-1 top-1/2 transform -translate-y-1/2 z-20 pointer-events-none">
+                <svg className="w-4 h-4 text-muted-foreground opacity-50" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                </svg>
+              </div>
+              <div className="absolute right-1 top-1/2 transform -translate-y-1/2 z-20 pointer-events-none">
+                <svg className="w-4 h-4 text-muted-foreground opacity-50" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+              </div>
+              
+              <div className="w-full overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="flex gap-2 px-6" style={{ minWidth: 'max-content' }}>
                 <button
                   onClick={() => setActiveTab('profile')}
                   className={`flex flex-col items-center gap-1 px-4 py-3 rounded-lg border text-xs font-medium whitespace-nowrap min-w-[80px] ${
@@ -546,6 +565,7 @@ export const SimpleEmployeeProfile: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
 
           {/* Desktop: Regular tabs */}
           <div className="hidden sm:block">
