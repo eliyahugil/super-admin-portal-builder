@@ -1774,6 +1774,7 @@ export type Database = {
           approved_by: string | null
           business_id: string
           created_at: string | null
+          document_type: string | null
           employee_id: string
           extracted_data: Json | null
           file_name: string
@@ -1794,6 +1795,7 @@ export type Database = {
           approved_by?: string | null
           business_id: string
           created_at?: string | null
+          document_type?: string | null
           employee_id: string
           extracted_data?: Json | null
           file_name: string
@@ -1814,6 +1816,7 @@ export type Database = {
           approved_by?: string | null
           business_id?: string
           created_at?: string | null
+          document_type?: string | null
           employee_id?: string
           extracted_data?: Json | null
           file_name?: string

@@ -11,6 +11,7 @@ export interface EmployeeFile {
   file_path: string;
   file_size?: number;
   file_type?: string;
+  document_type?: string;
   uploaded_by: string;
   uploaded_at: string;
   created_at: string;
@@ -195,10 +196,16 @@ export const useEmployeeFiles = (employeeId: string) => {
     },
   });
 
+  // Add Form 101 upload helper
+  const uploadForm101 = (file: File, businessId: string, isVisibleToEmployee: boolean = true) => {
+    uploadFileMutation.mutate({ file, isVisibleToEmployee, businessId, isForm101: true });
+  };
+
   return {
     files: files || [],
     isLoading,
     uploadFile: uploadFileMutation.mutate,
+    uploadForm101,
     deleteFile: deleteFileMutation.mutate,
     updateFileVisibility: updateFileVisibilityMutation.mutate,
     isUploading: uploadFileMutation.isPending,
