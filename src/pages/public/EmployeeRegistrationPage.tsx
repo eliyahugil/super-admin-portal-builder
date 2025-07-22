@@ -35,7 +35,7 @@ interface FormData {
   last_name: string;
   id_number: string;
   email: string;
-  phone?: string;
+  phone: string;
   birth_date: string;
   address?: string;
   preferred_branches: string[];
@@ -317,12 +317,21 @@ export const EmployeeRegistrationPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="phone">טלפון</Label>
+                    <Label htmlFor="phone">טלפון *</Label>
                     <Input
                       id="phone"
-                      {...register('phone')}
+                      {...register('phone', { 
+                        required: 'מספר טלפון חובה',
+                        pattern: {
+                          value: /^[0-9\-\s\+]{9,15}$/,
+                          message: 'מספר טלפון לא תקין'
+                        }
+                      })}
                       placeholder="050-1234567"
                     />
+                    {errors.phone && (
+                      <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -379,14 +388,16 @@ export const EmployeeRegistrationPage: React.FC = () => {
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <Checkbox
                         id="morning"
-                        {...register('shift_preferences.morning')}
+                        checked={watch('shift_preferences.morning')}
+                        onCheckedChange={(checked) => setValue('shift_preferences.morning', checked as boolean)}
                       />
                       <Label htmlFor="morning">משמרות בוקר</Label>
                     </div>
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <Checkbox
                         id="evening"
-                        {...register('shift_preferences.evening')}
+                        checked={watch('shift_preferences.evening')}
+                        onCheckedChange={(checked) => setValue('shift_preferences.evening', checked as boolean)}
                       />
                       <Label htmlFor="evening">משמרות ערב</Label>
                     </div>
