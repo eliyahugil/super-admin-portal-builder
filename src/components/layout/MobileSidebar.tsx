@@ -38,6 +38,12 @@ import { useBusiness } from '@/hooks/useBusiness';
 import { useBusinessModules } from '@/hooks/useBusinessModules';
 import { getModuleRoutes } from '@/utils/routeMapping';
 import { Skeleton } from '@/components/ui/skeleton';
+import { 
+  createEmployeesMenuItems, 
+  createBusinessMenuItems, 
+  createSystemMenuItems, 
+  createAdminMenuItems 
+} from './sidebar/menuItems';
 
 interface MenuItem {
   path: string;
@@ -75,99 +81,11 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
     modulesLoading
   });
 
-  // Get module routes based on business context
-  const moduleRoutes = getModuleRoutes(business?.id);
-
-  // Core menu items with module requirements
-  const coreMenuItems: MenuItem[] = [
-    { 
-      path: moduleRoutes.employees.base, 
-      label: 'עובדים', 
-      icon: Users, 
-      category: 'main',
-      moduleKey: 'employee_management',
-      subItems: [
-        { path: moduleRoutes.employees.base, label: 'רשימת עובדים', icon: Users, moduleKey: 'employee_management' },
-        { path: moduleRoutes.employees.files, label: 'קבצי עובדים', icon: FileText, moduleKey: 'employee_management' },
-        { path: moduleRoutes.employees.attendance, label: 'נוכחות', icon: UserCheck, moduleKey: 'employee_management' },
-        { path: moduleRoutes.employees.requests, label: 'בקשות עובדים', icon: CheckSquare, moduleKey: 'employee_management' },
-        { path: moduleRoutes.employees.docs, label: 'מסמכים חתומים', icon: FileText, moduleKey: 'employee_documents' },
-        { path: moduleRoutes.employees.shifts, label: 'משמרות עובדים', icon: Clock, moduleKey: 'shift_management' },
-        { path: moduleRoutes.employees.import, label: 'ייבוא עובדים', icon: FileText, moduleKey: 'employee_management' },
-      ]
-    },
-    { 
-      path: moduleRoutes.branches.base, 
-      label: 'סניפים', 
-      icon: Building, 
-      category: 'main',
-      moduleKey: 'branch_management',
-      subItems: [
-        { path: moduleRoutes.branches.roles, label: 'תפקידי סניף', icon: Users, moduleKey: 'branch_management' },
-        { path: moduleRoutes.branches.create, label: 'יצירת סניף', icon: Building, moduleKey: 'branch_management' },
-      ]
-    },
-    { 
-      path: moduleRoutes.shifts.base, 
-      label: 'ניהול משמרות', 
-      icon: Clock, 
-      category: 'main',
-      moduleKey: 'shift_management',
-      subItems: [
-        { path: moduleRoutes.shifts.submission, label: 'הגשת משמרות', icon: Send, moduleKey: 'shift_management' },
-        { path: moduleRoutes.shifts.requests, label: 'בקשות משמרת', icon: CheckSquare, moduleKey: 'shift_management' },
-        { path: moduleRoutes.shifts.approval, label: 'אישור משמרות', icon: UserCheck, moduleKey: 'shift_management' },
-        { path: moduleRoutes.shifts.schedule, label: 'לוח משמרות', icon: Calendar, moduleKey: 'shift_management' },
-        { path: moduleRoutes.shifts.admin, label: 'כלי מנהל', icon: Settings, moduleKey: 'shift_management' },
-      ]
-    },
-  ];
-
-  const businessMenuItems: MenuItem[] = [
-    { path: moduleRoutes.crm.base, label: 'CRM', icon: Users, category: 'business', moduleKey: 'crm_management' },
-    { path: '/modules/finance', label: 'כספים', icon: Calculator, category: 'business', moduleKey: 'finance_management' },
-    { path: '/modules/inventory', label: 'מלאי', icon: Package, category: 'business', moduleKey: 'inventory_management' },
-    { path: '/modules/orders', label: 'הזמנות', icon: ShoppingCart, category: 'business', moduleKey: 'orders_management' },
-    { path: '/modules/projects', label: 'פרויקטים', icon: Briefcase, category: 'business', moduleKey: 'projects_management' },
-  ];
-
-  const systemMenuItems: MenuItem[] = [
-    { 
-      path: moduleRoutes.integrations.base, 
-      label: 'אינטגרציות', 
-      icon: Plug, 
-      category: 'system',
-      moduleKey: 'integrations',
-      subItems: [
-        { path: moduleRoutes.integrations.googleMaps, label: 'Google Maps', icon: Plug, moduleKey: 'integrations' },
-        { path: moduleRoutes.integrations.whatsapp, label: 'WhatsApp', icon: Plug, moduleKey: 'integrations' },
-        { path: moduleRoutes.integrations.facebook, label: 'Facebook', icon: Plug, moduleKey: 'integrations' },
-        { path: moduleRoutes.integrations.invoices, label: 'חשבוניות', icon: Plug, moduleKey: 'integrations' },
-        
-        { path: moduleRoutes.integrations.payments, label: 'תשלומים', icon: Plug, moduleKey: 'integrations' },
-      ]
-    },
-    { 
-      path: moduleRoutes.settings.base, 
-      label: 'הגדרות', 
-      icon: Settings, 
-      category: 'system',
-      // Settings is always available
-      subItems: [
-        { path: moduleRoutes.settings.profile, label: 'פרטי עסק', icon: Building },
-        { path: moduleRoutes.settings.users, label: 'משתמשים', icon: Users },
-        { path: moduleRoutes.settings.permissions, label: 'הרשאות', icon: Shield },
-      ]
-    },
-  ];
-
-  const adminMenuItems: MenuItem[] = [
-    { path: '/admin', label: 'לוח בקרה', icon: LayoutDashboard, category: 'admin', requiresSuperAdmin: true },
-    { path: '/admin/businesses', label: 'ניהול עסקים', icon: Building, category: 'admin', requiresSuperAdmin: true },
-    { path: '/admin/modules', label: 'ניהול מודולים', icon: FileText, category: 'admin', requiresSuperAdmin: true },
-    { path: '/admin/integrations', label: 'ניהול אינטגרציות', icon: Plug, category: 'admin', requiresSuperAdmin: true },
-    { path: '/admin/system-preview', label: 'תצוגת מערכת', icon: Shield, category: 'admin', requiresSuperAdmin: true },
-  ];
+  // Get menu items using the shared functions from menuItems.ts
+  const employeesMenuItems = createEmployeesMenuItems(business);
+  const businessMenuItems = createBusinessMenuItems(business);  
+  const systemMenuItems = createSystemMenuItems(business);
+  const adminMenuItems = createAdminMenuItems();
 
   const isActive = (path: string) => {
     if (path === '/' && currentPath === '/') return true;
@@ -408,7 +326,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
 
         <ScrollArea className="flex-1 h-0">
           <div className="px-0 py-6 space-y-8">
-            {renderMenuSection('ראשי', coreMenuItems)}
+            {renderMenuSection('ראשי', employeesMenuItems)}
             <Separator className="mx-6 opacity-50" />
             {renderMenuSection('עסקי', businessMenuItems)}
             <Separator className="mx-6 opacity-50" />
