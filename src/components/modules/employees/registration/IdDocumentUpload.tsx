@@ -28,14 +28,14 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const convertImageToBase64 = (file: File): Promise<string> => {
+  const convertFileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
         if (typeof reader.result === 'string') {
           resolve(reader.result);
         } else {
-          reject(new Error('Failed to convert image to base64'));
+          reject(new Error('Failed to convert file to base64'));
         }
       };
       reader.onerror = () => reject(new Error('Failed to read file'));
@@ -48,23 +48,28 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
       setError(null);
       setIsProcessing(true);
       
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        throw new Error('אנא בחר קובץ תמונה תקין');
+      // Validate file type - accept images and PDFs
+      if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+        throw new Error('אנא בחר קובץ תמונה (JPG, PNG) או PDF תקין');
       }
 
-      // Validate file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        throw new Error('גודל הקובץ חייב להיות עד 10MB');
+      // Validate file size (max 20MB for PDFs, 10MB for images)
+      const maxSize = file.type === 'application/pdf' ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        const maxSizeText = file.type === 'application/pdf' ? '20MB' : '10MB';
+        throw new Error(`גודל הקובץ חייב להיות עד ${maxSizeText}`);
       }
 
-      const base64Image = await convertImageToBase64(file);
-      setUploadedImage(base64Image);
+      const base64File = await convertFileToBase64(file);
+      setUploadedImage(base64File);
 
-      console.log('Sending image to analysis...');
+      console.log('Sending file to analysis:', file.name, file.type);
       
       const { data, error: functionError } = await supabase.functions.invoke('analyze-id-document', {
-        body: { image: base64Image }
+        body: { 
+          file: base64File,
+          fileName: file.name
+        }
       });
 
       if (functionError) {
@@ -128,14 +133,8 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
   };
 
   const retryAnalysis = () => {
-    if (uploadedImage) {
-      // Convert base64 back to file for retry
-      fetch(uploadedImage)
-        .then(res => res.blob())
-        .then(blob => {
-          const file = new File([blob], 'id-document.jpg', { type: 'image/jpeg' });
-          handleFileSelect(file);
-        });
+    if (uploadedImage && fileInputRef.current?.files?.[0]) {
+      handleFileSelect(fileInputRef.current.files[0]);
     }
   };
 
@@ -145,11 +144,11 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
         <div className="space-y-4">
           <Label className="text-base font-medium flex items-center gap-2">
             <Camera className="h-5 w-5" />
-            העלאה מהירה - תמונת תעודת זהות
+            העלאה מהירה - תמונת תעודת זהות או PDF
           </Label>
           
           <div className="text-sm text-muted-foreground">
-            צלם או העלה תמונה של תעודת הזהות והמערכת תמלא את הפרטים האישיים אוטומטית
+            צלם או העלה תמונה/PDF של תעודת הזהות והמערכת תמלא את הפרטים האישיים אוטומטית
           </div>
 
           {!uploadedImage ? (
@@ -161,28 +160,40 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
             >
               <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <div className="space-y-2">
-                <div className="font-medium">גרור תמונה לכאן או לחץ לבחירה</div>
+                <div className="font-medium">גרור קובץ לכאן או לחץ לבחירה</div>
                 <div className="text-sm text-muted-foreground">
-                  PNG, JPG עד 10MB • וודא שהתמונה ברורה וכל הטקסט קריא
+                  PNG, JPG, PDF עד 20MB • וודא שהקובץ ברור וכל הטקסט קריא
                 </div>
               </div>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,.pdf"
                 onChange={handleFileChange}
                 className="hidden"
               />
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Image Preview */}
+              {/* File Preview */}
               <div className="relative">
-                <img 
-                  src={uploadedImage} 
-                  alt="תעודת זהות" 
-                  className="max-w-full h-auto max-h-64 mx-auto rounded-lg border"
-                />
+                {uploadedImage?.startsWith('data:application/pdf') ? (
+                  <div className="flex items-center justify-center bg-gray-100 rounded-lg border p-8">
+                    <div className="text-center">
+                      <svg className="h-16 w-16 mx-auto mb-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V6H8a2 2 0 01-2-2z" clipRule="evenodd" />
+                      </svg>
+                      <div className="text-sm font-medium">קובץ PDF נבחר</div>
+                      <div className="text-xs text-muted-foreground">מנתח את תעודת הזהות...</div>
+                    </div>
+                  </div>
+                ) : (
+                  <img 
+                    src={uploadedImage} 
+                    alt="תעודת זהות" 
+                    className="max-w-full h-auto max-h-64 mx-auto rounded-lg border"
+                  />
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -198,7 +209,7 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
                 <Alert>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <AlertDescription>
-                    מנתח את תעודת הזהות... זה יכול לקחת כמה שניות
+                    מנתח את תעודת הזהות/PDF... זה יכול לקחת כמה שניות
                   </AlertDescription>
                 </Alert>
               )}
@@ -257,7 +268,7 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
                   disabled={isProcessing}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  העלה תמונה אחרת
+                  העלה קובץ אחר
                 </Button>
                 {extractedData && extractedData.confidence < 80 && (
                   <Button 

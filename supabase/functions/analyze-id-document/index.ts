@@ -1,7 +1,12 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,13 +27,48 @@ serve(async (req) => {
   }
 
   try {
-    const { image } = await req.json();
+    const { file, fileName } = await req.json();
     
-    if (!image) {
+    if (!file) {
       return new Response(
-        JSON.stringify({ error: 'No image provided' }),
+        JSON.stringify({ error: 'No file provided' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    console.log('Processing file:', fileName);
+    let imageForAnalysis = file;
+
+    // If it's a PDF, convert first page to image using OpenAI
+    if (fileName && fileName.toLowerCase().endsWith('.pdf')) {
+      console.log('PDF detected, converting first page to image...');
+      
+      // First upload PDF to storage temporarily
+      const pdfFileName = `temp-pdf-${Date.now()}.pdf`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('id-documents')
+        .upload(pdfFileName, file.split(',')[1], {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Error uploading PDF:', uploadError);
+        throw new Error('שגיאה בהעלאת קובץ PDF');
+      }
+
+      // Get public URL for the PDF
+      const { data: { publicUrl } } = supabase.storage
+        .from('id-documents')
+        .getPublicUrl(pdfFileName);
+
+      // Use OpenAI to process PDF directly
+      imageForAnalysis = publicUrl;
+      
+      // Clean up the temporary file after a delay
+      setTimeout(async () => {
+        await supabase.storage.from('id-documents').remove([pdfFileName]);
+      }, 30000); // Delete after 30 seconds
     }
 
     console.log('Analyzing ID document with OpenAI Vision...');
@@ -55,6 +95,7 @@ serve(async (req) => {
             }
             
             חשוב:
+            - אם זה PDF, נתח את העמוד הראשון
             - אם זה לא תעודת זהות ישראלית, החזר שגיאה
             - וודא שמספר ת.ז. הוא 9 ספרות בדיוק
             - וודא שהתאריך תקין
@@ -63,7 +104,18 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: [
+            content: fileName && fileName.toLowerCase().endsWith('.pdf') ? [
+              {
+                type: 'text',
+                text: 'אנא נתח את תעודת הזהות בקובץ PDF הזה וחלץ את המידע הנדרש מהעמוד הראשון'
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: imageForAnalysis
+                }
+              }
+            ] : [
               {
                 type: 'text',
                 text: 'אנא נתח את תעודת הזהות הזו וחלץ את המידע הנדרש'
@@ -71,7 +123,7 @@ serve(async (req) => {
               {
                 type: 'image_url',
                 image_url: {
-                  url: image
+                  url: imageForAnalysis
                 }
               }
             ]
