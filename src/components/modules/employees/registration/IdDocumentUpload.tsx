@@ -48,16 +48,15 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
       setError(null);
       setIsProcessing(true);
       
-      // Validate file type - accept images and PDFs
-      if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-        throw new Error('אנא בחר קובץ תמונה (JPG, PNG) או PDF תקין');
+      // Validate file type - accept only images for now
+      if (!file.type.startsWith('image/')) {
+        throw new Error('אנא בחר קובץ תמונה (JPG, PNG) בלבד. תמיכה ב-PDF תתווסף בקרוב');
       }
 
-      // Validate file size (max 20MB for PDFs, 10MB for images)
-      const maxSize = file.type === 'application/pdf' ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+      // Validate file size (max 10MB for images)
+      const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
-        const maxSizeText = file.type === 'application/pdf' ? '20MB' : '10MB';
-        throw new Error(`גודל הקובץ חייב להיות עד ${maxSizeText}`);
+        throw new Error('גודל הקובץ חייב להיות עד 10MB');
       }
 
       const base64File = await convertFileToBase64(file);
@@ -144,11 +143,11 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
         <div className="space-y-4">
           <Label className="text-base font-medium flex items-center gap-2">
             <Camera className="h-5 w-5" />
-            העלאה מהירה - תמונת תעודת זהות או PDF
+            העלאה מהירה - תמונת תעודת זהות
           </Label>
           
           <div className="text-sm text-muted-foreground">
-            צלם או העלה תמונה/PDF של תעודת הזהות והמערכת תמלא את הפרטים האישיים אוטומטית
+            צלם או העלה תמונה של תעודת הזהות והמערכת תמלא את הפרטים האישיים אוטומטית
           </div>
 
           {!uploadedImage ? (
@@ -162,13 +161,13 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
               <div className="space-y-2">
                 <div className="font-medium">גרור קובץ לכאן או לחץ לבחירה</div>
                 <div className="text-sm text-muted-foreground">
-                  PNG, JPG, PDF עד 20MB • וודא שהקובץ ברור וכל הטקסט קריא
+                  PNG, JPG עד 10MB • וודא שהתמונה ברורה וכל הטקסט קריא
                 </div>
               </div>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*,.pdf"
+                accept="image/*"
                 onChange={handleFileChange}
                 className="hidden"
               />

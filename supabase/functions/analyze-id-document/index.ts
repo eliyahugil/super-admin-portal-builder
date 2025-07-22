@@ -39,36 +39,10 @@ serve(async (req) => {
     console.log('Processing file:', fileName);
     let imageForAnalysis = file;
 
-    // If it's a PDF, convert first page to image using OpenAI
+    // If it's a PDF, we need to inform the user that direct PDF analysis isn't supported yet
     if (fileName && fileName.toLowerCase().endsWith('.pdf')) {
-      console.log('PDF detected, converting first page to image...');
-      
-      // First upload PDF to storage temporarily
-      const pdfFileName = `temp-pdf-${Date.now()}.pdf`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('id-documents')
-        .upload(pdfFileName, file.split(',')[1], {
-          contentType: 'application/pdf',
-          upsert: true
-        });
-
-      if (uploadError) {
-        console.error('Error uploading PDF:', uploadError);
-        throw new Error('שגיאה בהעלאת קובץ PDF');
-      }
-
-      // Get public URL for the PDF
-      const { data: { publicUrl } } = supabase.storage
-        .from('id-documents')
-        .getPublicUrl(pdfFileName);
-
-      // Use OpenAI to process PDF directly
-      imageForAnalysis = publicUrl;
-      
-      // Clean up the temporary file after a delay
-      setTimeout(async () => {
-        await supabase.storage.from('id-documents').remove([pdfFileName]);
-      }, 30000); // Delete after 30 seconds
+      console.log('PDF detected - currently not supported for automatic analysis');
+      throw new Error('ניתוח קובצי PDF אינו נתמך כרגע. אנא המר את התמונה לפורמט JPG או PNG');
     }
 
     console.log('Analyzing ID document with OpenAI Vision...');
@@ -104,18 +78,7 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: fileName && fileName.toLowerCase().endsWith('.pdf') ? [
-              {
-                type: 'text',
-                text: 'אנא נתח את תעודת הזהות בקובץ PDF הזה וחלץ את המידע הנדרש מהעמוד הראשון'
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: imageForAnalysis
-                }
-              }
-            ] : [
+            content: [
               {
                 type: 'text',
                 text: 'אנא נתח את תעודת הזהות הזו וחלץ את המידע הנדרש'
