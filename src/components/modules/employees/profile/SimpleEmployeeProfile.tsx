@@ -462,16 +462,18 @@ export const SimpleEmployeeProfile: React.FC = () => {
 
         {/* Main Content with Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8 gap-1">
-            <TabsTrigger value="profile" className="text-xs sm:text-sm">פרטים אישיים</TabsTrigger>
-            <TabsTrigger value="schedule" className="text-xs sm:text-sm">סידור שבועי</TabsTrigger>
-            <TabsTrigger value="shifts" className="text-xs sm:text-sm">המשמרות שלי</TabsTrigger>
-            <TabsTrigger value="available" className="text-xs sm:text-sm">משמרות פתוחות</TabsTrigger>
-            <TabsTrigger value="tokens" className="text-xs sm:text-sm">טוקנים פעילים</TabsTrigger>
-            <TabsTrigger value="documents" className="text-xs sm:text-sm">מסמכים</TabsTrigger>
-            <TabsTrigger value="files" className="text-xs sm:text-sm">קבצים</TabsTrigger>
-            <TabsTrigger value="notifications" className="text-xs sm:text-sm">התראות</TabsTrigger>
-          </TabsList>
+          <div className="w-full overflow-x-auto pb-2">
+            <TabsList className="flex w-max min-w-full gap-1 h-auto p-2">
+              <TabsTrigger value="profile" className="text-xs sm:text-sm whitespace-nowrap px-2 py-1.5">פרטים אישיים</TabsTrigger>
+              <TabsTrigger value="schedule" className="text-xs sm:text-sm whitespace-nowrap px-2 py-1.5">סידור שבועי</TabsTrigger>
+              <TabsTrigger value="shifts" className="text-xs sm:text-sm whitespace-nowrap px-2 py-1.5">המשמרות שלי</TabsTrigger>
+              <TabsTrigger value="available" className="text-xs sm:text-sm whitespace-nowrap px-2 py-1.5">משמרות פתוחות</TabsTrigger>
+              <TabsTrigger value="tokens" className="text-xs sm:text-sm whitespace-nowrap px-2 py-1.5">טוקנים פעילים</TabsTrigger>
+              <TabsTrigger value="documents" className="text-xs sm:text-sm whitespace-nowrap px-2 py-1.5">מסמכים</TabsTrigger>
+              <TabsTrigger value="files" className="text-xs sm:text-sm whitespace-nowrap px-2 py-1.5">קבצים</TabsTrigger>
+              <TabsTrigger value="notifications" className="text-xs sm:text-sm whitespace-nowrap px-2 py-1.5">התראות</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Personal Details Tab */}
           <TabsContent value="profile" className="space-y-6">
