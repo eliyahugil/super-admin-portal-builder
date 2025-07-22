@@ -5039,6 +5039,16 @@ export type Database = {
         Args: { module_name: string }
         Returns: string
       }
+      get_business_branches_for_token: {
+        Args: { token_value: string }
+        Returns: {
+          id: string
+          name: string
+          address: string
+          latitude: number
+          longitude: number
+        }[]
+      }
       get_business_by_registration_code: {
         Args: { code_param: string }
         Returns: {
@@ -5078,6 +5088,19 @@ export type Database = {
       get_next_customer_number: {
         Args: { business_id_param: string }
         Returns: number
+      }
+      get_registration_token_info: {
+        Args: { token_value: string }
+        Returns: {
+          id: string
+          business_id: string
+          title: string
+          description: string
+          is_active: boolean
+          expires_at: string
+          max_registrations: number
+          current_registrations: number
+        }[]
       }
       get_user_business_ids: {
         Args: Record<PropertyKey, never>
