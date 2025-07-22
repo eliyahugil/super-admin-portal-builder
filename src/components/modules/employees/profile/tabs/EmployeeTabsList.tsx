@@ -35,7 +35,13 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   return (
     <div className="w-full mb-6 p-2" dir="rtl">
       <div className="overflow-x-auto scrollbar-hide">
-        <div className="flex gap-3 min-w-max p-4 bg-muted/50 rounded-xl" style={{minHeight: '70px'}}>
+        <div 
+          className="flex flex-wrap gap-3 p-4 bg-muted/50 rounded-xl" 
+          style={{
+            minHeight: 'auto',
+            paddingBottom: '20px'
+          }}
+        >
           {availableTabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -45,16 +51,17 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
                 className={`
                   flex items-center gap-2 px-4 py-3 text-sm font-medium
                   rounded-lg transition-all duration-200 whitespace-nowrap
-                  shrink-0 min-w-fit min-h-12
+                  shrink-0 min-w-fit
                   ${isActive 
                     ? 'bg-primary text-primary-foreground shadow-lg border-2 border-primary' 
                     : 'bg-background text-foreground hover:bg-muted border-2 border-border hover:border-primary/50'
                   }
                 `}
                 style={{
-                  minHeight: '48px',
+                  minHeight: '50px',
                   fontSize: '14px',
-                  fontWeight: '600'
+                  fontWeight: '600',
+                  marginBottom: '8px'
                 }}
               >
                 <tab.icon className="h-5 w-5" />
