@@ -33,9 +33,9 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   });
 
   return (
-    <div className="w-full mb-6" dir="rtl">
-      <div className="w-full overflow-x-auto">
-        <div className="flex flex-wrap gap-2 sm:gap-3 p-4 bg-muted/30 rounded-lg min-w-fit">
+    <div className="w-full mb-4" dir="rtl">
+      <div className="w-full overflow-x-auto overflow-y-visible pb-2">
+        <div className="flex flex-nowrap gap-2 p-3 bg-muted/30 rounded-lg" style={{ minWidth: 'max-content' }}>
           {availableTabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -43,22 +43,22 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3
-                  text-xs sm:text-sm font-medium rounded-lg
+                  flex items-center gap-2 px-3 py-2.5
+                  text-xs font-medium rounded-md
                   transition-all duration-200 whitespace-nowrap
-                  border-2 min-h-[44px] sm:min-h-[48px]
+                  border min-h-[40px] flex-shrink-0
                   ${isActive 
                     ? 'bg-primary text-primary-foreground border-primary shadow-sm' 
-                    : 'bg-background text-foreground border-border hover:bg-muted hover:border-primary/50'
+                    : 'bg-background text-foreground border-border hover:bg-muted/50'
                   }
                 `}
               >
-                <tab.icon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span className="font-medium">{tab.label}</span>
+                <tab.icon className="h-4 w-4 flex-shrink-0" />
+                <span className="font-medium text-xs">{tab.label}</span>
                 {tab.badge && (
                   <Badge 
                     variant={isActive ? "secondary" : "default"}
-                    className="ml-1 h-5 min-w-[20px] text-xs"
+                    className="ml-1 h-4 min-w-[16px] text-[10px] px-1"
                   >
                     {tab.badge}
                   </Badge>
