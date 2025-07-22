@@ -96,6 +96,22 @@ export const EmployeeProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background p-3 sm:p-6" dir="rtl">
+      {/* DEBUG - בדיקה שהדף נטען */}
+      <div style={{
+        backgroundColor: 'green',
+        color: 'white', 
+        padding: '20px',
+        margin: '10px',
+        fontSize: '20px',
+        fontWeight: 'bold',
+        border: '5px solid yellow',
+        textAlign: 'center'
+      }}>
+        DEBUG: דף פרופיל עובד נטען בהצלחה!
+        <br/>
+        עובד: {employee.first_name} {employee.last_name}
+      </div>
+
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header with navigation */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
