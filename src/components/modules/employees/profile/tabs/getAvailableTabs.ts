@@ -12,7 +12,7 @@ import {
   Settings, 
   BarChart3 
 } from 'lucide-react';
-import type { Employee } from '@/types/supabase';
+import type { Employee } from '@/types/employee';
 
 interface TabItem {
   id: string;
