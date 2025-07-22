@@ -30,6 +30,8 @@ import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { usePublicShifts } from '@/hooks/usePublicShifts';
 import { EmployeeScheduleView } from './schedule/EmployeeScheduleView';
+import { useEmployeeDocuments } from '@/components/modules/employees/hooks/useEmployeeDocuments';
+import { useEmployeeDocumentUpload } from '@/components/modules/employees/hooks/useEmployeeDocumentUpload';
 
 interface Employee {
   id: string;
@@ -111,7 +113,13 @@ export const SimpleEmployeeProfile: React.FC = () => {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [availableShifts, setAvailableShifts] = useState<AvailableShift[]>([]);
   const [activeTokens, setActiveTokens] = useState<any[]>([]);
-  const [documents, setDocuments] = useState<Document[]>([]);
+  // Use the proper hooks for documents
+  const { documents, isLoading: documentsLoading, refetch } = useEmployeeDocuments(employeeId || '');
+  const { uploading, handleFileUpload: handleDocumentUpload } = useEmployeeDocumentUpload(
+    employeeId,
+    ['employee-documents', employeeId],
+    refetch
+  );
   const [files, setFiles] = useState<EmployeeFile[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -207,19 +215,7 @@ export const SimpleEmployeeProfile: React.FC = () => {
           setAvailableShifts(mappedAvailableShifts);
         }
 
-        // Fetch documents
-        const { data: docsData } = await supabase
-          .from('employee_documents')
-          .select('*')
-          .eq('employee_id', employeeId)
-          .order('created_at', { ascending: false })
-          .limit(20);
-
-        if (docsData) {
-          setDocuments(docsData);
-        }
-
-        // Fetch files
+        // Fetch files (keeping employee_files for personal files)
         const { data: filesData } = await supabase
           .from('employee_files')
           .select('*')
@@ -310,73 +306,6 @@ export const SimpleEmployeeProfile: React.FC = () => {
     }
   };
 
-  const handleFileUpload = async (file: File) => {
-    if (!employee) return;
-
-    try {
-      // Create unique filename with only safe characters
-      const fileExtension = file.name.split('.').pop() || 'bin';
-      const timestamp = Date.now();
-      const randomId = Math.random().toString(36).substring(2, 8);
-      const cleanFileName = `file_${timestamp}_${randomId}.${fileExtension}`;
-      const filePath = `${employee.business_id}/${employee.id}/${cleanFileName}`;
-
-      // Upload file to storage
-      const { error: uploadError } = await supabase.storage
-        .from('employee-files')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      // Get current authenticated user ID for uploaded_by field
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        throw new Error('אין משתמש מחובר');
-      }
-
-      // Save file record to database
-      const { error: dbError } = await supabase
-        .from('employee_files')
-        .insert({
-          employee_id: employee.id,
-          business_id: employee.business_id,
-          file_name: file.name,
-          file_path: filePath,
-          file_size: file.size,
-          file_type: file.type,
-          approval_status: 'pending',
-          uploaded_by: user.id, // Use authenticated user ID
-          is_visible_to_employee: true
-        });
-
-      if (dbError) throw dbError;
-
-      toast({
-        title: 'הקובץ הועלה בהצלחה',
-        description: 'הקובץ נשלח לאישור המנהל',
-      });
-
-      // Refresh files list
-      const { data: filesData } = await supabase
-        .from('employee_files')
-        .select('*')
-        .eq('employee_id', employee.id)
-        .eq('is_visible_to_employee', true)
-        .order('created_at', { ascending: false });
-
-      if (filesData) {
-        setFiles(filesData);
-      }
-
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן להעלות את הקובץ. נסה שוב מאוחר יותר.',
-        variant: 'destructive',
-      });
-    }
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('employee_session');
@@ -957,10 +886,7 @@ export const SimpleEmployeeProfile: React.FC = () => {
                       className="hidden"
                       accept="*/*"
                       onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          handleFileUpload(file);
-                        }
+                        handleDocumentUpload(e, false);
                       }}
                     />
                   </label>
