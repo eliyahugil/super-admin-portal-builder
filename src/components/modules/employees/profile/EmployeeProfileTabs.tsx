@@ -24,29 +24,6 @@ export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({ employ
 
   return (
     <div className="flex-1 w-full">
-      {/* Debug - בדיקה אם הקומפוננטה מתרנדרת */}
-      <div 
-        style={{
-          backgroundColor: 'red',
-          color: 'white',
-          padding: '20px',
-          margin: '10px',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          border: '5px solid blue',
-          zIndex: 9999,
-          position: 'relative'
-        }}
-      >
-        DEBUG: EmployeeProfileTabs פועל!
-        <br />
-        Employee: {employeeName}
-        <br />
-        Active Tab: {activeTab}
-        <br />
-        Available Tabs: {availableTabs.length}
-      </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <EmployeeTabsList 
           availableTabs={availableTabs}

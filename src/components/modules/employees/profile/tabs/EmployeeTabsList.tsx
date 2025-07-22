@@ -33,46 +33,43 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   });
 
   return (
-    <div 
-      className="w-full mb-4 bg-red-500 text-white p-4" 
-      dir="rtl" 
-      style={{ 
-        minHeight: '100px',
-        fontSize: '16px',
-        fontWeight: 'bold',
-        border: '5px solid blue',
-        position: 'relative',
-        zIndex: 9999
-      }}
-    >
-      <div>בדיקה - אם אתה רואה את זה, הקומפוננטה עובדת!</div>
-      <div>מספר טאבים: {availableTabs.length}</div>
-      <div>טאב פעיל: {activeTab}</div>
-      
-      {/* הטאבים עצמם */}
-      <div className="mt-4">
-        {availableTabs.map((tab, index) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: 'inline-block',
-                margin: '5px',
-                padding: '10px 15px',
-                backgroundColor: isActive ? '#000' : '#fff',
-                color: isActive ? '#fff' : '#000',
-                border: '2px solid #000',
-                borderRadius: '5px',
-                fontSize: '14px',
-                fontWeight: 'bold'
-              }}
-            >
-              {tab.label} ({index + 1})
-            </button>
-          );
-        })}
+    <div className="w-full mb-4" dir="rtl">
+      <div className="overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 min-w-max p-2 bg-muted/30 rounded-lg">
+          {availableTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  flex items-center gap-2 px-3 py-2 text-sm font-medium
+                  rounded-md transition-all duration-200 whitespace-nowrap
+                  shrink-0 min-w-fit
+                  ${isActive 
+                    ? 'bg-primary text-primary-foreground shadow-sm' 
+                    : 'bg-background text-foreground hover:bg-background/80'
+                  }
+                `}
+              >
+                <tab.icon className="h-4 w-4" />
+                <span>{tab.label}</span>
+                {tab.badge && (
+                  <span className={`
+                    inline-flex items-center justify-center
+                    h-4 min-w-4 px-1 text-xs font-medium rounded-full ml-1
+                    ${isActive 
+                      ? 'bg-primary-foreground/20 text-primary-foreground' 
+                      : 'bg-primary text-primary-foreground'
+                    }
+                  `}>
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
