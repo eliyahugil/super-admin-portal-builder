@@ -462,22 +462,89 @@ export const SimpleEmployeeProfile: React.FC = () => {
 
         {/* Main Content with Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
-          {/* Mobile: Dropdown selector */}
+          {/* Mobile: Large buttons with icons */}
           <div className="block sm:hidden mb-4">
-            <select 
-              value={activeTab} 
-              onChange={(e) => setActiveTab(e.target.value)}
-              className="w-full p-3 border rounded-lg bg-background text-foreground text-sm"
-            >
-              <option value="profile">פרטים אישיים</option>
-              <option value="schedule">סידור שבועי</option>
-              <option value="shifts">המשמרות שלי</option>
-              <option value="available">משמרות פתוחות</option>
-              <option value="tokens">טוקנים פעילים</option>
-              <option value="documents">מסמכים</option>
-              <option value="files">קבצים</option>
-              <option value="notifications">התראות</option>
-            </select>
+            <div className="w-full overflow-x-auto pb-2">
+              <div className="flex gap-2 px-2" style={{ minWidth: 'max-content' }}>
+                <button
+                  onClick={() => setActiveTab('profile')}
+                  className={`flex flex-col items-center gap-1 px-4 py-3 rounded-lg border text-xs font-medium whitespace-nowrap min-w-[80px] ${
+                    activeTab === 'profile' 
+                      ? 'bg-primary text-primary-foreground border-primary' 
+                      : 'bg-background text-foreground border-border hover:bg-muted'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                  <span>פרטים</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('shifts')}
+                  className={`flex flex-col items-center gap-1 px-4 py-3 rounded-lg border text-xs font-medium whitespace-nowrap min-w-[80px] ${
+                    activeTab === 'shifts' 
+                      ? 'bg-primary text-primary-foreground border-primary' 
+                      : 'bg-background text-foreground border-border hover:bg-muted'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M9 11H7v6h2v-6zm4 0h-2v6h2v-6zm4 0h-2v6h2v-6zm2-7h-1V2h-2v2H8V2H6v2H5c-1.1 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+                  <span>משמרות</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('schedule')}
+                  className={`flex flex-col items-center gap-1 px-4 py-3 rounded-lg border text-xs font-medium whitespace-nowrap min-w-[80px] ${
+                    activeTab === 'schedule' 
+                      ? 'bg-primary text-primary-foreground border-primary' 
+                      : 'bg-background text-foreground border-border hover:bg-muted'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                  <span>סידור</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('available')}
+                  className={`flex flex-col items-center gap-1 px-4 py-3 rounded-lg border text-xs font-medium whitespace-nowrap min-w-[80px] ${
+                    activeTab === 'available' 
+                      ? 'bg-primary text-primary-foreground border-primary' 
+                      : 'bg-background text-foreground border-border hover:bg-muted'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                  <span>פתוחות</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('tokens')}
+                  className={`flex flex-col items-center gap-1 px-4 py-3 rounded-lg border text-xs font-medium whitespace-nowrap min-w-[80px] ${
+                    activeTab === 'tokens' 
+                      ? 'bg-primary text-primary-foreground border-primary' 
+                      : 'bg-background text-foreground border-border hover:bg-muted'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+                  <span>טוקנים</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('documents')}
+                  className={`flex flex-col items-center gap-1 px-4 py-3 rounded-lg border text-xs font-medium whitespace-nowrap min-w-[80px] ${
+                    activeTab === 'documents' 
+                      ? 'bg-primary text-primary-foreground border-primary' 
+                      : 'bg-background text-foreground border-border hover:bg-muted'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
+                  <span>מסמכים</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('notifications')}
+                  className={`flex flex-col items-center gap-1 px-4 py-3 rounded-lg border text-xs font-medium whitespace-nowrap min-w-[80px] ${
+                    activeTab === 'notifications' 
+                      ? 'bg-primary text-primary-foreground border-primary' 
+                      : 'bg-background text-foreground border-border hover:bg-muted'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12,2C13.05,2 14,2.95 14,4C14,5.05 13.05,6 12,6C10.95,6 10,5.05 10,4C10,2.95 10.95,2 12,2M21,6V8H3V6H21M6,19H18A2,2 0 0,0 20,17V10H4V17A2,2 0 0,0 6,19Z"/></svg>
+                  <span>התראות</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Desktop: Regular tabs */}
