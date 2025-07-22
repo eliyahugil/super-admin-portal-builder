@@ -111,7 +111,10 @@ export const CreateRegistrationTokenDialog: React.FC<Props> = ({
               <Label htmlFor="hasExpiration">הגדרת תאריך תפוגה</Label>
               <Switch
                 id="hasExpiration"
-                {...register('hasExpiration')}
+                checked={hasExpiration}
+                onCheckedChange={(checked) => {
+                  register('hasExpiration').onChange({ target: { value: checked } });
+                }}
               />
             </div>
             
@@ -138,7 +141,10 @@ export const CreateRegistrationTokenDialog: React.FC<Props> = ({
               <Label htmlFor="hasMaxRegistrations">הגבלת מספר הרשמות</Label>
               <Switch
                 id="hasMaxRegistrations"
-                {...register('hasMaxRegistrations')}
+                checked={hasMaxRegistrations}
+                onCheckedChange={(checked) => {
+                  register('hasMaxRegistrations').onChange({ target: { value: checked } });
+                }}
               />
             </div>
             

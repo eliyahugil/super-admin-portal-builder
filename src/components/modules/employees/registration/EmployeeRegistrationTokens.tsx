@@ -16,6 +16,7 @@ import {
 import { useEmployeeRegistrationTokens } from '@/hooks/useEmployeeRegistrationTokens';
 import { CreateRegistrationTokenDialog } from './CreateRegistrationTokenDialog';
 import { RegistrationTokenStats } from './RegistrationTokenStats';
+import { WhatsAppTokenShare } from './WhatsAppTokenShare';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -182,13 +183,17 @@ export const EmployeeRegistrationTokens: React.FC = () => {
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(getPublicTokenUrl(token.token), '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.open(getPublicTokenUrl(token.token), '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                  <WhatsAppTokenShare 
+                    token={token} 
+                    getPublicTokenUrl={getPublicTokenUrl} 
+                  />
                   </div>
                 </div>
 
