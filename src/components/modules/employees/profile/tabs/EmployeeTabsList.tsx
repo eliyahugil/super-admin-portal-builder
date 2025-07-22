@@ -26,32 +26,51 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   activeTab = 'overview'
 }) => {
   return (
-    <div className="w-full">
-      {/* Mobile: Dropdown selector */}
-      <div className="block sm:hidden mb-4">
-        <select 
-          value={activeTab}
-          onChange={(e) => setActiveTab(e.target.value)}
-          className="w-full p-3 border border-border rounded-lg bg-background text-foreground text-sm"
-          dir="rtl"
-        >
-          {availableTabs.map((tab) => (
-            <option key={tab.id} value={tab.id}>
-              {tab.label} {tab.badge ? `(${tab.badge})` : ''}
-            </option>
-          ))}
-        </select>
+    <div className="w-full mb-6" dir="rtl">
+      {/* Mobile: Horizontal scrollable tabs */}
+      <div className="block md:hidden">
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 min-w-max px-4 pb-3 border-b border-muted">
+            {availableTabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    flex items-center gap-2 px-4 py-2.5 text-sm font-medium
+                    rounded-lg transition-all duration-200 whitespace-nowrap
+                    border shrink-0 min-w-fit
+                    ${isActive 
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm' 
+                      : 'bg-background hover:bg-muted text-foreground border-border hover:border-muted-foreground/50'
+                    }
+                  `}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  <span>{tab.label}</span>
+                  {tab.badge && (
+                    <span className={`
+                      inline-flex items-center justify-center
+                      h-5 min-w-5 px-1.5 text-xs font-medium rounded-full
+                      ${isActive 
+                        ? 'bg-primary-foreground/20 text-primary-foreground' 
+                        : 'bg-muted text-muted-foreground'
+                      }
+                    `}>
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Desktop: Tab buttons - Multi-row layout */}
-      <div
-        className="
-          hidden sm:block w-full mb-4
-          border-b border-muted bg-background
-        "
-        dir="rtl"
-      >
-        <div className="flex flex-wrap gap-2 pb-3">
+      {/* Desktop: Multi-row wrapped tabs */}
+      <div className="hidden md:block">
+        <div className="flex flex-wrap gap-2 pb-3 border-b border-muted">
           {availableTabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -59,19 +78,18 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  relative flex items-center justify-center gap-2 
-                  px-4 py-2.5 text-sm rounded-lg font-medium
-                  transition-all duration-200 whitespace-nowrap
-                  border border-border
+                  flex items-center gap-2 px-4 py-2.5 text-sm font-medium
+                  rounded-lg transition-all duration-200 whitespace-nowrap
+                  border
                   ${isActive 
-                    ? 'bg-primary text-primary-foreground shadow-md border-primary' 
-                    : 'bg-background hover:bg-muted/70 text-foreground hover:border-muted-foreground/30'
+                    ? 'bg-primary text-primary-foreground border-primary shadow-sm' 
+                    : 'bg-background hover:bg-muted text-foreground border-border hover:border-muted-foreground/50'
                   }
                 `}
                 title={tab.description}
               >
-                <tab.icon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{tab.label}</span>
+                <tab.icon className="h-4 w-4" />
+                <span>{tab.label}</span>
                 {tab.badge && (
                   <span className={`
                     inline-flex items-center justify-center

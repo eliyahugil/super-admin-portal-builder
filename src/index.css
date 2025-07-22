@@ -40,6 +40,8 @@ body, html {
   background-color: #ffffff !important;
 }
 
+/* Utility classes for scrollable tabs */
+
 @layer base {
   :root {
     /* Modern Blue & Teal Theme - נעים לעיניים */
