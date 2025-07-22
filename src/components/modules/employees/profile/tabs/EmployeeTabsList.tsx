@@ -25,8 +25,15 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   setActiveTab,
   activeTab = 'overview'
 }) => {
+  console.log('🏷️ EmployeeTabsList - Rendering:', {
+    availableTabsCount: availableTabs.length,
+    activeTab,
+    isMobile: window.innerWidth < 640,
+    availableTabs: availableTabs.map(t => ({ id: t.id, label: t.label }))
+  });
+
   return (
-    <div className="w-full mb-6" dir="rtl">
+    <div className="w-full mb-6 bg-red-100 p-4" dir="rtl" style={{minHeight: '50px', border: '2px solid red'}}>
       {/* Mobile: Horizontal scrollable tabs */}
       <div className="block sm:hidden">
         <div className="overflow-x-auto scrollbar-hide">
