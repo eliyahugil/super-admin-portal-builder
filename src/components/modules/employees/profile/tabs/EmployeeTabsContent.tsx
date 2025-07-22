@@ -38,7 +38,7 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
 }) => {
   return (
     <div dir="rtl">
-      <TabsContent value="overview" className="mt-6">
+      <TabsContent value="overview">
         <EmployeeOverviewTab employee={employee} employeeName={employeeName} />
       </TabsContent>
 
@@ -87,7 +87,7 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
         />
       </TabsContent>
 
-      <TabsContent value="analytics" className="mt-6">
+      <TabsContent value="analytics">
         <EmployeeAnalyticsTab employee={employee} />
       </TabsContent>
     </div>
