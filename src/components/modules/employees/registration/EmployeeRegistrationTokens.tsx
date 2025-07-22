@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useEmployeeRegistrationTokens } from '@/hooks/useEmployeeRegistrationTokens';
 import { CreateRegistrationTokenDialog } from './CreateRegistrationTokenDialog';
+import { RegistrationTokenStats } from './RegistrationTokenStats';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -104,6 +105,9 @@ export const EmployeeRegistrationTokens: React.FC = () => {
           יצירת טוקן חדש
         </Button>
       </div>
+
+      {/* Statistics */}
+      <RegistrationTokenStats />
 
       {/* Tokens List */}
       <div className="grid gap-4">

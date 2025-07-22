@@ -23,6 +23,7 @@ import { ApproveRequestDialog } from './ApproveRequestDialog';
 import { RejectRequestDialog } from './RejectRequestDialog';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { RegistrationTokenStats } from './RegistrationTokenStats';
 
 export const EmployeeRegistrationRequests: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);

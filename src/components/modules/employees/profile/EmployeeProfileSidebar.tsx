@@ -6,6 +6,7 @@ import { UsernameField } from "./UsernameField";
 import { UserTypeField } from "./UserTypeField";
 import { UserStatusBadge } from "./UserStatusBadge";
 import { EmployeeDates } from "./EmployeeDates";
+import { SendRegistrationTokenButton } from "./SendRegistrationTokenButton";
 
 interface Props {
   employee: Employee;
@@ -35,6 +36,10 @@ export const EmployeeProfileSidebar: React.FC<Props> = ({ employee }) => {
         </div>
       </dl>
       <EmployeeDates hire_date={employee.hire_date} termination_date={employee.termination_date} birth_date={employee.birth_date} />
+      
+      <div className="pt-3 border-t">
+        <SendRegistrationTokenButton employee={employee} />
+      </div>
     </aside>
   );
 };

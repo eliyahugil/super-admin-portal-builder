@@ -8,6 +8,8 @@ import { EmployeeFilesManagement } from '../employees/EmployeeFilesManagement';
 import { EmployeeRequestsList } from '../employees/EmployeeRequestsList';
 import { EmployeeDocuments } from '../employees/EmployeeDocuments';
 import EmployeeChatPage from '@/pages/business/employees/EmployeeChatPage';
+import { EmployeeRegistrationTokens } from '../employees/registration/EmployeeRegistrationTokens';
+import { EmployeeRegistrationRequests } from '../employees/registration/EmployeeRegistrationRequests';
 
 interface Props {
   route: string;
@@ -59,6 +61,10 @@ export const EmployeesModuleRouter: React.FC<Props> = ({ route, employeeId, busi
       return <EmployeeChatPage />;
     case 'import':
       return <EmployeeManagement />;
+    case 'registration-tokens':
+      return <EmployeeRegistrationTokens />;
+    case 'registration-requests':
+      return <EmployeeRegistrationRequests />;
     default:
       return null;
   }

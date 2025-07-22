@@ -40,6 +40,8 @@ export const createEmployeesMenuItems = (business: { id: string } | undefined): 
         { path: moduleRoutes.employees.docs, label: 'מסמכי עובדים', icon: FileText, moduleKey: 'employee_documents' },
         { path: moduleRoutes.employees.base + '/chat', label: 'צ׳אט צוות', icon: MessageCircle, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.import, label: 'ייבוא עובדים', icon: FolderInput, moduleKey: 'employee_management' },
+        { path: moduleRoutes.employees.base + '/registration-tokens', label: 'טוקני הוספת עובדים', icon: Send, moduleKey: 'employee_management' },
+        { path: moduleRoutes.employees.base + '/registration-requests', label: 'בקשות הוספת עובדים', icon: ListChecks, moduleKey: 'employee_management' },
         { path: moduleRoutes.employees.shifts, label: 'משמרות עובדים', icon: Clock, moduleKey: 'shift_management' },
         { path: moduleRoutes.branches.base, label: 'ניהול סניפים', icon: Building, moduleKey: 'branch_management' },
       ]

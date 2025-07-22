@@ -5,6 +5,7 @@ import { SignDocumentPage } from '@/components/modules/employees/SignDocumentPag
 import QuickAddEmployeePage from '@/pages/QuickAddEmployeePage';
 import PublicShiftSubmission from '@/pages/public/PublicShiftSubmission';
 import { SimpleEmployeeProfile } from '@/components/modules/employees/profile/SimpleEmployeeProfile';
+import { EmployeeRegistrationPage } from '@/pages/public/EmployeeRegistrationPage';
 
 const QuickRegistrationPage = lazy(() => import('@/pages/QuickRegistrationPage').then(m => ({ default: m.QuickRegistrationPage })));
 const EmployeeLoginPage = lazy(() => import('@/pages/auth/EmployeeLoginPage'));
@@ -32,6 +33,7 @@ export const PublicRoutes = () => (
       </Suspense>
     } />
     <Route path="/public/shift-submission/:token" element={<PublicShiftSubmission />} />
+    <Route path="/register-employee" element={<EmployeeRegistrationPage />} />
     
     {/* Employee profile route - accessible for logged in employees */}
     <Route path="/employee/profile/:employeeId" element={<SimpleEmployeeProfile />} />
