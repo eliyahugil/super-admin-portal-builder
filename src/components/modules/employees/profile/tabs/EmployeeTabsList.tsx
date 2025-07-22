@@ -18,7 +18,7 @@ interface EmployeeTabsListProps {
 }
 
 /**
- * תצוגת טאבים רספונסיבית קומפקטית – הטאבים נשברים לשורות, רווח קטן, גובה מקסימלי, אין חפיפה עם תוכן הטאב.
+ * תצוגת טאבים רספונסיבית - פשוטה ועובדת במובייל
  */
 export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   availableTabs,
@@ -33,73 +33,35 @@ export const EmployeeTabsList: React.FC<EmployeeTabsListProps> = ({
   });
 
   return (
-    <div className="w-full mb-8 p-4" dir="rtl" style={{paddingBottom: '40px'}}>
-      <div style={{overflow: 'visible'}}>
-        <div 
-          className="flex flex-wrap gap-4 p-6 bg-muted/50 rounded-xl" 
-          style={{
-            paddingTop: '24px',
-            paddingBottom: '24px',
-            overflow: 'visible'
-          }}
-        >
+    <div className="w-full mb-6" dir="rtl">
+      <div className="w-full overflow-x-auto">
+        <div className="flex flex-wrap gap-2 sm:gap-3 p-4 bg-muted/30 rounded-lg min-w-fit">
           {availableTabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '16px 20px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  borderRadius: '12px',
-                  border: '2px solid',
-                  borderColor: isActive ? 'hsl(var(--primary))' : 'hsl(var(--border))',
-                  backgroundColor: isActive ? 'hsl(var(--primary))' : 'hsl(var(--background))',
-                  color: isActive ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))',
-                  minHeight: '56px',
-                  marginBottom: '12px',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = 'hsl(var(--muted))';
-                    e.currentTarget.style.borderColor = 'hsl(var(--primary) / 0.5)';
+                className={`
+                  flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3
+                  text-xs sm:text-sm font-medium rounded-lg
+                  transition-all duration-200 whitespace-nowrap
+                  border-2 min-h-[44px] sm:min-h-[48px]
+                  ${isActive 
+                    ? 'bg-primary text-primary-foreground border-primary shadow-sm' 
+                    : 'bg-background text-foreground border-border hover:bg-muted hover:border-primary/50'
                   }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = 'hsl(var(--background))';
-                    e.currentTarget.style.borderColor = 'hsl(var(--border))';
-                  }
-                }}
+                `}
               >
-                <tab.icon style={{width: '20px', height: '20px'}} />
-                <span style={{fontSize: '14px', fontWeight: '600'}}>{tab.label}</span>
+                <tab.icon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="font-medium">{tab.label}</span>
                 {tab.badge && (
-                  <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '20px',
-                    minWidth: '20px',
-                    padding: '0 8px',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    borderRadius: '50px',
-                    marginLeft: '4px',
-                    backgroundColor: isActive ? 'rgba(255,255,255,0.3)' : 'hsl(var(--primary))',
-                    color: isActive ? 'hsl(var(--primary-foreground))' : 'hsl(var(--primary-foreground))'
-                  }}>
+                  <Badge 
+                    variant={isActive ? "secondary" : "default"}
+                    className="ml-1 h-5 min-w-[20px] text-xs"
+                  >
                     {tab.badge}
-                  </span>
+                  </Badge>
                 )}
               </button>
             );

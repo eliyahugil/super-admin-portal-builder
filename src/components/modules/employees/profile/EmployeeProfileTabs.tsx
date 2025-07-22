@@ -23,20 +23,24 @@ export const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({ employ
   });
 
   return (
-    <div className="flex-1 w-full">
+    <div className="flex-1 w-full overflow-hidden">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <EmployeeTabsList 
-          availableTabs={availableTabs}
-          setActiveTab={setActiveTab}
-          activeTab={activeTab}
-        />
+        <div className="w-full">
+          <EmployeeTabsList 
+            availableTabs={availableTabs}
+            setActiveTab={setActiveTab}
+            activeTab={activeTab}
+          />
+        </div>
 
-        <EmployeeTabsContent
-          employee={employee}
-          employeeId={employeeId}
-          employeeName={employeeName}
-          businessId={employee.business_id}
-        />
+        <div className="w-full">
+          <EmployeeTabsContent
+            employee={employee}
+            employeeId={employeeId}
+            employeeName={employeeName}
+            businessId={employee.business_id}
+          />
+        </div>
       </Tabs>
     </div>
   );
