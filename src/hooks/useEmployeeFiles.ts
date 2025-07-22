@@ -49,20 +49,43 @@ export const useEmployeeFiles = (employeeId: string) => {
     enabled: !!employeeId,
   });
 
-  // Upload file mutation
+  // Upload file mutation (supports all file types including Form 101)
   const uploadFileMutation = useMutation({
     mutationFn: async ({ 
       file, 
       isVisibleToEmployee, 
-      businessId 
+      businessId,
+      isForm101 = false
     }: { 
       file: File; 
       isVisibleToEmployee: boolean; 
       businessId: string; 
+      isForm101?: boolean;
     }) => {
       if (!user?.id) {
         throw new Error('User must be authenticated to upload files');
       }
+
+      // Determine document type
+      const getDocumentType = (fileName: string, isForm101: boolean): string => {
+        if (isForm101) return 'form_101';
+        
+        const extension = fileName.split('.').pop()?.toLowerCase();
+        const lowerFileName = fileName.toLowerCase();
+        
+        // Auto-detect Form 101
+        if (lowerFileName.includes('טופס 101') || lowerFileName.includes('form 101') || lowerFileName.includes('101')) {
+          return 'form_101';
+        }
+        
+        if (['pdf'].includes(extension || '')) return 'contract';
+        if (['doc', 'docx'].includes(extension || '')) return 'form';
+        if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension || '')) return 'id';
+        if (['txt', 'rtf'].includes(extension || '')) return 'document';
+        if (['xlsx', 'xls', 'csv'].includes(extension || '')) return 'spreadsheet';
+        
+        return 'other';
+      };
 
       // Upload to storage
       const fileName = `${Date.now()}_${file.name}`;
@@ -79,6 +102,8 @@ export const useEmployeeFiles = (employeeId: string) => {
         .from('employee-files')
         .getPublicUrl(filePath);
 
+      const documentType = getDocumentType(file.name, isForm101);
+
       // Create database record
       const { data, error } = await supabase
         .from('employee_files')
@@ -90,7 +115,8 @@ export const useEmployeeFiles = (employeeId: string) => {
           file_size: file.size,
           file_type: file.type,
           uploaded_by: user.id,
-          is_visible_to_employee: isVisibleToEmployee
+          is_visible_to_employee: isVisibleToEmployee,
+          document_type: documentType
         })
         .select()
         .single();

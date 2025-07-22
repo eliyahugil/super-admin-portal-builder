@@ -124,10 +124,19 @@ export const useEmployeeDocumentUpload = (
 // Helper function to determine document type
 const getDocumentType = (fileName: string): string => {
   const extension = fileName.split('.').pop()?.toLowerCase();
+  const lowerFileName = fileName.toLowerCase();
   
+  // Check for Form 101 first
+  if (lowerFileName.includes('טופס 101') || lowerFileName.includes('form 101') || lowerFileName.includes('101')) {
+    return 'form_101';
+  }
+  
+  // Then check by extension
   if (['pdf'].includes(extension || '')) return 'contract';
   if (['doc', 'docx'].includes(extension || '')) return 'form';
-  if (['jpg', 'jpeg', 'png'].includes(extension || '')) return 'id';
+  if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension || '')) return 'id';
+  if (['txt', 'rtf'].includes(extension || '')) return 'document';
+  if (['xlsx', 'xls', 'csv'].includes(extension || '')) return 'spreadsheet';
   
   return 'other';
 };
