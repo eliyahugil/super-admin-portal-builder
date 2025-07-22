@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle, AlertCircle, Building2, MapPin, User, Phone, Mail, Calendar, Home } from 'lucide-react';
+import { IdDocumentUpload } from '@/components/modules/employees/registration/IdDocumentUpload';
 
 interface TokenInfo {
   id: string;
@@ -119,6 +120,13 @@ export const EmployeeRegistrationPage: React.FC = () => {
 
     fetchTokenInfo();
   }, [token]);
+
+  const handleIdDataExtracted = (extractedData: any) => {
+    if (extractedData.first_name) setValue('first_name', extractedData.first_name);
+    if (extractedData.last_name) setValue('last_name', extractedData.last_name);
+    if (extractedData.id_number) setValue('id_number', extractedData.id_number);
+    if (extractedData.birth_date) setValue('birth_date', extractedData.birth_date);
+  };
 
   const handleBranchToggle = (branchId: string) => {
     const current = preferredBranches;
@@ -231,6 +239,9 @@ export const EmployeeRegistrationPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* ID Document Upload */}
+          <IdDocumentUpload onDataExtracted={handleIdDataExtracted} />
 
           {/* Registration Form */}
           <Card>
