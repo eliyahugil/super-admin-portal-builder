@@ -166,9 +166,19 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
       const targetWeekStart = startOfWeek(targetDate, { weekStartsOn: 0 });
       const daysDiff = Math.floor((targetWeekStart.getTime() - sourceWeekStart.getTime()) / (1000 * 60 * 60 * 24));
 
+      console.log('🔄 Copy Debug:', {
+        sourceWeekStart: format(sourceWeekStart, 'yyyy-MM-dd'),
+        targetWeekStart: format(targetWeekStart, 'yyyy-MM-dd'),
+        targetDate: format(targetDate, 'yyyy-MM-dd'),
+        daysDiff,
+        selectedShiftsCount: selectedShiftData.length
+      });
+
       for (const shift of selectedShiftData) {
         const originalDate = new Date(shift.shift_date);
         const newDate = addDays(originalDate, daysDiff);
+
+        console.log(`📅 Shift copy: ${format(originalDate, 'yyyy-MM-dd')} -> ${format(newDate, 'yyyy-MM-dd')}`);
 
         const newShift: any = {
           shift_date: format(newDate, 'yyyy-MM-dd'),
@@ -180,7 +190,7 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
           business_id: actualBusinessId,
           employee_id: copyAsUnassigned ? null : shift.employee_id,
           notes: `הועתק מסידור ${format(new Date(shift.shift_date), 'dd/MM/yyyy', { locale: he })}`,
-          status: copyAsUnassigned ? 'open' : 'assigned'
+          status: copyAsUnassigned ? 'pending' : 'approved'
         };
 
         shifts.push(newShift);
