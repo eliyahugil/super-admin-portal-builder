@@ -3,6 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
+// Helper function to safely get string value
+function safeString(value: any, defaultValue: string = ''): string {
+  if (value === null || value === undefined) {
+    return defaultValue;
+  }
+  return String(value);
+}
+
 export const useShiftsByDateRange = (startDate: string, endDate: string) => {
   const { businessId } = useCurrentBusiness();
   
@@ -54,7 +62,27 @@ export const useShiftsByDateRange = (startDate: string, endDate: string) => {
         businessId
       });
 
-      return data || [];
+      // Safely handle the data with null checks
+      return (data || []).map(shift => ({
+        ...shift,
+        // Ensure employee names are safely handled
+        employee: shift.employee ? {
+          ...shift.employee,
+          first_name: safeString(shift.employee.first_name),
+          last_name: safeString(shift.employee.last_name),
+          phone: safeString(shift.employee.phone)
+        } : null,
+        // Ensure branch data is safely handled
+        branch: shift.branch ? {
+          ...shift.branch,
+          name: safeString(shift.branch.name)
+        } : null,
+        // Add safe branch_name
+        branch_name: shift.branch?.name ? safeString(shift.branch.name) : 'ללא סניף',
+        // Ensure other string fields are safe
+        role: safeString(shift.role),
+        notes: safeString(shift.notes)
+      }));
     },
     enabled: !!(businessId && startDate && endDate),
     staleTime: 1000 * 60, // 1 minute

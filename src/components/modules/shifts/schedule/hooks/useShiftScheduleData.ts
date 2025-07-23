@@ -56,6 +56,14 @@ function parseShiftAssignments(assignments: any): { id: string; type: "חובה"
   return [];
 }
 
+// Helper function to safely get string value
+function safeString(value: any, defaultValue: string = ''): string {
+  if (value === null || value === undefined) {
+    return defaultValue;
+  }
+  return String(value);
+}
+
 export const useShiftScheduleData = (businessIdParam?: string | null) => {
   const { businessId: currentBusinessId } = useCurrentBusiness();
   
@@ -120,7 +128,19 @@ export const useShiftScheduleData = (businessIdParam?: string | null) => {
         status: parseStatus(shift.status),
         priority: parsePriority(shift.priority),
         shift_assignments: parseShiftAssignments(shift.shift_assignments),
-        branch_name: shift.branch?.name || 'ללא סניף'
+        branch_name: shift.branch?.name ? safeString(shift.branch.name) : 'ללא סניף',
+        // Ensure employee names are safely handled
+        employee: shift.employee ? {
+          ...shift.employee,
+          first_name: safeString(shift.employee.first_name),
+          last_name: safeString(shift.employee.last_name),
+          phone: safeString(shift.employee.phone)
+        } : null,
+        // Ensure branch data is safely handled
+        branch: shift.branch ? {
+          ...shift.branch,
+          name: safeString(shift.branch.name)
+        } : null
       }));
     },
     enabled: !!finalBusinessId,
@@ -169,7 +189,17 @@ export const useShiftScheduleData = (businessIdParam?: string | null) => {
       }
 
       console.log('✅ Fetched employees:', data?.length || 0);
-      return data || [];
+      
+      // Safely handle employee data
+      return (data || []).map(employee => ({
+        ...employee,
+        first_name: safeString(employee.first_name),
+        last_name: safeString(employee.last_name),
+        email: safeString(employee.email),
+        phone: safeString(employee.phone),
+        employee_id: safeString(employee.employee_id),
+        notes: safeString(employee.notes)
+      }));
     },
     enabled: !!finalBusinessId,
     refetchOnWindowFocus: false,
@@ -220,7 +250,12 @@ export const useShiftScheduleData = (businessIdParam?: string | null) => {
         console.warn('⚠️ Some branches did not belong to the business and were filtered out');
       }
 
-      return validBranches;
+      // Safely handle branch data
+      return validBranches.map(branch => ({
+        ...branch,
+        name: safeString(branch.name),
+        address: safeString(branch.address)
+      }));
     },
     enabled: !!finalBusinessId,
     refetchOnWindowFocus: false,
@@ -261,7 +296,17 @@ export const useShiftScheduleData = (businessIdParam?: string | null) => {
 
       console.log('✅ Fetched shift submissions:', data?.length || 0);
       console.log('🔍 Submission types found:', data?.map(s => ({ id: s.id, submission_type: s.submission_type })));
-      return data || [];
+      
+      // Safely handle submission data
+      return (data || []).map(submission => ({
+        ...submission,
+        employees: submission.employees ? {
+          ...submission.employees,
+          first_name: safeString(submission.employees.first_name),
+          last_name: safeString(submission.employees.last_name),
+          employee_id: safeString(submission.employees.employee_id)
+        } : null
+      }));
     },
     enabled: !!finalBusinessId,
     refetchOnWindowFocus: true,
