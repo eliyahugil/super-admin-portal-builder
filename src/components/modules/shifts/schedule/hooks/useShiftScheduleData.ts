@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
@@ -297,9 +296,14 @@ export const useShiftScheduleData = (businessIdParam?: string | null) => {
       console.log('✅ Fetched shift submissions:', data?.length || 0);
       console.log('🔍 Submission types found:', data?.map(s => ({ id: s.id, submission_type: s.submission_type })));
       
-      // Safely handle submission data
+      // Safely handle submission data and ensure required fields are present
       return (data || []).map(submission => ({
         ...submission,
+        // Ensure required fields have default values
+        token: submission.token || '',
+        shifts: submission.shifts || {},
+        week_start_date: submission.week_start_date || '',
+        week_end_date: submission.week_end_date || '',
         employees: submission.employees ? {
           ...submission.employees,
           first_name: safeString(submission.employees.first_name),
