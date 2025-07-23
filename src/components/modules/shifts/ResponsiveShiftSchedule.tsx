@@ -70,7 +70,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     }
   };
 
-  const handleNavigateDate = (direction: number) => {
+  const handleNavigateDate = (direction: -1 | 0 | 1) => {
     const newDate = new Date(currentDate);
     newDate.setDate(currentDate.getDate() + (direction * 7)); // Navigate by weeks
     navigateDate(newDate);

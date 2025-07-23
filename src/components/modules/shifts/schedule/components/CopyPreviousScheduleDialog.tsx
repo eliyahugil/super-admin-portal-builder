@@ -109,7 +109,7 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
         shiftsToProcess: sourceShifts.length
       });
 
-      // Prepare shifts for copying with enhanced safety
+      // Prepare shifts for copying with enhanced safety - CLEAR EMPLOYEE ASSIGNMENTS
       const shiftsToInsert = sourceShifts
         .filter(shift => {
           // Only copy shifts that have valid branch_id
@@ -123,48 +123,52 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
           const shiftDate = new Date(shift.shift_date);
           const newShiftDate = addDays(shiftDate, daysDifference);
           
-          // Enhanced safe handling for all string fields
+          // Enhanced safe handling for all string fields - CLEAR EMPLOYEE ASSIGNMENTS
           const newShift = {
             business_id: businessId,
             shift_date: format(newShiftDate, 'yyyy-MM-dd'),
             start_time: safeString(shift.start_time),
             end_time: safeString(shift.end_time),
-            employee_id: shift.employee_id,
-            branch_id: shift.branch_id,
+            employee_id: null, // ✅ אפס עובד מוקצה
+            branch_id: shift.branch_id, // ✅ שמור סניף
             role: safeString(shift.role),
             notes: safeString(shift.notes),
             status: 'pending' as const,
-            is_assigned: !!shift.employee_id,
+            is_assigned: false, // ✅ אפס הקצאה
             is_archived: false,
             required_employees: shift.required_employees || 1,
             priority: shift.priority || 'normal' as const,
-            shift_assignments: shift.shift_assignments || []
+            shift_assignments: [] // ✅ אפס הקצאות
           };
 
-          console.log('🔧 Processing shift for copy:', {
+          console.log('🔧 Processing shift for copy (WITHOUT EMPLOYEE):', {
             original: {
               date: shift.shift_date,
               start_time: shift.start_time,
               end_time: shift.end_time,
               role: shift.role,
-              notes: shift.notes
+              employee_id: shift.employee_id,
+              branch_id: shift.branch_id
             },
             new: {
               date: newShift.shift_date,
               start_time: newShift.start_time,
               end_time: newShift.end_time,
               role: newShift.role,
-              notes: newShift.notes
+              employee_id: newShift.employee_id, // null
+              branch_id: newShift.branch_id,
+              is_assigned: newShift.is_assigned // false
             }
           });
 
           return newShift;
         });
 
-      console.log('💾 Shifts prepared for insertion:', {
+      console.log('💾 Shifts prepared for insertion (WITHOUT EMPLOYEES):', {
         count: shiftsToInsert.length,
         firstShift: shiftsToInsert[0],
-        businessId
+        businessId,
+        allUnassigned: shiftsToInsert.every(s => s.employee_id === null && s.is_assigned === false)
       });
 
       if (shiftsToInsert.length === 0) {
@@ -187,14 +191,15 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
         throw insertError;
       }
 
-      console.log('✅ Shifts copied successfully:', {
+      console.log('✅ Shifts copied successfully WITHOUT EMPLOYEES:', {
         inserted: insertedShifts?.length || 0,
-        targetWeek: format(targetWeekStart, 'yyyy-MM-dd')
+        targetWeek: format(targetWeekStart, 'yyyy-MM-dd'),
+        allUnassigned: insertedShifts?.every(s => s.employee_id === null && s.is_assigned === false)
       });
 
       toast({
         title: "הצלחה!",
-        description: `הועתקו ${insertedShifts?.length || 0} משמרות לשבוע ${format(targetWeekStart, 'dd/MM/yyyy', { locale: he })}`,
+        description: `הועתקו ${insertedShifts?.length || 0} משמרות לשבוע ${format(targetWeekStart, 'dd/MM/yyyy', { locale: he })} ללא עובדים מוקצים`,
       });
 
       // Reset form and close dialog
@@ -226,7 +231,7 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
             העתקת לוח זמנים קודם
           </DialogTitle>
           <DialogDescription>
-            בחר שבוע מקור לעקתקה ושבוע יעד להדבקה
+            בחר שבוע מקור לעקתקה ושבוע יעד להדבקה (רק שעות וסניפים, ללא עובדים מוקצים)
           </DialogDescription>
         </DialogHeader>
 
@@ -294,6 +299,7 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
                 <li>• {sourceShifts.length} משמרות יועתקו</li>
                 <li>• מתאריך: {format(startOfWeek(sourceDate, { weekStartsOn: 0 }), 'dd/MM/yyyy', { locale: he })}</li>
                 <li>• לתאריך: {format(startOfWeek(targetDate, { weekStartsOn: 0 }), 'dd/MM/yyyy', { locale: he })}</li>
+                <li className="font-semibold text-orange-700">• ⚠️ עובדים מוקצים יאופסו - רק שעות וסניפים יועתקו</li>
               </ul>
             </div>
           )}
@@ -320,7 +326,7 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
             ) : (
               <>
                 <Copy className="h-4 w-4" />
-                העתק לוח זמנים
+                העתק לוח זמנים (ללא עובדים)
               </>
             )}
           </Button>
