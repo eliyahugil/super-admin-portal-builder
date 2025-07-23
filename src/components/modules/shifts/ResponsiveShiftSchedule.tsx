@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Calendar, ChevronLeft, ChevronRight, Plus, Users, FileText, Filter, Menu, Download, Settings, Copy, CheckSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Copy, FileText, CheckSquare } from 'lucide-react';
 import { WeeklyScheduleView } from './schedule/WeeklyScheduleView';
 import { MonthlyScheduleView } from './schedule/MonthlyScheduleView';
 import { YearlyScheduleView } from './schedule/YearlyScheduleView';
@@ -13,6 +13,7 @@ import { QuickMultipleShiftsDialog } from './schedule/QuickMultipleShiftsDialog'
 import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
 import { PendingSubmissionsDialog } from './schedule/PendingSubmissionsDialog';
 import { ShiftTemplatesApplyDialog } from './schedule/components/ShiftTemplatesApplyDialog';
+import { CopyPreviousScheduleDialog } from './schedule/components/CopyPreviousScheduleDialog';
 import { BulkEditShiftsDialog } from './schedule/BulkEditShiftsDialog';
 import { ScheduleErrorBoundary } from './schedule/ScheduleErrorBoundary';
 import { ManagerOverrideDialog } from './schedule/components/ManagerOverrideDialog';
@@ -33,6 +34,7 @@ import { useNotifications } from './notifications/useNotifications';
 import { ParallelScheduleView } from './schedule/ParallelScheduleView';
 import { GroupedByBranchView } from './schedule/components/GroupedByBranchView';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { ShiftCreationHelpCard } from './help/ShiftCreationHelpCard';
 import type { ScheduleView, ShiftScheduleData, CreateShiftData } from './schedule/types';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
@@ -49,6 +51,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const [activeTab, setActiveTab] = useState('schedule');
   const [showTemplatesDialog, setShowTemplatesDialog] = useState(false);
   const [templatesSelectedDate, setTemplatesSelectedDate] = useState<Date | undefined>();
+  const [showCopyPreviousDialog, setShowCopyPreviousDialog] = useState(false);
+  const [copyTargetDate, setCopyTargetDate] = useState<Date | undefined>();
   
   // Bulk edit states
   const [selectedShifts, setSelectedShifts] = useState<ShiftScheduleData[]>([]);
@@ -202,6 +206,11 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const handleApplyTemplates = (date?: Date) => {
     setTemplatesSelectedDate(date);
     setShowTemplatesDialog(true);
+  };
+
+  const handleCopyPreviousSchedule = (date?: Date) => {
+    setCopyTargetDate(date || currentDate);
+    setShowCopyPreviousDialog(true);
   };
 
   const handleShiftUpdate = async (shiftId: string, updates: Partial<ShiftScheduleData>) => {
@@ -428,6 +437,25 @@ export const ResponsiveShiftSchedule: React.FC = () => {
               תבניות משמרות
             </Button>
             
+            <Button
+              onClick={() => handleCopyPreviousSchedule()}
+              variant="outline"
+              size={isMobile ? "sm" : "default"}
+            >
+              <Copy className="h-4 w-4 ml-1" />
+              העתק מסידור קודם
+            </Button>
+            
+            <Button
+              onClick={() => window.open('/modules/shifts/management#templates', '_blank')}
+              variant="outline"
+              size={isMobile ? "sm" : "default"}
+              title="נהל תבניות משמרות"
+            >
+              <Settings className="h-4 w-4 ml-1" />
+              נהל תבניות
+            </Button>
+            
             {/* Auto Schedule Assistant */}
             <AutoScheduleAssistant
               weekStartDate={currentDate.toISOString().split('T')[0]}
@@ -472,6 +500,9 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Help Card for Shift Creation */}
+      <ShiftCreationHelpCard />
 
       {/* Compact Stats Cards for mobile */}
       <ScheduleStats shifts={shifts} isMobile={isMobile} pendingSubmissions={pendingSubmissions} />
@@ -755,6 +786,18 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           isOpen={showTemplatesDialog}
           onClose={() => setShowTemplatesDialog(false)}
           selectedDate={templatesSelectedDate}
+          onShiftsCreated={() => {
+            // רענון הנתונים לאחר יצירת משמרות
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {showCopyPreviousDialog && (
+        <CopyPreviousScheduleDialog
+          isOpen={showCopyPreviousDialog}
+          onClose={() => setShowCopyPreviousDialog(false)}
+          targetDate={copyTargetDate}
           onShiftsCreated={() => {
             // רענון הנתונים לאחר יצירת משמרות
             window.location.reload();
