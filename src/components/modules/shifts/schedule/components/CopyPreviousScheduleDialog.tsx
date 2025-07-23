@@ -39,8 +39,9 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
   targetDate,
   onShiftsCreated
 }) => {
-  const { businessId } = useBusiness();
+  const { businessId, business } = useBusiness();
   const { toast } = useToast();
+  const actualBusinessId = businessId || business?.id;
   const [selectedShifts, setSelectedShifts] = useState<Set<string>>(new Set());
   const [selectedSourceWeek, setSelectedSourceWeek] = useState<Date | null>(null);
   const [copyAsUnassigned, setCopyAsUnassigned] = useState(true);
@@ -69,7 +70,7 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
 
   // שליפת משמרות מהשבוע הנבחר עם דיבוג
   const { data: previousShifts = [] } = useRealData<ScheduledShift>({
-    queryKey: ['previous-shifts', businessId, selectedSourceWeek?.toISOString()],
+    queryKey: ['previous-shifts', actualBusinessId, selectedSourceWeek?.toISOString()],
     tableName: 'scheduled_shifts',
     select: `
       id,
@@ -82,18 +83,19 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
       employee_id
     `,
     filters: selectedSourceWeek ? {
-      business_id: { eq: businessId },
+      business_id: { eq: actualBusinessId },
       shift_date: {
         gte: format(startOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd'),
         lte: format(endOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd')
       }
-    } : { business_id: { eq: businessId } },
-    enabled: !!businessId && !!selectedSourceWeek && isOpen
+    } : { business_id: { eq: actualBusinessId } },
+    enabled: !!actualBusinessId && !!selectedSourceWeek && isOpen
   });
 
   // דיבוג
   console.log('🔍 Copy Previous Dialog Debug:', {
     businessId,
+    actualBusinessId,
     selectedSourceWeek,
     isOpen,
     weekRange: selectedSourceWeek ? {
@@ -106,19 +108,19 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
 
   // שליפת עובדים וסניפים לשם הצגה
   const { data: employees = [] } = useRealData({
-    queryKey: ['employees', businessId],
+    queryKey: ['employees', actualBusinessId],
     tableName: 'employees',
     select: 'id, first_name, last_name',
-    filters: { business_id: { eq: businessId } },
-    enabled: !!businessId && isOpen
+    filters: { business_id: { eq: actualBusinessId } },
+    enabled: !!actualBusinessId && isOpen
   });
 
   const { data: branches = [] } = useRealData({
-    queryKey: ['branches', businessId],
+    queryKey: ['branches', actualBusinessId],
     tableName: 'branches',
     select: 'id, name',
-    filters: { business_id: { eq: businessId } },
-    enabled: !!businessId && isOpen
+    filters: { business_id: { eq: actualBusinessId } },
+    enabled: !!actualBusinessId && isOpen
   });
 
   // יצירת maps לגישה מהירה
@@ -175,7 +177,7 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
           branch_id: shift.branch_id,
           role: shift.role,
           required_employees: shift.required_employees || 1,
-          business_id: businessId,
+          business_id: actualBusinessId,
           employee_id: copyAsUnassigned ? null : shift.employee_id,
           notes: `הועתק מסידור ${format(new Date(shift.shift_date), 'dd/MM/yyyy', { locale: he })}`,
           status: copyAsUnassigned ? 'open' : 'assigned'
