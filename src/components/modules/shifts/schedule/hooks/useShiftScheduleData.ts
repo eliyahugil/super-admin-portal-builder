@@ -1,355 +1,193 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { useEmployeeContext } from '@/hooks/useEmployeeContext';
+import { useEmployeeShiftsData } from '@/hooks/useEmployeeShiftsData';
+import type { ShiftScheduleData, Employee, Branch, PendingSubmission } from '../types';
 
-type ShiftStatus = "pending" | "approved" | "rejected" | "completed";
-type ShiftPriority = "critical" | "normal" | "backup";
+export const useShiftScheduleData = (businessId: string | null) => {
+  const { isEmployee, employeeId, assignedBranchIds } = useEmployeeContext();
 
-function parseStatus(status: string | null): ShiftStatus {
-  if (status === "pending" || status === "approved" || status === "rejected" || status === "completed") {
-    return status;
-  }
-  return "pending"; // Default fallback
-}
+  // For employees, use the specialized employee shifts hook
+  const { data: employeeShifts, isLoading: employeeShiftsLoading, error: employeeShiftsError, refetch: refetchEmployeeShifts } = useEmployeeShiftsData();
 
-function parsePriority(priority: string | null): ShiftPriority {
-  if (priority === "critical" || priority === "normal" || priority === "backup") {
-    return priority;
-  }
-  return "normal"; // Default fallback
-}
+  // Regular shifts query for business admins
+  const { data: adminShifts, isLoading: adminShiftsLoading, error: adminShiftsError, refetch: refetchAdminShifts } = useQuery({
+    queryKey: ['shift-schedule-data', businessId],
+    queryFn: async (): Promise<ShiftScheduleData[]> => {
+      if (!businessId) return [];
 
-function parseShiftAssignments(assignments: any): { id: string; type: "חובה" | "תגבור"; employee_id: string; position: number; is_required: boolean; }[] {
-  console.log('🔄 parseShiftAssignments called with:', {
-    assignments,
-    assignmentsType: typeof assignments,
-    isArray: Array.isArray(assignments),
-    isNull: assignments === null,
-    isUndefined: assignments === undefined
-  });
-  
-  if (!assignments) {
-    console.log('📝 parseShiftAssignments: returning empty array (no assignments)');
-    return [];
-  }
-  
-  // If it's a string, parse it
-  if (typeof assignments === 'string') {
-    try {
-      const parsed = JSON.parse(assignments);
-      console.log('📝 parseShiftAssignments: parsed from string:', parsed);
-      return parsed;
-    } catch (error) {
-      console.log('❌ parseShiftAssignments: failed to parse string:', error);
-      return [];
-    }
-  }
-  
-  // If it's already an array, return it
-  if (Array.isArray(assignments)) {
-    console.log('📝 parseShiftAssignments: returning array as-is:', assignments);
-    return assignments;
-  }
-  
-  console.log('📝 parseShiftAssignments: returning empty array (unknown type)');
-  return [];
-}
-
-// Helper function to safely get string value
-function safeString(value: any, defaultValue: string = ''): string {
-  if (value === null || value === undefined) {
-    return defaultValue;
-  }
-  return String(value);
-}
-
-export const useShiftScheduleData = (businessIdParam?: string | null) => {
-  const { businessId: currentBusinessId } = useCurrentBusiness();
-  
-  // Use the parameter if provided, otherwise use current business
-  const finalBusinessId = businessIdParam || currentBusinessId;
-  
-  console.log('🔄 useShiftScheduleData hook initialized:', {
-    businessIdParam,
-    currentBusinessId,
-    finalBusinessId
-  });
-
-  // Fetch shifts
-  const { data: shifts = [], isLoading: shiftsLoading, error: shiftsError, refetch: refetchShifts } = useQuery({
-    queryKey: ['schedule-shifts', finalBusinessId],
-    queryFn: async () => {
-      if (!finalBusinessId) {
-        console.log('❌ No business ID available for shifts');
-        return [];
-      }
-
-      console.log('🔍 Fetching shifts for business:', finalBusinessId);
+      console.log('📊 Fetching shift schedule data for business:', businessId);
 
       const { data, error } = await supabase
         .from('scheduled_shifts')
         .select(`
-          id,
-          business_id,
-          shift_date,
-          start_time,
-          end_time,
-          employee_id,
-          branch_id,
-          role,
-          notes,
-          status,
-          is_assigned,
-          is_archived,
-          created_at,
-          updated_at,
-          is_new,
-          required_employees,
-          shift_assignments,
-          priority,
-          employee:employees(id, first_name, last_name, phone, business_id),
-          branch:branches(id, name, business_id)
+          *,
+          branches:branch_id(id, name, address),
+          employees:employee_id(id, first_name, last_name, employee_id)
         `)
-        .eq('business_id', finalBusinessId)
-        .eq('is_archived', false)
+        .eq('business_id', businessId)
         .order('shift_date', { ascending: true })
         .order('start_time', { ascending: true });
 
       if (error) {
-        console.error('❌ Error fetching shifts:', error);
+        console.error('❌ Error fetching shift schedule data:', error);
         throw error;
       }
 
-      console.log('✅ Fetched shifts:', data?.length || 0);
-
-      return (data || []).map(shift => ({
-        ...shift,
-        status: parseStatus(shift.status),
-        priority: parsePriority(shift.priority),
-        shift_assignments: parseShiftAssignments(shift.shift_assignments),
-        branch_name: shift.branch?.name ? safeString(shift.branch.name) : 'ללא סניף',
-        // Ensure employee names are safely handled
-        employee: shift.employee ? {
-          ...shift.employee,
-          first_name: safeString(shift.employee.first_name),
-          last_name: safeString(shift.employee.last_name),
-          phone: safeString(shift.employee.phone)
-        } : null,
-        // Ensure branch data is safely handled
-        branch: shift.branch ? {
-          ...shift.branch,
-          name: safeString(shift.branch.name)
-        } : null
-      }));
+      console.log('✅ Shift schedule data fetched:', data?.length || 0);
+      return (data || []) as ShiftScheduleData[];
     },
-    enabled: !!finalBusinessId,
-    refetchOnWindowFocus: true,
-    staleTime: 1000 * 60, // 1 minute
+    enabled: !isEmployee && !!businessId,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
-  // Fetch employees
-  const { data: employees = [], isLoading: employeesLoading, error: employeesError } = useQuery({
-    queryKey: ['schedule-employees', finalBusinessId],
-    queryFn: async () => {
-      if (!finalBusinessId) {
-        console.log('❌ No business ID available for employees');
-        return [];
-      }
+  // Employees query - filter only employees in assigned branches
+  const { data: employees, isLoading: employeesLoading, error: employeesError } = useQuery({
+    queryKey: ['employees', businessId, isEmployee, assignedBranchIds],
+    queryFn: async (): Promise<Employee[]> => {
+      if (!businessId) return [];
 
-      console.log('🔍 Fetching employees for business:', finalBusinessId);
+      console.log('👥 Fetching employees for business:', businessId);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('employees')
         .select(`
-          id,
-          business_id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          employee_id,
-          employee_type,
-          hire_date,
-          is_active,
-          is_archived,
-          weekly_hours_required,
-          notes,
-          created_at,
-          updated_at
+          *,
+          main_branch:main_branch_id(id, name, address),
+          employee_branch_assignments!inner(
+            id,
+            branch_id,
+            role_name,
+            priority_order,
+            is_active,
+            branch:branches(name)
+          )
         `)
-        .eq('business_id', finalBusinessId)
+        .eq('business_id', businessId)
         .eq('is_active', true)
-        .eq('is_archived', false)
-        .order('first_name', { ascending: true });
+        .eq('is_archived', false);
+
+      // CRITICAL: If employee, only show employees from assigned branches
+      if (isEmployee && assignedBranchIds.length > 0) {
+        console.log('🔒 Employee view - filtering employees by branch assignments:', assignedBranchIds);
+        query = query.in('employee_branch_assignments.branch_id', assignedBranchIds);
+      }
+
+      query = query.order('first_name', { ascending: true });
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('❌ Error fetching employees:', error);
         throw error;
       }
 
-      console.log('✅ Fetched employees:', data?.length || 0);
-      
-      // Safely handle employee data
-      return (data || []).map(employee => ({
-        ...employee,
-        first_name: safeString(employee.first_name),
-        last_name: safeString(employee.last_name),
-        email: safeString(employee.email),
-        phone: safeString(employee.phone),
-        employee_id: safeString(employee.employee_id),
-        notes: safeString(employee.notes)
-      }));
+      console.log('✅ Employees fetched:', {
+        count: data?.length || 0,
+        isEmployee,
+        filteredByBranches: isEmployee && assignedBranchIds.length > 0
+      });
+
+      return (data || []) as Employee[];
     },
-    enabled: !!finalBusinessId,
-    refetchOnWindowFocus: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!businessId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
-  // Fetch branches
-  const { data: branches = [], isLoading: branchesLoading, error: branchesError } = useQuery({
-    queryKey: ['schedule-branches', finalBusinessId],
-    queryFn: async () => {
-      if (!finalBusinessId) {
-        console.log('❌ No business ID available for branches');
-        return [];
+  // Branches query - handled by useBranchesData which is already updated
+  const { data: branches, isLoading: branchesLoading, error: branchesError } = useQuery({
+    queryKey: ['branches-schedule', businessId, isEmployee, assignedBranchIds],
+    queryFn: async (): Promise<Branch[]> => {
+      if (!businessId) return [];
+
+      let query = supabase
+        .from('branches')
+        .select('*')
+        .eq('business_id', businessId)
+        .eq('is_active', true);
+
+      // CRITICAL: Filter branches for employees
+      if (isEmployee && assignedBranchIds.length > 0) {
+        console.log('🔒 Employee view - filtering branches:', assignedBranchIds);
+        query = query.in('id', assignedBranchIds);
       }
 
-      console.log('🔍 Fetching branches for business:', finalBusinessId);
+      query = query.order('name', { ascending: true });
 
-      const { data, error } = await supabase
-        .from('branches')
-        .select(`
-          id,
-          business_id,
-          name,
-          address,
-          latitude,
-          longitude,
-          gps_radius,
-          is_active,
-          is_archived,
-          created_at,
-          updated_at
-        `)
-        .eq('business_id', finalBusinessId)
-        .eq('is_active', true)
-        .eq('is_archived', false)
-        .order('name', { ascending: true });
+      const { data, error } = await query;
 
       if (error) {
         console.error('❌ Error fetching branches:', error);
         throw error;
       }
 
-      console.log('✅ Fetched branches:', data?.length || 0);
+      console.log('✅ Branches fetched for schedule:', {
+        count: data?.length || 0,
+        isEmployee,
+        filteredByAssignments: isEmployee && assignedBranchIds.length > 0
+      });
 
-      // Security check: ensure all branches belong to the business
-      const validBranches = (data || []).filter(branch => branch.business_id === finalBusinessId);
-      if (validBranches.length !== (data || []).length) {
-        console.warn('⚠️ Some branches did not belong to the business and were filtered out');
-      }
-
-      // Safely handle branch data
-      return validBranches.map(branch => ({
-        ...branch,
-        name: safeString(branch.name),
-        address: safeString(branch.address)
-      }));
+      return (data || []) as Branch[];
     },
-    enabled: !!finalBusinessId,
-    refetchOnWindowFocus: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!businessId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
-  // Fetch shift submissions for display in schedule
-  const { data: pendingSubmissions = [], isLoading: submissionsLoading, error: submissionsError } = useQuery({
-    queryKey: ['shift-submissions', finalBusinessId],
-    queryFn: async () => {
-      if (!finalBusinessId) {
-        console.log('❌ No business ID available for shift submissions');
-        return [];
-      }
+  // Pending submissions - only for admins
+  const { data: pendingSubmissions, isLoading: pendingLoading, error: pendingError } = useQuery({
+    queryKey: ['pending-submissions', businessId],
+    queryFn: async (): Promise<PendingSubmission[]> => {
+      if (!businessId || isEmployee) return [];
 
-      console.log('🔍 Fetching shift submissions for business:', finalBusinessId);
-
-      // Join with employees table to filter by business_id
       const { data, error } = await supabase
-        .from('shift_submissions')
+        .from('public_shift_submissions')
         .select(`
           *,
-          employees!inner(
-            id,
-            first_name,
-            last_name,
-            employee_id,
-            business_id,
-            phone,
-            employee_type,
-            weekly_hours_required
-          )
+          employees(id, first_name, last_name, employee_id, business_id, phone, employee_type, weekly_hours_required)
         `)
-        .eq('employees.business_id', finalBusinessId)
+        .eq('business_id', businessId)
+        .eq('status', 'pending')
         .order('submitted_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Error fetching shift submissions:', error);
+        console.error('❌ Error fetching pending submissions:', error);
         throw error;
       }
 
-      console.log('✅ Fetched shift submissions:', data?.length || 0);
-      console.log('🔍 Submission types found:', data?.map(s => ({ id: s.id, submission_type: s.submission_type })));
-      
-      // Safely handle submission data and ensure required fields are present
-      return (data || []).map(submission => {
-        // Ensure we have employee data - this is required by the type
-        if (!submission.employees) {
-          console.warn(`⚠️ Submission ${submission.id} missing employee data, skipping`);
-          return null;
-        }
-
-        return {
-          ...submission,
-          // Ensure required fields have values
-          shifts: submission.shifts || {},
-          week_start_date: submission.week_start_date || '',
-          week_end_date: submission.week_end_date || '',
-          employees: {
-            ...submission.employees,
-            first_name: safeString(submission.employees.first_name),
-            last_name: safeString(submission.employees.last_name),
-            employee_id: safeString(submission.employees.employee_id),
-            phone: safeString(submission.employees.phone)
-          }
-        };
-      }).filter(Boolean); // Remove null entries
+      return (data || []) as PendingSubmission[];
     },
-    enabled: !!finalBusinessId,
-    refetchOnWindowFocus: true,
-    staleTime: 1000 * 60, // 1 minute
+    enabled: !isEmployee && !!businessId,
+    staleTime: 1 * 60 * 1000,
+    gcTime: 2 * 60 * 1000,
   });
 
-  const loading = shiftsLoading || employeesLoading || branchesLoading || submissionsLoading;
-  const error = shiftsError || employeesError || branchesError || submissionsError;
+  // Determine which data to use based on user type
+  const shifts = isEmployee ? (employeeShifts || []) : (adminShifts || []);
+  const loading = isEmployee ? employeeShiftsLoading : (adminShiftsLoading || employeesLoading || branchesLoading || pendingLoading);
+  const error = isEmployee ? employeeShiftsError : (adminShiftsError || employeesError || branchesError || pendingError);
+  const refetchShifts = isEmployee ? refetchEmployeeShifts : refetchAdminShifts;
 
   console.log('📊 useShiftScheduleData summary:', {
-    finalBusinessId,
+    isEmployee,
+    employeeId,
+    assignedBranchIds,
     shiftsCount: shifts.length,
-    employeesCount: employees.length,
-    branchesCount: branches.length,
-    pendingSubmissionsCount: pendingSubmissions.length,
+    employeesCount: employees?.length || 0,
+    branchesCount: branches?.length || 0,
+    pendingCount: pendingSubmissions?.length || 0,
     loading,
     hasError: !!error
   });
 
-  if (error) {
-    console.error('❌ Error in useShiftScheduleData:', error);
-  }
-
   return {
-    shifts,
-    employees,
-    branches,
-    pendingSubmissions,
+    shifts: shifts as ShiftScheduleData[],
+    employees: employees || [],
+    branches: branches || [],
+    pendingSubmissions: pendingSubmissions || [],
     loading,
     error,
     refetchShifts
