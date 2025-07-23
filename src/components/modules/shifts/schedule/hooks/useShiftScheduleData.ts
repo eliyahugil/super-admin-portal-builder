@@ -1,5 +1,7 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 type ShiftStatus = "pending" | "approved" | "rejected" | "completed";
 type ShiftPriority = "critical" | "normal" | "backup";
@@ -54,19 +56,28 @@ function parseShiftAssignments(assignments: any): { id: string; type: "חובה"
   return [];
 }
 
-export const useShiftScheduleData = (businessId: string | null) => {
-  console.log('🔄 useShiftScheduleData hook initialized with businessId:', businessId);
+export const useShiftScheduleData = (businessIdParam?: string | null) => {
+  const { businessId: currentBusinessId } = useCurrentBusiness();
+  
+  // Use the parameter if provided, otherwise use current business
+  const finalBusinessId = businessIdParam || currentBusinessId;
+  
+  console.log('🔄 useShiftScheduleData hook initialized:', {
+    businessIdParam,
+    currentBusinessId,
+    finalBusinessId
+  });
 
   // Fetch shifts
   const { data: shifts = [], isLoading: shiftsLoading, error: shiftsError, refetch: refetchShifts } = useQuery({
-    queryKey: ['schedule-shifts', businessId],
+    queryKey: ['schedule-shifts', finalBusinessId],
     queryFn: async () => {
-      if (!businessId) {
-        console.log('❌ No business ID provided for shifts');
+      if (!finalBusinessId) {
+        console.log('❌ No business ID available for shifts');
         return [];
       }
 
-      console.log('🔍 Fetching shifts for business:', businessId);
+      console.log('🔍 Fetching shifts for business:', finalBusinessId);
 
       const { data, error } = await supabase
         .from('scheduled_shifts')
@@ -92,7 +103,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
           employee:employees(id, first_name, last_name, phone, business_id),
           branch:branches(id, name, business_id)
         `)
-        .eq('business_id', businessId)
+        .eq('business_id', finalBusinessId)
         .eq('is_archived', false)
         .order('shift_date', { ascending: true })
         .order('start_time', { ascending: true });
@@ -112,21 +123,21 @@ export const useShiftScheduleData = (businessId: string | null) => {
         branch_name: shift.branch?.name || 'ללא סניף'
       }));
     },
-    enabled: !!businessId,
+    enabled: !!finalBusinessId,
     refetchOnWindowFocus: true,
     staleTime: 1000 * 60, // 1 minute
   });
 
   // Fetch employees
   const { data: employees = [], isLoading: employeesLoading, error: employeesError } = useQuery({
-    queryKey: ['schedule-employees', businessId],
+    queryKey: ['schedule-employees', finalBusinessId],
     queryFn: async () => {
-      if (!businessId) {
-        console.log('❌ No business ID provided for employees');
+      if (!finalBusinessId) {
+        console.log('❌ No business ID available for employees');
         return [];
       }
 
-      console.log('🔍 Fetching employees for business:', businessId);
+      console.log('🔍 Fetching employees for business:', finalBusinessId);
 
       const { data, error } = await supabase
         .from('employees')
@@ -147,7 +158,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
           created_at,
           updated_at
         `)
-        .eq('business_id', businessId)
+        .eq('business_id', finalBusinessId)
         .eq('is_active', true)
         .eq('is_archived', false)
         .order('first_name', { ascending: true });
@@ -160,21 +171,21 @@ export const useShiftScheduleData = (businessId: string | null) => {
       console.log('✅ Fetched employees:', data?.length || 0);
       return data || [];
     },
-    enabled: !!businessId,
+    enabled: !!finalBusinessId,
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Fetch branches
   const { data: branches = [], isLoading: branchesLoading, error: branchesError } = useQuery({
-    queryKey: ['schedule-branches', businessId],
+    queryKey: ['schedule-branches', finalBusinessId],
     queryFn: async () => {
-      if (!businessId) {
-        console.log('❌ No business ID provided for branches');
+      if (!finalBusinessId) {
+        console.log('❌ No business ID available for branches');
         return [];
       }
 
-      console.log('🔍 Fetching branches for business:', businessId);
+      console.log('🔍 Fetching branches for business:', finalBusinessId);
 
       const { data, error } = await supabase
         .from('branches')
@@ -191,7 +202,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
           created_at,
           updated_at
         `)
-        .eq('business_id', businessId)
+        .eq('business_id', finalBusinessId)
         .eq('is_active', true)
         .eq('is_archived', false)
         .order('name', { ascending: true });
@@ -204,28 +215,28 @@ export const useShiftScheduleData = (businessId: string | null) => {
       console.log('✅ Fetched branches:', data?.length || 0);
 
       // Security check: ensure all branches belong to the business
-      const validBranches = (data || []).filter(branch => branch.business_id === businessId);
+      const validBranches = (data || []).filter(branch => branch.business_id === finalBusinessId);
       if (validBranches.length !== (data || []).length) {
         console.warn('⚠️ Some branches did not belong to the business and were filtered out');
       }
 
       return validBranches;
     },
-    enabled: !!businessId,
+    enabled: !!finalBusinessId,
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Fetch shift submissions for display in schedule
   const { data: pendingSubmissions = [], isLoading: submissionsLoading, error: submissionsError } = useQuery({
-    queryKey: ['shift-submissions', businessId],
+    queryKey: ['shift-submissions', finalBusinessId],
     queryFn: async () => {
-      if (!businessId) {
-        console.log('❌ No business ID provided for shift submissions');
+      if (!finalBusinessId) {
+        console.log('❌ No business ID available for shift submissions');
         return [];
       }
 
-      console.log('🔍 Fetching shift submissions for business:', businessId);
+      console.log('🔍 Fetching shift submissions for business:', finalBusinessId);
 
       // Join with employees table to filter by business_id
       const { data, error } = await supabase
@@ -240,7 +251,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
             business_id
           )
         `)
-        .eq('employees.business_id', businessId)
+        .eq('employees.business_id', finalBusinessId)
         .order('submitted_at', { ascending: false });
 
       if (error) {
@@ -252,7 +263,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
       console.log('🔍 Submission types found:', data?.map(s => ({ id: s.id, submission_type: s.submission_type })));
       return data || [];
     },
-    enabled: !!businessId,
+    enabled: !!finalBusinessId,
     refetchOnWindowFocus: true,
     staleTime: 1000 * 60, // 1 minute
   });
@@ -261,7 +272,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
   const error = shiftsError || employeesError || branchesError || submissionsError;
 
   console.log('📊 useShiftScheduleData summary:', {
-    businessId,
+    finalBusinessId,
     shiftsCount: shifts.length,
     employeesCount: employees.length,
     branchesCount: branches.length,
