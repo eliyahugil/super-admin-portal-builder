@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Plus, Filter, Eye, EyeOff } from 'lucide-react';
 import { ShiftScheduleViewProps, PendingSubmission } from './types';
 import { ShiftSubmissionReminderButton } from './components/ShiftSubmissionReminderButton';
+import { BulkWeekDeleteDialog } from './components/BulkWeekDeleteDialog';
 
-export const ShiftScheduleView: React.FC<ShiftScheduleViewProps> = ({
+export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDeleted?: () => void }> = ({
   shifts,
   employees,
   branches,
@@ -24,6 +25,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps> = ({
   selectedShifts,
   onShiftSelection,
   onShowPendingSubmissions,
+  onWeekDeleted,
 }) => {
   const [showNewShifts, setShowNewShifts] = useState(true);
 
@@ -99,6 +101,8 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 הגשות ממתינות ({safePendingSubmissions.length})
               </Button>
             )}
+
+            <BulkWeekDeleteDialog onSuccess={onWeekDeleted} />
 
             <Button
               size="sm"

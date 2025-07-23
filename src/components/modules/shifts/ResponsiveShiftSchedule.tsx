@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -74,6 +73,10 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     const newDate = new Date(currentDate);
     newDate.setDate(currentDate.getDate() + (direction * 7)); // Navigate by weeks
     navigateDate(newDate);
+  };
+
+  const handleWeekDeleted = () => {
+    refetchShifts();
   };
 
   if (loading) {
@@ -277,6 +280,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
         onShiftUpdate={handleShiftUpdate}
         onAddShift={handleAddShift}
         onShiftDelete={deleteShift}
+        onWeekDeleted={handleWeekDeleted}
       />
 
       {/* Copy Schedule Dialog */}

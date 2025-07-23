@@ -10,6 +10,7 @@ import {
 import { Plus, Filter, MoreVertical, Calendar, Users, Trash2, Edit, CheckSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DeleteAllShiftsButton } from '../../DeleteAllShiftsButton';
+import { BulkWeekDeleteDialog } from './BulkWeekDeleteDialog';
 
 interface ScheduleActionsProps {
   showFilters: boolean;
@@ -26,6 +27,8 @@ interface ScheduleActionsProps {
   onBulkDelete?: () => void;
   onSelectAll?: () => void;
   onClearSelection?: () => void;
+  // Week delete callback
+  onWeekDeleted?: () => void;
 }
 
 export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
@@ -41,7 +44,8 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
   onBulkEdit,
   onBulkDelete,
   onSelectAll,
-  onClearSelection
+  onClearSelection,
+  onWeekDeleted
 }) => {
   
   if (isSelectionMode) {
@@ -123,6 +127,9 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
               עריכה מרובה
             </DropdownMenuItem>
             <DropdownMenuItem>
+              <BulkWeekDeleteDialog onSuccess={onWeekDeleted} />
+            </DropdownMenuItem>
+            <DropdownMenuItem>
               <DeleteAllShiftsButton />
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -161,6 +168,7 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
         <CheckSquare className="h-4 w-4 mr-2" />
         עריכה מרובה
       </Button>
+      <BulkWeekDeleteDialog onSuccess={onWeekDeleted} />
       <DeleteAllShiftsButton />
     </div>
   );
