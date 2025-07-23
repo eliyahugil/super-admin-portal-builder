@@ -29,6 +29,8 @@ interface ScheduleActionsProps {
   onClearSelection?: () => void;
   // Week delete callback
   onWeekDeleted?: () => void;
+  // Business ID for bulk operations
+  businessId?: string | null;
 }
 
 export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
@@ -45,7 +47,8 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
   onBulkDelete,
   onSelectAll,
   onClearSelection,
-  onWeekDeleted
+  onWeekDeleted,
+  businessId
 }) => {
   
   if (isSelectionMode) {
@@ -127,7 +130,7 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
               עריכה מרובה
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <BulkWeekDeleteDialog onSuccess={onWeekDeleted} />
+              <BulkWeekDeleteDialog onSuccess={onWeekDeleted} businessId={businessId} />
             </DropdownMenuItem>
             <DropdownMenuItem>
               <DeleteAllShiftsButton />
@@ -168,7 +171,7 @@ export const ScheduleActions: React.FC<ScheduleActionsProps> = ({
         <CheckSquare className="h-4 w-4 mr-2" />
         עריכה מרובה
       </Button>
-      <BulkWeekDeleteDialog onSuccess={onWeekDeleted} />
+      <BulkWeekDeleteDialog onSuccess={onWeekDeleted} businessId={businessId} />
       <DeleteAllShiftsButton />
     </div>
   );

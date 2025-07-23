@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -102,7 +101,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
               </Button>
             )}
 
-            <BulkWeekDeleteDialog onSuccess={onWeekDeleted} />
+            <BulkWeekDeleteDialog onSuccess={onWeekDeleted} businessId={businessId} />
 
             <Button
               size="sm"

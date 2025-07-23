@@ -1,87 +1,58 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, AlertTriangle, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { he } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { ShiftScheduleData } from '../types';
+import { Trash2, Calendar, AlertTriangle } from 'lucide-react';
 import { WeekRangePicker } from './WeekRangePicker';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import type { ShiftScheduleData } from '../types';
 
 interface BulkWeekDeleteDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  businessId: string;
-  onSuccess: () => void;
+  onSuccess?: () => void;
+  businessId?: string | null;
 }
 
+// Helper function to map status strings to the correct union type
+const mapStatusToUnion = (status: string): 'pending' | 'approved' | 'rejected' | 'completed' => {
+  switch (status) {
+    case 'pending':
+    case 'approved':
+    case 'rejected':
+    case 'completed':
+      return status as 'pending' | 'approved' | 'rejected' | 'completed';
+    default:
+      return 'pending';
+  }
+};
+
 export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
-  isOpen,
-  onClose,
-  businessId,
-  onSuccess
+  onSuccess,
+  businessId
 }) => {
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'week' | 'range'>('week');
-  const [isDeleting, setIsDeleting] = useState(false);
-  
-  // Week selection
-  const [weekStartDate, setWeekStartDate] = useState('');
-  const [weekEndDate, setWeekEndDate] = useState('');
-  
-  // Range selection
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
-  const [startDateOpen, setStartDateOpen] = useState(false);
-  const [endDateOpen, setEndDateOpen] = useState(false);
-  
-  // Shifts data
+  const [isOpen, setIsOpen] = useState(false);
+  const [weekStart, setWeekStart] = useState<string>('');
+  const [weekEnd, setWeekEnd] = useState<string>('');
   const [shiftsToDelete, setShiftsToDelete] = useState<ShiftScheduleData[]>([]);
-  const [loading, setLoading] = useState(false);
+  
+  const queryClient = useQueryClient();
 
-  // Handle week selection change
-  const handleWeekChange = (start: string, end: string) => {
-    console.log('Week changed:', { start, end });
-    setWeekStartDate(start);
-    setWeekEndDate(end);
-  };
-
-  // Fetch shifts based on current selection
-  const fetchShifts = async () => {
-    if (!businessId) return;
-    
-    let queryStartDate = '';
-    let queryEndDate = '';
-    
-    if (activeTab === 'week') {
-      if (!weekStartDate || !weekEndDate) return;
-      queryStartDate = weekStartDate;
-      queryEndDate = weekEndDate;
-    } else {
-      if (!startDate || !endDate) return;
-      queryStartDate = format(startDate, 'yyyy-MM-dd');
-      queryEndDate = format(endDate, 'yyyy-MM-dd');
-    }
-
-    console.log('Fetching shifts for period:', { queryStartDate, queryEndDate, businessId });
-    setLoading(true);
-
-    try {
+  // Fetch shifts for the selected week
+  const { data: weekShifts = [], isLoading: loadingShifts } = useQuery({
+    queryKey: ['week-shifts', businessId, weekStart, weekEnd],
+    queryFn: async (): Promise<ShiftScheduleData[]> => {
+      if (!businessId || !weekStart || !weekEnd) return [];
+      
+      console.log('🔍 Fetching shifts for week:', { businessId, weekStart, weekEnd });
+      
       const { data, error } = await supabase
         .from('scheduled_shifts')
         .select(`
@@ -95,272 +66,231 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
           role,
           notes,
           status,
+          shift_template_id,
           is_assigned,
           is_archived,
-          created_at,
-          updated_at,
           required_employees,
           priority,
           shift_assignments,
-          employee:employees(id, first_name, last_name),
-          branch:branches(id, name)
+          created_at,
+          updated_at,
+          branch_name,
+          role_preference,
+          is_new
         `)
         .eq('business_id', businessId)
-        .eq('is_archived', false)
-        .gte('shift_date', queryStartDate)
-        .lte('shift_date', queryEndDate)
-        .order('shift_date', { ascending: true })
-        .order('start_time', { ascending: true });
+        .gte('shift_date', weekStart)
+        .lte('shift_date', weekEnd)
+        .order('shift_date', { ascending: true });
 
       if (error) {
-        console.error('Error fetching shifts:', error);
+        console.error('Error fetching week shifts:', error);
         throw error;
       }
 
-      console.log('Fetched shifts:', data?.length || 0);
-      setShiftsToDelete(data || []);
-    } catch (error) {
-      console.error('Error fetching shifts:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן לטעון את המשמרות',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      const formattedShifts: ShiftScheduleData[] = (data || []).map(shift => ({
+        id: shift.id,
+        business_id: shift.business_id,
+        shift_date: shift.shift_date,
+        start_time: shift.start_time || '',
+        end_time: shift.end_time || '',
+        employee_id: shift.employee_id,
+        branch_id: shift.branch_id,
+        role: shift.role,
+        notes: shift.notes,
+        status: mapStatusToUnion(shift.status),
+        shift_template_id: shift.shift_template_id,
+        is_assigned: shift.is_assigned || false,
+        is_archived: shift.is_archived || false,
+        required_employees: shift.required_employees,
+        priority: shift.priority as 'critical' | 'normal' | 'backup' | undefined,
+        shift_assignments: shift.shift_assignments || [],
+        created_at: shift.created_at,
+        updated_at: shift.updated_at,
+        branch_name: shift.branch_name,
+        role_preference: shift.role_preference,
+        is_new: shift.is_new
+      }));
 
-  // Fetch shifts when selection changes
-  useEffect(() => {
-    if (isOpen) {
-      fetchShifts();
-    }
-  }, [isOpen, activeTab, weekStartDate, weekEndDate, startDate, endDate, businessId]);
+      console.log('✅ Found shifts for week:', formattedShifts.length);
+      return formattedShifts;
+    },
+    enabled: !!businessId && !!weekStart && !!weekEnd && isOpen,
+  });
 
-  // Handle delete action
-  const handleDelete = async () => {
-    if (shiftsToDelete.length === 0) return;
-
-    setIsDeleting(true);
-    try {
-      const shiftIds = shiftsToDelete.map(shift => shift.id);
+  // Delete shifts mutation
+  const deleteShiftsMutation = useMutation({
+    mutationFn: async (shiftIds: string[]) => {
+      console.log('🗑️ Deleting shifts:', shiftIds);
       
       const { error } = await supabase
         .from('scheduled_shifts')
-        .update({ is_archived: true })
+        .delete()
         .in('id', shiftIds);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting shifts:', error);
+        throw error;
+      }
 
-      toast({
-        title: 'הצלחה',
-        description: `${shiftsToDelete.length} משמרות נמחקו בהצלחה`,
-      });
+      return { success: true, deletedCount: shiftIds.length };
+    },
+    onSuccess: (result) => {
+      console.log('✅ Successfully deleted shifts:', result);
+      toast.success(`נמחקו בהצלחה ${result.deletedCount} משמרות`);
+      
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['shifts-schedule'] });
+      
+      // Close dialog and reset state
+      setIsOpen(false);
+      setWeekStart('');
+      setWeekEnd('');
+      setShiftsToDelete([]);
+      
+      // Call success callback
+      onSuccess?.();
+    },
+    onError: (error) => {
+      console.error('❌ Error deleting shifts:', error);
+      toast.error('שגיאה במחיקת המשמרות');
+    },
+  });
 
-      onSuccess();
-      onClose();
-    } catch (error) {
-      console.error('Error deleting shifts:', error);
-      toast({
-        title: 'שגיאה',
-        description: 'לא ניתן למחוק את המשמרות',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsDeleting(false);
+  const handleWeekChange = (startDate: string, endDate: string) => {
+    console.log('📅 Week changed:', { startDate, endDate });
+    setWeekStart(startDate);
+    setWeekEnd(endDate);
+  };
+
+  const handleDelete = () => {
+    if (weekShifts.length === 0) {
+      toast.error('לא נמצאו משמרות למחיקה');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `האם אתה בטוח שברצונך למחוק ${weekShifts.length} משמרות מהשבוע הנבחר?`
+    );
+
+    if (confirmed) {
+      const shiftIds = weekShifts.map(shift => shift.id);
+      deleteShiftsMutation.mutate(shiftIds);
     }
   };
 
-  // Reset state when dialog closes
-  const handleClose = () => {
-    setShiftsToDelete([]);
-    setWeekStartDate('');
-    setWeekEndDate('');
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setActiveTab('week');
-    onClose();
-  };
-
-  // Get period description
-  const getPeriodDescription = () => {
-    if (activeTab === 'week' && weekStartDate && weekEndDate) {
-      return `${format(new Date(weekStartDate), 'dd/MM/yyyy', { locale: he })} - ${format(new Date(weekEndDate), 'dd/MM/yyyy', { locale: he })}`;
-    }
-    if (activeTab === 'range' && startDate && endDate) {
-      return `${format(startDate, 'dd/MM/yyyy', { locale: he })} - ${format(endDate, 'dd/MM/yyyy', { locale: he })}`;
-    }
-    return '';
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('he-IL');
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Trash2 className="h-4 w-4" />
+          מחק שבוע
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Trash2 className="h-5 w-5 text-red-500" />
-            מחיקת משמרות בתקופה נבחרת
+            מחיקת משמרות לפי שבוע
           </DialogTitle>
           <DialogDescription>
-            בחר תקופה ומחק את כל המשמרות בטווח התאריכים
+            בחר שבוע כדי למחוק את כל המשמרות שלו
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'week' | 'range')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="week">שבוע שלם</TabsTrigger>
-            <TabsTrigger value="range">טווח מותאם</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="week" className="space-y-4">
+        <div className="space-y-6">
+          {/* Week Range Picker */}
+          <div>
+            <h4 className="font-medium mb-3">בחירת שבוע:</h4>
             <WeekRangePicker 
               onWeekChange={handleWeekChange}
               initialDate={new Date()}
             />
-          </TabsContent>
-
-          <TabsContent value="range" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">תאריך קיום</label>
-                <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !startDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {startDate ? format(startDate, 'dd/MM/yyyy', { locale: he }) : 'בחר תאריך התחלה'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={startDate}
-                      onSelect={(date) => {
-                        setStartDate(date);
-                        setStartDateOpen(false);
-                      }}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">תאריך התחלה</label>
-                <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !endDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {endDate ? format(endDate, 'dd/MM/yyyy', { locale: he }) : 'בחר תאריך סיום'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={endDate}
-                      onSelect={(date) => {
-                        setEndDate(date);
-                        setEndDateOpen(false);
-                      }}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Shifts Preview */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium">משמרות למחיקה בתקופה הנבחרת:</h4>
-            {getPeriodDescription() && (
-              <Badge variant="outline">{getPeriodDescription()}</Badge>
-            )}
           </div>
 
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-600">טוען משמרות...</p>
-            </div>
-          ) : (
-            <>
-              <div className="text-sm text-gray-600">
-                נמצאו {shiftsToDelete.length} משמרות למחיקה בתקופה הנבחרת:
+          {/* Shifts Preview */}
+          {weekStart && weekEnd && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">משמרות שיימחקו:</h4>
+                <div className="flex items-center gap-2">
+                  {loadingShifts ? (
+                    <span className="text-sm text-gray-500">טוען...</span>
+                  ) : (
+                    <span className="font-medium text-red-600">
+                      {weekShifts.length} משמרות
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {shiftsToDelete.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">לא נמצאו משמרות בתקופה זו</p>
+              {loadingShifts ? (
+                <div className="p-4 text-center text-gray-500">
+                  טוען משמרות...
+                </div>
+              ) : weekShifts.length === 0 ? (
+                <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">
+                  לא נמצאו משמרות בשבוע הנבחר
                 </div>
               ) : (
-                <div className="max-h-64 overflow-y-auto space-y-2">
-                  {shiftsToDelete.map((shift) => (
-                    <div
-                      key={shift.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div>
-                        <div className="font-medium">
-                          {format(new Date(shift.shift_date), 'dd/MM/yyyy', { locale: he })}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {shift.start_time} - {shift.end_time}
-                          {shift.employee && ` • ${shift.employee.first_name} ${shift.employee.last_name}`}
-                          {shift.branch && ` • ${shift.branch.name}`}
+                <div className="max-h-60 overflow-y-auto border rounded-lg">
+                  <div className="space-y-1">
+                    {weekShifts.map((shift) => (
+                      <div key={shift.id} className="p-3 border-b last:border-b-0 bg-red-50">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-medium">
+                              {formatDate(shift.shift_date)}
+                            </span>
+                            <span className="text-sm text-gray-600 mr-2">
+                              {shift.start_time} - {shift.end_time}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {shift.branch_name || 'ללא סניף'} • {shift.role || 'ללא תפקיד'}
+                          </div>
                         </div>
                       </div>
-                      <Badge variant={shift.status === 'approved' ? 'default' : 'secondary'}>
-                        {shift.status === 'approved' ? 'מאושר' : shift.status}
-                      </Badge>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
-            </>
+            </div>
           )}
+
+          {/* Warning */}
+          {weekShifts.length > 0 && (
+            <div className="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium text-yellow-800 mb-1">אזהרה!</p>
+                <p className="text-yellow-700">
+                  פעולה זו תמחק את כל המשמרות בשבוע הנבחר ולא ניתן לבטל אותה.
+                  וודא שאתה בטוח לפני המשך.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsOpen(false)}>
+              בטל
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={weekShifts.length === 0 || deleteShiftsMutation.isPending || loadingShifts}
+            >
+              {deleteShiftsMutation.isPending ? 'מוחק...' : `מחק ${weekShifts.length} משמרות`}
+            </Button>
+          </div>
         </div>
-
-        {/* Warning */}
-        {shiftsToDelete.length > 0 && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
-              <strong>אזהרה!</strong> פעולה זו תמחק את כל המשמרות בתקופה הנבחרת.
-              <br />
-              לא ניתן לבטל פעולה זו!
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
-            ביטול
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={shiftsToDelete.length === 0 || isDeleting || loading}
-          >
-            {isDeleting ? 'מוחק...' : `מחק ${shiftsToDelete.length} משמרות`}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
