@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ShiftScheduleHeader } from './schedule/ShiftScheduleHeader';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
@@ -79,18 +80,17 @@ export const ShiftSchedule: React.FC = () => {
             branches={branches}
             currentDate={currentDate}
             onShiftClick={(shift) => {
-              // Handle shift click
+              console.log('Shift clicked:', shift);
             }}
             onShiftUpdate={updateShift}
             onAddShift={(date) => {
-              // Handle add shift
+              console.log('Add shift for date:', date);
             }}
             onShiftDelete={deleteShift}
             businessId={businessId}
             onShowPendingSubmissions={() => {
-              // Handle show pending submissions
+              console.log('Show pending submissions');
             }}
-            onRefetch={refetchShifts}
             holidays={[]}
             shabbatTimes={[]}
             calendarEvents={[]}
@@ -100,7 +100,7 @@ export const ShiftSchedule: React.FC = () => {
       </div>
 
       <ShiftDetailsDialog />
-      <CreateShiftDialog currentDate={currentDate} onCreate={createShift} />
+      <CreateShiftDialog onCreate={createShift} />
       <PendingSubmissionsDialog />
     </div>
   );

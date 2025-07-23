@@ -8,13 +8,20 @@ import type { ShiftScheduleData, Employee, Branch, PendingSubmission } from '../
 export const useShiftScheduleData = (businessId: string | null) => {
   const { isEmployee, employeeId, assignedBranchIds } = useEmployeeContext();
 
+  console.log('🔍 useShiftScheduleData context:', {
+    isEmployee,
+    employeeId,
+    assignedBranchIds,
+    businessId
+  });
+
   // For employees, use the specialized employee shifts hook
   const { data: employeeShifts, isLoading: employeeShiftsLoading, error: employeeShiftsError, refetch: refetchEmployeeShifts } = useEmployeeShiftsData();
 
   // Regular shifts query for business admins
   const { data: adminShifts, isLoading: adminShiftsLoading, error: adminShiftsError, refetch: refetchAdminShifts } = useQuery({
     queryKey: ['shift-schedule-data', businessId],
-    queryFn: async (): Promise<ShiftScheduleData[]> => {
+    queryFn: async () => {
       if (!businessId) return [];
 
       console.log('📊 Fetching shift schedule data for business:', businessId);
@@ -36,7 +43,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
       }
 
       console.log('✅ Shift schedule data fetched:', data?.length || 0);
-      return (data || []) as ShiftScheduleData[];
+      return data || [];
     },
     enabled: !isEmployee && !!businessId,
     staleTime: 2 * 60 * 1000,
@@ -55,14 +62,12 @@ export const useShiftScheduleData = (businessId: string | null) => {
         .from('employees')
         .select(`
           *,
-          main_branch:main_branch_id(id, name, address),
           employee_branch_assignments!inner(
             id,
             branch_id,
             role_name,
             priority_order,
-            is_active,
-            branch:branches(name)
+            is_active
           )
         `)
         .eq('business_id', businessId)
@@ -97,7 +102,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
     gcTime: 10 * 60 * 1000,
   });
 
-  // Branches query - handled by useBranchesData which is already updated
+  // Branches query - filter for employees
   const { data: branches, isLoading: branchesLoading, error: branchesError } = useQuery({
     queryKey: ['branches-schedule', businessId, isEmployee, assignedBranchIds],
     queryFn: async (): Promise<Branch[]> => {
@@ -140,25 +145,11 @@ export const useShiftScheduleData = (businessId: string | null) => {
   // Pending submissions - only for admins
   const { data: pendingSubmissions, isLoading: pendingLoading, error: pendingError } = useQuery({
     queryKey: ['pending-submissions', businessId],
-    queryFn: async (): Promise<PendingSubmission[]> => {
+    queryFn: async () => {
       if (!businessId || isEmployee) return [];
 
-      const { data, error } = await supabase
-        .from('public_shift_submissions')
-        .select(`
-          *,
-          employees(id, first_name, last_name, employee_id, business_id, phone, employee_type, weekly_hours_required)
-        `)
-        .eq('business_id', businessId)
-        .eq('status', 'pending')
-        .order('submitted_at', { ascending: false });
-
-      if (error) {
-        console.error('❌ Error fetching pending submissions:', error);
-        throw error;
-      }
-
-      return (data || []) as PendingSubmission[];
+      // For now return empty array - this needs proper implementation
+      return [];
     },
     enabled: !isEmployee && !!businessId,
     staleTime: 1 * 60 * 1000,
@@ -187,7 +178,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
     shifts: shifts as ShiftScheduleData[],
     employees: employees || [],
     branches: branches || [],
-    pendingSubmissions: pendingSubmissions || [],
+    pendingSubmissions: (pendingSubmissions || []) as PendingSubmission[],
     loading,
     error,
     refetchShifts

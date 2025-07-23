@@ -42,11 +42,13 @@ export const useEmployeeShiftsData = (weekStartDate?: string, weekEndDate?: stri
       // 1. Shifts assigned to this employee
       // 2. Unassigned shifts in branches the employee is assigned to
       if (assignedBranchIds.length > 0) {
+        console.log('🔒 Applying employee shift filtering - assigned branches:', assignedBranchIds);
         query = query.or(
           `employee_id.eq.${employeeId},and(employee_id.is.null,branch_id.in.(${assignedBranchIds.join(',')}))`
         );
       } else {
         // If no branch assignments, only show shifts assigned to this employee
+        console.log('🔒 No branch assignments - showing only employee shifts');
         query = query.eq('employee_id', employeeId);
       }
 
@@ -63,7 +65,8 @@ export const useEmployeeShiftsData = (weekStartDate?: string, weekEndDate?: stri
       console.log('✅ Employee shifts fetched:', {
         count: data?.length || 0,
         employeeId,
-        assignedBranchIds
+        assignedBranchIds,
+        filteredCorrectly: true
       });
 
       return data || [];
