@@ -1,31 +1,42 @@
 import React, { useState } from 'react';
+import { useDeviceType } from '@/hooks/useDeviceType';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Plus, Filter, Eye, EyeOff } from 'lucide-react';
 import { ShiftScheduleViewProps, PendingSubmission } from './types';
 import { ShiftSubmissionReminderButton } from './components/ShiftSubmissionReminderButton';
 import { BulkWeekDeleteDialog } from './components/BulkWeekDeleteDialog';
+import { MobileShiftScheduleView } from './components/MobileShiftScheduleView';
 
-export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDeleted?: () => void }> = ({
-  shifts,
-  employees,
-  branches,
-  currentDate,
-  holidays,
-  shabbatTimes,
-  calendarEvents,
-  pendingSubmissions = [],
-  businessId,
-  onShiftClick,
-  onShiftUpdate,
-  onAddShift,
-  onShiftDelete,
-  isSelectionMode,
-  selectedShifts,
-  onShiftSelection,
-  onShowPendingSubmissions,
-  onWeekDeleted,
-}) => {
+export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDeleted?: () => void }> = (props) => {
+  const { type: deviceType } = useDeviceType();
+  
+  // If mobile, use the mobile-optimized view
+  if (deviceType === 'mobile') {
+    return <MobileShiftScheduleView {...props} />;
+  }
+
+  const {
+    shifts,
+    employees,
+    branches,
+    currentDate,
+    holidays,
+    shabbatTimes,
+    calendarEvents,
+    pendingSubmissions = [],
+    businessId,
+    onShiftClick,
+    onShiftUpdate,
+    onAddShift,
+    onShiftDelete,
+    isSelectionMode,
+    selectedShifts,
+    onShiftSelection,
+    onShowPendingSubmissions,
+    onWeekDeleted,
+  } = props;
+
   const [showNewShifts, setShowNewShifts] = useState(true);
 
   // Safely handle pendingSubmissions - ensure it's an array of proper type
