@@ -41,7 +41,6 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [weekStart, setWeekStart] = useState<string>('');
   const [weekEnd, setWeekEnd] = useState<string>('');
-  const [shiftsToDelete, setShiftsToDelete] = useState<ShiftScheduleData[]>([]);
   
   const queryClient = useQueryClient();
 
@@ -74,9 +73,12 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
           shift_assignments,
           created_at,
           updated_at,
-          branch_name,
-          role_preference,
-          is_new
+          is_new,
+          manager_override,
+          override_by,
+          override_at,
+          branches!inner(name),
+          employees(first_name, last_name)
         `)
         .eq('business_id', businessId)
         .gte('shift_date', weekStart)
@@ -104,11 +106,11 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
         is_archived: shift.is_archived || false,
         required_employees: shift.required_employees,
         priority: shift.priority as 'critical' | 'normal' | 'backup' | undefined,
-        shift_assignments: shift.shift_assignments || [],
+        shift_assignments: Array.isArray(shift.shift_assignments) ? shift.shift_assignments : [],
         created_at: shift.created_at,
         updated_at: shift.updated_at,
-        branch_name: shift.branch_name,
-        role_preference: shift.role_preference,
+        branch_name: shift.branches?.name || 'ללא סניף',
+        role_preference: shift.role,
         is_new: shift.is_new
       }));
 
@@ -147,7 +149,6 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
       setIsOpen(false);
       setWeekStart('');
       setWeekEnd('');
-      setShiftsToDelete([]);
       
       // Call success callback
       onSuccess?.();
@@ -182,6 +183,12 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('he-IL');
+  };
+
+  const getEmployeeName = (shift: ShiftScheduleData) => {
+    if (!shift.employee_id) return 'לא משויך';
+    // For now, return a placeholder since we don't have employee names in the current query
+    return 'עובד';
   };
 
   return (
