@@ -4,7 +4,12 @@ import { useState } from 'react';
 export const useShiftScheduleNavigation = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const navigateDate = (direction: 'prev' | 'next' | 'today') => {
+  const navigateDate = (direction: 'prev' | 'next' | 'today' | Date) => {
+    if (direction instanceof Date) {
+      setCurrentDate(direction);
+      return;
+    }
+
     switch (direction) {
       case 'prev':
         setCurrentDate(prev => {

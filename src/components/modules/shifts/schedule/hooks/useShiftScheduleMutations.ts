@@ -62,9 +62,12 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
   });
 
   return {
-    createShift: createMutation.mutateAsync,
-    updateShift: async (shiftId: string, updates: Partial<ShiftScheduleData>) => 
-      updateMutation.mutateAsync({ shiftId, updates }),
+    createShift: async (shiftData: CreateShiftData): Promise<void> => {
+      await createMutation.mutateAsync(shiftData);
+    },
+    updateShift: async (shiftId: string, updates: Partial<ShiftScheduleData>): Promise<void> => {
+      await updateMutation.mutateAsync({ shiftId, updates });
+    },
     deleteShift: deleteMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,

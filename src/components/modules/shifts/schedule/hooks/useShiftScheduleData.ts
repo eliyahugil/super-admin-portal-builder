@@ -3,7 +3,26 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeContext } from '@/hooks/useEmployeeContext';
 import { useEmployeeShiftsData } from '@/hooks/useEmployeeShiftsData';
-import type { ShiftScheduleData, Employee, Branch, PendingSubmission } from '../types';
+import type { ShiftScheduleData, Employee, Branch, PendingSubmission, ShiftAssignment } from '../types';
+
+// Helper function to safely parse shift assignments
+const parseShiftAssignments = (assignments: any): ShiftAssignment[] => {
+  if (!assignments) return [];
+  
+  try {
+    const parsed = Array.isArray(assignments) ? assignments : JSON.parse(assignments);
+    return parsed.map((assignment: any) => ({
+      id: assignment.id || '',
+      type: assignment.type || 'חובה',
+      employee_id: assignment.employee_id || null,
+      position: assignment.position || 1,
+      is_required: assignment.is_required || false
+    }));
+  } catch (error) {
+    console.warn('Failed to parse shift assignments:', error);
+    return [];
+  }
+};
 
 export const useShiftScheduleData = (businessId: string | null) => {
   const { isEmployee, employeeId, assignedBranchIds } = useEmployeeContext();
@@ -42,8 +61,31 @@ export const useShiftScheduleData = (businessId: string | null) => {
         throw error;
       }
 
-      console.log('✅ Shift schedule data fetched:', data?.length || 0);
-      return data || [];
+      // Transform data to match our interface
+      const transformedData: ShiftScheduleData[] = (data || []).map(shift => ({
+        id: shift.id,
+        business_id: shift.business_id,
+        shift_date: shift.shift_date,
+        start_time: shift.start_time,
+        end_time: shift.end_time,
+        employee_id: shift.employee_id,
+        branch_id: shift.branch_id,
+        role: shift.role,
+        notes: shift.notes,
+        status: shift.status as 'pending' | 'approved' | 'rejected' | 'completed',
+        shift_template_id: shift.shift_template_id,
+        is_assigned: shift.is_assigned,
+        is_archived: shift.is_archived,
+        required_employees: shift.required_employees,
+        priority: shift.priority as 'critical' | 'normal' | 'backup' | undefined,
+        shift_assignments: parseShiftAssignments(shift.shift_assignments),
+        created_at: shift.created_at,
+        updated_at: shift.updated_at,
+        is_new: shift.is_new
+      }));
+
+      console.log('✅ Shift schedule data fetched:', transformedData.length);
+      return transformedData;
     },
     enabled: !isEmployee && !!businessId,
     staleTime: 2 * 60 * 1000,
@@ -156,8 +198,31 @@ export const useShiftScheduleData = (businessId: string | null) => {
     gcTime: 2 * 60 * 1000,
   });
 
+  // Transform employee shifts data to match our interface
+  const transformedEmployeeShifts: ShiftScheduleData[] = (employeeShifts || []).map(shift => ({
+    id: shift.id,
+    business_id: shift.business_id,
+    shift_date: shift.shift_date,
+    start_time: shift.start_time,
+    end_time: shift.end_time,
+    employee_id: shift.employee_id,
+    branch_id: shift.branch_id,
+    role: shift.role,
+    notes: shift.notes,
+    status: shift.status as 'pending' | 'approved' | 'rejected' | 'completed',
+    shift_template_id: shift.shift_template_id,
+    is_assigned: shift.is_assigned,
+    is_archived: shift.is_archived,
+    required_employees: shift.required_employees,
+    priority: shift.priority as 'critical' | 'normal' | 'backup' | undefined,
+    shift_assignments: parseShiftAssignments(shift.shift_assignments),
+    created_at: shift.created_at,
+    updated_at: shift.updated_at,
+    is_new: shift.is_new
+  }));
+
   // Determine which data to use based on user type
-  const shifts = isEmployee ? (employeeShifts || []) : (adminShifts || []);
+  const shifts = isEmployee ? transformedEmployeeShifts : (adminShifts || []);
   const loading = isEmployee ? employeeShiftsLoading : (adminShiftsLoading || employeesLoading || branchesLoading || pendingLoading);
   const error = isEmployee ? employeeShiftsError : (adminShiftsError || employeesError || branchesError || pendingError);
   const refetchShifts = isEmployee ? refetchEmployeeShifts : refetchAdminShifts;
@@ -175,7 +240,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
   });
 
   return {
-    shifts: shifts as ShiftScheduleData[],
+    shifts,
     employees: employees || [],
     branches: branches || [],
     pendingSubmissions: (pendingSubmissions || []) as PendingSubmission[],

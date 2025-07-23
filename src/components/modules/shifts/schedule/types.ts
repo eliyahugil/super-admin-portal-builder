@@ -28,6 +28,14 @@ export interface Branch {
   is_active?: boolean;
 }
 
+export interface ShiftAssignment {
+  id: string;
+  type: 'חובה' | 'תגבור';
+  employee_id: string | null;
+  position: number;
+  is_required: boolean;
+}
+
 export interface ShiftScheduleData {
   id: string;
   business_id: string;
@@ -44,13 +52,7 @@ export interface ShiftScheduleData {
   is_archived: boolean;
   required_employees?: number;
   priority?: 'critical' | 'normal' | 'backup';
-  shift_assignments?: Array<{
-    id: string;
-    type: 'חובה' | 'תגבור';
-    employee_id: string | null;
-    position: number;
-    is_required: boolean;
-  }>;
+  shift_assignments?: ShiftAssignment[];
   created_at: string;
   updated_at: string;
   branch_name?: string;
