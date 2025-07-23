@@ -6,21 +6,23 @@ export interface EmployeeData {
   employee_id: string;
   phone?: string;
   business_id: string;
+  employee_type?: string;
+  weekly_hours_required?: number;
 }
 
 export interface ShiftSubmission {
   id: string;
   employee_id: string;
-  token: string;
+  token?: string;
   submitted_at: string;
-  shifts: any; // JSON from database
-  week_start_date: string;
-  week_end_date: string;
+  shifts?: any; // JSON from database
+  week_start_date?: string;
+  week_end_date?: string;
   status: string;
   submission_type?: string; // 'regular' או 'special'
   notes?: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   employee?: EmployeeData;
 }
 

@@ -14,6 +14,7 @@ export interface Employee {
   is_archived?: boolean;
   weekly_hours_required?: number;
   birth_date?: string | null;
+  employee_type?: string;
 }
 
 export interface Branch {
@@ -74,19 +75,30 @@ import type { IsraeliHoliday, ShabbatTimes, CalendarEvent } from '@/types/calend
 // Backward compatibility alias
 export type Holiday = IsraeliHoliday;
 
-// Properly typed pending submission interface
+// Enhanced PendingSubmission interface that's compatible with ShiftSubmission
 export interface PendingSubmission {
   id: string;
   employee_id: string;
   submission_type: string;
   status: string;
   submitted_at: string;
+  // Add missing fields to make it compatible with ShiftSubmission
+  token?: string;
+  shifts?: any; // JSON from database
+  week_start_date?: string;
+  week_end_date?: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
   employees?: {
     id: string;
     first_name: string;
     last_name: string;
     employee_id: string;
     business_id: string;
+    phone?: string;
+    employee_type?: string;
+    weekly_hours_required?: number;
   };
 }
 

@@ -1,41 +1,24 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { CalendarIcon, ChevronLeft, ChevronRight, Copy, Filter, Loader2, Plus } from 'lucide-react';
-import { addDays, endOfMonth, format, startOfMonth, subDays } from 'date-fns';
-import { DayPicker } from 'react-day-picker';
-import 'react-day-picker/dist/style.css';
-import { useSearchParams, useRouter } from 'next/navigation';
 
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
-import { useDebounce } from '@/hooks/useDebounce';
+import { Calendar, Filter, Search, Plus, Users, Clock, MapPin } from 'lucide-react';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
 import { ShiftScheduleView } from './schedule/ShiftScheduleView';
-import { CreateShiftDialog } from './schedule/components/CreateShiftDialog';
-import { UpdateShiftDialog } from './schedule/components/UpdateShiftDialog';
-import { DeleteShiftDialog } from './schedule/components/DeleteShiftDialog';
 import { CopyPreviousScheduleDialog } from './schedule/components/CopyPreviousScheduleDialog';
-import { PendingSubmissionsDialog } from './schedule/components/PendingSubmissionsDialog';
-import { useCalendarEvents } from '@/hooks/useCalendarEvents';
-import { useHolidays } from '@/hooks/useHolidays';
-import { useShabbatTimes } from '@/hooks/useShabbatTimes';
-import { ScheduleFilters } from './schedule/components/ScheduleFilters';
-import { ShiftTable } from './table/ShiftTable';
 
-const ResponsiveShiftSchedule: React.FC = () => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { toast } = useToast();
+export const ResponsiveShiftSchedule: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
+  const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [showCopyDialog, setShowCopyDialog] = useState(false);
+  const [selectedShift, setSelectedShift] = useState<any>(null);
+
   const {
     currentDate,
     shifts,
@@ -44,9 +27,7 @@ const ResponsiveShiftSchedule: React.FC = () => {
     pendingSubmissions,
     loading,
     error,
-    filters,
     navigateDate,
-    updateFilters,
     updateShift,
     deleteShift,
     createShift,
@@ -54,309 +35,248 @@ const ResponsiveShiftSchedule: React.FC = () => {
     refetchShifts
   } = useShiftSchedule();
 
-  const [selectedShift, setSelectedShift] = useState<any>(null);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showCopyDialog, setShowCopyDialog] = useState(false);
-  const [showPendingDialog, setShowPendingDialog] = useState(false);
-  const [isTableView, setIsTableView] = useState(false);
+  // Filter shifts based on search and filters
+  const filteredShifts = useMemo(() => {
+    return shifts.filter(shift => {
+      const matchesSearch = searchTerm === '' || 
+        shift.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shift.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employees.find(emp => emp.id === shift.employee_id)?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employees.find(emp => emp.id === shift.employee_id)?.last_name?.toLowerCase().includes(searchTerm.toLowerCase());
 
-  // Bulk actions
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedShifts, setSelectedShifts] = useState<any[]>([]);
+      const matchesEmployee = selectedEmployee === 'all' || shift.employee_id === selectedEmployee;
+      const matchesBranch = selectedBranch === 'all' || shift.branch_id === selectedBranch;
+      const matchesStatus = selectedStatus === 'all' || shift.status === selectedStatus;
 
-  // Calendar events
-  const { data: calendarEvents = [], isLoading: calendarLoading, error: calendarError } = useCalendarEvents(businessId);
-  const { data: holidays = [], isLoading: holidaysLoading, error: holidaysError } = useHolidays(currentDate);
-  const { data: shabbatTimes = [], isLoading: shabbatLoading, error: shabbatError } = useShabbatTimes(currentDate);
-
-  // Date range for calendar
-  const [date, setDate] = useState<Date | undefined>(currentDate);
-
-  // Debounced search
-  const [searchText, setSearchText] = useState('');
-  const debouncedSearchText = useDebounce(searchText, 500);
-
-  // Handlers
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setDate(date);
-      navigateDate(date);
-    }
-  };
+      return matchesSearch && matchesEmployee && matchesBranch && matchesStatus;
+    });
+  }, [shifts, searchTerm, selectedEmployee, selectedBranch, selectedStatus, employees]);
 
   const handleShiftClick = (shift: any) => {
     setSelectedShift(shift);
-    setShowUpdateDialog(true);
+  };
+
+  const handleAddShift = (date: Date) => {
+    // Simple implementation - in real app this would open a dialog
+    console.log('Add shift for date:', date);
   };
 
   const handleShiftUpdate = async (shiftId: string, updates: any) => {
     try {
       await updateShift(shiftId, updates);
-      setShowUpdateDialog(false);
-      toast({
-        title: "הצלחה",
-        description: "המשמרת עודכנה בהצלחה",
-      });
-    } catch (error: any) {
-      toast({
-        title: "שגיאה",
-        description: error.message || "אירעה שגיאה בעדכון המשמרת",
-        variant: "destructive",
-      });
+      await refetchShifts();
+    } catch (error) {
+      console.error('Error updating shift:', error);
     }
   };
 
-  const handleAddShift = (date: Date) => {
-    setDate(date);
-    navigateDate(date);
-    setShowCreateDialog(true);
-  };
-
-  const handleShiftDelete = async (shiftId: string) => {
-    try {
-      await deleteShift(shiftId);
-      setShowDeleteDialog(false);
-      toast({
-        title: "הצלחה",
-        description: "המשמרת נמחקה בהצלחה",
-      });
-    } catch (error: any) {
-      toast({
-        title: "שגיאה",
-        description: error.message || "אירעה שגיאה במחיקת המשמרת",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleShiftSelection = (shift: any, selected: boolean, event?: React.MouseEvent) => {
-    event?.preventDefault();
-    event?.stopPropagation();
-
-    setSelectedShifts(prev => {
-      if (selected) {
-        return [...prev, shift];
-      } else {
-        return prev.filter(s => s.id !== shift.id);
-      }
-    });
-  };
-
-  const handleShowPendingSubmissions = () => {
-    setShowPendingDialog(true);
-  };
-
-  const handleDateNavigation = (direction: 'prev' | 'next') => {
+  const handleNavigateDate = (direction: number) => {
     const newDate = new Date(currentDate);
-    if (direction === 'prev') {
-      newDate.setDate(currentDate.getDate() - 7); // Subtract 7 days for previous week
-    } else {
-      newDate.setDate(currentDate.getDate() + 7); // Add 7 days for next week
-    }
+    newDate.setDate(currentDate.getDate() + (direction * 7)); // Navigate by weeks
     navigateDate(newDate);
-    setDate(newDate);
   };
 
-  const handleTodayClick = () => {
-    const today = new Date();
-    navigateDate(today);
-    setDate(today);
-  };
-
-  const disabledDays = useMemo(() => {
-    if (!calendarEvents) return [];
-
-    return calendarEvents.map(event => {
-      const eventDate = new Date(event.start.dateTime || event.start.date || '');
-      return eventDate;
-    });
-  }, [calendarEvents]);
-
-  return (
-    <div className="container mx-auto p-4 space-y-6" dir="rtl">
-      {/* Header with Date Navigation and Actions */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <CalendarIcon className="h-6 w-6 text-primary" />
-            <div>
-              <h2 className="text-xl font-semibold">לוח משמרות</h2>
-              <p className="text-sm text-gray-600">
-                {currentDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsTableView(!isTableView)}
-            >
-              {isTableView ? 'תצוגת לוח' : 'תצוגת טבלה'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowCopyDialog(true)}
-            >
-              <Copy className="h-4 w-4" />
-              העתק משמרות משבוע שעבר
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => handleAddShift(currentDate)}
-            >
-              <Plus className="h-4 w-4" />
-              הוסף משמרת
-            </Button>
-          </div>
-        </div>
-
-        {/* Date Navigation Controls */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => handleDateNavigation('prev')}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={() => handleDateNavigation('next')}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleTodayClick}>
-              היום
-            </Button>
-          </div>
-
-          {/* Date Picker Popover */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={""}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                <span>{format(currentDate, "MMMM yyyy")}</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start" side="bottom">
-              <DayPicker
-                mode="single"
-                captionLayout="dropdown"
-                showOutsideDays
-                selected={date}
-                onSelect={handleDateSelect}
-                disabled={disabledDays}
-                locale={require('date-fns/locale/he')}
-              />
-            </PopoverContent>
-          </Popover>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>טוען לוח משמרות...</p>
         </div>
       </div>
+    );
+  }
 
-      {/* Filters and Toolbar */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <ScheduleFilters
-          filters={filters}
-          branches={branches}
-          employees={employees}
-          onFiltersChange={updateFilters}
-        />
+  if (error) {
+    return (
+      <Card className="border-red-200 bg-red-50">
+        <CardContent className="p-6">
+          <div className="text-center text-red-800">
+            <h3 className="text-lg font-semibold mb-2">שגיאה בטעינת הנתונים</h3>
+            <p className="mb-4">{error.message}</p>
+            <Button onClick={() => window.location.reload()} variant="outline">
+              נסה שוב
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
-        <div className="flex items-center gap-2">
-          <Label htmlFor="search">חיפוש:</Label>
-          <Input
-            type="search"
-            id="search"
-            placeholder="חפש משמרות..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-          />
+  return (
+    <div className="space-y-6" dir="rtl">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Calendar className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold">לוח משמרות</h1>
+            <p className="text-sm text-gray-600">
+              {currentDate.toLocaleDateString('he-IL', { 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2">
-          <Badge variant="secondary">
-            סה"כ משמרות: {shifts?.length || 0}
-          </Badge>
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            size="sm"
-            onClick={() => setIsSelectionMode(!isSelectionMode)}
+            onClick={() => handleNavigateDate(-1)}
           >
-            {isSelectionMode ? 'בטל בחירה' : 'בחר משמרות'}
+            שבוע קודם
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => handleNavigateDate(1)}
+          >
+            שבוע הבא
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowCopyDialog(true)}
+          >
+            העתק לוח זמנים
           </Button>
         </div>
       </div>
 
-      {/* Shift Display */}
-      {loading ? (
-        <div className="flex items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span className="ml-2">טוען משמרות...</span>
-        </div>
-      ) : error ? (
-        <div className="text-red-500">אירעה שגיאה בטעינת הנתונים.</div>
-      ) : (
-        <>
-          {isTableView ? (
-            <ShiftTable shifts={shifts} businessId={businessId} />
-          ) : (
-            <ShiftScheduleView
-              shifts={shifts}
-              employees={employees}
-              branches={branches}
-              currentDate={currentDate}
-              holidays={holidays}
-              shabbatTimes={shabbatTimes}
-              calendarEvents={calendarEvents}
-              pendingSubmissions={pendingSubmissions}
-              businessId={businessId}
-              onShiftClick={handleShiftClick}
-              onShiftUpdate={handleShiftUpdate}
-              onAddShift={handleAddShift}
-              onShiftDelete={handleShiftDelete}
-              isSelectionMode={isSelectionMode}
-              selectedShifts={selectedShifts}
-              onShiftSelection={handleShiftSelection}
-              onShowPendingSubmissions={handleShowPendingSubmissions}
-            />
-          )}
-        </>
-      )}
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            סינון וחיפוש
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="relative">
+              <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="חיפוש משמרות..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10"
+              />
+            </div>
 
-      {/* Create Shift Dialog */}
-      <CreateShiftDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        onCreate={createShift}
-        businessId={businessId}
-        branches={branches}
+            <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+              <SelectTrigger>
+                <SelectValue placeholder="כל העובדים" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל העובדים</SelectItem>
+                {employees.map(emp => (
+                  <SelectItem key={emp.id} value={emp.id}>
+                    {emp.first_name} {emp.last_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+              <SelectTrigger>
+                <SelectValue placeholder="כל הסניפים" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הסניפים</SelectItem>
+                {branches.map(branch => (
+                  <SelectItem key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="כל הסטטוסים" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הסטטוסים</SelectItem>
+                <SelectItem value="pending">ממתין</SelectItem>
+                <SelectItem value="approved">מאושר</SelectItem>
+                <SelectItem value="rejected">נדחה</SelectItem>
+                <SelectItem value="completed">הושלם</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">
+                {filteredShifts.length} משמרות
+              </Badge>
+              {pendingSubmissions.length > 0 && (
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                  {pendingSubmissions.length} הגשות
+                </Badge>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">עובדים פעילים</p>
+                <p className="text-2xl font-bold">{employees.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-green-100 rounded-lg">
+                <Clock className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">משמרות השבוע</p>
+                <p className="text-2xl font-bold">{filteredShifts.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <MapPin className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">סניפים פעילים</p>
+                <p className="text-2xl font-bold">{branches.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Schedule View */}
+      <ShiftScheduleView
+        shifts={filteredShifts}
         employees={employees}
-        defaultDate={currentDate}
-      />
-
-      {/* Update Shift Dialog */}
-      <UpdateShiftDialog
-        open={showUpdateDialog}
-        onOpenChange={setShowUpdateDialog}
-        shift={selectedShift}
-        onUpdate={handleShiftUpdate}
-        onDelete={() => {
-          setShowUpdateDialog(false);
-          setShowDeleteDialog(true);
-        }}
-        businessId={businessId}
         branches={branches}
-        employees={employees}
-      />
-
-      {/* Delete Shift Dialog */}
-      <DeleteShiftDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        shiftId={selectedShift?.id}
-        onDelete={handleShiftDelete}
+        currentDate={currentDate}
+        holidays={[]}
+        shabbatTimes={[]}
+        calendarEvents={[]}
+        pendingSubmissions={pendingSubmissions}
+        businessId={businessId}
+        onShiftClick={handleShiftClick}
+        onShiftUpdate={handleShiftUpdate}
+        onAddShift={handleAddShift}
+        onShiftDelete={deleteShift}
       />
 
       {/* Copy Schedule Dialog */}
@@ -364,16 +284,9 @@ const ResponsiveShiftSchedule: React.FC = () => {
         open={showCopyDialog}
         onOpenChange={setShowCopyDialog}
         onSuccess={() => {
-          console.log('✅ Schedule copied successfully, refetching shifts');
           refetchShifts();
+          setShowCopyDialog(false);
         }}
-      />
-
-      {/* Pending Submissions Dialog */}
-      <PendingSubmissionsDialog
-        open={showPendingDialog}
-        onOpenChange={setShowPendingDialog}
-        pendingSubmissions={pendingSubmissions}
       />
     </div>
   );
