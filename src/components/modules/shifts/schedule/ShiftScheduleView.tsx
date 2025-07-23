@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus, Filter, Eye, EyeOff, Copy, Send } from 'lucide-react';
-import { ShiftScheduleViewProps } from '../types';
+import { Calendar, Plus, Filter, Eye, EyeOff } from 'lucide-react';
+import { ShiftScheduleViewProps, PendingSubmission } from './types';
 import { ShiftSubmissionReminderButton } from './components/ShiftSubmissionReminderButton';
 
 export const ShiftScheduleView: React.FC<ShiftScheduleViewProps> = ({
@@ -27,8 +27,10 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps> = ({
 }) => {
   const [showNewShifts, setShowNewShifts] = useState(true);
 
-  // Safely handle pendingSubmissions - ensure it's an array
-  const safePendingSubmissions = Array.isArray(pendingSubmissions) ? pendingSubmissions : [];
+  // Safely handle pendingSubmissions - ensure it's an array of proper type
+  const safePendingSubmissions: PendingSubmission[] = Array.isArray(pendingSubmissions) 
+    ? pendingSubmissions.filter((sub): sub is PendingSubmission => sub != null)
+    : [];
 
   // Group shifts by date
   const shiftsByDate = shifts.reduce((acc, shift) => {

@@ -74,6 +74,22 @@ import type { IsraeliHoliday, ShabbatTimes, CalendarEvent } from '@/types/calend
 // Backward compatibility alias
 export type Holiday = IsraeliHoliday;
 
+// Properly typed pending submission interface
+export interface PendingSubmission {
+  id: string;
+  employee_id: string;
+  submission_type: string;
+  status: string;
+  submitted_at: string;
+  employees?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    employee_id: string;
+    business_id: string;
+  };
+}
+
 export interface ShiftScheduleViewProps {
   shifts: ShiftScheduleData[];
   employees: Employee[];
@@ -82,7 +98,7 @@ export interface ShiftScheduleViewProps {
   holidays: IsraeliHoliday[];
   shabbatTimes: ShabbatTimes[];
   calendarEvents: CalendarEvent[];
-  pendingSubmissions?: any[];
+  pendingSubmissions?: PendingSubmission[];
   businessId?: string | null;
   
   onShiftClick: (shift: ShiftScheduleData) => void;

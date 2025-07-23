@@ -24,12 +24,19 @@ interface CopyPreviousScheduleDialogProps {
   onSuccess?: () => void;
 }
 
-// Helper function to safely get string value
+// Enhanced helper function to safely get string value and handle null/undefined
 function safeString(value: any): string {
+  console.log('🔍 safeString called with:', { value, type: typeof value, isNull: value === null, isUndefined: value === undefined });
+  
   if (value === null || value === undefined) {
+    console.log('📝 safeString: returning empty string for null/undefined');
     return '';
   }
-  return String(value);
+  
+  // Convert to string safely
+  const stringValue = String(value);
+  console.log('📝 safeString: converted to string:', stringValue);
+  return stringValue;
 }
 
 export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProps> = ({
@@ -102,7 +109,7 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
         shiftsToProcess: sourceShifts.length
       });
 
-      // Prepare shifts for copying
+      // Prepare shifts for copying with enhanced safety
       const shiftsToInsert = sourceShifts
         .filter(shift => {
           // Only copy shifts that have valid branch_id
@@ -116,7 +123,8 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
           const shiftDate = new Date(shift.shift_date);
           const newShiftDate = addDays(shiftDate, daysDifference);
           
-          return {
+          // Enhanced safe handling for all string fields
+          const newShift = {
             business_id: businessId,
             shift_date: format(newShiftDate, 'yyyy-MM-dd'),
             start_time: safeString(shift.start_time),
@@ -132,6 +140,25 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
             priority: shift.priority || 'normal' as const,
             shift_assignments: shift.shift_assignments || []
           };
+
+          console.log('🔧 Processing shift for copy:', {
+            original: {
+              date: shift.shift_date,
+              start_time: shift.start_time,
+              end_time: shift.end_time,
+              role: shift.role,
+              notes: shift.notes
+            },
+            new: {
+              date: newShift.shift_date,
+              start_time: newShift.start_time,
+              end_time: newShift.end_time,
+              role: newShift.role,
+              notes: newShift.notes
+            }
+          });
+
+          return newShift;
         });
 
       console.log('💾 Shifts prepared for insertion:', {

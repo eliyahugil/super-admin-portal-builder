@@ -1,76 +1,41 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Plus, Users, FileText, Filter, Menu, Download, Settings, Copy, CheckSquare } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import React, { useState, useCallback, useMemo } from 'react';
+import { CalendarIcon, ChevronLeft, ChevronRight, Copy, Filter, Loader2, Plus } from 'lucide-react';
+import { addDays, endOfMonth, format, startOfMonth, subDays } from 'date-fns';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
+import { useSearchParams, useRouter } from 'next/navigation';
+
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { WeeklyScheduleView } from './schedule/WeeklyScheduleView';
-import { MonthlyScheduleView } from './schedule/MonthlyScheduleView';
-import { YearlyScheduleView } from './schedule/YearlyScheduleView';
-import { ShiftScheduleFilters } from './schedule/ShiftScheduleFilters';
-import { UnifiedShiftCreator } from './schedule/UnifiedShiftCreator';
-import { ShiftDetailsDialog } from './schedule/ShiftDetailsDialog';
-import { QuickMultipleShiftsDialog } from './schedule/QuickMultipleShiftsDialog';
-import { ShiftAssignmentDialog } from './schedule/ShiftAssignmentDialog';
-import { PendingSubmissionsDialog } from './schedule/PendingSubmissionsDialog';
-import { ShiftTemplatesApplyDialog } from './schedule/components/ShiftTemplatesApplyDialog';
-import { CopyPreviousScheduleDialog } from './schedule/components/CopyPreviousScheduleDialog';
-import { BulkEditShiftsDialog } from './schedule/BulkEditShiftsDialog';
-import { ScheduleErrorBoundary } from './schedule/ScheduleErrorBoundary';
-import { ManagerOverrideDialog } from './schedule/components/ManagerOverrideDialog';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
-import { useCalendarIntegration } from './schedule/hooks/useCalendarIntegration';
-import { useQueryClient } from '@tanstack/react-query';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { ScheduleHeader } from './schedule/components/ScheduleHeader';
-import { ScheduleActions } from './schedule/components/ScheduleActions';
-import { ScheduleStats } from './schedule/components/ScheduleStats';
-import { HolidaysAndFestivalsTable } from './schedule/components/HolidaysAndFestivalsTable';
-import { GoogleCalendarEventsTable } from './schedule/components/GoogleCalendarEventsTable';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AutoScheduleAssistant } from './AutoScheduleAssistant';
-import { AdvancedSchedulingDashboard } from './advanced-scheduling/AdvancedSchedulingDashboard';
-import { NotificationsPanel } from './notifications/NotificationsPanel';
-import { useNotifications } from './notifications/useNotifications';
-import { ParallelScheduleView } from './schedule/ParallelScheduleView';
-import { GroupedByBranchView } from './schedule/components/GroupedByBranchView';
-import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { ShiftCreationHelpCard } from './help/ShiftCreationHelpCard';
-import type { ScheduleView, ShiftScheduleData, CreateShiftData } from './schedule/types';
+import { ShiftScheduleView } from './schedule/ShiftScheduleView';
+import { CreateShiftDialog } from './schedule/components/CreateShiftDialog';
+import { UpdateShiftDialog } from './schedule/components/UpdateShiftDialog';
+import { DeleteShiftDialog } from './schedule/components/DeleteShiftDialog';
+import { CopyPreviousScheduleDialog } from './schedule/components/CopyPreviousScheduleDialog';
+import { PendingSubmissionsDialog } from './schedule/components/PendingSubmissionsDialog';
+import { useCalendarEvents } from '@/hooks/useCalendarEvents';
+import { useHolidays } from '@/hooks/useHolidays';
+import { useShabbatTimes } from '@/hooks/useShabbatTimes';
+import { ScheduleFilters } from './schedule/components/ScheduleFilters';
+import { ShiftTable } from './table/ShiftTable';
 
-export const ResponsiveShiftSchedule: React.FC = () => {
-  const isMobile = useIsMobile();
-  const { preferences, loading: preferencesLoading } = useUserPreferences();
-  const [view, setView] = useState<ScheduleView>('grouped'); // התחלה עם תצוגה מקובצת
-  const [showFilters, setShowFilters] = useState(false);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showQuickMultiple, setShowQuickMultiple] = useState(false);
-  const [quickMultipleShift, setQuickMultipleShift] = useState<Partial<CreateShiftData> | undefined>();
-  const [selectedShift, setSelectedShift] = useState<ShiftScheduleData | null>(null);
-  const [assignmentShift, setAssignmentShift] = useState<ShiftScheduleData | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('schedule');
-  const [showTemplatesDialog, setShowTemplatesDialog] = useState(false);
-  const [templatesSelectedDate, setTemplatesSelectedDate] = useState<Date | undefined>();
-  const [showCopyPreviousDialog, setShowCopyPreviousDialog] = useState(false);
-  const [copyTargetDate, setCopyTargetDate] = useState<Date | undefined>();
-  
-  // Bulk edit states
-  const [selectedShifts, setSelectedShifts] = useState<ShiftScheduleData[]>([]);
-  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  
-  // Pending submissions dialog state
-  const [showPendingSubmissionsDialog, setShowPendingSubmissionsDialog] = useState(false);
-  
-  // Manager override dialog state
-  const [showManagerOverrideDialog, setShowManagerOverrideDialog] = useState(false);
-  const [managerOverrideData, setManagerOverrideData] = useState<{
-    shiftId: string;
-    updates: Partial<ShiftScheduleData>;
-    conflictDetails: any;
-    employeeName: string;
-  } | null>(null);
-
+const ResponsiveShiftSchedule: React.FC = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
   const {
     currentDate,
     shifts,
@@ -89,776 +54,329 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     refetchShifts
   } = useShiftSchedule();
 
-  const queryClient = useQueryClient();
+  const [selectedShift, setSelectedShift] = useState<any>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showCopyDialog, setShowCopyDialog] = useState(false);
+  const [showPendingDialog, setShowPendingDialog] = useState(false);
+  const [isTableView, setIsTableView] = useState(false);
 
-  // Calendar integration מושבת, אבל משאיר את הפונקציונליות הבסיסית
-  const {
-    combinedEvents = [],
-    googleEvents = [],
-    holidays: calendarHolidays = [],
-    shabbatTimes: calendarShabbatTimes = [],
-    loading: calendarLoading = false,
-    getEventsForDate = () => []
-  } = (() => {
-    // מחזיר ערכי ברירת מחדל ללא אינטגרציה עם Google Maps
-    return {
-      combinedEvents: [],
-      googleEvents: [],
-      holidays: [],
-      shabbatTimes: [],
-      loading: false,
-      getEventsForDate: () => []
-    };
-  })();
+  // Bulk actions
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedShifts, setSelectedShifts] = useState<any[]>([]);
 
-  // Notifications system
-  const {
-    notifications,
-    addNotification,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification,
-    addShiftSubmissionNotification
-  } = useNotifications();
+  // Calendar events
+  const { data: calendarEvents = [], isLoading: calendarLoading, error: calendarError } = useCalendarEvents(businessId);
+  const { data: holidays = [], isLoading: holidaysLoading, error: holidaysError } = useHolidays(currentDate);
+  const { data: shabbatTimes = [], isLoading: shabbatLoading, error: shabbatError } = useShabbatTimes(currentDate);
 
-  // טעינת הגדרות ברירת מחדל של המשתמש
-  useEffect(() => {
-    if (!preferencesLoading && preferences.defaultScheduleView) {
-      setView(preferences.defaultScheduleView);
+  // Date range for calendar
+  const [date, setDate] = useState<Date | undefined>(currentDate);
+
+  // Debounced search
+  const [searchText, setSearchText] = useState('');
+  const debouncedSearchText = useDebounce(searchText, 500);
+
+  // Handlers
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setDate(date);
+      navigateDate(date);
     }
-  }, [preferences, preferencesLoading]);
-
-  // Add event listener for pending submissions dialog
-  useEffect(() => {
-    const handleOpenPendingSubmissions = () => {
-      setShowPendingSubmissionsDialog(true);
-    };
-
-    window.addEventListener('openPendingSubmissions', handleOpenPendingSubmissions);
-    
-    return () => {
-      window.removeEventListener('openPendingSubmissions', handleOpenPendingSubmissions);
-    };
-  }, []);
-
-  const isLoading = loading || calendarLoading;
-
-  console.log('📊 ResponsiveShiftSchedule - Current state:', {
-    businessId,
-    shiftsCount: shifts.length,
-    employeesCount: employees.length,
-    branchesCount: branches.length,
-    combinedEventsCount: combinedEvents.length,
-    googleEventsCount: googleEvents.length,
-    holidaysCount: calendarHolidays.length,
-    shabbatTimesCount: calendarShabbatTimes.length,
-    loading: loading || calendarLoading,
-    error: error?.message || null,
-    activeTab,
-    isSelectionMode,
-    selectedShiftsCount: selectedShifts.length,
-    view,
-    isLoading,
-    currentDate: currentDate.toISOString(),
-    hasCurrentDate: !!currentDate,
-    filtersActive: JSON.stringify(filters)
-  });
-
-  // Handle retry for errors
-  const handleRetry = () => {
-    window.location.reload();
   };
 
-  // Show error state if there's an error
-  if (error) {
-    return (
-      <div className="min-h-screen p-4">
-        <ScheduleErrorBoundary 
-          error={error} 
-          onRetry={handleRetry}
-          businessId={businessId}
-        />
-      </div>
-    );
-  }
-
-  // Show loading state if no business context
-  if (!businessId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">טוען נתוני עסק...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const handleShiftClick = (shift: ShiftScheduleData) => {
+  const handleShiftClick = (shift: any) => {
     setSelectedShift(shift);
+    setShowUpdateDialog(true);
+  };
+
+  const handleShiftUpdate = async (shiftId: string, updates: any) => {
+    try {
+      await updateShift(shiftId, updates);
+      setShowUpdateDialog(false);
+      toast({
+        title: "הצלחה",
+        description: "המשמרת עודכנה בהצלחה",
+      });
+    } catch (error: any) {
+      toast({
+        title: "שגיאה",
+        description: error.message || "אירעה שגיאה בעדכון המשמרת",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAddShift = (date: Date) => {
-    console.log('🔄 Opening create shift dialog for date:', date);
+    setDate(date);
+    navigateDate(date);
     setShowCreateDialog(true);
   };
 
-  const handleApplyTemplates = (date?: Date) => {
-    setTemplatesSelectedDate(date);
-    setShowTemplatesDialog(true);
-  };
-
-  const handleCopyPreviousSchedule = (date?: Date) => {
-    setCopyTargetDate(date || currentDate);
-    setShowCopyPreviousDialog(true);
-  };
-
-  const handleShiftUpdate = async (shiftId: string, updates: Partial<ShiftScheduleData>) => {
-    await updateShift(shiftId, updates);
-    setSelectedShift(null);
-  };
-
   const handleShiftDelete = async (shiftId: string) => {
-    await deleteShift(shiftId);
-    setSelectedShift(null);
-  };
-
-  const handleCreateShift = async (shiftData: CreateShiftData) => {
-    console.log('📝 Creating single shift:', shiftData);
-    await createShift(shiftData);
-  };
-
-  const handleCreateMultipleShifts = async (shifts: CreateShiftData[]) => {
-    console.log('📝 Creating multiple shifts:', shifts.length);
-    console.log('📝 Shifts data:', shifts);
-    
-    let successCount = 0;
-    let errorCount = 0;
-    
-    for (const shift of shifts) {
-      try {
-        console.log('📝 Creating shift:', shift);
-        await createShift(shift);
-        successCount++;
-        console.log('✅ Successfully created shift');
-      } catch (error) {
-        errorCount++;
-        console.error('❌ Failed to create shift:', error, shift);
-      }
-    }
-    
-    console.log(`📊 Creation summary: ${successCount} successful, ${errorCount} failed`);
-    
-    // רענן את הנתונים בכוח
-    console.log('🔄 Forcing data refresh...');
-    queryClient.invalidateQueries({ queryKey: ['schedule-shifts'] });
-    queryClient.invalidateQueries({ queryKey: ['schedule-shifts', businessId] });
-    await queryClient.refetchQueries({ queryKey: ['schedule-shifts', businessId] });
-    console.log('✅ Data refresh completed');
-  };
-
-  const handleBulkCreate = async (shifts: Omit<ShiftScheduleData, 'id' | 'created_at' | 'updated_at' | 'business_id' | 'is_assigned' | 'is_archived'>[]) => {
-    console.log('📝 Creating bulk shifts:', shifts.length);
-    for (const shift of shifts) {
-      await createShift(shift);
-    }
-  };
-
-  const handleDuplicateShift = (shift: ShiftScheduleData) => {
-    setQuickMultipleShift({
-      start_time: shift.start_time,
-      end_time: shift.end_time,
-      employee_id: shift.employee_id,
-      branch_id: shift.branch_id,
-      role: shift.role
-    });
-    setShowQuickMultiple(true);
-  };
-
-  const handleAssignEmployee = async (shiftId: string, employeeId: string) => {
     try {
-      await updateShift(shiftId, { employee_id: employeeId });
-      setAssignmentShift(null);
+      await deleteShift(shiftId);
+      setShowDeleteDialog(false);
+      toast({
+        title: "הצלחה",
+        description: "המשמרת נמחקה בהצלחה",
+      });
     } catch (error: any) {
-      console.error('Error assigning employee:', error);
-      
-      // אם זה קונפליקט שדורש אישור מנהל
-      if (error.code === 'MANAGER_OVERRIDE_REQUIRED') {
-        setManagerOverrideData({
-          shiftId,
-          updates: { employee_id: employeeId },
-          conflictDetails: error.conflictData,
-          employeeName: employees.find(emp => emp.id === employeeId)?.first_name + ' ' + 
-                       employees.find(emp => emp.id === employeeId)?.last_name
-        });
-        setShowManagerOverrideDialog(true);
+      toast({
+        title: "שגיאה",
+        description: error.message || "אירעה שגיאה במחיקת המשמרת",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleShiftSelection = (shift: any, selected: boolean, event?: React.MouseEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    setSelectedShifts(prev => {
+      if (selected) {
+        return [...prev, shift];
       } else {
-        // שגיאה אחרת - הצג הודעה רגילה
-        throw error;
+        return prev.filter(s => s.id !== shift.id);
       }
-    }
-  };
-
-  const handleUnassignEmployee = async (shiftId: string) => {
-    await updateShift(shiftId, { employee_id: '' });
-    setAssignmentShift(null);
-  };
-
-  const handleTabChange = (value: string) => {
-    console.log('🔄 Tab changed to:', value);
-    setActiveTab(value);
-  };
-
-  const handleBranchCreated = () => {
-    // Invalidate and refetch branches data
-    queryClient.invalidateQueries({ queryKey: ['schedule-branches', businessId] });
-  };
-
-  const handleShiftSelection = (shift: ShiftScheduleData, selected: boolean, event?: React.MouseEvent) => {
-    console.log('🔄 handleShiftSelection called:', { 
-      shiftId: shift.id, 
-      selected, 
-      currentSelection: selectedShifts.length,
-      isSelectionModeActive: isSelectionMode 
     });
-    if (selected) {
-      setSelectedShifts(prev => [...prev, shift]);
+  };
+
+  const handleShowPendingSubmissions = () => {
+    setShowPendingDialog(true);
+  };
+
+  const handleDateNavigation = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate);
+    if (direction === 'prev') {
+      newDate.setDate(currentDate.getDate() - 7); // Subtract 7 days for previous week
     } else {
-      setSelectedShifts(prev => prev.filter(s => s.id !== shift.id));
+      newDate.setDate(currentDate.getDate() + 7); // Add 7 days for next week
     }
+    navigateDate(newDate);
+    setDate(newDate);
   };
 
-  const handleSelectAllShifts = () => {
-    setSelectedShifts(shifts);
+  const handleTodayClick = () => {
+    const today = new Date();
+    navigateDate(today);
+    setDate(today);
   };
 
-  const handleClearSelection = () => {
-    setSelectedShifts([]);
-    setIsSelectionMode(false);
-    console.log('🔄 Selection cleared, isSelectionMode:', false, 'selectedShifts:', []);
-  };
+  const disabledDays = useMemo(() => {
+    if (!calendarEvents) return [];
 
-  const handleBulkUpdate = async (updates: Partial<ShiftScheduleData>) => {
-    console.log('🔄 Starting bulk update with data:', updates);
-    console.log('🔄 Updating shifts:', selectedShifts.map(s => s.id));
-    
-    for (const shift of selectedShifts) {
-      console.log(`🔄 Updating shift ${shift.id} with:`, updates);
-      await updateShift(shift.id, updates);
-    }
-    handleClearSelection();
-  };
-
-  const handleBulkDelete = async () => {
-    if (confirm(`האם אתה בטוח שברצונך למחוק ${selectedShifts.length} משמרות?`)) {
-      for (const shift of selectedShifts) {
-        await deleteShift(shift.id);
-      }
-      handleClearSelection();
-    }
-  };
-
-  const handleManagerOverride = async (code: string) => {
-    if (!managerOverrideData) return;
-    
-    try {
-      await updateShift(
-        managerOverrideData.shiftId, 
-        managerOverrideData.updates, 
-        code
-      );
-      setAssignmentShift(null);
-      setManagerOverrideData(null);
-    } catch (error) {
-      console.error('Manager override failed:', error);
-      throw error;
-    }
-  };
+    return calendarEvents.map(event => {
+      const eventDate = new Date(event.start.dateTime || event.start.date || '');
+      return eventDate;
+    });
+  }, [calendarEvents]);
 
   return (
-    <div className={`w-full ${isMobile ? 'p-2' : 'p-6'} space-y-2 lg:space-y-6 h-full flex flex-col bg-white`} dir="rtl">
-      {/* Mobile optimized header */}
-      <div className="flex flex-col space-y-2 bg-white">
-        <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center justify-between'} bg-white`}>
-          <div className={isMobile ? 'text-center' : ''}>
-            <h1 className={`${isMobile ? 'text-lg' : 'text-2xl lg:text-3xl'} font-bold text-gray-900`}>לוח משמרות</h1>
-            {!isMobile && <p className="text-sm lg:text-base text-gray-600 mt-1">ניהול וצפייה בלוח הזמנים עם אינטגרציית Google Calendar, חגים וזמני שבת</p>}
-          </div>
-          
+    <div className="container mx-auto p-4 space-y-6" dir="rtl">
+      {/* Header with Date Navigation and Actions */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* Notifications Panel */}
-            <NotificationsPanel
-              notifications={notifications}
-              onMarkAsRead={markAsRead}
-              onMarkAllAsRead={markAllAsRead}
-              onDeleteNotification={deleteNotification}
-            />
-            
-            <ScheduleActions
-              showFilters={showFilters}
-              setShowFilters={setShowFilters}
-              setShowCreateDialog={setShowCreateDialog}
-              mobileMenuOpen={mobileMenuOpen}
-              setMobileMenuOpen={setMobileMenuOpen}
-              isMobile={isMobile}
-              isSelectionMode={isSelectionMode}
-              setIsSelectionMode={setIsSelectionMode}
-              selectedShifts={selectedShifts}
-              onBulkEdit={() => setShowBulkEditDialog(true)}
-              onBulkDelete={handleBulkDelete}
-              onSelectAll={handleSelectAllShifts}
-              onClearSelection={handleClearSelection}
-            />
-          </div>
-          
-          {/* Templates and Quick Multiple Buttons */}
-          <div className="flex gap-2">
-            <Button
-              onClick={async () => {
-                console.log('🔄 Manual refresh button clicked');
-                try {
-                  await refetchShifts();
-                  console.log('✅ Refetch completed');
-                } catch (error) {
-                  console.error('Error during refresh:', error);
-                }
-              }}
-              variant="outline"
-              size={isMobile ? "sm" : "default"}
-            >
-              🔄 רענן
-            </Button>
-            <Button
-              onClick={() => handleApplyTemplates()}
-              variant="outline"
-              size={isMobile ? "sm" : "default"}
-            >
-              <FileText className="h-4 w-4 ml-1" />
-              תבניות משמרות
-            </Button>
-            
-            <Button
-              onClick={() => handleCopyPreviousSchedule()}
-              variant="outline"
-              size={isMobile ? "sm" : "default"}
-            >
-              <Copy className="h-4 w-4 ml-1" />
-              העתק מסידור קודם
-            </Button>
-            
-            <Button
-              onClick={() => window.open('/modules/shifts/management#templates', '_blank')}
-              variant="outline"
-              size={isMobile ? "sm" : "default"}
-              title="נהל תבניות משמרות"
-            >
-              <Settings className="h-4 w-4 ml-1" />
-              נהל תבניות
-            </Button>
-            
-            {/* Auto Schedule Assistant */}
-            <AutoScheduleAssistant
-              weekStartDate={currentDate.toISOString().split('T')[0]}
-              emptyShifts={shifts.filter(shift => !shift.employee_id)}
-              onShiftUpdate={updateShift}
-            />
-            <Button
-              onClick={() => setShowQuickMultiple(true)}
-              size={isMobile ? "sm" : "default"}
-            >
-              <Copy className="h-4 w-4 ml-1" />
-              יצירה מרובה
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Selection Mode Banner */}
-      {isSelectionMode && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CheckSquare className="h-5 w-5 text-blue-600" />
-              <span className="font-medium text-blue-800">מצב בחירה פעיל</span>
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                {selectedShifts.length} משמרות נבחרו
-              </Badge>
+            <CalendarIcon className="h-6 w-6 text-primary" />
+            <div>
+              <h2 className="text-xl font-semibold">לוח משמרות</h2>
+              <p className="text-sm text-gray-600">
+                {currentDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })}
+              </p>
             </div>
-            <Button 
-              onClick={handleClearSelection}
-              variant="ghost"
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
               size="sm"
-              className="text-blue-700 hover:text-blue-800"
+              onClick={() => setIsTableView(!isTableView)}
             >
-              יציאה ממצב בחירה
+              {isTableView ? 'תצוגת לוח' : 'תצוגת טבלה'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCopyDialog(true)}
+            >
+              <Copy className="h-4 w-4" />
+              העתק משמרות משבוע שעבר
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleAddShift(currentDate)}
+            >
+              <Plus className="h-4 w-4" />
+              הוסף משמרת
             </Button>
           </div>
-          {selectedShifts.length === 0 && (
-            <p className="text-sm text-blue-600 mt-2">
-              לחץ על המשמרות כדי לבחור אותן לעריכה גורפת
-            </p>
-          )}
         </div>
-      )}
 
-      {/* Help Card for Shift Creation */}
-      <ShiftCreationHelpCard />
-
-      {/* Compact Stats Cards for mobile */}
-      <ScheduleStats shifts={shifts} isMobile={isMobile} pendingSubmissions={pendingSubmissions} />
-
-      {/* Quick Branch Filter - Always visible for easy access */}
-      <div className="bg-white border rounded-lg p-3 shadow-sm">
-        <div className="flex items-center gap-4 flex-wrap">
-          <span className="text-sm font-medium text-gray-700">תצוגת סניפים:</span>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => updateFilters({ ...filters, branch: 'all' })}
-              className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                filters.branch === 'all' 
-                  ? 'bg-blue-600 text-white shadow-sm' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              כל הסניפים יחד ({shifts.length})
-            </button>
-            <button
-              onClick={() => setView(view === 'grouped' ? 'week' : 'grouped')}
-              className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                view === 'grouped' 
-                  ? 'bg-green-600 text-white shadow-sm' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              תצוגה מקובצת לפי סניפים
-            </button>
-            {branches.map(branch => {
-              const branchShiftsCount = shifts.filter(s => s.branch_id === branch.id).length;
-              return (
-                <button
-                  key={branch.id}
-                  onClick={() => updateFilters({ ...filters, branch: branch.id })}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    filters.branch === branch.id 
-                      ? 'bg-blue-600 text-white shadow-sm' 
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {branch.name} ({branchShiftsCount})
-                </button>
-              );
-            })}
+        {/* Date Navigation Controls */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => handleDateNavigation('prev')}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => handleDateNavigation('next')}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleTodayClick}>
+              היום
+            </Button>
           </div>
+
+          {/* Date Picker Popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={""}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                <span>{format(currentDate, "MMMM yyyy")}</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start" side="bottom">
+              <DayPicker
+                mode="single"
+                captionLayout="dropdown"
+                showOutsideDays
+                selected={date}
+                onSelect={handleDateSelect}
+                disabled={disabledDays}
+                locale={require('date-fns/locale/he')}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
-      {/* Compact Filters for mobile */}
-      {showFilters && (
-        <div className={isMobile ? 'pb-2' : ''}>
-          <ShiftScheduleFilters
-            filters={filters}
-            onFiltersChange={updateFilters}
-            employees={employees}
-            branches={branches}
+      {/* Filters and Toolbar */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <ScheduleFilters
+          filters={filters}
+          branches={branches}
+          employees={employees}
+          onFiltersChange={updateFilters}
+        />
+
+        <div className="flex items-center gap-2">
+          <Label htmlFor="search">חיפוש:</Label>
+          <Input
+            type="search"
+            id="search"
+            placeholder="חפש משמרות..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
         </div>
-      )}
 
-      {/* Main Content with Mobile-Optimized Tabs - Fixed at top */}
-      <div className="flex-1 flex flex-col min-h-0 bg-white">
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col bg-white">
-          <div className="sticky top-0 z-10 bg-white border-b">
-            <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3 h-10 text-sm' : 'grid-cols-3 h-12'} bg-gray-50 rounded-none border-0`}>
-              <TabsTrigger 
-                value="schedule" 
-                className={`${isMobile ? 'text-sm px-2' : 'text-base px-4'} data-[state=active]:bg-white data-[state=active]:shadow-sm`}
-              >
-                📅 לוח משמרות
-              </TabsTrigger>
-              <TabsTrigger 
-                value="parallel" 
-                className={`${isMobile ? 'text-sm px-2' : 'text-base px-4'} data-[state=active]:bg-white data-[state=active]:shadow-sm`}
-              >
-                🔗 תצוגה מקבילה
-              </TabsTrigger>
-              <TabsTrigger 
-                value="advanced" 
-                className={`${isMobile ? 'text-sm px-2' : 'text-base px-4'} data-[state=active]:bg-white data-[state=active]:shadow-sm`}
-              >
-                ⚙️ סידור מתקדם
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          
-          <TabsContent value="schedule" className="flex-1 flex flex-col min-h-0 bg-white">
-            <Card className="flex-1 flex flex-col min-h-0 bg-white border shadow-sm">
-              <CardHeader className={`${isMobile ? 'pb-1 px-2 pt-2' : 'pb-3'} bg-white`}>
-                <ScheduleHeader
-                  currentDate={currentDate}
-                  view={view}
-                  setView={setView}
-                  navigateDate={navigateDate}
-                  isMobile={isMobile}
-                />
-              </CardHeader>
-              
-              <CardContent className={`flex-1 flex flex-col min-h-0 ${isMobile ? 'p-0' : 'p-0'}`}>
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="mt-2 text-gray-600 text-sm">טוען נתוני משמרות ולוח שנה...</p>
-                    </div>
-                  </div>
-                  ) : view === 'week' ? (
-                     <WeeklyScheduleView
-                       shifts={shifts}
-                       employees={employees}
-                       branches={branches}
-                       currentDate={currentDate}
-                       holidays={calendarHolidays}
-                       shabbatTimes={calendarShabbatTimes}
-                       calendarEvents={combinedEvents}
-                       pendingSubmissions={pendingSubmissions}
-                       businessId={businessId}
-                       onShiftClick={handleShiftClick}
-                       onShiftUpdate={updateShift}
-                       onAddShift={handleAddShift}
-                       onShiftDelete={deleteShift}
-                       isSelectionMode={isSelectionMode}
-                       selectedShifts={selectedShifts}
-                       onShiftSelection={handleShiftSelection}
-                       onShowPendingSubmissions={() => setShowPendingSubmissionsDialog(true)}
-                    />
-                    ) : view === 'grouped' ? (
-                      <GroupedByBranchView
-                        shifts={shifts}
-                        employees={employees}
-                        branches={branches}
-                        currentDate={currentDate}
-                        onShiftClick={handleShiftClick}
-                        onShiftUpdate={updateShift}
-                        onAddShift={handleAddShift}
-                        onShiftDelete={deleteShift}
-                        isSelectionMode={isSelectionMode}
-                        selectedShifts={selectedShifts}
-                        onShiftSelection={handleShiftSelection}
-                        pendingSubmissions={pendingSubmissions}
-                        onOpenSubmissions={() => setShowPendingSubmissionsDialog(true)}
-                      />
-                    ) : view === 'month' ? (
-                   <MonthlyScheduleView
-                     shifts={shifts}
-                     employees={employees}
-                     branches={branches}
-                      currentDate={currentDate}
-                      holidays={calendarHolidays}
-                      shabbatTimes={calendarShabbatTimes}
-                     calendarEvents={combinedEvents}
-                     onShiftClick={handleShiftClick}
-                     onShiftUpdate={updateShift}
-                     onAddShift={handleAddShift}
-                     onShiftDelete={deleteShift}
-                     isSelectionMode={isSelectionMode}
-                     selectedShifts={selectedShifts}
-                     onShiftSelection={handleShiftSelection}
-                   />
-                 ) : (
-                   <YearlyScheduleView
-                     shifts={shifts}
-                     employees={employees}
-                     branches={branches}
-                      currentDate={currentDate}
-                      holidays={calendarHolidays}
-                      shabbatTimes={calendarShabbatTimes}
-                     calendarEvents={combinedEvents}
-                     onShiftClick={handleShiftClick}
-                     onShiftUpdate={updateShift}
-                     onAddShift={handleAddShift}
-                     onShiftDelete={deleteShift}
-                     isSelectionMode={isSelectionMode}
-                     selectedShifts={selectedShifts}
-                     onShiftSelection={handleShiftSelection}
-                   />
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="parallel" className="flex-1 flex flex-col min-h-0">
-            <ParallelScheduleView
+        <div className="flex items-center justify-end gap-2">
+          <Badge variant="secondary">
+            סה"כ משמרות: {shifts?.length || 0}
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsSelectionMode(!isSelectionMode)}
+          >
+            {isSelectionMode ? 'בטל בחירה' : 'בחר משמרות'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Shift Display */}
+      {loading ? (
+        <div className="flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="ml-2">טוען משמרות...</span>
+        </div>
+      ) : error ? (
+        <div className="text-red-500">אירעה שגיאה בטעינת הנתונים.</div>
+      ) : (
+        <>
+          {isTableView ? (
+            <ShiftTable shifts={shifts} businessId={businessId} />
+          ) : (
+            <ShiftScheduleView
               shifts={shifts}
               employees={employees}
               branches={branches}
               currentDate={currentDate}
-              holidays={calendarHolidays}
-              shabbatTimes={calendarShabbatTimes}
-              calendarEvents={combinedEvents}
+              holidays={holidays}
+              shabbatTimes={shabbatTimes}
+              calendarEvents={calendarEvents}
               pendingSubmissions={pendingSubmissions}
               businessId={businessId}
               onShiftClick={handleShiftClick}
-              onShiftUpdate={updateShift}
+              onShiftUpdate={handleShiftUpdate}
               onAddShift={handleAddShift}
-              onShiftDelete={deleteShift}
+              onShiftDelete={handleShiftDelete}
               isSelectionMode={isSelectionMode}
               selectedShifts={selectedShifts}
               onShiftSelection={handleShiftSelection}
-              onShowPendingSubmissions={() => setShowPendingSubmissionsDialog(true)}
+              onShowPendingSubmissions={handleShowPendingSubmissions}
             />
-          </TabsContent>
-          
-          <TabsContent value="advanced" className="flex-1 w-full">
-            <AdvancedSchedulingDashboard />
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* Debug Information - smaller on mobile */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className={`fixed bottom-4 left-4 bg-gray-800 text-white p-2 rounded ${isMobile ? 'text-[10px] max-w-[120px]' : 'text-xs max-w-xs'} opacity-75`}>
-          <div>טאב פעיל: {activeTab}</div>
-          <div>אירועים: {combinedEvents.length}</div>
-          <div>Google: {googleEvents.length}</div>
-          <div>חגים: {calendarHolidays.length}</div>
-          <div>שבת: {calendarShabbatTimes.length}</div>
-          <div>טוען: {isLoading ? 'כן' : 'לא'}</div>
-        </div>
+          )}
+        </>
       )}
 
-      {/* Dialogs */}
-      {showCreateDialog && (
-        <UnifiedShiftCreator
-          isOpen={showCreateDialog}
-          onClose={() => setShowCreateDialog(false)}
-          onSubmit={handleCreateShift}
-          onBulkSubmit={handleBulkCreate}
-          employees={employees}
-          branches={branches}
-          onBranchCreated={handleBranchCreated}
-        />
-      )}
-      
-      {showQuickMultiple && (
-        <QuickMultipleShiftsDialog
-          isOpen={showQuickMultiple}
-          onClose={() => {
-            setShowQuickMultiple(false);
-            setQuickMultipleShift(undefined);
-          }}
-          onSubmit={handleCreateMultipleShifts}
-          employees={employees}
-          branches={branches}
-          prefilledShift={quickMultipleShift}
-          onBranchCreated={handleBranchCreated}
-        />
-      )}
-      
-      {selectedShift && (
-        <ShiftDetailsDialog
-          shift={selectedShift}
-          employees={employees}
-          branches={branches}
-          shifts={shifts}
-          pendingSubmissions={pendingSubmissions as any[]}
-          onClose={() => setSelectedShift(null)}
-          onUpdate={handleShiftUpdate}
-          onDelete={handleShiftDelete}
-          onAssignEmployee={(shift) => setAssignmentShift(shift)}
-          onSubmissionUpdate={async () => { await refetchShifts(); }}
-          onRefresh={async () => { await refetchShifts(); }}
-        />
-      )}
+      {/* Create Shift Dialog */}
+      <CreateShiftDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onCreate={createShift}
+        businessId={businessId}
+        branches={branches}
+        employees={employees}
+        defaultDate={currentDate}
+      />
 
-      {assignmentShift && (
-        <ShiftAssignmentDialog
-          isOpen={!!assignmentShift}
-          onClose={() => setAssignmentShift(null)}
-          shift={assignmentShift}
-          employees={employees}
-          allShifts={shifts}
-          onAssign={handleAssignEmployee}
-          onUnassign={handleUnassignEmployee}
-        />
-      )}
+      {/* Update Shift Dialog */}
+      <UpdateShiftDialog
+        open={showUpdateDialog}
+        onOpenChange={setShowUpdateDialog}
+        shift={selectedShift}
+        onUpdate={handleShiftUpdate}
+        onDelete={() => {
+          setShowUpdateDialog(false);
+          setShowDeleteDialog(true);
+        }}
+        businessId={businessId}
+        branches={branches}
+        employees={employees}
+      />
 
-      {showTemplatesDialog && (
-        <ShiftTemplatesApplyDialog
-          isOpen={showTemplatesDialog}
-          onClose={() => setShowTemplatesDialog(false)}
-          selectedDate={templatesSelectedDate}
-          onShiftsCreated={() => {
-            // רענון הנתונים לאחר יצירת משמרות
-            window.location.reload();
-          }}
-        />
-      )}
+      {/* Delete Shift Dialog */}
+      <DeleteShiftDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        shiftId={selectedShift?.id}
+        onDelete={handleShiftDelete}
+      />
 
-      {showCopyPreviousDialog && (
-        <CopyPreviousScheduleDialog
-          isOpen={showCopyPreviousDialog}
-          onClose={() => setShowCopyPreviousDialog(false)}
-          targetDate={copyTargetDate}
-          onShiftsCreated={() => {
-            // רענון הנתונים לאחר יצירת משמרות
-            window.location.reload();
-          }}
-        />
-      )}
-
-      {showBulkEditDialog && selectedShifts.length > 0 && (
-        <BulkEditShiftsDialog
-          isOpen={showBulkEditDialog}
-          onClose={() => setShowBulkEditDialog(false)}
-          selectedShifts={selectedShifts}
-          employees={employees}
-          branches={branches}
-          onUpdate={handleBulkUpdate}
-        />
-      )}
-
-      {/* Manager Override Dialog */}
-      {showManagerOverrideDialog && managerOverrideData && (
-        <ManagerOverrideDialog
-          isOpen={showManagerOverrideDialog}
-          onClose={() => {
-            setShowManagerOverrideDialog(false);
-            setManagerOverrideData(null);
-          }}
-          onConfirm={handleManagerOverride}
-          conflictDetails={{
-            employeeName: managerOverrideData.employeeName,
-            currentShiftTime: managerOverrideData.conflictDetails?.currentShift?.start_time + '-' + 
-                             managerOverrideData.conflictDetails?.currentShift?.end_time,
-            conflictingShifts: managerOverrideData.conflictDetails?.conflictingShifts,
-            date: managerOverrideData.conflictDetails?.currentShift?.shift_date,
-            branchName: branches.find(b => b.id === managerOverrideData.conflictDetails?.currentShift?.branch_id)?.name
-          }}
-        />
-      )}
+      {/* Copy Schedule Dialog */}
+      <CopyPreviousScheduleDialog
+        open={showCopyDialog}
+        onOpenChange={setShowCopyDialog}
+        onSuccess={() => {
+          console.log('✅ Schedule copied successfully, refetching shifts');
+          refetchShifts();
+        }}
+      />
 
       {/* Pending Submissions Dialog */}
-      {showPendingSubmissionsDialog && (
-        <PendingSubmissionsDialog
-          isOpen={showPendingSubmissionsDialog}
-          onClose={() => setShowPendingSubmissionsDialog(false)}
-          submissions={pendingSubmissions}
-          parseShifts={(shiftsData: any) => {
-            // Parse the shifts data
-            if (!shiftsData || !shiftsData.shift_requests) return [];
-            return shiftsData.shift_requests.map((request: any) => ({
-              id: request.id || crypto.randomUUID(),
-              time: `${request.start_time}-${request.end_time}`,
-              role: request.role,
-              branch_id: request.branch_id,
-              shift_date: request.shift_date,
-              notes: request.notes
-            }));
-          }}
-          sendWhatsApp={undefined}
-        />
-      )}
-
-      {/* Pending submissions dialog removed - submissions system no longer exists */}
+      <PendingSubmissionsDialog
+        open={showPendingDialog}
+        onOpenChange={setShowPendingDialog}
+        pendingSubmissions={pendingSubmissions}
+      />
     </div>
   );
 };
+
+export default ResponsiveShiftSchedule;
