@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar, Clock, Users, Building, Copy, CalendarDays } from 'lucide-react';
-import { useRealData } from '@/hooks/useRealData';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useQuery } from '@tanstack/react-query';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format, addDays, startOfWeek, endOfWeek, subWeeks, addWeeks } from 'date-fns';
@@ -39,9 +39,8 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
   targetDate,
   onShiftsCreated
 }) => {
-  const { businessId, business } = useBusiness();
+  const { businessId } = useCurrentBusiness();
   const { toast } = useToast();
-  const actualBusinessId = businessId || business?.id;
   const [selectedShifts, setSelectedShifts] = useState<Set<string>>(new Set());
   const [selectedSourceWeek, setSelectedSourceWeek] = useState<Date | null>(null);
   const [copyAsUnassigned, setCopyAsUnassigned] = useState(true);
@@ -69,58 +68,76 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
   const weekOptions = getWeekOptions();
 
   // שליפת משמרות מהשבוע הנבחר עם דיבוג
-  const { data: previousShifts = [] } = useRealData<ScheduledShift>({
-    queryKey: ['previous-shifts', actualBusinessId, selectedSourceWeek?.toISOString()],
-    tableName: 'scheduled_shifts',
-    select: `
-      id,
-      shift_date,
-      start_time,
-      end_time,
-      branch_id,
-      role,
-      required_employees,
-      employee_id
-    `,
-    filters: selectedSourceWeek ? {
-      business_id: { eq: actualBusinessId },
-      shift_date: { 
-        gte: format(startOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd'),
-        lte: format(endOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd')
+  const { data: previousShifts = [], isLoading: shiftsLoading } = useQuery({
+    queryKey: ['previous-shifts', businessId, selectedSourceWeek?.toISOString()],
+    queryFn: async (): Promise<ScheduledShift[]> => {
+      if (!businessId || !selectedSourceWeek) return [];
+      
+      const weekStart = format(startOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd');
+      const weekEnd = format(endOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd');
+      
+      console.log('🔍 Fetching shifts for week:', { weekStart, weekEnd, businessId });
+      
+      const { data, error } = await supabase
+        .from('scheduled_shifts')
+        .select(`
+          id,
+          shift_date,
+          start_time,
+          end_time,
+          branch_id,
+          role,
+          required_employees,
+          employee_id
+        `)
+        .eq('business_id', businessId)
+        .gte('shift_date', weekStart)
+        .lte('shift_date', weekEnd);
+        
+      if (error) {
+        console.error('❌ Error fetching shifts:', error);
+        throw error;
       }
-    } : { business_id: { eq: actualBusinessId } },
-    enabled: !!actualBusinessId && !!selectedSourceWeek && isOpen
+      
+      console.log('✅ Fetched shifts:', data?.length || 0, data?.slice(0, 3));
+      return data || [];
+    },
+    enabled: !!businessId && !!selectedSourceWeek && isOpen
   });
 
   // דיבוג
-  console.log('🔍 Copy Previous Dialog Debug:', {
-    businessId,
-    actualBusinessId,
-    selectedSourceWeek,
-    isOpen,
-    weekRange: selectedSourceWeek ? {
-      start: format(startOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd'),
-      end: format(endOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd')
-    } : null,
-    shiftsCount: previousShifts.length,
-    shifts: previousShifts.slice(0, 3)
-  });
 
   // שליפת עובדים וסניפים לשם הצגה
-  const { data: employees = [] } = useRealData({
-    queryKey: ['employees', actualBusinessId],
-    tableName: 'employees',
-    select: 'id, first_name, last_name',
-    filters: { business_id: { eq: actualBusinessId } },
-    enabled: !!actualBusinessId && isOpen
+  const { data: employees = [] } = useQuery({
+    queryKey: ['employees', businessId],
+    queryFn: async () => {
+      if (!businessId) return [];
+      
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name')
+        .eq('business_id', businessId);
+        
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!businessId && isOpen
   });
 
-  const { data: branches = [] } = useRealData({
-    queryKey: ['branches', actualBusinessId],
-    tableName: 'branches',
-    select: 'id, name',
-    filters: { business_id: { eq: actualBusinessId } },
-    enabled: !!actualBusinessId && isOpen
+  const { data: branches = [] } = useQuery({
+    queryKey: ['branches', businessId],
+    queryFn: async () => {
+      if (!businessId) return [];
+      
+      const { data, error } = await supabase
+        .from('branches')
+        .select('id, name')
+        .eq('business_id', businessId);
+        
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!businessId && isOpen
   });
 
   // יצירת maps לגישה מהירה
@@ -187,7 +204,7 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
           branch_id: shift.branch_id,
           role: shift.role,
           required_employees: shift.required_employees || 1,
-          business_id: actualBusinessId,
+          business_id: businessId,
           employee_id: copyAsUnassigned ? null : shift.employee_id,
           notes: `הועתק מסידור ${format(new Date(shift.shift_date), 'dd/MM/yyyy', { locale: he })}`,
           status: copyAsUnassigned ? 'pending' : 'approved'
