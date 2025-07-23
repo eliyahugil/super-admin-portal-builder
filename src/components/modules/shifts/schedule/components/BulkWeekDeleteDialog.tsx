@@ -33,48 +33,101 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSu
     if (open) {
       const upcomingWeek = getUpcomingWeekDates();
       const year = upcomingWeek.startDate.getFullYear();
-      const weekNumber = getWeekNumber(upcomingWeek.startDate);
+      const weekNumber = getISOWeekNumber(upcomingWeek.startDate);
       setSelectedWeek(`${year}-W${weekNumber.toString().padStart(2, '0')}`);
     }
   }, [open]);
 
-  const getWeekNumber = (date: Date) => {
-    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-    const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
-    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  // חישוב מספר השבוע בשנה לפי תקן ISO (ראשון הוא היום הראשון בשבוע)
+  const getISOWeekNumber = (date: Date) => {
+    const target = new Date(date.valueOf());
+    const dayNr = (date.getDay() + 6) % 7; // המרה כך שראשון = 0
+    target.setDate(target.getDate() - dayNr + 3);
+    const jan4 = new Date(target.getFullYear(), 0, 4);
+    const dayDiff = (target.getTime() - jan4.getTime()) / 86400000;
+    return Math.ceil((dayDiff + ((jan4.getDay() + 6) % 7) + 1) / 7);
   };
 
-  const getWeekDates = (weekString: string) => {
+  // חישוב תאריכי השבוע ממחרוזת week input (ראשון עד ראשון)
+  const getWeekDatesFromWeekString = (weekString: string) => {
     const [year, week] = weekString.split('-W');
-    const simple = new Date(parseInt(year), 0, 1 + (parseInt(week) - 1) * 7);
-    const dow = simple.getDay();
-    const ISOweekStart = simple;
-    if (dow <= 4)
-      ISOweekStart.setDate(simple.getDate() - simple.getDay());
-    else
-      ISOweekStart.setDate(simple.getDate() + 7 - simple.getDay());
+    const yearNum = parseInt(year);
+    const weekNum = parseInt(week);
     
-    const weekStart = new Date(ISOweekStart);
-    const weekEnd = new Date(ISOweekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
+    // חישוב התאריך של יום ראשון של השבוע הראשון בשנה
+    const jan4 = new Date(yearNum, 0, 4);
+    const jan4Day = (jan4.getDay() + 6) % 7; // המרה כך שראשון = 0
+    const firstMondayOfYear = new Date(jan4.getTime() - jan4Day * 86400000);
+    
+    // חישוב יום ראשון של השבוע המבוקש
+    const targetWeekStart = new Date(firstMondayOfYear.getTime() + (weekNum - 1) * 7 * 86400000);
+    
+    // וידוא שזה יום ראשון
+    const dayOfWeek = targetWeekStart.getDay();
+    if (dayOfWeek !== 1) { // אם זה לא יום שני, נתקן ליום ראשון
+      const mondayDate = new Date(targetWeekStart);
+      mondayDate.setDate(targetWeekStart.getDate() - dayOfWeek + 1);
+      
+      // יום ראשון הוא יום לפני יום שני
+      const sundayDate = new Date(mondayDate);
+      sundayDate.setDate(mondayDate.getDate() - 1);
+      
+      const weekEnd = new Date(sundayDate);
+      weekEnd.setDate(sundayDate.getDate() + 6); // שבת
+      
+      return {
+        start: sundayDate.toISOString().split('T')[0],
+        end: weekEnd.toISOString().split('T')[0]
+      };
+    }
+    
+    // אם זה יום שני, יום ראשון הוא יום קודם
+    const sundayStart = new Date(targetWeekStart);
+    sundayStart.setDate(targetWeekStart.getDate() - 1);
+    
+    const saturdayEnd = new Date(sundayStart);
+    saturdayEnd.setDate(sundayStart.getDate() + 6);
     
     return {
-      start: weekStart.toISOString().split('T')[0],
-      end: weekEnd.toISOString().split('T')[0]
+      start: sundayStart.toISOString().split('T')[0],
+      end: saturdayEnd.toISOString().split('T')[0]
     };
   };
 
   const handlePreviewShifts = async () => {
-    if (!businessId) return;
+    if (!businessId) {
+      toast({
+        title: 'שגיאה',
+        description: 'לא נמצא מזהה העסק',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     let dateRange;
     if (deleteMode === 'week') {
-      if (!selectedWeek) return;
-      dateRange = getWeekDates(selectedWeek);
+      if (!selectedWeek) {
+        toast({
+          title: 'שגיאה',
+          description: 'יש לבחור שבוע',
+          variant: 'destructive',
+        });
+        return;
+      }
+      dateRange = getWeekDatesFromWeekString(selectedWeek);
     } else {
-      if (!startDate || !endDate) return;
+      if (!startDate || !endDate) {
+        toast({
+          title: 'שגיאה',
+          description: 'יש לבחור תאריך התחלה וסיום',
+          variant: 'destructive',
+        });
+        return;
+      }
       dateRange = { start: startDate, end: endDate };
     }
+
+    console.log('🔍 Fetching shifts for date range:', dateRange);
 
     try {
       const { data, error } = await supabase
@@ -93,8 +146,12 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSu
         .order('shift_date')
         .order('start_time');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching shifts:', error);
+        throw error;
+      }
 
+      console.log(`✅ Found ${data?.length || 0} shifts in date range ${dateRange.start} to ${dateRange.end}`);
       setShiftsToDelete(data || []);
       setShowPreview(true);
     } catch (error) {
@@ -157,7 +214,7 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSu
 
   const formatWeekRange = (weekString: string) => {
     if (!weekString) return '';
-    const dates = getWeekDates(weekString);
+    const dates = getWeekDatesFromWeekString(weekString);
     const start = new Date(dates.start).toLocaleDateString('he-IL');
     const end = new Date(dates.end).toLocaleDateString('he-IL');
     return `${start} - ${end}`;
@@ -207,7 +264,7 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSu
               <div className="space-y-2">
                 <Label htmlFor="week-select" className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  בחר שבוע למחיקה
+                  בחר שבוע למחיקה (ראשון עד ראשון)
                 </Label>
                 <Input
                   id="week-select"
