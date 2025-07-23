@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,11 +9,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
 import { Trash2, Calendar, AlertTriangle } from 'lucide-react';
 import { WeekRangePicker } from './WeekRangePicker';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { ShiftScheduleData } from '../types';
 
 interface BulkWeekDeleteDialogProps {
@@ -48,6 +60,130 @@ const parseShiftAssignments = (assignments: any): ShiftScheduleData['shift_assig
   }));
 };
 
+const BulkWeekDeleteContent: React.FC<{
+  weekStart: string;
+  weekEnd: string;
+  setWeekStart: (date: string) => void;
+  setWeekEnd: (date: string) => void;
+  weekShifts: ShiftScheduleData[];
+  loadingShifts: boolean;
+  handleDelete: () => void;
+  deleteShiftsMutation: any;
+  onClose: () => void;
+}> = ({
+  weekStart,
+  weekEnd,
+  setWeekStart,
+  setWeekEnd,
+  weekShifts,
+  loadingShifts,
+  handleDelete,
+  deleteShiftsMutation,
+  onClose
+}) => {
+  const handleWeekChange = (startDate: string, endDate: string) => {
+    console.log('📅 Week changed:', { startDate, endDate });
+    setWeekStart(startDate);
+    setWeekEnd(endDate);
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('he-IL');
+  };
+
+  return (
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0" dir="rtl">
+      {/* Week Range Picker */}
+      <div>
+        <h4 className="font-medium mb-3 text-base sm:text-sm">בחירת שבוע:</h4>
+        <WeekRangePicker 
+          onWeekChange={handleWeekChange}
+          initialDate={new Date()}
+        />
+      </div>
+
+      {/* Shifts Preview */}
+      {weekStart && weekEnd && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-base sm:text-sm">משמרות שיימחקו:</h4>
+            <div className="flex items-center gap-2">
+              {loadingShifts ? (
+                <span className="text-sm text-gray-500">טוען...</span>
+              ) : (
+                <span className="font-medium text-red-600 text-sm">
+                  {weekShifts.length} משמרות
+                </span>
+              )}
+            </div>
+          </div>
+
+          {loadingShifts ? (
+            <div className="p-4 text-center text-gray-500 text-sm">
+              טוען משמרות...
+            </div>
+          ) : weekShifts.length === 0 ? (
+            <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg text-sm">
+              לא נמצאו משמרות בשבוע הנבחר
+            </div>
+          ) : (
+            <div className="max-h-40 sm:max-h-60 overflow-y-auto border rounded-lg">
+              <div className="space-y-1">
+                {weekShifts.map((shift) => (
+                  <div key={shift.id} className="p-3 border-b last:border-b-0 bg-red-50">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                        <span className="font-medium text-sm">
+                          {formatDate(shift.shift_date)}
+                        </span>
+                        <span className="text-xs sm:text-sm text-gray-600">
+                          {shift.start_time} - {shift.end_time}
+                        </span>
+                      </div>
+                      <div className="text-xs sm:text-sm text-gray-500">
+                        {shift.branch_name || 'ללא סניף'} • {shift.role || 'ללא תפקיד'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Warning */}
+      {weekShifts.length > 0 && (
+        <div className="flex items-start gap-3 p-3 sm:p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+          <div className="text-xs sm:text-sm">
+            <p className="font-medium text-yellow-800 mb-1">אזהרה!</p>
+            <p className="text-yellow-700">
+              פעולה זו תמחק את כל המשמרות בשבוע הנבחר ולא ניתן לבטל אותה.
+              וודא שאתה בטוח לפני המשך.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Actions - Mobile */}
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-6">
+        <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
+          בטל
+        </Button>
+        <Button
+          variant="destructive"
+          onClick={handleDelete}
+          disabled={weekShifts.length === 0 || deleteShiftsMutation.isPending || loadingShifts}
+          className="w-full sm:w-auto"
+        >
+          {deleteShiftsMutation.isPending ? 'מוחק...' : `מחק ${weekShifts.length} משמרות`}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
   onSuccess,
   businessId
@@ -55,6 +191,7 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [weekStart, setWeekStart] = useState<string>('');
   const [weekEnd, setWeekEnd] = useState<string>('');
+  const isMobile = useIsMobile();
   
   const queryClient = useQueryClient();
 
@@ -134,12 +271,6 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
     enabled: !!businessId && !!weekStart && !!weekEnd && isOpen,
   });
 
-  const handleWeekChange = (startDate: string, endDate: string) => {
-    console.log('📅 Week changed:', { startDate, endDate });
-    setWeekStart(startDate);
-    setWeekEnd(endDate);
-  };
-
   const handleDelete = () => {
     if (weekShifts.length === 0) {
       toast.error('לא נמצאו משמרות למחיקה');
@@ -154,16 +285,6 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
       const shiftIds = weekShifts.map(shift => shift.id);
       deleteShiftsMutation.mutate(shiftIds);
     }
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('he-IL');
-  };
-
-  const getEmployeeName = (shift: ShiftScheduleData) => {
-    if (!shift.employee_id) return 'לא משויך';
-    // For now, return a placeholder since we don't have employee names in the current query
-    return 'עובד';
   };
 
   // Delete shifts mutation
@@ -205,13 +326,58 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
     },
   });
 
+  const handleClose = () => {
+    setIsOpen(false);
+    setWeekStart('');
+    setWeekEnd('');
+  };
+
+  const TriggerButton = (
+    <Button variant="outline" size="sm">
+      <Trash2 className="h-4 w-4" />
+      מחק שבוע
+    </Button>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={isOpen} onOpenChange={setIsOpen}>
+        <DrawerTrigger asChild>
+          {TriggerButton}
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader className="text-right">
+            <DrawerTitle className="flex items-center gap-2 justify-end">
+              <span>מחיקת משמרות לפי שבוע</span>
+              <Trash2 className="h-5 w-5 text-red-500" />
+            </DrawerTitle>
+            <DrawerDescription className="text-right">
+              בחר שבוע כדי למחוק את כל המשמרות שלו
+            </DrawerDescription>
+          </DrawerHeader>
+          
+          <div className="px-4 pb-4">
+            <BulkWeekDeleteContent
+              weekStart={weekStart}
+              weekEnd={weekEnd}
+              setWeekStart={setWeekStart}
+              setWeekEnd={setWeekEnd}
+              weekShifts={weekShifts}
+              loadingShifts={loadingShifts}
+              handleDelete={handleDelete}
+              deleteShiftsMutation={deleteShiftsMutation}
+              onClose={handleClose}
+            />
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Trash2 className="h-4 w-4" />
-          מחק שבוע
-        </Button>
+        {TriggerButton}
       </DialogTrigger>
       <DialogContent className="max-w-2xl" dir="rtl">
         <DialogHeader>
@@ -224,94 +390,17 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Week Range Picker */}
-          <div>
-            <h4 className="font-medium mb-3">בחירת שבוע:</h4>
-            <WeekRangePicker 
-              onWeekChange={handleWeekChange}
-              initialDate={new Date()}
-            />
-          </div>
-
-          {/* Shifts Preview */}
-          {weekStart && weekEnd && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium">משמרות שיימחקו:</h4>
-                <div className="flex items-center gap-2">
-                  {loadingShifts ? (
-                    <span className="text-sm text-gray-500">טוען...</span>
-                  ) : (
-                    <span className="font-medium text-red-600">
-                      {weekShifts.length} משמרות
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {loadingShifts ? (
-                <div className="p-4 text-center text-gray-500">
-                  טוען משמרות...
-                </div>
-              ) : weekShifts.length === 0 ? (
-                <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">
-                  לא נמצאו משמרות בשבוע הנבחר
-                </div>
-              ) : (
-                <div className="max-h-60 overflow-y-auto border rounded-lg">
-                  <div className="space-y-1">
-                    {weekShifts.map((shift) => (
-                      <div key={shift.id} className="p-3 border-b last:border-b-0 bg-red-50">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="font-medium">
-                              {formatDate(shift.shift_date)}
-                            </span>
-                            <span className="text-sm text-gray-600 mr-2">
-                              {shift.start_time} - {shift.end_time}
-                            </span>
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {shift.branch_name || 'ללא סניף'} • {shift.role || 'ללא תפקיד'}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Warning */}
-          {weekShifts.length > 0 && (
-            <div className="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm">
-                <p className="font-medium text-yellow-800 mb-1">אזהרה!</p>
-                <p className="text-yellow-700">
-                  פעולה זו תמחק את כל המשמרות בשבוע הנבחר ולא ניתן לבטל אותה.
-                  וודא שאתה בטוח לפני המשך.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
-              בטל
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={weekShifts.length === 0 || deleteShiftsMutation.isPending || loadingShifts}
-            >
-              {deleteShiftsMutation.isPending ? 'מוחק...' : `מחק ${weekShifts.length} משמרות`}
-            </Button>
-          </div>
-        </div>
+        <BulkWeekDeleteContent
+          weekStart={weekStart}
+          weekEnd={weekEnd}
+          setWeekStart={setWeekStart}
+          setWeekEnd={setWeekEnd}
+          weekShifts={weekShifts}
+          loadingShifts={loadingShifts}
+          handleDelete={handleDelete}
+          deleteShiftsMutation={deleteShiftsMutation}
+          onClose={handleClose}
+        />
       </DialogContent>
     </Dialog>
   );
