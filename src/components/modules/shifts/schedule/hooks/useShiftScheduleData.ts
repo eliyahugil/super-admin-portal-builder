@@ -309,8 +309,6 @@ export const useShiftScheduleData = (businessIdParam?: string | null) => {
 
         return {
           ...submission,
-          // Only add token if it exists in the data
-          ...(submission.token && { token: submission.token }),
           // Ensure required fields have values
           shifts: submission.shifts || {},
           week_start_date: submission.week_start_date || '',

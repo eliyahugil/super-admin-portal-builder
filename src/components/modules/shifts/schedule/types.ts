@@ -75,15 +75,14 @@ import type { IsraeliHoliday, ShabbatTimes, CalendarEvent } from '@/types/calend
 // Backward compatibility alias
 export type Holiday = IsraeliHoliday;
 
-// Enhanced PendingSubmission interface that's fully compatible with ShiftSubmission
+// Enhanced PendingSubmission interface - removed token field as it doesn't exist in database
 export interface PendingSubmission {
   id: string;
   employee_id: string;
   submission_type: string;
   status: string;
   submitted_at: string;
-  // Make these required to match ShiftSubmission and database reality
-  token?: string; // This field might not exist in database, so keep optional
+  // Database fields - no token field exists
   shifts: any; // JSON from database - required
   week_start_date: string; // Required
   week_end_date: string; // Required
