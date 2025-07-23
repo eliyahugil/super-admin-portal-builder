@@ -84,11 +84,12 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
       branches:branch_id (name)
     `,
     filters: selectedSourceWeek ? {
+      business_id: { eq: businessId },
       shift_date: {
         gte: format(startOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd'),
         lte: format(endOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd')
       }
-    } : {},
+    } : { business_id: { eq: businessId } },
     enabled: !!businessId && !!selectedSourceWeek && isOpen
   });
 
