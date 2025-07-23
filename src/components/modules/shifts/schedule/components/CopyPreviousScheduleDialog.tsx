@@ -67,7 +67,7 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
 
   const weekOptions = getWeekOptions();
 
-  // שליפת משמרות מהשבוע הנבחר
+  // שליפת משמרות מהשבוע הנבחר עם דיבוג
   const { data: previousShifts = [] } = useRealData<ScheduledShift>({
     queryKey: ['previous-shifts', businessId, selectedSourceWeek?.toISOString()],
     tableName: 'scheduled_shifts',
@@ -89,6 +89,19 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
       }
     } : { business_id: { eq: businessId } },
     enabled: !!businessId && !!selectedSourceWeek && isOpen
+  });
+
+  // דיבוג
+  console.log('🔍 Copy Previous Dialog Debug:', {
+    businessId,
+    selectedSourceWeek,
+    isOpen,
+    weekRange: selectedSourceWeek ? {
+      start: format(startOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd'),
+      end: format(endOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd')
+    } : null,
+    shiftsCount: previousShifts.length,
+    shifts: previousShifts.slice(0, 3)
   });
 
   // שליפת עובדים וסניפים לשם הצגה
