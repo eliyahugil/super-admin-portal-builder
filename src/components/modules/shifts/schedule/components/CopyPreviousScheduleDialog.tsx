@@ -79,9 +79,7 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
       branch_id,
       role,
       required_employees,
-      employee_id,
-      employees:employee_id (first_name, last_name),
-      branches:branch_id (name)
+      employee_id
     `,
     filters: selectedSourceWeek ? {
       business_id: { eq: businessId },
@@ -92,6 +90,27 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
     } : { business_id: { eq: businessId } },
     enabled: !!businessId && !!selectedSourceWeek && isOpen
   });
+
+  // שליפת עובדים וסניפים לשם הצגה
+  const { data: employees = [] } = useRealData({
+    queryKey: ['employees', businessId],
+    tableName: 'employees',
+    select: 'id, first_name, last_name',
+    filters: { business_id: { eq: businessId } },
+    enabled: !!businessId && isOpen
+  });
+
+  const { data: branches = [] } = useRealData({
+    queryKey: ['branches', businessId],
+    tableName: 'branches',
+    select: 'id, name',
+    filters: { business_id: { eq: businessId } },
+    enabled: !!businessId && isOpen
+  });
+
+  // יצירת maps לגישה מהירה
+  const employeesMap = new Map(employees.map((emp: any) => [emp.id, `${emp.first_name} ${emp.last_name}`]));
+  const branchesMap = new Map(branches.map((branch: any) => [branch.id, branch.name]));
 
   const handleShiftSelect = (shiftId: string) => {
     const newSelected = new Set(selectedShifts);
@@ -202,12 +221,12 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
   };
 
   const getEmployeeName = (shift: ScheduledShift) => {
-    if (!shift.employee_id || !shift.employees) return 'לא משויך';
-    return `${shift.employees.first_name} ${shift.employees.last_name}`;
+    if (!shift.employee_id) return 'לא משויך';
+    return employeesMap.get(shift.employee_id) || 'לא מוגדר';
   };
 
   const getBranchName = (shift: ScheduledShift) => {
-    return shift.branches?.name || 'לא מוגדר';
+    return branchesMap.get(shift.branch_id) || 'לא מוגדר';
   };
 
   return (
