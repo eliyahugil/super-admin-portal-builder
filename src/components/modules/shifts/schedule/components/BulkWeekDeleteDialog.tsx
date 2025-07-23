@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,6 +31,21 @@ const mapStatusToUnion = (status: string): 'pending' | 'approved' | 'rejected' |
     default:
       return 'pending';
   }
+};
+
+// Helper function to safely parse shift assignments from JSON
+const parseShiftAssignments = (assignments: any): ShiftScheduleData['shift_assignments'] => {
+  if (!assignments || !Array.isArray(assignments)) {
+    return [];
+  }
+  
+  return assignments.map((assignment: any) => ({
+    id: assignment?.id || '',
+    type: (assignment?.type === 'תגבור' ? 'תגבור' : 'חובה') as 'חובה' | 'תגבור',
+    employee_id: assignment?.employee_id || null,
+    position: assignment?.position || 1,
+    is_required: Boolean(assignment?.is_required)
+  }));
 };
 
 export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
@@ -106,7 +120,7 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
         is_archived: shift.is_archived || false,
         required_employees: shift.required_employees,
         priority: shift.priority as 'critical' | 'normal' | 'backup' | undefined,
-        shift_assignments: Array.isArray(shift.shift_assignments) ? shift.shift_assignments : [],
+        shift_assignments: parseShiftAssignments(shift.shift_assignments),
         created_at: shift.created_at,
         updated_at: shift.updated_at,
         branch_name: shift.branches?.name || 'ללא סניף',
@@ -119,6 +133,38 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
     },
     enabled: !!businessId && !!weekStart && !!weekEnd && isOpen,
   });
+
+  const handleWeekChange = (startDate: string, endDate: string) => {
+    console.log('📅 Week changed:', { startDate, endDate });
+    setWeekStart(startDate);
+    setWeekEnd(endDate);
+  };
+
+  const handleDelete = () => {
+    if (weekShifts.length === 0) {
+      toast.error('לא נמצאו משמרות למחיקה');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `האם אתה בטוח שברצונך למחוק ${weekShifts.length} משמרות מהשבוע הנבחר?`
+    );
+
+    if (confirmed) {
+      const shiftIds = weekShifts.map(shift => shift.id);
+      deleteShiftsMutation.mutate(shiftIds);
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('he-IL');
+  };
+
+  const getEmployeeName = (shift: ShiftScheduleData) => {
+    if (!shift.employee_id) return 'לא משויך';
+    // For now, return a placeholder since we don't have employee names in the current query
+    return 'עובד';
+  };
 
   // Delete shifts mutation
   const deleteShiftsMutation = useMutation({
@@ -158,38 +204,6 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({
       toast.error('שגיאה במחיקת המשמרות');
     },
   });
-
-  const handleWeekChange = (startDate: string, endDate: string) => {
-    console.log('📅 Week changed:', { startDate, endDate });
-    setWeekStart(startDate);
-    setWeekEnd(endDate);
-  };
-
-  const handleDelete = () => {
-    if (weekShifts.length === 0) {
-      toast.error('לא נמצאו משמרות למחיקה');
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `האם אתה בטוח שברצונך למחוק ${weekShifts.length} משמרות מהשבוע הנבחר?`
-    );
-
-    if (confirmed) {
-      const shiftIds = weekShifts.map(shift => shift.id);
-      deleteShiftsMutation.mutate(shiftIds);
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('he-IL');
-  };
-
-  const getEmployeeName = (shift: ShiftScheduleData) => {
-    if (!shift.employee_id) return 'לא משויך';
-    // For now, return a placeholder since we don't have employee names in the current query
-    return 'עובד';
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
