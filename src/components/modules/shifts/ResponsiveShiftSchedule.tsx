@@ -9,8 +9,11 @@ import { Calendar, Filter, Search, Plus, Users, Clock, MapPin } from 'lucide-rea
 import { useShiftSchedule } from './schedule/useShiftSchedule';
 import { ShiftScheduleView } from './schedule/ShiftScheduleView';
 import { CopyPreviousScheduleDialog } from './schedule/components/CopyPreviousScheduleDialog';
+import { MobileFilterDrawer } from './schedule/components/MobileFilterDrawer';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
+  const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
@@ -79,6 +82,13 @@ export const ResponsiveShiftSchedule: React.FC = () => {
     refetchShifts();
   };
 
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setSelectedEmployee('all');
+    setSelectedBranch('all');
+    setSelectedStatus('all');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -124,6 +134,25 @@ export const ResponsiveShiftSchedule: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Mobile Filter Button */}
+          {isMobile && (
+            <MobileFilterDrawer
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              selectedEmployee={selectedEmployee}
+              onEmployeeChange={setSelectedEmployee}
+              selectedBranch={selectedBranch}
+              onBranchChange={setSelectedBranch}
+              selectedStatus={selectedStatus}
+              onStatusChange={setSelectedStatus}
+              employees={employees}
+              branches={branches}
+              filteredCount={filteredShifts.length}
+              totalCount={shifts.length}
+              onClearFilters={handleClearFilters}
+            />
+          )}
+          
           <Button
             variant="outline"
             onClick={() => handleNavigateDate(-1)}
@@ -145,80 +174,96 @@ export const ResponsiveShiftSchedule: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            סינון וחיפוש
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="relative">
-              <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="חיפוש משמרות..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
-              />
-            </div>
+      {/* Desktop Filters - Hidden on mobile */}
+      {!isMobile && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              סינון וחיפוש
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="relative">
+                <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="חיפוש משמרות..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-10"
+                />
+              </div>
 
-            <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-              <SelectTrigger>
-                <SelectValue placeholder="כל העובדים" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל העובדים</SelectItem>
-                {employees.map(emp => (
-                  <SelectItem key={emp.id} value={emp.id}>
-                    {emp.first_name} {emp.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                <SelectTrigger>
+                  <SelectValue placeholder="כל העובדים" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל העובדים</SelectItem>
+                  {employees.map(emp => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      {emp.first_name} {emp.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-              <SelectTrigger>
-                <SelectValue placeholder="כל הסניפים" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל הסניפים</SelectItem>
-                {branches.map(branch => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                <SelectTrigger>
+                  <SelectValue placeholder="כל הסניפים" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל הסניפים</SelectItem>
+                  {branches.map(branch => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger>
-                <SelectValue placeholder="כל הסטטוסים" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל הסטטוסים</SelectItem>
-                <SelectItem value="pending">ממתין</SelectItem>
-                <SelectItem value="approved">מאושר</SelectItem>
-                <SelectItem value="rejected">נדחה</SelectItem>
-                <SelectItem value="completed">הושלם</SelectItem>
-              </SelectContent>
-            </Select>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="כל הסטטוסים" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל הסטטוסים</SelectItem>
+                  <SelectItem value="pending">ממתין</SelectItem>
+                  <SelectItem value="approved">מאושר</SelectItem>
+                  <SelectItem value="rejected">נדחה</SelectItem>
+                  <SelectItem value="completed">הושלם</SelectItem>
+                </SelectContent>
+              </Select>
 
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                {filteredShifts.length} משמרות
-              </Badge>
-              {pendingSubmissions.length > 0 && (
-                <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
-                  {pendingSubmissions.length} הגשות
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {filteredShifts.length} משמרות
                 </Badge>
-              )}
+                {pendingSubmissions.length > 0 && (
+                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                    {pendingSubmissions.length} הגשות
+                  </Badge>
+                )}
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Mobile Results Summary */}
+      {isMobile && (
+        <div className="flex items-center justify-between px-2">
+          <Badge variant="secondary">
+            {filteredShifts.length} משמרות
+          </Badge>
+          {pendingSubmissions.length > 0 && (
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+              {pendingSubmissions.length} הגשות
+            </Badge>
+          )}
+        </div>
+      )}
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
