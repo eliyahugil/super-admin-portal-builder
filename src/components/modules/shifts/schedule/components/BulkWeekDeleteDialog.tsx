@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trash2, AlertTriangle, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { getWeekDatesForDate, getUpcomingWeekDates } from '@/lib/dateUtils';
 
 interface BulkWeekDeleteDialogProps {
   onSuccess?: () => void;
@@ -17,19 +19,44 @@ interface BulkWeekDeleteDialogProps {
 export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSuccess }) => {
   const [open, setOpen] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [deleteMode, setDeleteMode] = useState<'week' | 'range'>('week');
   const [isDeleting, setIsDeleting] = useState(false);
   const [shiftsToDelete, setShiftsToDelete] = useState<any[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
   const { businessId } = useCurrentBusiness();
 
+  // Set default to upcoming week
+  React.useEffect(() => {
+    if (open) {
+      const upcomingWeek = getUpcomingWeekDates();
+      const year = upcomingWeek.startDate.getFullYear();
+      const weekNumber = getWeekNumber(upcomingWeek.startDate);
+      setSelectedWeek(`${year}-W${weekNumber.toString().padStart(2, '0')}`);
+    }
+  }, [open]);
+
+  const getWeekNumber = (date: Date) => {
+    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  };
+
   const getWeekDates = (weekString: string) => {
-    const date = new Date(weekString);
-    const day = date.getDay();
-    const diff = date.getDate() - day; // First day of week (Sunday)
+    const [year, week] = weekString.split('-W');
+    const simple = new Date(parseInt(year), 0, 1 + (parseInt(week) - 1) * 7);
+    const dow = simple.getDay();
+    const ISOweekStart = simple;
+    if (dow <= 4)
+      ISOweekStart.setDate(simple.getDate() - simple.getDay());
+    else
+      ISOweekStart.setDate(simple.getDate() + 7 - simple.getDay());
     
-    const weekStart = new Date(date.setDate(diff));
-    const weekEnd = new Date(date.setDate(diff + 6));
+    const weekStart = new Date(ISOweekStart);
+    const weekEnd = new Date(ISOweekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
     
     return {
       start: weekStart.toISOString().split('T')[0],
@@ -37,10 +64,17 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSu
     };
   };
 
-  const handlePreviewWeek = async () => {
-    if (!selectedWeek || !businessId) return;
+  const handlePreviewShifts = async () => {
+    if (!businessId) return;
 
-    const { start, end } = getWeekDates(selectedWeek);
+    let dateRange;
+    if (deleteMode === 'week') {
+      if (!selectedWeek) return;
+      dateRange = getWeekDates(selectedWeek);
+    } else {
+      if (!startDate || !endDate) return;
+      dateRange = { start: startDate, end: endDate };
+    }
 
     try {
       const { data, error } = await supabase
@@ -54,8 +88,8 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSu
           branch:branches(name)
         `)
         .eq('business_id', businessId)
-        .gte('shift_date', start)
-        .lte('shift_date', end)
+        .gte('shift_date', dateRange.start)
+        .lte('shift_date', dateRange.end)
         .order('shift_date')
         .order('start_time');
 
@@ -67,14 +101,14 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSu
       console.error('Error fetching shifts:', error);
       toast({
         title: 'שגיאה',
-        description: 'לא ניתן לטעון את המשמרות לשבוע הנבחר',
+        description: 'לא ניתן לטעון את המשמרות לתקופה הנבחרת',
         variant: 'destructive',
       });
     }
   };
 
-  const handleDeleteWeek = async () => {
-    if (!selectedWeek || !businessId || shiftsToDelete.length === 0) return;
+  const handleDeleteShifts = async () => {
+    if (!businessId || shiftsToDelete.length === 0) return;
 
     setIsDeleting(true);
 
@@ -88,15 +122,16 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSu
 
       if (error) throw error;
 
+      const periodText = deleteMode === 'week' 
+        ? `לשבוע שנבחר`
+        : `מ-${new Date(startDate).toLocaleDateString('he-IL')} עד ${new Date(endDate).toLocaleDateString('he-IL')}`;
+
       toast({
         title: 'הצלחה',
-        description: `נמחקו ${shiftsToDelete.length} משמרות בהצלחה`,
+        description: `נמחקו ${shiftsToDelete.length} משמרות ${periodText}`,
       });
 
-      setOpen(false);
-      setSelectedWeek('');
-      setShiftsToDelete([]);
-      setShowPreview(false);
+      handleClose();
       onSuccess?.();
 
     } catch (error) {
@@ -114,8 +149,18 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSu
   const handleClose = () => {
     setOpen(false);
     setSelectedWeek('');
+    setStartDate('');
+    setEndDate('');
     setShiftsToDelete([]);
     setShowPreview(false);
+  };
+
+  const formatWeekRange = (weekString: string) => {
+    if (!weekString) return '';
+    const dates = getWeekDates(weekString);
+    const start = new Date(dates.start).toLocaleDateString('he-IL');
+    const end = new Date(dates.end).toLocaleDateString('he-IL');
+    return `${start} - ${end}`;
   };
 
   return (
@@ -127,14 +172,14 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSu
           className="gap-2"
         >
           <Trash2 className="h-4 w-4" />
-          מחק שבוע שלם
+          מחק משמרות בתקופה
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md" dir="rtl">
+      <DialogContent className="sm:max-w-lg" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-red-600">
             <AlertTriangle className="h-5 w-5" />
-            מחיקת משמרות לשבוע שלם
+            מחיקת משמרות בתקופה נבחרת
           </DialogTitle>
         </DialogHeader>
         
@@ -142,45 +187,96 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSu
           <Alert className="border-red-200 bg-red-50">
             <AlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">
-              <strong>אזהרה!</strong> פעולה זו תמחק את כל המשמרות בשבוע הנבחר.
+              <strong>אזהרה!</strong> פעולה זו תמחק את כל המשמרות בתקופה הנבחרת.
               <br />
               <strong>לא ניתן לבטל פעולה זו!</strong>
             </AlertDescription>
           </Alert>
 
-          <div className="space-y-2">
-            <Label htmlFor="week-select" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              בחר שבוע למחיקה
-            </Label>
-            <Input
-              id="week-select"
-              type="week"
-              value={selectedWeek}
-              onChange={(e) => {
-                setSelectedWeek(e.target.value);
-                setShowPreview(false);
-                setShiftsToDelete([]);
-              }}
-              disabled={isDeleting}
-            />
-          </div>
+          <Tabs value={deleteMode} onValueChange={(value) => {
+            setDeleteMode(value as 'week' | 'range');
+            setShowPreview(false);
+            setShiftsToDelete([]);
+          }}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="week">שבוע שלם</TabsTrigger>
+              <TabsTrigger value="range">טווח מותאם</TabsTrigger>
+            </TabsList>
 
-          {selectedWeek && !showPreview && (
+            <TabsContent value="week" className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="week-select" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  בחר שבוע למחיקה
+                </Label>
+                <Input
+                  id="week-select"
+                  type="week"
+                  value={selectedWeek}
+                  onChange={(e) => {
+                    setSelectedWeek(e.target.value);
+                    setShowPreview(false);
+                    setShiftsToDelete([]);
+                  }}
+                  disabled={isDeleting}
+                />
+                {selectedWeek && (
+                  <p className="text-sm text-gray-600">
+                    תקופה: {formatWeekRange(selectedWeek)}
+                  </p>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="range" className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="start-date">תאריך התחלה</Label>
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      setShowPreview(false);
+                      setShiftsToDelete([]);
+                    }}
+                    disabled={isDeleting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end-date">תאריך סיום</Label>
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      setShowPreview(false);
+                      setShiftsToDelete([]);
+                    }}
+                    disabled={isDeleting}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          {((deleteMode === 'week' && selectedWeek) || (deleteMode === 'range' && startDate && endDate)) && !showPreview && (
             <Button
-              onClick={handlePreviewWeek}
+              onClick={handlePreviewShifts}
               variant="outline"
               className="w-full"
               disabled={isDeleting}
             >
-              הצג משמרות לשבוע זה
+              הצג משמרות לתקופה זו
             </Button>
           )}
 
           {showPreview && (
             <div className="space-y-3">
               <h4 className="font-medium">
-                נמצאו {shiftsToDelete.length} משמרות למחיקה:
+                נמצאו {shiftsToDelete.length} משמרות למחיקה בתקופה הנבחרת:
               </h4>
               
               {shiftsToDelete.length > 0 ? (
@@ -200,7 +296,7 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSu
                 </div>
               ) : (
                 <div className="text-center text-gray-500 py-4">
-                  לא נמצאו משמרות בשבוע זה
+                  לא נמצאו משמרות בתקופה זו
                 </div>
               )}
             </div>
@@ -217,7 +313,7 @@ export const BulkWeekDeleteDialog: React.FC<BulkWeekDeleteDialogProps> = ({ onSu
             {showPreview && shiftsToDelete.length > 0 && (
               <Button
                 variant="destructive"
-                onClick={handleDeleteWeek}
+                onClick={handleDeleteShifts}
                 disabled={isDeleting}
               >
                 {isDeleting ? 'מוחק...' : `מחק ${shiftsToDelete.length} משמרות`}
