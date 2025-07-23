@@ -14,7 +14,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps> = ({
   holidays,
   shabbatTimes,
   calendarEvents,
-  pendingSubmissions,
+  pendingSubmissions = [],
   businessId,
   onShiftClick,
   onShiftUpdate,
@@ -26,6 +26,9 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps> = ({
   onShowPendingSubmissions,
 }) => {
   const [showNewShifts, setShowNewShifts] = useState(true);
+
+  // Safely handle pendingSubmissions - ensure it's an array
+  const safePendingSubmissions = Array.isArray(pendingSubmissions) ? pendingSubmissions : [];
 
   // Group shifts by date
   const shiftsByDate = shifts.reduce((acc, shift) => {
@@ -83,7 +86,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps> = ({
               {showNewShifts ? 'הסתר חדשות' : 'הצג חדשות'}
             </Button>
 
-            {pendingSubmissions && pendingSubmissions.length > 0 && (
+            {safePendingSubmissions.length > 0 && onShowPendingSubmissions && (
               <Button
                 variant="outline"
                 size="sm"
@@ -91,7 +94,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps> = ({
                 className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
               >
                 <Filter className="h-4 w-4" />
-                הגשות ממתינות ({pendingSubmissions.length})
+                הגשות ממתינות ({safePendingSubmissions.length})
               </Button>
             )}
 

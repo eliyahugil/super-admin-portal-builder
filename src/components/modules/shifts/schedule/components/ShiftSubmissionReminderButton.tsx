@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Send, MessageSquare, Users } from 'lucide-react';
+import { Send, Loader2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { BulkSendMessageDialog } from '@/components/modules/employees/list/BulkSendMessageDialog';
-import type { Employee } from '@/types/employee';
+import { supabase } from '@/integrations/supabase/client';
+import type { Employee } from '../types';
 
 interface ShiftSubmissionReminderButtonProps {
   employees: Employee[];
@@ -15,116 +15,103 @@ export const ShiftSubmissionReminderButton: React.FC<ShiftSubmissionReminderButt
   employees,
   businessId
 }) => {
-  const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [sending, setSending] = useState(false);
   const { toast } = useToast();
 
-  const activeEmployees = employees.filter(emp => 
-    emp.is_active !== false && 
-    emp.is_archived !== true &&
-    emp.phone // רק עובדים עם טלפון
-  );
-
-  const sendQuickReminder = () => {
-    if (activeEmployees.length === 0) {
+  const handleSendReminder = async () => {
+    if (!businessId) {
       toast({
-        title: 'אין עובדים זמינים',
-        description: 'לא נמצאו עובדים פעילים עם מספר טלפון',
-        variant: 'destructive'
+        title: "שגיאה",
+        description: "לא נמצא מזהה עסק",
+        variant: "destructive"
       });
       return;
     }
 
-    const reminderMessage = `שלום! 👋
+    if (employees.length === 0) {
+      toast({
+        title: "אין עובדים",
+        description: "לא נמצאו עובדים פעילים לשליחת תזכורת",
+        variant: "destructive"
+      });
+      return;
+    }
 
-תזכורת חשובה להגשת משמרות לשבוע הקרוב.
+    setSending(true);
 
-🗓️ אנא הגישו את בקשות המשמרות שלכם בהקדם האפשרי.
+    try {
+      console.log('📤 Sending shift submission reminders to employees:', {
+        businessId,
+        employeeCount: employees.length,
+        employees: employees.map(emp => ({ id: emp.id, name: `${emp.first_name} ${emp.last_name}` }))
+      });
 
-⏰ המועד האחרון להגשה: עד סוף היום!
+      // Call the edge function to send reminders
+      const { data, error } = await supabase.functions.invoke('send-shift-reminders', {
+        body: {
+          businessId,
+          employeeIds: employees.map(emp => emp.id)
+        }
+      });
 
-תודה על שיתוף הפעולה! 🙏
-
-צוות הניהול`;
-
-    let sentCount = 0;
-    activeEmployees.forEach((employee, index) => {
-      if (employee.phone) {
-        const cleanPhone = employee.phone.replace(/[^\d]/g, '');
-        const whatsappPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.slice(1) : cleanPhone;
-        const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(reminderMessage)}`;
-        
-        // פתיחה עם דילאי קטן בין חלונות
-        setTimeout(() => {
-          window.open(whatsappUrl, '_blank');
-        }, index * 300);
-        
-        sentCount++;
+      if (error) {
+        console.error('❌ Error sending reminders:', error);
+        throw error;
       }
-    });
 
-    toast({
-      title: 'תזכורות נשלחו! 📱',
-      description: `WhatsApp נפתח עבור ${sentCount} עובדים`,
-    });
+      console.log('✅ Reminders sent successfully:', data);
+
+      toast({
+        title: "תזכורות נשלחו בהצלחה!",
+        description: `נשלחו תזכורות ל-${employees.length} עובדים להגשת משמרות`,
+      });
+
+    } catch (error: any) {
+      console.error('💥 Error sending shift submission reminders:', error);
+      toast({
+        title: "שגיאה בשליחת תזכורות",
+        description: error.message || "שגיאה לא צפויה בשליחת התזכורות",
+        variant: "destructive"
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
-  const handleMessageSuccess = () => {
-    setShowMessageDialog(false);
-    toast({
-      title: 'הצלחה! ✅',
-      description: 'ההודעות נשלחו בהצלחה לכל העובדים',
-    });
-  };
+  if (!businessId || employees.length === 0) {
+    return null;
+  }
 
   return (
-    <>
-      <div className="flex gap-2 mb-4">
-        <Button
-          onClick={sendQuickReminder}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-          disabled={activeEmployees.length === 0}
-        >
-          <Send className="h-4 w-4" />
-          שלח תזכורת מהירה
-          <span className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs">
-            {activeEmployees.length}
-          </span>
-        </Button>
-
-        <Button
-          onClick={() => setShowMessageDialog(true)}
-          variant="outline"
-          className="flex items-center gap-2"
-          disabled={activeEmployees.length === 0}
-        >
-          <MessageSquare className="h-4 w-4" />
-          הודעה מותאמת אישית
-        </Button>
-
-        <div className="flex items-center gap-2 text-sm text-gray-600 px-3">
-          <Users className="h-4 w-4" />
-          {activeEmployees.length} עובדים פעילים עם טלפון
-        </div>
-      </div>
-
-      {activeEmployees.length === 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-          <div className="flex items-center gap-2 text-yellow-800">
-            <Users className="h-5 w-5" />
-            <span className="font-medium">אין עובדים זמינים לשליחת הודעות</span>
+    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Users className="h-5 w-5 text-blue-600" />
+          <div>
+            <h3 className="font-medium text-blue-900">תזכורת הגשת משמרות</h3>
+            <p className="text-sm text-blue-700">
+              שלח תזכורת ל-{employees.length} עובדים להגיש את משמרותיהם השבועיות
+            </p>
           </div>
-          <p className="text-yellow-700 text-sm mt-1">
-            נדרש לפחות עובד אחד פעיל עם מספר טלפון כדי לשלוח הודעות
-          </p>
         </div>
-      )}
-
-      <BulkSendMessageDialog
-        employees={activeEmployees}
-        open={showMessageDialog}
-        onOpenChange={setShowMessageDialog}
-        onSuccess={handleMessageSuccess}
-      />
-    </>
+        <Button
+          onClick={handleSendReminder}
+          disabled={sending}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+        >
+          {sending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              שולח...
+            </>
+          ) : (
+            <>
+              <Send className="h-4 w-4" />
+              שלח תזכורות
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
   );
 };

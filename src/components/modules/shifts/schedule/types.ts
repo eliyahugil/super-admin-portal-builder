@@ -54,6 +54,7 @@ export interface ShiftScheduleData {
   updated_at: string;
   branch_name?: string;
   role_preference?: string;
+  is_new?: boolean;
 }
 
 export type ScheduleView = 'week' | 'month' | 'year' | 'grouped';

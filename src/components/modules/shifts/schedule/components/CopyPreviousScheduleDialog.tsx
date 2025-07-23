@@ -1,447 +1,303 @@
+
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, Clock, Users, Building, Copy, CalendarDays } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { format, addDays, startOfWeek, endOfWeek, subWeeks, addWeeks } from 'date-fns';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { useShiftsByDateRange } from '../hooks/useShiftsByDateRange';
+import { CalendarIcon, Copy, Loader2 } from 'lucide-react';
+import { format, startOfWeek, endOfWeek, addDays } from 'date-fns';
 import { he } from 'date-fns/locale';
 
-interface ScheduledShift {
-  id: string;
-  shift_date: string;
-  start_time: string;
-  end_time: string;
-  branch_id: string;
-  role: string;
-  required_employees?: number;
-  employee_id?: string;
-  employees?: { first_name: string; last_name: string };
-  branches?: { name: string };
+interface CopyPreviousScheduleDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-interface CopyPreviousScheduleDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  targetDate?: Date;
-  onShiftsCreated: () => void;
+// Helper function to safely get string value
+function safeString(value: any): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  return String(value);
 }
 
 export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProps> = ({
-  isOpen,
-  onClose,
-  targetDate,
-  onShiftsCreated
+  open,
+  onOpenChange,
+  onSuccess
 }) => {
-  const { businessId } = useCurrentBusiness();
+  const [sourceDate, setSourceDate] = useState<Date | undefined>(undefined);
+  const [targetDate, setTargetDate] = useState<Date | undefined>(undefined);
+  const [copying, setCopying] = useState(false);
   const { toast } = useToast();
-  const [selectedShifts, setSelectedShifts] = useState<Set<string>>(new Set());
-  const [selectedSourceWeek, setSelectedSourceWeek] = useState<Date | null>(null);
-  const [copyAsUnassigned, setCopyAsUnassigned] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
+  const { businessId } = useCurrentBusiness();
 
-  // בחירת שבועות (כולל השבוע הנוכחי ושבועות קודמים)
-  const getWeekOptions = () => {
-    const options = [];
-    const today = new Date();
-    for (let i = 0; i <= 8; i++) {
-      const weekStart = startOfWeek(subWeeks(today, i), { weekStartsOn: 0 });
-      const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
-      const isCurrentWeek = i === 0;
-      options.push({
-        start: weekStart,
-        end: weekEnd,
-        label: isCurrentWeek 
-          ? `השבוע הנוכחי (${format(weekStart, 'dd/MM', { locale: he })} - ${format(weekEnd, 'dd/MM', { locale: he })})`
-          : `שבוע ${format(weekStart, 'dd/MM', { locale: he })} - ${format(weekEnd, 'dd/MM', { locale: he })}`
-      });
-    }
-    return options;
-  };
+  console.log('🔄 CopyPreviousScheduleDialog - Business ID:', businessId);
 
-  const weekOptions = getWeekOptions();
+  // Get source week range
+  const sourceWeekStart = sourceDate ? startOfWeek(sourceDate, { weekStartsOn: 0 }) : null;
+  const sourceWeekEnd = sourceDate ? endOfWeek(sourceDate, { weekStartsOn: 0 }) : null;
 
-  // שליפת משמרות מהשבוע הנבחר עם דיבוג
-  const { data: previousShifts = [], isLoading: shiftsLoading } = useQuery({
-    queryKey: ['previous-shifts', businessId, selectedSourceWeek?.toISOString()],
-    queryFn: async (): Promise<ScheduledShift[]> => {
-      if (!businessId || !selectedSourceWeek) return [];
-      
-      const weekStart = format(startOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd');
-      const weekEnd = format(endOfWeek(selectedSourceWeek, { weekStartsOn: 0 }), 'yyyy-MM-dd');
-      
-      console.log('🔍 Fetching shifts for week:', { weekStart, weekEnd, businessId });
-      
-      const { data, error } = await supabase
-        .from('scheduled_shifts')
-        .select(`
-          id,
-          shift_date,
-          start_time,
-          end_time,
-          branch_id,
-          role,
-          required_employees,
-          employee_id
-        `)
-        .eq('business_id', businessId)
-        .gte('shift_date', weekStart)
-        .lte('shift_date', weekEnd);
-        
-      if (error) {
-        console.error('❌ Error fetching shifts:', error);
-        throw error;
-      }
-      
-      console.log('✅ Fetched shifts:', data?.length || 0, data?.slice(0, 3));
-      return data || [];
-    },
-    enabled: !!businessId && !!selectedSourceWeek && isOpen
+  // Fetch shifts for the selected source week
+  const { data: sourceShifts = [], isLoading: isLoadingShifts } = useShiftsByDateRange(
+    sourceWeekStart ? format(sourceWeekStart, 'yyyy-MM-dd') : '',
+    sourceWeekEnd ? format(sourceWeekEnd, 'yyyy-MM-dd') : ''
+  );
+
+  console.log('📊 Source shifts loaded:', {
+    count: sourceShifts.length,
+    sourceDate: sourceDate?.toISOString(),
+    businessId,
+    shifts: sourceShifts.map(s => ({
+      id: s.id,
+      date: s.shift_date,
+      branch_id: s.branch_id,
+      employee_id: s.employee_id
+    }))
   });
 
-  // דיבוג
-
-  // שליפת עובדים וסניפים לשם הצגה
-  const { data: employees = [] } = useQuery({
-    queryKey: ['employees', businessId],
-    queryFn: async () => {
-      if (!businessId) return [];
-      
-      const { data, error } = await supabase
-        .from('employees')
-        .select('id, first_name, last_name')
-        .eq('business_id', businessId);
-        
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!businessId && isOpen
-  });
-
-  const { data: branches = [] } = useQuery({
-    queryKey: ['branches', businessId],
-    queryFn: async () => {
-      if (!businessId) return [];
-      
-      const { data, error } = await supabase
-        .from('branches')
-        .select('id, name')
-        .eq('business_id', businessId);
-        
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!businessId && isOpen
-  });
-
-  // יצירת maps לגישה מהירה
-  const employeesMap = new Map(employees.map((emp: any) => [emp.id, `${emp.first_name} ${emp.last_name}`]));
-  const branchesMap = new Map(branches.map((branch: any) => [branch.id, branch.name]));
-
-  const handleShiftSelect = (shiftId: string) => {
-    const newSelected = new Set(selectedShifts);
-    if (newSelected.has(shiftId)) {
-      newSelected.delete(shiftId);
-    } else {
-      newSelected.add(shiftId);
-    }
-    setSelectedShifts(newSelected);
-  };
-
-  const selectAllShifts = () => {
-    if (selectedShifts.size === previousShifts.length) {
-      setSelectedShifts(new Set());
-    } else {
-      setSelectedShifts(new Set(previousShifts.map(shift => shift.id)));
-    }
-  };
-
-  const copySelectedShifts = async () => {
-    if (!targetDate || selectedShifts.size === 0) {
+  const handleCopySchedule = async () => {
+    if (!sourceDate || !targetDate || !businessId) {
       toast({
         title: "שגיאה",
-        description: "אנא בחר משמרות וודא שיש תאריך יעד",
+        description: "אנא בחר תאריכים ווודא שיש עסק נבחר",
         variant: "destructive"
       });
       return;
     }
 
-    setIsCreating(true);
+    if (sourceShifts.length === 0) {
+      toast({
+        title: "אין משמרות להעתקה",
+        description: "לא נמצאו משמרות בשבוע הנבחר",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setCopying(true);
 
     try {
-      const selectedShiftData = previousShifts.filter(s => selectedShifts.has(s.id));
-      const shifts = [];
-
-      // חישוב הפרש הימים בין השבוע המקור לשבוע היעד
-      const sourceWeekStart = startOfWeek(new Date(selectedShiftData[0]?.shift_date), { weekStartsOn: 0 });
       const targetWeekStart = startOfWeek(targetDate, { weekStartsOn: 0 });
-      const daysDiff = Math.floor((targetWeekStart.getTime() - sourceWeekStart.getTime()) / (1000 * 60 * 60 * 24));
+      const sourceWeekStartDate = startOfWeek(sourceDate, { weekStartsOn: 0 });
+      
+      // Calculate the difference in days between source and target weeks
+      const daysDifference = Math.floor((targetWeekStart.getTime() - sourceWeekStartDate.getTime()) / (1000 * 60 * 60 * 24));
 
-      console.log('🔄 Copy Debug:', {
-        sourceWeekStart: format(sourceWeekStart, 'yyyy-MM-dd'),
-        targetWeekStart: format(targetWeekStart, 'yyyy-MM-dd'),
-        targetDate: format(targetDate, 'yyyy-MM-dd'),
-        daysDiff,
-        selectedShiftsCount: selectedShiftData.length
+      console.log('📅 Copy calculation:', {
+        sourceWeekStart: sourceWeekStartDate.toISOString(),
+        targetWeekStart: targetWeekStart.toISOString(),
+        daysDifference,
+        shiftsToProcess: sourceShifts.length
       });
 
-      for (const shift of selectedShiftData) {
-        const originalDate = new Date(shift.shift_date);
-        const newDate = addDays(originalDate, daysDiff);
-
-        console.log(`📅 Shift copy: ${format(originalDate, 'yyyy-MM-dd')} -> ${format(newDate, 'yyyy-MM-dd')}`);
-
-        const newShift: any = {
-          shift_date: format(newDate, 'yyyy-MM-dd'),
-          start_time: shift.start_time,
-          end_time: shift.end_time,
-          branch_id: shift.branch_id,
-          role: shift.role,
-          required_employees: shift.required_employees || 1,
-          business_id: businessId,
-          employee_id: copyAsUnassigned ? null : shift.employee_id,
-          notes: `הועתק מסידור ${format(new Date(shift.shift_date), 'dd/MM/yyyy', { locale: he })}`,
-          status: copyAsUnassigned ? 'pending' : 'approved'
-        };
-
-        shifts.push(newShift);
-      }
-
-      // אם מעתיקים כמשמרות לא מוקצות, ניצור available_shifts
-      if (copyAsUnassigned) {
-        const { error } = await supabase
-          .from('available_shifts')
-          .insert(shifts.map(shift => ({
-            business_id: shift.business_id,
+      // Prepare shifts for copying
+      const shiftsToInsert = sourceShifts
+        .filter(shift => {
+          // Only copy shifts that have valid branch_id
+          if (!shift.branch_id) {
+            console.warn('🚨 דילוג על משמרת ללא סניף:', `${shift.shift_date} ${shift.start_time}-${shift.end_time}`);
+            return false;
+          }
+          return true;
+        })
+        .map(shift => {
+          const shiftDate = new Date(shift.shift_date);
+          const newShiftDate = addDays(shiftDate, daysDifference);
+          
+          return {
+            business_id: businessId,
+            shift_date: format(newShiftDate, 'yyyy-MM-dd'),
+            start_time: safeString(shift.start_time),
+            end_time: safeString(shift.end_time),
+            employee_id: shift.employee_id,
             branch_id: shift.branch_id,
-            shift_name: `${shift.role} - הועתק`,
-            shift_type: shift.role.toLowerCase(),
-            start_time: shift.start_time,
-            end_time: shift.end_time,
-            day_of_week: new Date(shift.shift_date).getDay(),
-            week_start_date: format(startOfWeek(new Date(shift.shift_date), { weekStartsOn: 0 }), 'yyyy-MM-dd'),
-            week_end_date: format(endOfWeek(new Date(shift.shift_date), { weekStartsOn: 0 }), 'yyyy-MM-dd'),
-            required_employees: shift.required_employees,
-            current_assignments: 0,
-            is_open_for_unassigned: true
-          })));
+            role: safeString(shift.role),
+            notes: safeString(shift.notes),
+            status: 'pending' as const,
+            is_assigned: !!shift.employee_id,
+            is_archived: false,
+            required_employees: shift.required_employees || 1,
+            priority: shift.priority || 'normal' as const,
+            shift_assignments: shift.shift_assignments || []
+          };
+        });
 
-        if (error) throw error;
-      } else {
-        // אם מעתיקים כמשמרות מוקצות
-        const { error } = await supabase
-          .from('scheduled_shifts')
-          .insert(shifts);
-
-        if (error) throw error;
-      }
-
-      toast({
-        title: "הצלחה",
-        description: `הועתקו ${shifts.length} משמרות ${copyAsUnassigned ? 'כמשמרות לא מוקצות' : 'עם השיוכים המקוריים'}`
+      console.log('💾 Shifts prepared for insertion:', {
+        count: shiftsToInsert.length,
+        firstShift: shiftsToInsert[0],
+        businessId
       });
 
-      setSelectedShifts(new Set());
-      setSelectedSourceWeek(null);
-      onShiftsCreated();
-      onClose();
-    } catch (error: any) {
+      if (shiftsToInsert.length === 0) {
+        toast({
+          title: "שגיאה",
+          description: "לא נמצאו משמרות תקינות להעתקה (חסרים סניפים)",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Insert the new shifts
+      const { data: insertedShifts, error: insertError } = await supabase
+        .from('scheduled_shifts')
+        .insert(shiftsToInsert)
+        .select();
+
+      if (insertError) {
+        console.error('❌ Error inserting shifts:', insertError);
+        throw insertError;
+      }
+
+      console.log('✅ Shifts copied successfully:', {
+        inserted: insertedShifts?.length || 0,
+        targetWeek: format(targetWeekStart, 'yyyy-MM-dd')
+      });
+
       toast({
-        title: "שגיאה",
-        description: `שגיאה בהעתקת משמרות: ${error.message}`,
+        title: "הצלחה!",
+        description: `הועתקו ${insertedShifts?.length || 0} משמרות לשבוע ${format(targetWeekStart, 'dd/MM/yyyy', { locale: he })}`,
+      });
+
+      // Reset form and close dialog
+      setSourceDate(undefined);
+      setTargetDate(undefined);
+      onOpenChange(false);
+      onSuccess?.();
+
+    } catch (error: any) {
+      console.error('💥 Error copying schedule:', error);
+      toast({
+        title: "שגיאה בהעתקת לוח הזמנים",
+        description: error.message || "שגיאה לא צפויה",
         variant: "destructive"
       });
     } finally {
-      setIsCreating(false);
+      setCopying(false);
     }
   };
 
-  const getEmployeeName = (shift: ScheduledShift) => {
-    if (!shift.employee_id) return 'לא משויך';
-    return employeesMap.get(shift.employee_id) || 'לא מוגדר';
-  };
-
-  const getBranchName = (shift: ScheduledShift) => {
-    return branchesMap.get(shift.branch_id) || 'לא מוגדר';
-  };
+  const canCopy = sourceDate && targetDate && sourceShifts.length > 0 && !copying && !isLoadingShifts;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5" />
-            העתקת משמרות מסידור קודם
+            <Copy className="h-5 w-5" />
+            העתקת לוח זמנים קודם
           </DialogTitle>
-          {targetDate && (
-            <p className="text-sm text-muted-foreground">
-              יעד להעתקה: שבוע {format(startOfWeek(targetDate, { weekStartsOn: 0 }), 'dd/MM/yyyy', { locale: he })}
-            </p>
-          )}
+          <DialogDescription>
+            בחר שבוע מקור לעקתקה ושבוע יעד להדבקה
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* בחירת שבוע מקור */}
-          <div className="space-y-3">
-            <Label className="text-base font-semibold">בחר שבוע לגישה</Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {weekOptions.map((week, index) => (
-                <Card 
-                  key={index}
-                  className={`cursor-pointer transition-colors ${
-                    selectedSourceWeek?.getTime() === week.start.getTime()
-                      ? 'border-primary bg-primary/5' 
-                      : 'hover:border-primary/50'
-                  }`}
-                  onClick={() => setSelectedSourceWeek(week.start)}
-                >
-                  <CardContent className="p-3 text-center">
-                    <div className="text-sm font-medium">{week.label}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {format(week.start, 'yyyy', { locale: he })}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* אפשרויות העתקה */}
-          <div className="space-y-3">
-            <Label className="text-base font-semibold">אפשרויות העתקה</Label>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="copy-as-unassigned"
-                checked={copyAsUnassigned}
-                onCheckedChange={(checked) => setCopyAsUnassigned(checked === true)}
+        <div className="space-y-6 py-4">
+          {/* Source Week Selection */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4" />
+              בחר שבוע מקור (להעתקה)
+            </h3>
+            <div className="border rounded-lg p-4">
+              <Calendar
+                mode="single"
+                selected={sourceDate}
+                onSelect={setSourceDate}
+                locale={he}
+                className="mx-auto"
               />
-              <Label htmlFor="copy-as-unassigned" className="cursor-pointer">
-                העתק כמשמרות לא מוקצות (עובדים יכולים להגיש בקשות)
-              </Label>
-            </div>
-            {!copyAsUnassigned && (
-              <p className="text-sm text-muted-foreground mr-6">
-                המשמרות יועתקו עם השיוכים המקוריים לעובדים
-              </p>
-            )}
-          </div>
-
-          {/* רשימת משמרות */}
-          {selectedSourceWeek && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-base font-semibold">
-                  משמרות זמינות ({previousShifts.length})
-                </Label>
-                {previousShifts.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={selectAllShifts}
-                  >
-                    {selectedShifts.size === previousShifts.length ? 'בטל בחירת הכל' : 'בחר הכל'}
-                  </Button>
-                )}
-              </div>
-              
-              {previousShifts.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>אין משמרות בשבוע הנבחר</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
-                  {previousShifts.map((shift) => (
-                    <Card 
-                      key={shift.id}
-                      className={`cursor-pointer transition-colors ${
-                        selectedShifts.has(shift.id) 
-                          ? 'border-primary bg-primary/5' 
-                          : 'hover:border-primary/50'
-                      }`}
-                      onClick={() => handleShiftSelect(shift.id)}
-                    >
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-sm font-medium">
-                            {format(new Date(shift.shift_date), 'EEEE dd/MM', { locale: he })}
-                          </CardTitle>
-                          <Checkbox
-                            checked={selectedShifts.has(shift.id)}
-                          />
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="space-y-2 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            <span>{shift.start_time} - {shift.end_time}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Building className="h-4 w-4" />
-                            <span>{getBranchName(shift)}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            <span>{getEmployeeName(shift)}</span>
-                          </div>
-                          <div>
-                            <Badge variant="secondary" className="text-xs">
-                              {shift.role}
-                            </Badge>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+              {sourceDate && (
+                <div className="mt-3 p-3 bg-blue-50 rounded-lg text-center">
+                  <p className="text-sm text-blue-800">
+                    שבוע נבחר: {format(startOfWeek(sourceDate, { weekStartsOn: 0 }), 'dd/MM/yyyy', { locale: he })} - {format(endOfWeek(sourceDate, { weekStartsOn: 0 }), 'dd/MM/yyyy', { locale: he })}
+                  </p>
+                  {isLoadingShifts ? (
+                    <p className="text-sm text-blue-600 mt-1">טוען משמרות...</p>
+                  ) : (
+                    <p className="text-sm text-blue-600 mt-1">
+                      נמצאו {sourceShifts.length} משמרות בשבוע זה
+                    </p>
+                  )}
                 </div>
               )}
             </div>
-          )}
+          </div>
 
-          {/* סיכום */}
-          {selectedShifts.size > 0 && (
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <h4 className="font-semibold mb-2">סיכום</h4>
-              <p className="text-sm text-muted-foreground">
-                {selectedShifts.size} משמרות נבחרו להעתקה
-                {copyAsUnassigned 
-                  ? ' • יועתקו כמשמרות לא מוקצות'
-                  : ' • יועתקו עם השיוכים המקוריים'
-                }
-              </p>
+          {/* Target Week Selection */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4" />
+              בחר שבוע יעד (להדבקה)
+            </h3>
+            <div className="border rounded-lg p-4">
+              <Calendar
+                mode="single"
+                selected={targetDate}
+                onSelect={setTargetDate}
+                locale={he}
+                className="mx-auto"
+              />
+              {targetDate && (
+                <div className="mt-3 p-3 bg-green-50 rounded-lg text-center">
+                  <p className="text-sm text-green-800">
+                    שבוע יעד: {format(startOfWeek(targetDate, { weekStartsOn: 0 }), 'dd/MM/yyyy', { locale: he })} - {format(endOfWeek(targetDate, { weekStartsOn: 0 }), 'dd/MM/yyyy', { locale: he })}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Summary */}
+          {sourceDate && targetDate && sourceShifts.length > 0 && (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <h4 className="font-semibold text-yellow-800 mb-2">סיכום ההעתקה:</h4>
+              <ul className="text-sm text-yellow-700 space-y-1">
+                <li>• {sourceShifts.length} משמרות יועתקו</li>
+                <li>• מתאריך: {format(startOfWeek(sourceDate, { weekStartsOn: 0 }), 'dd/MM/yyyy', { locale: he })}</li>
+                <li>• לתאריך: {format(startOfWeek(targetDate, { weekStartsOn: 0 }), 'dd/MM/yyyy', { locale: he })}</li>
+              </ul>
             </div>
           )}
-
-          {/* כפתורי פעולה */}
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={onClose}>
-              ביטול
-            </Button>
-            <Button 
-              onClick={copySelectedShifts}
-              disabled={selectedShifts.size === 0 || isCreating}
-            >
-              {isCreating ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  מעתיק משמרות...
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4 mr-2" />
-                  העתק משמרות ({selectedShifts.size})
-                </>
-              )}
-            </Button>
-          </div>
         </div>
+
+        <DialogFooter className="gap-2">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={copying}
+          >
+            ביטול
+          </Button>
+          <Button
+            onClick={handleCopySchedule}
+            disabled={!canCopy}
+            className="flex items-center gap-2"
+          >
+            {copying ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                מעתיק...
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4" />
+                העתק לוח זמנים
+              </>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
