@@ -282,7 +282,10 @@ export const useShiftScheduleData = (businessIdParam?: string | null) => {
             first_name,
             last_name,
             employee_id,
-            business_id
+            business_id,
+            phone,
+            employee_type,
+            weekly_hours_required
           )
         `)
         .eq('employees.business_id', finalBusinessId)
@@ -297,20 +300,30 @@ export const useShiftScheduleData = (businessIdParam?: string | null) => {
       console.log('🔍 Submission types found:', data?.map(s => ({ id: s.id, submission_type: s.submission_type })));
       
       // Safely handle submission data and ensure required fields are present
-      return (data || []).map(submission => ({
-        ...submission,
-        // Ensure required fields have default values
-        token: submission.token || '',
-        shifts: submission.shifts || {},
-        week_start_date: submission.week_start_date || '',
-        week_end_date: submission.week_end_date || '',
-        employees: submission.employees ? {
-          ...submission.employees,
-          first_name: safeString(submission.employees.first_name),
-          last_name: safeString(submission.employees.last_name),
-          employee_id: safeString(submission.employees.employee_id)
-        } : null
-      }));
+      return (data || []).map(submission => {
+        // Ensure we have employee data - this is required by the type
+        if (!submission.employees) {
+          console.warn(`⚠️ Submission ${submission.id} missing employee data, skipping`);
+          return null;
+        }
+
+        return {
+          ...submission,
+          // Only add token if it exists in the data
+          ...(submission.token && { token: submission.token }),
+          // Ensure required fields have values
+          shifts: submission.shifts || {},
+          week_start_date: submission.week_start_date || '',
+          week_end_date: submission.week_end_date || '',
+          employees: {
+            ...submission.employees,
+            first_name: safeString(submission.employees.first_name),
+            last_name: safeString(submission.employees.last_name),
+            employee_id: safeString(submission.employees.employee_id),
+            phone: safeString(submission.employees.phone)
+          }
+        };
+      }).filter(Boolean); // Remove null entries
     },
     enabled: !!finalBusinessId,
     refetchOnWindowFocus: true,

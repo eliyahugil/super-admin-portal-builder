@@ -82,15 +82,16 @@ export interface PendingSubmission {
   submission_type: string;
   status: string;
   submitted_at: string;
-  // Make these required to match ShiftSubmission
-  token: string;
-  shifts: any; // JSON from database - now required
-  week_start_date: string; // Now required
-  week_end_date: string; // Now required
+  // Make these required to match ShiftSubmission and database reality
+  token?: string; // This field might not exist in database, so keep optional
+  shifts: any; // JSON from database - required
+  week_start_date: string; // Required
+  week_end_date: string; // Required
   notes?: string;
   created_at?: string;
   updated_at?: string;
-  employees?: {
+  // Make employees required to match ShiftSubmission
+  employees: {
     id: string;
     first_name: string;
     last_name: string;
