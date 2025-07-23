@@ -46,17 +46,20 @@ export const CopyPreviousScheduleDialog: React.FC<CopyPreviousScheduleDialogProp
   const [copyAsUnassigned, setCopyAsUnassigned] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
-  // בחירת שבועות קודמים לבחירה
+  // בחירת שבועות (כולל השבוע הנוכחי ושבועות קודמים)
   const getWeekOptions = () => {
     const options = [];
     const today = new Date();
-    for (let i = 1; i <= 8; i++) {
+    for (let i = 0; i <= 8; i++) {
       const weekStart = startOfWeek(subWeeks(today, i), { weekStartsOn: 0 });
       const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
+      const isCurrentWeek = i === 0;
       options.push({
         start: weekStart,
         end: weekEnd,
-        label: `שבוע ${format(weekStart, 'dd/MM', { locale: he })} - ${format(weekEnd, 'dd/MM', { locale: he })}`
+        label: isCurrentWeek 
+          ? `השבוע הנוכחי (${format(weekStart, 'dd/MM', { locale: he })} - ${format(weekEnd, 'dd/MM', { locale: he })})`
+          : `שבוע ${format(weekStart, 'dd/MM', { locale: he })} - ${format(weekEnd, 'dd/MM', { locale: he })}`
       });
     }
     return options;
