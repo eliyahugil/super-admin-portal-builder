@@ -219,6 +219,30 @@ export const usePublicShifts = () => {
     },
   });
 
+  // Reset single token (admin only)
+  const resetSingleToken = useMutation({
+    mutationFn: async (tokenId: string) => {
+      // Deactivate specific token
+      const { data, error } = await supabase
+        .from('shift_submission_tokens')
+        .update({ is_active: false })
+        .eq('id', tokenId)
+        .eq('is_active', true)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error resetting token:', error);
+        throw new Error('שגיאה באיפוס הטוקן');
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['public-tokens'] });
+    },
+  });
+
   // Reset all tokens for a business (admin only)
   const resetAllTokens = useMutation({
     mutationFn: async (businessId: string) => {
@@ -337,6 +361,7 @@ export const usePublicShifts = () => {
     useBusinessTokens,
     useEmployeeActiveToken,
     useTokenAvailableShifts,
+    resetSingleToken,
     resetAllTokens,
   };
 };

@@ -20,7 +20,7 @@ export const PublicTokenManager: React.FC = () => {
   const { toast } = useToast();
   const { businessId } = useCurrentBusiness();
   const { data: employees = [] } = useEmployees(businessId);
-  const { generateToken, useBusinessTokens, resetAllTokens, toggleTokenStatus } = usePublicShifts();
+  const { generateToken, useBusinessTokens, resetAllTokens, resetSingleToken, toggleTokenStatus } = usePublicShifts();
   const { data: existingTokens = [] } = useBusinessTokens(businessId || '');
   
   const [isResetting, setIsResetting] = useState(false);
@@ -221,6 +221,24 @@ ${url}
       toast({
         title: 'שגיאה',
         description: 'אירעה שגיאה בשינוי סטטוס הטוקן',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleResetSingleToken = async (tokenId: string, employeeName?: string) => {
+    try {
+      await resetSingleToken.mutateAsync(tokenId);
+      
+      toast({
+        title: 'טוקן אופס בהצלחה!',
+        description: employeeName ? `הטוקן של ${employeeName} הועבר למצב לא פעיל` : 'הטוקן הועבר למצב לא פעיל',
+      });
+    } catch (error) {
+      console.error('Error resetting single token:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'אירעה שגיאה באיפוס הטוקן',
         variant: 'destructive',
       });
     }
@@ -664,6 +682,47 @@ ${url}
                         </div>
                       </div>
                       <div className="flex gap-2">
+                        {token.is_active && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="gap-1"
+                                disabled={resetSingleToken.isPending}
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                                איפוס
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent dir="rtl">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>איפוס טוקן יחיד</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  האם אתה בטוח שברצונך לאפס את הטוקן של{' '}
+                                  <strong>{employees.find(emp => emp.id === token.employee_id)?.first_name} {employees.find(emp => emp.id === token.employee_id)?.last_name}</strong>?
+                                  <br />
+                                  פעולה זו תבטל את הטוקן והעובד לא יוכל יותר להשתמש בקישור.
+                                  <br />
+                                  <strong>פעולה זו לא ניתנת לביטול.</strong>
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>ביטול</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleResetSingleToken(
+                                    token.id,
+                                    `${employees.find(emp => emp.id === token.employee_id)?.first_name} ${employees.find(emp => emp.id === token.employee_id)?.last_name}`
+                                  )}
+                                  className="bg-red-600 hover:bg-red-700"
+                                  disabled={resetSingleToken.isPending}
+                                >
+                                  {resetSingleToken.isPending ? 'מאפס...' : 'כן, אפס טוקן'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                         <Button
                           variant={token.is_active ? "destructive" : "default"}
                           size="sm"
