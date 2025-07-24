@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays, Clock, MapPin, User, FileText, X } from 'lucide-react';
+import { useRealData } from '@/hooks/useRealData';
 
 interface ShiftDetailsDialogProps {
   shift: any;
@@ -12,7 +12,48 @@ interface ShiftDetailsDialogProps {
 }
 
 export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, open, onClose }) => {
+  // קבלת נתונים נוספים עבור הצגה תקינה
+  const { data: employees = [] } = useRealData<any>({
+    queryKey: ['employees-for-shift-details', shift?.business_id],
+    tableName: 'employees',
+    filters: { business_id: shift?.business_id, is_active: true },
+    enabled: !!shift?.business_id && open
+  });
+
+  const { data: branches = [] } = useRealData<any>({
+    queryKey: ['branches-for-shift-details', shift?.business_id],
+    tableName: 'branches',
+    filters: { business_id: shift?.business_id, is_active: true },
+    enabled: !!shift?.business_id && open
+  });
+
+  const { data: roles = [] } = useRealData<any>({
+    queryKey: ['roles-for-shift-details', shift?.business_id],
+    tableName: 'shift_roles',
+    filters: { business_id: shift?.business_id, is_active: true },
+    enabled: !!shift?.business_id && open
+  });
+
   if (!shift) return null;
+
+  // פונקציות עזר לקבלת שמות
+  const getEmployeeName = (employeeId: string | null) => {
+    if (!employeeId) return 'לא משויך';
+    const employee = employees.find(emp => emp.id === employeeId);
+    return employee ? `${employee.first_name} ${employee.last_name}` : 'לא ידוע';
+  };
+
+  const getBranchName = (branchId: string | null) => {
+    if (!branchId) return 'לא משויך';
+    const branch = branches.find(br => br.id === branchId);
+    return branch ? branch.name : 'לא ידוע';
+  };
+
+  const getRoleName = (roleId: string | null) => {
+    if (!roleId) return null;
+    const role = roles.find(r => r.id === roleId);
+    return role ? role.name : null;
+  };
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('he-IL', {
@@ -71,7 +112,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
             <div className="flex items-center gap-3">
               <User className="h-5 w-5 text-gray-500" />
               <div>
-                <p className="font-medium">{shift.employee_name || 'לא ידוע'}</p>
+                <p className="font-medium">{getEmployeeName(shift.employee_id)}</p>
                 <p className="text-sm text-gray-500">עובד משובץ</p>
               </div>
             </div>
@@ -82,7 +123,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
             <div className="flex items-center gap-3">
               <MapPin className="h-5 w-5 text-gray-500" />
               <div>
-                <p className="font-medium">{shift.branch_name || 'לא ידוע'}</p>
+                <p className="font-medium">{getBranchName(shift.branch_id)}</p>
                 <p className="text-sm text-gray-500">סניף</p>
               </div>
             </div>
@@ -100,11 +141,11 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
           </div>
 
           {/* Role */}
-          {shift.role && (
+          {shift.role && getRoleName(shift.role) && (
             <div className="flex items-center gap-3">
               <User className="h-5 w-5 text-gray-500" />
               <div>
-                <p className="font-medium">{shift.role}</p>
+                <p className="font-medium">{getRoleName(shift.role)}</p>
                 <p className="text-sm text-gray-500">תפקיד</p>
               </div>
             </div>

@@ -121,10 +121,8 @@ export const useCreateShiftForm = (
   };
 
   const createShifts = async (allDates: string[]) => {
-    console.log('🔍 Creating shifts for dates:', allDates);
     const branchIds = Array.isArray(selectedBranchId) ? selectedBranchId : [selectedBranchId];
     const newShifts = allDates.flatMap((shiftDate) => {
-      console.log('🔍 Processing shift date:', shiftDate);
       return branchIds.map(branch_id => {
         const shiftData: any = {
           shift_date: shiftDate,
@@ -179,8 +177,6 @@ export const useCreateShiftForm = (
       });
     });
 
-    console.log('🔍 Final shifts to insert:', newShifts);
-    
     const { error } = await supabase
       .from('scheduled_shifts')
       .insert(newShifts);

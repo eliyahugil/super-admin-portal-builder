@@ -7,6 +7,7 @@ import { ShiftScheduleViewProps, PendingSubmission } from './types';
 import { ShiftSubmissionReminderButton } from './components/ShiftSubmissionReminderButton';
 import { BulkWeekDeleteDialog } from './components/BulkWeekDeleteDialog';
 import { MobileShiftScheduleView } from './components/MobileShiftScheduleView';
+import { useRealData } from '@/hooks/useRealData';
 
 export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDeleted?: () => void }> = (props) => {
   const { type: deviceType } = useDeviceType();
@@ -32,6 +33,14 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     onShowPendingSubmissions,
     onWeekDeleted,
   } = props;
+
+  // טעינת תפקידים למקרה שצריך להציג שמות תפקידים
+  const { data: roles = [] } = useRealData<any>({
+    queryKey: ['shift-roles-for-display', businessId],
+    tableName: 'shift_roles',
+    filters: { business_id: businessId, is_active: true },
+    enabled: !!businessId,
+  });
 
   // If mobile, use the mobile-optimized view
   if (deviceType === 'mobile') {
@@ -82,6 +91,12 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     if (!branchId) return 'לא משויך';
     const branch = branches.find(br => br.id === branchId);
     return branch ? branch.name : 'לא ידוע';
+  };
+
+  const getRoleName = (roleId: string | null) => {
+    if (!roleId) return null;
+    const role = roles.find(r => r.id === roleId);
+    return role ? role.name : roleId; // אם לא נמצא התפקיד, נציג את ה-ID
   };
 
   return (
@@ -197,9 +212,9 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
                               <span className="text-sm text-gray-500">
                                 {getBranchName(shift.branch_id)}
                               </span>
-                              {shift.role && (
+                              {shift.role && getRoleName(shift.role) && (
                                 <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                                  {shift.role}
+                                  {getRoleName(shift.role)}
                                 </span>
                               )}
                             </div>
