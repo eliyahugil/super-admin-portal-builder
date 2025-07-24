@@ -59,6 +59,9 @@ export const useCreateShiftForm = (
   const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([]);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('17:00');
+  const [useCustomTime, setUseCustomTime] = useState(false);
 
   const resetForm = () => {
     setSelectedEmployeeId('');
@@ -68,13 +71,25 @@ export const useCreateShiftForm = (
     setWeekdayRange({start: '', end: ''});
     setSelectedWeekdays([]);
     setNotes('');
+    setStartTime('09:00');
+    setEndTime('17:00');
+    setUseCustomTime(false);
   };
 
   const validateForm = () => {
-    if (!selectedTemplateId || !selectedBranchId || selectedBranchId.length === 0) {
+    if ((!selectedTemplateId && !useCustomTime) || !selectedBranchId || selectedBranchId.length === 0) {
       toast({
         title: "שגיאה",
-        description: "אנא מלא את כל השדות הנדרשים (תבנית, תאריכים/חזרות, סניפים)",
+        description: "אנא מלא את כל השדות הנדרשים (תבנית או שעות מותאמות, תאריכים/חזרות, סניפים)",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (useCustomTime && (!startTime || !endTime)) {
+      toast({
+        title: "שגיאה",
+        description: "אנא מלא את שעות התחלה וסיום המשמרת",
         variant: "destructive"
       });
       return false;
@@ -106,13 +121,21 @@ export const useCreateShiftForm = (
     const newShifts = allDates.flatMap((shiftDate) =>
       branchIds.map(branch_id => {
         const shiftData: any = {
-          shift_template_id: selectedTemplateId,
           shift_date: shiftDate,
           branch_id,
           is_assigned: !!selectedEmployeeId,
           notes: notes || null,
           business_id: businessId
         };
+        
+        // Use custom time or template
+        if (useCustomTime) {
+          shiftData.start_time = startTime;
+          shiftData.end_time = endTime;
+        } else {
+          shiftData.shift_template_id = selectedTemplateId;
+        }
+        
         if (selectedEmployeeId) shiftData.employee_id = selectedEmployeeId;
         return shiftData;
       })
@@ -188,5 +211,11 @@ export const useCreateShiftForm = (
     setWeekdayRange,
     selectedWeekdays,
     setSelectedWeekdays,
+    startTime,
+    setStartTime,
+    endTime,
+    setEndTime,
+    useCustomTime,
+    setUseCustomTime,
   };
 };

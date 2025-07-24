@@ -1,12 +1,15 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { CreateShiftFormHeader } from './CreateShiftFormHeader';
 import { ShiftTemplateSelector } from './ShiftTemplateSelector';
 import { ShiftDatesSelector } from './ShiftDatesSelector';
 import { WeeklyRecurringSelector } from './WeeklyRecurringSelector';
 import { EmployeeSelector } from './EmployeeSelector';
 import { ShiftNotesInput } from './ShiftNotesInput';
+import { ShiftTimeSelector } from './ShiftTimeSelector';
 import { useCreateShiftForm } from './useCreateShiftForm';
 import { QuickShiftTemplateCreatorDialog } from './QuickShiftTemplateCreatorDialog';
 import { BranchMultiSelect } from './BranchMultiSelect';
@@ -48,6 +51,12 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
     setWeekdayRange,
     selectedWeekdays,
     setSelectedWeekdays,
+    startTime,
+    setStartTime,
+    endTime,
+    setEndTime,
+    useCustomTime,
+    setUseCustomTime,
   } = useCreateShiftForm(businessId, branches);
 
   React.useEffect(() => {
@@ -56,18 +65,40 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
     }
   }, [templates, selectedTemplateId, setSelectedTemplateId]);
 
-  const isFormDisabled = submitting || !templates || templates.length === 0 || (branches && branches.length === 0);
+  const isFormDisabled = submitting || (!useCustomTime && (!templates || templates.length === 0)) || (branches && branches.length === 0);
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-4 md:p-6 space-y-4 max-w-full" dir="rtl">
       <CreateShiftFormHeader />
       <form onSubmit={handleSubmit} className="space-y-4">
-        <ShiftTemplateSelector
-          selectedTemplateId={selectedTemplateId}
-          onTemplateChange={setSelectedTemplateId}
-          templates={templates}
-          onOpenCreator={() => setShowTemplateDialog(true)}
-        />
+        {/* Toggle between template and custom time */}
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <Label htmlFor="custom-time-switch" className="text-sm font-medium">
+            השתמש בשעות מותאמות אישית
+          </Label>
+          <Switch
+            id="custom-time-switch"
+            checked={useCustomTime}
+            onCheckedChange={setUseCustomTime}
+          />
+        </div>
+
+        {!useCustomTime ? (
+          <ShiftTemplateSelector
+            selectedTemplateId={selectedTemplateId}
+            onTemplateChange={setSelectedTemplateId}
+            templates={templates}
+            onOpenCreator={() => setShowTemplateDialog(true)}
+          />
+        ) : (
+          <ShiftTimeSelector
+            startTime={startTime}
+            endTime={endTime}
+            onStartTimeChange={setStartTime}
+            onEndTimeChange={setEndTime}
+            disabled={submitting}
+          />
+        )}
 
         <ShiftDatesSelector
           shiftDates={shiftDates}
