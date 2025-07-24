@@ -104,7 +104,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
         .from('employees')
         .select(`
           *,
-          employee_branch_assignments!inner(
+          employee_branch_assignments(
             id,
             branch_id,
             role_name,
