@@ -10,6 +10,7 @@ import { useShiftSchedule } from './schedule/useShiftSchedule';
 import { ShiftScheduleView } from './schedule/ShiftScheduleView';
 import { CopyPreviousScheduleDialog } from './schedule/components/CopyPreviousScheduleDialog';
 import { MobileFilterDrawer } from './schedule/components/MobileFilterDrawer';
+import { UnifiedShiftCreator } from './schedule/UnifiedShiftCreator';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export const ResponsiveShiftSchedule: React.FC = () => {
@@ -19,6 +20,7 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [showCopyDialog, setShowCopyDialog] = useState(false);
+  const [showShiftCreator, setShowShiftCreator] = useState(false);
   const [selectedShift, setSelectedShift] = useState<any>(null);
 
   const {
@@ -59,8 +61,8 @@ export const ResponsiveShiftSchedule: React.FC = () => {
   };
 
   const handleAddShift = (date: Date) => {
-    // Simple implementation - in real app this would open a dialog
     console.log('Add shift for date:', date);
+    setShowShiftCreator(true);
   };
 
   const handleShiftUpdate = async (shiftId: string, updates: any) => {
@@ -336,6 +338,21 @@ export const ResponsiveShiftSchedule: React.FC = () => {
           refetchShifts();
           setShowCopyDialog(false);
         }}
+      />
+
+      {/* Shift Creator Dialog */}
+      <UnifiedShiftCreator
+        isOpen={showShiftCreator}
+        onClose={() => setShowShiftCreator(false)}
+        onSubmit={createShift}
+        onBulkSubmit={async (shiftsData) => {
+          for (const shiftData of shiftsData) {
+            await createShift(shiftData);
+          }
+        }}
+        employees={employees}
+        branches={branches}
+        onBranchCreated={refetchShifts}
       />
     </div>
   );
