@@ -587,6 +587,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             onAssignEmployee={handleAssignEmployee}
                             employees={employees}
                             getRoleName={getRoleName}
+                            submissions={pendingSubmissions}
+                            allShifts={shifts}
                           />
                           
                           {/* Evening shifts */}
@@ -607,6 +609,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             onAssignEmployee={handleAssignEmployee}
                             employees={employees}
                             getRoleName={getRoleName}
+                            submissions={pendingSubmissions}
+                            allShifts={shifts}
                           />
                           
                           {/* Night shifts */}
@@ -626,6 +630,9 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             weekStartDate={weekDays[0].toISOString().split('T')[0]}
                             onAssignEmployee={handleAssignEmployee}
                             employees={employees}
+                            getRoleName={getRoleName}
+                            submissions={pendingSubmissions}
+                            allShifts={shifts}
                           />
                         </div>
                       );
