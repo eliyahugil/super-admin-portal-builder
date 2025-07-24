@@ -21,6 +21,7 @@ import { ShiftSubmissionsPopover } from './components/ShiftSubmissionsPopover';
 import { EmployeeRecommendationEngine } from '../recommendations/EmployeeRecommendationEngine';
 import { AutoScheduleAssistant } from '../AutoScheduleAssistant';
 import { GroupedByBranchView } from './components/GroupedByBranchView';
+import { useShiftRoles } from '@/hooks/useShiftRoles';
 import {
   Tooltip,
   TooltipContent,
@@ -55,6 +56,9 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [showPriorityManager, setShowPriorityManager] = useState(false);
   const [openSubmissionsPopover, setOpenSubmissionsPopover] = useState<string | null>(null);
+  
+  // Load shift roles
+  const { data: rolesLookup = {} } = useShiftRoles(businessId);
   
   // Filters state - load from localStorage if available
   const [localFilters, setLocalFilters] = useState<ShiftFilters>(() => {
