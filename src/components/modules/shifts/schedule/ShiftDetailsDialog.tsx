@@ -227,12 +227,12 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
               {/* עובד */}
               <div className="space-y-2">
                 <Label htmlFor="employee">עובד</Label>
-                <Select value={editData.employee_id || ''} onValueChange={(value) => setEditData({...editData, employee_id: value || null})}>
+                <Select value={editData.employee_id || 'none'} onValueChange={(value) => setEditData({...editData, employee_id: value === 'none' ? null : value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="בחר עובד (אופציונלי)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">לא משויך</SelectItem>
+                    <SelectItem value="none">לא משויך</SelectItem>
                     {employees.map((employee) => (
                       <SelectItem key={employee.id} value={employee.id}>
                         {employee.first_name} {employee.last_name}
@@ -245,12 +245,12 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
               {/* תפקיד */}
               <div className="space-y-2">
                 <Label htmlFor="role">תפקיד</Label>
-                <Select value={editData.role || ''} onValueChange={(value) => setEditData({...editData, role: value || null})}>
+                <Select value={editData.role || 'none'} onValueChange={(value) => setEditData({...editData, role: value === 'none' ? null : value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="בחר תפקיד (אופציונלי)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">ללא תפקיד</SelectItem>
+                    <SelectItem value="none">ללא תפקיד</SelectItem>
                     {roles.map((role) => (
                       <SelectItem key={role.id} value={role.id}>
                         {role.name}
