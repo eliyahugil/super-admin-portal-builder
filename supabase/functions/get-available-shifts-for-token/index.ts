@@ -97,8 +97,8 @@ serve(async (req) => {
       console.log('⏰ Employee shift types:', assignedShiftTypes);
       console.log('📅 Employee available days:', availableDays);
 
-      // Get available shifts filtered by employee's assignments
-      const { data: availableShifts, error: availableError } = await supabaseAdmin
+      // Get ALL available shifts for the business and week first
+      const { data: allAvailableShifts, error: availableError } = await supabaseAdmin
         .from('available_shifts')
         .select(`
           *,
@@ -108,8 +108,6 @@ serve(async (req) => {
         .eq('business_id', businessId)
         .eq('week_start_date', weekStart)
         .eq('week_end_date', weekEnd)
-        .in('branch_id', assignedBranchIds) // Only branches employee is assigned to
-        .in('shift_type', assignedShiftTypes) // Only shift types employee can work
         .order('day_of_week', { ascending: true })
         .order('start_time', { ascending: true });
 
@@ -118,10 +116,25 @@ serve(async (req) => {
         throw availableError;
       }
 
-      // Further filter by available days
-      const filteredShifts = (availableShifts || []).filter(shift => 
-        availableDays.includes(shift.day_of_week)
-      );
+      console.log('📊 Total available shifts before filtering:', allAvailableShifts?.length || 0);
+
+      // Filter shifts by employee assignments
+      const filteredShifts = (allAvailableShifts || []).filter(shift => {
+        // Check if shift is in assigned branches
+        const branchMatch = assignedBranchIds.includes(shift.branch_id);
+        
+        // Check if shift type matches assigned shift types
+        const shiftTypeMatch = assignedShiftTypes.includes(shift.shift_type);
+        
+        // Check if day matches available days
+        const dayMatch = availableDays.includes(shift.day_of_week);
+        
+        console.log(`🔍 Filtering shift ${shift.id}: branch(${shift.branch_id}): ${branchMatch}, type(${shift.shift_type}): ${shiftTypeMatch}, day(${shift.day_of_week}): ${dayMatch}`);
+        
+        return branchMatch && shiftTypeMatch && dayMatch;
+      });
+
+      console.log('✅ Shifts after filtering:', filteredShifts.length);
 
       shifts = filteredShifts;
       context = {
