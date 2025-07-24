@@ -19,6 +19,8 @@ interface ShiftGroupDisplayProps {
   onAssignEmployee?: (employeeId: string, shiftId: string) => void;
   employees?: Array<{ id: string; first_name: string; last_name: string; }>;
   getRoleName?: (roleId: string) => string;
+  submissions?: any[];
+  allShifts?: ShiftScheduleData[];
 }
 
 export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
@@ -37,7 +39,9 @@ export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
   weekStartDate,
   onAssignEmployee,
   employees = [],
-  getRoleName
+  getRoleName,
+  submissions = [],
+  allShifts = []
 }) => {
   if (shifts.length === 0) return null;
 
@@ -91,6 +95,24 @@ export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
   }, {} as Record<string, ShiftScheduleData[]>);
 
   const branchNames = Object.keys(shiftsByBranch).sort((a, b) => a.localeCompare(b, 'he'));
+
+  // פונקציה לבדיקת הגשות למשמרת ספציפית
+  const getShiftSubmissions = (shift: ShiftScheduleData) => {
+    const matchingSubmissions = submissions.filter(sub => {
+      // בדיקה שההגשה תואמת לתאריך, שעות וסניף של המשמרת
+      return sub.shifts?.some((submittedShift: any) => 
+        submittedShift.date === shift.shift_date &&
+        submittedShift.start_time === shift.start_time &&
+        submittedShift.end_time === shift.end_time &&
+        submittedShift.branch_preference === shift.branch_name
+      );
+    });
+    
+    return {
+      hasSubmissions: matchingSubmissions.length > 0,
+      submissionsCount: matchingSubmissions.length
+    };
+  };
 
   return (
     <div className="space-y-3">

@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Clock, User, MapPin, Trash2, AlertTriangle, UserCheck, FileText, Lightbulb } from 'lucide-react';
 import { EmployeeRecommendationEngine } from '../../recommendations/EmployeeRecommendationEngine';
+import { ShiftSubmissionsPopover } from './ShiftSubmissionsPopover';
 import type { ShiftScheduleData } from '../types';
 
 interface ShiftDisplayCardProps {
@@ -25,6 +26,8 @@ interface ShiftDisplayCardProps {
   employees?: Array<{ id: string; first_name: string; last_name: string; }>;
   onOpenPendingSubmissions?: () => void;
   getRoleName?: (roleId: string) => string;
+  submissions?: any[];
+  shifts?: any[];
 }
 
 export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
@@ -44,7 +47,9 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
   onAssignEmployee,
   employees = [],
   onOpenPendingSubmissions,
-  getRoleName
+  getRoleName,
+  submissions = [],
+  shifts = []
 }) => {
   // פונקציה לבדיקה אם יש הקצאות שלא מולאו
   const getUnassignedCount = () => {
@@ -489,25 +494,23 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
           )}
         </div>
 
-        {/* אינדיקטור הגשות משמרות - לחיץ */}
+        {/* הגשות משמרות עם ShiftSubmissionsPopover */}
         {hasSubmissions && (
-          <div className="flex items-center justify-center">
-            <Badge 
-              className="bg-green-600 text-white px-2 py-1 text-xs shadow-sm animate-pulse cursor-pointer hover:bg-green-700 transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onOpenPendingSubmissions) {
-                  onOpenPendingSubmissions();
-                } else {
-                  // Fallback - call global function if it exists
-                  const event = new CustomEvent('openPendingSubmissions');
-                  window.dispatchEvent(event);
-                }
-              }}
+          <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <ShiftSubmissionsPopover
+              submissions={submissions}
+              targetDate={new Date(shift.shift_date)}
+              shifts={shifts}
+              currentShift={shift}
+              onAssignEmployee={onAssignEmployee ? (employeeId) => onAssignEmployee(employeeId, shift.id) : undefined}
             >
-              <FileText className="h-3 w-3 ml-1" />
-              {submissionsCount} הגשות
-            </Badge>
+              <Badge 
+                className="bg-green-600 text-white px-2 py-1 text-xs shadow-sm animate-pulse cursor-pointer hover:bg-green-700 transition-colors"
+              >
+                <FileText className="h-3 w-3 ml-1" />
+                {submissionsCount} הגשות
+              </Badge>
+            </ShiftSubmissionsPopover>
           </div>
         )}
 
