@@ -99,9 +99,35 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
   const getEmployeesWhoSubmittedForThisShift = () => {
     const submittedEmployees = [];
     
+    console.log('🔍 Debug getEmployeesWhoSubmittedForThisShift:', {
+      shifSubmissionsForShift: shifSubmissionsForShift.length,
+      shift_date: shift.shift_date,
+      start_time: shift.start_time,
+      end_time: shift.end_time,
+      branch_name: getBranchName(shift.branch_id)
+    });
+    
     shifSubmissionsForShift.forEach(submission => {
+      console.log('📋 Processing submission:', {
+        employee_id: submission.employee_id,
+        shifts: submission.shifts
+      });
+      
       const shifts = submission.shifts || [];
       shifts.forEach(submittedShift => {
+        console.log('🔍 Checking submitted shift:', {
+          date: submittedShift.date,
+          start_time: submittedShift.start_time,
+          end_time: submittedShift.end_time,
+          branch_preference: submittedShift.branch_preference,
+          matches: {
+            date: submittedShift.date === shift.shift_date,
+            start_time: submittedShift.start_time === shift.start_time,
+            end_time: submittedShift.end_time === shift.end_time,
+            branch: submittedShift.branch_preference === getBranchName(shift.branch_id)
+          }
+        });
+        
         // בדיקה אם המשמרת מתאימה לתאריך, שעות וסניף
         if (submittedShift.date === shift.shift_date &&
             submittedShift.start_time === shift.start_time &&
@@ -110,6 +136,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
           
           const employee = employees.find(emp => emp.id === submission.employee_id);
           if (employee && !submittedEmployees.find(emp => emp.id === employee.id)) {
+            console.log('✅ Adding employee to submitted list:', employee.first_name, employee.last_name);
             submittedEmployees.push({
               ...employee,
               submissionNotes: submittedShift.notes,
@@ -120,6 +147,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
       });
     });
     
+    console.log('📊 Final submitted employees count:', submittedEmployees.length);
     return submittedEmployees;
   };
 
