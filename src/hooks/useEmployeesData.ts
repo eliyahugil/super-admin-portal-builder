@@ -93,7 +93,9 @@ export const useEmployeesData = (selectedBusinessId?: string | null) => {
           business_id: emp.business_id,
           is_active: emp.is_active,
           is_archived: emp.is_archived,
-          created_at: emp.created_at
+          created_at: emp.created_at,
+          branchAssignments: emp.branch_assignments,
+          branchAssignmentsCount: emp.branch_assignments?.length || 0
         }))
       });
 
