@@ -131,7 +131,7 @@ export const useCreateShiftForm = (
           notes: notes || null,
           business_id: businessId,
           required_employees: requiredEmployees,
-          role: selectedRoleId || null
+          role: selectedRoleId && selectedRoleId !== 'no-role' ? selectedRoleId : null
         };
         
         // Use custom time or template

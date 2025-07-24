@@ -44,7 +44,7 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({
           <SelectValue placeholder="בחר תפקיד (אופציונלי)" />
         </SelectTrigger>
         <SelectContent className="bg-white z-50">
-          <SelectItem value="">ללא תפקיד ספציפי</SelectItem>
+          <SelectItem value="no-role">ללא תפקיד ספציפי</SelectItem>
           {activeRoles.map((role) => (
             <SelectItem key={role.id} value={role.id}>
               {role.name}
