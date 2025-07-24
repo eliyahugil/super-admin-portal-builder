@@ -311,21 +311,24 @@ export const usePublicShifts = () => {
     });
   };
 
-  // Get available shifts for a token's date range
+  // Get available shifts for a token's date range - UPDATED for new system
   const useTokenAvailableShifts = (tokenId: string) => {
     return useQuery({
       queryKey: ['tokenAvailableShifts', tokenId],
       queryFn: async () => {
         if (!tokenId) return [];
 
-        // First get the token details
+        // First get the token details from new table
         const { data: token, error: tokenError } = await supabase
-          .from('shift_submission_tokens')
+          .from('employee_weekly_tokens')
           .select('*')
           .eq('id', tokenId)
-          .single();
+          .maybeSingle();
 
-        if (tokenError) throw tokenError;
+        if (tokenError || !token) {
+          console.error('Token error:', tokenError);
+          return [];
+        }
 
         // Then get available shifts for the token's date range
         const { data: availableShifts, error: shiftsError } = await supabase
@@ -343,7 +346,11 @@ export const usePublicShifts = () => {
           .order('day_of_week', { ascending: true })
           .order('start_time', { ascending: true });
 
-        if (shiftsError) throw shiftsError;
+        if (shiftsError) {
+          console.error('Shifts error:', shiftsError);
+          return [];
+        }
+        
         return availableShifts || [];
       },
       enabled: !!tokenId,

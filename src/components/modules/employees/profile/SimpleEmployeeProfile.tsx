@@ -240,14 +240,14 @@ export const SimpleEmployeeProfile: React.FC = () => {
           setNotifications(notificationsData);
         }
 
-        // Fetch active tokens for this employee
+        // Fetch active tokens for this employee - UPDATED for new system
         const { data: tokensData } = await supabase
-          .from('shift_submission_tokens')
+          .from('employee_weekly_tokens')
           .select('*')
+          .eq('employee_id', employeeId)
           .eq('business_id', employeeData.business_id)
           .eq('is_active', true)
           .gt('expires_at', new Date().toISOString())
-          .or(`employee_id.is.null,employee_id.eq.${employeeId}`)
           .order('created_at', { ascending: false });
 
         if (tokensData) {
