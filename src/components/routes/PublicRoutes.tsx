@@ -7,6 +7,7 @@ import PublicShiftSubmission from '@/pages/public/PublicShiftSubmission';
 import { PublicWeeklyShifts } from './PublicWeeklyShifts';
 import { SimpleEmployeeProfile } from '@/components/modules/employees/profile/SimpleEmployeeProfile';
 import { EmployeeRegistrationPage } from '@/pages/public/EmployeeRegistrationPage';
+import PermanentShiftsPage from '@/pages/public/PermanentShiftsPage';
 
 const QuickRegistrationPage = lazy(() => import('@/pages/QuickRegistrationPage').then(m => ({ default: m.QuickRegistrationPage })));
 const EmployeeLoginPage = lazy(() => import('@/pages/auth/EmployeeLoginPage'));
@@ -35,6 +36,7 @@ export const PublicRoutes = () => (
     } />
     <Route path="/public/shift-submission/:token" element={<PublicShiftSubmission />} />
     <Route path="/public/weekly-shifts/:token" element={<PublicWeeklyShifts />} />
+    <Route path="/public/permanent-shifts/:token" element={<PermanentShiftsPage />} />
     <Route path="/register-employee" element={<EmployeeRegistrationPage />} />
     
     {/* Employee profile route - accessible for logged in employees */}

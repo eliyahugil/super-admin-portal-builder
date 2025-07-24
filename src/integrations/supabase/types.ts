@@ -2036,6 +2036,57 @@ export type Database = {
           },
         ]
       }
+      employee_permanent_tokens: {
+        Row: {
+          business_id: string
+          created_at: string
+          employee_id: string
+          id: string
+          is_active: boolean
+          last_used_at: string | null
+          token: string
+          updated_at: string
+          uses_count: number
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          token: string
+          updated_at?: string
+          uses_count?: number
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          token?: string
+          updated_at?: string
+          uses_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_permanent_tokens_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_permanent_tokens_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_registration_notifications: {
         Row: {
           business_id: string
@@ -5092,6 +5143,10 @@ export type Database = {
       }
       generate_business_registration_code: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_employee_permanent_token: {
+        Args: { p_employee_id: string }
         Returns: string
       }
       generate_employee_weekly_token: {
