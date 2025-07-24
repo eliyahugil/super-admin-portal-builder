@@ -345,6 +345,16 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
             </Badge>
           </div>
         )}
+        
+        {/* הגשות למשמרת - אם קיימות */}
+        {submissionsCount > 0 && (
+          <div className="flex items-center justify-center">
+            <Badge className="bg-blue-100 border-blue-300 text-blue-700 font-medium px-3 py-1 shadow-sm">
+              <FileText className="h-3 w-3 ml-1" />
+              {submissionsCount} הגשות
+            </Badge>
+          </div>
+        )}
       {/* הקצאות עובדים - תצוגה מרוכזת ויפה */}
         <div className="flex flex-col items-center gap-2 w-full">
           {hasAssignedEmployee() ? (
