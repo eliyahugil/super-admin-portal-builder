@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Clock, MapPin, User, FileText, X, Edit, Trash2 } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, User, FileText, X, Edit, Trash2, UserCheck } from 'lucide-react';
 import { useRealData } from '@/hooks/useRealData';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,9 +16,10 @@ interface ShiftDetailsDialogProps {
   onClose: () => void;
   onUpdate?: (shiftId: string, updates: any) => Promise<void>;
   onDelete?: (shiftId: string) => Promise<void>;
+  onAssignEmployee?: (employeeId: string, shiftId: string) => Promise<void>;
 }
 
-export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, open, onClose, onUpdate, onDelete }) => {
+export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, open, onClose, onUpdate, onDelete, onAssignEmployee }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<any>({});
   const { toast } = useToast();
