@@ -62,6 +62,7 @@ export const useCreateShiftForm = (
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
   const [useCustomTime, setUseCustomTime] = useState(false);
+  const [requiredEmployees, setRequiredEmployees] = useState(1);
 
   const resetForm = () => {
     setSelectedEmployeeId('');
@@ -74,6 +75,7 @@ export const useCreateShiftForm = (
     setStartTime('09:00');
     setEndTime('17:00');
     setUseCustomTime(false);
+    setRequiredEmployees(1);
   };
 
   const validateForm = () => {
@@ -125,7 +127,8 @@ export const useCreateShiftForm = (
           branch_id,
           is_assigned: !!selectedEmployeeId,
           notes: notes || null,
-          business_id: businessId
+          business_id: businessId,
+          required_employees: requiredEmployees
         };
         
         // Use custom time or template
@@ -217,5 +220,7 @@ export const useCreateShiftForm = (
     setEndTime,
     useCustomTime,
     setUseCustomTime,
+    requiredEmployees,
+    setRequiredEmployees,
   };
 };

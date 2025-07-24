@@ -10,6 +10,7 @@ import { WeeklyRecurringSelector } from './WeeklyRecurringSelector';
 import { EmployeeSelector } from './EmployeeSelector';
 import { ShiftNotesInput } from './ShiftNotesInput';
 import { ShiftTimeSelector } from './ShiftTimeSelector';
+import { RequiredEmployeesSelector } from './RequiredEmployeesSelector';
 import { useCreateShiftForm } from './useCreateShiftForm';
 import { QuickShiftTemplateCreatorDialog } from './QuickShiftTemplateCreatorDialog';
 import { BranchMultiSelect } from './BranchMultiSelect';
@@ -57,6 +58,8 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
     setEndTime,
     useCustomTime,
     setUseCustomTime,
+    requiredEmployees,
+    setRequiredEmployees,
   } = useCreateShiftForm(businessId, branches);
 
   React.useEffect(() => {
@@ -132,6 +135,12 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
         <ShiftNotesInput
           notes={notes}
           onNotesChange={setNotes}
+        />
+
+        <RequiredEmployeesSelector
+          requiredEmployees={requiredEmployees}
+          onRequiredEmployeesChange={setRequiredEmployees}
+          disabled={submitting}
         />
 
         <Button 
