@@ -66,6 +66,15 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
   const getEmployeeName = (employeeId: string | null) => {
     if (!employeeId) return 'לא משויך';
     const employee = employees.find(emp => emp.id === employeeId);
+    
+    // Temporary debug log to check data
+    if (!employee && employeeId) {
+      console.log('⚠️ Employee not found:', { 
+        employeeId, 
+        availableEmployees: employees.map(e => ({ id: e.id, name: `${e.first_name} ${e.last_name}` }))
+      });
+    }
+    
     return employee ? `${employee.first_name} ${employee.last_name}` : 'לא ידוע';
   };
 
