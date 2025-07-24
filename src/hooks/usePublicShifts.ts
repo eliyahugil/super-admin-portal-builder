@@ -5,31 +5,28 @@ import { PublicShiftToken, PublicShiftSubmission, PublicShiftForm } from '@/type
 export const usePublicShifts = () => {
   const queryClient = useQueryClient();
 
-  // Get token details by token string
+  // Get token details by token string - updated for employee weekly tokens
   const useToken = (token: string) => {
     return useQuery({
       queryKey: ['public-token', token],
       queryFn: async () => {
         if (!token) return null;
         
-        const { data, error } = await supabase
-          .from('shift_submission_tokens')
-          .select('*')
-          .eq('token', token)
-          .eq('is_active', true)
-          .single();
+        // Call edge function to validate token
+        const { data, error } = await supabase.functions.invoke('validate-weekly-token', {
+          body: { token }
+        });
 
         if (error) {
-          console.error('Error fetching token:', error);
+          console.error('Error validating token:', error);
           throw new Error('טוקן לא נמצא או שפג תוקפו');
         }
 
-        // Check if token is expired
-        if (new Date(data.expires_at) < new Date()) {
-          throw new Error('פג תוקף הטוקן');
+        if (!data.data) {
+          throw new Error('טוקן לא תקין');
         }
 
-        return data as PublicShiftToken;
+        return data.data as PublicShiftToken;
       },
       enabled: !!token,
     });
@@ -266,7 +263,7 @@ export const usePublicShifts = () => {
     },
   });
 
-  // Get all tokens for a business (admin only)
+  // Get all tokens for a business (admin only) - updated for weekly tokens
   const useBusinessTokens = (businessId: string) => {
     return useQuery({
       queryKey: ['public-tokens', businessId],
@@ -274,8 +271,11 @@ export const usePublicShifts = () => {
         if (!businessId) return [];
         
         const { data, error } = await supabase
-          .from('shift_submission_tokens')
-          .select('*')
+          .from('employee_weekly_tokens')
+          .select(`
+            *,
+            employee:employees(first_name, last_name, employee_id)
+          `)
           .eq('business_id', businessId)
           .order('created_at', { ascending: false });
 
@@ -290,17 +290,18 @@ export const usePublicShifts = () => {
     });
   };
 
-  // Get active token for a specific employee
+  // Get active token for a specific employee - updated for weekly tokens
   const useEmployeeActiveToken = (employeeId: string) => {
     return useQuery({
       queryKey: ['employeeActiveToken', employeeId],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('shift_submission_tokens')
+          .from('employee_weekly_tokens')
           .select('*')
           .eq('employee_id', employeeId)
           .eq('is_active', true)
           .gt('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false })
           .maybeSingle();
 
         if (error) throw error;

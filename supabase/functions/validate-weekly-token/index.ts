@@ -43,7 +43,7 @@ serve(async (req) => {
       .eq('token', token)
       .eq('is_active', true)
       .gt('expires_at', new Date().toISOString())
-      .single()
+      .maybeSingle()
 
     if (error) {
       console.error('❌ Token validation error:', error)
@@ -56,7 +56,7 @@ serve(async (req) => {
           employee:employees(first_name, last_name, employee_id, phone, business_id)
         `)
         .eq('token', token)
-        .single()
+        .maybeSingle()
       
       if (!checkError && inactiveToken) {
         const isExpired = new Date(inactiveToken.expires_at) <= new Date()

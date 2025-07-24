@@ -2666,6 +2666,66 @@ export type Database = {
           },
         ]
       }
+      employee_weekly_tokens: {
+        Row: {
+          business_id: string
+          created_at: string
+          current_submissions: number | null
+          employee_id: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          max_submissions: number | null
+          token: string
+          updated_at: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          current_submissions?: number | null
+          employee_id: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          max_submissions?: number | null
+          token: string
+          updated_at?: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          current_submissions?: number | null
+          employee_id?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          max_submissions?: number | null
+          token?: string
+          updated_at?: string
+          week_end_date?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_weekly_tokens_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_weekly_tokens_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           address: string | null
@@ -5032,6 +5092,14 @@ export type Database = {
       }
       generate_business_registration_code: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_employee_weekly_token: {
+        Args: {
+          p_employee_id: string
+          p_week_start_date: string
+          p_week_end_date: string
+        }
         Returns: string
       }
       generate_module_route: {
