@@ -142,7 +142,37 @@ export const useCreateShiftForm = (
           shiftData.shift_template_id = selectedTemplateId;
         }
         
-        if (selectedEmployeeId) shiftData.employee_id = selectedEmployeeId;
+        // Create shift assignments based on required employees
+        const assignments = [];
+        
+        // If employee is selected, add them as first assignment
+        if (selectedEmployeeId) {
+          shiftData.employee_id = selectedEmployeeId;
+          assignments.push({
+            id: crypto.randomUUID(),
+            type: 'חובה',
+            employee_id: selectedEmployeeId,
+            position: 1,
+            is_required: true
+          });
+        }
+        
+        // Add additional unassigned positions for required employees
+        const startPosition = selectedEmployeeId ? 2 : 1;
+        for (let i = startPosition; i <= requiredEmployees; i++) {
+          assignments.push({
+            id: crypto.randomUUID(),
+            type: 'חובה',
+            employee_id: null,
+            position: i,
+            is_required: true
+          });
+        }
+        
+        // Only set shift_assignments if we have more than just the main employee
+        if (assignments.length > 0) {
+          shiftData.shift_assignments = assignments;
+        }
         return shiftData;
       })
     );
