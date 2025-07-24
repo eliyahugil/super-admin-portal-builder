@@ -95,23 +95,22 @@ export const EmployeeProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-3 sm:p-6" dir="rtl">
-
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+    <div className="min-h-screen bg-background p-2 sm:p-4 lg:p-6" dir="rtl">
+      <div className="max-w-full mx-auto space-y-3 sm:space-y-4 lg:space-y-6">
         {/* Header with navigation */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-right">
-            <h1 className="text-xl sm:text-3xl font-bold text-foreground">
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-foreground break-words">
               פרופיל עובד - {employee.first_name} {employee.last_name}
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm lg:text-base text-muted-foreground mt-1">
               פרטי עובד מלאים עם כל הכרטיסיות והמידע
             </p>
           </div>
           <Button
             onClick={handleGoBack}
             variant="outline"
-            className="flex items-center gap-2 w-full sm:w-auto"
+            className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0"
             size="sm"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -120,16 +119,18 @@ export const EmployeeProfilePage: React.FC = () => {
         </div>
 
         {/* Main profile content */}
-        <Card>
+        <Card className="w-full overflow-hidden">
           <EmployeeProfileHeader
             employee={employee}
             onGoBack={handleGoBack}
             onEmployeeUpdated={refetchEmployee}
           />
-          <CardContent className="p-3 sm:p-6">
-            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6" dir="rtl">
-              <EmployeeProfileSidebar employee={employee} />
-              <div className="flex-1 min-h-0">
+          <CardContent className="p-2 sm:p-4 lg:p-6">
+            <div className="flex flex-col xl:flex-row gap-3 sm:gap-4 lg:gap-6" dir="rtl">
+              <div className="w-full xl:w-80 flex-shrink-0">
+                <EmployeeProfileSidebar employee={employee} />
+              </div>
+              <div className="flex-1 min-w-0 overflow-hidden">
                 <EmployeeProfileTabs employee={employee} employeeId={employeeId!} />
               </div>
             </div>

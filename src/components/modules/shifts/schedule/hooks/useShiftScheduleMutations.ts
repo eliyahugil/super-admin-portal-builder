@@ -47,11 +47,22 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ shiftId, updates }: { shiftId: string; updates: Partial<ShiftScheduleData> }) => {
+      console.log('🔄 updateMutation - Starting update:', { shiftId, updates });
+      
       // Convert shift assignments to proper JSON format for updates
       const dbUpdates = {
         ...updates,
         shift_assignments: updates.shift_assignments ? convertShiftAssignmentsForDB(updates.shift_assignments) : undefined
       };
+
+      // Remove undefined values to prevent Supabase errors
+      Object.keys(dbUpdates).forEach(key => {
+        if (dbUpdates[key] === undefined) {
+          delete dbUpdates[key];
+        }
+      });
+
+      console.log('📤 updateMutation - Sending to DB:', { shiftId, dbUpdates });
 
       const { data, error } = await supabase
         .from('scheduled_shifts')
@@ -60,7 +71,12 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ updateMutation - Error:', error);
+        throw error;
+      }
+      
+      console.log('✅ updateMutation - Success:', data);
       return data;
     },
     onSuccess: () => {
