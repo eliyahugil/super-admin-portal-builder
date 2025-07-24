@@ -4233,7 +4233,7 @@ export type Database = {
       }
       shift_templates: {
         Row: {
-          branch_id: string
+          branch_id: string | null
           business_id: string
           created_at: string | null
           end_time: string
@@ -4247,7 +4247,7 @@ export type Database = {
           start_time: string
         }
         Insert: {
-          branch_id: string
+          branch_id?: string | null
           business_id: string
           created_at?: string | null
           end_time: string
@@ -4261,7 +4261,7 @@ export type Database = {
           start_time: string
         }
         Update: {
-          branch_id?: string
+          branch_id?: string | null
           business_id?: string
           created_at?: string | null
           end_time?: string
