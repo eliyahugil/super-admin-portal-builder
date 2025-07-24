@@ -108,6 +108,8 @@ export const ShiftSchedule: React.FC = () => {
         shift={selectedShift}
         open={showShiftDetails}
         onClose={() => setShowShiftDetails(false)}
+        onUpdate={updateShift}
+        onDelete={deleteShift}
       />
       <CreateShiftDialog 
         open={showCreateDialog}
