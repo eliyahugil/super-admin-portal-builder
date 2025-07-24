@@ -10,6 +10,8 @@ import { PendingSubmissionsDialog } from './schedule/PendingSubmissionsDialog';
 
 export const ShiftSchedule: React.FC = () => {
   const [showCreateDialog, setShowCreateDialog] = React.useState(false);
+  const [selectedShift, setSelectedShift] = React.useState<any>(null);
+  const [showShiftDetails, setShowShiftDetails] = React.useState(false);
   
   const {
     currentDate,
@@ -82,7 +84,8 @@ export const ShiftSchedule: React.FC = () => {
             branches={branches}
             currentDate={currentDate}
             onShiftClick={(shift) => {
-              console.log('Shift clicked:', shift);
+              setSelectedShift(shift);
+              setShowShiftDetails(true);
             }}
             onShiftUpdate={updateShift}
             onAddShift={(date) => {
@@ -101,7 +104,11 @@ export const ShiftSchedule: React.FC = () => {
         </div>
       </div>
 
-      <ShiftDetailsDialog />
+      <ShiftDetailsDialog 
+        shift={selectedShift}
+        open={showShiftDetails}
+        onClose={() => setShowShiftDetails(false)}
+      />
       <CreateShiftDialog 
         open={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
