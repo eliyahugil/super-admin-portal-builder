@@ -73,18 +73,18 @@ export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
         };
       default:
         return {
-          label: '',
-          color: 'border-gray-300 bg-gray-50',
-          textColor: 'text-gray-700',
-          bgColor: 'bg-gray-50',
-          separatorColor: 'bg-gray-300'
+          label: '⏰ כללי',
+          color: 'border-gray-400 bg-gradient-to-r from-gray-100 to-gray-50',
+          textColor: 'text-gray-800',
+          bgColor: 'bg-gray-100',
+          separatorColor: 'bg-gray-400'
         };
     }
   };
 
   const config = getShiftTypeConfig();
 
-  // Group shifts by branch for better organization
+  // קיבוץ משמרות לפי סניף
   const shiftsByBranch = shifts.reduce((acc, shift) => {
     const branchName = shift.branch_name || 'ללא סניף';
     if (!acc[branchName]) {
@@ -98,14 +98,52 @@ export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
 
   // פונקציה לבדיקת הגשות למשמרת ספציפית
   const getShiftSubmissions = (shift: ShiftScheduleData) => {
+    console.log('🔍 getShiftSubmissions debug:', {
+      shiftId: shift.id,
+      shift_date: shift.shift_date,
+      start_time: shift.start_time,
+      end_time: shift.end_time,
+      branch_name: shift.branch_name,
+      submissionsCount: submissions.length
+    });
+
     const matchingSubmissions = submissions.filter(sub => {
       // בדיקה שההגשה תואמת לתאריך, שעות וסניף של המשמרת
-      return sub.shifts?.some((submittedShift: any) => 
-        submittedShift.date === shift.shift_date &&
-        submittedShift.start_time === shift.start_time &&
-        submittedShift.end_time === shift.end_time &&
-        submittedShift.branch_preference === shift.branch_name
-      );
+      const hasMatch = sub.shifts?.some((submittedShift: any) => {
+        const matches = {
+          date: submittedShift.date === shift.shift_date,
+          start_time: submittedShift.start_time === shift.start_time,
+          end_time: submittedShift.end_time === shift.end_time,
+          branch: submittedShift.branch_preference === shift.branch_name
+        };
+        
+        console.log('📋 Checking submission match:', {
+          submittedShift: {
+            date: submittedShift.date,
+            start_time: submittedShift.start_time,
+            end_time: submittedShift.end_time,
+            branch_preference: submittedShift.branch_preference
+          },
+          shift: {
+            shift_date: shift.shift_date,
+            start_time: shift.start_time,
+            end_time: shift.end_time,
+            branch_name: shift.branch_name
+          },
+          matches,
+          overallMatch: matches.date && matches.start_time && matches.end_time && matches.branch
+        });
+        
+        return matches.date && matches.start_time && matches.end_time && matches.branch;
+      });
+      
+      return hasMatch;
+    });
+    
+    console.log('✅ getShiftSubmissions result:', {
+      shiftId: shift.id,
+      matchingCount: matchingSubmissions.length,
+      hasSubmissions: matchingSubmissions.length > 0
     });
     
     return {
@@ -128,7 +166,7 @@ export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
       )}
 
       {/* תצוגה לפי סניפים */}
-      {branchNames.map((branchName) => (
+      {branchNames.map(branchName => (
         <div key={branchName} className="space-y-2">
           {/* שם הסניף - רק אם יש יותר מסניף אחד ביום זה */}
           {branchNames.length > 1 && (
@@ -153,46 +191,40 @@ export const ShiftGroupDisplay: React.FC<ShiftGroupDisplayProps> = ({
                 const endA = parseTime(a.end_time || '23:59');
                 const endB = parseTime(b.end_time || '23:59');
                 
-                console.log('🔄 Sorting shifts:', {
-                  shiftA: `${a.start_time}-${a.end_time}`,
-                  shiftB: `${b.start_time}-${b.end_time}`,
-                  startA: startA.totalMinutes,
-                  startB: startB.totalMinutes,
-                  endA: endA.totalMinutes,
-                  endB: endB.totalMinutes
-                });
-                
                 // מיון לפי שעת התחלה קודם
                 if (startA.totalMinutes !== startB.totalMinutes) {
-                  const result = startA.totalMinutes - startB.totalMinutes;
-                  console.log('📊 Sort by start time result:', result);
-                  return result;
+                  return startA.totalMinutes - startB.totalMinutes;
                 }
                 
                 // אם שעות ההתחלה זהות, מיין לפי שעת הסיום (המשמרת הארוכה יותר קודם)
-                const result = endB.totalMinutes - endA.totalMinutes; // הארוכה קודם
-                console.log('📊 Sort by end time result (longer first):', result);
-                return result;
+                return endB.totalMinutes - endA.totalMinutes; // הארוכה קודם
               })
-              .map((shift) => (
-                <ShiftDisplayCard
-                  key={shift.id}
-                  shift={shift}
-                  hasConflict={hasShiftConflict(shift)}
-                  isSelectionMode={isSelectionMode}
-                  isSelected={isShiftSelected(shift)}
-                  onShiftClick={onShiftClick}
-                  onShiftSelection={onShiftSelection}
-                  onDeleteShift={onDeleteShift}
-                  getEmployeeName={getEmployeeName}
-                  getStatusColor={getStatusColor}
-                  shiftType={shiftType}
-                  weekStartDate={weekStartDate}
-                  onAssignEmployee={onAssignEmployee}
-                  employees={employees}
-                  getRoleName={getRoleName}
-                />
-              ))}
+              .map((shift) => {
+                const { hasSubmissions, submissionsCount } = getShiftSubmissions(shift);
+                return (
+                  <ShiftDisplayCard
+                    key={shift.id}
+                    shift={shift}
+                    hasConflict={hasShiftConflict(shift)}
+                    isSelectionMode={isSelectionMode}
+                    isSelected={isShiftSelected(shift)}
+                    onShiftClick={onShiftClick}
+                    onShiftSelection={onShiftSelection}
+                    onDeleteShift={onDeleteShift}
+                    getEmployeeName={getEmployeeName}
+                    getStatusColor={getStatusColor}
+                    shiftType={shiftType}
+                    hasSubmissions={hasSubmissions}
+                    submissionsCount={submissionsCount}
+                    weekStartDate={weekStartDate}
+                    onAssignEmployee={onAssignEmployee}
+                    employees={employees}
+                    getRoleName={getRoleName}
+                    submissions={submissions}
+                    shifts={allShifts}
+                  />
+                );
+              })}
           </div>
         </div>
       ))}
