@@ -6,16 +6,33 @@ import type { CreateShiftData, ShiftScheduleData } from '../types';
 export const useShiftScheduleMutations = (businessId: string | null) => {
   const queryClient = useQueryClient();
 
+  // Helper function to convert ShiftAssignment[] to JSON for database
+  const convertShiftAssignmentsForDB = (assignments?: any): any => {
+    if (!assignments || !Array.isArray(assignments)) return null;
+    
+    return assignments.map(assignment => ({
+      id: assignment.id || '',
+      type: assignment.type || 'חובה',
+      employee_id: assignment.employee_id || null,
+      position: assignment.position || 1,
+      is_required: assignment.is_required || false
+    }));
+  };
+
   const createMutation = useMutation({
     mutationFn: async (shiftData: CreateShiftData) => {
       if (!businessId) throw new Error('Business ID required');
       
+      // Convert shift assignments to proper JSON format
+      const dbData = {
+        ...shiftData,
+        business_id: businessId,
+        shift_assignments: convertShiftAssignmentsForDB(shiftData.shift_assignments)
+      };
+
       const { data, error } = await supabase
         .from('scheduled_shifts')
-        .insert({
-          ...shiftData,
-          business_id: businessId
-        })
+        .insert(dbData)
         .select()
         .single();
 
@@ -30,9 +47,15 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ shiftId, updates }: { shiftId: string; updates: Partial<ShiftScheduleData> }) => {
+      // Convert shift assignments to proper JSON format for updates
+      const dbUpdates = {
+        ...updates,
+        shift_assignments: updates.shift_assignments ? convertShiftAssignmentsForDB(updates.shift_assignments) : undefined
+      };
+
       const { data, error } = await supabase
         .from('scheduled_shifts')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', shiftId)
         .select()
         .single();
