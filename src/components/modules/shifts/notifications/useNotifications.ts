@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthContext';
+import { useMobileNotifications } from '@/hooks/useMobileNotifications';
 
 interface Notification {
   id: string;
@@ -19,6 +20,7 @@ interface Notification {
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { profile } = useAuth();
+  const { showLocalNotification, isNative } = useMobileNotifications();
 
   // פונקציה לנגינת צליל התראה
   const playNotificationSound = () => {
@@ -119,8 +121,19 @@ export const useNotifications = () => {
         },
         (payload) => {
           console.log('New shift submission:', payload);
-          // נגינת צליל התראה
-          playNotificationSound();
+          
+          // אם זה אפליקציה native, הצג התראה native
+          if (isNative) {
+            showLocalNotification(
+              'הגשת משמרת חדשה',
+              'עובד הגיש בקשה למשמרת',
+              { type: 'shift_submission', payload }
+            );
+          } else {
+            // אחרת, נגן צליל התראה
+            playNotificationSound();
+          }
+          
           // טעינה מחדש של ההתראות כשיש הגשה חדשה
           loadNotifications();
         }
