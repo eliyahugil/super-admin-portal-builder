@@ -31,6 +31,16 @@ export const ShiftSchedule: React.FC = () => {
     refetchShifts
   } = useShiftSchedule();
 
+  // פונקציה לשיבוץ עובד למשמרת
+  const handleAssignEmployee = async (employeeId: string, shiftId: string) => {
+    try {
+      await updateShift(shiftId, { employee_id: employeeId });
+    } catch (error) {
+      console.error('Error assigning employee:', error);
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8" dir="rtl">
@@ -110,6 +120,7 @@ export const ShiftSchedule: React.FC = () => {
         onClose={() => setShowShiftDetails(false)}
         onUpdate={updateShift}
         onDelete={deleteShift}
+        onAssignEmployee={handleAssignEmployee}
       />
       <CreateShiftDialog 
         open={showCreateDialog}
