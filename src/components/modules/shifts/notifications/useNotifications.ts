@@ -20,6 +20,31 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { profile } = useAuth();
 
+  // פונקציה לנגינת צליל התראה
+  const playNotificationSound = () => {
+    try {
+      // יצירת צליל התראה באמצעות Web Audio API
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800; // תדירות הצליל
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (error) {
+      console.log('Could not play notification sound:', error);
+    }
+  };
+
   // טעינת התראות אמיתיות מהמסד
   const loadNotifications = async () => {
     if (!profile?.business_id) return;
@@ -94,6 +119,8 @@ export const useNotifications = () => {
         },
         (payload) => {
           console.log('New shift submission:', payload);
+          // נגינת צליל התראה
+          playNotificationSound();
           // טעינה מחדש של ההתראות כשיש הגשה חדשה
           loadNotifications();
         }
