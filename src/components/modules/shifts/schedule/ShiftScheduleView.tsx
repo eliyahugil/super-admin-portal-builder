@@ -10,12 +10,8 @@ import { MobileShiftScheduleView } from './components/MobileShiftScheduleView';
 
 export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDeleted?: () => void }> = (props) => {
   const { type: deviceType } = useDeviceType();
+  const [showNewShifts, setShowNewShifts] = useState(true);
   
-  // If mobile, use the mobile-optimized view
-  if (deviceType === 'mobile') {
-    return <MobileShiftScheduleView {...props} />;
-  }
-
   const {
     shifts,
     employees,
@@ -37,7 +33,11 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     onWeekDeleted,
   } = props;
 
-  const [showNewShifts, setShowNewShifts] = useState(true);
+  // If mobile, use the mobile-optimized view
+  if (deviceType === 'mobile') {
+    return <MobileShiftScheduleView {...props} />;
+  }
+
 
   // Safely handle pendingSubmissions - ensure it's an array of proper type
   const safePendingSubmissions: PendingSubmission[] = Array.isArray(pendingSubmissions) 
