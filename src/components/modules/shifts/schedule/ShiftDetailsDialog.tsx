@@ -45,6 +45,18 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
     enabled: !!shift?.business_id && open
   });
 
+  // שליפת עובדים שהגישו בקשות למשמרת זו
+  const { data: shifSubmissionsForShift = [] } = useRealData<any>({
+    queryKey: ['shift-submissions-for-shift', shift?.shift_date, shift?.start_time, shift?.end_time, shift?.branch_id],
+    tableName: 'shift_submissions',
+    filters: { 
+      status: 'submitted',
+      week_start_date: `lte.${shift?.shift_date}`,
+      week_end_date: `gte.${shift?.shift_date}`
+    },
+    enabled: !!shift?.shift_date && open
+  });
+
   // איפוס נתוני העריכה כשנפתח הדיאלוג
   React.useEffect(() => {
     if (open && shift) {
@@ -82,6 +94,34 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
     if (!roleId) return null;
     const role = roles.find(r => r.id === roleId);
     return role ? role.name : null;
+  };
+
+  // פונקציה לחילוץ עובדים שהגישו למשמרת זו
+  const getEmployeesWhoSubmittedForThisShift = () => {
+    const submittedEmployees = [];
+    
+    shifSubmissionsForShift.forEach(submission => {
+      const shifts = submission.shifts || [];
+      shifts.forEach(submittedShift => {
+        // בדיקה אם המשמרת מתאימה לתאריך, שעות וסניף
+        if (submittedShift.date === shift.shift_date &&
+            submittedShift.start_time === shift.start_time &&
+            submittedShift.end_time === shift.end_time &&
+            submittedShift.branch_preference === getBranchName(shift.branch_id)) {
+          
+          const employee = employees.find(emp => emp.id === submission.employee_id);
+          if (employee && !submittedEmployees.find(emp => emp.id === employee.id)) {
+            submittedEmployees.push({
+              ...employee,
+              submissionNotes: submittedShift.notes,
+              rolePreference: submittedShift.role_preference
+            });
+          }
+        }
+      });
+    });
+    
+    return submittedEmployees;
   };
 
   const formatDate = (dateStr: string) => {
@@ -233,11 +273,32 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">לא משויך</SelectItem>
-                    {employees.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.id}>
-                        {employee.first_name} {employee.last_name}
-                      </SelectItem>
-                    ))}
+                    
+                    {/* עובדים שהגישו למשמרת זו */}
+                    {getEmployeesWhoSubmittedForThisShift().length > 0 && (
+                      <>
+                        {getEmployeesWhoSubmittedForThisShift().map((employee) => (
+                          <SelectItem key={`submitted-${employee.id}`} value={employee.id}>
+                            <div className="flex items-center gap-2">
+                              <span className="text-blue-600">✓</span>
+                              <span>{employee.first_name} {employee.last_name}</span>
+                              {employee.rolePreference && (
+                                <span className="text-xs text-gray-500">({employee.rolePreference})</span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                    
+                    {/* כל העובדים האחרים */}
+                    {employees
+                      .filter(emp => !getEmployeesWhoSubmittedForThisShift().find(submitted => submitted.id === emp.id))
+                      .map((employee) => (
+                        <SelectItem key={employee.id} value={employee.id}>
+                          {employee.first_name} {employee.last_name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -365,6 +426,36 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
                   <div>
                     <p className="font-medium">{shift.required_employees} עובדים נדרשים</p>
                     <p className="text-sm text-gray-500">כמות עובדים נדרשת</p>
+                  </div>
+                </div>
+              )}
+
+              {/* עובדים שהגישו למשמרת זו */}
+              {getEmployeesWhoSubmittedForThisShift().length > 0 && (
+                <div className="flex items-start gap-3">
+                  <User className="h-5 w-5 text-blue-500 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-600">עובדים שהגישו למשמרת זו</p>
+                    <div className="mt-2 space-y-1">
+                      {getEmployeesWhoSubmittedForThisShift().map((employee, index) => (
+                        <div key={employee.id} className="text-sm bg-blue-50 p-2 rounded">
+                          <div className="flex items-center gap-2">
+                            <span className="text-blue-600">✓</span>
+                            <span className="font-medium">{employee.first_name} {employee.last_name}</span>
+                          </div>
+                          {employee.rolePreference && (
+                            <p className="text-xs text-gray-600 mt-1">
+                              תפקיד מועדף: {employee.rolePreference}
+                            </p>
+                          )}
+                          {employee.submissionNotes && (
+                            <p className="text-xs text-gray-600 mt-1">
+                              הערות: {employee.submissionNotes}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
