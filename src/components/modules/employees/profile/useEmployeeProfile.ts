@@ -154,7 +154,9 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
       console.log('✅ Raw employee profile loaded:', {
         name: `${data.first_name} ${data.last_name}`,
         businessId: data.business_id,
-        employeeId: data.id
+        employeeId: data.id,
+        branchAssignmentsRaw: data.branch_assignments,
+        branchAssignmentsCount: data.branch_assignments?.length || 0
       });
 
       // Normalize the data to our Employee type
@@ -166,6 +168,7 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
         hasEmail: !!normalizedEmployee.email,
         type: normalizedEmployee.employee_type,
         hasBranchAssignments: normalizedEmployee.branch_assignments?.length || 0,
+        branchAssignmentsNormalized: normalizedEmployee.branch_assignments,
         hasNotes: normalizedEmployee.employee_notes?.length || 0
       });
 
