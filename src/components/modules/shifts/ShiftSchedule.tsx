@@ -9,6 +9,8 @@ import { CreateShiftDialog } from './schedule/CreateShiftDialog';
 import { PendingSubmissionsDialog } from './schedule/PendingSubmissionsDialog';
 
 export const ShiftSchedule: React.FC = () => {
+  const [showCreateDialog, setShowCreateDialog] = React.useState(false);
+  
   const {
     currentDate,
     shifts,
@@ -84,7 +86,7 @@ export const ShiftSchedule: React.FC = () => {
             }}
             onShiftUpdate={updateShift}
             onAddShift={(date) => {
-              console.log('Add shift for date:', date);
+              setShowCreateDialog(true);
             }}
             onShiftDelete={deleteShift}
             businessId={businessId}
@@ -100,7 +102,11 @@ export const ShiftSchedule: React.FC = () => {
       </div>
 
       <ShiftDetailsDialog />
-      <CreateShiftDialog onCreate={createShift} />
+      <CreateShiftDialog 
+        open={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onCreate={createShift} 
+      />
       <PendingSubmissionsDialog />
     </div>
   );

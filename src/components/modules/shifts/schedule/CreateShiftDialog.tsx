@@ -4,12 +4,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import type { CreateShiftData } from './types';
 
 interface CreateShiftDialogProps {
+  open: boolean;
+  onClose: () => void;
   onCreate: (shiftData: CreateShiftData) => Promise<void>;
 }
 
-export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({ onCreate }) => {
+export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({ open, onClose, onCreate }) => {
   return (
-    <Dialog open={false}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>יצירת משמרת חדשה</DialogTitle>
