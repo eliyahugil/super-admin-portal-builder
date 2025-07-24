@@ -116,10 +116,27 @@ export const useShiftScheduleData = (businessId: string | null) => {
         .eq('is_active', true)
         .eq('is_archived', false);
 
-      // CRITICAL: If employee, only show employees from assigned branches
+      // For employees - only show employees from assigned branches
+      // For admins - show all employees  
       if (isEmployee && assignedBranchIds.length > 0) {
         console.log('🔒 Employee view - filtering employees by branch assignments:', assignedBranchIds);
-        query = query.in('employee_branch_assignments.branch_id', assignedBranchIds);
+        // Use inner join only for employee context to filter by branches
+        query = supabase
+          .from('employees')
+          .select(`
+            *,
+            employee_branch_assignments!inner(
+              id,
+              branch_id,
+              role_name,
+              priority_order,
+              is_active
+            )
+          `)
+          .eq('business_id', businessId)
+          .eq('is_active', true)
+          .eq('is_archived', false)
+          .in('employee_branch_assignments.branch_id', assignedBranchIds);
       }
 
       query = query.order('first_name', { ascending: true });
