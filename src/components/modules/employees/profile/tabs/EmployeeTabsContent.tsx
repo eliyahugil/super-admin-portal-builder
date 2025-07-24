@@ -19,6 +19,7 @@ import { EmployeeAttendanceTab } from './EmployeeAttendanceTab';
 import { EmployeeShiftSubmissionsTab } from './EmployeeShiftSubmissionsTab';
 import { EmployeeShiftSubmissionStats } from './EmployeeShiftSubmissionStats';
 import { EmployeeProfileScheduleTab } from '../schedule/EmployeeProfileScheduleTab';
+import { EmployeeTokensTab } from './EmployeeTokensTab';
 import type { Employee } from '@/types/employee';
 
 interface EmployeeTabsContentProps {
@@ -71,6 +72,9 @@ export const EmployeeTabsContent: React.FC<EmployeeTabsContentProps> = ({
         <EmployeeShiftSubmissionsTab employee={employee} employeeId={employeeId} employeeName={employeeName} />
       </TabsContent>
 
+      <TabsContent value="tokens">
+        <EmployeeTokensTab employee={employee} employeeId={employeeId} employeeName={employeeName} />
+      </TabsContent>
 
       <TabsContent value="shift-settings">
         <EmployeeShiftSettings employee={employee} onUpdate={onUpdate} />
