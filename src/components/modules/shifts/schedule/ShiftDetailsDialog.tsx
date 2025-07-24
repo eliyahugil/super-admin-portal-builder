@@ -22,7 +22,8 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<any>({});
   const { toast } = useToast();
-  // קבלת נתונים נוספים עבור הצגה תקינה
+
+  // קבלת נתונים נוספים עבור הצגה תקינה - כל ה-hooks תמיד נקראים באותו סדר
   const { data: employees = [] } = useRealData<any>({
     queryKey: ['employees-for-shift-details', shift?.business_id],
     tableName: 'employees',
@@ -44,8 +45,6 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
     enabled: !!shift?.business_id && open
   });
 
-  if (!shift) return null;
-
   // איפוס נתוני העריכה כשנפתח הדיאלוג
   React.useEffect(() => {
     if (open && shift) {
@@ -62,6 +61,9 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
       setIsEditing(false);
     }
   }, [open, shift]);
+
+  // רק אחרי כל ה-hooks נבדוק אם יש shift
+  if (!shift) return null;
 
   // פונקציות עזר לקבלת שמות
   const getEmployeeName = (employeeId: string | null) => {
