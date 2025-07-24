@@ -73,23 +73,13 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
   // Debug logs for assignments - עם alert כדי שנראה בוודאות
   const assignmentsData = (shift as any).shift_assignments;
   
-  if (shift.id === 'f2ee861e-7a60-423a-a59b-a046880680a3') {
-    alert('בדיקת הקצאות למשמרת: ' + JSON.stringify({
-      shiftId: shift.id,
-      employeeId: shift.employee_id,
-      requiredEmployees: shift.required_employees,
-      assignmentsData: assignmentsData,
-      assignmentsType: typeof assignmentsData,
-      assignmentsLength: Array.isArray(assignmentsData) ? assignmentsData.length : 'לא מערך'
-    }, null, 2));
-  }
-  
   console.log('🔍 ShiftDisplayCard assignments debug:', {
     shiftId: shift.id,
     startTime: shift.start_time,
     endTime: shift.end_time,
     employeeId: shift.employee_id,
     shiftAssignments: assignmentsData,
+    shiftAssignmentsType: typeof assignmentsData,
     shiftAssignmentsLength: Array.isArray(assignmentsData) ? assignmentsData.length : 'לא מערך',
     requiredEmployees: shift.required_employees,
     employeesAvailable: employees.length,
@@ -412,16 +402,26 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
               })()}
               
               {/* הקצאות ללא עובד מוקצה */}
-              {((shift as any).shift_assignments || [])
-                .filter((assignment: any) => !assignment.employee_id)
-                .map((assignment: any, index: number) => (
+              {(() => {
+                const unassignedAssignments = ((shift as any).shift_assignments || [])
+                  .filter((assignment: any) => !assignment.employee_id);
+                
+                console.log('🚫 Unassigned assignments debug:', {
+                  shiftId: shift.id,
+                  totalAssignments: ((shift as any).shift_assignments || []).length,
+                  unassignedAssignments: unassignedAssignments,
+                  unassignedCount: unassignedAssignments.length
+                });
+                
+                return unassignedAssignments.map((assignment: any, index: number) => (
                   <div key={`unassigned-${assignment.id || index}`} className="flex justify-center">
                     <div className="px-2 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded text-xs">
                       <User className="h-3 w-3 inline ml-1" />
                       לא מוקצה {assignment.type && `(${assignment.type})`}
                     </div>
                   </div>
-                ))}
+                ));
+              })()}
               
               {/* מצב הקצאה */}
               <div className="flex justify-center">
