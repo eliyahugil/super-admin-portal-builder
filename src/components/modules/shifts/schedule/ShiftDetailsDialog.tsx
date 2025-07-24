@@ -436,24 +436,67 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
                   <div>
                     <p className="font-medium text-blue-600">עובדים שהגישו למשמרת זו</p>
                     <div className="mt-2 space-y-1">
-                      {getEmployeesWhoSubmittedForThisShift().map((employee, index) => (
-                        <div key={employee.id} className="text-sm bg-blue-50 p-2 rounded">
-                          <div className="flex items-center gap-2">
-                            <span className="text-blue-600">✓</span>
-                            <span className="font-medium">{employee.first_name} {employee.last_name}</span>
+                      {getEmployeesWhoSubmittedForThisShift().map((employee, index) => {
+                        const isAssigned = shift.employee_id === employee.id;
+                        return (
+                          <div key={employee.id} className="text-sm bg-blue-50 p-2 rounded">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-blue-600">✓</span>
+                                <span className="font-medium">{employee.first_name} {employee.last_name}</span>
+                                {isAssigned && (
+                                  <Badge className="bg-green-100 text-green-800 text-xs">משובץ</Badge>
+                                )}
+                              </div>
+                              {onAssignEmployee && (
+                                <Button
+                                  size="sm"
+                                  variant={isAssigned ? "outline" : "default"}
+                                  className="h-6 px-2 text-xs"
+                                  onClick={async () => {
+                                    try {
+                                      if (isAssigned) {
+                                        // הסרת שיבוץ - העברת null
+                                        await onUpdate?.(shift.id, { employee_id: null });
+                                        toast({
+                                          title: "הצלחה",
+                                          description: "השיבוץ הוסר בהצלחה",
+                                        });
+                                      } else {
+                                        // שיבוץ עובד
+                                        await onAssignEmployee(employee.id, shift.id);
+                                        toast({
+                                          title: "הצלחה", 
+                                          description: "העובד שובץ בהצלחה למשמרת",
+                                        });
+                                      }
+                                    } catch (error) {
+                                      toast({
+                                        title: "שגיאה",
+                                        description: isAssigned ? "שגיאה בהסרת השיבוץ" : "שגיאה בשיבוץ העובד",
+                                        variant: "destructive"
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <UserCheck className="h-3 w-3 mr-1" />
+                                  {isAssigned ? "הסר שיבוץ" : "שיבוץ"}
+                                </Button>
+                              )}
+                            </div>
+                            {employee.rolePreference && (
+                              <p className="text-xs text-gray-600 mt-1">
+                                תפקיד מועדף: {employee.rolePreference}
+                              </p>
+                            )}
+                            {employee.submissionNotes && (
+                              <p className="text-xs text-gray-600 mt-1">
+                                הערות: {employee.submissionNotes}
+                              </p>
+                            )}
                           </div>
-                          {employee.rolePreference && (
-                            <p className="text-xs text-gray-600 mt-1">
-                              תפקיד מועדף: {employee.rolePreference}
-                            </p>
-                          )}
-                          {employee.submissionNotes && (
-                            <p className="text-xs text-gray-600 mt-1">
-                              הערות: {employee.submissionNotes}
-                            </p>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
