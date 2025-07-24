@@ -123,35 +123,79 @@ serve(async (req) => {
 
       console.log('✅ Found', shifts.length, 'assigned shifts');
     } else {
-      // Get available shifts that haven't been assigned yet
-      console.log('📋 Getting available shifts for next week');
-      const { data: availableShifts, error: availableError } = await supabaseAdmin
-        .from('available_shifts')
-        .select(`
-          *,
-          branch:branches(id, name, address),
-          business:businesses(id, name)
-        `)
-        .eq('business_id', businessId)
-        .eq('week_start_date', weekStart)
-        .eq('week_end_date', weekEnd)
-        .order('day_of_week', { ascending: true })
-        .order('start_time', { ascending: true });
+      // Get employee's branch assignments and preferences
+      console.log('📋 Getting employee branch assignments and preferences');
+      const { data: employeeBranches, error: branchError } = await supabaseAdmin
+        .from('employee_branch_assignments')
+        .select('branch_id, shift_types, available_days')
+        .eq('employee_id', employeeId)
+        .eq('is_active', true);
 
-      if (availableError) {
-        console.error('❌ Error fetching available shifts:', availableError);
-        throw availableError;
+      if (branchError) {
+        console.error('❌ Error fetching employee branches:', branchError);
+        throw branchError;
       }
 
-      shifts = availableShifts || [];
-      context = {
-        type: 'available_shifts',
-        title: 'משמרות זמינות לשבוע הקרוב',
-        description: 'אלו המשמרות הזמינות להרשמה לשבוע זה',
-        shiftsPublished: false
-      };
+      if (!employeeBranches || employeeBranches.length === 0) {
+        console.log('⚠️ No branch assignments found for employee');
+        shifts = [];
+        context = {
+          type: 'available_shifts',
+          title: 'אין משמרות זמינות',
+          description: 'אינך משויך לאף סניף כעת',
+          shiftsPublished: false
+        };
+      } else {
+        // Extract branch IDs and shift types from assignments
+        const assignedBranchIds = employeeBranches.map(ba => ba.branch_id);
+        const assignedShiftTypes = [...new Set(employeeBranches.flatMap(ba => ba.shift_types || []))];
+        const availableDays = [...new Set(employeeBranches.flatMap(ba => ba.available_days || []))];
 
-      console.log('✅ Found', shifts.length, 'available shifts');
+        console.log('🏢 Employee assigned to branches:', assignedBranchIds);
+        console.log('⏰ Employee shift types:', assignedShiftTypes);
+        console.log('📅 Employee available days:', availableDays);
+
+        // Get available shifts filtered by employee's assignments
+        const { data: availableShifts, error: availableError } = await supabaseAdmin
+          .from('available_shifts')
+          .select(`
+            *,
+            branch:branches(id, name, address),
+            business:businesses(id, name)
+          `)
+          .eq('business_id', businessId)
+          .eq('week_start_date', weekStart)
+          .eq('week_end_date', weekEnd)
+          .in('branch_id', assignedBranchIds) // Only branches employee is assigned to
+          .in('shift_type', assignedShiftTypes) // Only shift types employee can work
+          .order('day_of_week', { ascending: true })
+          .order('start_time', { ascending: true });
+
+        if (availableError) {
+          console.error('❌ Error fetching available shifts:', availableError);
+          throw availableError;
+        }
+
+        // Further filter by available days
+        const filteredShifts = (availableShifts || []).filter(shift => 
+          availableDays.includes(shift.day_of_week)
+        );
+
+        shifts = filteredShifts;
+        context = {
+          type: 'available_shifts',
+          title: 'משמרות זמינות לשבוע הקרוב',
+          description: `נמצאו ${shifts.length} משמרות זמינות בסניפים ובמשמרות שאליהן אתה משויך`,
+          shiftsPublished: false,
+          filterInfo: {
+            assignedBranches: assignedBranchIds.length,
+            shiftTypes: assignedShiftTypes,
+            availableDays: availableDays
+          }
+        };
+
+        console.log('✅ Found', shifts.length, 'filtered available shifts for employee assignments');
+      }
     }
 
     const response = {
