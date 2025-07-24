@@ -207,8 +207,38 @@ export const useShiftScheduleData = (businessId: string | null) => {
     queryFn: async () => {
       if (!businessId || isEmployee) return [];
 
-      // For now return empty array - this needs proper implementation
-      return [];
+      console.log('📥 Fetching pending submissions for business:', businessId);
+
+      const { data, error } = await supabase
+        .from('shift_submissions')
+        .select(`
+          *,
+          employees!inner(
+            id,
+            first_name,
+            last_name,
+            employee_id,
+            business_id,
+            phone,
+            employee_type,
+            weekly_hours_required
+          )
+        `)
+        .eq('employees.business_id', businessId)
+        .eq('status', 'submitted')
+        .order('submitted_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching pending submissions:', error);
+        throw error;
+      }
+
+      console.log('✅ Pending submissions fetched:', {
+        count: data?.length || 0,
+        first: data?.[0]
+      });
+
+      return (data || []) as PendingSubmission[];
     },
     enabled: !isEmployee && !!businessId,
     staleTime: 1 * 60 * 1000,

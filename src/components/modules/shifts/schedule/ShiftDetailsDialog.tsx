@@ -51,9 +51,7 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
     queryKey: ['shift-submissions-for-shift', shift?.shift_date, shift?.start_time, shift?.end_time, shift?.branch_id],
     tableName: 'shift_submissions',
     filters: { 
-      status: 'submitted',
-      week_start_date: `lte.${shift?.shift_date}`,
-      week_end_date: `gte.${shift?.shift_date}`
+      status: 'submitted'
     },
     enabled: !!shift?.shift_date && open
   });
