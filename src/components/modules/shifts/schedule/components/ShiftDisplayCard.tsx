@@ -24,6 +24,7 @@ interface ShiftDisplayCardProps {
   onAssignEmployee?: (employeeId: string, shiftId: string) => void;
   employees?: Array<{ id: string; first_name: string; last_name: string; }>;
   onOpenPendingSubmissions?: () => void;
+  getRoleName?: (roleId: string) => string;
 }
 
 export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
@@ -42,7 +43,8 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
   weekStartDate,
   onAssignEmployee,
   employees = [],
-  onOpenPendingSubmissions
+  onOpenPendingSubmissions,
+  getRoleName
 }) => {
   // פונקציה לבדיקה אם יש הקצאות שלא מולאו
   const getUnassignedCount = () => {
@@ -328,7 +330,16 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
              {getFormattedTimeRange()}
            </Badge>
          </div>
-        
+         
+        {/* תפקיד במשמרת - אם קיים */}
+        {shift.role && (
+          <div className="flex items-center justify-center">
+            <Badge variant="outline" className="bg-purple-50 border-purple-300 text-purple-700 font-medium px-3 py-1 shadow-sm">
+              <UserCheck className="h-3 w-3 ml-1" />
+              {getRoleName ? getRoleName(shift.role) : shift.role}
+            </Badge>
+          </div>
+        )}
       {/* הקצאות עובדים - תצוגה מרוכזת ויפה */}
         <div className="flex flex-col items-center gap-2 w-full">
           {hasAssignedEmployee() ? (
@@ -500,14 +511,6 @@ export const ShiftDisplayCard: React.FC<ShiftDisplayCardProps> = ({
           </div>
         )}
 
-        {/* תפקיד - אם קיים */}
-        {shift.role && (
-          <div className="flex items-center justify-center">
-            <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200 px-2 py-1 text-xs">
-              {shift.role}
-            </Badge>
-          </div>
-        )}
       </div>
       
       {/* סטטוס וקונפליקטים - רביעי במטה */}

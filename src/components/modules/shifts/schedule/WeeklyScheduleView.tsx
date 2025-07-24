@@ -202,6 +202,10 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
     return shabbatTimes.find(shabbat => shabbat.date === dateStr) || null;
   };
 
+  
+  // Function to get role name by ID
+  const getRoleName = (roleId: string) => rolesLookup[roleId] || roleId;
+
   const getEmployeeName = (employeeId: string) => {
     const employee = employees.find(emp => emp.id === employeeId);
     return employee ? `${employee.first_name} ${employee.last_name}` : 'לא מוקצה';
@@ -577,6 +581,8 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             isShiftSelected={isShiftSelected}
                             weekStartDate={weekDays[0].toISOString().split('T')[0]}
                             onAssignEmployee={handleAssignEmployee}
+                            employees={employees}
+                            getRoleName={getRoleName}
                           />
                           
                           {/* Evening shifts */}
@@ -596,6 +602,7 @@ export const WeeklyScheduleView: React.FC<ShiftScheduleViewProps> = ({
                             weekStartDate={weekDays[0].toISOString().split('T')[0]}
                             onAssignEmployee={handleAssignEmployee}
                             employees={employees}
+                            getRoleName={getRoleName}
                           />
                           
                           {/* Night shifts */}

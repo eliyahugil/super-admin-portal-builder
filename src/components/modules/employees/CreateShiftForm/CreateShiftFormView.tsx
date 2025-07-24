@@ -11,10 +11,12 @@ import { EmployeeSelector } from './EmployeeSelector';
 import { ShiftNotesInput } from './ShiftNotesInput';
 import { ShiftTimeSelector } from './ShiftTimeSelector';
 import { RequiredEmployeesSelector } from './RequiredEmployeesSelector';
+import { RoleSelector } from './RoleSelector';
 import { useCreateShiftForm } from './useCreateShiftForm';
 import { QuickShiftTemplateCreatorDialog } from './QuickShiftTemplateCreatorDialog';
 import { BranchMultiSelect } from './BranchMultiSelect';
 import { useBranchesData } from '@/hooks/useBranchesData';
+import { useRealData } from '@/hooks/useRealData';
 import { CreateShiftFormViewProps, ShiftTemplate } from './types';
 
 export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
@@ -34,6 +36,14 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
   };
 
   const { data: branches } = useBranchesData(businessId);
+  
+  // טעינת תפקידים
+  const { data: roles = [] } = useRealData<any>({
+    queryKey: ['shift-roles', businessId],
+    tableName: 'shift_roles',
+    filters: { business_id: businessId, is_active: true },
+    enabled: !!businessId,
+  });
 
   const {
     selectedEmployeeId,
@@ -60,6 +70,8 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
     setUseCustomTime,
     requiredEmployees,
     setRequiredEmployees,
+    selectedRoleId,
+    setSelectedRoleId,
   } = useCreateShiftForm(businessId, branches);
 
   React.useEffect(() => {
@@ -140,6 +152,13 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
         <RequiredEmployeesSelector
           requiredEmployees={requiredEmployees}
           onRequiredEmployeesChange={setRequiredEmployees}
+          disabled={submitting}
+        />
+
+        <RoleSelector
+          selectedRoleId={selectedRoleId}
+          onRoleChange={setSelectedRoleId}
+          roles={roles}
           disabled={submitting}
         />
 
