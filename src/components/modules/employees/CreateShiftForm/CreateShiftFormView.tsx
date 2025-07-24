@@ -65,7 +65,7 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
     }
   }, [templates, selectedTemplateId, setSelectedTemplateId]);
 
-  const isFormDisabled = submitting || (!useCustomTime && (!templates || templates.length === 0)) || (branches && branches.length === 0);
+  const isFormDisabled = submitting || (branches && branches.length === 0);
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-4 md:p-6 space-y-4 max-w-full" dir="rtl">
@@ -91,13 +91,15 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
             onOpenCreator={() => setShowTemplateDialog(true)}
           />
         ) : (
-          <ShiftTimeSelector
-            startTime={startTime}
-            endTime={endTime}
-            onStartTimeChange={setStartTime}
-            onEndTimeChange={setEndTime}
-            disabled={submitting}
-          />
+          <div className="space-y-4">
+            <ShiftTimeSelector
+              startTime={startTime}
+              endTime={endTime}
+              onStartTimeChange={setStartTime}
+              onEndTimeChange={setEndTime}
+              disabled={submitting}
+            />
+          </div>
         )}
 
         <ShiftDatesSelector
