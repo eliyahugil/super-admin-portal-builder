@@ -756,7 +756,7 @@ export const SimpleEmployeeProfile: React.FC = () => {
                       <Button 
                         className="bg-blue-600 hover:bg-blue-700 text-white"
                         onClick={() => {
-                          window.open(`/public/shift-submission/${activeToken.token}`, '_blank');
+                          window.open(`/public/weekly-shifts/${activeToken.token}`, '_blank');
                         }}
                       >
                         <Send className="h-4 w-4 ml-2" />
@@ -1141,7 +1141,7 @@ export const SimpleEmployeeProfile: React.FC = () => {
                               <Button 
                                 className="w-full bg-green-600 hover:bg-green-700 text-white"
                                 onClick={() => {
-                                  window.open(`/public/shift-submission/${token.token}`, '_blank');
+                                  window.open(`/public/weekly-shifts/${token.token}`, '_blank');
                                 }}
                               >
                                 <Send className="h-4 w-4 ml-2" />

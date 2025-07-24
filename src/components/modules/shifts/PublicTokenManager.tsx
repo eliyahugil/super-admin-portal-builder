@@ -7,12 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useEmployees } from '@/hooks/useEmployees';
 import { usePublicShifts } from '@/hooks/usePublicShifts';
+import { useEmployeeTokens } from '@/hooks/useEmployeeTokens';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
-import { Copy, Plus, Calendar, Users, Timer, Eye, User, UsersRound, TrendingDown, AlertTriangle, RotateCcw, Power } from 'lucide-react';
+import { Copy, Plus, Calendar, Users, Timer, Eye, User, UsersRound, TrendingDown, AlertTriangle, RotateCcw, Power, UserCheck } from 'lucide-react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { TokenSubmissionsList } from './TokenSubmissionsList';
 import { ShiftSubmissionsList } from './ShiftSubmissionsList';
+import { EmployeeTokenManager } from './EmployeeTokenManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -21,6 +23,7 @@ export const PublicTokenManager: React.FC = () => {
   const { businessId } = useCurrentBusiness();
   const { data: employees = [] } = useEmployees(businessId);
   const { generateToken, useBusinessTokens, resetAllTokens, resetSingleToken, toggleTokenStatus } = usePublicShifts();
+  const { generateEmployeeTokens, resetAndGenerateTokens } = useEmployeeTokens();
   const { data: existingTokens = [] } = useBusinessTokens(businessId || '');
   
   const [isResetting, setIsResetting] = useState(false);
@@ -111,45 +114,41 @@ export const PublicTokenManager: React.FC = () => {
     setIsBulkGenerating(true);
     
     try {
-      const filteredEmployees = employees.filter(emp => {
-        if (bulkTokenForm.employeeType === 'all') return true;
-        return emp.employee_type === bulkTokenForm.employeeType;
+      // Use the new employee tokens system
+      const result = await generateEmployeeTokens.mutateAsync({
+        business_id: businessId,
+        week_start_date: bulkTokenForm.startDate,
+        week_end_date: bulkTokenForm.endDate,
+        employee_ids: bulkTokenForm.employeeType === 'all' ? undefined : 
+          employees.filter(emp => emp.employee_type === bulkTokenForm.employeeType).map(emp => emp.id)
       });
 
-      if (filteredEmployees.length === 0) {
-        toast({
-          title: 'שגיאה',
-          description: 'לא נמצאו עובדים מסוג זה',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      const expiresAt = addDays(new Date(), bulkTokenForm.expiryDays);
-      const results = [];
-
-      for (const employee of filteredEmployees) {
-        try {
-          const result = await generateToken.mutateAsync({
-            business_id: businessId,
-            employee_id: employee.id,
-            week_start_date: bulkTokenForm.startDate,
-            week_end_date: bulkTokenForm.endDate,
-            expires_at: expiresAt.toISOString(),
-            max_submissions: bulkTokenForm.maxSubmissions,
-          });
-          results.push({ employee, token: result.token });
-        } catch (error) {
-          console.error(`Error generating token for ${employee.first_name}:`, error);
-        }
-      }
+      // Convert the result to match our UI format
+      const results = result.tokens.map(tokenData => ({
+        employee: {
+          id: tokenData.employee_id,
+          first_name: tokenData.employee_name.split(' ')[0],
+          last_name: tokenData.employee_name.split(' ').slice(1).join(' '),
+          employee_id: tokenData.employee_code
+        },
+        token: tokenData.token
+      }));
 
       setBulkResults(results);
       
       toast({
         title: 'טוקנים נוצרו בהצלחה!',
-        description: `נוצרו ${results.length} טוקנים מתוך ${filteredEmployees.length} עובדים`,
+        description: `נוצרו ${result.successful_tokens} טוקנים מתוך ${result.total_employees} עובדים`,
       });
+
+      if (result.failed_tokens > 0) {
+        console.error('Failed tokens:', result.errors);
+        toast({
+          title: 'אזהרה',
+          description: `${result.failed_tokens} טוקנים נכשלו ביצירה`,
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       console.error('Error in bulk generation:', error);
       toast({
@@ -257,11 +256,18 @@ ${url}
     setIsResetting(true);
     
     try {
-      await resetAllTokens.mutateAsync(businessId);
+      // Use the new reset and generate system
+      const { start, end } = getWeekDates(0); // Current week
+      
+      await resetAndGenerateTokens.mutateAsync({
+        business_id: businessId,
+        week_start_date: format(start, 'yyyy-MM-dd'),
+        week_end_date: format(end, 'yyyy-MM-dd')
+      });
       
       toast({
-        title: 'טוקנים אופסו בהצלחה!',
-        description: 'כל הטוקנים הפעילים הועברו למצב לא פעיל',
+        title: 'טוקנים אופסו ונוצרו מחדש בהצלחה!',
+        description: 'כל הטוקנים הישנים נמחקו ונוצרו טוקנים חדשים לכל העובדים',
       });
     } catch (error) {
       console.error('Error resetting tokens:', error);
@@ -289,17 +295,17 @@ ${url}
               disabled={isResetting || existingTokens.filter(t => t.is_active).length === 0}
             >
               <RotateCcw className="h-4 w-4" />
-              איפוס כל הטוקנים ({existingTokens.filter(t => t.is_active).length})
+              איפוס וחידוש כל הטוקנים ({existingTokens.filter(t => t.is_active).length})
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent dir="rtl">
             <AlertDialogHeader>
-              <AlertDialogTitle>האם אתה בטוח שברצונך לאפס את כל הטוקנים?</AlertDialogTitle>
+              <AlertDialogTitle>האם אתה בטוח שברצונך לאפס ולחדש את כל הטוקנים?</AlertDialogTitle>
               <AlertDialogDescription>
-                פעולה זו תבטל את כל הטוקנים הפעילים ({existingTokens.filter(t => t.is_active).length} טוקנים).
-                העובדים לא יוכלו יותר להשתמש בקישורים הקיימים.
+                פעולה זו תמחק את כל הטוקנים הישנים ותיצור טוקנים חדשים לכל העובדים הפעילים.
+                הטוקנים החדשים יהיו תקפים לשבוע הנוכחי.
                 <br />
-                <strong>פעולה זו לא ניתנת לביטול.</strong>
+                <strong>העובדים יקבלו קישורים חדשים.</strong>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -309,17 +315,24 @@ ${url}
                 className="bg-red-600 hover:bg-red-700"
                 disabled={isResetting}
               >
-                {isResetting ? 'מאפס...' : 'כן, אפס את כל הטוקנים'}
+                {isResetting ? 'מאפס ויוצר מחדש...' : 'כן, אפס ויצור מחדש'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
       </div>
 
-      <Tabs defaultValue="submissions" className="w-full">
+      <Tabs defaultValue="employee-tokens" className="w-full">
         {/* טאבים רספונסיביים עם גלילה אופקית במובייל */}
         <div className="w-full overflow-x-auto scrollbar-hide mb-6">
-          <TabsList className="inline-flex w-auto min-w-full lg:w-full lg:grid lg:grid-cols-5 h-auto p-1 bg-muted rounded-lg">
+          <TabsList className="inline-flex w-auto min-w-full lg:w-full lg:grid lg:grid-cols-6 h-auto p-1 bg-muted rounded-lg">
+            <TabsTrigger 
+              value="employee-tokens" 
+              className="flex items-center gap-2 px-3 py-2.5 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            >
+              <UserCheck className="h-4 w-4" />
+              טוקנים אישיים
+            </TabsTrigger>
             <TabsTrigger 
               value="submissions" 
               className="flex items-center gap-2 px-3 py-2.5 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
@@ -332,14 +345,14 @@ ${url}
               className="flex items-center gap-2 px-3 py-2.5 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
               <User className="h-4 w-4" />
-              טוקן אישי
+              טוקן אישי (ישן)
             </TabsTrigger>
             <TabsTrigger 
               value="bulk" 
               className="flex items-center gap-2 px-3 py-2.5 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
               <UsersRound className="h-4 w-4" />
-              יצירה גורפת
+              יצירה גורפת (ישן)
             </TabsTrigger>
             <TabsTrigger 
               value="existing" 
@@ -357,6 +370,11 @@ ${url}
             </TabsTrigger>
           </TabsList>
         </div>
+
+        {/* Employee Tokens Tab - NEW */}
+        <TabsContent value="employee-tokens" className="space-y-4 sm:space-y-6 mt-0">
+          <EmployeeTokenManager />
+        </TabsContent>
 
         {/* Shift Submissions Tab */}
         <TabsContent value="submissions" className="space-y-4 sm:space-y-6 mt-0">
