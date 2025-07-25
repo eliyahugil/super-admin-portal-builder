@@ -5,9 +5,9 @@ import { useShiftScheduleMutations } from './hooks/useShiftScheduleMutations';
 import { useShiftScheduleFilters } from './hooks/useShiftScheduleFilters';
 import { useShiftScheduleNavigation } from './hooks/useShiftScheduleNavigation';
 
-export const useShiftSchedule = (view: 'week' | 'month' | 'year' | 'grouped' = 'month') => {
+export const useShiftSchedule = () => {
   const { businessId } = useCurrentBusiness();
-  const { currentDate, navigateDate } = useShiftScheduleNavigation(view);
+  const { currentDate, navigateDate } = useShiftScheduleNavigation();
   const { shifts, employees, branches, pendingSubmissions, loading, error, refetchShifts } = useShiftScheduleData(businessId);
   const { filters, filteredShifts, updateFilters } = useShiftScheduleFilters(shifts);
   const { createShift, updateShift, deleteShift, isCreating, isUpdating, isDeleting } = useShiftScheduleMutations(businessId);

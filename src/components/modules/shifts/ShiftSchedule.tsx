@@ -3,9 +3,7 @@ import React from 'react';
 import { ShiftScheduleHeader } from './schedule/ShiftScheduleHeader';
 import { useShiftSchedule } from './schedule/useShiftSchedule';
 import { ShiftScheduleView } from './schedule/ShiftScheduleView';
-import { WeekView } from './schedule/components/WeekView';
 import { ScheduleFilters } from './schedule/ScheduleFilters';
-import { ScheduleHeader } from './schedule/components/ScheduleHeader';
 import { ShiftDetailsDialog } from './schedule/ShiftDetailsDialog';
 import { CreateShiftDialog } from './schedule/CreateShiftDialog';
 import { PendingSubmissionsDialog } from './schedule/PendingSubmissionsDialog';
@@ -14,7 +12,6 @@ export const ShiftSchedule: React.FC = () => {
   const [showCreateDialog, setShowCreateDialog] = React.useState(false);
   const [selectedShift, setSelectedShift] = React.useState<any>(null);
   const [showShiftDetails, setShowShiftDetails] = React.useState(false);
-  const [view, setView] = React.useState<'week' | 'month' | 'year' | 'grouped'>('week');
   
   const {
     currentDate,
@@ -32,7 +29,7 @@ export const ShiftSchedule: React.FC = () => {
     createShift,
     businessId,
     refetchShifts
-  } = useShiftSchedule(view);
+  } = useShiftSchedule();
 
   // פונקציה לשיבוץ עובד למשמרת
   const handleAssignEmployee = async (employeeId: string, shiftId: string) => {
@@ -41,17 +38,6 @@ export const ShiftSchedule: React.FC = () => {
     } catch (error) {
       console.error('Error assigning employee:', error);
       throw error;
-    }
-  };
-
-  // פונקציית ניווט עבור הכותרת
-  const handleNavigateDate = (direction: -1 | 0 | 1) => {
-    if (direction === 0) {
-      navigateDate('today');
-    } else if (direction === 1) {
-      navigateDate('next');
-    } else if (direction === -1) {
-      navigateDate('prev');
     }
   };
 
@@ -101,54 +87,30 @@ export const ShiftSchedule: React.FC = () => {
           />
         </div>
 
-        <div className="flex-1 space-y-4">
-          <ScheduleHeader
+        <div className="flex-1">
+          <ShiftScheduleView
+            shifts={shifts}
+            employees={employees}
+            branches={branches}
             currentDate={currentDate}
-            view={view}
-            setView={setView}
-            navigateDate={handleNavigateDate}
-            isMobile={false}
+            onShiftClick={(shift) => {
+              setSelectedShift(shift);
+              setShowShiftDetails(true);
+            }}
+            onShiftUpdate={updateShift}
+            onAddShift={(date) => {
+              setShowCreateDialog(true);
+            }}
+            onShiftDelete={deleteShift}
+            businessId={businessId}
+            onShowPendingSubmissions={() => {
+              console.log('Show pending submissions');
+            }}
+            holidays={[]}
+            shabbatTimes={[]}
+            calendarEvents={[]}
+            pendingSubmissions={pendingSubmissions}
           />
-          
-          {view === 'week' ? (
-            <WeekView
-              shifts={shifts}
-              employees={employees}
-              branches={branches}
-              currentDate={currentDate}
-              onShiftClick={(shift) => {
-                setSelectedShift(shift);
-                setShowShiftDetails(true);
-              }}
-              onAddShift={(date) => {
-                setShowCreateDialog(true);
-              }}
-            />
-          ) : (
-            <ShiftScheduleView
-              shifts={shifts}
-              employees={employees}
-              branches={branches}
-              currentDate={currentDate}
-              onShiftClick={(shift) => {
-                setSelectedShift(shift);
-                setShowShiftDetails(true);
-              }}
-              onShiftUpdate={updateShift}
-              onAddShift={(date) => {
-                setShowCreateDialog(true);
-              }}
-              onShiftDelete={deleteShift}
-              businessId={businessId}
-              onShowPendingSubmissions={() => {
-                console.log('Show pending submissions');
-              }}
-              holidays={[]}
-              shabbatTimes={[]}
-              calendarEvents={[]}
-              pendingSubmissions={pendingSubmissions}
-            />
-          )}
         </div>
       </div>
 
