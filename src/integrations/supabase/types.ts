@@ -910,6 +910,53 @@ export type Database = {
           },
         ]
       }
+      business_shift_types: {
+        Row: {
+          business_id: string
+          color: string | null
+          created_at: string
+          display_name: string
+          end_time: string
+          id: string
+          is_active: boolean
+          shift_type: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          color?: string | null
+          created_at?: string
+          display_name: string
+          end_time: string
+          id?: string
+          is_active?: boolean
+          shift_type: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          color?: string | null
+          created_at?: string
+          display_name?: string
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          shift_type?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_shift_types_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_subscriptions: {
         Row: {
           business_id: string

@@ -28,7 +28,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Validate token and get employee information
+    // Validate token and get employee information + business shift types
     const { data: tokenData, error: tokenError } = await supabaseAdmin
       .from('employee_permanent_tokens')
       .select(`
@@ -67,6 +67,63 @@ serve(async (req) => {
         last_used_at: new Date().toISOString()
       })
       .eq('id', tokenData.id);
+
+    // Get business shift type definitions
+    console.log('📋 Getting business shift type definitions');
+    const { data: businessShiftTypes, error: shiftTypesError } = await supabaseAdmin
+      .from('business_shift_types')
+      .select('shift_type, display_name, start_time, end_time, color')
+      .eq('business_id', businessId)
+      .eq('is_active', true);
+
+    if (shiftTypesError) {
+      console.error('❌ Error fetching business shift types:', shiftTypesError);
+    }
+
+    // Create a function to determine shift type based on business definitions
+    const determineShiftType = (startTime: string) => {
+      if (!businessShiftTypes || businessShiftTypes.length === 0) {
+        // Fallback to default logic if no business definitions
+        const startHour = parseInt(startTime.split(':')[0]);
+        const startMinute = parseInt(startTime.split(':')[1]);
+        const startTimeInMinutes = startHour * 60 + startMinute;
+        
+        if (startTimeInMinutes >= 360 && startTimeInMinutes < 840) return 'morning';
+        if (startTimeInMinutes >= 840 && startTimeInMinutes < 1080) return 'afternoon';
+        return 'evening';
+      }
+
+      // Parse start time
+      const [startHour, startMinute] = startTime.split(':').map(Number);
+      const startTimeInMinutes = startHour * 60 + startMinute;
+
+      // Check against business shift type definitions
+      for (const shiftType of businessShiftTypes) {
+        const [typeStartHour, typeStartMinute] = shiftType.start_time.split(':').map(Number);
+        const [typeEndHour, typeEndMinute] = shiftType.end_time.split(':').map(Number);
+        
+        const typeStartMinutes = typeStartHour * 60 + typeStartMinute;
+        let typeEndMinutes = typeEndHour * 60 + typeEndMinute;
+        
+        // Handle overnight shifts (like evening: 18:00-06:00)
+        if (typeEndMinutes <= typeStartMinutes) {
+          typeEndMinutes += 24 * 60; // Add 24 hours
+        }
+        
+        // Check if the shift start time falls within this type's range
+        if (startTimeInMinutes >= typeStartMinutes && startTimeInMinutes < typeEndMinutes) {
+          return shiftType.shift_type;
+        }
+        
+        // Special handling for overnight shifts when start time is after midnight
+        if (typeEndMinutes > 24 * 60 && startTimeInMinutes < (typeEndMinutes - 24 * 60)) {
+          return shiftType.shift_type;
+        }
+      }
+
+      // Default fallback
+      return 'morning';
+    };
 
     // Get employee's branch assignments and preferences
     console.log('📋 Getting employee branch assignments and preferences');
@@ -170,19 +227,8 @@ serve(async (req) => {
         const shiftDate = new Date(shift.shift_date);
         const dayOfWeek = shiftDate.getDay(); // 0 = Sunday, 1 = Monday...
         
-        // Determine shift type based on time - משמרות שמתחילות אחרי 18:00 נחשבות כערב
-        const startHour = parseInt(shift.start_time.split(':')[0]);
-        const startMinute = parseInt(shift.start_time.split(':')[1]);
-        const startTimeInMinutes = startHour * 60 + startMinute;
-        
-        let shift_type = 'morning';
-        if (startTimeInMinutes >= 360 && startTimeInMinutes < 840) { // 6:00-14:00
-          shift_type = 'morning';
-        } else if (startTimeInMinutes >= 840 && startTimeInMinutes < 1080) { // 14:00-18:00
-          shift_type = 'afternoon';
-        } else { // 18:00+ או לפני 6:00
-          shift_type = 'evening';
-        }
+        // Use the business shift type determination function
+        const shift_type = determineShiftType(shift.start_time);
 
         return {
           id: shift.id,
@@ -281,6 +327,37 @@ serve(async (req) => {
       console.error('❌ Error fetching scheduled shifts:', scheduledError);
     }
 
+    // Convert employee's scheduled shifts to the same format as available shifts
+    const employeeScheduledShifts = (scheduledShifts || []).map(shift => {
+      const shiftDate = new Date(shift.shift_date);
+      const dayOfWeek = shiftDate.getDay();
+      const shift_type = determineShiftType(shift.start_time);
+
+      return {
+        id: shift.id,
+        business_id: shift.business_id,
+        branch_id: shift.branch_id,
+        shift_name: `משמרת ${businessShiftTypes?.find(bt => bt.shift_type === shift_type)?.display_name || shift_type}`,
+        shift_type: shift_type,
+        day_of_week: dayOfWeek,
+        start_time: shift.start_time,
+        end_time: shift.end_time,
+        required_employees: 1,
+        current_assignments: 1,
+        is_open_for_unassigned: false,
+        week_start_date: context.weekStart || weekStart,
+        week_end_date: context.weekEnd || weekEndStr,
+        branch: shift.branch,
+        source: 'employee_scheduled',
+        shift_date: shift.shift_date,
+        notes: shift.notes,
+        shift_assignments: shift.shift_assignments,
+        is_assigned_to_employee: true
+      };
+    });
+
+    console.log('👤 Employee scheduled shifts:', employeeScheduledShifts.length);
+
     const response = {
       success: true,
       tokenData: {
@@ -295,10 +372,13 @@ serve(async (req) => {
       context,
       availableShifts: shifts,
       scheduledShifts: scheduledShifts || [],
+      employeeScheduledShifts: employeeScheduledShifts || [],
       branches: branches || [],
       availableShiftsCount: shifts.length,
       scheduledShiftsCount: (scheduledShifts || []).length,
-      employeeAssignments: employeeBranches || []
+      employeeScheduledShiftsCount: employeeScheduledShifts.length,
+      employeeAssignments: employeeBranches || [],
+      businessShiftTypes: businessShiftTypes || []
     };
 
     console.log('🎉 Successfully prepared shifts for permanent employee token');
