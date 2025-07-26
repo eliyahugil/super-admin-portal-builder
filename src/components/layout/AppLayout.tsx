@@ -20,7 +20,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full" dir="rtl">
         {/* Desktop Sidebar - Only on desktop */}
         {!isMobile && <DynamicSidebar />}
         
