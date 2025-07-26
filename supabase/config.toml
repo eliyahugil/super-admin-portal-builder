@@ -165,3 +165,21 @@ verify_jwt = false
 
 [functions.send-birthday-notifications]
 verify_jwt = false
+
+[functions.submit-weekly-shifts]
+verify_jwt = false
+
+[functions.get-weekly-shifts-for-employee]
+verify_jwt = false
+
+[functions.get-available-shifts-for-token]
+verify_jwt = false
+
+[functions.get-employee-permanent-shifts]
+verify_jwt = false
+
+[functions.generate-permanent-employee-tokens]
+verify_jwt = false
+
+[functions.check-submission-status]
+verify_jwt = false

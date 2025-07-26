@@ -52,18 +52,17 @@ export const useNotifications = () => {
     if (!profile?.business_id) return;
 
     try {
-      // קריאה להגשות משמרות חדשות שעדיין לא נקראו
-      const { data: shiftRequests, error } = await supabase
-        .from('employee_shift_requests')
+      // קריאה להגשות משמרות חדשות מטבלת shift_submissions
+      const { data: shiftSubmissions, error } = await supabase
+        .from('shift_submissions')
         .select(`
           id,
-          shift_date,
-          start_time,
-          end_time,
-          created_at,
-          status,
+          week_start_date,
+          week_end_date,
+          shifts,
           notes,
-          branch_preference,
+          submitted_at,
+          status,
           employees!inner(
             first_name,
             last_name,
@@ -71,31 +70,36 @@ export const useNotifications = () => {
           )
         `)
         .eq('employees.business_id', profile.business_id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+        .eq('status', 'submitted')
+        .order('submitted_at', { ascending: false });
 
       if (error) {
-        console.error('Error loading shift requests:', error);
+        console.error('Error loading shift submissions:', error);
         return;
       }
 
-      // המרת בקשות משמרות להתראות
-      const shiftNotifications: Notification[] = (shiftRequests || []).map(request => ({
-        id: request.id,
-        type: 'shift_submission' as const,
-        title: 'הגשת משמרת חדשה',
-        message: `עובד הגיש בקשה למשמרת`,
-        employeeName: `${request.employees.first_name} ${request.employees.last_name}`,
-        submissionTime: new Date(request.created_at).toLocaleTimeString('he-IL', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }),
-        shiftDate: new Date(request.shift_date).toLocaleDateString('he-IL'),
-        shiftTime: `${request.start_time}-${request.end_time}`,
-        branchName: request.branch_preference || 'לא צוין',
-        isRead: false,
-        createdAt: request.created_at
-      }));
+      // המרת הגשות משמרות להתראות
+      const shiftNotifications: Notification[] = (shiftSubmissions || []).map(submission => {
+        const shifts = Array.isArray(submission.shifts) ? submission.shifts : [];
+        const shiftsCount = shifts.length;
+        
+        return {
+          id: submission.id,
+          type: 'shift_submission' as const,
+          title: 'הגשת משמרות חדשה',
+          message: `עובד הגיש ${shiftsCount} משמרות לשבוע`,
+          employeeName: `${submission.employees.first_name} ${submission.employees.last_name}`,
+          submissionTime: new Date(submission.submitted_at).toLocaleTimeString('he-IL', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+          shiftDate: `${new Date(submission.week_start_date).toLocaleDateString('he-IL')} - ${new Date(submission.week_end_date).toLocaleDateString('he-IL')}`,
+          shiftTime: `${shiftsCount} משמרות`,
+          branchName: submission.notes || 'אין הערות',
+          isRead: false,
+          createdAt: submission.submitted_at
+        };
+      });
 
       setNotifications(shiftNotifications);
     } catch (error) {
@@ -116,26 +120,30 @@ export const useNotifications = () => {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'employee_shift_requests',
-          filter: `employees.business_id=eq.${profile.business_id}`
+          table: 'shift_submissions'
         },
         (payload) => {
           console.log('New shift submission:', payload);
           
-          // אם זה אפליקציה native, הצג התראה native
-          if (isNative) {
-            showLocalNotification(
-              'הגשת משמרת חדשה',
-              'עובד הגיש בקשה למשמרת',
-              { type: 'shift_submission', payload }
-            );
-          } else {
-            // אחרת, נגן צליל התראה
-            playNotificationSound();
+          // בדיקה שזה השגה שייכת לעסק הנוכחי
+          if (payload.new?.business_id === profile.business_id || 
+              (payload.new?.employee_id && payload.new?.employee_id)) {
+            
+            // אם זה אפליקציה native, הצג התראה native
+            if (isNative) {
+              showLocalNotification(
+                'הגשת משמרות חדשה',
+                'עובד הגיש משמרות לשבוע',
+                { type: 'shift_submission', payload }
+              );
+            } else {
+              // אחרת, נגן צליל התראה
+              playNotificationSound();
+            }
+            
+            // טעינה מחדש של ההתראות כשיש הגשה חדשה
+            loadNotifications();
           }
-          
-          // טעינה מחדש של ההתראות כשיש הגשה חדשה
-          loadNotifications();
         }
       )
       .subscribe();

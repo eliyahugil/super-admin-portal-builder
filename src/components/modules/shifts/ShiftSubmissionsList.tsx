@@ -8,6 +8,8 @@ import { he } from 'date-fns/locale';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { useShiftSubmissions } from './hooks/useShiftSubmissions';
+import { useScheduleStatus } from './hooks/useScheduleStatus';
+import { ScheduleStatusIndicator } from './ScheduleStatusIndicator';
 
 export const ShiftSubmissionsList: React.FC = () => {
   const isMobile = useIsMobile();
@@ -89,6 +91,7 @@ export const ShiftSubmissionsList: React.FC = () => {
   const MobileSubmissionCard = ({ submission }: { submission: any }) => {
     const shifts = Array.isArray(submission.shifts) ? submission.shifts : [];
     const isExpanded = expandedCards.has(submission.id);
+    const { data: scheduleStatus } = useScheduleStatus(submission.week_start_date, submission.week_end_date);
     
     return (
       <div className="bg-card border border-border rounded-lg shadow-sm mb-3 overflow-hidden">
@@ -110,7 +113,11 @@ export const ShiftSubmissionsList: React.FC = () => {
               </span>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              {getStatusBadge(submission.status)}
+              <ScheduleStatusIndicator 
+                submission={submission}
+                isSchedulePublished={scheduleStatus?.isPublished}
+                publishDate={scheduleStatus?.publishDate}
+              />
               <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </div>
@@ -272,6 +279,7 @@ export const ShiftSubmissionsList: React.FC = () => {
               const morningAvailability = Array.isArray(submission.optional_morning_availability) 
                 ? submission.optional_morning_availability 
                 : [];
+              const { data: scheduleStatus } = useScheduleStatus(submission.week_start_date, submission.week_end_date);
 
               return (
                 <Card key={submission.id} className="overflow-hidden">
@@ -284,7 +292,11 @@ export const ShiftSubmissionsList: React.FC = () => {
                           : 'עובד אנונימי'
                         }
                       </CardTitle>
-                      {getStatusBadge(submission.status)}
+                      <ScheduleStatusIndicator 
+                        submission={submission}
+                        isSchedulePublished={scheduleStatus?.isPublished}
+                        publishDate={scheduleStatus?.publishDate}
+                      />
                     </div>
                     <CardDescription className="flex items-center gap-4 text-sm">
                       <span className="flex items-center gap-1">

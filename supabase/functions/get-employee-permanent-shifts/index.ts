@@ -83,14 +83,13 @@ serve(async (req) => {
     // Create a function to determine shift type based on business definitions
     const determineShiftType = (startTime: string) => {
       if (!businessShiftTypes || businessShiftTypes.length === 0) {
-        // Fallback to default logic if no business definitions
-        // Changed: 14:00 (840 minutes) and later are 'evening' instead of 'afternoon'
+        // Improved fallback logic: 16:00 (960 minutes) and later are 'evening'
         const startHour = parseInt(startTime.split(':')[0]);
         const startMinute = parseInt(startTime.split(':')[1]);
         const startTimeInMinutes = startHour * 60 + startMinute;
         
-        if (startTimeInMinutes >= 360 && startTimeInMinutes < 840) return 'morning';
-        // All shifts from 14:00 onwards are now 'evening'
+        if (startTimeInMinutes >= 360 && startTimeInMinutes < 960) return 'morning';
+        // All shifts from 16:00 onwards are now 'evening'
         return 'evening';
       }
 

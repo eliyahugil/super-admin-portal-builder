@@ -121,6 +121,28 @@ serve(async (req) => {
       )
     }
 
+    // Check if schedule has been published for this week (any approved shifts)
+    const { data: publishedShifts } = await supabaseClient
+      .from('scheduled_shifts')
+      .select('id')
+      .eq('business_id', tokenValidation.business_id)
+      .gte('shift_date', week_start_date)
+      .lte('shift_date', week_end_date)
+      .eq('status', 'approved')
+
+    if (publishedShifts && publishedShifts.length > 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'הסידור לשבוע זה כבר פורסם ולא ניתן לעוד הגשות' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
     // Create submission record
     const submissionData = {
       employee_id: tokenValidation.employee_id,
