@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { WeeklyShiftService, ShiftEntry, WeeklySubmissionData } from '@/services/WeeklyShiftService';
 import { ShiftCalendarView } from './ShiftCalendarView';
-import { Clock, MapPin, User, Calendar, Plus, Trash2, AlertTriangle, Copy, LogIn } from 'lucide-react';
+import { Clock, MapPin, User, Calendar, Plus, Trash2, AlertTriangle, Copy, LogIn, Users } from 'lucide-react';
 
 export const WeeklyShiftSubmissionForm: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -371,50 +371,81 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
               <>
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-4">בחר משמרות זמינות:</h3>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {availableShifts.map((shift) => (
-                      <Card 
-                        key={shift.id}
-                        className={`cursor-pointer transition-all border-2 ${
-                          selectedShifts[shift.id] 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        onClick={() => toggleShiftSelection(shift.id)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-semibold">
-                              {daysOfWeek[shift.day_of_week]}
-                            </h4>
-                            <div className="text-xs bg-gray-100 px-2 py-1 rounded">
-                              {shift.shift_type}
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-gray-500" />
-                              <span>{shift.start_time} - {shift.end_time}</span>
-                            </div>
-                            
-                            {shift.branch && (
-                              <div className="flex items-center gap-2">
-                                <MapPin className="h-4 w-4 text-gray-500" />
-                                <span>{shift.branch.name}</span>
-                              </div>
-                            )}
-                            
-                            {shift.required_employees && (
-                              <div className="text-xs text-gray-600">
-                                דרושים: {shift.required_employees} עובדים
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                  
+                  {/* הפרדה לפי ימים */}
+                  {daysOfWeek.map((dayName, dayIndex) => {
+                    const dayShifts = availableShifts.filter(shift => shift.day_of_week === dayIndex);
+                    
+                    if (dayShifts.length === 0) return null;
+                    
+                    return (
+                      <div key={dayIndex} className="mb-6">
+                        {/* כותרת היום */}
+                        <div className="border-b-2 border-primary/20 pb-2 mb-4">
+                          <h4 className="text-xl font-bold text-primary flex items-center gap-2">
+                            <Calendar className="h-5 w-5" />
+                            {dayName}
+                          </h4>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {dayShifts.length} משמרות זמינות
+                          </p>
+                        </div>
+                        
+                        {/* משמרות היום */}
+                        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                          {dayShifts.map((shift) => (
+                            <Card 
+                              key={shift.id}
+                              className={`cursor-pointer transition-all border-2 ${
+                                selectedShifts[shift.id] 
+                                  ? 'border-blue-500 bg-blue-50 shadow-md' 
+                                  : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                              }`}
+                              onClick={() => toggleShiftSelection(shift.id)}
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex justify-between items-start mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-3 h-3 rounded-full ${
+                                      selectedShifts[shift.id] ? 'bg-blue-500' : 'bg-gray-300'
+                                    }`} />
+                                    <span className={`text-xs px-2 py-1 rounded font-medium ${
+                                      selectedShifts[shift.id] 
+                                        ? 'bg-blue-100 text-blue-800' 
+                                        : 'bg-gray-100 text-gray-700'
+                                    }`}>
+                                      {shift.shift_type}
+                                    </span>
+                                  </div>
+                                </div>
+                                
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-gray-500" />
+                                    <span className="font-medium">{shift.start_time} - {shift.end_time}</span>
+                                  </div>
+                                  
+                                  {shift.branch && (
+                                    <div className="flex items-center gap-2">
+                                      <MapPin className="h-4 w-4 text-gray-500" />
+                                      <span className="text-gray-700">{shift.branch.name}</span>
+                                    </div>
+                                  )}
+                                  
+                                  {shift.required_employees && (
+                                    <div className="text-xs text-gray-600 flex items-center gap-1">
+                                      <Users className="h-3 w-3" />
+                                      דרושים: {shift.required_employees} עובדים
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="space-y-4">
