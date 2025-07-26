@@ -47,6 +47,7 @@ export const ModuleRouteHandler: React.FC<ModuleRouteHandlerProps> = ({
       return <CRMDashboard />;
     case 'orders':
       return <OrdersModuleRouter route={route} />;
+    case 'accounting':
     case 'finance':
     case 'inventory':
     case 'projects':
