@@ -1076,8 +1076,9 @@ export const SimpleEmployeeProfile: React.FC = () => {
                       <div key={token.id} className="p-4 border rounded-lg bg-green-50 border-green-200">
                         <div className="flex items-center justify-between mb-3">
                           <div className="text-right flex-1">
-                            <h4 className="font-medium text-lg">טוקן הגשת משמרות</h4>
+                            <h4 className="font-medium text-lg">טוקן להגשה וצפייה במשמרות</h4>
                             <p className="text-sm text-muted-foreground">
+                              מאפשר הגשת משמרות וצפייה במשמרות עבר/עתיד <br/>
                               תקף מ-{format(new Date(token.week_start_date), 'dd/MM/yyyy')} 
                               {' '}עד{' '}
                               {format(new Date(token.week_end_date), 'dd/MM/yyyy')}
@@ -1145,7 +1146,7 @@ export const SimpleEmployeeProfile: React.FC = () => {
                                 }}
                               >
                                 <Send className="h-4 w-4 ml-2" />
-                                כניסה לטופס הגשת משמרות
+                                כניסה לאזור הגשה וצפייה במשמרות
                               </Button>
                             </div>
                           </div>
