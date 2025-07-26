@@ -1009,6 +1009,60 @@ export type Database = {
         }
         Relationships: []
       }
+      chart_of_accounts: {
+        Row: {
+          account_code: string
+          account_name: string
+          account_type: string
+          business_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          level: number
+          parent_account_id: string | null
+        }
+        Insert: {
+          account_code: string
+          account_name: string
+          account_type: string
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          level?: number
+          parent_account_id?: string | null
+        }
+        Update: {
+          account_code?: string
+          account_name?: string
+          account_type?: string
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          level?: number
+          parent_account_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chart_of_accounts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chart_of_accounts_parent_account_id_fkey"
+            columns: ["parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_activities: {
         Row: {
           activity_date: string | null
@@ -3526,6 +3580,461 @@ export type Database = {
           },
         ]
       }
+      inventory_items: {
+        Row: {
+          business_id: string
+          category: string | null
+          cost_price: number | null
+          created_at: string
+          created_by: string | null
+          current_quantity: number
+          id: string
+          is_active: boolean
+          item_code: string
+          item_name: string
+          minimum_quantity: number | null
+          selling_price: number | null
+          sequential_number: number
+          unit_of_measure: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          current_quantity?: number
+          id?: string
+          is_active?: boolean
+          item_code: string
+          item_name: string
+          minimum_quantity?: number | null
+          selling_price?: number | null
+          sequential_number?: number
+          unit_of_measure?: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          current_quantity?: number
+          id?: string
+          is_active?: boolean
+          item_code?: string
+          item_name?: string
+          minimum_quantity?: number | null
+          selling_price?: number | null
+          sequential_number?: number
+          unit_of_measure?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_movements: {
+        Row: {
+          business_id: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_movement_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          inventory_item_id: string
+          is_cancelled: boolean
+          movement_date: string
+          movement_type: string
+          permanent_file_id: string | null
+          quantity: number
+          reference_number: string | null
+          sequential_number: number
+          source_document_id: string | null
+          source_document_type: string | null
+          total_value: number | null
+          unit_cost: number | null
+        }
+        Insert: {
+          business_id: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_movement_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          inventory_item_id: string
+          is_cancelled?: boolean
+          movement_date: string
+          movement_type: string
+          permanent_file_id?: string | null
+          quantity: number
+          reference_number?: string | null
+          sequential_number?: number
+          source_document_id?: string | null
+          source_document_type?: string | null
+          total_value?: number | null
+          unit_cost?: number | null
+        }
+        Update: {
+          business_id?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_movement_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          inventory_item_id?: string
+          is_cancelled?: boolean
+          movement_date?: string
+          movement_type?: string
+          permanent_file_id?: string | null
+          quantity?: number
+          reference_number?: string | null
+          sequential_number?: number
+          source_document_id?: string | null
+          source_document_type?: string | null
+          total_value?: number | null
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_cancelled_by_movement_id_fkey"
+            columns: ["cancelled_by_movement_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_movements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_permanent_file_id_fkey"
+            columns: ["permanent_file_id"]
+            isOneToOne: false
+            referencedRelation: "permanent_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_items: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_id: string
+          item_code: string | null
+          item_description: string
+          line_total: number
+          quantity: number
+          sequential_number: number
+          unit_price: number
+          vat_amount: number
+          vat_rate: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_id: string
+          item_code?: string | null
+          item_description: string
+          line_total: number
+          quantity?: number
+          sequential_number?: number
+          unit_price: number
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          item_code?: string | null
+          item_description?: string
+          line_total?: number
+          quantity?: number
+          sequential_number?: number
+          unit_price?: number
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          business_id: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_invoice_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_id: string | null
+          customer_name: string
+          customer_tax_id: string | null
+          due_date: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          is_cancelled: boolean
+          language: string
+          notes: string | null
+          payment_terms: string | null
+          permanent_file_id: string | null
+          sequential_number: number
+          status: string
+          subtotal: number
+          total_amount: number
+          vat_amount: number
+        }
+        Insert: {
+          business_id: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_invoice_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          customer_name: string
+          customer_tax_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date: string
+          invoice_number: string
+          is_cancelled?: boolean
+          language?: string
+          notes?: string | null
+          payment_terms?: string | null
+          permanent_file_id?: string | null
+          sequential_number?: number
+          status?: string
+          subtotal: number
+          total_amount: number
+          vat_amount?: number
+        }
+        Update: {
+          business_id?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_invoice_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          customer_name?: string
+          customer_tax_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          is_cancelled?: boolean
+          language?: string
+          notes?: string | null
+          payment_terms?: string | null
+          permanent_file_id?: string | null
+          sequential_number?: number
+          status?: string
+          subtotal?: number
+          total_amount?: number
+          vat_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_cancelled_by_invoice_id_fkey"
+            columns: ["cancelled_by_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_permanent_file_id_fkey"
+            columns: ["permanent_file_id"]
+            isOneToOne: false
+            referencedRelation: "permanent_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          business_id: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_entry_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          entry_date: string
+          id: string
+          is_cancelled: boolean
+          permanent_file_id: string | null
+          reference_number: string
+          sequential_number: number
+          source_document_id: string | null
+          source_document_type: string | null
+          total_credit: number
+          total_debit: number
+        }
+        Insert: {
+          business_id: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_entry_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          entry_date: string
+          id?: string
+          is_cancelled?: boolean
+          permanent_file_id?: string | null
+          reference_number: string
+          sequential_number?: number
+          source_document_id?: string | null
+          source_document_type?: string | null
+          total_credit?: number
+          total_debit?: number
+        }
+        Update: {
+          business_id?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_entry_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          entry_date?: string
+          id?: string
+          is_cancelled?: boolean
+          permanent_file_id?: string | null
+          reference_number?: string
+          sequential_number?: number
+          source_document_id?: string | null
+          source_document_type?: string | null
+          total_credit?: number
+          total_debit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_cancelled_by_entry_id_fkey"
+            columns: ["cancelled_by_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_permanent_file_id_fkey"
+            columns: ["permanent_file_id"]
+            isOneToOne: false
+            referencedRelation: "permanent_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entry_lines: {
+        Row: {
+          account_code: string
+          account_name: string
+          created_at: string
+          credit_amount: number
+          debit_amount: number
+          description: string | null
+          id: string
+          journal_entry_id: string
+          sequential_number: number
+        }
+        Insert: {
+          account_code: string
+          account_name: string
+          created_at?: string
+          credit_amount?: number
+          debit_amount?: number
+          description?: string | null
+          id?: string
+          journal_entry_id: string
+          sequential_number?: number
+        }
+        Update: {
+          account_code?: string
+          account_name?: string
+          created_at?: string
+          credit_amount?: number
+          debit_amount?: number
+          description?: string | null
+          id?: string
+          journal_entry_id?: string
+          sequential_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entry_lines_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           assigned_to: string | null
@@ -4108,6 +4617,94 @@ export type Database = {
           },
         ]
       }
+      purchase_orders: {
+        Row: {
+          business_id: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_order_id: string | null
+          created_at: string
+          created_by: string | null
+          expected_delivery_date: string | null
+          id: string
+          is_cancelled: boolean
+          notes: string | null
+          order_date: string
+          order_number: string
+          permanent_file_id: string | null
+          sequential_number: number
+          status: string
+          supplier_id: string | null
+          supplier_name: string
+          total_amount: number
+        }
+        Insert: {
+          business_id: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          is_cancelled?: boolean
+          notes?: string | null
+          order_date: string
+          order_number: string
+          permanent_file_id?: string | null
+          sequential_number?: number
+          status?: string
+          supplier_id?: string | null
+          supplier_name: string
+          total_amount: number
+        }
+        Update: {
+          business_id?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          is_cancelled?: boolean
+          notes?: string | null
+          order_date?: string
+          order_number?: string
+          permanent_file_id?: string | null
+          sequential_number?: number
+          status?: string
+          supplier_id?: string | null
+          supplier_name?: string
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_cancelled_by_order_id_fkey"
+            columns: ["cancelled_by_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_permanent_file_id_fkey"
+            columns: ["permanent_file_id"]
+            isOneToOne: false
+            referencedRelation: "permanent_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quarterly_backups: {
         Row: {
           backup_date: string
@@ -4157,6 +4754,111 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receipts: {
+        Row: {
+          amount_received: number
+          business_id: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_receipt_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_id: string | null
+          customer_name: string
+          id: string
+          invoice_id: string | null
+          is_cancelled: boolean
+          notes: string | null
+          payment_method: string
+          permanent_file_id: string | null
+          receipt_date: string
+          receipt_number: string
+          sequential_number: number
+        }
+        Insert: {
+          amount_received: number
+          business_id: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_receipt_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          customer_name: string
+          id?: string
+          invoice_id?: string | null
+          is_cancelled?: boolean
+          notes?: string | null
+          payment_method: string
+          permanent_file_id?: string | null
+          receipt_date: string
+          receipt_number: string
+          sequential_number?: number
+        }
+        Update: {
+          amount_received?: number
+          business_id?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_receipt_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          customer_name?: string
+          id?: string
+          invoice_id?: string | null
+          is_cancelled?: boolean
+          notes?: string | null
+          payment_method?: string
+          permanent_file_id?: string | null
+          receipt_date?: string
+          receipt_number?: string
+          sequential_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_cancelled_by_receipt_id_fkey"
+            columns: ["cancelled_by_receipt_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_permanent_file_id_fkey"
+            columns: ["permanent_file_id"]
+            isOneToOne: false
+            referencedRelation: "permanent_files"
             referencedColumns: ["id"]
           },
         ]
@@ -5486,6 +6188,15 @@ export type Database = {
         Args: { business_id_param: string; module_key_param: string }
         Returns: boolean
       }
+      check_sequential_integrity: {
+        Args: { table_name_param: string; business_id_param: string }
+        Returns: {
+          missing_numbers: number[]
+          duplicate_numbers: number[]
+          max_number: number
+          total_records: number
+        }[]
+      }
       clone_employees_to_business: {
         Args: {
           from_business_id: string
@@ -5501,6 +6212,15 @@ export type Database = {
           fields_config: Json
         }
         Returns: boolean
+      }
+      create_quarterly_backup: {
+        Args: {
+          business_id_param: string
+          quarter_param: number
+          year_param: number
+          backup_location_param: string
+        }
+        Returns: string
       }
       delete_from_table: {
         Args: { table_name: string; where_clause: string }
@@ -5582,6 +6302,10 @@ export type Database = {
       }
       get_next_customer_number: {
         Args: { business_id_param: string }
+        Returns: number
+      }
+      get_next_sequential_number: {
+        Args: { table_name_param: string; business_id_param: string }
         Returns: number
       }
       get_registration_token_info: {
