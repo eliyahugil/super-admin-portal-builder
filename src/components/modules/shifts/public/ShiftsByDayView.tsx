@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,6 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
   selectedShifts
 }) => {
   const [showSpecialShifts, setShowSpecialShifts] = useState<Record<string, boolean>>({});
-  const [suggestedShifts, setSuggestedShifts] = useState<CompatibleShift[]>([]);
 
   const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -58,8 +58,8 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
     return start1 < end2 && start2 < end1;
   };
 
-  // Check if a shift can be auto-selected based on selected shifts
-  const canAutoSelect = (shift: CompatibleShift): boolean => {
+  // Check if a shift should be auto-selected based on selected shifts
+  const shouldAutoSelect = (shift: CompatibleShift): boolean => {
     return selectedShifts.some(selectedShift => {
       return isShiftContained(selectedShift, shift);
     });
@@ -79,31 +79,23 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
     });
   };
 
-  // Update suggested shifts when selected shifts change
+  // Auto-select shifts when selected shifts change
   useEffect(() => {
-    console.log('🔄 Updating suggested shifts based on selected shifts:', selectedShifts);
-    const newSuggested: CompatibleShift[] = [];
+    console.log('🔄 Auto-selecting shifts based on selected shifts:', selectedShifts);
     
     Object.values(shiftsByDay).forEach(dayData => {
       dayData.compatibleShifts.forEach(shift => {
-        // Skip if already selected
-        if (selectedShifts.find(s => s.id === shift.id)) return;
+        const isAlreadySelected = selectedShifts.find(s => s.id === shift.id);
+        const shouldBeAutoSelected = shouldAutoSelect(shift);
         
-        // Check if this shift can be auto-selected
-        if (canAutoSelect(shift)) {
-          console.log('✅ Adding suggested shift:', shift.shift_name, shift.start_time, '-', shift.end_time);
-          newSuggested.push({
-            ...shift,
-            autoSelected: true,
-            reason: 'זמין - כבר נבחרה משמרת המכילה את השעות הללו'
-          });
+        // Auto-select if should be selected but isn't
+        if (shouldBeAutoSelected && !isAlreadySelected) {
+          console.log('✅ Auto-selecting shift:', shift.shift_name, shift.start_time, '-', shift.end_time);
+          onShiftToggle(shift);
         }
       });
     });
-    
-    console.log('📋 Total suggested shifts:', newSuggested.length);
-    setSuggestedShifts(newSuggested);
-  }, [selectedShifts, shiftsByDay]);
+  }, [selectedShifts, shiftsByDay, onShiftToggle]);
 
   const toggleSpecialShifts = (dayName: string) => {
     setShowSpecialShifts(prev => ({
@@ -116,8 +108,8 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
     return selectedShifts.some(s => s.id === shift.id);
   };
 
-  const isShiftSuggested = (shift: CompatibleShift) => {
-    return suggestedShifts.some(s => s.id === shift.id);
+  const isShiftAutoSelected = (shift: CompatibleShift) => {
+    return shouldAutoSelect(shift);
   };
 
   const handleShiftClick = (shift: CompatibleShift) => {
@@ -134,7 +126,7 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
 
   const ShiftCard = ({ shift }: { shift: CompatibleShift }) => {
     const isSelected = isShiftSelected(shift);
-    const isSuggested = isShiftSuggested(shift);
+    const isAutoSelected = isShiftAutoSelected(shift);
     const hasShiftConflict = hasConflict(shift);
     const isSpecial = shift.shift_type === 'special' || shift.shift_type === 'emergency';
     
@@ -143,8 +135,6 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
         className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
           isSelected
             ? 'border-blue-500 bg-blue-50'
-            : isSuggested
-            ? 'border-green-400 bg-green-50'
             : hasShiftConflict
             ? 'border-red-300 bg-red-50 opacity-60 cursor-not-allowed'
             : 'border-gray-200 hover:border-gray-300'
@@ -171,10 +161,10 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
                 נבחר
               </Badge>
             )}
-            {isSuggested && !isSelected && (
+            {isAutoSelected && !isSelected && (
               <Badge variant="secondary" className="bg-green-100 text-green-800">
                 <Star className="h-3 w-3 mr-1" />
-                מומלץ
+                זמין אוטומטית
               </Badge>
             )}
             {hasShiftConflict && (
@@ -195,9 +185,9 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
           {shift.shift_name}
         </div>
         
-        {(shift.reason || isSuggested) && (
+        {isAutoSelected && !isSelected && (
           <div className="mt-2 text-xs text-green-700 bg-green-50 p-2 rounded">
-            {shift.reason || suggestedShifts.find(s => s.id === shift.id)?.reason}
+            זמין - כבר נבחרה משמרת המכילה את השעות הללו
           </div>
         )}
         
@@ -219,7 +209,7 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
     const regularShifts = dayData.compatibleShifts || [];
     const specialShifts = dayData.specialShifts || [];
     const selectedCount = selectedShifts.filter(s => s.day_of_week === dayIndex).length;
-    const suggestedCount = suggestedShifts.filter(s => s.day_of_week === dayIndex).length;
+    const autoSelectedCount = regularShifts.filter(s => shouldAutoSelect(s) && !isShiftSelected(s)).length;
 
     return (
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
@@ -235,9 +225,9 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
                 {selectedCount} נבחרו
               </Badge>
             )}
-            {suggestedCount > 0 && (
+            {autoSelectedCount > 0 && (
               <Badge variant="secondary" className="bg-green-100 text-green-800">
-                {suggestedCount} מומלצות
+                {autoSelectedCount} זמינות אוטומטית
               </Badge>
             )}
             {regularShifts.length > 0 && (
