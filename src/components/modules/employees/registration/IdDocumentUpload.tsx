@@ -45,6 +45,7 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
 
   const handleFileSelect = async (file: File) => {
     try {
+      console.log('🔍 Starting file analysis:', file.name, file.type, 'Size:', file.size);
       setError(null);
       setIsProcessing(true);
       
@@ -62,7 +63,7 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
       const base64File = await convertFileToBase64(file);
       setUploadedImage(base64File);
 
-      console.log('Sending file to analysis:', file.name, file.type);
+      console.log('📤 Sending file to edge function for analysis...');
       
       const { data, error: functionError } = await supabase.functions.invoke('analyze-id-document', {
         body: { 
@@ -71,15 +72,19 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
         }
       });
 
+      console.log('📊 Edge function response:', { data, error: functionError });
+
       if (functionError) {
+        console.error('❌ Function error:', functionError);
         throw new Error(functionError.message || 'שגיאה בניתוח התמונה');
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'שגיאה בניתוח התמונה');
+      if (!data || !data.success) {
+        console.error('❌ Analysis failed:', data);
+        throw new Error(data?.error || 'שגיאה בניתוח התמונה');
       }
 
-      console.log('Analysis result:', data.data);
+      console.log('✅ Analysis successful:', data.data);
       
       setExtractedData(data.data);
       onDataExtracted(data.data);

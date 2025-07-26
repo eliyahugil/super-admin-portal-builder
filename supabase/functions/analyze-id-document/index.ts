@@ -20,28 +20,31 @@ serve(async (req) => {
   }
 
   if (!openAIApiKey) {
+    console.log('❌ OpenAI API key not configured');
     return new Response(
-      JSON.stringify({ error: 'OpenAI API key not configured' }),
+      JSON.stringify({ success: false, error: 'OpenAI API key not configured' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
   try {
+    console.log('🔍 Received request for ID document analysis');
     const { file, fileName } = await req.json();
     
     if (!file) {
+      console.log('❌ No file provided');
       return new Response(
-        JSON.stringify({ error: 'No file provided' }),
+        JSON.stringify({ success: false, error: 'No file provided' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Processing file:', fileName);
+    console.log('📄 Processing file:', fileName);
     let imageForAnalysis = file;
 
     // If it's a PDF, we need to inform the user that direct PDF analysis isn't supported yet
     if (fileName && fileName.toLowerCase().endsWith('.pdf')) {
-      console.log('PDF detected - currently not supported for automatic analysis');
+      console.log('❌ PDF detected - currently not supported for automatic analysis');
       throw new Error('ניתוח קובצי PDF אינו נתמך כרגע. אנא המר את התמונה לפורמט JPG או PNG');
     }
 
@@ -54,7 +57,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',

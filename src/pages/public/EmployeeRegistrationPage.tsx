@@ -139,35 +139,46 @@ export const EmployeeRegistrationPage: React.FC = () => {
   const onSubmit = async (data: FormData) => {
     if (!tokenInfo) return;
 
+    console.log('🔄 Starting form submission with data:', data);
     setIsSubmitting(true);
+    
     try {
-      const { error } = await supabase
+      const submissionData = {
+        token_id: tokenInfo.id,
+        business_id: tokenInfo.business_id,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        id_number: data.id_number,
+        email: data.email,
+        phone: data.phone,
+        birth_date: data.birth_date,
+        address: data.address,
+        preferred_branches: data.preferred_branches,
+        branch_assignment_notes: data.branch_assignment_notes,
+        shift_preferences: data.shift_preferences,
+        status: 'pending',
+        submitted_at: new Date().toISOString(),
+      };
+
+      console.log('📤 Submitting data:', submissionData);
+
+      const { data: insertedData, error } = await supabase
         .from('employee_registration_requests')
-        .insert({
-          token_id: tokenInfo.id,
-          business_id: tokenInfo.business_id,
-          first_name: data.first_name,
-          last_name: data.last_name,
-          id_number: data.id_number,
-          email: data.email,
-          phone: data.phone,
-          birth_date: data.birth_date,
-          address: data.address,
-          preferred_branches: data.preferred_branches,
-          branch_assignment_notes: data.branch_assignment_notes,
-          shift_preferences: data.shift_preferences,
-          status: 'pending',
-          submitted_at: new Date().toISOString(),
-        });
+        .insert(submissionData)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database error:', error);
+        throw error;
+      }
 
+      console.log('✅ Registration submitted successfully:', insertedData);
       setSubmitted(true);
       toast.success('בקשת הרישום נשלחה בהצלחה!');
 
     } catch (err) {
-      console.error('Error submitting registration:', err);
-      toast.error('שגיאה בשליחת בקשת הרישום');
+      console.error('💥 Error submitting registration:', err);
+      toast.error(`שגיאה בשליחת בקשת הרישום: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
