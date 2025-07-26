@@ -67,39 +67,39 @@ export const BranchManagement: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8" dir="rtl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">ניהול סניפים ותפקידים</h1>
-        <p className="text-gray-600">ניהול סניפים, עובדים ותפקידים של העסק</p>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8" dir="rtl">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">ניהול סניפים ותפקידים</h1>
+        <p className="text-gray-600 text-sm sm:text-base">ניהול סניפים, עובדים ותפקידים של העסק</p>
       </div>
 
       <Tabs defaultValue="branches" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg mb-6">
-          <TabsTrigger value="branches" className="flex items-center gap-2">
-            <Building className="h-4 w-4" />
-            סניפים
+        <TabsList className="grid w-full grid-cols-3 max-w-full sm:max-w-lg mb-4 sm:mb-6">
+          <TabsTrigger value="branches" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Building className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden xs:inline">סניפים</span>
           </TabsTrigger>
-          <TabsTrigger value="roles" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            תפקידים
+          <TabsTrigger value="roles" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden xs:inline">תפקידים</span>
           </TabsTrigger>
-          <TabsTrigger value="archive" className="flex items-center gap-2">
-            <Archive className="h-4 w-4" />
-            ארכיון
+          <TabsTrigger value="archive" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Archive className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden xs:inline">ארכיון</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="branches" className="space-y-6">
           {/* Add Branch Button */}
-          <div className="mb-6">
-            <Button onClick={handleCreateBranch} className="flex items-center gap-2">
+          <div className="mb-4 sm:mb-6">
+            <Button onClick={handleCreateBranch} className="w-full sm:w-auto flex items-center gap-2">
               <Plus className="h-4 w-4" />
               הוסף סניף חדש
             </Button>
           </div>
 
           {/* Branches Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {branches?.map((branch) => (
               <Card key={branch.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">

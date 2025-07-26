@@ -58,7 +58,7 @@ export const ModernEmployeeHeader: React.FC<ModernEmployeeHeaderProps> = ({
       <CardContent className="p-3 sm:p-6">
         <div className="space-y-4">
           {/* Title Section */}
-          <div className="flex items-start gap-3">
+          <div className="flex flex-col sm:flex-row items-start gap-3">
             <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
               <Users className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>

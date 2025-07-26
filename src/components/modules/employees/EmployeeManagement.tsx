@@ -77,9 +77,9 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
 
   if (!effectiveBusinessId) {
     return (
-      <div className="p-6">
-        <div className="text-center py-12">
-          <p className="text-gray-500">אנא בחר עסק כדי לנהל עובדים</p>
+      <div className="p-4 sm:p-6">
+        <div className="text-center py-8 sm:py-12">
+          <p className="text-gray-500 text-sm sm:text-base">אנא בחר עסק כדי לנהל עובדים</p>
         </div>
       </div>
     );
@@ -91,12 +91,12 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
 
   if (employeesError) {
     return (
-      <div className="p-6">
-        <div className="text-center py-12">
-          <p className="text-red-600 mb-4">שגיאה בטעינת נתוני העובדים</p>
+      <div className="p-4 sm:p-6">
+        <div className="text-center py-8 sm:py-12">
+          <p className="text-red-600 mb-4 text-sm sm:text-base">שגיאה בטעינת נתוני העובדים</p>
           <button 
             onClick={handleRefetch}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base"
           >
             נסה שוב
           </button>
@@ -106,7 +106,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({
   }
 
   return (
-    <div className="container-mobile space-y-6 py-6" key={refreshKey}>
+    <div className="container-mobile space-y-4 sm:space-y-6 py-4 sm:py-6" key={refreshKey}>
       <ModernEmployeeHeader 
         businessId={effectiveBusinessId}
         currentView={currentView}
