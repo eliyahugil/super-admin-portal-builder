@@ -155,8 +155,8 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
         // הודעה למשתמש על משמרות נוספות שנבחרו
         if (additionalShifts.length > 0) {
           toast({
-            title: 'משמרות נוספות נבחרו אוטומטית! 🎯',
-            description: `נבחרו ${additionalShifts.length} משמרות נוספות באותו יום שאתה יכול לעבוד`,
+            title: 'משמרות חופפות נבחרו אוטומטית! 🎯',
+            description: `נבחרו ${additionalShifts.length} משמרות נוספות באותו זמן התחלה (${selectedShift.start_time}) בסניפים שונים`,
           });
         }
       }
@@ -175,7 +175,6 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
     const sameDayOfWeek = selectedShift.day_of_week;
     const sameWeek = selectedShift.week_start_date;
     const selectedStartTime = selectedShift.start_time;
-    const selectedEndTime = selectedShift.end_time;
     
     // המרת זמן לדקות לצורך השוואה
     const timeToMinutes = (timeStr: string) => {
@@ -184,9 +183,8 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
     };
     
     const selectedStartMinutes = timeToMinutes(selectedStartTime);
-    const selectedEndMinutes = timeToMinutes(selectedEndTime);
     
-    // חיפוש משמרות נוספות באותו יום שהזמנים שלהן נכנסים בזמנים של המשמרת שנבחרה
+    // חיפוש משמרות נוספות באותו יום עם אותה שעת התחלה (משמרות חופפות)
     return availableShifts.filter(shift => {
       if (shift.day_of_week !== sameDayOfWeek || 
           shift.week_start_date !== sameWeek || 
@@ -195,10 +193,9 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
       }
       
       const shiftStartMinutes = timeToMinutes(shift.start_time);
-      const shiftEndMinutes = timeToMinutes(shift.end_time);
       
-      // בדיקה אם המשמרת נכנסת בזמנים של המשמרת שנבחרה
-      return shiftStartMinutes >= selectedStartMinutes && shiftEndMinutes <= selectedEndMinutes;
+      // בדיקה אם המשמרת מתחילה באותה שעה (משמרות חופפות)
+      return shiftStartMinutes === selectedStartMinutes;
     });
   };
 
