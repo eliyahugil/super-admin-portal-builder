@@ -29,6 +29,8 @@ const PermanentShiftsPage: React.FC = () => {
   const [shiftsData, setShiftsData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentWeekOffset, setCurrentWeekOffset] = useState(0); // 0 = this week, 1 = next week, -1 = last week
+  const [selectedShifts, setSelectedShifts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (token) {
@@ -83,6 +85,53 @@ const PermanentShiftsPage: React.FC = () => {
     loadTokenAndShifts();
   };
 
+  const toggleShiftSelection = (shiftId: string) => {
+    setSelectedShifts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(shiftId)) {
+        newSet.delete(shiftId);
+      } else {
+        newSet.add(shiftId);
+      }
+      return newSet;
+    });
+  };
+
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    const newOffset = direction === 'next' ? currentWeekOffset + 1 : currentWeekOffset - 1;
+    setCurrentWeekOffset(newOffset);
+    // TODO: Load shifts for the new week
+    toast({
+      title: `עובר ל${direction === 'next' ? 'שבוע הבא' : 'שבוע הקודם'}`,
+      description: "בפיתוח - בקרוב יהיה ניתן לדפדף בין שבועות",
+    });
+  };
+
+  const getCurrentWeekRange = () => {
+    const today = new Date();
+    const currentDay = today.getDay();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - currentDay + (currentWeekOffset * 7));
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    
+    return {
+      start: weekStart.toLocaleDateString('he-IL'),
+      end: weekEnd.toLocaleDateString('he-IL'),
+      isCurrentWeek: currentWeekOffset === 0,
+      isPastWeek: currentWeekOffset < 0,
+      isFutureWeek: currentWeekOffset > 0
+    };
+  };
+
+  const isShiftInPast = (shiftDate: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const shift = new Date(shiftDate);
+    shift.setHours(0, 0, 0, 0);
+    return shift < today;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center" dir="rtl">
@@ -118,10 +167,43 @@ const PermanentShiftsPage: React.FC = () => {
   const availableShifts = shiftsData?.availableShifts || [];
   const employeeScheduledShifts = shiftsData?.employeeScheduledShifts || [];
   const context = shiftsData?.context || {};
+  const weekRange = getCurrentWeekRange();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100" dir="rtl">
       <div className="container mx-auto px-4 py-8">
+        
+        {/* Week Navigation Header */}
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="outline" 
+              onClick={() => navigateWeek('prev')}
+              className="flex items-center gap-2"
+            >
+              ← שבוע קודם
+            </Button>
+            
+            <div className="text-center">
+              <div className="text-lg font-semibold text-gray-800">
+                {weekRange.start} - {weekRange.end}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {weekRange.isCurrentWeek && "השבוע הנוכחי"}
+                {weekRange.isPastWeek && "שבוע שעבר"}
+                {weekRange.isFutureWeek && "שבוע עתידי"}
+              </div>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => navigateWeek('next')}
+              className="flex items-center gap-2"
+            >
+              שבוע הבא →
+            </Button>
+          </div>
+        </div>
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
@@ -178,7 +260,7 @@ const PermanentShiftsPage: React.FC = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                 <div className="bg-blue-50 p-3 rounded-lg">
                   <div className="text-lg font-semibold text-blue-700">
-                    {availableShifts.length}
+                    {availableShifts.filter((s: any) => !isShiftInPast(s.shift_date || '')).length}
                   </div>
                   <div className="text-xs text-blue-600">משמרות זמינות</div>
                   {availableShifts.filter((s: any) => s.is_special).length > 0 && (
@@ -304,22 +386,47 @@ const PermanentShiftsPage: React.FC = () => {
                         const employeeAssignments = shiftsData?.employeeAssignments || [];
                         const branchAssignment = employeeAssignments.find((ea: any) => ea.branch_id === shift.branch_id);
                         const isPreferredBranch = branchAssignment?.priority_order === 1;
+                        
+                        // Check if shift is in the past
+                        const isPastShift = isShiftInPast(shift.shift_date || '');
+                        const isSelected = selectedShifts.has(shift.id);
 
                         return (
                           <div 
                             key={shift.id} 
-                            className={`border rounded-lg p-4 relative ${
-                              isSpecialShift 
-                                ? 'border-purple-300 bg-purple-50/70 shadow-md' 
-                                : hasIdenticalTimes
-                                  ? 'border-amber-300 bg-amber-50/70 shadow-sm'
-                                  : 'border-blue-200 bg-blue-50/50'
-                            }`}
+                            className={`border rounded-lg p-4 relative cursor-pointer transition-all duration-200 ${
+                              isSelected 
+                                ? 'border-green-400 bg-green-50 shadow-md ring-2 ring-green-200'
+                                : isSpecialShift 
+                                  ? 'border-purple-300 bg-purple-50/70 hover:shadow-md' 
+                                  : hasIdenticalTimes
+                                    ? 'border-amber-300 bg-amber-50/70 hover:shadow-sm'
+                                    : isPastShift
+                                      ? 'border-gray-300 bg-gray-50/70 opacity-60'
+                                      : 'border-blue-200 bg-blue-50/50 hover:border-blue-300 hover:shadow-sm'
+                            } ${isPastShift ? 'pointer-events-none' : ''}`}
+                            onClick={() => !isPastShift && toggleShiftSelection(shift.id)}
                           >
+                            {/* Past shift overlay */}
+                            {isPastShift && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-gray-200/80 rounded-lg">
+                                <span className="text-gray-600 font-medium text-sm bg-white px-3 py-1 rounded-full shadow">
+                                  ✓ משמרת שבוצעה
+                                </span>
+                              </div>
+                            )}
+                            
+                            {/* Selection indicator */}
+                            {isSelected && !isPastShift && (
+                              <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                <CheckCircle className="w-4 h-4 text-white" />
+                              </div>
+                            )}
+
                             {/* Special/Regular Shift Indicator */}
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-2">
-                                {isSpecialShift && (
+                                {isSpecialShift && !isPastShift && (
                                   <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
                                     <Star className="h-3 w-3 mr-1" />
                                     משמרת מיוחדת
@@ -343,7 +450,7 @@ const PermanentShiftsPage: React.FC = () => {
                               
                               {/* Time with identical time warning */}
                               <div className="flex items-center gap-2">
-                                {hasIdenticalTimes && (
+                                {hasIdenticalTimes && !isPastShift && (
                                   <Badge variant="outline" className="bg-amber-100 text-amber-700 text-xs">
                                     <Clock className="h-3 w-3 mr-1" />
                                     {shiftsAtSameTime.length} באותה שעה
@@ -362,7 +469,7 @@ const PermanentShiftsPage: React.FC = () => {
                                 <div className="text-sm text-muted-foreground flex items-center gap-1">
                                   <MapPin className="h-3 w-3" />
                                   {shift.branch.name}
-                                  {isPreferredBranch && (
+                                  {isPreferredBranch && !isPastShift && (
                                     <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs mr-2">
                                       <Star className="h-3 w-3 mr-1" />
                                       סניף מועדף
@@ -389,6 +496,13 @@ const PermanentShiftsPage: React.FC = () => {
                             {branchAssignment?.role_name && (
                               <div className="mt-2 text-xs text-blue-600">
                                 תפקיד: {branchAssignment.role_name}
+                              </div>
+                            )}
+                            
+                            {/* Click instruction for available shifts */}
+                            {!isPastShift && (
+                              <div className="mt-2 text-xs text-center text-gray-500 border-t pt-2">
+                                {isSelected ? '✓ נבחר להגשה' : 'לחץ לבחירה להגשה'}
                               </div>
                             )}
                           </div>
@@ -447,18 +561,29 @@ const PermanentShiftsPage: React.FC = () => {
                         // Check if this is from employee's scheduled shifts vs available assignment
                         const isFromScheduled = shift.source === 'employee_scheduled';
                         const isSpecialShift = shift.is_special || shift.submission_type === 'special';
+                        const isPastShift = isShiftInPast(shift.shift_date || '');
 
                         return (
                           <div 
                             key={shift.id} 
                             className={`border rounded-lg p-4 relative ${
-                              hasTimeConflict 
-                                ? 'border-red-300 bg-red-50/70 shadow-md' 
-                                : isSpecialShift
-                                  ? 'border-purple-300 bg-purple-50/70 shadow-md'
-                                  : 'border-green-200 bg-green-50/50'
+                              isPastShift
+                                ? 'border-gray-300 bg-gray-50/70 opacity-75'
+                                : hasTimeConflict 
+                                  ? 'border-red-300 bg-red-50/70 shadow-md' 
+                                  : isSpecialShift
+                                    ? 'border-purple-300 bg-purple-50/70 shadow-md'
+                                    : 'border-green-200 bg-green-50/50'
                             }`}
                           >
+                            {/* Past shift overlay */}
+                            {isPastShift && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-gray-200/80 rounded-lg">
+                                <span className="text-gray-600 font-medium text-sm bg-white px-3 py-1 rounded-full shadow line-through">
+                                  ✓ משמרת שבוצעה
+                                </span>
+                              </div>
+                            )}
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-2">
                                 {hasTimeConflict && (
@@ -530,17 +655,37 @@ const PermanentShiftsPage: React.FC = () => {
           </Card>
         </div>
 
+        {/* Submission Section */}
+        {selectedShifts.size > 0 && (
+          <div className="mt-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-green-800 mb-2">
+                נבחרו {selectedShifts.size} משמרות להגשה
+              </h3>
+              <p className="text-green-700 text-sm mb-4">
+                לחץ על "הגש בקשה" כדי לשלוח את המשמרות שבחרת למנהל
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button 
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-2"
+                  disabled
+                >
+                  🚀 הגש בקשה (בפיתוח)
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedShifts(new Set())}
+                  className="px-6"
+                >
+                  נקה בחירה
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Week Navigation & Action Buttons */}
         <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <div className="flex gap-2">
-            <Button variant="outline" disabled className="opacity-50">
-              ← שבוע קודם
-            </Button>
-            <Button variant="outline" disabled className="opacity-50">
-              שבוע הבא →
-            </Button>
-          </div>
-          
           <div className="flex gap-2">
             <Button onClick={handleRefresh} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
