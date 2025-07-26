@@ -248,17 +248,18 @@ const PublicShiftSubmission: React.FC = () => {
         // Store all shifts and filtered shifts separately
         setAllScheduledShifts(shifts || []);
         setScheduledShifts(shiftsWithBranchInfo);
-       } catch (error) {
-         console.error('Error loading scheduled shifts:', error);
-       } finally {
-         setShiftsLoading(false);
-       }
-     };
+        } catch (error) {
+          console.error('Error loading scheduled shifts:', error);
+        } finally {
+          setShiftsLoading(false);
+        }
+      }
+    };
 
-     if (tokenData && employeeData) {
-       loadScheduledShifts();
-     }
-   }, [tokenData, employeeData]);
+    if (tokenData && employeeData) {
+      loadScheduledShifts();
+    }
+  }, [tokenData, employeeData]);
 
   const getShiftTypeFromTime = (startTime: string) => {
     const hour = parseInt(startTime.split(':')[0]);
@@ -454,7 +455,7 @@ const PublicShiftSubmission: React.FC = () => {
 
     try {
       await submitShifts.mutateAsync({
-        token: token!,
+        tokenId: token!,
         formData
       });
       
