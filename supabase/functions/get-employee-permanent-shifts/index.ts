@@ -170,14 +170,17 @@ serve(async (req) => {
         const shiftDate = new Date(shift.shift_date);
         const dayOfWeek = shiftDate.getDay(); // 0 = Sunday, 1 = Monday...
         
-        // Determine shift type based on time
+        // Determine shift type based on time - משמרות שמתחילות אחרי 18:00 נחשבות כערב
         const startHour = parseInt(shift.start_time.split(':')[0]);
+        const startMinute = parseInt(shift.start_time.split(':')[1]);
+        const startTimeInMinutes = startHour * 60 + startMinute;
+        
         let shift_type = 'morning';
-        if (startHour >= 6 && startHour < 14) {
+        if (startTimeInMinutes >= 360 && startTimeInMinutes < 840) { // 6:00-14:00
           shift_type = 'morning';
-        } else if (startHour >= 14 && startHour < 20) {
+        } else if (startTimeInMinutes >= 840 && startTimeInMinutes < 1080) { // 14:00-18:00
           shift_type = 'afternoon';
-        } else {
+        } else { // 18:00+ או לפני 6:00
           shift_type = 'evening';
         }
 
