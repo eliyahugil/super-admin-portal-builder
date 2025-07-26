@@ -85,25 +85,25 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
               {hasSubItems ? (
                 <button
                   onClick={(e) => handleMenuItemClick(true, item.path, e)}
-                  className="flex items-center justify-between gap-3 text-right w-full pl-2"
+                  className="flex items-center justify-end gap-3 text-right w-full pr-2"
                   type="button"
                 >
                   {!collapsed && (
-                    <span className={`text-xs transform transition-transform duration-200 mr-2 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
+                    <span className={`text-xs transform transition-transform duration-200 ml-2 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
                       ▶
                     </span>
                   )}
-                  <item.icon className="h-4 w-4 flex-shrink-0" />
                   <span className="flex-1 text-right font-medium">{item.label}</span>
+                  <item.icon className="h-4 w-4 flex-shrink-0" />
                 </button>
               ) : (
                 <NavLink 
                   to={item.path} 
-                  className="flex items-center justify-between gap-3 text-right pl-2"
+                  className="flex items-center justify-end gap-3 text-right pr-2"
                   onClick={() => handleMenuItemClick(false, item.path)}
                 >
-                  <item.icon className="h-4 w-4 flex-shrink-0" />
                   <span className="flex-1 text-right">{item.label}</span>
+                  <item.icon className="h-4 w-4 flex-shrink-0" />
                 </NavLink>
               )}
             </SidebarMenuButton>
@@ -115,11 +115,11 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
                     <SidebarMenuSubButton asChild isActive={isActive(subItem.path)}>
                       <NavLink
                         to={subItem.path}
-                        className="flex items-center justify-between gap-3 text-right text-sm pl-4"
+                        className="flex items-center justify-end gap-3 text-right text-sm pr-4"
                         onClick={onMenuItemClick}
                       >
-                        <subItem.icon className="h-3 w-3 flex-shrink-0" />
                         <span className="flex-1 text-right">{subItem.label}</span>
+                        <subItem.icon className="h-3 w-3 flex-shrink-0" />
                       </NavLink>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
