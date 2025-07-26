@@ -95,12 +95,14 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
       });
 
     } catch (err) {
-      console.error('Error processing ID document:', err);
+      console.error('💥 Error processing ID document:', err);
       const errorMessage = err instanceof Error ? err.message : 'שגיאה בעיבוד התמונה';
       setError(errorMessage);
+      
+      // נאפשר למשתמש להמשיך גם עם שגיאה
       toast({
-        title: 'שגיאה',
-        description: errorMessage,
+        title: 'ניתוח אוטומטי נכשל',
+        description: 'ניתן לממלא את הטופס ידנית. התמונה תיבדק על ידי המנהל.',
         variant: 'destructive',
       });
     } finally {
@@ -152,7 +154,9 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
           </Label>
           
           <div className="text-sm text-muted-foreground">
-            צלם או העלה תמונה של תעודת הזהות והמערכת תמלא את הפרטים האישיים אוטומטית
+            צלם או העלה תמונה של תעודת הזהות והמערכת תמלא את הפרטים האישיים אוטומטית.
+            <br />
+            <strong>הערה:</strong> גם אם הניתוח האוטומטי לא יעבוד, תוכל לממלא את הטופס ידנית והתמונה תיבדק על ידי המנהל.
           </div>
 
           {!uploadedImage ? (
@@ -222,12 +226,18 @@ export const IdDocumentUpload: React.FC<Props> = ({ onDataExtracted }) => {
               {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="flex items-center justify-between">
-                    <span>{error}</span>
-                    <Button variant="outline" size="sm" onClick={retryAnalysis}>
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      נסה שוב
-                    </Button>
+                  <AlertDescription className="space-y-3">
+                    <div>{error}</div>
+                    <div className="text-sm bg-blue-50 p-3 rounded border">
+                      <strong>💡 ללא בעיה!</strong> תוכל להמשיך לממלא את הטופס ידנית. 
+                      התמונה נשמרה והמנהל יוכל לראות אותה כשיבדוק את הבקשה שלך.
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={retryAnalysis}>
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        נסה שוב
+                      </Button>
+                    </div>
                   </AlertDescription>
                 </Alert>
               )}
