@@ -89,6 +89,32 @@ serve(async (req) => {
       console.error('❌ Error fetching previous submissions:', submissionError);
     }
 
+    // Helper function to convert time string to minutes for comparison
+    const timeToMinutes = (timeStr) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    // Helper function to check if one shift is contained within another
+    const isShiftContained = (innerShift, outerShift) => {
+      const innerStart = timeToMinutes(innerShift.start_time);
+      const innerEnd = timeToMinutes(innerShift.end_time);
+      const outerStart = timeToMinutes(outerShift.start_time);
+      const outerEnd = timeToMinutes(outerShift.end_time);
+      
+      return innerStart >= outerStart && innerEnd <= outerEnd;
+    };
+
+    // Helper function to check if shifts overlap
+    const shiftsOverlap = (shift1, shift2) => {
+      const start1 = timeToMinutes(shift1.start_time);
+      const end1 = timeToMinutes(shift1.end_time);
+      const start2 = timeToMinutes(shift2.start_time);
+      const end2 = timeToMinutes(shift2.end_time);
+      
+      return start1 < end2 && start2 < end1;
+    };
+
     // Parse submitted availability
     let submittedAvailability = [];
     let optionalMorningAvailability = null;
@@ -176,8 +202,12 @@ serve(async (req) => {
           shift.shift_type === 'special' || shift.shift_type === 'emergency'
         );
 
+        // Sort shifts by start time for better processing
+        regularCompatibleShifts.sort((a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time));
+
         // Auto-select shifts based on submitted availability
         const autoSelectedShifts = [];
+        const processedShifts = new Set();
         
         // Check if employee submitted availability for this day
         submittedAvailability.forEach(submittedShift => {
@@ -185,51 +215,74 @@ serve(async (req) => {
           const shiftDayOfWeek = shiftDate.getDay();
           
           if (shiftDayOfWeek === dayIndex) {
-            // Find shifts that overlap with employee's available time
-            const availableShifts = regularCompatibleShifts.filter(availableShift => {
-              const submittedStart = submittedShift.start_time;
-              const submittedEnd = submittedShift.end_time;
-              const availableStart = availableShift.start_time;
-              const availableEnd = availableShift.end_time;
-              
-              // Check if there's any overlap between submitted availability and available shift
-              return (
-                (availableStart >= submittedStart && availableStart < submittedEnd) ||
-                (availableEnd > submittedStart && availableEnd <= submittedEnd) ||
-                (submittedStart >= availableStart && submittedStart < availableEnd) ||
-                (submittedEnd > availableStart && submittedEnd <= availableEnd)
-              );
+            console.log(`📅 Processing submitted availability for ${dayName}:`, submittedShift);
+            
+            // Create a virtual shift from submitted availability
+            const virtualShift = {
+              start_time: submittedShift.start_time,
+              end_time: submittedShift.end_time,
+              day_of_week: dayIndex
+            };
+            
+            // Find shifts that are contained within the submitted availability
+            const containedShifts = regularCompatibleShifts.filter(availableShift => {
+              return !processedShifts.has(availableShift.id) && 
+                     isShiftContained(availableShift, virtualShift);
             });
             
-            availableShifts.forEach(shift => {
-              if (!autoSelectedShifts.find(s => s.id === shift.id)) {
-                autoSelectedShifts.push({
-                  ...shift,
-                  autoSelected: true,
-                  reason: `זמין ${submittedShift.start_time}-${submittedShift.end_time}`
-                });
-              }
-            });
+            // If no contained shifts, look for overlapping shifts
+            if (containedShifts.length === 0) {
+              const overlappingShifts = regularCompatibleShifts.filter(availableShift => {
+                return !processedShifts.has(availableShift.id) && 
+                       shiftsOverlap(availableShift, virtualShift);
+              });
+              
+              overlappingShifts.forEach(shift => {
+                if (!processedShifts.has(shift.id)) {
+                  autoSelectedShifts.push({
+                    ...shift,
+                    autoSelected: true,
+                    reason: `חפיפה עם זמינות ${submittedShift.start_time}-${submittedShift.end_time}`
+                  });
+                  processedShifts.add(shift.id);
+                }
+              });
+            } else {
+              // Add all contained shifts
+              containedShifts.forEach(shift => {
+                if (!processedShifts.has(shift.id)) {
+                  autoSelectedShifts.push({
+                    ...shift,
+                    autoSelected: true,
+                    reason: `נכלל בזמינות ${submittedShift.start_time}-${submittedShift.end_time}`
+                  });
+                  processedShifts.add(shift.id);
+                }
+              });
+            }
           }
         });
 
         // Handle optional morning availability
-        if (optionalMorningAvailability && dayIndex < 5) { // Weekdays only
+        if (optionalMorningAvailability && optionalMorningAvailability.includes(dayIndex)) {
           const morningShifts = regularCompatibleShifts.filter(shift => {
             const startHour = parseInt(shift.start_time.split(':')[0]);
-            return startHour >= 6 && startHour <= 12; // Morning shifts
+            return startHour >= 6 && startHour <= 12 && !processedShifts.has(shift.id);
           });
           
           morningShifts.forEach(shift => {
-            if (!autoSelectedShifts.find(s => s.id === shift.id)) {
+            if (!processedShifts.has(shift.id)) {
               autoSelectedShifts.push({
                 ...shift,
                 autoSelected: true,
                 reason: 'זמין לבוקר (אופציונלי)'
               });
+              processedShifts.add(shift.id);
             }
           });
         }
+
+        console.log(`📊 Day ${dayName}: ${regularCompatibleShifts.length} compatible, ${autoSelectedShifts.length} auto-selected`);
 
         shiftsByDay[dayName] = {
           dayIndex,
@@ -264,7 +317,7 @@ serve(async (req) => {
       optionalMorningAvailability: optionalMorningAvailability
     };
 
-    console.log('🎉 Successfully prepared compatible shifts by day');
+    console.log('🎉 Successfully prepared compatible shifts by day with improved auto-selection');
 
     return new Response(
       JSON.stringify(response),

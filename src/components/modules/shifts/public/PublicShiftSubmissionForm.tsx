@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEmployeeCompatibleShifts, CompatibleShift } from '@/hooks/useEmployeeCompatibleShifts';
 import { useShiftSubmission } from '@/hooks/useShiftSubmission';
 import { ShiftsByDayView } from './ShiftsByDayView';
-import { Loader2, Send, User, Calendar, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, Send, User, Calendar, Clock, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface PublicShiftSubmissionFormProps {
@@ -23,6 +23,24 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
   const { data: compatibleData, isLoading, error } = useEmployeeCompatibleShifts(token);
   const submitShifts = useShiftSubmission();
   const { toast } = useToast();
+
+  // Auto-select shifts when data is loaded
+  useEffect(() => {
+    if (compatibleData && compatibleData.shiftsByDay) {
+      const autoSelectedShifts: CompatibleShift[] = [];
+      
+      Object.values(compatibleData.shiftsByDay).forEach(dayData => {
+        if (dayData.autoSelectedShifts) {
+          autoSelectedShifts.push(...dayData.autoSelectedShifts);
+        }
+      });
+
+      if (autoSelectedShifts.length > 0) {
+        console.log('🎯 Auto-selecting shifts:', autoSelectedShifts.length);
+        setSelectedShifts(autoSelectedShifts);
+      }
+    }
+  }, [compatibleData]);
 
   const handleShiftToggle = (shift: CompatibleShift) => {
     setSelectedShifts(prev => {
@@ -137,6 +155,11 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
 
   const { tokenData, shiftsByDay, totalCompatibleShifts, totalSpecialShifts } = compatibleData;
 
+  // Calculate total auto-selected shifts
+  const totalAutoSelected = Object.values(shiftsByDay).reduce((sum, dayData) => {
+    return sum + (dayData.autoSelectedShifts?.length || 0);
+  }, 0);
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8" dir="rtl">
       {/* Header */}
@@ -167,6 +190,12 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
               <Badge variant="outline" className="text-lg py-2 px-4">
                 {totalCompatibleShifts} משמרות זמינות
               </Badge>
+              {totalAutoSelected > 0 && (
+                <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300 text-lg py-2 px-4">
+                  <Sparkles className="h-4 w-4 mr-1" />
+                  {totalAutoSelected} מומלצות
+                </Badge>
+              )}
               {totalSpecialShifts > 0 && (
                 <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300 text-lg py-2 px-4">
                   {totalSpecialShifts} משמרות מיוחדות
@@ -187,9 +216,8 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
       <Alert>
         <CheckCircle className="h-4 w-4" />
         <AlertDescription className="text-base">
-          <strong>הנחיות:</strong> בחר את המשמרות שברצונך לעבוד השבוע. 
-          המערכת תציע משמרות נוספות באופן אוטומטי על סמך הבחירות שלך.
-          משמרות עם סימון "מומלץ" הן משמרות שאתה יכול לעבוד בהן בזמן שכבר בחרת.
+          <strong>הנחיות:</strong> המערכת בחרה עבורך משמרות מומלצות על סמך הזמינות שלך. 
+          תוכל לבטל או להוסיף משמרות לפי הצורך. משמרות מומלצות מסומנות בירוק.
         </AlertDescription>
       </Alert>
 
