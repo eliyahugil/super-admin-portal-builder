@@ -75,7 +75,7 @@ serve(async (req) => {
       throw branchError;
     }
 
-    // Get employee's previous submissions to understand their availability patterns
+    // Get employee's previous submissions
     const { data: previousSubmissions, error: submissionError } = await supabaseAdmin
       .from('shift_submissions')
       .select('shifts, notes, optional_morning_availability')
@@ -105,14 +105,26 @@ serve(async (req) => {
       }
     }
 
+    const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
     let shiftsByDay = {};
-    let compatibleShifts = [];
-    let regularShifts = [];
-    let specialShifts = [];
+    let totalCompatibleShifts = 0;
+    let totalSpecialShifts = 0;
 
     if (!employeeBranches || employeeBranches.length === 0) {
       console.log('⚠️ No branch assignments found for employee');
-      shiftsByDay = {};
+      
+      // Initialize empty days
+      for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+        const dayName = daysOfWeek[dayIndex];
+        shiftsByDay[dayName] = {
+          dayIndex,
+          dayName,
+          shifts: [],
+          compatibleShifts: [],
+          autoSelectedShifts: [],
+          specialShifts: []
+        };
+      }
     } else {
       // Extract branch IDs and shift types from assignments
       const assignedBranchIds = employeeBranches.map(ba => ba.branch_id);
@@ -142,24 +154,11 @@ serve(async (req) => {
         throw availableError;
       }
 
-      // Group shifts by day and filter by compatibility
-      const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-      
+      // Process each day
       for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
         const dayName = daysOfWeek[dayIndex];
         const dayShifts = (allAvailableShifts || []).filter(shift => shift.day_of_week === dayIndex);
         
-        if (dayShifts.length === 0) {
-          shiftsByDay[dayName] = {
-            dayIndex,
-            shifts: [],
-            compatibleShifts: [],
-            autoSelectedShifts: [],
-            specialShifts: []
-          };
-          continue;
-        }
-
         // Filter shifts by employee assignments
         const compatibleDayShifts = dayShifts.filter(shift => {
           const branchMatch = assignedBranchIds.includes(shift.branch_id);
@@ -186,15 +185,20 @@ serve(async (req) => {
           const shiftDayOfWeek = shiftDate.getDay();
           
           if (shiftDayOfWeek === dayIndex) {
-            // Find shifts that are within the employee's available hours
+            // Find shifts that overlap with employee's available time
             const availableShifts = regularCompatibleShifts.filter(availableShift => {
               const submittedStart = submittedShift.start_time;
               const submittedEnd = submittedShift.end_time;
               const availableStart = availableShift.start_time;
               const availableEnd = availableShift.end_time;
               
-              // Check if the shift is completely within the employee's available time
-              return (availableStart >= submittedStart && availableEnd <= submittedEnd);
+              // Check if there's any overlap between submitted availability and available shift
+              return (
+                (availableStart >= submittedStart && availableStart < submittedEnd) ||
+                (availableEnd > submittedStart && availableEnd <= submittedEnd) ||
+                (submittedStart >= availableStart && submittedStart < availableEnd) ||
+                (submittedEnd > availableStart && submittedEnd <= availableEnd)
+              );
             });
             
             availableShifts.forEach(shift => {
@@ -229,15 +233,15 @@ serve(async (req) => {
 
         shiftsByDay[dayName] = {
           dayIndex,
+          dayName,
           shifts: dayShifts,
           compatibleShifts: regularCompatibleShifts,
           autoSelectedShifts: autoSelectedShifts,
           specialShifts: specialCompatibleShifts
         };
 
-        compatibleShifts.push(...regularCompatibleShifts);
-        regularShifts.push(...regularCompatibleShifts);
-        specialShifts.push(...specialCompatibleShifts);
+        totalCompatibleShifts += regularCompatibleShifts.length;
+        totalSpecialShifts += specialCompatibleShifts.length;
       }
     }
 
@@ -253,8 +257,8 @@ serve(async (req) => {
         employee: tokenData.employee
       },
       shiftsByDay,
-      totalCompatibleShifts: compatibleShifts.length,
-      totalSpecialShifts: specialShifts.length,
+      totalCompatibleShifts,
+      totalSpecialShifts,
       employeeAssignments: employeeBranches || [],
       submittedAvailability: submittedAvailability,
       optionalMorningAvailability: optionalMorningAvailability
