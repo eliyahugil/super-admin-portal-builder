@@ -15,7 +15,7 @@ import {
   Database
 } from 'lucide-react';
 import { useRealData } from '@/hooks/useRealData';
-import { useBusiness } from '@/hooks/useBusiness';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { AccountingOverview } from './AccountingOverview';
 import { InvoiceManagement } from './InvoiceManagement';
 import { ReceiptManagement } from './ReceiptManagement';
@@ -26,8 +26,10 @@ import { ActivityLog } from './ActivityLog';
 import { SystemSettings } from './SystemSettings';
 
 export const AccountingSystem: React.FC = () => {
-  const { businessId } = useBusiness();
+  const { businessId } = useCurrentBusiness();
   const [activeTab, setActiveTab] = useState('overview');
+
+  console.log('💼 AccountingSystem - Business state:', { businessId });
 
   // שליפת הגדרות מערכת החשבונות
   const { data: systemSettings } = useRealData<any>({
