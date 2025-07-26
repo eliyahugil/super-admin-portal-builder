@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Clock, MapPin, CheckCircle2, Circle, Star, Sparkles } from 'lucide-react';
+import { Clock, MapPin, CheckCircle2, Circle, Star, Sparkles, Timer } from 'lucide-react';
 import { CompatibleShift, DayShifts } from '@/hooks/useEmployeeCompatibleShifts';
 
 interface ShiftsByDayViewProps {
@@ -44,10 +44,10 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
         key={shift.id}
         className={`p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
           selected
-            ? 'border-blue-500 bg-blue-50'
+            ? 'border-blue-500 bg-blue-50 shadow-md'
             : isAutoSelected
-            ? 'border-green-500 bg-green-50'
-            : 'border-gray-200 hover:border-gray-300'
+            ? 'border-green-500 bg-green-50 shadow-sm'
+            : 'border-gray-200 hover:border-gray-300 bg-white'
         }`}
         onClick={() => onShiftToggle(shift)}
       >
@@ -63,7 +63,7 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
               {isAutoSelected && (
                 <div className="flex items-center gap-1">
                   <Sparkles className="h-4 w-4 text-green-600" />
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 text-xs">
                     מומלץ
                   </Badge>
                 </div>
@@ -82,7 +82,7 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-2">
               <Badge variant="outline" className="text-xs">
                 {shift.shift_type}
               </Badge>
@@ -97,7 +97,7 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
           <Button
             variant={selected ? "default" : "outline"}
             size="sm"
-            className="mr-2"
+            className={`ml-2 ${selected ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
             onClick={(e) => {
               e.stopPropagation();
               onShiftToggle(shift);
@@ -121,6 +121,27 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
         const { compatibleShifts, autoSelectedShifts, specialShifts } = dayData;
         const hasShifts = compatibleShifts.length > 0 || specialShifts.length > 0;
 
+        // Sort shifts by start time for better display
+        const sortedAutoSelected = [...autoSelectedShifts].sort((a, b) => {
+          const timeA = new Date(`2000-01-01T${a.start_time}`).getTime();
+          const timeB = new Date(`2000-01-01T${b.start_time}`).getTime();
+          return timeA - timeB;
+        });
+
+        const sortedRegular = compatibleShifts
+          .filter(shift => !autoSelectedShifts.some(auto => auto.id === shift.id))
+          .sort((a, b) => {
+            const timeA = new Date(`2000-01-01T${a.start_time}`).getTime();
+            const timeB = new Date(`2000-01-01T${b.start_time}`).getTime();
+            return timeA - timeB;
+          });
+
+        const sortedSpecial = [...specialShifts].sort((a, b) => {
+          const timeA = new Date(`2000-01-01T${a.start_time}`).getTime();
+          const timeB = new Date(`2000-01-01T${b.start_time}`).getTime();
+          return timeA - timeB;
+        });
+
         return (
           <Card key={dayName} className="shadow-sm">
             <CardHeader className="pb-3">
@@ -132,7 +153,7 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
                   </Badge>
                   {autoSelectedShifts.length > 0 && (
                     <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
-                      <Star className="h-3 w-3 mr-1" />
+                      <Sparkles className="h-3 w-3 mr-1" />
                       {autoSelectedShifts.length} מומלצות
                     </Badge>
                   )}
@@ -146,28 +167,31 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
             <CardContent>
               {!hasShifts ? (
                 <div className="text-center py-8 text-gray-500">
-                  <Clock className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                  <Timer className="h-12 w-12 mx-auto mb-3 text-gray-400" />
                   <p>אין משמרות זמינות ביום זה</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* Auto-selected shifts */}
-                  {autoSelectedShifts.length > 0 && (
+                  {/* Auto-selected shifts section */}
+                  {sortedAutoSelected.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-3">
                         <Sparkles className="h-4 w-4 text-green-600" />
                         <h4 className="font-medium text-green-800">משמרות מומלצות</h4>
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 text-xs">
+                          נבחרו אוטומטית
+                        </Badge>
                       </div>
                       <div className="grid gap-3">
-                        {autoSelectedShifts.map(shift => renderShift(shift, true))}
+                        {sortedAutoSelected.map(shift => renderShift(shift, true))}
                       </div>
                     </div>
                   )}
                   
-                  {/* Regular compatible shifts */}
-                  {compatibleShifts.length > autoSelectedShifts.length && (
+                  {/* Regular compatible shifts section */}
+                  {sortedRegular.length > 0 && (
                     <div>
-                      {autoSelectedShifts.length > 0 && (
+                      {sortedAutoSelected.length > 0 && (
                         <>
                           <Separator className="my-4" />
                           <div className="flex items-center gap-2 mb-3">
@@ -177,15 +201,13 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
                         </>
                       )}
                       <div className="grid gap-3">
-                        {compatibleShifts
-                          .filter(shift => !autoSelectedShifts.some(auto => auto.id === shift.id))
-                          .map(shift => renderShift(shift, false))}
+                        {sortedRegular.map(shift => renderShift(shift, false))}
                       </div>
                     </div>
                   )}
                   
-                  {/* Special shifts */}
-                  {specialShifts.length > 0 && (
+                  {/* Special shifts section */}
+                  {sortedSpecial.length > 0 && (
                     <div>
                       <Separator className="my-4" />
                       <div className="flex items-center gap-2 mb-3">
@@ -193,7 +215,7 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
                         <h4 className="font-medium text-yellow-800">משמרות מיוחדות</h4>
                       </div>
                       <div className="grid gap-3">
-                        {specialShifts.map(shift => renderShift(shift, false))}
+                        {sortedSpecial.map(shift => renderShift(shift, false))}
                       </div>
                     </div>
                   )}

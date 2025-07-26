@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEmployeeCompatibleShifts, CompatibleShift } from '@/hooks/useEmployeeCompatibleShifts';
 import { useShiftSubmission } from '@/hooks/useShiftSubmission';
 import { ShiftsByDayView } from './ShiftsByDayView';
-import { Loader2, Send, User, Calendar, Clock, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
+import { Loader2, Send, User, Calendar, Clock, CheckCircle, AlertCircle, Sparkles, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface PublicShiftSubmissionFormProps {
@@ -24,30 +24,48 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
   const submitShifts = useShiftSubmission();
   const { toast } = useToast();
 
-  // Auto-select shifts when data is loaded
+  // Enhanced auto-selection logic
   useEffect(() => {
     if (compatibleData && compatibleData.shiftsByDay) {
       const autoSelectedShifts: CompatibleShift[] = [];
       
+      console.log('🔄 Processing auto-selection from server data');
+      
       Object.values(compatibleData.shiftsByDay).forEach(dayData => {
-        if (dayData.autoSelectedShifts) {
+        if (dayData.autoSelectedShifts && dayData.autoSelectedShifts.length > 0) {
+          console.log(`📅 Day ${dayData.dayName}: ${dayData.autoSelectedShifts.length} auto-selected shifts`);
           autoSelectedShifts.push(...dayData.autoSelectedShifts);
         }
       });
 
       if (autoSelectedShifts.length > 0) {
-        console.log('🎯 Auto-selecting shifts:', autoSelectedShifts.length);
+        console.log('🎯 Auto-selecting shifts:', autoSelectedShifts.map(s => ({ 
+          id: s.id, 
+          name: s.shift_name, 
+          time: `${s.start_time}-${s.end_time}`,
+          reason: s.reason 
+        })));
+        
         setSelectedShifts(autoSelectedShifts);
+        
+        // Show informative toast about auto-selection
+        toast({
+          title: 'משמרות נבחרו אוטומטית',
+          description: `${autoSelectedShifts.length} משמרות נבחרו בהתאם לזמינות שלך`,
+          variant: 'default',
+        });
       }
     }
-  }, [compatibleData]);
+  }, [compatibleData, toast]);
 
   const handleShiftToggle = (shift: CompatibleShift) => {
     setSelectedShifts(prev => {
       const isSelected = prev.some(s => s.id === shift.id);
       if (isSelected) {
+        console.log('🔄 Deselecting shift:', shift.shift_name);
         return prev.filter(s => s.id !== shift.id);
       } else {
+        console.log('✅ Selecting shift:', shift.shift_name);
         return [...prev, shift];
       }
     });
@@ -84,6 +102,8 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
         };
       });
 
+      console.log('📤 Submitting shifts:', shiftData);
+
       await submitShifts.mutateAsync({
         token,
         employeeId: compatibleData.tokenData.employeeId,
@@ -103,7 +123,7 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
       setNotes('');
       
     } catch (error) {
-      console.error('Error submitting shifts:', error);
+      console.error('❌ Error submitting shifts:', error);
       toast({
         title: 'שגיאה בהגשה',
         description: 'אירעה שגיאה בעת הגשת המשמרות',
@@ -120,7 +140,7 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto mb-4" />
           <p className="text-lg text-gray-600">טוען משמרות זמינות...</p>
-          <p className="text-sm text-gray-500 mt-2">אנא המתן, אנחנו מחפשים את המשמרות המתאימות עבורך</p>
+          <p className="text-sm text-gray-500 mt-2">המערכת מחפשת משמרות מתאימות עבורך</p>
         </div>
       </div>
     );
@@ -160,6 +180,13 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
     return sum + (dayData.autoSelectedShifts?.length || 0);
   }, 0);
 
+  // Count selected auto-selected shifts
+  const selectedAutoCount = selectedShifts.filter(shift => 
+    Object.values(shiftsByDay).some(dayData => 
+      dayData.autoSelectedShifts?.some(autoShift => autoShift.id === shift.id)
+    )
+  ).length;
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8" dir="rtl">
       {/* Header */}
@@ -182,10 +209,10 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
         </CardHeader>
       </Card>
 
-      {/* Summary */}
+      {/* Enhanced Summary */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <Badge variant="outline" className="text-lg py-2 px-4">
                 {totalCompatibleShifts} משמרות זמינות
@@ -209,15 +236,31 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
               </Badge>
             </div>
           </div>
+          
+          {/* Auto-selection summary */}
+          {totalAutoSelected > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-green-800">
+                <Sparkles className="h-4 w-4" />
+                <span className="font-medium">
+                  {selectedAutoCount} מתוך {totalAutoSelected} משמרות מומלצות נבחרו
+                </span>
+              </div>
+              <p className="text-sm text-green-700 mt-1">
+                המערכת בחרה עבורך משמרות המתאימות לזמינות שלך
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Instructions */}
+      {/* Enhanced Instructions */}
       <Alert>
-        <CheckCircle className="h-4 w-4" />
+        <Info className="h-4 w-4" />
         <AlertDescription className="text-base">
-          <strong>הנחיות:</strong> המערכת בחרה עבורך משמרות מומלצות על סמך הזמינות שלך. 
-          תוכל לבטל או להוסיף משמרות לפי הצורך. משמרות מומלצות מסומנות בירוק.
+          <strong>הנחיות:</strong> המערכת זיהתה וטה לבחור עבורך משמרות המתאימות לזמינות שלך. 
+          משמרות אלה מסומנות בירוק עם תווית "מומלץ". 
+          תוכל לבטל או להוסיף משמרות לפי הצורך.
         </AlertDescription>
       </Alert>
 
@@ -245,7 +288,7 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
           <div className="flex items-center justify-between pt-4 border-t">
             <div className="text-base text-gray-600">
               {selectedShifts.length > 0 
-                ? `${selectedShifts.length} משמרות נבחרו להגשה` 
+                ? `${selectedShifts.length} משמרות נבחרו להגשה${selectedAutoCount > 0 ? ` (${selectedAutoCount} מומלצות)` : ''}`
                 : 'לא נבחרו משמרות'
               }
             </div>

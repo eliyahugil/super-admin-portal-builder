@@ -89,14 +89,20 @@ serve(async (req) => {
       console.error('❌ Error fetching previous submissions:', submissionError);
     }
 
-    // Helper function to convert time string to minutes for comparison
+    // Enhanced time utility functions
     const timeToMinutes = (timeStr) => {
       const [hours, minutes] = timeStr.split(':').map(Number);
       return hours * 60 + minutes;
     };
 
-    // Helper function to check if one shift is contained within another
-    const isShiftContained = (innerShift, outerShift) => {
+    const minutesToTime = (minutes) => {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    };
+
+    // Enhanced shift containment logic
+    const isShiftFullyContained = (innerShift, outerShift) => {
       const innerStart = timeToMinutes(innerShift.start_time);
       const innerEnd = timeToMinutes(innerShift.end_time);
       const outerStart = timeToMinutes(outerShift.start_time);
@@ -105,7 +111,7 @@ serve(async (req) => {
       return innerStart >= outerStart && innerEnd <= outerEnd;
     };
 
-    // Helper function to check if shifts overlap
+    // Enhanced overlap detection
     const shiftsOverlap = (shift1, shift2) => {
       const start1 = timeToMinutes(shift1.start_time);
       const end1 = timeToMinutes(shift1.end_time);
@@ -113,6 +119,27 @@ serve(async (req) => {
       const end2 = timeToMinutes(shift2.end_time);
       
       return start1 < end2 && start2 < end1;
+    };
+
+    // Find shorter shifts within a time range
+    const findShorterShiftsInRange = (availableShifts, startTime, endTime) => {
+      const rangeStart = timeToMinutes(startTime);
+      const rangeEnd = timeToMinutes(endTime);
+      
+      return availableShifts.filter(shift => {
+        const shiftStart = timeToMinutes(shift.start_time);
+        const shiftEnd = timeToMinutes(shift.end_time);
+        
+        // Check if shift is fully contained within the range
+        const isContained = shiftStart >= rangeStart && shiftEnd <= rangeEnd;
+        
+        // Check if shift is shorter than the range
+        const shiftDuration = shiftEnd - shiftStart;
+        const rangeDuration = rangeEnd - rangeStart;
+        const isShorter = shiftDuration < rangeDuration;
+        
+        return isContained && isShorter;
+      });
     };
 
     // Parse submitted availability
@@ -205,11 +232,11 @@ serve(async (req) => {
         // Sort shifts by start time for better processing
         regularCompatibleShifts.sort((a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time));
 
-        // Auto-select shifts based on submitted availability
+        // Enhanced auto-selection logic
         const autoSelectedShifts = [];
         const processedShifts = new Set();
         
-        // Check if employee submitted availability for this day
+        // Process submitted availability for this day
         submittedAvailability.forEach(submittedShift => {
           const shiftDate = new Date(submittedShift.date);
           const shiftDayOfWeek = shiftDate.getDay();
@@ -224,41 +251,67 @@ serve(async (req) => {
               day_of_week: dayIndex
             };
             
-            // Find shifts that are contained within the submitted availability
-            const containedShifts = regularCompatibleShifts.filter(availableShift => {
-              return !processedShifts.has(availableShift.id) && 
-                     isShiftContained(availableShift, virtualShift);
-            });
+            // Strategy 1: Find shorter shifts within the submitted time range
+            const shorterShifts = findShorterShiftsInRange(
+              regularCompatibleShifts.filter(s => !processedShifts.has(s.id)),
+              virtualShift.start_time,
+              virtualShift.end_time
+            );
             
-            // If no contained shifts, look for overlapping shifts
-            if (containedShifts.length === 0) {
-              const overlappingShifts = regularCompatibleShifts.filter(availableShift => {
-                return !processedShifts.has(availableShift.id) && 
-                       shiftsOverlap(availableShift, virtualShift);
-              });
+            if (shorterShifts.length > 0) {
+              console.log(`🎯 Found ${shorterShifts.length} shorter shifts within range ${virtualShift.start_time}-${virtualShift.end_time}`);
               
-              overlappingShifts.forEach(shift => {
+              // Auto-select all shorter shifts within the range
+              shorterShifts.forEach(shift => {
                 if (!processedShifts.has(shift.id)) {
                   autoSelectedShifts.push({
                     ...shift,
                     autoSelected: true,
-                    reason: `חפיפה עם זמינות ${submittedShift.start_time}-${submittedShift.end_time}`
+                    reason: `משמרת קצרה בתוך הזמינות ${virtualShift.start_time}-${virtualShift.end_time}`
                   });
                   processedShifts.add(shift.id);
                 }
               });
             } else {
-              // Add all contained shifts
-              containedShifts.forEach(shift => {
-                if (!processedShifts.has(shift.id)) {
-                  autoSelectedShifts.push({
-                    ...shift,
-                    autoSelected: true,
-                    reason: `נכלל בזמינות ${submittedShift.start_time}-${submittedShift.end_time}`
-                  });
-                  processedShifts.add(shift.id);
-                }
+              // Strategy 2: Find shifts that are fully contained within the submitted availability
+              const containedShifts = regularCompatibleShifts.filter(availableShift => {
+                return !processedShifts.has(availableShift.id) && 
+                       isShiftFullyContained(availableShift, virtualShift);
               });
+              
+              if (containedShifts.length > 0) {
+                console.log(`📦 Found ${containedShifts.length} contained shifts`);
+                containedShifts.forEach(shift => {
+                  if (!processedShifts.has(shift.id)) {
+                    autoSelectedShifts.push({
+                      ...shift,
+                      autoSelected: true,
+                      reason: `נכלל בזמינות ${virtualShift.start_time}-${virtualShift.end_time}`
+                    });
+                    processedShifts.add(shift.id);
+                  }
+                });
+              } else {
+                // Strategy 3: Find overlapping shifts as fallback
+                const overlappingShifts = regularCompatibleShifts.filter(availableShift => {
+                  return !processedShifts.has(availableShift.id) && 
+                         shiftsOverlap(availableShift, virtualShift);
+                });
+                
+                if (overlappingShifts.length > 0) {
+                  console.log(`🔄 Found ${overlappingShifts.length} overlapping shifts`);
+                  overlappingShifts.forEach(shift => {
+                    if (!processedShifts.has(shift.id)) {
+                      autoSelectedShifts.push({
+                        ...shift,
+                        autoSelected: true,
+                        reason: `חפיפה עם זמינות ${virtualShift.start_time}-${virtualShift.end_time}`
+                      });
+                      processedShifts.add(shift.id);
+                    }
+                  });
+                }
+              }
             }
           }
         });
@@ -317,7 +370,7 @@ serve(async (req) => {
       optionalMorningAvailability: optionalMorningAvailability
     };
 
-    console.log('🎉 Successfully prepared compatible shifts by day with improved auto-selection');
+    console.log('🎉 Successfully prepared compatible shifts with enhanced auto-selection');
 
     return new Response(
       JSON.stringify(response),
