@@ -1,3 +1,4 @@
+
 export interface PublicShiftToken {
   id: string;
   token: string;
@@ -14,12 +15,17 @@ export interface PublicShiftToken {
 
 export interface PublicShiftSubmission {
   id: string;
-  token_id: string;
-  employee_name: string;
-  phone?: string;
-  shift_preferences: ShiftPreference[];
+  employee_id: string;
+  week_start_date: string;
+  week_end_date: string;
+  shifts: any; // JSON field containing shift data
+  status: string;
+  submission_type: string;
   notes?: string;
+  optional_morning_availability?: number[];
   submitted_at: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ShiftPreference {
