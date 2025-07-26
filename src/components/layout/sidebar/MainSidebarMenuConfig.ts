@@ -68,7 +68,7 @@ export const buildMainSidebarMenuItems = (isSuperAdmin: boolean, business?: { id
   
   const businessMenuItems: MenuItem[] = [
     { path: moduleRoutes.crm.base, label: 'CRM', icon: Users, category: 'business' },
-    { path: '/modules/accounting', label: 'חשבונות ממוחשבת', icon: Calculator, category: 'business' },
+    { path: '/modules/accounting', label: 'חשבונות ממוחשבת', icon: FileText, category: 'business' },
     { path: '/modules/finance', label: 'כספים', icon: Calculator, category: 'business' },
     { path: '/modules/inventory', label: 'מלאי', icon: Package, category: 'business' },
     { path: '/modules/orders', label: 'הזמנות', icon: ShoppingCart, category: 'business' },
@@ -110,6 +110,14 @@ export const buildMainSidebarMenuItems = (isSuperAdmin: boolean, business?: { id
     { path: '/admin/integrations', label: 'ניהול אינטגרציות', icon: Plug, category: 'admin', requiresSuperAdmin: true },
     { path: '/admin/system-preview', label: 'תצוגת מערכת', icon: Shield, category: 'admin', requiresSuperAdmin: true },
   ];
+
+  console.log('🏗️ MainSidebarMenuConfig - Built menu items:', {
+    coreMenuItems: coreMenuItems.length,
+    businessMenuItems: businessMenuItems.length,
+    systemMenuItems: systemMenuItems.length,
+    adminMenuItems: adminMenuItems.length,
+    businessMenuList: businessMenuItems.map(item => item.label)
+  });
 
   return {
     coreMenuItems,

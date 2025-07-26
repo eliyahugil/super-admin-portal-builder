@@ -24,6 +24,13 @@ export const MainSidebar: React.FC = () => {
     adminMenuItems,
   } = buildMainSidebarMenuItems(isSuperAdmin, business);
 
+  console.log('🖥️ MainSidebar - Menu items built:', {
+    currentPath,
+    isSuperAdmin,
+    businessName: business?.name,
+    businessMenuItems: businessMenuItems.map(item => ({ label: item.label, path: item.path }))
+  });
+
   const isActive = (path: string) => {
     if (path === '/' && currentPath === '/') return true;
     if (path !== '/' && currentPath.startsWith(path)) return true;
