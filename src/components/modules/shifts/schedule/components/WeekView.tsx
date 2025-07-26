@@ -82,9 +82,9 @@ export const WeekView: React.FC<WeekViewProps> = ({
           return (
             <Card 
               key={dateKey} 
-              className={`min-h-[200px] ${isToday ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+              className={`min-h-[150px] sm:min-h-[200px] ${isToday ? 'ring-2 ring-primary bg-primary/5' : ''}`}
             >
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 p-2 sm:p-4">
                 <CardTitle className="text-sm flex flex-col items-center gap-1">
                   <span className="text-gray-600">{dayNames[index]}</span>
                   <span className={`text-lg ${isToday ? 'text-primary font-bold' : ''}`}>

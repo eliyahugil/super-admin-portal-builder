@@ -161,9 +161,11 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
             <Button
               size="sm"
               onClick={() => onAddShift(currentDate)}
+              className="w-full sm:w-auto"
             >
               <Plus className="h-4 w-4" />
-              הוסף משמרת
+              <span className="hidden sm:inline ml-2">הוסף משמרת</span>
+              <span className="sm:hidden">הוסף</span>
             </Button>
           </div>
         </div>
