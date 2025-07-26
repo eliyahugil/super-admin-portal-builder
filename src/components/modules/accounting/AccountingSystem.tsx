@@ -31,6 +31,12 @@ export const AccountingSystem: React.FC = () => {
 
   console.log('💼 AccountingSystem - Business state:', { businessId });
 
+  console.log('💼 AccountingSystem - Full business data check:', { 
+    hasBusinessId: !!businessId,
+    businessIdType: typeof businessId,
+    businessIdValue: businessId 
+  });
+
   // שליפת הגדרות מערכת החשבונות
   const { data: systemSettings } = useRealData<any>({
     queryKey: ['accounting-system-settings', businessId],

@@ -66,6 +66,7 @@ export const createBusinessMenuItems = (business: { id: string } | undefined): M
   
   return [
     { path: moduleRoutes.crm.base, label: 'CRM', icon: Users, category: 'business', moduleKey: 'crm_management' },
+    { path: '/modules/accounting', label: 'חשבונות ממוחשבת', icon: Calculator, category: 'business', moduleKey: 'accounting' },
     { path: '/modules/finance', label: 'כספים', icon: Calculator, category: 'business', moduleKey: 'finance_management' },
     { path: '/modules/inventory', label: 'מלאי', icon: Package, category: 'business', moduleKey: 'inventory_management' },
     { path: '/modules/orders', label: 'הזמנות', icon: ShoppingCart, category: 'business', moduleKey: 'orders_management' },
