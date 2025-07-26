@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { WeeklyShiftService, ShiftEntry, WeeklySubmissionData } from '@/services/WeeklyShiftService';
 import { ShiftCalendarView } from './ShiftCalendarView';
 import { Clock, MapPin, User, Calendar, Plus, Trash2, AlertTriangle, Copy, LogIn, Users } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export const WeeklyShiftSubmissionForm: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -26,8 +27,13 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
   const [availableShifts, setAvailableShifts] = useState<any[]>([]);
   // Selected shifts by employee (shift ID -> selected)
   const [selectedShifts, setSelectedShifts] = useState<Record<string, boolean>>({});
+  // Special shifts selection
+  const [selectedSpecialShifts, setSelectedSpecialShifts] = useState<Record<string, boolean>>({});
+  const [showSpecialShifts, setShowSpecialShifts] = useState<boolean>(false);
   // Optional morning shifts preference
   const [optionalMorningShifts, setOptionalMorningShifts] = useState<Record<string, boolean>>({});
+  // Employee preference (will be determined from employee data)
+  const [employeePreference, setEmployeePreference] = useState<'morning' | 'evening' | null>(null);
 
   useEffect(() => {
     const validateTokenAndGetContext = async () => {
@@ -100,6 +106,12 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
         });
 
         setTokenData(validatedTokenData);
+
+        // Determine employee preference from their shift types
+        // This would ideally come from employee data, for now we'll infer it
+        const employeeShiftTypes = validatedTokenData.employee.shift_types || ['evening'];
+        const mainPreference = employeeShiftTypes.includes('evening') ? 'evening' : 'morning';
+        setEmployeePreference(mainPreference);
 
         // Check if we're in submission mode (available shifts) or view mode (assigned shifts)
         if (context.type === 'available_shifts') {
@@ -199,6 +211,43 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
     });
   };
 
+  // Toggle special shift selection
+  const toggleSpecialShiftSelection = (shiftId: string) => {
+    const isCurrentlySelected = selectedSpecialShifts[shiftId];
+    
+    setSelectedSpecialShifts(prev => ({
+      ...prev,
+      [shiftId]: !isCurrentlySelected
+    }));
+  };
+
+  // Get special shifts for a day (opposite of employee preference)
+  const getSpecialShiftsForDay = (dayIndex: number) => {
+    if (!employeePreference) return [];
+    
+    const dayShifts = availableShifts.filter(shift => shift.day_of_week === dayIndex);
+    
+    // Return shifts that are opposite to employee preference
+    return dayShifts.filter(shift => {
+      if (employeePreference === 'evening') {
+        return shift.shift_type?.includes('morning') || shift.shift_type?.includes('בוקר');
+      } else {
+        return shift.shift_type?.includes('evening') || shift.shift_type?.includes('ערב') || shift.shift_type?.includes('לילה');
+      }
+    });
+  };
+
+  // Check if a shift is regular (matches employee preference)
+  const isRegularShift = (shift: any) => {
+    if (!employeePreference) return true;
+    
+    if (employeePreference === 'evening') {
+      return shift.shift_type?.includes('evening') || shift.shift_type?.includes('ערב') || shift.shift_type?.includes('לילה') || shift.shift_type?.includes('afternoon') || shift.shift_type?.includes('צהריים');
+    } else {
+      return shift.shift_type?.includes('morning') || shift.shift_type?.includes('בוקר');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token || !tokenData) {
@@ -222,12 +271,18 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
       return;
     }
 
-    // Get selected shifts
-    const selectedShiftIds = Object.entries(selectedShifts)
+    // Get selected shifts (regular + special)
+    const regularShiftIds = Object.entries(selectedShifts)
       .filter(([_, isSelected]) => isSelected)
       .map(([shiftId, _]) => shiftId);
+      
+    const specialShiftIds = Object.entries(selectedSpecialShifts)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([shiftId, _]) => shiftId);
+      
+    const allSelectedShiftIds = [...regularShiftIds, ...specialShiftIds];
 
-    if (selectedShiftIds.length === 0) {
+    if (allSelectedShiftIds.length === 0) {
       toast({
         title: 'שגיאה',
         description: 'יש לבחור לפחות משמרת אחת',
@@ -237,7 +292,7 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
     }
 
     // Convert selected shifts to the expected format
-    const validShifts = selectedShiftIds.map(shiftId => {
+    const validShifts = allSelectedShiftIds.map(shiftId => {
       const shift = availableShifts.find(s => s.id === shiftId);
       
       // Create shift date from week start and day of week
@@ -448,6 +503,106 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                   })}
                 </div>
 
+                {/* משמרות מיוחדות */}
+                {employeePreference && (
+                  <div className="mb-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Checkbox
+                        id="special-shifts"
+                        checked={showSpecialShifts}
+                        onCheckedChange={(checked) => setShowSpecialShifts(checked as boolean)}
+                      />
+                      <label htmlFor="special-shifts" className="text-sm font-medium cursor-pointer">
+                        הצג משמרות {employeePreference === 'evening' ? 'בוקר' : 'ערב'} מיוחדות
+                        <span className="text-xs text-gray-500 mr-2">
+                          (משמרות שאינן מתאימות להעדפתך הרגילה)
+                        </span>
+                      </label>
+                    </div>
+
+                    {showSpecialShifts && (
+                      <div className="border-2 border-orange-200 rounded-lg p-4 bg-orange-50/30">
+                        <h4 className="text-lg font-semibold text-orange-800 mb-4 flex items-center gap-2">
+                          <Plus className="h-5 w-5" />
+                          משמרות מיוחדות - {employeePreference === 'evening' ? 'בוקר' : 'ערב'}
+                        </h4>
+                        
+                        {daysOfWeek.map((dayName, dayIndex) => {
+                          const specialShifts = getSpecialShiftsForDay(dayIndex);
+                          
+                          if (specialShifts.length === 0) return null;
+                          
+                          return (
+                            <div key={`special-${dayIndex}`} className="mb-6">
+                              <div className="border-b border-orange-300/50 pb-2 mb-4">
+                                <h5 className="text-md font-bold text-orange-700 flex items-center gap-2">
+                                  <Calendar className="h-4 w-4" />
+                                  {dayName} - משמרות מיוחדות
+                                </h5>
+                                <p className="text-xs text-orange-600 mt-1">
+                                  {specialShifts.length} משמרות מיוחדות זמינות
+                                </p>
+                              </div>
+                              
+                              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                                {specialShifts.map((shift) => (
+                                  <Card 
+                                    key={shift.id}
+                                    className={`cursor-pointer transition-all border-2 ${
+                                      selectedSpecialShifts[shift.id] 
+                                        ? 'border-orange-500 bg-orange-100 shadow-md' 
+                                        : 'border-orange-200 hover:border-orange-300 hover:shadow-sm'
+                                    }`}
+                                    onClick={() => toggleSpecialShiftSelection(shift.id)}
+                                  >
+                                    <CardContent className="p-4">
+                                      <div className="flex justify-between items-start mb-3">
+                                        <div className="flex items-center gap-2">
+                                          <div className={`w-3 h-3 rounded-full ${
+                                            selectedSpecialShifts[shift.id] ? 'bg-orange-500' : 'bg-orange-300'
+                                          }`} />
+                                          <span className={`text-xs px-2 py-1 rounded font-medium ${
+                                            selectedSpecialShifts[shift.id] 
+                                              ? 'bg-orange-200 text-orange-800' 
+                                              : 'bg-orange-100 text-orange-700'
+                                          }`}>
+                                            {shift.shift_type} - מיוחד
+                                          </span>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex items-center gap-2">
+                                          <Clock className="h-4 w-4 text-orange-500" />
+                                          <span className="font-medium">{shift.start_time} - {shift.end_time}</span>
+                                        </div>
+                                        
+                                        {shift.branch && (
+                                          <div className="flex items-center gap-2">
+                                            <MapPin className="h-4 w-4 text-orange-500" />
+                                            <span className="text-orange-700">{shift.branch.name}</span>
+                                          </div>
+                                        )}
+                                        
+                                        {shift.required_employees && (
+                                          <div className="text-xs text-orange-600 flex items-center gap-1">
+                                            <Users className="h-3 w-3" />
+                                            דרושים: {shift.required_employees} עובדים
+                                          </div>
+                                        )}
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   <Label htmlFor="notes">הערות נוספות (אופציונלי)</Label>
                   <Textarea
@@ -465,7 +620,7 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                   <Button
                     type="submit"
                     onClick={handleSubmit}
-                    disabled={submitting || Object.values(selectedShifts).filter(Boolean).length === 0}
+                    disabled={submitting || (Object.values(selectedShifts).filter(Boolean).length + Object.values(selectedSpecialShifts).filter(Boolean).length) === 0}
                     className="px-8 py-2"
                   >
                     {submitting ? (
@@ -474,7 +629,7 @@ export const WeeklyShiftSubmissionForm: React.FC = () => {
                         שולח...
                       </>
                     ) : (
-                      `שלח בחירת משמרות (${Object.values(selectedShifts).filter(Boolean).length})`
+                      `שלח בחירת משמרות (${Object.values(selectedShifts).filter(Boolean).length + Object.values(selectedSpecialShifts).filter(Boolean).length})`
                     )}
                   </Button>
                 </div>
