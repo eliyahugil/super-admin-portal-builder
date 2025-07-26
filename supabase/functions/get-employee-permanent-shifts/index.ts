@@ -265,7 +265,11 @@ serve(async (req) => {
         const branchMatch = assignedBranchIds.includes(shift.branch_id);
         
         // Check if shift type matches assigned shift types (if employee has specific types)
-        const shiftTypeMatch = assignedShiftTypes.length === 0 || assignedShiftTypes.includes(shift.shift_type);
+        // Special logic: evening workers should also see afternoon shifts
+        let shiftTypeMatch = assignedShiftTypes.length === 0 || assignedShiftTypes.includes(shift.shift_type);
+        if (!shiftTypeMatch && assignedShiftTypes.includes('evening') && shift.shift_type === 'afternoon') {
+          shiftTypeMatch = true; // Evening workers can also work afternoon shifts
+        }
         
         // Check if day matches available days
         const dayMatch = availableDays.includes(shift.day_of_week);

@@ -166,9 +166,18 @@ const PublicShiftSubmission: React.FC = () => {
           const beforeTypeFilter = filteredShifts.length;
           filteredShifts = filteredShifts.filter(shift => {
             const shiftType = getShiftTypeFromTime(shift.start_time);
-            console.log(`⏰ Shift ${shift.id} (${shift.start_time}) → type: ${shiftType}, included: ${preferredShiftTypes.includes(shiftType)}`);
-            // Show ALL evening shifts (including all shifts from 14:00 onwards)
-            return preferredShiftTypes.includes(shiftType) || shiftType === 'evening';
+            let isIncluded = preferredShiftTypes.includes(shiftType);
+            
+            // Special logic: evening workers should also see afternoon shifts (14:00-18:00)
+            if (!isIncluded && preferredShiftTypes.includes('evening')) {
+              const hour = parseInt(shift.start_time.split(':')[0]);
+              if (hour >= 14) { // Include all shifts from 14:00 onwards for evening workers
+                isIncluded = true;
+              }
+            }
+            
+            console.log(`⏰ Shift ${shift.id} (${shift.start_time}) → type: ${shiftType}, included: ${isIncluded}`);
+            return isIncluded;
           });
           console.log(`⏰ After shift type filter: ${beforeTypeFilter} → ${filteredShifts.length} shifts`);
         }
@@ -181,9 +190,18 @@ const PublicShiftSubmission: React.FC = () => {
             const beforeTypeFilter = filteredShifts.length;
             filteredShifts = filteredShifts.filter(shift => {
               const shiftType = getShiftTypeFromTime(shift.start_time);
-              console.log(`⏰ Default filter - Shift ${shift.id} (${shift.start_time}) → type: ${shiftType}, included: ${defaultPrefs.shift_types.includes(shiftType)}`);
-              // Show ALL evening shifts (including all shifts from 14:00 onwards)
-              return defaultPrefs.shift_types.includes(shiftType) || shiftType === 'evening';
+              let isIncluded = defaultPrefs.shift_types.includes(shiftType);
+              
+              // Special logic: evening workers should also see afternoon shifts (14:00-18:00)
+              if (!isIncluded && defaultPrefs.shift_types.includes('evening')) {
+                const hour = parseInt(shift.start_time.split(':')[0]);
+                if (hour >= 14) { // Include all shifts from 14:00 onwards for evening workers
+                  isIncluded = true;
+                }
+              }
+              
+              console.log(`⏰ Default filter - Shift ${shift.id} (${shift.start_time}) → type: ${shiftType}, included: ${isIncluded}`);
+              return isIncluded;
             });
             console.log(`⏰ After default shift type filter: ${beforeTypeFilter} → ${filteredShifts.length} shifts`);
           }
@@ -641,32 +659,39 @@ const PublicShiftSubmission: React.FC = () => {
                              morningShifts = sortShifts(morningShifts);
                              eveningShifts = sortShifts(eveningShifts);
 
-                            days.push(
-                              <div key={dateStr} className="grid grid-cols-8 border-b last:border-b-0 min-h-[80px]">
-                                {/* Day Column */}
-                                <div className="p-3 border-l bg-gray-50 flex flex-col justify-center items-center">
-                                  <div className="text-sm font-semibold text-gray-900">{getDayName(dateStr)}</div>
-                                  <div className="text-xs text-gray-600">{getDateDisplay(dateStr)}</div>
-                                </div>
+                             days.push(
+                               <div key={dateStr} className="border-b-2 border-gray-300 bg-gradient-to-r from-blue-50 to-indigo-50 mb-4 rounded-lg shadow-sm">
+                                 {/* Day Header - Full Width */}
+                                 <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-4 rounded-t-lg">
+                                   <div className="flex items-center justify-center gap-2">
+                                     <div className="text-lg font-bold">{getDayName(dateStr)}</div>
+                                     <div className="text-sm opacity-90">{getDateDisplay(dateStr)}</div>
+                                   </div>
+                                 </div>
+                                 
+                                 {/* Shifts Grid */}
+                                 <div className="grid grid-cols-2 gap-4 p-4">
                                 
-                                {/* Morning Shifts */}
-                                <div className="col-span-3 p-2 border-l">
-                                  <div className="text-xs font-semibold text-orange-700 mb-2">🌅 בוקר</div>
-                                  <div className="space-y-1">
-                                    {morningShifts.map(shift => {
-                                      const currentPreference = formData.preferences.find(
-                                        (p: any) => p.shift_id === shift.id
-                                      );
-                                      const isSelected = currentPreference?.available;
-                                      
-                                      return (
-                                        <div 
-                                          key={shift.id}
-                                          className={`p-2 rounded border text-xs cursor-pointer transition-all ${
-                                            isSelected 
-                                              ? 'bg-green-100 border-green-300 text-green-800' 
-                                              : 'bg-gray-50 border-gray-200 hover:bg-blue-50 hover:border-blue-300'
-                                          }`}
+                                   {/* Morning Shifts */}
+                                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                     <div className="text-sm font-semibold text-orange-700 mb-3 flex items-center gap-2">
+                                       🌅 משמרות בוקר וצהריים
+                                     </div>
+                                     <div className="space-y-2">
+                                       {morningShifts.map(shift => {
+                                         const currentPreference = formData.preferences.find(
+                                           (p: any) => p.shift_id === shift.id
+                                         );
+                                         const isSelected = currentPreference?.available;
+                                         
+                                         return (
+                                           <div 
+                                             key={shift.id}
+                                             className={`p-3 rounded-lg border text-sm cursor-pointer transition-all shadow-sm ${
+                                               isSelected 
+                                                 ? 'bg-green-100 border-green-400 text-green-800 ring-2 ring-green-300' 
+                                                 : 'bg-white border-gray-300 hover:bg-blue-50 hover:border-blue-400 hover:shadow-md'
+                                             }`}
                                           onClick={() => handleShiftToggle(shift, !isSelected)}
                                         >
                                              <div className="font-semibold">
@@ -700,30 +725,32 @@ const PublicShiftSubmission: React.FC = () => {
                                         </div>
                                       );
                                     })}
-                                    {morningShifts.length === 0 && (
-                                      <div className="text-xs text-gray-400 p-2">אין משמרות</div>
-                                    )}
-                                  </div>
-                                </div>
+                                       {morningShifts.length === 0 && (
+                                         <div className="text-sm text-gray-500 p-3 text-center italic">אין משמרות בוקר זמינות</div>
+                                       )}
+                                     </div>
+                                   </div>
                                 
-                                {/* Evening Shifts */}
-                                <div className="col-span-4 p-2">
-                                  <div className="text-xs font-semibold text-purple-700 mb-2">🌆 ערב</div>
-                                  <div className="space-y-1">
-                                    {eveningShifts.map(shift => {
-                                      const currentPreference = formData.preferences.find(
-                                        (p: any) => p.shift_id === shift.id
-                                      );
-                                      const isSelected = currentPreference?.available;
-                                      
-                                      return (
-                                        <div 
-                                          key={shift.id}
-                                          className={`p-2 rounded border text-xs cursor-pointer transition-all ${
-                                            isSelected 
-                                              ? 'bg-green-100 border-green-300 text-green-800' 
-                                              : 'bg-gray-50 border-gray-200 hover:bg-blue-50 hover:border-blue-300'
-                                          }`}
+                                   {/* Evening Shifts */}
+                                   <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                                     <div className="text-sm font-semibold text-purple-700 mb-3 flex items-center gap-2">
+                                       🌆 משמרות ערב ולילה
+                                     </div>
+                                     <div className="space-y-2">
+                                       {eveningShifts.map(shift => {
+                                         const currentPreference = formData.preferences.find(
+                                           (p: any) => p.shift_id === shift.id
+                                         );
+                                         const isSelected = currentPreference?.available;
+                                         
+                                         return (
+                                           <div 
+                                             key={shift.id}
+                                             className={`p-3 rounded-lg border text-sm cursor-pointer transition-all shadow-sm ${
+                                               isSelected
+                                               ? 'bg-green-100 border-green-400 text-green-800 ring-2 ring-green-300' 
+                                               : 'bg-white border-gray-300 hover:bg-blue-50 hover:border-blue-400 hover:shadow-md'
+                                           }`}
                                           onClick={() => handleShiftToggle(shift, !isSelected)}
                                         >
                                              <div className="font-semibold">
@@ -753,13 +780,14 @@ const PublicShiftSubmission: React.FC = () => {
                                         </div>
                                       );
                                     })}
-                                    {eveningShifts.length === 0 && (
-                                      <div className="text-xs text-gray-400 p-2">אין משמרות</div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            );
+                                       {eveningShifts.length === 0 && (
+                                         <div className="text-sm text-gray-500 p-3 text-center italic">אין משמרות ערב זמינות</div>
+                                       )}
+                                     </div>
+                                   </div>
+                                 </div>
+                               </div>
+                             );
                           }
                           return days;
                         })()}
