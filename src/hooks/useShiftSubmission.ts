@@ -22,7 +22,7 @@ interface ShiftSubmissionData {
 export const useShiftSubmission = () => {
   const queryClient = useQueryClient();
 
-  const submitShifts = useMutation({
+  return useMutation({
     mutationFn: async (data: ShiftSubmissionData) => {
       const { data: result, error } = await supabase
         .from('shift_submissions')
@@ -54,6 +54,4 @@ export const useShiftSubmission = () => {
       });
     },
   });
-
-  return { submitShifts };
 };

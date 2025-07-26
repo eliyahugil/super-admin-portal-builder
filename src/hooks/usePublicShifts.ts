@@ -16,13 +16,13 @@ export const usePublicShifts = () => {
     useTokenAvailableShifts 
   } = useTokenManagement();
 
-  const submitShifts = useShiftSubmission();
+  const useShiftSubmissionMutation = useShiftSubmission;
 
   return {
     useToken: useTokenDetails,
     useTokenSubmissions,
     useEmployeeCompatibleShifts,
-    submitShifts,
+    useShiftSubmissionMutation,
     generateToken,
     toggleTokenStatus,
     useBusinessTokens,

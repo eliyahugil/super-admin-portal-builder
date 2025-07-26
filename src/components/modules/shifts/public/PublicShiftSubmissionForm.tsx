@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,7 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { data: compatibleData, isLoading, error } = useEmployeeCompatibleShifts(token);
-  const { submitShifts } = useShiftSubmission();
+  const submitShifts = useShiftSubmission();
   const { toast } = useToast();
 
   const handleShiftToggle = (shift: CompatibleShift) => {
