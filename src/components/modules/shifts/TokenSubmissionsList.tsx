@@ -12,10 +12,15 @@ interface TokenSubmissionsListProps {
 }
 
 export const TokenSubmissionsList: React.FC<TokenSubmissionsListProps> = ({ tokenId }) => {
-  const { data: submissions = [], isLoading } = useTokenSubmissions(tokenId);
+  const { data: submissions = [], isLoading, error } = useTokenSubmissions(tokenId);
 
   if (isLoading) {
     return <div className="text-center p-4">טוען הגשות...</div>;
+  }
+
+  if (error) {
+    console.error('Error loading submissions:', error);
+    return <div className="text-center p-4 text-red-500">שגיאה בטעינת הגשות</div>;
   }
 
   if (submissions.length === 0) {

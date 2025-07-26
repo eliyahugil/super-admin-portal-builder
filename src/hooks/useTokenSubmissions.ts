@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface ShiftSubmission {
   id: string;
-  token_id: string;
   employee_id: string;
   shifts: any;
   notes: string | null;
@@ -21,14 +20,31 @@ interface ShiftSubmission {
 export const useTokenSubmissions = (tokenId: string) => {
   return useQuery({
     queryKey: ['token-submissions', tokenId],
-    queryFn: async () => {
+    queryFn: async (): Promise<ShiftSubmission[]> => {
       if (!tokenId) return [];
       
+      // First, get the token details to find submissions by week dates
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('shift_submission_tokens')
+        .select('week_start_date, week_end_date, business_id')
+        .eq('id', tokenId)
+        .maybeSingle();
+
+      if (tokenError) {
+        console.error('Error fetching token:', tokenError);
+        return [];
+      }
+
+      if (!tokenData) {
+        console.error('Token not found');
+        return [];
+      }
+
+      // Now get submissions for the same week and business
       const { data, error } = await supabase
         .from('shift_submissions')
         .select(`
           id,
-          token_id,
           employee_id,
           shifts,
           notes,
@@ -41,7 +57,8 @@ export const useTokenSubmissions = (tokenId: string) => {
           week_end_date,
           optional_morning_availability
         `)
-        .eq('token_id', tokenId)
+        .eq('week_start_date', tokenData.week_start_date)
+        .eq('week_end_date', tokenData.week_end_date)
         .order('submitted_at', { ascending: false });
 
       if (error) {
