@@ -1,404 +1,257 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { usePublicShifts } from '@/hooks/usePublicShifts';
-import { PublicShiftForm, ShiftPreference } from '@/types/publicShift';
-import { useToast } from '@/hooks/use-toast';
-import { Calendar, Clock, MapPin, User, Send, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { usePublicShifts } from '@/hooks/usePublicShifts';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Calendar, Clock, Building, User, Send, CheckCircle, XCircle } from 'lucide-react';
 
-interface ScheduledShift {
-  id: string;
+interface ShiftPreference {
+  shift_id: string;
   shift_date: string;
   start_time: string;
   end_time: string;
-  branch_id: string;
-  branch_name?: string;
-  role?: string;
-  notes?: string;
-  is_assigned: boolean;
-  employee_id?: string;
-  status: string;
+  branch_name: string;
+  role: string;
+  is_selected: boolean;
 }
 
-export const PublicShiftSubmission: React.FC = () => {
+const PublicShiftSubmission: React.FC = () => {
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const { useToken, submitShifts } = usePublicShifts();
+  const { useToken, useTokenAvailableShifts, submitShifts } = usePublicShifts();
   
+  const [preferences, setPreferences] = useState<ShiftPreference[]>([]);
+  const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Get token details
   const { data: tokenData, isLoading: tokenLoading, error: tokenError } = useToken(token || '');
   
-  const [formData, setFormData] = useState<PublicShiftForm>({
-    employee_name: '',
-    phone: '',
-    preferences: [],
-    notes: ''
-  });
-  
-  const [scheduledShifts, setScheduledShifts] = useState<ScheduledShift[]>([]);
-  const [allScheduledShifts, setAllScheduledShifts] = useState<ScheduledShift[]>([]);
-  const [shiftsLoading, setShiftsLoading] = useState(false);
-  const [employeeData, setEmployeeData] = useState<any>(null);
+  // Get available shifts for the token
+  const { data: availableShifts = [], isLoading: shiftsLoading } = useTokenAvailableShifts(tokenData?.id || '');
 
-  // Load employee data and shifts when token is available
+  // Initialize preferences when shifts are loaded
   useEffect(() => {
-    if (!tokenData) return;
+    if (availableShifts.length > 0) {
+      const initialPreferences: ShiftPreference[] = availableShifts.map(shift => ({
+        shift_id: shift.id,
+        shift_date: shift.shift_date,
+        start_time: shift.start_time,
+        end_time: shift.end_time,
+        branch_name: shift.branches?.name || '',
+        role: shift.role,
+        is_selected: false
+      }));
+      setPreferences(initialPreferences);
+    }
+  }, [availableShifts]);
 
-    console.log('🔍 Token data loaded:', tokenData);
-    
-    const loadEmployeeData = async () => {
-      try {
-        const { data: employee, error } = await supabase
-          .from('employees')
-          .select('*')
-          .eq('id', tokenData.employee_id)
-          .single();
-
-        if (error) {
-          console.error('❌ Error loading employee data:', error);
-          return;
-        }
-
-        console.log('✅ Employee data loaded:', employee);
-        setEmployeeData(employee);
-        
-        // Pre-fill form with employee data
-        setFormData(prev => ({
-          ...prev,
-          employee_name: `${employee.first_name} ${employee.last_name}`,
-          phone: employee.phone || ''
-        }));
-      } catch (error) {
-        console.error('❌ Error in loadEmployeeData:', error);
-      }
-    };
-
-    const loadScheduledShifts = async () => {
-      if (!tokenData.business_id || !tokenData.week_start_date || !tokenData.week_end_date) {
-        console.warn('⚠️ Missing required token data for loading shifts');
-        return;
-      }
-
-      setShiftsLoading(true);
-      try {
-        console.log('🔍 Loading shifts for week:', tokenData.week_start_date, 'to', tokenData.week_end_date);
-        
-        const { data: shifts, error } = await supabase
-          .from('scheduled_shifts')
-          .select(`
-            *,
-            branches (
-              id,
-              name
-            )
-          `)
-          .eq('business_id', tokenData.business_id)
-          .gte('shift_date', tokenData.week_start_date)
-          .lte('shift_date', tokenData.week_end_date)
-          .order('shift_date', { ascending: true })
-          .order('start_time', { ascending: true });
-
-        if (error) {
-          console.error('❌ Error loading shifts:', error);
-          toast({
-            title: "שגיאה",
-            description: "שגיאה בטעינת המשמרות הזמינות",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        console.log('✅ Shifts loaded:', shifts?.length || 0);
-        
-        // Add branch_name to shifts
-        const shiftsWithBranchInfo = shifts?.map(shift => ({
-          ...shift,
-          branch_name: shift.branches?.name || 'לא צוין'
-        })) || [];
-
-        // Store all shifts and filtered shifts separately
-        setAllScheduledShifts(shifts || []);
-        setScheduledShifts(shiftsWithBranchInfo);
-        } catch (error) {
-          console.error('❌ Error loading scheduled shifts:', error);
-        } finally {
-          setShiftsLoading(false);
-        }
-      }
-    };
-
-    loadEmployeeData();
-    loadScheduledShifts();
-  }, [tokenData, toast]);
-
-  const getShiftTypeFromTime = (startTime: string) => {
-    const hour = parseInt(startTime.split(':')[0]);
-    if (hour >= 6 && hour < 12) return 'morning';
-    if (hour >= 12 && hour < 18) return 'afternoon';
-    if (hour >= 18 && hour < 24) return 'evening';
-    return 'night';
+  // Handle shift selection toggle
+  const toggleShiftSelection = (shiftId: string) => {
+    setPreferences(prev => 
+      prev.map(pref => 
+        pref.shift_id === shiftId 
+          ? { ...pref, is_selected: !pref.is_selected }
+          : pref
+      )
+    );
   };
 
-  // Group shifts by date for better UI organization
-  const shiftsByDate = useMemo(() => {
-    const grouped = scheduledShifts.reduce((acc, shift) => {
-      const date = shift.shift_date;
-      if (!acc[date]) {
-        acc[date] = [];
-      }
-      acc[date].push(shift);
-      return acc;
-    }, {} as Record<string, ScheduledShift[]>);
-
-    // Sort dates
-    const sortedDates = Object.keys(grouped).sort();
-    const result: Record<string, ScheduledShift[]> = {};
-    sortedDates.forEach(date => {
-      result[date] = grouped[date];
-    });
-    
-    return result;
-  }, [scheduledShifts]);
-
-  const handleShiftToggle = (shift: ScheduledShift, isSelected: boolean) => {
-    console.log('🔄 Toggle shift:', shift.id, 'Selected:', isSelected);
-    
-    setFormData(prev => {
-      let newPreferences = [...prev.preferences];
-      
-      if (isSelected) {
-        // Add shift preference
-        const newPreference: ShiftPreference = {
-          shift_id: shift.id,
-          shift_date: shift.shift_date,
-          start_time: shift.start_time,
-          end_time: shift.end_time,
-          role: shift.role || '',
-          branch_name: shift.branch_name || '',
-          available: true
-        };
-        newPreferences.push(newPreference);
-        console.log('✅ Added shift preference:', newPreference);
-      } else {
-        // Remove shift preference
-        newPreferences = newPreferences.filter(pref => pref.shift_id !== shift.id);
-        console.log('❌ Removed shift preference for shift:', shift.id);
-      }
-      
-      return { ...prev, preferences: newPreferences };
-    });
-  };
-
-  const isShiftSelected = (shiftId: string) => {
-    return formData.preferences.some(pref => pref.shift_id === shiftId);
-  };
-
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!token) {
       toast({
-        title: "שגיאה",
-        description: "טוקן לא תקף",
-        variant: "destructive"
+        title: 'שגיאה',
+        description: 'לא נמצא טוקן תקין',
+        variant: 'destructive',
       });
       return;
     }
 
-    if (formData.preferences.length === 0) {
+    const selectedPreferences = preferences.filter(pref => pref.is_selected);
+    
+    if (selectedPreferences.length === 0) {
       toast({
-        title: "שגיאה", 
-        description: "אנא בחר לפחות משמרת אחת",
-        variant: "destructive"
+        title: 'שגיאה',
+        description: 'יש לבחור לפחות משמרת אחת',
+        variant: 'destructive',
       });
       return;
     }
 
-    console.log('📤 Submitting form data:', {
-      preferences: formData.preferences.length,
-      notes: formData.notes?.length || 0
-    });
-
+    setIsSubmitting(true);
+    
     try {
       await submitShifts.mutateAsync({
-        token: token,
-        formData
+        token,
+        formData: {
+          preferences: selectedPreferences,
+          notes
+        }
       });
       
       toast({
-        title: "הצלחה!",
-        description: `הגשת בחירת המשמרות בוצעה בהצלחה. נבחרו ${formData.preferences.length} משמרות.`,
-        variant: "default"
+        title: 'הגשה בוצעה בהצלחה',
+        description: 'המשמרות שלך נשלחו לאישור',
+        variant: 'default',
       });
       
-      // Reset form
-      setFormData(prev => ({
-        ...prev,
-        preferences: [],
-        notes: ''
-      }));
-      
-    } catch (error: any) {
-      console.error('❌ Submission error:', error);
+      // Redirect to success page or home
+      navigate('/');
+    } catch (error) {
+      console.error('Submission error:', error);
       toast({
-        title: "שגיאה בהגשה",
-        description: error.message || "שגיאה לא ידועה בהגשת המשמרות",
-        variant: "destructive"
+        title: 'שגיאה בהגשה',
+        description: error instanceof Error ? error.message : 'אירעה שגיאה לא צפויה',
+        variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return format(date, 'EEEE, d MMMM yyyy', { locale: he });
-    } catch (error) {
-      return dateString;
-    }
-  };
-
-  const getDayOfWeek = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return format(date, 'EEEE', { locale: he });
-    } catch (error) {
-      return '';
-    }
-  };
-
-  if (tokenLoading) {
+  // Loading state
+  if (tokenLoading || shiftsLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">טוען נתונים...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (tokenError || !tokenData) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
         <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-center text-destructive">שגיאה</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-center text-muted-foreground">
-              הטוקן לא תקף או פג תוקף. אנא פנה למנהל לקבלת טוקן חדש.
-            </p>
+          <CardContent className="p-6">
+            <div className="text-center space-y-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground">טוען נתונים...</p>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
+  // Error state
+  if (tokenError || !tokenData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6">
+            <div className="text-center space-y-4">
+              <XCircle className="h-12 w-12 text-destructive mx-auto" />
+              <h2 className="text-lg font-semibold">טוקן לא תקין</h2>
+              <p className="text-muted-foreground">
+                הטוקן שפג תוקפו או אינו קיים במערכת
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Group shifts by date
+  const groupedShifts = preferences.reduce((acc, pref) => {
+    const date = pref.shift_date;
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(pref);
+    return acc;
+  }, {} as Record<string, ShiftPreference[]>);
+
+  const selectedCount = preferences.filter(pref => pref.is_selected).length;
+
   return (
-    <div className="min-h-screen bg-background py-6" dir="rtl">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <div className="min-h-screen bg-background" dir="rtl">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Header */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5" />
-              הגשת בחירת משמרות
+            <CardTitle className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold">הגשת העדפות משמרות</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {tokenData.week_start_date && tokenData.week_end_date && (
+                    <>
+                      שבוע {format(new Date(tokenData.week_start_date), 'dd/MM', { locale: he })} - {format(new Date(tokenData.week_end_date), 'dd/MM/yyyy', { locale: he })}
+                    </>
+                  )}
+                </p>
+              </div>
             </CardTitle>
-            <CardDescription>
-              {employeeData ? `שלום ${employeeData.first_name} ${employeeData.last_name}` : 'שלום'}
-              <br />
-              בחר את המשמרות שאתה מעוניין לעבוד בהן השבוע
-            </CardDescription>
           </CardHeader>
         </Card>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Shifts Selection */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                בחירת משמרות
+              <CardTitle className="flex items-center justify-between">
+                <span>בחירת משמרות</span>
+                <Badge variant="secondary">
+                  {selectedCount} נבחרו
+                </Badge>
               </CardTitle>
-              <CardDescription>
-                בחר את המשמרות שאתה מעוניין לעבוד בהן
-              </CardDescription>
             </CardHeader>
             <CardContent>
-              {shiftsLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">טוען משמרות...</p>
-                </div>
-              ) : Object.keys(shiftsByDate).length === 0 ? (
-                <Alert>
-                  <AlertDescription>
-                    לא נמצאו משמרות זמינות לשבוע זה
-                  </AlertDescription>
-                </Alert>
+              {Object.keys(groupedShifts).length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  אין משמרות זמינות עבור השבוע הנבחר
+                </p>
               ) : (
                 <div className="space-y-6">
-                  {Object.entries(shiftsByDate).map(([date, shifts]) => (
+                  {Object.entries(groupedShifts).map(([date, shifts]) => (
                     <div key={date} className="space-y-3">
-                      {/* Day Header */}
-                      <div className="border-b pb-2">
-                        <h3 className="text-lg font-semibold text-foreground">
-                          {getDayOfWeek(date)}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDate(date)}
-                        </p>
-                      </div>
-                      
-                      {/* Shifts for this day */}
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {shifts.map((shift) => (
+                      <h3 className="font-medium text-lg border-b pb-2">
+                        {format(new Date(date), 'EEEE, dd/MM/yyyy', { locale: he })}
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {shifts.map(shift => (
                           <div
-                            key={shift.id}
-                            className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                              isShiftSelected(shift.id)
-                                ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                            key={shift.shift_id}
+                            className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                              shift.is_selected
+                                ? 'border-primary bg-primary/5 shadow-sm'
                                 : 'border-border hover:border-primary/50'
                             }`}
-                            onClick={() => handleShiftToggle(shift, !isShiftSelected(shift.id))}
+                            onClick={() => toggleShiftSelection(shift.shift_id)}
                           >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-muted-foreground" />
-                                <span className="font-medium">
-                                  {shift.start_time} - {shift.end_time}
-                                </span>
-                              </div>
-                              {isShiftSelected(shift.id) && (
-                                <CheckCircle className="h-5 w-5 text-primary" />
-                              )}
-                            </div>
-                            
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <MapPin className="h-3 w-3" />
-                                <span>{shift.branch_name}</span>
-                              </div>
-                              
-                              {shift.role && (
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <User className="h-3 w-3" />
-                                  <span>{shift.role}</span>
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-muted-foreground" />
+                                  <span className="font-medium">
+                                    {shift.start_time} - {shift.end_time}
+                                  </span>
                                 </div>
-                              )}
-                              
-                              <div className="flex items-center gap-2 mt-2">
-                                <Badge variant={getShiftTypeFromTime(shift.start_time) === 'morning' ? 'default' : 'secondary'}>
-                                  {getShiftTypeFromTime(shift.start_time) === 'morning' ? 'בוקר' : 
-                                   getShiftTypeFromTime(shift.start_time) === 'afternoon' ? 'צהריים' : 
-                                   getShiftTypeFromTime(shift.start_time) === 'evening' ? 'ערב' : 'לילה'}
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                  <Building className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm text-muted-foreground">
+                                    {shift.branch_name}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm text-muted-foreground">
+                                    {shift.role}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center">
+                                {shift.is_selected ? (
+                                  <CheckCircle className="h-6 w-6 text-primary" />
+                                ) : (
+                                  <div className="h-6 w-6 rounded-full border-2 border-muted-foreground"></div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -415,15 +268,12 @@ export const PublicShiftSubmission: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle>הערות נוספות</CardTitle>
-              <CardDescription>
-                הערות או בקשות מיוחדות (אופציונלי)
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <Textarea
-                value={formData.notes || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="הכנס הערות או בקשות מיוחדות..."
+                placeholder="הוסף הערות או העדפות נוספות..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
                 className="min-h-[100px]"
               />
             </CardContent>
@@ -432,30 +282,24 @@ export const PublicShiftSubmission: React.FC = () => {
           {/* Submit Button */}
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  {formData.preferences.length > 0 && (
-                    <span>נבחרו {formData.preferences.length} משמרות</span>
-                  )}
-                </div>
-                <Button
-                  type="submit"
-                  disabled={formData.preferences.length === 0 || submitShifts.isPending}
-                  className="px-8"
-                >
-                  {submitShifts.isPending ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      שולח...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      שלח הגשה
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Button
+                type="submit"
+                disabled={isSubmitting || selectedCount === 0}
+                className="w-full"
+                size="lg"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                    שולח...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    שלח הגשה ({selectedCount} משמרות)
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
         </form>
