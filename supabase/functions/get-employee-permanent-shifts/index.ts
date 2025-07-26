@@ -150,8 +150,7 @@ serve(async (req) => {
           business_id,
           notes,
           shift_assignments,
-          branch:branches(id, name, address),
-          business:businesses(id, name)
+          branch:branches(id, name, address)
         `)
         .eq('business_id', businessId)
         .is('employee_id', null)
@@ -197,7 +196,6 @@ serve(async (req) => {
           week_start_date: weekStart,
           week_end_date: weekEndStr,
           branch: shift.branch,
-          business: shift.business,
           source: 'scheduled_shifts',
           shift_date: shift.shift_date,
           notes: shift.notes,
@@ -221,7 +219,11 @@ serve(async (req) => {
         // Check if day matches available days
         const dayMatch = availableDays.includes(shift.day_of_week);
         
-        console.log(`🔍 Filtering shift ${shift.id} (${shift.source || 'available_shifts'}): branch(${shift.branch_id}): ${branchMatch}, type(${shift.shift_type}): ${shiftTypeMatch}, day(${shift.day_of_week}): ${dayMatch}`);
+        console.log(`🔍 Filtering shift ${shift.id} (${shift.source || 'available_shifts'}): 
+          - Branch ${shift.branch_id} in [${assignedBranchIds.join(',')}]: ${branchMatch}
+          - Type '${shift.shift_type}' in [${assignedShiftTypes.join(',')}]: ${shiftTypeMatch}
+          - Day ${shift.day_of_week} in [${availableDays.join(',')}]: ${dayMatch}
+          - Result: ${branchMatch && shiftTypeMatch && dayMatch}`);
         
         return branchMatch && shiftTypeMatch && dayMatch;
       });
