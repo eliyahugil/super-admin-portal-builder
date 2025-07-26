@@ -78,7 +78,7 @@ serve(async (req) => {
     // Get employee's previous submissions to understand their availability patterns
     const { data: previousSubmissions, error: submissionError } = await supabaseAdmin
       .from('shift_submissions')
-      .select('shifts, notes')
+      .select('shifts, notes, optional_morning_availability')
       .eq('employee_id', employeeId)
       .eq('week_start_date', weekStart)
       .eq('week_end_date', weekEnd)
@@ -91,12 +91,15 @@ serve(async (req) => {
 
     // Parse submitted availability
     let submittedAvailability = [];
+    let optionalMorningAvailability = null;
+    
     if (previousSubmissions && previousSubmissions.length > 0) {
       try {
         const shifts = typeof previousSubmissions[0].shifts === 'string' 
           ? JSON.parse(previousSubmissions[0].shifts) 
           : previousSubmissions[0].shifts;
         submittedAvailability = shifts || [];
+        optionalMorningAvailability = previousSubmissions[0].optional_morning_availability;
       } catch (e) {
         console.error('Error parsing submitted shifts:', e);
       }
@@ -104,6 +107,8 @@ serve(async (req) => {
 
     let shiftsByDay = {};
     let compatibleShifts = [];
+    let regularShifts = [];
+    let specialShifts = [];
 
     if (!employeeBranches || employeeBranches.length === 0) {
       console.log('⚠️ No branch assignments found for employee');
@@ -149,7 +154,8 @@ serve(async (req) => {
             dayIndex,
             shifts: [],
             compatibleShifts: [],
-            autoSelectedShifts: []
+            autoSelectedShifts: [],
+            specialShifts: []
           };
           continue;
         }
@@ -162,48 +168,76 @@ serve(async (req) => {
           return branchMatch && shiftTypeMatch && dayMatch;
         });
 
+        // Separate regular and special shifts
+        const regularCompatibleShifts = compatibleDayShifts.filter(shift => 
+          shift.shift_type !== 'special' && shift.shift_type !== 'emergency'
+        );
+        
+        const specialCompatibleShifts = compatibleDayShifts.filter(shift => 
+          shift.shift_type === 'special' || shift.shift_type === 'emergency'
+        );
+
         // Auto-select shifts based on submitted availability
         const autoSelectedShifts = [];
         
-        // If employee submitted availability for this day, try to auto-select compatible shifts
+        // Check if employee submitted availability for this day
         submittedAvailability.forEach(submittedShift => {
           const shiftDate = new Date(submittedShift.date);
           const shiftDayOfWeek = shiftDate.getDay();
           
           if (shiftDayOfWeek === dayIndex) {
-            // Find all compatible shifts that overlap with the submitted time window
-            const overlappingShifts = compatibleDayShifts.filter(availableShift => {
+            // Find shifts that are within the employee's available hours
+            const availableShifts = regularCompatibleShifts.filter(availableShift => {
               const submittedStart = submittedShift.start_time;
               const submittedEnd = submittedShift.end_time;
               const availableStart = availableShift.start_time;
               const availableEnd = availableShift.end_time;
               
-              // Check if there's any time overlap
-              return (submittedStart < availableEnd && submittedEnd > availableStart);
+              // Check if the shift is completely within the employee's available time
+              return (availableStart >= submittedStart && availableEnd <= submittedEnd);
             });
             
-            // If the employee is available for a specific shift type and time,
-            // they should be available for other shifts in the same time window
-            overlappingShifts.forEach(shift => {
+            availableShifts.forEach(shift => {
               if (!autoSelectedShifts.find(s => s.id === shift.id)) {
                 autoSelectedShifts.push({
                   ...shift,
                   autoSelected: true,
-                  reason: `זמין לפי הגשה: ${submittedShift.start_time}-${submittedShift.end_time}`
+                  reason: `זמין ${submittedShift.start_time}-${submittedShift.end_time}`
                 });
               }
             });
           }
         });
 
+        // Handle optional morning availability
+        if (optionalMorningAvailability && dayIndex < 5) { // Weekdays only
+          const morningShifts = regularCompatibleShifts.filter(shift => {
+            const startHour = parseInt(shift.start_time.split(':')[0]);
+            return startHour >= 6 && startHour <= 12; // Morning shifts
+          });
+          
+          morningShifts.forEach(shift => {
+            if (!autoSelectedShifts.find(s => s.id === shift.id)) {
+              autoSelectedShifts.push({
+                ...shift,
+                autoSelected: true,
+                reason: 'זמין לבוקר (אופציונלי)'
+              });
+            }
+          });
+        }
+
         shiftsByDay[dayName] = {
           dayIndex,
           shifts: dayShifts,
-          compatibleShifts: compatibleDayShifts,
-          autoSelectedShifts: autoSelectedShifts
+          compatibleShifts: regularCompatibleShifts,
+          autoSelectedShifts: autoSelectedShifts,
+          specialShifts: specialCompatibleShifts
         };
 
-        compatibleShifts.push(...compatibleDayShifts);
+        compatibleShifts.push(...regularCompatibleShifts);
+        regularShifts.push(...regularCompatibleShifts);
+        specialShifts.push(...specialCompatibleShifts);
       }
     }
 
@@ -220,8 +254,10 @@ serve(async (req) => {
       },
       shiftsByDay,
       totalCompatibleShifts: compatibleShifts.length,
+      totalSpecialShifts: specialShifts.length,
       employeeAssignments: employeeBranches || [],
-      submittedAvailability: submittedAvailability
+      submittedAvailability: submittedAvailability,
+      optionalMorningAvailability: optionalMorningAvailability
     };
 
     console.log('🎉 Successfully prepared compatible shifts by day');

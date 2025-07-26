@@ -1,13 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEmployeeCompatibleShifts } from '@/hooks/useEmployeeCompatibleShifts';
-import { Calendar, Clock, MapPin, Users, CheckCircle, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { he } from 'date-fns/locale';
+import { Calendar, Clock, MapPin, CheckCircle, AlertCircle, Star } from 'lucide-react';
 
 export const EmployeeCompatibleShiftsView: React.FC = () => {
   const [token, setToken] = useState('');
@@ -81,7 +78,7 @@ export const EmployeeCompatibleShiftsView: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">
-                פרטי עובד: {shiftsData.tokenData.employee.first_name} {shiftsData.tokenData.employee.last_name}
+                עובד: {shiftsData.tokenData.employee.first_name} {shiftsData.tokenData.employee.last_name}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -105,14 +102,19 @@ export const EmployeeCompatibleShiftsView: React.FC = () => {
               <CardTitle className="text-lg">סיכום</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span>סך הכל משמרות תואמות: {shiftsData.totalCompatibleShifts}</span>
+                  <span>משמרות רגילות תואמות: {shiftsData.totalCompatibleShifts}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-blue-600" />
-                  <span>הקצאות סניפים: {shiftsData.employeeAssignments.length}</span>
+                  <Star className="h-5 w-5 text-yellow-600" />
+                  <span>משמרות מיוחדות: {shiftsData.totalSpecialShifts}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">
+                    הקצאות סניפים: {shiftsData.employeeAssignments.length}
+                  </Badge>
                 </div>
               </div>
             </CardContent>
@@ -127,14 +129,19 @@ export const EmployeeCompatibleShiftsView: React.FC = () => {
                     <span>{dayName}</span>
                     <div className="flex gap-2">
                       <Badge variant="outline">
-                        {dayData.shifts.length} משמרות זמינות
+                        {dayData.shifts.length} סה"כ
                       </Badge>
                       <Badge variant="default">
                         {dayData.compatibleShifts.length} תואמות
                       </Badge>
                       {dayData.autoSelectedShifts.length > 0 && (
                         <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          {dayData.autoSelectedShifts.length} נבחרו אוטומטית
+                          {dayData.autoSelectedShifts.length} נבחרו
+                        </Badge>
+                      )}
+                      {dayData.specialShifts.length > 0 && (
+                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                          {dayData.specialShifts.length} מיוחדות
                         </Badge>
                       )}
                     </div>
@@ -144,11 +151,11 @@ export const EmployeeCompatibleShiftsView: React.FC = () => {
                   {dayData.shifts.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">אין משמרות זמינות ביום זה</p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {/* Auto-selected shifts */}
                       {dayData.autoSelectedShifts.length > 0 && (
                         <div>
-                          <h4 className="font-medium text-green-700 mb-2">משמרות שנבחרו אוטומטית:</h4>
+                          <h4 className="font-medium text-green-700 mb-2">משמרות נבחרות אוטומטית:</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {dayData.autoSelectedShifts.map((shift: any) => (
                               <div key={shift.id} className="border rounded-lg p-3 bg-green-50 border-green-200">
@@ -180,8 +187,8 @@ export const EmployeeCompatibleShiftsView: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Compatible shifts */}
-                      {dayData.compatibleShifts.length > 0 && (
+                      {/* Other compatible shifts */}
+                      {dayData.compatibleShifts.length > dayData.autoSelectedShifts.length && (
                         <div>
                           <h4 className="font-medium text-blue-700 mb-2">משמרות תואמות נוספות:</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -192,6 +199,41 @@ export const EmployeeCompatibleShiftsView: React.FC = () => {
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="font-medium">{shift.shift_name}</span>
                                   <Badge variant="outline" className="text-xs">
+                                    {shift.shift_type}
+                                  </Badge>
+                                </div>
+                                <div className="text-sm space-y-1">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    <span>{formatTime(shift.start_time)} - {formatTime(shift.end_time)}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    <span>{shift.branch.name}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Special shifts */}
+                      {dayData.specialShifts.length > 0 && (
+                        <div>
+                          <h4 className="font-medium text-yellow-700 mb-2 flex items-center gap-2">
+                            <Star className="h-4 w-4" />
+                            משמרות מיוחדות:
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {dayData.specialShifts.map((shift: any) => (
+                              <div key={shift.id} className="border rounded-lg p-3 bg-yellow-50 border-yellow-200">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <Star className="h-4 w-4 text-yellow-600" />
+                                    <span className="font-medium">{shift.shift_name}</span>
+                                  </div>
+                                  <Badge variant="outline" className="text-xs bg-yellow-100">
                                     {shift.shift_type}
                                   </Badge>
                                 </div>
