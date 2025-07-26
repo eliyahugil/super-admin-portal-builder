@@ -10,7 +10,9 @@ import {
   KeyRound, 
   DollarSign, 
   Settings, 
-  BarChart3 
+  BarChart3,
+  History,
+  ClipboardList
 } from 'lucide-react';
 import type { Employee } from '@/types/employee';
 
@@ -93,6 +95,18 @@ export const getAvailableTabs = (employee: Employee): TabItem[] => {
       label: 'שדות מותאמים', 
       icon: Settings,
       description: 'מידע נוסף ושדות מותאמים אישית'
+    },
+    { 
+      id: 'submission-history', 
+      label: 'היסטוריית הגשות', 
+      icon: History,
+      description: 'היסטוריית הגשות משמרות קודמות'
+    },
+    { 
+      id: 'work-order-history', 
+      label: 'היסטוריית הזמנות עבודה', 
+      icon: ClipboardList,
+      description: 'היסטוריית משמרות שהוקצו לעובד'
     },
     { 
       id: 'analytics', 
