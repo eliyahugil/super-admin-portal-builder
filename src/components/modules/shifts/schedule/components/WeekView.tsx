@@ -73,7 +73,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
 
   return (
     <div className="space-y-4" dir="rtl">
-      <div className="grid grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 sm:gap-4">
         {weekDates.map((date, index) => {
           const dateKey = formatDateKey(date);
           const dayShifts = shiftsByDate[dateKey] || [];

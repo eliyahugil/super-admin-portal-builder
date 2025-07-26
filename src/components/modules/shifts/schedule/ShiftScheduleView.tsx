@@ -105,7 +105,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     <div className="space-y-6" dir="rtl">
       {/* Header with actions */}
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Calendar className="h-6 w-6 text-primary" />
             <div>
@@ -116,7 +116,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant={viewType === 'week' ? 'default' : 'outline'}
               size="sm"
@@ -232,22 +232,22 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <div className="flex items-center gap-4 mb-2">
-                                <span className="font-medium">
-                                  {shift.start_time} - {shift.end_time}
-                                </span>
-                                <span className="text-sm text-gray-600">
-                                  {getEmployeeName(shift.employee_id)}
-                                </span>
-                                <span className="text-sm text-gray-500">
-                                  {getBranchName(shift.branch_id)}
-                                </span>
-                                {shift.role && getRoleName(shift.role) && (
-                                  <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                                    {getRoleName(shift.role)}
-                                  </span>
-                                )}
-                              </div>
+                               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
+                                 <span className="font-medium">
+                                   {shift.start_time} - {shift.end_time}
+                                 </span>
+                                 <span className="text-sm text-gray-600">
+                                   {getEmployeeName(shift.employee_id)}
+                                 </span>
+                                 <span className="text-sm text-gray-500">
+                                   {getBranchName(shift.branch_id)}
+                                 </span>
+                                 {shift.role && getRoleName(shift.role) && (
+                                   <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                                     {getRoleName(shift.role)}
+                                   </span>
+                                 )}
+                               </div>
                               {shift.notes && (
                                 <p className="text-sm text-gray-600">{shift.notes}</p>
                               )}
