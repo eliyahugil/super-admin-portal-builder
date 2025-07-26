@@ -14,6 +14,203 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_activity_log: {
+        Row: {
+          action_timestamp: string
+          action_type: string
+          additional_info: Json | null
+          business_id: string
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          record_id: string | null
+          sequential_number: number
+          session_id: string | null
+          table_name: string | null
+          user_agent: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          action_timestamp?: string
+          action_type: string
+          additional_info?: Json | null
+          business_id: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          sequential_number?: number
+          session_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          action_timestamp?: string
+          action_type?: string
+          additional_info?: Json | null
+          business_id?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          sequential_number?: number
+          session_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_activity_log_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounting_records: {
+        Row: {
+          account_code: string | null
+          additional_data: Json | null
+          amount: number
+          business_id: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_record_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_supplier: string | null
+          description: string
+          document_date: string
+          document_number: string
+          id: string
+          is_cancelled: boolean
+          permanent_file_id: string | null
+          record_type: string
+          sequential_number: number
+        }
+        Insert: {
+          account_code?: string | null
+          additional_data?: Json | null
+          amount: number
+          business_id: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_record_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_supplier?: string | null
+          description: string
+          document_date: string
+          document_number: string
+          id?: string
+          is_cancelled?: boolean
+          permanent_file_id?: string | null
+          record_type: string
+          sequential_number?: number
+        }
+        Update: {
+          account_code?: string | null
+          additional_data?: Json | null
+          amount?: number
+          business_id?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_record_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_supplier?: string | null
+          description?: string
+          document_date?: string
+          document_number?: string
+          id?: string
+          is_cancelled?: boolean
+          permanent_file_id?: string | null
+          record_type?: string
+          sequential_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_records_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_records_cancelled_by_record_id_fkey"
+            columns: ["cancelled_by_record_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_records_permanent_file_id_fkey"
+            columns: ["permanent_file_id"]
+            isOneToOne: false
+            referencedRelation: "permanent_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounting_system_settings: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_registered_software: boolean
+          license_number: string | null
+          software_version: string
+          system_name: string
+          tax_authority_registration_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_registered_software?: boolean
+          license_number?: string | null
+          software_version: string
+          system_name: string
+          tax_authority_registration_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_registered_software?: boolean
+          license_number?: string | null
+          software_version?: string
+          system_name?: string
+          tax_authority_registration_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_system_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_logs: {
         Row: {
           action: string
@@ -3666,6 +3863,56 @@ export type Database = {
           },
         ]
       }
+      permanent_files: {
+        Row: {
+          business_id: string
+          content_hash: string
+          created_at: string
+          created_by: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id: string
+          is_active: boolean
+          metadata: Json | null
+          sequential_number: number
+        }
+        Insert: {
+          business_id: string
+          content_hash: string
+          created_at?: string
+          created_by?: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id?: string
+          is_active?: boolean
+          metadata?: Json | null
+          sequential_number?: number
+        }
+        Update: {
+          business_id?: string
+          content_hash?: string
+          created_at?: string
+          created_by?: string | null
+          file_name?: string
+          file_path?: string
+          file_type?: string
+          id?: string
+          is_active?: boolean
+          metadata?: Json | null
+          sequential_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permanent_files_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_module_permissions: {
         Row: {
           created_at: string
@@ -3697,6 +3944,75 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_system_settings: {
+        Row: {
+          backup_duration_minutes: number | null
+          branch_id: string | null
+          business_id: string
+          created_at: string
+          id: string
+          installation_date: string
+          is_active: boolean
+          last_inspection_date: string | null
+          next_inspection_due: string | null
+          pos_name: string
+          power_backup_available: boolean
+          serial_number: string
+          software_version: string
+          tax_authority_approval_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          backup_duration_minutes?: number | null
+          branch_id?: string | null
+          business_id: string
+          created_at?: string
+          id?: string
+          installation_date: string
+          is_active?: boolean
+          last_inspection_date?: string | null
+          next_inspection_due?: string | null
+          pos_name: string
+          power_backup_available?: boolean
+          serial_number: string
+          software_version: string
+          tax_authority_approval_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          backup_duration_minutes?: number | null
+          branch_id?: string | null
+          business_id?: string
+          created_at?: string
+          id?: string
+          installation_date?: string
+          is_active?: boolean
+          last_inspection_date?: string | null
+          next_inspection_due?: string | null
+          pos_name?: string
+          power_backup_available?: boolean
+          serial_number?: string
+          software_version?: string
+          tax_authority_approval_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_system_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_system_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -3788,6 +4104,59 @@ export type Database = {
             columns: ["token_id"]
             isOneToOne: false
             referencedRelation: "shift_submission_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quarterly_backups: {
+        Row: {
+          backup_date: string
+          backup_hash: string
+          backup_location: string
+          backup_size_mb: number | null
+          business_id: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          quarter: number
+          verification_date: string | null
+          verification_status: string
+          year: number
+        }
+        Insert: {
+          backup_date?: string
+          backup_hash: string
+          backup_location: string
+          backup_size_mb?: number | null
+          business_id: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          quarter: number
+          verification_date?: string | null
+          verification_status?: string
+          year: number
+        }
+        Update: {
+          backup_date?: string
+          backup_hash?: string
+          backup_location?: string
+          backup_size_mb?: number | null
+          business_id?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          quarter?: number
+          verification_date?: string | null
+          verification_status?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quarterly_backups_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
