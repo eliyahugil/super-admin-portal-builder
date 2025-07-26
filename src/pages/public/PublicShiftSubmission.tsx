@@ -113,10 +113,9 @@ const PublicShiftSubmission: React.FC = () => {
         // Helper function to determine shift type based on start time
         const getShiftTypeFromTime = (startTime: string) => {
           const hour = parseInt(startTime.split(':')[0]);
-          if (hour >= 6 && hour < 12) return 'morning';
-          if (hour >= 12 && hour < 16) return 'afternoon';  // Changed from 17 to 16
-          if (hour >= 16 && hour < 22) return 'evening';    // Changed from 17 to 16
-          return 'night';
+          if (hour >= 6 && hour < 14) return 'morning';
+          if (hour >= 14) return 'evening';  // Evening starts from 14:00
+          return 'evening'; // Late shifts also count as evening
         };
 
         console.log('👤 Employee data:', {
@@ -162,16 +161,17 @@ const PublicShiftSubmission: React.FC = () => {
             })));
           }
           
-          // Filter shifts by preferred shift types if available
-          if (preferredShiftTypes.length > 0) {
-            const beforeTypeFilter = filteredShifts.length;
-            filteredShifts = filteredShifts.filter(shift => {
-              const shiftType = getShiftTypeFromTime(shift.start_time);
-              console.log(`⏰ Shift ${shift.id} (${shift.start_time}) → type: ${shiftType}, included: ${preferredShiftTypes.includes(shiftType)}`);
-              return preferredShiftTypes.includes(shiftType);
-            });
-            console.log(`⏰ After shift type filter: ${beforeTypeFilter} → ${filteredShifts.length} shifts`);
-          }
+        // Filter shifts by preferred shift types if available
+        if (preferredShiftTypes.length > 0) {
+          const beforeTypeFilter = filteredShifts.length;
+          filteredShifts = filteredShifts.filter(shift => {
+            const shiftType = getShiftTypeFromTime(shift.start_time);
+            console.log(`⏰ Shift ${shift.id} (${shift.start_time}) → type: ${shiftType}, included: ${preferredShiftTypes.includes(shiftType)}`);
+            // Show ALL evening shifts (including all shifts from 14:00 onwards)
+            return preferredShiftTypes.includes(shiftType) || shiftType === 'evening';
+          });
+          console.log(`⏰ After shift type filter: ${beforeTypeFilter} → ${filteredShifts.length} shifts`);
+        }
         } else if (employeeData.employee_default_preferences && employeeData.employee_default_preferences.length > 0) {
           console.log('⚙️ Using default preferences:', employeeData.employee_default_preferences[0]);
           
@@ -182,7 +182,8 @@ const PublicShiftSubmission: React.FC = () => {
             filteredShifts = filteredShifts.filter(shift => {
               const shiftType = getShiftTypeFromTime(shift.start_time);
               console.log(`⏰ Default filter - Shift ${shift.id} (${shift.start_time}) → type: ${shiftType}, included: ${defaultPrefs.shift_types.includes(shiftType)}`);
-              return defaultPrefs.shift_types.includes(shiftType);
+              // Show ALL evening shifts (including all shifts from 14:00 onwards)
+              return defaultPrefs.shift_types.includes(shiftType) || shiftType === 'evening';
             });
             console.log(`⏰ After default shift type filter: ${beforeTypeFilter} → ${filteredShifts.length} shifts`);
           }
@@ -315,10 +316,9 @@ const PublicShiftSubmission: React.FC = () => {
     
     const getShiftTypeFromTime = (startTime: string) => {
       const hour = parseInt(startTime.split(':')[0]);
-      if (hour >= 6 && hour < 12) return 'morning';
-      if (hour >= 12 && hour < 16) return 'afternoon';
-      if (hour >= 16 && hour < 22) return 'evening';
-      return 'night';
+      if (hour >= 6 && hour < 14) return 'morning';
+      if (hour >= 14) return 'evening';  // Evening starts from 14:00
+      return 'evening'; // Late shifts also count as evening
     };
     
     // Filter shifts that are NOT in the employee's preferred types AND are in assigned branches
@@ -617,15 +617,15 @@ const PublicShiftSubmission: React.FC = () => {
                             const dateStr = currentDate.toISOString().split('T')[0];
                             const dayShifts = scheduledShifts.filter(shift => shift.shift_date === dateStr);
                             
-                             // Group shifts by type (morning/evening) and sort within each group
-                             let morningShifts = dayShifts.filter(shift => {
-                               const hour = parseInt(shift.start_time.split(':')[0]);
-                               return hour >= 6 && hour < 16;
-                             });
-                             let eveningShifts = dayShifts.filter(shift => {
-                               const hour = parseInt(shift.start_time.split(':')[0]);
-                               return hour >= 16 && hour < 24;
-                             });
+                              // Group shifts by type (morning/evening) and sort within each group
+                              let morningShifts = dayShifts.filter(shift => {
+                                const hour = parseInt(shift.start_time.split(':')[0]);
+                                return hour >= 6 && hour < 14;
+                              });
+                              let eveningShifts = dayShifts.filter(shift => {
+                                const hour = parseInt(shift.start_time.split(':')[0]);
+                                return hour >= 14; // All shifts from 14:00 onwards are evening
+                              });
                              
                              // Sort each group: main branch first, then by time
                              const sortShifts = (shifts: any[]) => {

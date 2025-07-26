@@ -106,9 +106,10 @@ serve(async (req) => {
       .eq('employee_id', tokenValidation.employee_id)
       .eq('week_start_date', week_start_date)
       .eq('week_end_date', week_end_date)
-      .single()
+      .maybeSingle()
 
     if (existingSubmission) {
+      console.log('⚠️ Employee already submitted for this week:', existingSubmission.id)
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -184,8 +185,11 @@ serve(async (req) => {
       })
       .eq('id', tokenValidation.id)
 
-    // Deactivate token if max submissions reached
+    console.log('✅ Token usage incremented. Current submissions:', tokenValidation.current_submissions + 1)
+
+    // Deactivate token if max submissions reached or if this is a single-use token
     if (tokenValidation.current_submissions + 1 >= tokenValidation.max_submissions) {
+      console.log('🔒 Deactivating token - max submissions reached')
       await supabaseClient
         .from('shift_submission_tokens')
         .update({ 

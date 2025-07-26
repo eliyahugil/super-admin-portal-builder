@@ -4,6 +4,7 @@ import { ImportToolsCard } from './ImportToolsCard';
 import { QuickActionsCard } from './QuickActionsCard';
 import { ShiftTemplateManagementSection } from './ShiftTemplateManagementSection';
 import { DuplicateManagementCard } from './DuplicateManagementCard';
+import { ShiftTypesManagementCard } from './ShiftTypesManagementCard';
 import { ManagementToolsGridProps } from './types';
 
 export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({
@@ -32,6 +33,10 @@ export const ManagementToolsGrid: React.FC<ManagementToolsGridProps> = ({
         <DuplicateManagementCard />
         
         <ShiftTemplateManagementSection 
+          selectedBusinessId={selectedBusinessId}
+        />
+        
+        <ShiftTypesManagementCard 
           selectedBusinessId={selectedBusinessId}
         />
       </div>
