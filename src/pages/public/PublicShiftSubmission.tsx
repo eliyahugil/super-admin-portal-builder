@@ -226,20 +226,21 @@ const PublicShiftSubmission: React.FC = () => {
          let mainBranchId: string | null = null;
          if (employeeData.employee_branch_assignments && employeeData.employee_branch_assignments.length > 0) {
            const activeAssignments = employeeData.employee_branch_assignments.filter((assignment: any) => assignment.is_active);
+           // Sort by priority to get main branch (lowest priority_order number = highest priority)
            const mainAssignment = activeAssignments
-             .sort((a: any, b: any) => a.priority_order - b.priority_order)[0];
+             .sort((a: any, b: any) => (a.priority_order || 999) - (b.priority_order || 999))[0];
            mainBranchId = mainAssignment?.branch_id || null;
          }
          
-         // Add main branch indicator to filtered shifts
+         // Add main branch indicator to filtered shifts and sort properly
          const shiftsWithBranchInfo = filteredShifts.map(shift => ({
            ...shift,
            isMainBranch: mainBranchId === shift.branch_id
          }));
          
-         // Sort shifts: main branch first, then by date and time
+         // Enhanced sorting: main branch first, then by date, then by start time
          shiftsWithBranchInfo.sort((a, b) => {
-           // Main branch shifts come first
+           // Priority 1: Main branch shifts come first
            if (mainBranchId) {
              const aIsMain = a.branch_id === mainBranchId;
              const bIsMain = b.branch_id === mainBranchId;
@@ -247,12 +248,16 @@ const PublicShiftSubmission: React.FC = () => {
              if (!aIsMain && bIsMain) return 1;
            }
            
-           // Then sort by date
+           // Priority 2: Then sort by branch name (for consistent ordering of non-main branches)
+           const branchComparison = (a.branch?.name || '').localeCompare(b.branch?.name || '');
+           if (branchComparison !== 0) return branchComparison;
+           
+           // Priority 3: Then sort by date
            if (a.shift_date !== b.shift_date) {
              return a.shift_date.localeCompare(b.shift_date);
            }
            
-           // Finally sort by start time
+           // Priority 4: Finally sort by start time
            return a.start_time.localeCompare(b.start_time);
          });
          
@@ -400,34 +405,35 @@ const PublicShiftSubmission: React.FC = () => {
           ?.filter((assignment: any) => assignment.is_active)
           ?.map((assignment: any) => assignment.branch_id) || [];
         
-        const containedShifts = allScheduledShifts.filter(otherShift => 
+        const overlappingShifts = allScheduledShifts.filter(otherShift => 
           otherShift.id !== shift.id && 
+          otherShift.shift_date === shift.shift_date && // Same date
           (employeeAssignedBranches.length === 0 || employeeAssignedBranches.includes(otherShift.branch_id)) && // Only assigned branches
           shiftsOverlap(shift, otherShift) &&
           !newPreferences.some((p: any) => p.shift_id === otherShift.id)
         );
 
         console.log(`🔍 Employee assigned branches:`, employeeAssignedBranches);
-        console.log(`🔍 Found ${containedShifts.length} shifts contained within selected shift from assigned branches`);
+        console.log(`🔍 Found ${overlappingShifts.length} overlapping shifts on same date from assigned branches`);
 
-        containedShifts.forEach(containedShift => {
-          const containedPref = {
-            shift_id: containedShift.id,
-            shift_date: containedShift.shift_date,
-            start_time: containedShift.start_time,
-            end_time: containedShift.end_time,
-            role: containedShift.role,
-            branch_name: containedShift.branch?.name,
+        overlappingShifts.forEach(overlappingShift => {
+          const overlappingPref = {
+            shift_id: overlappingShift.id,
+            shift_date: overlappingShift.shift_date,
+            start_time: overlappingShift.start_time,
+            end_time: overlappingShift.end_time,
+            role: overlappingShift.role,
+            branch_name: overlappingShift.branch?.name,
             available: true,
           };
-          newPreferences.push(containedPref);
+          newPreferences.push(overlappingPref);
         });
 
-        // Show toast if contained shifts were auto-selected
-        if (containedShifts.length > 0) {
+        // Show toast if overlapping shifts were auto-selected
+        if (overlappingShifts.length > 0) {
           toast({
-            title: 'משמרות נבחרו אוטומטית',
-            description: `נבחרו ${containedShifts.length} משמרות נוספות הכלולות בחלון הזמן שבחרת`,
+            title: 'משמרות חופפות נבחרו אוטומטית',
+            description: `נבחרו ${overlappingShifts.length} משמרות נוספות שחופפות בזמן`,
           });
         }
       }
@@ -598,15 +604,18 @@ const PublicShiftSubmission: React.FC = () => {
                 
                 {/* Special Shifts Checkbox */}
                 {getSpecialShifts().length > 0 && (
-                  <div className="flex items-center space-x-2 justify-center mt-3 mb-4 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                  <div className="flex items-center space-x-2 justify-center mt-3 mb-4 bg-yellow-50 p-4 rounded-lg border border-yellow-300">
                     <Checkbox 
                       id="special-shifts"
                       checked={showSpecialShifts}
                       onCheckedChange={(checked) => setShowSpecialShifts(checked as boolean)}
                     />
-                    <label htmlFor="special-shifts" className="text-sm font-medium text-yellow-800">
-                      הצג משמרות מיוחדות ({getSpecialShifts().length} זמינות)
+                    <label htmlFor="special-shifts" className="text-sm font-semibold text-yellow-800 cursor-pointer">
+                      ⭐ הצג משמרות מיוחדות ({getSpecialShifts().length} זמינות)
                     </label>
+                    <div className="text-xs text-yellow-700">
+                      משמרות שאינן בסוג המשמרת הרגיל שלך
+                    </div>
                   </div>
                 )}
                 
@@ -694,34 +703,39 @@ const PublicShiftSubmission: React.FC = () => {
                                              }`}
                                           onClick={() => handleShiftToggle(shift, !isSelected)}
                                         >
-                                             <div className="font-semibold">
-                                               {(() => {
-                                                 // Handle overnight shifts (crossing midnight)
-                                                 const start = shift.start_time;
-                                                 const end = shift.end_time;
-                                                 const startHour = parseInt(start.split(':')[0]);
-                                                 const endHour = parseInt(end.split(':')[0]);
-                                                 
-                                                 console.log(`🕐 Displaying shift: start=${start}, end=${end}, startHour=${startHour}, endHour=${endHour}`);
-                                                 
+                                              <div className="font-semibold">
+                                                {(() => {
+                                                  // Handle overnight shifts (crossing midnight)
+                                                  const start = shift.start_time;
+                                                  const end = shift.end_time;
+                                                  
+                                                  console.log(`🕐 Shift ${shift.id} display data:`, {
+                                                    start_time: shift.start_time,
+                                                    end_time: shift.end_time,
+                                                    branch: shift.branch?.name,
+                                                    role: shift.role,
+                                                    shift_assignments: shift.shift_assignments,
+                                                    allShiftData: shift
+                                                  });
+                                                  
                                                   // Always display as start-end (FIXED ORDER)
-                                                  return `${start}-${end}`;
-                                               })()}
-                                             </div>
-                                           {shift.branch?.name && (
-                                             <div className="text-blue-600 flex items-center gap-1">
-                                               📍 {shift.branch.name}
-                                               {shift.isMainBranch && (
-                                                 <span className="text-orange-600 font-semibold text-xs">(סניף עיקרי)</span>
-                                               )}
-                                             </div>
+                                                  return `${start.substring(0,5)}-${end.substring(0,5)}`;
+                                                })()}
+                                              </div>
+                                            {shift.branch?.name && (
+                                              <div className="text-blue-600 flex items-center gap-1">
+                                                📍 {shift.branch.name}
+                                                {shift.isMainBranch && (
+                                                  <span className="text-orange-600 font-semibold text-xs">(סניף עיקרי)</span>
+                                                )}
+                                              </div>
+                                            )}
+                                            {shift.role && (
+                                              <div className="text-gray-500 text-xs">תפקיד: {shift.role}</div>
+                                            )}
+                                           {isSelected && (
+                                             <div className="text-green-700 font-bold mt-1">✓ נבחר</div>
                                            )}
-                                           {shift.role && (
-                                             <div className="text-gray-500">{shift.role}</div>
-                                           )}
-                                          {isSelected && (
-                                            <div className="text-green-700 font-bold mt-1">✓ נבחר</div>
-                                          )}
                                         </div>
                                       );
                                     })}
