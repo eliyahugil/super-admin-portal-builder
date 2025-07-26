@@ -284,24 +284,16 @@ const PublicShiftSubmission: React.FC = () => {
     };
     
     const selectedStart = timeToMinutes(selectedShift.start_time);
-    const selectedEnd = timeToMinutes(selectedShift.end_time);
     const otherStart = timeToMinutes(otherShift.start_time);
-    const otherEnd = timeToMinutes(otherShift.end_time);
     
-    console.log(`🔍 Checking if ${otherShift.start_time}-${otherShift.end_time} fits within ${selectedShift.start_time}-${selectedShift.end_time}`);
+    console.log(`🔍 Checking if ${otherShift.start_time} starts at same time as ${selectedShift.start_time}`);
     
-    // Handle overnight shifts
-    const actualSelectedEnd = selectedEnd < selectedStart ? selectedEnd + 24 * 60 : selectedEnd;
-    const actualOtherEnd = otherEnd < otherStart ? otherEnd + 24 * 60 : otherEnd;
+    // Auto-select if shifts start at exactly the same time (overlapping shifts)
+    const hasSameStartTime = selectedStart === otherStart;
     
-    // Auto-select if the other shift is contained within the selected shift's time window
-    // This means: other shift starts at or after selected shift starts
-    // AND other shift ends at or before selected shift ends
-    const isContained = (otherStart >= selectedStart) && (actualOtherEnd <= actualSelectedEnd);
+    console.log(`🔍 Selected start: ${selectedStart}, Other start: ${otherStart}, Same start time: ${hasSameStartTime}`);
     
-    console.log(`🔍 Selected: ${selectedStart}-${actualSelectedEnd}, Other: ${otherStart}-${actualOtherEnd}, Contained: ${isContained}`);
-    
-    return isContained;
+    return hasSameStartTime;
   };
 
   // Get shifts that are not normally available to this employee
@@ -432,8 +424,8 @@ const PublicShiftSubmission: React.FC = () => {
         // Show toast if overlapping shifts were auto-selected
         if (overlappingShifts.length > 0) {
           toast({
-            title: 'משמרות חופפות נבחרו אוטומטית',
-            description: `נבחרו ${overlappingShifts.length} משמרות נוספות שחופפות בזמן`,
+            title: 'משמרות חופפות נבחרו אוטומטית! 🎯',
+            description: `נבחרו ${overlappingShifts.length} משמרות נוספות באותו זמן התחלה (${shift.start_time}) בסניפים שונים`,
           });
         }
       }
