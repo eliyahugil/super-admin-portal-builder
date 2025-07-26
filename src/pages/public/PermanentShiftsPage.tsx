@@ -165,6 +165,76 @@ const PermanentShiftsPage: React.FC = () => {
           </Card>
         )}
 
+        {/* Advanced Summary */}
+        {shiftsData && (
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <div className="text-lg font-semibold text-blue-700">
+                    {availableShifts.length}
+                  </div>
+                  <div className="text-xs text-blue-600">משמרות זמינות</div>
+                  {availableShifts.filter((s: any) => s.is_special).length > 0 && (
+                    <div className="text-xs text-purple-600 mt-1">
+                      {availableShifts.filter((s: any) => s.is_special).length} מיוחדות
+                    </div>
+                  )}
+                </div>
+                
+                <div className="bg-green-50 p-3 rounded-lg">
+                  <div className="text-lg font-semibold text-green-700">
+                    {scheduledShifts.length + (shiftsData?.employeeScheduledShifts?.length || 0)}
+                  </div>
+                  <div className="text-xs text-green-600">משמרות מתוכננות</div>
+                </div>
+                
+                <div className="bg-amber-50 p-3 rounded-lg">
+                  <div className="text-lg font-semibold text-amber-700">
+                    {(() => {
+                      const allShifts = [...availableShifts, ...scheduledShifts, ...(shiftsData?.employeeScheduledShifts || [])];
+                      const timeGroups = allShifts.reduce((acc: any, shift: any) => {
+                        const timeKey = `${shift.start_time}-${shift.end_time}`;
+                        if (!acc[timeKey]) acc[timeKey] = [];
+                        acc[timeKey].push(shift);
+                        return acc;
+                      }, {});
+                      return Object.values(timeGroups).filter((group: any) => group.length > 1).length;
+                    })()}
+                  </div>
+                  <div className="text-xs text-amber-600">התנגשויות זמנים</div>
+                </div>
+                
+                <div className="bg-purple-50 p-3 rounded-lg">
+                  <div className="text-lg font-semibold text-purple-700">
+                    {shiftsData?.employeeAssignments?.filter((ea: any) => ea.priority_order === 1)?.length || 0}
+                  </div>
+                  <div className="text-xs text-purple-600">סניפים מועדפים</div>
+                </div>
+              </div>
+              
+              {/* Branch Preferences Summary */}
+              {shiftsData?.employeeAssignments && shiftsData.employeeAssignments.length > 0 && (
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="text-sm font-medium mb-2">השמות סניפים:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {shiftsData.employeeAssignments.map((assignment: any, index: number) => (
+                      <Badge 
+                        key={index}
+                        variant={assignment.priority_order === 1 ? "default" : "secondary"}
+                        className={assignment.priority_order === 1 ? "bg-green-100 text-green-700" : ""}
+                      >
+                        {assignment.priority_order === 1 && <Star className="h-3 w-3 mr-1" />}
+                        {assignment.role_name} (עדיפות {assignment.priority_order})
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Available Shifts */}
           <Card>
@@ -208,31 +278,117 @@ const PermanentShiftsPage: React.FC = () => {
                   </div>
                   
                   <div className="grid gap-3">
-                    {availableShifts.map((shift: any) => (
-                      <div key={shift.id} className="border border-blue-200 rounded-lg p-4 bg-blue-50/50">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              {shift.shift_type}
-                            </Badge>
-                            <span className="text-sm font-medium">
-                              יום {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][shift.day_of_week]}
-                            </span>
-                          </div>
-                          <div className="text-sm text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
-                          </div>
-                        </div>
+                    {(() => {
+                      // Group shifts by time to identify identical times
+                      const shiftsByTime = availableShifts.reduce((acc: any, shift: any) => {
+                        const timeKey = `${shift.start_time}-${shift.end_time}`;
+                        if (!acc[timeKey]) acc[timeKey] = [];
+                        acc[timeKey].push(shift);
+                        return acc;
+                      }, {});
+
+                      return availableShifts.map((shift: any) => {
+                        const timeKey = `${shift.start_time}-${shift.end_time}`;
+                        const shiftsAtSameTime = shiftsByTime[timeKey];
+                        const hasIdenticalTimes = shiftsAtSameTime.length > 1;
+                        const isSpecialShift = shift.source === 'scheduled_shifts' || shift.is_special;
+                        const businessShiftType = shiftsData?.businessShiftTypes?.find((bst: any) => bst.shift_type === shift.shift_type);
                         
-                        {shift.branch && (
-                          <div className="text-sm text-muted-foreground flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {shift.branch.name}
+                        // Check if this is employee's preferred branch
+                        const employeeAssignments = shiftsData?.employeeAssignments || [];
+                        const branchAssignment = employeeAssignments.find((ea: any) => ea.branch_id === shift.branch_id);
+                        const isPreferredBranch = branchAssignment?.priority_order === 1;
+
+                        return (
+                          <div 
+                            key={shift.id} 
+                            className={`border rounded-lg p-4 relative ${
+                              isSpecialShift 
+                                ? 'border-purple-300 bg-purple-50/70 shadow-md' 
+                                : hasIdenticalTimes
+                                  ? 'border-amber-300 bg-amber-50/70 shadow-sm'
+                                  : 'border-blue-200 bg-blue-50/50'
+                            }`}
+                          >
+                            {/* Special/Regular Shift Indicator */}
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                {isSpecialShift && (
+                                  <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
+                                    <Star className="h-3 w-3 mr-1" />
+                                    משמרת מיוחדת
+                                  </Badge>
+                                )}
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-xs"
+                                  style={{ 
+                                    backgroundColor: businessShiftType?.color + '20' || '#3B82F620',
+                                    borderColor: businessShiftType?.color || '#3B82F6',
+                                    color: businessShiftType?.color || '#3B82F6'
+                                  }}
+                                >
+                                  {businessShiftType?.display_name || shift.shift_type}
+                                </Badge>
+                                <span className="text-sm font-medium">
+                                  יום {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][shift.day_of_week]}
+                                </span>
+                              </div>
+                              
+                              {/* Time with identical time warning */}
+                              <div className="flex items-center gap-2">
+                                {hasIdenticalTimes && (
+                                  <Badge variant="outline" className="bg-amber-100 text-amber-700 text-xs">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    {shiftsAtSameTime.length} באותה שעה
+                                  </Badge>
+                                )}
+                                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Branch with preference indicator */}
+                            {shift.branch && (
+                              <div className="flex items-center justify-between">
+                                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {shift.branch.name}
+                                  {isPreferredBranch && (
+                                    <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs mr-2">
+                                      <Star className="h-3 w-3 mr-1" />
+                                      סניף מועדף
+                                    </Badge>
+                                  )}
+                                </div>
+                                
+                                {shift.required_employees > 1 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    נדרשים {shift.required_employees} עובדים
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Additional shift info */}
+                            {shift.notes && (
+                              <div className="mt-2 text-xs text-muted-foreground p-2 bg-white/60 rounded">
+                                📝 {shift.notes}
+                              </div>
+                            )}
+
+                            {/* Role info if available */}
+                            {branchAssignment?.role_name && (
+                              <div className="mt-2 text-xs text-blue-600">
+                                תפקיד: {branchAssignment.role_name}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    ))}
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
               )}
@@ -265,37 +421,103 @@ const PermanentShiftsPage: React.FC = () => {
                   </div>
                   
                   <div className="grid gap-3">
-                    {scheduledShifts.map((shift: any) => (
-                      <div key={shift.id} className="border border-green-200 rounded-lg p-4 bg-green-50/50">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="bg-green-100 text-green-700">
-                              {shift.status === 'approved' ? 'אושר' : 'ממתין'}
-                            </Badge>
-                            <span className="font-medium">
-                              {format(new Date(shift.shift_date), 'EEEE, dd/MM', { locale: he })}
-                            </span>
-                          </div>
-                          <div className="text-sm text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
-                          </div>
-                        </div>
+                    {(() => {
+                      // Group employee's shifts by time to identify conflicts
+                      const employeeScheduled = shiftsData?.employeeScheduledShifts || [];
+                      const allEmployeeShifts = [...scheduledShifts, ...employeeScheduled];
+                      
+                      const shiftsByTime = allEmployeeShifts.reduce((acc: any, shift: any) => {
+                        const timeKey = `${shift.start_time}-${shift.end_time}`;
+                        if (!acc[timeKey]) acc[timeKey] = [];
+                        acc[timeKey].push(shift);
+                        return acc;
+                      }, {});
+
+                      return allEmployeeShifts.map((shift: any) => {
+                        const timeKey = `${shift.start_time}-${shift.end_time}`;
+                        const shiftsAtSameTime = shiftsByTime[timeKey];
+                        const hasTimeConflict = shiftsAtSameTime.length > 1;
+                        const businessShiftType = shiftsData?.businessShiftTypes?.find((bst: any) => bst.shift_type === shift.shift_type);
                         
-                        {shift.branch && (
-                          <div className="text-sm text-muted-foreground flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {shift.branch.name}
+                        // Check if this is from employee's scheduled shifts vs available assignment
+                        const isFromScheduled = shift.source === 'employee_scheduled';
+                        const isSpecialShift = shift.is_special || shift.submission_type === 'special';
+
+                        return (
+                          <div 
+                            key={shift.id} 
+                            className={`border rounded-lg p-4 relative ${
+                              hasTimeConflict 
+                                ? 'border-red-300 bg-red-50/70 shadow-md' 
+                                : isSpecialShift
+                                  ? 'border-purple-300 bg-purple-50/70 shadow-md'
+                                  : 'border-green-200 bg-green-50/50'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                {hasTimeConflict && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    ⚠️ התנגשות זמנים
+                                  </Badge>
+                                )}
+                                {isSpecialShift && (
+                                  <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
+                                    <Star className="h-3 w-3 mr-1" />
+                                    משמרת מיוחדת
+                                  </Badge>
+                                )}
+                                <Badge 
+                                  variant="secondary" 
+                                  className={isFromScheduled ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}
+                                >
+                                  {isFromScheduled ? 'משמרת קבועה' : (shift.status === 'approved' ? 'אושר' : 'ממתין')}
+                                </Badge>
+                                {businessShiftType && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs"
+                                    style={{ 
+                                      backgroundColor: businessShiftType.color + '20',
+                                      borderColor: businessShiftType.color,
+                                      color: businessShiftType.color
+                                    }}
+                                  >
+                                    {businessShiftType.display_name}
+                                  </Badge>
+                                )}
+                                <span className="font-medium">
+                                  {shift.shift_date ? format(new Date(shift.shift_date), 'EEEE, dd/MM', { locale: he }) : 'תאריך לא זמין'}
+                                </span>
+                              </div>
+                              <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
+                              </div>
+                            </div>
+                            
+                            {shift.branch && (
+                              <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {shift.branch.name}
+                              </div>
+                            )}
+                            
+                            {shift.role && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                תפקיד: {shift.role}
+                              </div>
+                            )}
+
+                            {shift.notes && (
+                              <div className="mt-2 text-xs text-muted-foreground p-2 bg-white/60 rounded">
+                                📝 {shift.notes}
+                              </div>
+                            )}
                           </div>
-                        )}
-                        
-                        {shift.role && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            תפקיד: {shift.role}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
               )}

@@ -125,13 +125,14 @@ serve(async (req) => {
       return 'morning';
     };
 
-    // Get employee's branch assignments and preferences
+    // Get employee's branch assignments and preferences (with priority order)
     console.log('📋 Getting employee branch assignments and preferences');
     const { data: employeeBranches, error: branchError } = await supabaseAdmin
       .from('employee_branch_assignments')
-      .select('branch_id, shift_types, available_days, role_name')
+      .select('branch_id, shift_types, available_days, role_name, priority_order, max_weekly_hours')
       .eq('employee_id', employeeId)
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .order('priority_order', { ascending: true });
 
     if (branchError) {
       console.error('❌ Error fetching employee branches:', branchError);
@@ -248,7 +249,8 @@ serve(async (req) => {
           source: 'scheduled_shifts',
           shift_date: shift.shift_date,
           notes: shift.notes,
-          shift_assignments: shift.shift_assignments
+          shift_assignments: shift.shift_assignments,
+          is_special: true // Shifts from scheduled_shifts are considered special
         };
       });
 
@@ -333,27 +335,30 @@ serve(async (req) => {
       const dayOfWeek = shiftDate.getDay();
       const shift_type = determineShiftType(shift.start_time);
 
-      return {
-        id: shift.id,
-        business_id: shift.business_id,
-        branch_id: shift.branch_id,
-        shift_name: `משמרת ${businessShiftTypes?.find(bt => bt.shift_type === shift_type)?.display_name || shift_type}`,
-        shift_type: shift_type,
-        day_of_week: dayOfWeek,
-        start_time: shift.start_time,
-        end_time: shift.end_time,
-        required_employees: 1,
-        current_assignments: 1,
-        is_open_for_unassigned: false,
-        week_start_date: context.weekStart || weekStart,
-        week_end_date: context.weekEnd || weekEndStr,
-        branch: shift.branch,
-        source: 'employee_scheduled',
-        shift_date: shift.shift_date,
-        notes: shift.notes,
-        shift_assignments: shift.shift_assignments,
-        is_assigned_to_employee: true
-      };
+        return {
+          id: shift.id,
+          business_id: shift.business_id,
+          branch_id: shift.branch_id,
+          shift_name: `משמרת ${businessShiftTypes?.find(bt => bt.shift_type === shift_type)?.display_name || shift_type}`,
+          shift_type: shift_type,
+          day_of_week: dayOfWeek,
+          start_time: shift.start_time,
+          end_time: shift.end_time,
+          required_employees: 1,
+          current_assignments: 1,
+          is_open_for_unassigned: false,
+          week_start_date: context.weekStart || weekStart,
+          week_end_date: context.weekEnd || weekEndStr,
+          branch: shift.branch,
+          source: 'employee_scheduled',
+          shift_date: shift.shift_date,
+          notes: shift.notes,
+          shift_assignments: shift.shift_assignments,
+          is_assigned_to_employee: true,
+          is_special: shift.submission_type === 'special' || false,
+          role: shift.role,
+          status: shift.status
+        };
     });
 
     console.log('👤 Employee scheduled shifts:', employeeScheduledShifts.length);
