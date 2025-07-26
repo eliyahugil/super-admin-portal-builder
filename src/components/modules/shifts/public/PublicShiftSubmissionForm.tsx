@@ -1,12 +1,14 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEmployeeCompatibleShifts, CompatibleShift } from '@/hooks/useEmployeeCompatibleShifts';
 import { useShiftSubmission } from '@/hooks/useShiftSubmission';
 import { ShiftsByDayView } from './ShiftsByDayView';
-import { Loader2, Send, User, Calendar, Clock } from 'lucide-react';
+import { Loader2, Send, User, Calendar, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface PublicShiftSubmissionFormProps {
@@ -46,15 +48,23 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
     setIsSubmitting(true);
 
     try {
-      const shiftData = selectedShifts.map(shift => ({
-        shift_id: shift.id,
-        date: `${compatibleData.tokenData.weekStart}`, // This should be calculated per shift
-        start_time: shift.start_time,
-        end_time: shift.end_time,
-        branch_preference: shift.branch.name,
-        role_preference: shift.shift_type,
-        available: true
-      }));
+      // Calculate the actual date for each shift based on day_of_week and week_start
+      const weekStart = new Date(compatibleData.tokenData.weekStart);
+      
+      const shiftData = selectedShifts.map(shift => {
+        const shiftDate = new Date(weekStart);
+        shiftDate.setDate(shiftDate.getDate() + shift.day_of_week);
+        
+        return {
+          shift_id: shift.id,
+          date: shiftDate.toISOString().split('T')[0],
+          start_time: shift.start_time,
+          end_time: shift.end_time,
+          branch_preference: shift.branch.name,
+          role_preference: shift.shift_type,
+          available: true
+        };
+      });
 
       await submitShifts.mutateAsync({
         token,
@@ -67,7 +77,7 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
 
       toast({
         title: 'הוגש בהצלחה!',
-        description: 'הגשת המשמרות נקלטה במערכת',
+        description: `${selectedShifts.length} משמרות נקלטו במערכת`,
       });
 
       // Reset form
@@ -88,22 +98,26 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="mr-2">טוען משמרות...</span>
+      <div className="flex items-center justify-center p-12">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto mb-4" />
+          <p className="text-lg text-gray-600">טוען משמרות זמינות...</p>
+          <p className="text-sm text-gray-500 mt-2">אנא המתן, אנחנו מחפשים את המשמרות המתאימות עבורך</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <div className="text-red-500 mb-4">
-            <Calendar className="h-12 w-12 mx-auto mb-2" />
-            <h3 className="text-lg font-semibold">שגיאה בטעינת המשמרות</h3>
-            <p className="text-sm mt-2">{error.message}</p>
-          </div>
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-8 text-center">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-red-600 mb-2">שגיאה בטעינת המשמרות</h3>
+          <p className="text-gray-600 mb-4">{error.message}</p>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            נסה שוב
+          </Button>
         </CardContent>
       </Card>
     );
@@ -111,10 +125,10 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
 
   if (!compatibleData) {
     return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold">לא נמצאו משמרות</h3>
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-8 text-center">
+          <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">לא נמצאו משמרות</h3>
           <p className="text-gray-600">אין משמרות זמינות להגשה כרגע</p>
         </CardContent>
       </Card>
@@ -124,22 +138,22 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
   const { tokenData, shiftsByDay, totalCompatibleShifts, totalSpecialShifts } = compatibleData;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6" dir="rtl">
+    <div className="max-w-6xl mx-auto p-6 space-y-8" dir="rtl">
       {/* Header */}
-      <Card>
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-3 text-2xl">
+            <User className="h-7 w-7 text-blue-600" />
             הגשת משמרות - {tokenData.employee.first_name} {tokenData.employee.last_name}
           </CardTitle>
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-1">
+          <div className="flex items-center gap-6 text-sm text-gray-700">
+            <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              שבוע: {new Date(tokenData.weekStart).toLocaleDateString('he-IL')} - {new Date(tokenData.weekEnd).toLocaleDateString('he-IL')}
+              <span>שבוע: {new Date(tokenData.weekStart).toLocaleDateString('he-IL')} - {new Date(tokenData.weekEnd).toLocaleDateString('he-IL')}</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              תוקף עד: {new Date(tokenData.expiresAt).toLocaleString('he-IL')}
+              <span>תוקף עד: {new Date(tokenData.expiresAt).toLocaleString('he-IL')}</span>
             </div>
           </div>
         </CardHeader>
@@ -147,27 +161,37 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
 
       {/* Summary */}
       <Card>
-        <CardContent className="p-4">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Badge variant="outline">
+              <Badge variant="outline" className="text-lg py-2 px-4">
                 {totalCompatibleShifts} משמרות זמינות
               </Badge>
               {totalSpecialShifts > 0 && (
-                <Badge variant="outline" className="bg-yellow-50 text-yellow-800">
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300 text-lg py-2 px-4">
                   {totalSpecialShifts} משמרות מיוחדות
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">נבחרו:</span>
-              <Badge variant="secondary">
+            <div className="flex items-center gap-3">
+              <span className="text-lg font-medium text-gray-700">נבחרו:</span>
+              <Badge variant="secondary" className="text-lg py-2 px-4">
                 {selectedShifts.length} משמרות
               </Badge>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Instructions */}
+      <Alert>
+        <CheckCircle className="h-4 w-4" />
+        <AlertDescription className="text-base">
+          <strong>הנחיות:</strong> בחר את המשמרות שברצונך לעבוד השבוע. 
+          המערכת תציע משמרות נוספות באופן אוטומטי על סמך הבחירות שלך.
+          משמרות עם סימון "מומלץ" הן משמרות שאתה יכול לעבוד בהן בזמן שכבר בחרת.
+        </AlertDescription>
+      </Alert>
 
       {/* Shifts by Day */}
       <ShiftsByDayView
@@ -179,29 +203,34 @@ export const PublicShiftSubmissionForm: React.FC<PublicShiftSubmissionFormProps>
       {/* Notes and Submit */}
       <Card>
         <CardHeader>
-          <CardTitle>הערות נוספות</CardTitle>
+          <CardTitle className="text-xl">הערות נוספות</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <Textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="הערות נוספות (אופציונלי)"
-            rows={3}
+            placeholder="הערות נוספות או בקשות מיוחדות (אופציונלי)"
+            rows={4}
+            className="text-base"
           />
           
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              {selectedShifts.length > 0 ? `${selectedShifts.length} משמרות נבחרו` : 'לא נבחרו משמרות'}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="text-base text-gray-600">
+              {selectedShifts.length > 0 
+                ? `${selectedShifts.length} משמרות נבחרו להגשה` 
+                : 'לא נבחרו משמרות'
+              }
             </div>
             <Button
               onClick={handleSubmit}
               disabled={selectedShifts.length === 0 || isSubmitting}
-              className="flex items-center gap-2"
+              className="flex items-center gap-3 text-lg py-6 px-8"
+              size="lg"
             >
               {isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
-                <Send className="h-4 w-4" />
+                <Send className="h-5 w-5" />
               )}
               הגש משמרות
             </Button>
