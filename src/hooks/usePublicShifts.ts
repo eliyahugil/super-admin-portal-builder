@@ -3,6 +3,7 @@ import { useTokenDetails } from './useTokenDetails';
 import { useTokenSubmissions } from './useTokenSubmissions';
 import { useShiftSubmission } from './useShiftSubmission';
 import { useTokenManagement } from './useTokenManagement';
+import { useEmployeeCompatibleShifts } from './useEmployeeCompatibleShifts';
 
 export const usePublicShifts = () => {
   const { 
@@ -20,6 +21,7 @@ export const usePublicShifts = () => {
   return {
     useToken: useTokenDetails,
     useTokenSubmissions,
+    useEmployeeCompatibleShifts,
     submitShifts,
     generateToken,
     toggleTokenStatus,
