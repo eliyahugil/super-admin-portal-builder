@@ -9,8 +9,9 @@ import { usePublicShifts } from '@/hooks/usePublicShifts';
 import { useToast } from '@/hooks/use-toast';
 import { format, addDays } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { Calendar, Clock, Building, User, Send, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, Clock, Building, User, Send, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { ShiftPreference } from '@/types/publicShift';
+import EmployeeNameDialog from '@/components/shared/EmployeeNameDialog';
 
 interface LocalShiftPreference extends ShiftPreference {
   shift_id: string;
@@ -24,17 +25,24 @@ const PublicShiftSubmission: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { useToken, useTokenAvailableShifts, submitShifts } = usePublicShifts();
+  const { useToken, useTokenAvailableShifts, submitShifts, useTokenSubmissions } = usePublicShifts();
   
   const [preferences, setPreferences] = useState<LocalShiftPreference[]>([]);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showNameDialog, setShowNameDialog] = useState(false);
+  const [employeeName, setEmployeeName] = useState('');
+  const [employeePhone, setEmployeePhone] = useState('');
 
   // Get token details
   const { data: tokenData, isLoading: tokenLoading, error: tokenError } = useToken(token || '');
   
   // Get available shifts for the token
   const { data: availableShifts = [], isLoading: shiftsLoading } = useTokenAvailableShifts(tokenData?.id || '');
+
+  // Check if there's already a submission for this token
+  const { data: existingSubmissions = [] } = useTokenSubmissions(tokenData?.id || '');
+  const hasExistingSubmission = existingSubmissions.length > 0;
 
   // Initialize preferences when shifts are loaded
   useEffect(() => {
@@ -61,6 +69,8 @@ const PublicShiftSubmission: React.FC = () => {
 
   // Handle shift selection toggle
   const toggleShiftSelection = (shiftId: string) => {
+    if (hasExistingSubmission) return; // Prevent changes if already submitted
+    
     setPreferences(prev => 
       prev.map(pref => 
         pref.shift_id === shiftId 
@@ -94,13 +104,35 @@ const PublicShiftSubmission: React.FC = () => {
       return;
     }
 
+    // Show employee name dialog if not already provided
+    if (!employeeName) {
+      setShowNameDialog(true);
+      return;
+    }
+
+    await performSubmission(selectedPreferences);
+  };
+
+  // Handle name confirmation
+  const handleNameConfirm = async (name: string, phone?: string) => {
+    setEmployeeName(name);
+    setEmployeePhone(phone || '');
+    setShowNameDialog(false);
+    
+    const selectedPreferences = preferences.filter(pref => pref.is_selected);
+    await performSubmission(selectedPreferences, name, phone);
+  };
+
+  // Perform the actual submission
+  const performSubmission = async (selectedPreferences: LocalShiftPreference[], name?: string, phone?: string) => {
     setIsSubmitting(true);
     
     try {
       await submitShifts.mutateAsync({
-        token,
+        token: token!,
         formData: {
-          employee_name: 'עובד',
+          employee_name: name || employeeName,
+          phone: phone || employeePhone,
           preferences: selectedPreferences,
           notes
         }
@@ -161,6 +193,30 @@ const PublicShiftSubmission: React.FC = () => {
     );
   }
 
+  // Already submitted state
+  if (hasExistingSubmission) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6">
+            <div className="text-center space-y-4">
+              <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
+              <h2 className="text-lg font-semibold">הגשה כבר בוצעה</h2>
+              <p className="text-muted-foreground">
+                כבר הגשת את בחירת המשמרות שלך עבור השבוע הנבחר
+              </p>
+              <div className="mt-4 p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  הגשה בוצעה בתאריך: {format(new Date(existingSubmissions[0].submitted_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Group shifts by date
   const groupedShifts = preferences.reduce((acc, pref) => {
     const date = pref.shift_date;
@@ -211,9 +267,12 @@ const PublicShiftSubmission: React.FC = () => {
             </CardHeader>
             <CardContent>
               {Object.keys(groupedShifts).length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  אין משמרות זמינות עבור השבוע הנבחר
-                </p>
+                <div className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    אין משמרות זמינות עבור השבוע הנבחר
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-6">
                   {Object.entries(groupedShifts).map(([date, shifts]) => (
@@ -282,6 +341,7 @@ const PublicShiftSubmission: React.FC = () => {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="min-h-[100px]"
+                disabled={hasExistingSubmission}
               />
             </CardContent>
           </Card>
@@ -291,7 +351,7 @@ const PublicShiftSubmission: React.FC = () => {
             <CardContent className="pt-6">
               <Button
                 type="submit"
-                disabled={isSubmitting || selectedCount === 0}
+                disabled={isSubmitting || selectedCount === 0 || hasExistingSubmission}
                 className="w-full"
                 size="lg"
               >
@@ -310,6 +370,14 @@ const PublicShiftSubmission: React.FC = () => {
             </CardContent>
           </Card>
         </form>
+
+        {/* Employee Name Dialog */}
+        <EmployeeNameDialog
+          isOpen={showNameDialog}
+          onClose={() => setShowNameDialog(false)}
+          onConfirm={handleNameConfirm}
+          isLoading={isSubmitting}
+        />
       </div>
     </div>
   );

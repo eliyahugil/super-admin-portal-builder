@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PublicShiftToken, PublicShiftSubmission, PublicShiftForm } from '@/types/publicShift';
@@ -5,28 +6,30 @@ import { PublicShiftToken, PublicShiftSubmission, PublicShiftForm } from '@/type
 export const usePublicShifts = () => {
   const queryClient = useQueryClient();
 
-  // Get token details by token string - updated for employee weekly tokens
+  // Get token details by token string - updated for new shift_submission_tokens table
   const useToken = (token: string) => {
     return useQuery({
       queryKey: ['public-token', token],
       queryFn: async () => {
         if (!token) return null;
         
-        // Call edge function to validate token
-        const { data, error } = await supabase.functions.invoke('validate-weekly-token', {
-          body: { token }
-        });
+        const { data, error } = await supabase
+          .from('shift_submission_tokens')
+          .select(`
+            *,
+            employee:employees(first_name, last_name, employee_id, phone, business_id)
+          `)
+          .eq('token', token)
+          .eq('is_active', true)
+          .gt('expires_at', new Date().toISOString())
+          .maybeSingle();
 
         if (error) {
-          console.error('Error validating token:', error);
+          console.error('Error fetching token:', error);
           throw new Error('טוקן לא נמצא או שפג תוקפו');
         }
 
-        if (!data.data) {
-          throw new Error('טוקן לא תקין');
-        }
-
-        return data.data as PublicShiftToken;
+        return data as PublicShiftToken;
       },
       enabled: !!token,
     });
@@ -40,7 +43,7 @@ export const usePublicShifts = () => {
         if (!tokenId) return [];
         
         const { data, error } = await supabase
-          .from('public_shift_submissions')
+          .from('shift_submissions')
           .select('*')
           .eq('token_id', tokenId)
           .order('submitted_at', { ascending: false });
@@ -50,16 +53,13 @@ export const usePublicShifts = () => {
           return [];
         }
 
-        return data.map(item => ({
-          ...item,
-          shift_preferences: item.shift_preferences as any
-        })) as PublicShiftSubmission[];
+        return data || [];
       },
       enabled: !!tokenId,
     });
   };
 
-  // Submit shifts via public token using the new edge function - FIXED to use token directly
+  // Submit shifts via public token using the new edge function
   const submitShifts = useMutation({
     mutationFn: async ({ token, formData }: { token: string; formData: PublicShiftForm }) => {
       console.log('🔥 Starting submission mutation with token:', token?.substring(0, 8) + '...');
@@ -83,7 +83,7 @@ export const usePublicShifts = () => {
         end_time: pref.end_time,
         branch_preference: pref.branch_name || '',
         role_preference: pref.role,
-        notes: '', // ShiftPreference doesn't have notes, so use empty string
+        notes: '',
         available_shift_id: pref.shift_id
       }));
 
@@ -166,7 +166,8 @@ export const usePublicShifts = () => {
             week_end_date: params.week_end_date,
             expires_at: params.expires_at,
             is_active: true,
-            max_submissions: params.max_submissions || 50,
+            max_submissions: params.max_submissions || 1,
+            current_submissions: 0,
           })
           .eq('id', existingToken.id)
           .select()
@@ -192,7 +193,7 @@ export const usePublicShifts = () => {
           week_start_date: params.week_start_date,
           week_end_date: params.week_end_date,
           expires_at: params.expires_at,
-          max_submissions: params.max_submissions || 50,
+          max_submissions: params.max_submissions || 1,
           is_active: true,
         })
         .select()
@@ -213,10 +214,10 @@ export const usePublicShifts = () => {
   // Toggle token status (admin only)
   const toggleTokenStatus = useMutation({
     mutationFn: async ({ tokenId, isActive }: { tokenId: string; isActive: boolean }) => {
-      const { error } = await supabase.rpc('toggle_token_status', {
-        token_id_param: tokenId,
-        new_status: isActive
-      });
+      const { error } = await supabase
+        .from('shift_submission_tokens')
+        .update({ is_active: isActive })
+        .eq('id', tokenId);
 
       if (error) {
         console.error('Error toggling token status:', error);
@@ -275,7 +276,7 @@ export const usePublicShifts = () => {
     },
   });
 
-  // Get all tokens for a business (admin only) - updated for weekly tokens
+  // Get all tokens for a business (admin only) - updated for new table
   const useBusinessTokens = (businessId: string) => {
     return useQuery({
       queryKey: ['public-tokens', businessId],
@@ -283,7 +284,7 @@ export const usePublicShifts = () => {
         if (!businessId) return [];
         
         const { data, error } = await supabase
-          .from('employee_weekly_tokens')
+          .from('shift_submission_tokens')
           .select(`
             *,
             employee:employees(first_name, last_name, employee_id)
@@ -302,13 +303,13 @@ export const usePublicShifts = () => {
     });
   };
 
-  // Get active token for a specific employee - updated for weekly tokens
+  // Get active token for a specific employee - updated for new table
   const useEmployeeActiveToken = (employeeId: string) => {
     return useQuery({
       queryKey: ['employeeActiveToken', employeeId],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('employee_weekly_tokens')
+          .from('shift_submission_tokens')
           .select('*')
           .eq('employee_id', employeeId)
           .eq('is_active', true)
@@ -323,16 +324,16 @@ export const usePublicShifts = () => {
     });
   };
 
-  // Get available shifts for a token's date range - UPDATED for new system
+  // Get available shifts for a token's date range
   const useTokenAvailableShifts = (tokenId: string) => {
     return useQuery({
       queryKey: ['tokenAvailableShifts', tokenId],
       queryFn: async () => {
         if (!tokenId) return [];
 
-        // First get the token details from new table
+        // First get the token details
         const { data: token, error: tokenError } = await supabase
-          .from('employee_weekly_tokens')
+          .from('shift_submission_tokens')
           .select('*')
           .eq('id', tokenId)
           .maybeSingle();
@@ -366,7 +367,6 @@ export const usePublicShifts = () => {
         return availableShifts || [];
       },
       enabled: !!tokenId,
-      // Force refetch every time to get latest data
       staleTime: 0,
       gcTime: 0,
     });
