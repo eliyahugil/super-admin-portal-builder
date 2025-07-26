@@ -59,19 +59,20 @@ export const usePublicShifts = () => {
     });
   };
 
-  // Submit shifts via public token using the new edge function
+  // Submit shifts via public token using the new edge function - FIXED to use token directly
   const submitShifts = useMutation({
-    mutationFn: async ({ tokenId, formData }: { tokenId: string; formData: PublicShiftForm }) => {
-      console.log('🔥 Starting submission mutation:', { tokenId, formData });
+    mutationFn: async ({ token, formData }: { token: string; formData: PublicShiftForm }) => {
+      console.log('🔥 Starting submission mutation with token:', token?.substring(0, 8) + '...');
       
-      // Get the token string from the token ID first
+      // Get token details to extract week dates
       const { data: tokenData, error: tokenError } = await supabase
         .from('shift_submission_tokens')
-        .select('token, week_start_date, week_end_date')
-        .eq('id', tokenId)
+        .select('week_start_date, week_end_date')
+        .eq('token', token)
         .single();
 
       if (tokenError || !tokenData) {
+        console.error('❌ Token lookup failed:', tokenError);
         throw new Error(`שגיאה בקבלת פרטי הטוקן: ${tokenError?.message}`);
       }
 
@@ -86,10 +87,17 @@ export const usePublicShifts = () => {
         available_shift_id: pref.shift_id
       }));
 
-      // Call the edge function
+      console.log('🔥 Submitting to edge function with:', {
+        token: token?.substring(0, 8) + '...',
+        shiftsCount: shifts.length,
+        weekStart: tokenData.week_start_date,
+        weekEnd: tokenData.week_end_date
+      });
+
+      // Call the edge function with the token directly
       const { data, error } = await supabase.functions.invoke('submit-weekly-shifts', {
         body: {
-          token: tokenData.token,
+          token: token,
           shifts,
           week_start_date: tokenData.week_start_date,
           week_end_date: tokenData.week_end_date,
@@ -100,18 +108,22 @@ export const usePublicShifts = () => {
       console.log('🔥 Edge function result:', { data, error });
 
       if (error) {
-        console.error('Error submitting shifts via edge function:', error);
+        console.error('❌ Error submitting shifts via edge function:', error);
         throw new Error(`שגיאה בהגשת המשמרות: ${error.message}`);
       }
 
       if (!data?.success) {
+        console.error('❌ Submission failed:', data?.error);
         throw new Error(data?.error || 'שגיאה בהגשת המשמרות');
       }
 
+      console.log('✅ Submission successful:', data.submission);
       return data.submission;
     },
-    onSuccess: (_, { tokenId }) => {
-      queryClient.invalidateQueries({ queryKey: ['token-submissions', tokenId] });
+    onSuccess: (_, { token }) => {
+      // Invalidate token submissions using the token to get tokenId
+      queryClient.invalidateQueries({ queryKey: ['token-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['public-token', token] });
     },
   });
 
