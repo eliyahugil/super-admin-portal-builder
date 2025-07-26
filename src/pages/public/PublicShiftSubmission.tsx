@@ -393,19 +393,31 @@ const PublicShiftSubmission: React.FC = () => {
 
         // Find and auto-select shifts that are contained within this shift's time window
         // Only from branches the employee is assigned to
+        console.log(`🎯 Looking for overlapping shifts for selected shift: ${shift.start_time} on ${shift.shift_date}`);
+        
         const employeeAssignedBranches = employeeData?.employee_branch_assignments
           ?.filter((assignment: any) => assignment.is_active)
           ?.map((assignment: any) => assignment.branch_id) || [];
         
-        const overlappingShifts = allScheduledShifts.filter(otherShift => 
-          otherShift.id !== shift.id && 
-          otherShift.shift_date === shift.shift_date && // Same date
-          (employeeAssignedBranches.length === 0 || employeeAssignedBranches.includes(otherShift.branch_id)) && // Only assigned branches
-          shiftsOverlap(shift, otherShift) &&
-          !newPreferences.some((p: any) => p.shift_id === otherShift.id)
-        );
-
         console.log(`🔍 Employee assigned branches:`, employeeAssignedBranches);
+        console.log(`🔍 All shifts on same date:`, allScheduledShifts.filter(s => s.shift_date === shift.shift_date).map(s => ({ id: s.id, start_time: s.start_time, branch_id: s.branch_id, branch_name: s.branch?.name })));
+        
+        const overlappingShifts = allScheduledShifts.filter(otherShift => {
+          const isNotSameShift = otherShift.id !== shift.id;
+          const isSameDate = otherShift.shift_date === shift.shift_date;
+          const doesOverlap = shiftsOverlap(shift, otherShift);
+          const isNotAlreadySelected = !newPreferences.some((p: any) => p.shift_id === otherShift.id);
+          
+          console.log(`🔍 Checking shift ${otherShift.id} (${otherShift.start_time}) in branch ${otherShift.branch?.name}:`, {
+            isNotSameShift,
+            isSameDate,
+            doesOverlap,
+            isNotAlreadySelected
+          });
+          
+          return isNotSameShift && isSameDate && doesOverlap && isNotAlreadySelected;
+        });
+
         console.log(`🔍 Found ${overlappingShifts.length} overlapping shifts on same date from assigned branches`);
 
         overlappingShifts.forEach(overlappingShift => {
