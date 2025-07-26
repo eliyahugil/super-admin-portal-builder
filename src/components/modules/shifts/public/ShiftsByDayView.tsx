@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,60 +23,75 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
 
   const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
-  // Check for time overlap between shifts
+  // Helper function to convert time string to minutes
+  const timeToMinutes = (timeStr: string): number => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Check if a shift is completely contained within another shift
+  const isShiftContained = (containerShift: CompatibleShift, containedShift: CompatibleShift): boolean => {
+    // Must be same day and same branch
+    if (containerShift.day_of_week !== containedShift.day_of_week || 
+        containerShift.branch_id !== containedShift.branch_id) {
+      return false;
+    }
+
+    const containerStart = timeToMinutes(containerShift.start_time);
+    const containerEnd = timeToMinutes(containerShift.end_time);
+    const containedStart = timeToMinutes(containedShift.start_time);
+    const containedEnd = timeToMinutes(containedShift.end_time);
+
+    // The contained shift must be fully within the container shift
+    return containerStart <= containedStart && containerEnd >= containedEnd;
+  };
+
+  // Check if shifts overlap (for conflict detection)
   const hasTimeOverlap = (shift1: CompatibleShift, shift2: CompatibleShift): boolean => {
-    const start1 = shift1.start_time;
-    const end1 = shift1.end_time;
-    const start2 = shift2.start_time;
-    const end2 = shift2.end_time;
+    if (shift1.day_of_week !== shift2.day_of_week) return false;
     
-    return (start1 < end2 && start2 < end1);
+    const start1 = timeToMinutes(shift1.start_time);
+    const end1 = timeToMinutes(shift1.end_time);
+    const start2 = timeToMinutes(shift2.start_time);
+    const end2 = timeToMinutes(shift2.end_time);
+    
+    return start1 < end2 && start2 < end1;
   };
 
   // Check if a shift can be auto-selected based on selected shifts
   const canAutoSelect = (shift: CompatibleShift): boolean => {
     return selectedShifts.some(selectedShift => {
-      // Same day and same branch
-      if (selectedShift.day_of_week === shift.day_of_week && 
-          selectedShift.branch_id === shift.branch_id) {
-        
-        // If selected shift contains this shift's time window
-        const selectedStart = selectedShift.start_time;
-        const selectedEnd = selectedShift.end_time;
-        const shiftStart = shift.start_time;
-        const shiftEnd = shift.end_time;
-        
-        // Check if the selected shift's time window covers this shift
-        return selectedStart <= shiftStart && selectedEnd >= shiftEnd;
-      }
-      return false;
+      return isShiftContained(selectedShift, shift);
     });
   };
 
   // Check if a shift conflicts with selected shifts
   const hasConflict = (shift: CompatibleShift): boolean => {
     return selectedShifts.some(selectedShift => {
-      // Same day and different shifts
-      if (selectedShift.day_of_week === shift.day_of_week && 
-          selectedShift.id !== shift.id) {
-        
-        // Check for time overlap but not full containment
-        const hasOverlap = hasTimeOverlap(selectedShift, shift);
-        const isContained = canAutoSelect(shift);
-        
-        return hasOverlap && !isContained;
-      }
-      return false;
+      // Skip if it's the same shift
+      if (selectedShift.id === shift.id) return false;
+      
+      // Check for overlap but not if one contains the other
+      const hasOverlap = hasTimeOverlap(selectedShift, shift);
+      const isContained = isShiftContained(selectedShift, shift) || isShiftContained(shift, selectedShift);
+      
+      return hasOverlap && !isContained;
     });
   };
 
   // Update suggested shifts when selected shifts change
   useEffect(() => {
+    console.log('🔄 Updating suggested shifts based on selected shifts:', selectedShifts);
     const newSuggested: CompatibleShift[] = [];
     
     Object.values(shiftsByDay).forEach(dayData => {
       dayData.compatibleShifts.forEach(shift => {
-        if (!selectedShifts.find(s => s.id === shift.id) && canAutoSelect(shift)) {
+        // Skip if already selected
+        if (selectedShifts.find(s => s.id === shift.id)) return;
+        
+        // Check if this shift can be auto-selected
+        if (canAutoSelect(shift)) {
+          console.log('✅ Adding suggested shift:', shift.shift_name, shift.start_time, '-', shift.end_time);
           newSuggested.push({
             ...shift,
             autoSelected: true,
@@ -87,6 +101,7 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
       });
     });
     
+    console.log('📋 Total suggested shifts:', newSuggested.length);
     setSuggestedShifts(newSuggested);
   }, [selectedShifts, shiftsByDay]);
 
@@ -106,8 +121,11 @@ export const ShiftsByDayView: React.FC<ShiftsByDayViewProps> = ({
   };
 
   const handleShiftClick = (shift: CompatibleShift) => {
+    console.log('🖱️ Shift clicked:', shift.shift_name, shift.start_time, '-', shift.end_time);
+    
     // Don't allow selection if there's a conflict
     if (hasConflict(shift) && !isShiftSelected(shift)) {
+      console.log('❌ Blocked due to conflict');
       return;
     }
     
