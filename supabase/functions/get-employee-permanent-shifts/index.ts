@@ -138,18 +138,88 @@ serve(async (req) => {
 
       console.log('📊 Total available shifts before filtering:', allAvailableShifts?.length || 0);
 
+      // ALSO get unassigned scheduled shifts (employee_id is null) for the week
+      const { data: unassignedScheduledShifts, error: scheduledError } = await supabaseAdmin
+        .from('scheduled_shifts')
+        .select(`
+          id,
+          shift_date,
+          start_time,
+          end_time,
+          branch_id,
+          business_id,
+          notes,
+          shift_assignments,
+          branch:branches(id, name, address),
+          business:businesses(id, name)
+        `)
+        .eq('business_id', businessId)
+        .is('employee_id', null)
+        .gte('shift_date', weekStart)
+        .lte('shift_date', weekEndStr)
+        .order('shift_date', { ascending: true })
+        .order('start_time', { ascending: true });
+
+      if (scheduledError) {
+        console.error('❌ Error fetching unassigned scheduled shifts:', scheduledError);
+      }
+
+      console.log('📊 Total unassigned scheduled shifts found:', unassignedScheduledShifts?.length || 0);
+
+      // Convert scheduled shifts to available shifts format and combine
+      const scheduledAsAvailable = (unassignedScheduledShifts || []).map(shift => {
+        const shiftDate = new Date(shift.shift_date);
+        const dayOfWeek = shiftDate.getDay(); // 0 = Sunday, 1 = Monday...
+        
+        // Determine shift type based on time
+        const startHour = parseInt(shift.start_time.split(':')[0]);
+        let shift_type = 'evening';
+        if (startHour >= 6 && startHour < 14) {
+          shift_type = 'morning';
+        } else if (startHour >= 14 && startHour < 20) {
+          shift_type = 'afternoon';
+        }
+
+        return {
+          id: shift.id,
+          business_id: shift.business_id,
+          branch_id: shift.branch_id,
+          shift_name: `משמרת ${shift_type}`,
+          shift_type: shift_type,
+          day_of_week: dayOfWeek,
+          start_time: shift.start_time,
+          end_time: shift.end_time,
+          required_employees: 1,
+          current_assignments: 0,
+          is_open_for_unassigned: true,
+          week_start_date: weekStart,
+          week_end_date: weekEndStr,
+          branch: shift.branch,
+          business: shift.business,
+          source: 'scheduled_shifts',
+          shift_date: shift.shift_date,
+          notes: shift.notes,
+          shift_assignments: shift.shift_assignments
+        };
+      });
+
+      // Combine available_shifts with converted scheduled_shifts
+      const allShifts = [...(allAvailableShifts || []), ...scheduledAsAvailable];
+      
+      console.log('📊 Total shifts (available + unassigned scheduled):', allShifts.length);
+
       // Filter shifts by employee assignments
-      const filteredShifts = (allAvailableShifts || []).filter(shift => {
+      const filteredShifts = allShifts.filter(shift => {
         // Check if shift is in assigned branches
         const branchMatch = assignedBranchIds.includes(shift.branch_id);
         
-        // Check if shift type matches assigned shift types
-        const shiftTypeMatch = assignedShiftTypes.includes(shift.shift_type);
+        // Check if shift type matches assigned shift types (if employee has specific types)
+        const shiftTypeMatch = assignedShiftTypes.length === 0 || assignedShiftTypes.includes(shift.shift_type);
         
         // Check if day matches available days
         const dayMatch = availableDays.includes(shift.day_of_week);
         
-        console.log(`🔍 Filtering shift ${shift.id}: branch(${shift.branch_id}): ${branchMatch}, type(${shift.shift_type}): ${shiftTypeMatch}, day(${shift.day_of_week}): ${dayMatch}`);
+        console.log(`🔍 Filtering shift ${shift.id} (${shift.source || 'available_shifts'}): branch(${shift.branch_id}): ${branchMatch}, type(${shift.shift_type}): ${shiftTypeMatch}, day(${shift.day_of_week}): ${dayMatch}`);
         
         return branchMatch && shiftTypeMatch && dayMatch;
       });
