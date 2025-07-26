@@ -7,15 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { usePublicShifts } from '@/hooks/usePublicShifts';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Calendar, Clock, Building, User, Send, CheckCircle, XCircle } from 'lucide-react';
+import { ShiftPreference } from '@/types/publicShift';
 
-interface ShiftPreference {
+interface LocalShiftPreference extends ShiftPreference {
   shift_id: string;
   shift_date: string;
-  start_time: string;
-  end_time: string;
   branch_name: string;
   role: string;
   is_selected: boolean;
@@ -27,7 +26,7 @@ const PublicShiftSubmission: React.FC = () => {
   const { toast } = useToast();
   const { useToken, useTokenAvailableShifts, submitShifts } = usePublicShifts();
   
-  const [preferences, setPreferences] = useState<ShiftPreference[]>([]);
+  const [preferences, setPreferences] = useState<LocalShiftPreference[]>([]);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,19 +38,26 @@ const PublicShiftSubmission: React.FC = () => {
 
   // Initialize preferences when shifts are loaded
   useEffect(() => {
-    if (availableShifts.length > 0) {
-      const initialPreferences: ShiftPreference[] = availableShifts.map(shift => ({
-        shift_id: shift.id,
-        shift_date: shift.shift_date,
-        start_time: shift.start_time,
-        end_time: shift.end_time,
-        branch_name: shift.branches?.name || '',
-        role: shift.role,
-        is_selected: false
-      }));
+    if (availableShifts.length > 0 && tokenData) {
+      const initialPreferences: LocalShiftPreference[] = availableShifts.map(shift => {
+        // Calculate the actual date based on day_of_week and week_start_date
+        const weekStart = new Date(tokenData.week_start_date);
+        const shiftDate = addDays(weekStart, shift.day_of_week);
+        
+        return {
+          shift_id: shift.id,
+          shift_date: format(shiftDate, 'yyyy-MM-dd'),
+          start_time: shift.start_time,
+          end_time: shift.end_time,
+          branch_name: shift.branches?.name || '',
+          role: shift.shift_name || 'משמרת',
+          available: true,
+          is_selected: false
+        };
+      });
       setPreferences(initialPreferences);
     }
-  }, [availableShifts]);
+  }, [availableShifts, tokenData]);
 
   // Handle shift selection toggle
   const toggleShiftSelection = (shiftId: string) => {
@@ -94,6 +100,7 @@ const PublicShiftSubmission: React.FC = () => {
       await submitShifts.mutateAsync({
         token,
         formData: {
+          employee_name: 'עובד',
           preferences: selectedPreferences,
           notes
         }
@@ -162,7 +169,7 @@ const PublicShiftSubmission: React.FC = () => {
     }
     acc[date].push(pref);
     return acc;
-  }, {} as Record<string, ShiftPreference[]>);
+  }, {} as Record<string, LocalShiftPreference[]>);
 
   const selectedCount = preferences.filter(pref => pref.is_selected).length;
 
