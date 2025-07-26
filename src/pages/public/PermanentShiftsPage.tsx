@@ -130,6 +130,12 @@ const PermanentShiftsPage: React.FC = () => {
           <p className="text-gray-600">
             צפייה במשמרות זמינות וסידור עבודה אישי
           </p>
+          {context.isCurrentWeek && (
+            <div className="mt-2 inline-flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              השבוע הנוכחי
+            </div>
+          )}
         </div>
 
         {/* Employee Info */}
@@ -525,12 +531,43 @@ const PermanentShiftsPage: React.FC = () => {
           </Card>
         </div>
 
-        {/* Action Buttons */}
-        <div className="mt-8 text-center">
-          <Button onClick={handleRefresh} variant="outline" className="mr-4">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            רענן נתונים
-          </Button>
+        {/* Week Navigation & Action Buttons */}
+        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex gap-2">
+            <Button variant="outline" disabled className="opacity-50">
+              ← שבוע קודם
+            </Button>
+            <Button variant="outline" disabled className="opacity-50">
+              שבוע הבא →
+            </Button>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button onClick={handleRefresh} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              רענן נתונים
+            </Button>
+            <Button variant="outline" disabled className="opacity-50">
+              📅 צפה בחודש
+            </Button>
+          </div>
+        </div>
+
+        {/* Coming Soon Notice */}
+        <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
+          <p className="text-amber-700 font-medium">⚡ בקרוב: ניווט בין שבועות, צפייה חודשית, והגשת משמרות ישירות מהטוקן</p>
+          <p className="text-amber-600 text-sm mt-1">כרגע מציג את השבוע הנוכחי בלבד</p>
+        </div>
+
+        {/* Shift Submission Link */}
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+          <p className="text-blue-700 font-medium">💡 רוצה להגיש משמרות?</p>
+          <p className="text-blue-600 text-sm mt-1">
+            יש להשתמש בטוקן הגשת משמרות שבועי מהמנהל, או לפנות למנהל לקבלת קישור הגשה
+          </p>
+          <p className="text-blue-500 text-xs mt-2">
+            הטוקן הזה מיועד לצפייה בלבד - לא להגשת משמרות
+          </p>
         </div>
 
         {/* Footer */}

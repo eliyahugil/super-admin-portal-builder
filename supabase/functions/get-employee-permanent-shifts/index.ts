@@ -161,19 +161,19 @@ serve(async (req) => {
       console.log('⏰ Employee shift types:', assignedShiftTypes);
       console.log('📅 Employee available days:', availableDays);
 
-      // Get current week dates (Sunday to Saturday)
+      // Get current week dates (Sunday to Saturday) - THIS WEEK
       const today = new Date();
       const currentDayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
-      const daysToSunday = currentDayOfWeek === 0 ? 0 : 7 - currentDayOfWeek;
-      const nextSunday = new Date(today);
-      nextSunday.setDate(today.getDate() + daysToSunday);
+      const daysFromSunday = currentDayOfWeek; // Today's offset from Sunday
+      const thisWeekSunday = new Date(today);
+      thisWeekSunday.setDate(today.getDate() - daysFromSunday);
       
-      const weekStart = nextSunday.toISOString().split('T')[0];
-      const weekEnd = new Date(nextSunday);
-      weekEnd.setDate(nextSunday.getDate() + 6);
+      const weekStart = thisWeekSunday.toISOString().split('T')[0];
+      const weekEnd = new Date(thisWeekSunday);
+      weekEnd.setDate(thisWeekSunday.getDate() + 6);
       const weekEndStr = weekEnd.toISOString().split('T')[0];
 
-      console.log('📅 Getting shifts for week:', weekStart, 'to', weekEndStr);
+      console.log('📅 Getting shifts for CURRENT week:', weekStart, 'to', weekEndStr);
 
       // Get ALL available shifts for the business and upcoming week
       const { data: allAvailableShifts, error: availableError } = await supabaseAdmin
@@ -284,13 +284,14 @@ serve(async (req) => {
       shifts = filteredShifts;
       context = {
         type: 'available_shifts',
-        title: 'משמרות זמינות לשבוע הקרוב',
-        description: `נמצאו ${shifts.length} משמרות זמינות בסניפים ובמשמרות שאליהן אתה משויך`,
+        title: 'משמרות זמינות לשבוע הנוכחי',
+        description: `נמצאו ${shifts.length} משמרות זמינות בסניפים ובמשמרות שאליהם אתה משויך`,
         weekStart,
         weekEnd: weekEndStr,
+        isCurrentWeek: true,
         filterInfo: {
           assignedBranches: assignedBranchIds.length,
-          branchNames: employeeBranches.map(ba => ({ id: ba.branch_id, role: ba.role_name })),
+          branchNames: employeeBranches.map(ba => ({ id: ba.branch_id, role: ba.role_name, priority: ba.priority_order })),
           shiftTypes: assignedShiftTypes,
           availableDays: availableDays
         }

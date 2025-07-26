@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useBusinessShiftTypes } from './hooks/useBusinessShiftTypes';
-import { Plus, Edit, Trash2, Clock, Palette } from 'lucide-react';
+import { Plus, Edit, Trash2, Clock, Palette, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ShiftType {
@@ -136,7 +136,12 @@ export const BusinessShiftTypesManager: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6" dir="rtl">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">ניהול סוגי משמרות</h1>
+        <div>
+          <h1 className="text-2xl font-bold">ניהול סוגי משמרות מתקדם</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            הגדר טווחי זמנים מותאמים אישית למשמרות בוקר, צהריים וערב
+          </p>
+        </div>
         <Button 
           onClick={() => setIsCreating(true)}
           className="flex items-center gap-2"
@@ -145,6 +150,24 @@ export const BusinessShiftTypesManager: React.FC = () => {
           הוסף סוג משמרת
         </Button>
       </div>
+
+      {/* Info Card */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <Clock className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="font-medium text-blue-900">למה זה חשוב?</h3>
+              <p className="text-blue-700 text-sm mt-1">
+                הגדרת סוגי משמרות עם טווחי זמנים מותאמים מאפשרת למערכת לסווג אוטומטית את המשמרות ולהציגן בצבעים שונים. 
+                זה מחליף את ההגדרה הקשיחה של 14:00 ונותן לך שליטה מלאה על הסיווג.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Create/Edit Form */}
       {isCreating && (
@@ -273,6 +296,25 @@ export const BusinessShiftTypesManager: React.FC = () => {
             <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
             <p className="text-muted-foreground">
               לא נמצאו סוגי משמרות. לחץ על "הוסף סוג משמרת" כדי להתחיל.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              💡 טיפ: התחל עם הגדרת משמרות בוקר (06:00-14:00), צהריים (14:00-22:00) וערב (22:00-06:00)
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Advanced Features Notice */}
+      {shiftTypes && shiftTypes.length > 0 && (
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <h3 className="font-medium text-green-900">המערכת פעילה!</h3>
+            </div>
+            <p className="text-green-700 text-sm">
+              ההגדרות שלך פעילות בכל המערכת: טוקני עובדים, תצוגת משמרות, ודוחות.
+              המערכת תסווג אוטומטית משמרות על פי הטווחים שהגדרת.
             </p>
           </CardContent>
         </Card>
