@@ -40,15 +40,20 @@ serve(async (req) => {
     }
 
     console.log('📄 Processing file:', fileName);
-    let imageForAnalysis = file;
-
+    
     // If it's a PDF, we need to inform the user that direct PDF analysis isn't supported yet
     if (fileName && fileName.toLowerCase().endsWith('.pdf')) {
       console.log('❌ PDF detected - currently not supported for automatic analysis');
-      throw new Error('ניתוח קובצי PDF אינו נתמך כרגע. אנא המר את התמונה לפורמט JPG או PNG');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'ניתוח קובצי PDF אינו נתמך כרגע. אנא המר את התמונה לפורמט JPG או PNG' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log('Analyzing ID document with OpenAI Vision...');
+    console.log('📤 Sending request to OpenAI...');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -57,39 +62,37 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: `אתה מומחה בניתוח תעודות זהות ישראליות. נתח את התמונה וחלץ את המידע הבא בפורמט JSON מדויק:
-            {
-              "first_name": "שם פרטי",
-              "last_name": "שם משפחה", 
-              "id_number": "מספר תעודת זהות (9 ספרות)",
-              "birth_date": "תאריך לידה בפורמט YYYY-MM-DD",
-              "confidence": "רמת ביטחון 0-100",
-              "errors": ["רשימת שגיאות אם יש"]
-            }
+            content: `You are an expert at analyzing Israeli ID documents. Extract the following information and return it as a JSON object:
+            - first_name (Hebrew first name)
+            - last_name (Hebrew last name) 
+            - id_number (Israeli ID number - exactly 9 digits)
+            - birth_date (birth date in YYYY-MM-DD format)
+            - confidence (percentage of how confident you are in the extraction, 0-100)
             
-            חשוב:
-            - אם זה PDF, נתח את העמוד הראשון
-            - אם זה לא תעודת זהות ישראלית, החזר שגיאה
-            - וודא שמספר ת.ז. הוא 9 ספרות בדיוק
-            - וודא שהתאריך תקין
-            - אם יש ספק בקריאה, ציין ב-confidence נמוך
-            - החזר רק JSON תקני ללא טקסט נוסף`
+            Return ONLY valid JSON in this exact format:
+            {"first_name": "...", "last_name": "...", "id_number": "...", "birth_date": "...", "confidence": 95}
+            
+            Important:
+            - If this is not an Israeli ID document, return an error
+            - Ensure ID number is exactly 9 digits
+            - Ensure birth date is valid and in correct format
+            - Return only the JSON, no additional text`
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'אנא נתח את תעודת הזהות הזו וחלץ את המידע הנדרש'
+                text: 'Please analyze this Israeli ID document and extract the personal information.'
               },
               {
                 type: 'image_url',
                 image_url: {
-                  url: imageForAnalysis
+                  url: file
                 }
               }
             ]
@@ -97,21 +100,38 @@ serve(async (req) => {
         ],
         max_tokens: 500,
         temperature: 0.1
-      }),
+      })
     });
 
+    console.log('📊 OpenAI Response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('❌ OpenAI API error:', response.status, errorText);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `שגיאה בשירות ניתוח התמונות. נסה שוב מאוחר יותר (${response.status})` 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const data = await response.json();
-    const aiResponse = data.choices[0].message.content.trim();
+    console.log('📊 Full OpenAI response:', JSON.stringify(data, null, 2));
     
-    console.log('OpenAI response:', aiResponse);
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid response structure from OpenAI');
+    }
+    
+    const aiResponse = data.choices[0].message.content.trim();
+    console.log('📝 AI Response content:', aiResponse);
 
     try {
       // Try to parse the JSON response
       const extractedData = JSON.parse(aiResponse);
+      console.log('🔍 Parsed extracted data:', extractedData);
       
       // Validate the response structure
       if (!extractedData.first_name || !extractedData.last_name || !extractedData.id_number) {
@@ -132,7 +152,7 @@ serve(async (req) => {
         extractedData.confidence = Math.min(extractedData.confidence || 0, 50);
       }
 
-      console.log('Extracted data:', extractedData);
+      console.log('✅ Validation complete, returning data:', extractedData);
 
       return new Response(JSON.stringify({ 
         success: true, 
@@ -142,11 +162,13 @@ serve(async (req) => {
       });
 
     } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError);
+      console.error('❌ Failed to parse AI response:', parseError);
+      console.error('❌ Raw AI response:', aiResponse);
+      
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'שגיאה בניתוח התמונה. אנא וודא שהתמונה ברורה וברונה טובה',
-        raw_response: aiResponse
+        error: 'שגיאה בניתוח התמונה. אנא וודא שהתמונה ברורה ומכילה תעודת זהות ישראלית',
+        raw_response: aiResponse.substring(0, 200) // Limit response size
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -154,10 +176,12 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Error in analyze-id-document function:', error);
+    console.error('💥 Error in analyze-id-document function:', error);
+    console.error('💥 Error stack:', error.stack);
+    
     return new Response(JSON.stringify({ 
       success: false, 
-      error: error.message || 'שגיאה בניתוח התמונה' 
+      error: error.message || 'שגיאה כללית בניתוח התמונה' 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
