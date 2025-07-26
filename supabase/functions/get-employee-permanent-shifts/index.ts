@@ -59,12 +59,12 @@ serve(async (req) => {
     
     console.log('✅ Token validated for employee:', employeeId, 'business:', businessId);
 
-    // Update last used timestamp and usage count
+    // Update only last used timestamp - DO NOT increment uses_count here
+    // uses_count should only be incremented when actual shift submission happens
     await supabaseAdmin
       .from('employee_permanent_tokens')
       .update({ 
-        last_used_at: new Date().toISOString(),
-        uses_count: tokenData.uses_count + 1
+        last_used_at: new Date().toISOString()
       })
       .eq('id', tokenData.id);
 
@@ -173,11 +173,13 @@ serve(async (req) => {
         
         // Determine shift type based on time
         const startHour = parseInt(shift.start_time.split(':')[0]);
-        let shift_type = 'evening';
+        let shift_type = 'morning';
         if (startHour >= 6 && startHour < 14) {
           shift_type = 'morning';
         } else if (startHour >= 14 && startHour < 20) {
           shift_type = 'afternoon';
+        } else {
+          shift_type = 'evening';
         }
 
         return {
@@ -283,7 +285,7 @@ serve(async (req) => {
         isPermanent: true,
         employee: tokenData.employee,
         lastUsed: tokenData.last_used_at,
-        usesCount: tokenData.uses_count + 1
+        usesCount: tokenData.uses_count
       },
       context,
       availableShifts: shifts,
