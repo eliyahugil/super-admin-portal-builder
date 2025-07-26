@@ -161,19 +161,19 @@ serve(async (req) => {
       console.log('⏰ Employee shift types:', assignedShiftTypes);
       console.log('📅 Employee available days:', availableDays);
 
-      // Get current week dates (Sunday to Saturday) - THIS WEEK
+      // Get NEXT week dates (Sunday to Saturday) - UPCOMING WEEK for submissions
       const today = new Date();
       const currentDayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
-      const daysFromSunday = currentDayOfWeek; // Today's offset from Sunday
-      const thisWeekSunday = new Date(today);
-      thisWeekSunday.setDate(today.getDate() - daysFromSunday);
+      const daysToSunday = currentDayOfWeek === 0 ? 7 : 7 - currentDayOfWeek; // Days to NEXT Sunday
+      const nextSunday = new Date(today);
+      nextSunday.setDate(today.getDate() + daysToSunday);
       
-      const weekStart = thisWeekSunday.toISOString().split('T')[0];
-      const weekEnd = new Date(thisWeekSunday);
-      weekEnd.setDate(thisWeekSunday.getDate() + 6);
+      const weekStart = nextSunday.toISOString().split('T')[0];
+      const weekEnd = new Date(nextSunday);
+      weekEnd.setDate(nextSunday.getDate() + 6);
       const weekEndStr = weekEnd.toISOString().split('T')[0];
 
-      console.log('📅 Getting shifts for CURRENT week:', weekStart, 'to', weekEndStr);
+      console.log('📅 Getting shifts for UPCOMING week:', weekStart, 'to', weekEndStr);
 
       // Get ALL available shifts for the business and upcoming week
       const { data: allAvailableShifts, error: availableError } = await supabaseAdmin
@@ -284,11 +284,11 @@ serve(async (req) => {
       shifts = filteredShifts;
       context = {
         type: 'available_shifts',
-        title: 'משמרות זמינות לשבוע הנוכחי',
+        title: 'משמרות זמינות לשבוע הקרוב',
         description: `נמצאו ${shifts.length} משמרות זמינות בסניפים ובמשמרות שאליהם אתה משויך`,
         weekStart,
         weekEnd: weekEndStr,
-        isCurrentWeek: true,
+        isCurrentWeek: false,
         filterInfo: {
           assignedBranches: assignedBranchIds.length,
           branchNames: employeeBranches.map(ba => ({ id: ba.branch_id, role: ba.role_name, priority: ba.priority_order })),
@@ -312,8 +312,14 @@ serve(async (req) => {
       console.error('❌ Error fetching branches:', branchesError);
     }
 
-    // Also get scheduled shifts for this employee for the upcoming week
-    const { data: scheduledShifts, error: scheduledError } = await supabaseAdmin
+    // Get current week AND upcoming week scheduled shifts for this employee
+    const currentWeekStart = new Date();
+    const currentDay = currentWeekStart.getDay();
+    currentWeekStart.setDate(currentWeekStart.getDate() - currentDay); // Go to Sunday of current week
+    const currentWeekEnd = new Date(currentWeekStart);
+    currentWeekEnd.setDate(currentWeekStart.getDate() + 13); // Cover current + next week
+    
+    const { data: employeeScheduledShifts, error: employeeScheduledError } = await supabaseAdmin
       .from('scheduled_shifts')
       .select(`
         *,
@@ -321,48 +327,48 @@ serve(async (req) => {
         employee:employees(id, first_name, last_name, phone)
       `)
       .eq('employee_id', employeeId)
-      .gte('shift_date', context.weekStart || new Date().toISOString().split('T')[0])
-      .lte('shift_date', context.weekEnd || new Date().toISOString().split('T')[0])
+      .gte('shift_date', currentWeekStart.toISOString().split('T')[0])
+      .lte('shift_date', currentWeekEnd.toISOString().split('T')[0])
       .order('shift_date', { ascending: true })
       .order('start_time', { ascending: true });
 
-    if (scheduledError) {
-      console.error('❌ Error fetching scheduled shifts:', scheduledError);
+    if (employeeScheduledError) {
+      console.error('❌ Error fetching employee scheduled shifts:', employeeScheduledError);
     }
 
-    // Convert employee's scheduled shifts to the same format as available shifts
-    const employeeScheduledShifts = (scheduledShifts || []).map(shift => {
+    // Convert employee's scheduled shifts to the same format
+    const formattedEmployeeScheduledShifts = (employeeScheduledShifts || []).map(shift => {
       const shiftDate = new Date(shift.shift_date);
       const dayOfWeek = shiftDate.getDay();
       const shift_type = determineShiftType(shift.start_time);
 
-        return {
-          id: shift.id,
-          business_id: shift.business_id,
-          branch_id: shift.branch_id,
-          shift_name: `משמרת ${businessShiftTypes?.find(bt => bt.shift_type === shift_type)?.display_name || shift_type}`,
-          shift_type: shift_type,
-          day_of_week: dayOfWeek,
-          start_time: shift.start_time,
-          end_time: shift.end_time,
-          required_employees: 1,
-          current_assignments: 1,
-          is_open_for_unassigned: false,
-          week_start_date: context.weekStart || weekStart,
-          week_end_date: context.weekEnd || weekEndStr,
-          branch: shift.branch,
-          source: 'employee_scheduled',
-          shift_date: shift.shift_date,
-          notes: shift.notes,
-          shift_assignments: shift.shift_assignments,
-          is_assigned_to_employee: true,
-          is_special: shift.submission_type === 'special' || false,
-          role: shift.role,
-          status: shift.status
-        };
+      return {
+        id: shift.id,
+        business_id: shift.business_id,
+        branch_id: shift.branch_id,
+        shift_name: `משמרת ${businessShiftTypes?.find(bt => bt.shift_type === shift_type)?.display_name || shift_type}`,
+        shift_type: shift_type,
+        day_of_week: dayOfWeek,
+        start_time: shift.start_time,
+        end_time: shift.end_time,
+        required_employees: 1,
+        current_assignments: 1,
+        is_open_for_unassigned: false,
+        week_start_date: context.weekStart || weekStart,
+        week_end_date: context.weekEnd || weekEndStr,
+        branch: shift.branch,
+        source: 'employee_scheduled',
+        shift_date: shift.shift_date,
+        notes: shift.notes,
+        shift_assignments: shift.shift_assignments,
+        is_assigned_to_employee: true,
+        is_special: shift.submission_type === 'special' || false,
+        role: shift.role,
+        status: shift.status
+      };
     });
 
-    console.log('👤 Employee scheduled shifts:', employeeScheduledShifts.length);
+    console.log('👤 Employee scheduled shifts (current + upcoming weeks):', formattedEmployeeScheduledShifts.length);
 
     const response = {
       success: true,
@@ -377,12 +383,12 @@ serve(async (req) => {
       },
       context,
       availableShifts: shifts,
-      scheduledShifts: scheduledShifts || [],
-      employeeScheduledShifts: employeeScheduledShifts || [],
+      scheduledShifts: [], // Remove duplicate - using employeeScheduledShifts instead
+      employeeScheduledShifts: formattedEmployeeScheduledShifts || [],
       branches: branches || [],
       availableShiftsCount: shifts.length,
-      scheduledShiftsCount: (scheduledShifts || []).length,
-      employeeScheduledShiftsCount: employeeScheduledShifts.length,
+      scheduledShiftsCount: 0, // Set to 0 since we're not using scheduledShifts
+      employeeScheduledShiftsCount: formattedEmployeeScheduledShifts.length,
       employeeAssignments: employeeBranches || [],
       businessShiftTypes: businessShiftTypes || []
     };

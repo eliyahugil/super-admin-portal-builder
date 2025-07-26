@@ -116,7 +116,7 @@ const PermanentShiftsPage: React.FC = () => {
 
   const employee = tokenData?.employee;
   const availableShifts = shiftsData?.availableShifts || [];
-  const scheduledShifts = shiftsData?.scheduledShifts || [];
+  const employeeScheduledShifts = shiftsData?.employeeScheduledShifts || [];
   const context = shiftsData?.context || {};
 
   return (
@@ -130,10 +130,10 @@ const PermanentShiftsPage: React.FC = () => {
           <p className="text-gray-600">
             צפייה במשמרות זמינות וסידור עבודה אישי
           </p>
-          {context.isCurrentWeek && (
-            <div className="mt-2 inline-flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              השבוע הנוכחי
+          {context.isCurrentWeek === false && (
+            <div className="mt-2 inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              השבוע הקרוב
             </div>
           )}
         </div>
@@ -190,7 +190,7 @@ const PermanentShiftsPage: React.FC = () => {
                 
                 <div className="bg-green-50 p-3 rounded-lg">
                   <div className="text-lg font-semibold text-green-700">
-                    {scheduledShifts.length + (shiftsData?.employeeScheduledShifts?.length || 0)}
+                    {employeeScheduledShifts.length}
                   </div>
                   <div className="text-xs text-green-600">משמרות מתוכננות</div>
                 </div>
@@ -198,7 +198,7 @@ const PermanentShiftsPage: React.FC = () => {
                 <div className="bg-amber-50 p-3 rounded-lg">
                   <div className="text-lg font-semibold text-amber-700">
                     {(() => {
-                      const allShifts = [...availableShifts, ...scheduledShifts, ...(shiftsData?.employeeScheduledShifts || [])];
+                      const allShifts = [...availableShifts, ...employeeScheduledShifts];
                       const timeGroups = allShifts.reduce((acc: any, shift: any) => {
                         const timeKey = `${shift.start_time}-${shift.end_time}`;
                         if (!acc[timeKey]) acc[timeKey] = [];
@@ -410,7 +410,7 @@ const PermanentShiftsPage: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {scheduledShifts.length === 0 ? (
+              {employeeScheduledShifts.length === 0 ? (
                 <div className="text-center py-8">
                   <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">
@@ -422,15 +422,14 @@ const PermanentShiftsPage: React.FC = () => {
                   <div className="bg-green-50 p-3 rounded-lg">
                     <p className="text-sm text-green-700">
                       <CheckCircle className="h-4 w-4 inline mr-1" />
-                      יש לך {scheduledShifts.length} משמרות מתוכננות השבוע
+                      יש לך {employeeScheduledShifts.length} משמרות מתוכננות
                     </p>
                   </div>
                   
                   <div className="grid gap-3">
                     {(() => {
                       // Group employee's shifts by time to identify conflicts
-                      const employeeScheduled = shiftsData?.employeeScheduledShifts || [];
-                      const allEmployeeShifts = [...scheduledShifts, ...employeeScheduled];
+                      const allEmployeeShifts = employeeScheduledShifts;
                       
                       const shiftsByTime = allEmployeeShifts.reduce((acc: any, shift: any) => {
                         const timeKey = `${shift.start_time}-${shift.end_time}`;
@@ -556,7 +555,7 @@ const PermanentShiftsPage: React.FC = () => {
         {/* Coming Soon Notice */}
         <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
           <p className="text-amber-700 font-medium">⚡ בקרוב: ניווט בין שבועות, צפייה חודשית, והגשת משמרות ישירות מהטוקן</p>
-          <p className="text-amber-600 text-sm mt-1">כרגע מציג את השבוע הנוכחי בלבד</p>
+          <p className="text-amber-600 text-sm mt-1">כרגע מציג את השבוע הקרוב להגשה בלבד</p>
         </div>
 
         {/* Shift Submission Link */}
