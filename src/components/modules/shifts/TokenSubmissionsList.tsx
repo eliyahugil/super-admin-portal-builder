@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { usePublicShifts } from '@/hooks/usePublicShifts';
+import { useTokenSubmissions } from '@/hooks/useTokenSubmissions';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { User, Phone, Calendar, Clock } from 'lucide-react';
@@ -12,7 +12,6 @@ interface TokenSubmissionsListProps {
 }
 
 export const TokenSubmissionsList: React.FC<TokenSubmissionsListProps> = ({ tokenId }) => {
-  const { useTokenSubmissions } = usePublicShifts();
   const { data: submissions = [], isLoading } = useTokenSubmissions(tokenId);
 
   if (isLoading) {
@@ -31,21 +30,6 @@ export const TokenSubmissionsList: React.FC<TokenSubmissionsListProps> = ({ toke
       </Card>
     );
   }
-
-  const getDayName = (day: number) => {
-    const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-    return days[day] || '';
-  };
-
-  const getShiftTypeName = (type: string) => {
-    const types = {
-      morning: 'בוקר',
-      afternoon: 'צהריים', 
-      evening: 'ערב',
-      night: 'לילה'
-    };
-    return types[type as keyof typeof types] || type;
-  };
 
   const parseShiftsData = (shifts: any) => {
     try {
