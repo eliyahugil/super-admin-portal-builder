@@ -98,7 +98,8 @@ export const EmployeeShiftSubmissionsTab: React.FC<EmployeeShiftSubmissionsTabPr
     const start = parseInt(startTime.split(':')[0]);
     
     if (start >= 6 && start < 14) return 'morning';
-    if (start >= 14 && start < 22) return 'evening';
+    // All shifts from 14:00 onwards are 'evening'
+    if (start >= 14) return 'evening';
     return 'night';
   };
 
