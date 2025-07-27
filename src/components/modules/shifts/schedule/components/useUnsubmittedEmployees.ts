@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 
 interface SimpleEmployee {
   id: string;
@@ -15,9 +15,15 @@ type SubmissionResult = {
   employee_id: string | null;
 };
 
+// Create untyped supabase client to avoid deep type instantiation
+const untypedSupabase = createClient(
+  "https://xmhmztipuvzmwgbcovch.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtaG16dGlwdXZ6bXdnYmNvdmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMjkzODIsImV4cCI6MjA2NDcwNTM4Mn0.QEugxUTGlJ1rnG8ddf3E6BIpNaiqwkp2ml7MbiUfY9c"
+);
+
 // Separate async function to avoid deep type instantiation in useQuery
 const fetchSubmissions = async (businessId: string): Promise<SubmissionResult[]> => {
-  const { data, error } = await supabase
+  const { data, error } = await untypedSupabase
     .from('shift_submissions')
     .select('employee_id')
     .eq('business_id', businessId)
