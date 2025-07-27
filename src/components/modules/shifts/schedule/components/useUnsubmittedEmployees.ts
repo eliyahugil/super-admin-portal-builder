@@ -10,38 +10,42 @@ interface SimpleEmployee {
   is_archived?: boolean;
 }
 
+// Explicit type for the query function return
+type QueryResult = SimpleEmployee[];
+
 export const useUnsubmittedEmployees = (businessId: string, employees: SimpleEmployee[], enabled: boolean) => {
-  return useQuery({
+  return useQuery<QueryResult>({
     queryKey: ['unsubmitted-employees', businessId],
-    queryFn: async () => {
+    queryFn: async (): Promise<QueryResult> => {
       if (!businessId) {
         return [];
       }
       
-      // Simple query without explicit typing
-      const { data: submissions, error } = await supabase
+      // Query submissions with explicit type
+      const submissionsQuery = await supabase
         .from('shift_submissions')
         .select('employee_id')
         .eq('business_id', businessId)
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
-      if (error) {
-        console.error('Error fetching shift submissions:', error);
-        throw error;
+      if (submissionsQuery.error) {
+        console.error('Error fetching shift submissions:', submissionsQuery.error);
+        throw submissionsQuery.error;
       }
 
-      // Build set of submitted employee IDs with simple logic
-      const submittedIds = new Set();
-      if (submissions) {
-        for (let i = 0; i < submissions.length; i++) {
-          submittedIds.add(submissions[i].employee_id);
+      // Build set of submitted employee IDs
+      const submittedIds = new Set<string>();
+      const submissions = submissionsQuery.data || [];
+      
+      for (const submission of submissions) {
+        if (submission.employee_id) {
+          submittedIds.add(submission.employee_id);
         }
       }
       
-      // Filter employees with simple logic
-      const result = [];
-      for (let i = 0; i < employees.length; i++) {
-        const emp = employees[i];
+      // Filter employees
+      const result: SimpleEmployee[] = [];
+      for (const emp of employees) {
         const isActive = emp.is_active !== false && emp.is_archived !== true;
         const hasNotSubmitted = !submittedIds.has(emp.id);
         
