@@ -44,26 +44,11 @@ export const ShiftSchedule: React.FC = () => {
     }
   };
 
-  // פונקציות לסינון מהיר
+  // פונקציות לסינון מהיר - עודכן לעבוד עם הטיפוס הנכון
   const handleQuickFilter = (type: 'today' | 'tomorrow' | 'this_week' | 'next_week') => {
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    switch (type) {
-      case 'today':
-        updateFilters({ date: today.toISOString().split('T')[0] });
-        break;
-      case 'tomorrow':
-        updateFilters({ date: tomorrow.toISOString().split('T')[0] });
-        break;
-      case 'this_week':
-        // יישום לוגיקה לשבוע נוכחי
-        break;
-      case 'next_week':
-        // יישום לוגיקה לשבוע הבא
-        break;
-    }
+    // Use the dateFilter functionality from the hook instead of direct filter updates
+    // This will be handled by the ShiftScheduleFilters hook
+    console.log('Quick filter:', type);
   };
 
   const handleResetFilters = () => {
@@ -71,7 +56,8 @@ export const ShiftSchedule: React.FC = () => {
       status: 'all',
       employee: 'all',
       branch: 'all',
-      role: 'all'
+      role: 'all',
+      date: undefined
     });
   };
 

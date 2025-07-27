@@ -33,6 +33,8 @@ export const useShiftScheduleFilters = (shifts: ShiftScheduleData[]) => {
           startDate: startOfDay(today),
           endDate: endOfDay(today)
         });
+        // Update filters with date string
+        updateFilters({ date: today.toISOString().split('T')[0] });
         break;
       case 'tomorrow':
         const tomorrow = addDays(today, 1);
@@ -41,6 +43,8 @@ export const useShiftScheduleFilters = (shifts: ShiftScheduleData[]) => {
           startDate: startOfDay(tomorrow),
           endDate: endOfDay(tomorrow)
         });
+        // Update filters with date string
+        updateFilters({ date: tomorrow.toISOString().split('T')[0] });
         break;
       case 'this_week':
         setDateFilter({
@@ -48,6 +52,8 @@ export const useShiftScheduleFilters = (shifts: ShiftScheduleData[]) => {
           startDate: startOfWeek(today, { weekStartsOn: 0 }),
           endDate: endOfWeek(today, { weekStartsOn: 0 })
         });
+        // Clear date filter for week view
+        updateFilters({ date: undefined });
         break;
       case 'next_week':
         const nextWeek = addWeeks(today, 1);
@@ -56,10 +62,13 @@ export const useShiftScheduleFilters = (shifts: ShiftScheduleData[]) => {
           startDate: startOfWeek(nextWeek, { weekStartsOn: 0 }),
           endDate: endOfWeek(nextWeek, { weekStartsOn: 0 })
         });
+        // Clear date filter for week view
+        updateFilters({ date: undefined });
         break;
       case 'all':
       default:
         setDateFilter({ type: 'all' });
+        updateFilters({ date: undefined });
         break;
     }
   };
@@ -101,7 +110,15 @@ export const useShiftScheduleFilters = (shifts: ShiftScheduleData[]) => {
         return false;
       }
 
-      // Date filter
+      // Date filter - handle both string and Date filter approaches
+      if (filters.date) {
+        const shiftDate = shift.shift_date;
+        if (shiftDate !== filters.date) {
+          return false;
+        }
+      }
+
+      // Date range filter for week/range selections
       if (dateFilter.type !== 'all' && dateFilter.startDate && dateFilter.endDate) {
         const shiftDate = new Date(shift.shift_date);
         if (!isWithinInterval(shiftDate, { start: dateFilter.startDate, end: dateFilter.endDate })) {

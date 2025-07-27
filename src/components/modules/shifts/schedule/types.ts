@@ -69,6 +69,7 @@ export interface ScheduleFiltersType {
   employee: 'all' | string;
   branch: 'all' | string;
   role: 'all' | string;
+  date?: string; // Add date filter support
 }
 
 // Import types from central location for proper typing
