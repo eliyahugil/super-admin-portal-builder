@@ -141,6 +141,8 @@ serve(async (req) => {
 
     let shifts = [];
     let context = {};
+    let weekStartParam = '';
+    let weekEndParam = '';
 
     if (!employeeBranches || employeeBranches.length === 0) {
       console.log('⚠️ No branch assignments found for employee');
@@ -169,10 +171,10 @@ serve(async (req) => {
       const currentSunday = new Date(today);
       currentSunday.setDate(today.getDate() + daysToCurrentSunday + (weekOffsetParam * 7));
       
-      const weekStartParam = weekStart || currentSunday.toISOString().split('T')[0];
+      weekStartParam = weekStart || currentSunday.toISOString().split('T')[0];
       const weekEndDate = new Date(currentSunday);
       weekEndDate.setDate(currentSunday.getDate() + 6);
-      const weekEndParam = weekEnd || weekEndDate.toISOString().split('T')[0];
+      weekEndParam = weekEnd || weekEndDate.toISOString().split('T')[0];
 
       console.log('📅 Getting shifts for week:', weekStartParam, 'to', weekEndParam, 'offset:', weekOffsetParam);
 
@@ -398,8 +400,8 @@ serve(async (req) => {
         required_employees: 1,
         current_assignments: 1,
         is_open_for_unassigned: false,
-        week_start_date: context.weekStart || weekStartParam,
-        week_end_date: context.weekEnd || weekEndParam,
+        week_start_date: weekStartParam,
+        week_end_date: weekEndParam,
         branch: shift.branch,
         source: 'employee_scheduled',
         shift_date: shift.shift_date,
