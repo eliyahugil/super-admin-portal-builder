@@ -10,8 +10,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// Simplified interface to avoid deep type instantiation
-interface SimpleEmployee {
+// Minimal interface to avoid any type complexity
+interface BasicEmployee {
   id: string;
   first_name: string;
   last_name: string;
@@ -20,33 +20,9 @@ interface SimpleEmployee {
 }
 
 interface OptimizedShiftSubmissionReminderButtonProps {
-  employees: SimpleEmployee[];
+  employees: BasicEmployee[];
   businessId: string;
 }
-
-// Separate function with explicit typing
-const fetchUnsubmittedEmployees = async (businessId: string, employees: SimpleEmployee[]): Promise<SimpleEmployee[]> => {
-  if (!businessId) return [];
-  
-  const { data: submissions, error } = await supabase
-    .from('shift_submissions')
-    .select('employee_id')
-    .eq('business_id', businessId)
-    .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-
-  if (error) {
-    console.error('Error fetching submissions:', error);
-    return [];
-  }
-
-  const submittedEmployeeIds = new Set(submissions?.map(s => s.employee_id) || []);
-  
-  return employees.filter(emp => 
-    emp.is_active !== false && 
-    emp.is_archived !== true && 
-    !submittedEmployeeIds.has(emp.id)
-  );
-};
 
 export const OptimizedShiftSubmissionReminderButton: React.FC<OptimizedShiftSubmissionReminderButtonProps> = ({
   employees,
@@ -55,10 +31,31 @@ export const OptimizedShiftSubmissionReminderButton: React.FC<OptimizedShiftSubm
   const [isOpen, setIsOpen] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
 
-  // Explicit typing to avoid deep instantiation
-  const { data: unsubmittedEmployees = [], isLoading } = useQuery<SimpleEmployee[]>({
+  // Completely isolated query function with minimal typing
+  const { data: unsubmittedEmployees = [], isLoading } = useQuery({
     queryKey: ['unsubmitted-employees', businessId],
-    queryFn: () => fetchUnsubmittedEmployees(businessId, employees),
+    queryFn: async () => {
+      if (!businessId) return [];
+      
+      const { data: submissions, error } = await supabase
+        .from('shift_submissions')
+        .select('employee_id')
+        .eq('business_id', businessId)
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+      if (error) {
+        console.error('Error fetching submissions:', error);
+        return [];
+      }
+
+      const submittedEmployeeIds = new Set(submissions?.map(s => s.employee_id) || []);
+      
+      return employees.filter(emp => 
+        emp.is_active !== false && 
+        emp.is_archived !== true && 
+        !submittedEmployeeIds.has(emp.id)
+      );
+    },
     enabled: isOpen && !!businessId && employees.length > 0,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
