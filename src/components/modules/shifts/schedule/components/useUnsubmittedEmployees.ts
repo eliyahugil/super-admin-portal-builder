@@ -10,48 +10,57 @@ interface SimpleEmployee {
   is_archived?: boolean;
 }
 
-interface SubmissionData {
+// Simple type for database result
+type SubmissionResult = {
   employee_id: string | null;
-}
+};
+
+// Separate async function to avoid deep type instantiation in useQuery
+const fetchSubmissions = async (businessId: string): Promise<SubmissionResult[]> => {
+  const { data, error } = await supabase
+    .from('shift_submissions')
+    .select('employee_id')
+    .eq('business_id', businessId)
+    .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+  if (error) {
+    console.error('Error fetching shift submissions:', error);
+    throw error;
+  }
+
+  return (data || []) as SubmissionResult[];
+};
+
+// Separate function to filter employees
+const filterUnsubmittedEmployees = (
+  employees: SimpleEmployee[], 
+  submissions: SubmissionResult[]
+): SimpleEmployee[] => {
+  const submittedIds = new Set<string>();
+  
+  submissions.forEach(submission => {
+    if (submission.employee_id) {
+      submittedIds.add(submission.employee_id);
+    }
+  });
+
+  return employees.filter(emp => {
+    const isActive = emp.is_active !== false && emp.is_archived !== true;
+    const hasNotSubmitted = !submittedIds.has(emp.id);
+    return isActive && hasNotSubmitted;
+  });
+};
 
 export const useUnsubmittedEmployees = (businessId: string, employees: SimpleEmployee[], enabled: boolean) => {
   return useQuery({
     queryKey: ['unsubmitted-employees', businessId],
-    queryFn: async (): Promise<SimpleEmployee[]> => {
+    queryFn: async () => {
       if (!businessId) {
         return [];
       }
       
-      // Query submissions with explicit type annotation
-      const { data, error }: { data: SubmissionData[] | null; error: any } = await supabase
-        .from('shift_submissions')
-        .select('employee_id')
-        .eq('business_id', businessId)
-        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-
-      if (error) {
-        console.error('Error fetching shift submissions:', error);
-        throw error;
-      }
-
-      // Build set of submitted employee IDs with explicit typing
-      const submittedIds = new Set<string>();
-      if (data) {
-        data.forEach((submission: SubmissionData) => {
-          if (submission.employee_id) {
-            submittedIds.add(submission.employee_id);
-          }
-        });
-      }
-      
-      // Filter employees with explicit return type
-      const filteredEmployees: SimpleEmployee[] = employees.filter((emp: SimpleEmployee) => {
-        const isActive = emp.is_active !== false && emp.is_archived !== true;
-        const hasNotSubmitted = !submittedIds.has(emp.id);
-        return isActive && hasNotSubmitted;
-      });
-      
-      return filteredEmployees;
+      const submissions = await fetchSubmissions(businessId);
+      return filterUnsubmittedEmployees(employees, submissions);
     },
     enabled: enabled && !!businessId && employees.length > 0,
     staleTime: 5 * 60 * 1000,
