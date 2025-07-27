@@ -33,21 +33,29 @@ export const useUnsubmittedEmployees = (businessId: string, employees: SimpleEmp
         throw error;
       }
 
-      const submittedIds = new Set<string>();
+      // Build set of submitted employee IDs
+      const submittedIds: Set<string> = new Set();
       if (submissions) {
-        submissions.forEach((submission: ShiftSubmission) => {
+        for (const submission of submissions) {
           submittedIds.add(submission.employee_id);
-        });
+        }
       }
       
-      const activeEmployees = employees.filter((emp: SimpleEmployee) => 
-        emp.is_active !== false && 
-        emp.is_archived !== true
-      );
+      // Filter active employees first
+      const activeEmployees: SimpleEmployee[] = [];
+      for (const emp of employees) {
+        if (emp.is_active !== false && emp.is_archived !== true) {
+          activeEmployees.push(emp);
+        }
+      }
 
-      const unsubmittedEmployees = activeEmployees.filter((emp: SimpleEmployee) => 
-        !submittedIds.has(emp.id)
-      );
+      // Filter out employees who have submitted
+      const unsubmittedEmployees: SimpleEmployee[] = [];
+      for (const emp of activeEmployees) {
+        if (!submittedIds.has(emp.id)) {
+          unsubmittedEmployees.push(emp);
+        }
+      }
       
       return unsubmittedEmployees;
     },
