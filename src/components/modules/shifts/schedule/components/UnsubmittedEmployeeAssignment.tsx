@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +38,7 @@ export const UnsubmittedEmployeeAssignment: React.FC<UnsubmittedEmployeeAssignme
 
   // Filter employees who haven't been assigned to this shift
   const availableEmployees = allEmployees.filter(emp => 
-    emp.id !== shift.employee_id && emp.is_active
+    emp.id !== shift.employee_id && (emp.is_active !== false)
   );
 
   const getEmployeeName = (employeeId: string) => {

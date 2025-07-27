@@ -1,4 +1,3 @@
-
 // Re-export types from central location
 export type { CalendarEvent, GoogleCalendarEvent, IsraeliHoliday, ShabbatTimes } from '@/types/calendar';
 
@@ -15,6 +14,12 @@ export interface Employee {
   weekly_hours_required?: number;
   birth_date?: string | null;
   employee_type?: string;
+  // Additional fields from Supabase employees table
+  id_number?: string;
+  address?: string;
+  hire_date?: string;
+  main_branch_id?: string;
+  notes?: string;
 }
 
 export interface Branch {
