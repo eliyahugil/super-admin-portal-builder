@@ -1,8 +1,10 @@
 
 import { useState } from 'react';
+import { addWeeks, subWeeks, startOfWeek } from 'date-fns';
 
 export const useShiftScheduleNavigation = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedWeek, setSelectedWeek] = useState(new Date());
 
   const navigateDate = (direction: 'prev' | 'next' | 'today' | Date) => {
     if (direction instanceof Date) {
@@ -31,8 +33,38 @@ export const useShiftScheduleNavigation = () => {
     }
   };
 
+  const navigateWeek = (direction: 'prev' | 'next' | 'current' | Date) => {
+    if (direction instanceof Date) {
+      setSelectedWeek(direction);
+      return;
+    }
+
+    switch (direction) {
+      case 'prev':
+        setSelectedWeek(prev => subWeeks(prev, 1));
+        break;
+      case 'next':
+        setSelectedWeek(prev => addWeeks(prev, 1));
+        break;
+      case 'current':
+        setSelectedWeek(new Date());
+        break;
+    }
+  };
+
+  const getWeekBounds = (date: Date) => {
+    const weekStart = startOfWeek(date, { weekStartsOn: 0 });
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    return { weekStart, weekEnd };
+  };
+
   return {
     currentDate,
-    navigateDate
+    selectedWeek,
+    navigateDate,
+    navigateWeek,
+    getWeekBounds,
+    setSelectedWeek
   };
 };

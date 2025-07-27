@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,12 +9,16 @@ import { ShiftSubmissionReminderButton } from './components/ShiftSubmissionRemin
 import { BulkWeekDeleteDialog } from './components/BulkWeekDeleteDialog';
 import { MobileShiftScheduleView } from './components/MobileShiftScheduleView';
 import { WeekView } from './components/WeekView';
+import { WeekSelector } from './components/WeekSelector';
 import { useRealData } from '@/hooks/useRealData';
+import { useShiftsByDateRange } from './hooks/useShiftsByDateRange';
+import { startOfWeek, endOfWeek, format } from 'date-fns';
 
 export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDeleted?: () => void }> = (props) => {
   const { type: deviceType } = useDeviceType();
   const [showNewShifts, setShowNewShifts] = useState(true);
-  const [viewType, setViewType] = useState<'list' | 'week'>('list');
+  const [viewType, setViewType] = useState<'list' | 'week'>('week');
+  const [selectedWeek, setSelectedWeek] = useState(new Date());
   
   const {
     shifts,
@@ -36,6 +41,14 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     onWeekDeleted,
   } = props;
 
+  // Get shifts for the selected week
+  const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 0 });
+  const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 0 });
+  const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+  const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
+
+  const { data: weekShifts = [], isLoading: isWeekLoading } = useShiftsByDateRange(weekStartStr, weekEndStr);
+
   // טעינת תפקידים למקרה שצריך להציג שמות תפקידים
   const { data: roles = [] } = useRealData<any>({
     queryKey: ['shift-roles-for-display', businessId],
@@ -49,14 +62,13 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     return <MobileShiftScheduleView {...props} />;
   }
 
-
   // Safely handle pendingSubmissions - ensure it's an array of proper type
   const safePendingSubmissions: PendingSubmission[] = Array.isArray(pendingSubmissions) 
     ? pendingSubmissions.filter((sub): sub is PendingSubmission => sub != null)
     : [];
 
   // Group shifts by date
-  const shiftsByDate = shifts.reduce((acc, shift) => {
+  const shiftsByDate = (viewType === 'week' ? weekShifts : shifts).reduce((acc, shift) => {
     const date = shift.shift_date;
     if (!acc[date]) {
       acc[date] = [];
@@ -101,8 +113,18 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     return role ? role.name : roleId; // אם לא נמצא התפקיד, נציג את ה-ID
   };
 
+  const displayShifts = viewType === 'week' ? weekShifts : shifts;
+
   return (
     <div className="space-y-6" dir="rtl">
+      {/* Week selector - only show when in week view */}
+      {viewType === 'week' && (
+        <WeekSelector
+          selectedWeek={selectedWeek}
+          onWeekChange={setSelectedWeek}
+        />
+      )}
+
       {/* Header with actions */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -111,7 +133,10 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
             <div>
               <h2 className="text-xl font-semibold">לוח משמרות</h2>
               <p className="text-sm text-gray-600">
-                {currentDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })}
+                {viewType === 'week' 
+                  ? `שבוע ${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM/yyyy')}`
+                  : currentDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })
+                }
               </p>
             </div>
           </div>
@@ -160,7 +185,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
 
             <Button
               size="sm"
-              onClick={() => onAddShift(currentDate)}
+              onClick={() => onAddShift(viewType === 'week' ? selectedWeek : currentDate)}
               className="w-full sm:w-auto"
             >
               <Plus className="h-4 w-4" />
@@ -177,17 +202,25 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
         />
       </div>
 
+      {/* Loading state for week view */}
+      {viewType === 'week' && isWeekLoading && (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      )}
+
       {/* Shifts Display */}
-      {viewType === 'week' ? (
+      {viewType === 'week' && !isWeekLoading ? (
         <WeekView
-          shifts={Object.values(shiftsByDate).flat()}
+          shifts={weekShifts}
           employees={employees}
           branches={branches}
-          currentDate={currentDate}
+          currentDate={selectedWeek}
           onShiftClick={onShiftClick}
+          onShiftUpdate={onShiftUpdate}
           onAddShift={onAddShift}
         />
-      ) : (
+      ) : viewType === 'list' ? (
         <div className="space-y-4">
           {Object.keys(shiftsByDate).length === 0 ? (
             <Card>
@@ -279,7 +312,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
               ))
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

@@ -4,50 +4,37 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Plus, User, Clock, MapPin, CheckCircle2 } from 'lucide-react';
+import { Calendar, Plus, User, Clock, MapPin } from 'lucide-react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { he } from 'date-fns/locale';
 import type { ShiftScheduleData, Employee, Branch } from '../types';
 
-interface WeekViewProps {
+interface ImprovedWeekViewProps {
   shifts: ShiftScheduleData[];
   employees: Employee[];
   branches: Branch[];
-  currentDate: Date;
+  currentWeek: Date;
   onShiftClick: (shift: ShiftScheduleData) => void;
-  onShiftUpdate?: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
+  onShiftUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
   onAddShift: (date: Date) => void;
 }
 
-export const WeekView: React.FC<WeekViewProps> = ({
+export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
   shifts,
   employees,
   branches,
-  currentDate,
+  currentWeek,
   onShiftClick,
   onShiftUpdate,
   onAddShift
 }) => {
   const [assigningShift, setAssigningShift] = useState<string | null>(null);
 
-  // יצירת שבוע מ-ראשון עד שבת
-  const getWeekDates = (date: Date) => {
-    const startOfWeek = new Date(date);
-    startOfWeek.setDate(date.getDate() - date.getDay()); // ראשון בשבוע
-    
-    const weekDates = [];
-    for (let i = 0; i < 7; i++) {
-      const dayDate = new Date(startOfWeek);
-      dayDate.setDate(startOfWeek.getDate() + i);
-      weekDates.push(dayDate);
-    }
-    return weekDates;
-  };
-
-  const weekDates = getWeekDates(currentDate);
+  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 });
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
-  // קיבוץ משמרות לפי תאריך
+  // Group shifts by date
   const shiftsByDate = shifts.reduce((acc, shift) => {
     const date = shift.shift_date;
     if (!acc[date]) {
@@ -64,14 +51,12 @@ export const WeekView: React.FC<WeekViewProps> = ({
   };
 
   const getBranchName = (branchId: string | null) => {
-    if (!branchId) return 'לא משויך';
+    if (!branchId) return 'ללא סניף';
     const branch = branches.find(br => br.id === branchId);
-    return branch ? branch.name : 'לא ידוע';
+    return branch ? branch.name : 'ללא סניף';
   };
 
   const handleEmployeeAssignment = async (shiftId: string, employeeId: string) => {
-    if (!onShiftUpdate) return;
-    
     setAssigningShift(shiftId);
     try {
       await onShiftUpdate(shiftId, { 
@@ -86,24 +71,21 @@ export const WeekView: React.FC<WeekViewProps> = ({
   };
 
   const formatDateKey = (date: Date) => {
-    return date.toISOString().split('T')[0];
+    return format(date, 'yyyy-MM-dd');
   };
 
   const formatDateDisplay = (date: Date) => {
-    return date.toLocaleDateString('he-IL', {
-      day: 'numeric',
-      month: 'numeric'
-    });
+    return format(date, 'dd/MM');
   };
 
   const isToday = (date: Date) => {
-    return date.toDateString() === new Date().toDateString();
+    return format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
   };
 
   return (
     <div className="space-y-4" dir="rtl">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 sm:gap-4">
-        {weekDates.map((date, index) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+        {weekDays.map((date, index) => {
           const dateKey = formatDateKey(date);
           const dayShifts = shiftsByDate[dateKey] || [];
           const isCurrentDay = isToday(date);
@@ -111,97 +93,93 @@ export const WeekView: React.FC<WeekViewProps> = ({
           return (
             <Card 
               key={dateKey} 
-              className={`min-h-[200px] sm:min-h-[300px] ${isCurrentDay ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+              className={`min-h-[300px] ${isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
             >
-              <CardHeader className="pb-2 p-2 sm:p-4">
-                <CardTitle className="text-sm flex flex-col items-center gap-1">
-                  <span className="text-gray-600">{dayNames[index]}</span>
-                  <span className={`text-lg ${isCurrentDay ? 'text-primary font-bold' : ''}`}>
-                    {formatDateDisplay(date)}
-                  </span>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-center">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-sm text-gray-600">{dayNames[index]}</span>
+                    <span className={`text-lg font-bold ${isCurrentDay ? 'text-blue-600' : ''}`}>
+                      {formatDateDisplay(date)}
+                    </span>
+                  </div>
                 </CardTitle>
               </CardHeader>
               
-              <CardContent className="p-2 space-y-2">
+              <CardContent className="space-y-3">
                 {/* Add shift button */}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full text-xs h-8"
+                  className="w-full"
                   onClick={() => onAddShift(date)}
                 >
-                  <Plus className="h-3 w-3 mr-1" />
+                  <Plus className="h-4 w-4 mr-1" />
                   הוסף משמרת
                 </Button>
 
+                {/* Shifts for this day */}
                 {dayShifts.length === 0 ? (
-                  <div className="text-center py-4 text-gray-400">
-                    <Calendar className="h-6 w-6 mx-auto mb-1 opacity-50" />
-                    <span className="text-xs">אין משמרות</span>
+                  <div className="text-center py-8 text-gray-400">
+                    <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">אין משמרות</p>
                   </div>
                 ) : (
                   dayShifts
                     .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
                     .map(shift => (
-                      <div
+                      <Card
                         key={shift.id}
-                        className="p-2 bg-white border rounded hover:shadow-sm transition-all group"
+                        className="p-3 bg-white border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => onShiftClick(shift)}
                       >
                         <div className="space-y-2">
-                          {/* Time and branch */}
-                          <div 
-                            className="cursor-pointer"
-                            onClick={() => onShiftClick(shift)}
-                          >
-                            <div className="flex items-center gap-1 text-xs font-medium mb-1">
-                              <Clock className="h-3 w-3 text-gray-500" />
-                              {shift.start_time} - {shift.end_time}
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-gray-600 mb-1">
-                              <MapPin className="h-3 w-3" />
-                              {getBranchName(shift.branch_id)}
-                            </div>
+                          {/* Time */}
+                          <div className="flex items-center gap-1 text-sm font-medium">
+                            <Clock className="h-3 w-3 text-gray-500" />
+                            {shift.start_time} - {shift.end_time}
                           </div>
 
-                          {/* Employee assignment section */}
+                          {/* Branch */}
+                          <div className="flex items-center gap-1 text-xs text-gray-600">
+                            <MapPin className="h-3 w-3" />
+                            {getBranchName(shift.branch_id)}
+                          </div>
+
+                          {/* Employee assignment */}
                           <div className="space-y-1">
                             {shift.employee_id ? (
-                              <div className="flex items-center gap-1 text-xs">
-                                <CheckCircle2 className="h-3 w-3 text-green-600" />
+                              <div className="flex items-center gap-1 text-sm">
+                                <User className="h-3 w-3 text-green-600" />
                                 <span className="text-green-700 font-medium">
                                   {getEmployeeName(shift.employee_id)}
                                 </span>
                               </div>
-                            ) : onShiftUpdate ? (
-                              <div className="relative">
+                            ) : (
+                              <div onClick={(e) => e.stopPropagation()}>
                                 <Select
                                   value=""
                                   onValueChange={(employeeId) => handleEmployeeAssignment(shift.id, employeeId)}
                                   disabled={assigningShift === shift.id}
                                 >
-                                  <SelectTrigger className="h-6 text-xs">
+                                  <SelectTrigger className="h-7 text-xs">
                                     <SelectValue placeholder={
                                       assigningShift === shift.id ? "משבץ..." : "בחר עובד"
                                     } />
                                   </SelectTrigger>
-                                  <SelectContent className="max-h-48">
+                                  <SelectContent>
                                     {employees.map(employee => (
-                                      <SelectItem key={employee.id} value={employee.id} className="text-xs">
+                                      <SelectItem key={employee.id} value={employee.id}>
                                         {employee.first_name} {employee.last_name}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
                               </div>
-                            ) : (
-                              <div className="flex items-center gap-1 text-xs text-gray-500">
-                                <User className="h-3 w-3" />
-                                <span>לא משובץ</span>
-                              </div>
                             )}
                           </div>
 
-                          {/* Status badges */}
+                          {/* Status */}
                           <div className="flex items-center justify-between">
                             <Badge 
                               variant={
@@ -209,7 +187,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                 shift.status === 'pending' ? 'secondary' :
                                 'outline'
                               }
-                              className="text-xs py-0 px-1"
+                              className="text-xs"
                             >
                               {shift.status === 'assigned' ? 'משובץ' : 
                                shift.status === 'pending' ? 'ממתין' : 
@@ -217,13 +195,13 @@ export const WeekView: React.FC<WeekViewProps> = ({
                             </Badge>
                             
                             {shift.is_new && (
-                              <Badge variant="outline" className="text-xs py-0 px-1 border-blue-500 text-blue-600">
+                              <Badge variant="outline" className="text-xs border-blue-500 text-blue-600">
                                 חדש
                               </Badge>
                             )}
                           </div>
                         </div>
-                      </div>
+                      </Card>
                     ))
                 )}
               </CardContent>

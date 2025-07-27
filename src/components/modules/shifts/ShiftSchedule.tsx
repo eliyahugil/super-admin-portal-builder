@@ -15,6 +15,7 @@ export const ShiftSchedule: React.FC = () => {
   
   const {
     currentDate,
+    selectedWeek,
     shifts,
     employees,
     branches,
@@ -23,6 +24,8 @@ export const ShiftSchedule: React.FC = () => {
     error,
     filters,
     navigateDate,
+    navigateWeek,
+    setSelectedWeek,
     updateFilters,
     updateShift,
     deleteShift,
@@ -110,6 +113,7 @@ export const ShiftSchedule: React.FC = () => {
             shabbatTimes={[]}
             calendarEvents={[]}
             pendingSubmissions={pendingSubmissions}
+            onWeekDeleted={refetchShifts}
           />
         </div>
       </div>
