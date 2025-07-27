@@ -26,7 +26,7 @@ export const OptimizedShiftSubmissionReminderButton: React.FC<OptimizedShiftSubm
   // Only fetch when dialog is open to improve performance
   const { data: unsubmittedEmployees = [], isLoading } = useQuery({
     queryKey: ['unsubmitted-employees', businessId],
-    queryFn: async () => {
+    queryFn: async (): Promise<Employee[]> => {
       if (!businessId) return [];
       
       const { data: submissions, error } = await supabase
@@ -50,7 +50,7 @@ export const OptimizedShiftSubmissionReminderButton: React.FC<OptimizedShiftSubm
     },
     enabled: isOpen && !!businessId && employees.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (replaced cacheTime)
   });
 
   const unsubmittedCount = useMemo(() => {

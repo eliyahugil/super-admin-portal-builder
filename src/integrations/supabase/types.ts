@@ -5237,6 +5237,44 @@ export type Database = {
           },
         ]
       }
+      shift_submission_reminders: {
+        Row: {
+          business_id: string
+          created_at: string
+          employee_ids: string[]
+          id: string
+          message: string | null
+          reminder_type: string
+          sent_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          employee_ids: string[]
+          id?: string
+          message?: string | null
+          reminder_type?: string
+          sent_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          employee_ids?: string[]
+          id?: string
+          message?: string | null
+          reminder_type?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_submission_reminders_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_submission_tokens: {
         Row: {
           business_id: string
