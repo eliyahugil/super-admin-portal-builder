@@ -44,6 +44,37 @@ export const ShiftSchedule: React.FC = () => {
     }
   };
 
+  // פונקציות לסינון מהיר
+  const handleQuickFilter = (type: 'today' | 'tomorrow' | 'this_week' | 'next_week') => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    switch (type) {
+      case 'today':
+        updateFilters({ date: today.toISOString().split('T')[0] });
+        break;
+      case 'tomorrow':
+        updateFilters({ date: tomorrow.toISOString().split('T')[0] });
+        break;
+      case 'this_week':
+        // יישום לוגיקה לשבוע נוכחי
+        break;
+      case 'next_week':
+        // יישום לוגיקה לשבוע הבא
+        break;
+    }
+  };
+
+  const handleResetFilters = () => {
+    updateFilters({
+      status: 'all',
+      employee: 'all',
+      branch: 'all',
+      role: 'all'
+    });
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8" dir="rtl">
@@ -114,6 +145,11 @@ export const ShiftSchedule: React.FC = () => {
             calendarEvents={[]}
             pendingSubmissions={pendingSubmissions}
             onWeekDeleted={refetchShifts}
+            // הוספת הפרופס החדשים
+            filters={filters}
+            onFiltersChange={updateFilters}
+            onQuickFilter={handleQuickFilter}
+            onResetFilters={handleResetFilters}
           />
         </div>
       </div>

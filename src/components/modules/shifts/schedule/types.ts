@@ -125,6 +125,12 @@ export interface ShiftScheduleViewProps {
   onShiftSelection?: (shift: ShiftScheduleData, selected: boolean, event?: React.MouseEvent) => void;
   // Pending submissions dialog
   onShowPendingSubmissions?: () => void;
+  
+  // Filter props - הוספת הפרופס החסרים
+  filters?: ScheduleFiltersType;
+  onFiltersChange?: (filters: Partial<ScheduleFiltersType>) => void;
+  onQuickFilter?: (type: 'today' | 'tomorrow' | 'this_week' | 'next_week') => void;
+  onResetFilters?: () => void;
 }
 
 // Employee preferences types

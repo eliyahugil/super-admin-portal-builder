@@ -42,11 +42,11 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     onShiftSelection,
     onShowPendingSubmissions,
     onWeekDeleted,
-    // New props for filtering
-    filters,
-    onFiltersChange,
-    onQuickFilter,
-    onResetFilters
+    // Filter props with default values
+    filters = { status: 'all', employee: 'all', branch: 'all', role: 'all' },
+    onFiltersChange = () => {},
+    onQuickFilter = () => {},
+    onResetFilters = () => {}
   } = props;
 
   // Get shifts for the selected week
@@ -87,7 +87,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
   };
 
   const handleQuickFilter = (type: 'today' | 'tomorrow' | 'this_week' | 'next_week') => {
-    onQuickFilter?.(type);
+    onQuickFilter(type);
   };
 
   const handleShiftAssignment = (shift: any) => {
@@ -98,12 +98,12 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     <div className="space-y-6" dir="rtl">
       {/* Advanced Filters */}
       <AdvancedScheduleFilters
-        filters={filters || { status: 'all', employee: 'all', branch: 'all', role: 'all' }}
-        onFiltersChange={onFiltersChange || (() => {})}
+        filters={filters}
+        onFiltersChange={onFiltersChange}
         employees={employees}
         branches={branches}
         onQuickFilter={handleQuickFilter}
-        onResetFilters={onResetFilters || (() => {})}
+        onResetFilters={onResetFilters}
       />
 
       {/* Week selector - only show when in week view */}
