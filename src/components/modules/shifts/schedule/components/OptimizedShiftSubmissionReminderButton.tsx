@@ -9,15 +9,23 @@ import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { Employee } from '../types';
+
+// Simplified interface to avoid deep type instantiation
+interface SimpleEmployee {
+  id: string;
+  first_name: string;
+  last_name: string;
+  is_active?: boolean;
+  is_archived?: boolean;
+}
 
 interface OptimizedShiftSubmissionReminderButtonProps {
-  employees: Employee[];
+  employees: SimpleEmployee[];
   businessId: string;
 }
 
-// Separate function to avoid deep type instantiation
-const fetchUnsubmittedEmployees = async (businessId: string, employees: Employee[]): Promise<Employee[]> => {
+// Separate function with explicit typing
+const fetchUnsubmittedEmployees = async (businessId: string, employees: SimpleEmployee[]): Promise<SimpleEmployee[]> => {
   if (!businessId) return [];
   
   const { data: submissions, error } = await supabase
@@ -47,13 +55,13 @@ export const OptimizedShiftSubmissionReminderButton: React.FC<OptimizedShiftSubm
   const [isOpen, setIsOpen] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
 
-  // Only fetch when dialog is open to improve performance
-  const { data: unsubmittedEmployees = [], isLoading } = useQuery({
+  // Explicit typing to avoid deep instantiation
+  const { data: unsubmittedEmployees = [], isLoading } = useQuery<SimpleEmployee[]>({
     queryKey: ['unsubmitted-employees', businessId],
     queryFn: () => fetchUnsubmittedEmployees(businessId, employees),
     enabled: isOpen && !!businessId && employees.length > 0,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (replaced cacheTime)
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const unsubmittedCount = useMemo(() => {
