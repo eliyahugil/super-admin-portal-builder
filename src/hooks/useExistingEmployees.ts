@@ -18,7 +18,7 @@ export const useExistingEmployees = (selectedBusinessId?: string | null) => {
 
       const { data, error } = await supabase
         .from('employees')
-        .select('id, email, id_number, employee_id, first_name, last_name, phone, address, employee_type, hire_date, main_branch_id, notes, weekly_hours_required')
+        .select('id, email, id_number, employee_id, first_name, last_name, phone, address, employee_type, hire_date, main_branch_id, notes, weekly_hours_required, is_active, is_archived')
         .eq('business_id', businessId)
         .eq('is_active', true);
 
