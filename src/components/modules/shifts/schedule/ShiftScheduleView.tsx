@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,11 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     onResetFilters = () => {}
   } = props;
 
+  // If mobile, use the mobile-optimized view
+  if (deviceType === 'mobile') {
+    return <MobileShiftScheduleView {...props} />;
+  }
+
   // Get shifts for the selected week
   const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 0 });
   const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 0 });
@@ -65,11 +70,6 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     enabled: !!businessId,
   });
 
-  // If mobile, use the mobile-optimized view
-  if (deviceType === 'mobile') {
-    return <MobileShiftScheduleView {...props} />;
-  }
-
   // Safely handle pendingSubmissions - ensure it's an array of proper type
   const safePendingSubmissions: PendingSubmission[] = Array.isArray(pendingSubmissions) 
     ? pendingSubmissions.filter((sub): sub is PendingSubmission => sub != null)
@@ -78,21 +78,34 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
   // Use the properly typed shifts for display
   const displayShifts = viewType === 'week' ? weekShifts : shifts;
 
-  const handleShiftClick = (shift: any) => {
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleShiftClick = useCallback((shift: any) => {
     if (isSelectionMode && onShiftSelection) {
       onShiftSelection(shift, !selectedShifts?.some(s => s.id === shift.id));
     } else {
       onShiftClick(shift);
     }
-  };
+  }, [isSelectionMode, onShiftSelection, selectedShifts, onShiftClick]);
 
-  const handleQuickFilter = (type: 'today' | 'tomorrow' | 'this_week' | 'next_week') => {
+  const handleQuickFilter = useCallback((type: 'today' | 'tomorrow' | 'this_week' | 'next_week') => {
     onQuickFilter(type);
-  };
+  }, [onQuickFilter]);
 
-  const handleShiftAssignment = (shift: any) => {
+  const handleShiftAssignment = useCallback((shift: any) => {
     setSelectedShiftForAssignment(shift);
-  };
+  }, []);
+
+  // Memoize expensive computations
+  const groupedShifts = useMemo(() => {
+    return Object.entries(
+      displayShifts.reduce((acc, shift) => {
+        const date = shift.shift_date;
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(shift);
+        return acc;
+      }, {} as Record<string, typeof displayShifts>)
+    ).sort(([a], [b]) => a.localeCompare(b));
+  }, [displayShifts]);
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -184,11 +197,13 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
           </div>
         </div>
 
-        {/* Shift Submission Reminder Section */}
-        <ShiftSubmissionReminderButton 
-          employees={employees}
-          businessId={businessId}
-        />
+        {/* Shift Submission Reminder Section - Only when employees exist */}
+        {employees.length > 0 && (
+          <ShiftSubmissionReminderButton 
+            employees={employees}
+            businessId={businessId}
+          />
+        )}
       </div>
 
       {/* Loading state for week view */}
@@ -224,17 +239,8 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
               </CardContent>
             </Card>
           ) : (
-            // Group shifts by date for list view
-            Object.entries(
-              displayShifts.reduce((acc, shift) => {
-                const date = shift.shift_date;
-                if (!acc[date]) acc[date] = [];
-                acc[date].push(shift);
-                return acc;
-              }, {} as Record<string, typeof displayShifts>)
-            )
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([date, dayShifts]) => (
+            // Use memoized grouped shifts
+            groupedShifts.map(([date, dayShifts]) => (
               <Card key={date} className="overflow-hidden">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center justify-between">

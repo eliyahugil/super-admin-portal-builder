@@ -1,7 +1,7 @@
 
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { useShiftScheduleData } from './hooks/useShiftScheduleData';
-import { useShiftScheduleMutations } from './hooks/useShiftScheduleMutations';
+import { useOptimizedShiftMutations } from './hooks/useOptimizedShiftMutations';
 import { useShiftScheduleFilters } from './hooks/useShiftScheduleFilters';
 import { useShiftScheduleNavigation } from './hooks/useShiftScheduleNavigation';
 
@@ -10,7 +10,7 @@ export const useShiftSchedule = () => {
   const { currentDate, selectedWeek, navigateDate, navigateWeek, setSelectedWeek } = useShiftScheduleNavigation();
   const { shifts, employees, branches, pendingSubmissions, loading, error, refetchShifts } = useShiftScheduleData(businessId);
   const { filters, filteredShifts, updateFilters } = useShiftScheduleFilters(shifts);
-  const { createShift, updateShift, deleteShift, isCreating, isUpdating, isDeleting } = useShiftScheduleMutations(businessId);
+  const { createShift, updateShift, deleteShift, isCreating, isUpdating, isDeleting } = useOptimizedShiftMutations(businessId);
 
   console.log('🔍 useShiftSchedule - Current state:', {
     businessId,

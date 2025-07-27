@@ -1,14 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Plus, Filter, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { MobileShiftCard } from './MobileShiftCard';
+import { MobileWeekSelector } from './MobileWeekSelector';
 import { ShiftScheduleViewProps, PendingSubmission } from '../types';
 import { ShiftSubmissionReminderButton } from './ShiftSubmissionReminderButton';
 import { BulkWeekDeleteDialog } from './BulkWeekDeleteDialog';
+import { startOfWeek, endOfWeek, isWithinInterval, format } from 'date-fns';
 
 export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDeleted?: () => void }> = ({
   shifts,
@@ -32,21 +34,35 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
 }) => {
   const [showNewShifts, setShowNewShifts] = useState(true);
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
+  const [selectedWeek, setSelectedWeek] = useState(new Date());
 
   // Safely handle pendingSubmissions
   const safePendingSubmissions: PendingSubmission[] = Array.isArray(pendingSubmissions) 
     ? pendingSubmissions.filter((sub): sub is PendingSubmission => sub != null)
     : [];
 
+  // Filter shifts by selected week
+  const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 0 });
+  const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 0 });
+  
+  const weekShifts = useMemo(() => {
+    return shifts.filter(shift => {
+      const shiftDate = new Date(shift.shift_date);
+      return isWithinInterval(shiftDate, { start: weekStart, end: weekEnd });
+    });
+  }, [shifts, weekStart, weekEnd]);
+
   // Group shifts by date
-  const shiftsByDate = shifts.reduce((acc, shift) => {
-    const date = shift.shift_date;
-    if (!acc[date]) {
-      acc[date] = [];
-    }
-    acc[date].push(shift);
-    return acc;
-  }, {} as Record<string, typeof shifts>);
+  const shiftsByDate = useMemo(() => {
+    return weekShifts.reduce((acc, shift) => {
+      const date = shift.shift_date;
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(shift);
+      return acc;
+    }, {} as Record<string, typeof shifts>);
+  }, [weekShifts]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -85,6 +101,14 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
     setExpandedDates(newExpanded);
   };
 
+  const handleShiftClick = (shift: any) => {
+    if (isSelectionMode && onShiftSelection) {
+      onShiftSelection(shift, !selectedShifts?.some(s => s.id === shift.id));
+    } else {
+      onShiftClick(shift);
+    }
+  };
+
   return (
     <div className="space-y-4 p-4" dir="rtl">
       {/* Mobile Header */}
@@ -95,9 +119,16 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
             <h2 className="text-lg font-semibold">לוח משמרות</h2>
           </div>
           <p className="text-sm text-gray-600">
-            {currentDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })}
+            {format(weekStart, 'dd/MM')} - {format(weekEnd, 'dd/MM/yyyy')}
           </p>
         </div>
+
+        {/* Week Selector */}
+        <MobileWeekSelector
+          selectedWeek={selectedWeek}
+          onWeekChange={setSelectedWeek}
+          shiftsCount={weekShifts.length}
+        />
 
         {/* Mobile Action Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-2">
@@ -128,7 +159,7 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
-            onClick={() => onAddShift(currentDate)}
+            onClick={() => onAddShift(selectedWeek)}
             className="flex-1"
           >
             <Plus className="h-4 w-4 ml-1" />
@@ -137,11 +168,13 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
           <BulkWeekDeleteDialog onSuccess={onWeekDeleted} businessId={businessId} />
         </div>
 
-        {/* Shift Submission Reminder */}
-        <ShiftSubmissionReminderButton 
-          employees={employees}
-          businessId={businessId}
-        />
+        {/* Shift Submission Reminder - Only load when needed */}
+        {employees.length > 0 && (
+          <ShiftSubmissionReminderButton 
+            employees={employees}
+            businessId={businessId}
+          />
+        )}
       </div>
 
       {/* Mobile Shifts Display */}
@@ -150,11 +183,13 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
           <Card>
             <CardContent className="p-6 text-center">
               <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-              <h3 className="text-base font-medium text-gray-900 mb-2">אין משמרות להצגה</h3>
-              <p className="text-sm text-gray-600 mb-4">לא נמצאו משמרות בתקופה הנבחרת</p>
-              <Button onClick={() => onAddShift(currentDate)} size="sm">
+              <h3 className="text-base font-medium text-gray-900 mb-2">
+                אין משמרות בשבוע {format(weekStart, 'dd/MM')} - {format(weekEnd, 'dd/MM')}
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">לא נמצאו משמרות בשבוע הנבחר</p>
+              <Button onClick={() => onAddShift(selectedWeek)} size="sm">
                 <Plus className="h-4 w-4 ml-1" />
-                הוסף משמרת ראשונה
+                הוסף משמרת לשבוע זה
               </Button>
             </CardContent>
           </Card>
@@ -204,13 +239,7 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
                               getBranchName={getBranchName}
                               isSelected={selectedShifts?.some(s => s.id === shift.id)}
                               showNewShifts={showNewShifts}
-                              onClick={() => {
-                                if (isSelectionMode && onShiftSelection) {
-                                  onShiftSelection(shift, !selectedShifts?.some(s => s.id === shift.id));
-                                } else {
-                                  onShiftClick(shift);
-                                }
-                              }}
+                              onClick={() => handleShiftClick(shift)}
                             />
                           ))}
                         </div>
