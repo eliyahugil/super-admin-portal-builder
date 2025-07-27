@@ -351,12 +351,17 @@ serve(async (req) => {
       console.error('❌ Error fetching branches:', branchesError);
     }
 
-    // Get current week AND upcoming week scheduled shifts for this employee
-    const currentWeekStart = new Date();
-    const currentDay = currentWeekStart.getDay();
-    currentWeekStart.setDate(currentWeekStart.getDate() - currentDay); // Go to Sunday of current week
-    const currentWeekEnd = new Date(currentWeekStart);
-    currentWeekEnd.setDate(currentWeekStart.getDate() + 13); // Cover current + next week
+    // Get scheduled shifts for this employee for the requested week (and neighboring weeks for context)
+    const requestedWeekStart = new Date(weekStartParam);
+    const requestedWeekEnd = new Date(weekEndParam);
+    
+    // Expand range to include previous and next week for context
+    const expandedWeekStart = new Date(requestedWeekStart);
+    expandedWeekStart.setDate(requestedWeekStart.getDate() - 7); // Previous week
+    const expandedWeekEnd = new Date(requestedWeekEnd);
+    expandedWeekEnd.setDate(requestedWeekEnd.getDate() + 7); // Next week
+    
+    console.log('👤 Fetching employee scheduled shifts from', expandedWeekStart.toISOString().split('T')[0], 'to', expandedWeekEnd.toISOString().split('T')[0]);
     
     const { data: employeeScheduledShifts, error: employeeScheduledError } = await supabaseAdmin
       .from('scheduled_shifts')
@@ -366,8 +371,8 @@ serve(async (req) => {
         employee:employees(id, first_name, last_name, phone)
       `)
       .eq('employee_id', employeeId)
-      .gte('shift_date', currentWeekStart.toISOString().split('T')[0])
-      .lte('shift_date', currentWeekEnd.toISOString().split('T')[0])
+      .gte('shift_date', expandedWeekStart.toISOString().split('T')[0])
+      .lte('shift_date', expandedWeekEnd.toISOString().split('T')[0])
       .order('shift_date', { ascending: true })
       .order('start_time', { ascending: true });
 
