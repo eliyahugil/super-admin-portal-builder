@@ -67,7 +67,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     ? pendingSubmissions.filter((sub): sub is PendingSubmission => sub != null)
     : [];
 
-  // Group shifts by date
+  // Group shifts by date - use proper type for both week and list views
   const shiftsByDate = (viewType === 'week' ? weekShifts : shifts).reduce((acc, shift) => {
     const date = shift.shift_date;
     if (!acc[date]) {
@@ -113,6 +113,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     return role ? role.name : roleId; // אם לא נמצא התפקיד, נציג את ה-ID
   };
 
+  // Use the properly typed shifts for display
   const displayShifts = viewType === 'week' ? weekShifts : shifts;
 
   return (
@@ -296,10 +297,12 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
                               )}
                               <span className={`text-xs px-2 py-1 rounded-full ${
                                 shift.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                shift.status === 'assigned' ? 'bg-blue-100 text-blue-800' :
                                 shift.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                                 'bg-gray-100 text-gray-800'
                               }`}>
                                 {shift.status === 'approved' ? 'מאושר' : 
+                                 shift.status === 'assigned' ? 'משובץ' :
                                  shift.status === 'pending' ? 'ממתין' : shift.status}
                               </span>
                             </div>

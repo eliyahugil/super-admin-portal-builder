@@ -46,7 +46,7 @@ export interface ShiftScheduleData {
   branch_id?: string | null;
   role?: string | null;
   notes?: string | null;
-  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'assigned';
   shift_template_id?: string | null;
   is_assigned: boolean;
   is_archived: boolean;
@@ -65,7 +65,7 @@ export type ScheduleView = 'week' | 'month' | 'year' | 'grouped';
 export type CreateShiftData = Pick<ShiftScheduleData, 'shift_date' | 'start_time' | 'end_time' | 'employee_id' | 'branch_id' | 'role' | 'notes' | 'status' | 'shift_template_id' | 'required_employees' | 'priority' | 'shift_assignments'>;
 
 export interface ScheduleFiltersType {
-  status: 'all' | 'pending' | 'approved' | 'rejected' | 'completed';
+  status: 'all' | 'pending' | 'approved' | 'rejected' | 'completed' | 'assigned';
   employee: 'all' | string;
   branch: 'all' | string;
   role: 'all' | string;
