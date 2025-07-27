@@ -3,13 +3,15 @@ import React, { useState } from 'react';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus, Filter, Eye, EyeOff, Grid, List } from 'lucide-react';
+import { Calendar, Plus, Eye, EyeOff, Grid, List } from 'lucide-react';
 import { ShiftScheduleViewProps, PendingSubmission } from './types';
 import { ShiftSubmissionReminderButton } from './components/ShiftSubmissionReminderButton';
 import { BulkWeekDeleteDialog } from './components/BulkWeekDeleteDialog';
 import { MobileShiftScheduleView } from './components/MobileShiftScheduleView';
 import { WeekView } from './components/WeekView';
-import { WeekSelector } from './components/WeekSelector';
+import { ImprovedWeekSelector } from './components/ImprovedWeekSelector';
+import { AdvancedScheduleFilters } from './components/AdvancedScheduleFilters';
+import { UnsubmittedEmployeeAssignment } from './components/UnsubmittedEmployeeAssignment';
 import { useRealData } from '@/hooks/useRealData';
 import { useShiftsByDateRange } from './hooks/useShiftsByDateRange';
 import { startOfWeek, endOfWeek, format } from 'date-fns';
@@ -19,6 +21,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
   const [showNewShifts, setShowNewShifts] = useState(true);
   const [viewType, setViewType] = useState<'list' | 'week'>('week');
   const [selectedWeek, setSelectedWeek] = useState(new Date());
+  const [selectedShiftForAssignment, setSelectedShiftForAssignment] = useState<any>(null);
   
   const {
     shifts,
@@ -39,6 +42,11 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     onShiftSelection,
     onShowPendingSubmissions,
     onWeekDeleted,
+    // New props for filtering
+    filters,
+    onFiltersChange,
+    onQuickFilter,
+    onResetFilters
   } = props;
 
   // Get shifts for the selected week
@@ -67,62 +75,43 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     ? pendingSubmissions.filter((sub): sub is PendingSubmission => sub != null)
     : [];
 
-  // Group shifts by date - use proper type for both week and list views
-  const shiftsByDate = (viewType === 'week' ? weekShifts : shifts).reduce((acc, shift) => {
-    const date = shift.shift_date;
-    if (!acc[date]) {
-      acc[date] = [];
-    }
-    acc[date].push(shift);
-    return acc;
-  }, {} as Record<string, typeof shifts>);
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('he-IL', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long'
-    });
-  };
-
-  const getEmployeeName = (employeeId: string | null) => {
-    if (!employeeId) return 'לא משויך';
-    const employee = employees.find(emp => emp.id === employeeId);
-    
-    // Temporary debug log to check data
-    if (!employee && employeeId) {
-      console.log('⚠️ Employee not found:', { 
-        employeeId, 
-        availableEmployees: employees.map(e => ({ id: e.id, name: `${e.first_name} ${e.last_name}` }))
-      });
-    }
-    
-    return employee ? `${employee.first_name} ${employee.last_name}` : 'לא ידוע';
-  };
-
-  const getBranchName = (branchId: string | null) => {
-    if (!branchId) return 'לא משויך';
-    const branch = branches.find(br => br.id === branchId);
-    return branch ? branch.name : 'לא ידוע';
-  };
-
-  const getRoleName = (roleId: string | null) => {
-    if (!roleId) return null;
-    const role = roles.find(r => r.id === roleId);
-    return role ? role.name : roleId; // אם לא נמצא התפקיד, נציג את ה-ID
-  };
-
   // Use the properly typed shifts for display
   const displayShifts = viewType === 'week' ? weekShifts : shifts;
 
+  const handleShiftClick = (shift: any) => {
+    if (isSelectionMode && onShiftSelection) {
+      onShiftSelection(shift, !selectedShifts?.some(s => s.id === shift.id));
+    } else {
+      onShiftClick(shift);
+    }
+  };
+
+  const handleQuickFilter = (type: 'today' | 'tomorrow' | 'this_week' | 'next_week') => {
+    onQuickFilter?.(type);
+  };
+
+  const handleShiftAssignment = (shift: any) => {
+    setSelectedShiftForAssignment(shift);
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
+      {/* Advanced Filters */}
+      <AdvancedScheduleFilters
+        filters={filters || { status: 'all', employee: 'all', branch: 'all', role: 'all' }}
+        onFiltersChange={onFiltersChange || (() => {})}
+        employees={employees}
+        branches={branches}
+        onQuickFilter={handleQuickFilter}
+        onResetFilters={onResetFilters || (() => {})}
+      />
+
       {/* Week selector - only show when in week view */}
       {viewType === 'week' && (
-        <WeekSelector
+        <ImprovedWeekSelector
           selectedWeek={selectedWeek}
           onWeekChange={setSelectedWeek}
+          shiftsCount={weekShifts.length}
         />
       )}
 
@@ -132,7 +121,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
           <div className="flex items-center gap-3">
             <Calendar className="h-6 w-6 text-primary" />
             <div>
-              <h2 className="text-xl font-semibold">לוח משמרות</h2>
+              <h2 className="text-xl font-semibold">לוח משמרות מתקדם</h2>
               <p className="text-sm text-gray-600">
                 {viewType === 'week' 
                   ? `שבוע ${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM/yyyy')}`
@@ -177,7 +166,6 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
                 onClick={onShowPendingSubmissions}
                 className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
               >
-                <Filter className="h-4 w-4" />
                 הגשות ממתינות ({safePendingSubmissions.length})
               </Button>
             )}
@@ -217,13 +205,13 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
           employees={employees}
           branches={branches}
           currentDate={selectedWeek}
-          onShiftClick={onShiftClick}
+          onShiftClick={handleShiftClick}
           onShiftUpdate={onShiftUpdate}
           onAddShift={onAddShift}
         />
       ) : viewType === 'list' ? (
         <div className="space-y-4">
-          {Object.keys(shiftsByDate).length === 0 ? (
+          {displayShifts.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -236,86 +224,98 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
               </CardContent>
             </Card>
           ) : (
-            Object.entries(shiftsByDate)
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([date, dayShifts]) => (
-                <Card key={date} className="overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center justify-between">
-                      <span>{formatDate(date)}</span>
-                      <span className="text-sm font-normal text-gray-500">
-                        {dayShifts.length} משמרות
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="space-y-2">
-                      {dayShifts.map((shift, index) => (
-                        <div
-                          key={shift.id}
-                          className={`p-4 border-r-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                            shift.is_new && showNewShifts ? 'border-r-blue-500 bg-blue-50' : 'border-r-gray-200'
-                          } ${
-                            selectedShifts?.some(s => s.id === shift.id) ? 'bg-blue-100' : ''
-                          }`}
-                          onClick={() => {
-                            if (isSelectionMode && onShiftSelection) {
-                              onShiftSelection(shift, !selectedShifts?.some(s => s.id === shift.id));
-                            } else {
-                              onShiftClick(shift);
-                            }
-                          }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
-                                 <span className="font-medium">
-                                   {shift.start_time} - {shift.end_time}
-                                 </span>
-                                 <span className="text-sm text-gray-600">
-                                   {getEmployeeName(shift.employee_id)}
-                                 </span>
-                                 <span className="text-sm text-gray-500">
-                                   {getBranchName(shift.branch_id)}
-                                 </span>
-                                 {shift.role && getRoleName(shift.role) && (
-                                   <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                                     {getRoleName(shift.role)}
-                                   </span>
-                                 )}
-                               </div>
-                              {shift.notes && (
-                                <p className="text-sm text-gray-600">{shift.notes}</p>
-                              )}
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
-                              {shift.is_new && showNewShifts && (
-                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                  חדש
-                                </span>
-                              )}
-                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                shift.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                shift.status === 'assigned' ? 'bg-blue-100 text-blue-800' :
-                                shift.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
-                                {shift.status === 'approved' ? 'מאושר' : 
-                                 shift.status === 'assigned' ? 'משובץ' :
-                                 shift.status === 'pending' ? 'ממתין' : shift.status}
+            // Group shifts by date for list view
+            Object.entries(
+              displayShifts.reduce((acc, shift) => {
+                const date = shift.shift_date;
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(shift);
+                return acc;
+              }, {} as Record<string, typeof displayShifts>)
+            )
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([date, dayShifts]) => (
+              <Card key={date} className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center justify-between">
+                    <span>{new Date(date).toLocaleDateString('he-IL', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long'
+                    })}</span>
+                    <span className="text-sm font-normal text-gray-500">
+                      {dayShifts.length} משמרות
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="space-y-2">
+                    {dayShifts.map((shift) => (
+                      <div
+                        key={shift.id}
+                        className={`p-4 border-r-4 hover:bg-gray-50 transition-colors ${
+                          shift.is_new && showNewShifts ? 'border-r-blue-500 bg-blue-50' : 'border-r-gray-200'
+                        } ${
+                          selectedShifts?.some(s => s.id === shift.id) ? 'bg-blue-100' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 cursor-pointer" onClick={() => handleShiftClick(shift)}>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
+                              <span className="font-medium">
+                                {shift.start_time} - {shift.end_time}
+                              </span>
+                              <span className="text-sm text-gray-600">
+                                {shift.employee_id 
+                                  ? employees.find(e => e.id === shift.employee_id)?.first_name + ' ' + 
+                                    employees.find(e => e.id === shift.employee_id)?.last_name
+                                  : 'לא משובץ'
+                                }
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                {branches.find(b => b.id === shift.branch_id)?.name || 'לא משויך'}
                               </span>
                             </div>
+                            {shift.notes && (
+                              <p className="text-sm text-gray-600">{shift.notes}</p>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <UnsubmittedEmployeeAssignment
+                              shift={shift}
+                              employees={employees}
+                              branches={branches}
+                              onShiftUpdate={onShiftUpdate}
+                            />
+                            
+                            {shift.is_new && showNewShifts && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                חדש
+                              </span>
+                            )}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
           )}
         </div>
       ) : null}
+
+      {/* Employee Assignment Dialog */}
+      {selectedShiftForAssignment && (
+        <UnsubmittedEmployeeAssignment
+          shift={selectedShiftForAssignment}
+          employees={employees}
+          branches={branches}
+          onShiftUpdate={onShiftUpdate}
+          onClose={() => setSelectedShiftForAssignment(null)}
+        />
+      )}
     </div>
   );
 };
