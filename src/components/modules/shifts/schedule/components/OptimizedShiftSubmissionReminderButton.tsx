@@ -31,10 +31,10 @@ export const OptimizedShiftSubmissionReminderButton: React.FC<OptimizedShiftSubm
   const [isOpen, setIsOpen] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
 
-  // Completely isolated query function with minimal typing
-  const { data: unsubmittedEmployees = [], isLoading } = useQuery({
-    queryKey: ['unsubmitted-employees', businessId],
-    queryFn: async () => {
+  // Explicit typing to prevent deep type instantiation
+  const queryResult = useQuery({
+    queryKey: ['unsubmitted-employees', businessId] as const,
+    queryFn: async (): Promise<BasicEmployee[]> => {
       if (!businessId) return [];
       
       const { data: submissions, error } = await supabase
@@ -60,6 +60,9 @@ export const OptimizedShiftSubmissionReminderButton: React.FC<OptimizedShiftSubm
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
+
+  const unsubmittedEmployees: BasicEmployee[] = queryResult.data || [];
+  const isLoading = queryResult.isLoading;
 
   const unsubmittedCount = useMemo(() => {
     return unsubmittedEmployees.length;
