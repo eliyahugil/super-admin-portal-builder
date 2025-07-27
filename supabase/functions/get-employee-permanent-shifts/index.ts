@@ -228,7 +228,7 @@ serve(async (req) => {
 
       console.log('📊 Total available shifts before filtering:', allAvailableShifts?.length || 0);
 
-      // ALSO get unassigned scheduled shifts (employee_id is null) for the week
+      // ALSO get unassigned AND pending scheduled shifts for the week
       const { data: unassignedScheduledShifts, error: scheduledError } = await supabaseAdmin
         .from('scheduled_shifts')
         .select(`
@@ -240,10 +240,12 @@ serve(async (req) => {
           business_id,
           notes,
           shift_assignments,
+          status,
+          employee_id,
           branch:branches(id, name, address)
         `)
         .eq('business_id', businessId)
-        .is('employee_id', null)
+        .or('employee_id.is.null,status.eq.pending')
         .gte('shift_date', weekStart)
         .lte('shift_date', weekEndStr)
         .order('shift_date', { ascending: true })
@@ -253,7 +255,7 @@ serve(async (req) => {
         console.error('❌ Error fetching unassigned scheduled shifts:', scheduledError);
       }
 
-      console.log('📊 Total unassigned scheduled shifts found:', unassignedScheduledShifts?.length || 0);
+      console.log('📊 Total unassigned + pending scheduled shifts found:', unassignedScheduledShifts?.length || 0);
 
       // Convert scheduled shifts to available shifts format and combine
       const scheduledAsAvailable = (unassignedScheduledShifts || []).map(shift => {
