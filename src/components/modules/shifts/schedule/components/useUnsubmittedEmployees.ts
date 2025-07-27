@@ -15,9 +15,9 @@ interface ShiftSubmission {
 }
 
 export const useUnsubmittedEmployees = (businessId: string, employees: SimpleEmployee[], enabled: boolean) => {
-  return useQuery<SimpleEmployee[], Error>({
+  return useQuery({
     queryKey: ['unsubmitted-employees', businessId],
-    queryFn: async (): Promise<SimpleEmployee[]> => {
+    queryFn: async () => {
       if (!businessId) {
         return [];
       }
