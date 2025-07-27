@@ -36,9 +36,9 @@ export const UnsubmittedEmployeeAssignment: React.FC<UnsubmittedEmployeeAssignme
   const { businessId } = useCurrentBusiness();
   const { data: allEmployees = [] } = useExistingEmployees(businessId);
 
-  // Filter employees who haven't been assigned to this shift
+  // Filter employees who haven't been assigned to this shift and are active
   const availableEmployees = allEmployees.filter(emp => 
-    emp.id !== shift.employee_id && (emp.is_active !== false)
+    emp.id !== shift.employee_id && (emp.is_active !== false) && (emp.is_archived !== true)
   );
 
   const getEmployeeName = (employeeId: string) => {
