@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token } = await req.json();
+    const { token, weekOffset, weekStart, weekEnd } = await req.json();
 
     if (!token) {
       return new Response(
@@ -161,19 +161,20 @@ serve(async (req) => {
       console.log('⏰ Employee shift types:', assignedShiftTypes);
       console.log('📅 Employee available days:', availableDays);
 
-      // Get CURRENT week dates (Sunday to Saturday) - CURRENT WEEK for submissions
+      // Get week dates - allow custom week offset from client
+      const weekOffsetParam = weekOffset || 0;
       const today = new Date();
       const currentDayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
       const daysToCurrentSunday = currentDayOfWeek === 0 ? 0 : -currentDayOfWeek; // Days to CURRENT Sunday
       const currentSunday = new Date(today);
-      currentSunday.setDate(today.getDate() + daysToCurrentSunday);
+      currentSunday.setDate(today.getDate() + daysToCurrentSunday + (weekOffsetParam * 7));
       
-      const weekStart = currentSunday.toISOString().split('T')[0];
-      const weekEnd = new Date(currentSunday);
-      weekEnd.setDate(currentSunday.getDate() + 6);
-      const weekEndStr = weekEnd.toISOString().split('T')[0];
+      const weekStartParam = weekStart || currentSunday.toISOString().split('T')[0];
+      const weekEndDate = new Date(currentSunday);
+      weekEndDate.setDate(currentSunday.getDate() + 6);
+      const weekEndParam = weekEnd || weekEndDate.toISOString().split('T')[0];
 
-      console.log('📅 Getting shifts for CURRENT week:', weekStart, 'to', weekEndStr);
+      console.log('📅 Getting shifts for week:', weekStartParam, 'to', weekEndParam, 'offset:', weekOffsetParam);
 
       // Get ALL available shifts for the business for current week
       let { data: allAvailableShifts, error: availableError } = await supabaseAdmin
@@ -184,8 +185,8 @@ serve(async (req) => {
           business:businesses(id, name)
         `)
         .eq('business_id', businessId)
-        .eq('week_start_date', weekStart)
-        .eq('week_end_date', weekEndStr)
+        .eq('week_start_date', weekStartParam)
+        .eq('week_end_date', weekEndParam)
         .order('day_of_week', { ascending: true })
         .order('start_time', { ascending: true });
 
@@ -245,9 +246,9 @@ serve(async (req) => {
           branch:branches(id, name, address)
         `)
         .eq('business_id', businessId)
-        .or('employee_id.is.null,status.eq.pending')
-        .gte('shift_date', weekStart)
-        .lte('shift_date', weekEndStr)
+        .or(`employee_id.is.null,status.eq.pending,and(employee_id.eq.${employeeId},status.eq.approved)`)
+        .gte('shift_date', weekStartParam)
+        .lte('shift_date', weekEndParam)
         .order('shift_date', { ascending: true })
         .order('start_time', { ascending: true });
 
@@ -255,7 +256,7 @@ serve(async (req) => {
         console.error('❌ Error fetching unassigned scheduled shifts:', scheduledError);
       }
 
-      console.log('📊 Total unassigned + pending scheduled shifts found:', unassignedScheduledShifts?.length || 0);
+      console.log('📊 Total unassigned + pending + approved scheduled shifts found:', unassignedScheduledShifts?.length || 0);
 
       // Convert scheduled shifts to available shifts format and combine
       const scheduledAsAvailable = (unassignedScheduledShifts || []).map(shift => {
@@ -277,8 +278,8 @@ serve(async (req) => {
           required_employees: 1,
           current_assignments: 0,
           is_open_for_unassigned: true,
-          week_start_date: weekStart,
-          week_end_date: weekEndStr,
+          week_start_date: weekStartParam,
+          week_end_date: weekEndParam,
           branch: shift.branch,
           source: 'scheduled_shifts',
           shift_date: shift.shift_date,
@@ -324,8 +325,8 @@ serve(async (req) => {
         type: 'available_shifts',
         title: 'משמרות זמינות לשבוע הנוכחי',
         description: `נמצאו ${shifts.length} משמרות זמינות בסניפים ובמשמרות שאליהם אתה משויך`,
-        weekStart,
-        weekEnd: weekEndStr,
+        weekStart: weekStartParam,
+        weekEnd: weekEndParam,
         isCurrentWeek: true,
         filterInfo: {
           assignedBranches: assignedBranchIds.length,
@@ -392,8 +393,8 @@ serve(async (req) => {
         required_employees: 1,
         current_assignments: 1,
         is_open_for_unassigned: false,
-        week_start_date: context.weekStart || weekStart,
-        week_end_date: context.weekEnd || weekEndStr,
+        week_start_date: context.weekStart || weekStartParam,
+        week_end_date: context.weekEnd || weekEndParam,
         branch: shift.branch,
         source: 'employee_scheduled',
         shift_date: shift.shift_date,

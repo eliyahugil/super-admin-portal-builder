@@ -59,7 +59,13 @@ const PermanentShiftsPage: React.FC = () => {
 
       // Then get the shifts
       console.log('📅 Getting shifts for permanent token...');
-      const shiftsResponse = await getPermanentTokenShifts.mutateAsync({ token });
+      const weekRange = getCurrentWeekRange();
+      const shiftsResponse = await getPermanentTokenShifts.mutateAsync({ 
+        token, 
+        weekOffset: currentWeekOffset,
+        weekStart: weekRange.weekStartDate.toISOString().split('T')[0],
+        weekEnd: weekRange.weekEndDate.toISOString().split('T')[0]
+      });
       
       if (!shiftsResponse.success) {
         throw new Error('שגיאה בטעינת משמרות');
@@ -123,8 +129,17 @@ const PermanentShiftsPage: React.FC = () => {
       end: weekEnd.toLocaleDateString('he-IL'),
       isCurrentWeek: currentWeekOffset === 0,
       isPastWeek: currentWeekOffset < 0,
-      isFutureWeek: currentWeekOffset > 0
+      isFutureWeek: currentWeekOffset > 0,
+      weekStartDate: weekStart,
+      weekEndDate: weekEnd
     };
+  };
+
+  const isWeekInPast = () => {
+    const weekRange = getCurrentWeekRange();
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+    return weekRange.weekEndDate < today;
   };
 
   const isShiftInPast = (shiftDate: string) => {
@@ -176,7 +191,7 @@ const PermanentShiftsPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100" dir="rtl">
       <div className="container mx-auto px-4 py-8">
         
-        {/* Week Navigation Header */}
+          {/* Week Navigation Header */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <div className="flex items-center justify-between">
             <Button 
@@ -196,6 +211,12 @@ const PermanentShiftsPage: React.FC = () => {
                 {weekRange.isPastWeek && "שבוע שעבר"}
                 {weekRange.isFutureWeek && "שבוע עתידי"}
               </div>
+              {isWeekInPast() && (
+                <div className="mt-2 inline-flex items-center gap-2 bg-red-50 text-red-700 px-3 py-1 rounded-full text-sm">
+                  <XCircle className="w-3 h-3" />
+                  השבוע חלף - לא ניתן להגיש משמרות
+                </div>
+              )}
             </div>
             
             <Button 
@@ -358,15 +379,27 @@ const PermanentShiftsPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <p className="text-sm text-blue-700">
-                      <CheckCircle className="h-4 w-4 inline mr-1" />
-                      נמצאו {availableShifts.length} משמרות זמינות לשבוע הקרוב
-                    </p>
-                    <p className="text-xs text-blue-600 mt-1">
-                      שבוע {context.weekStart} עד {context.weekEnd}
-                    </p>
-                  </div>
+                  {isWeekInPast() ? (
+                    <div className="bg-red-50 p-3 rounded-lg">
+                      <p className="text-sm text-red-700">
+                        <XCircle className="h-4 w-4 inline mr-1" />
+                        השבוע חלף - לא ניתן להגיש משמרות
+                      </p>
+                      <p className="text-xs text-red-600 mt-1">
+                        שבוע {context.weekStart} עד {context.weekEnd}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <p className="text-sm text-blue-700">
+                        <CheckCircle className="h-4 w-4 inline mr-1" />
+                        נמצאו {availableShifts.length} משמרות זמינות לשבוע הקרוב
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        שבוע {context.weekStart} עד {context.weekEnd}
+                      </p>
+                    </div>
+                  )}
                   
                   <div className="grid gap-3">
                     {(() => {
@@ -390,8 +423,8 @@ const PermanentShiftsPage: React.FC = () => {
                         const branchAssignment = employeeAssignments.find((ea: any) => ea.branch_id === shift.branch_id);
                         const isPreferredBranch = branchAssignment?.priority_order === 1;
                         
-                        // Check if shift is in the past
-                        const isPastShift = isShiftInPast(shift.shift_date || '');
+                        // Check if shift is in the past or week is in past
+                        const isPastShift = isShiftInPast(shift.shift_date || '') || isWeekInPast();
                         const isSelected = selectedShifts.has(shift.id);
 
                         return (
@@ -407,14 +440,14 @@ const PermanentShiftsPage: React.FC = () => {
                                     : isPastShift
                                       ? 'border-gray-300 bg-gray-50/70 opacity-60'
                                       : 'border-blue-200 bg-blue-50/50 hover:border-blue-300 hover:shadow-sm'
-                            } ${isPastShift ? 'pointer-events-none' : ''}`}
-                            onClick={() => !isPastShift && toggleShiftSelection(shift.id)}
+                            } ${isPastShift || isWeekInPast() ? 'pointer-events-none' : ''}`}
+                            onClick={() => !isPastShift && !isWeekInPast() && toggleShiftSelection(shift.id)}
                           >
                             {/* Past shift overlay */}
-                            {isPastShift && (
+                            {(isPastShift || isWeekInPast()) && (
                               <div className="absolute inset-0 flex items-center justify-center bg-gray-200/80 rounded-lg">
                                 <span className="text-gray-600 font-medium text-sm bg-white px-3 py-1 rounded-full shadow">
-                                  ✓ משמרת שבוצעה
+                                  {isWeekInPast() ? "השבוע חלף" : "✓ משמרת שבוצעה"}
                                 </span>
                               </div>
                             )}
@@ -521,9 +554,9 @@ const PermanentShiftsPage: React.FC = () => {
           {/* Scheduled Shifts */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-green-500" />
-                הסידור האישי שלך
+                המשמרות שלי (מאושרות ומשובצות)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -540,6 +573,9 @@ const PermanentShiftsPage: React.FC = () => {
                     <p className="text-sm text-green-700">
                       <CheckCircle className="h-4 w-4 inline mr-1" />
                       יש לך {employeeScheduledShifts.length} משמרות מתוכננות
+                    </p>
+                    <p className="text-xs text-green-600 mt-1">
+                      כולל שבוע נוכחי ועתידי
                     </p>
                   </div>
                   

@@ -82,8 +82,11 @@ export const usePermanentTokens = () => {
   const getPermanentTokenShifts = useMutation({
     mutationFn: async (params: {
       token: string;
+      weekOffset?: number;
+      weekStart?: string;
+      weekEnd?: string;
     }) => {
-      console.log('📅 Getting shifts for permanent token:', params.token.substring(0, 8) + '...');
+      console.log('📅 Getting shifts for permanent token:', params.token.substring(0, 8) + '...', 'Week offset:', params.weekOffset);
       
       const { data, error } = await supabase.functions.invoke('get-employee-permanent-shifts', {
         body: params
