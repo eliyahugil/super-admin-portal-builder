@@ -10,60 +10,51 @@ interface SimpleEmployee {
   is_archived?: boolean;
 }
 
-interface ShiftSubmission {
+// Explicitly type the submission data from Supabase
+interface SubmissionData {
   employee_id: string;
 }
 
-// Explicitly type the query function to avoid deep type inference
-type QueryFn = () => Promise<SimpleEmployee[]>;
-
 export const useUnsubmittedEmployees = (businessId: string, employees: SimpleEmployee[], enabled: boolean) => {
-  const queryFn: QueryFn = async () => {
-    if (!businessId) {
-      return [];
-    }
-    
-    const { data: submissions, error } = await supabase
-      .from('shift_submissions')
-      .select('employee_id')
-      .eq('business_id', businessId)
-      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-
-    if (error) {
-      console.error('Error fetching shift submissions:', error);
-      throw error;
-    }
-
-    // Build set of submitted employee IDs
-    const submittedIds: Set<string> = new Set();
-    if (submissions) {
-      for (const submission of submissions) {
-        submittedIds.add(submission.employee_id);
-      }
-    }
-    
-    // Filter active employees first
-    const activeEmployees: SimpleEmployee[] = [];
-    for (const emp of employees) {
-      if (emp.is_active !== false && emp.is_archived !== true) {
-        activeEmployees.push(emp);
-      }
-    }
-
-    // Filter out employees who have submitted
-    const unsubmittedEmployees: SimpleEmployee[] = [];
-    for (const emp of activeEmployees) {
-      if (!submittedIds.has(emp.id)) {
-        unsubmittedEmployees.push(emp);
-      }
-    }
-    
-    return unsubmittedEmployees;
-  };
-
-  return useQuery<SimpleEmployee[]>({
+  return useQuery({
     queryKey: ['unsubmitted-employees', businessId],
-    queryFn,
+    queryFn: async (): Promise<SimpleEmployee[]> => {
+      if (!businessId) {
+        return [];
+      }
+      
+      // Explicitly type the query result
+      const { data: submissions, error } = await supabase
+        .from('shift_submissions')
+        .select('employee_id')
+        .eq('business_id', businessId)
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) as {
+        data: SubmissionData[] | null;
+        error: any;
+      };
+
+      if (error) {
+        console.error('Error fetching shift submissions:', error);
+        throw error;
+      }
+
+      // Build set of submitted employee IDs
+      const submittedIds = new Set<string>();
+      if (submissions) {
+        submissions.forEach(submission => {
+          submittedIds.add(submission.employee_id);
+        });
+      }
+      
+      // Filter employees using simple operations
+      return employees.filter(emp => {
+        // Check if employee is active
+        const isActive = emp.is_active !== false && emp.is_archived !== true;
+        // Check if employee hasn't submitted
+        const hasNotSubmitted = !submittedIds.has(emp.id);
+        return isActive && hasNotSubmitted;
+      });
+    },
     enabled: enabled && !!businessId && employees.length > 0,
     staleTime: 5 * 60 * 1000,
   });
