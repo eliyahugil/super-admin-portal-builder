@@ -52,9 +52,9 @@ const filterUnsubmittedEmployees = (
 };
 
 export const useUnsubmittedEmployees = (businessId: string, employees: SimpleEmployee[], enabled: boolean) => {
-  return useQuery({
+  return useQuery<SimpleEmployee[], Error>({
     queryKey: ['unsubmitted-employees', businessId],
-    queryFn: async () => {
+    queryFn: async (): Promise<SimpleEmployee[]> => {
       if (!businessId) {
         return [];
       }
