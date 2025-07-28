@@ -260,10 +260,11 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                                    variant="outline"
                                    size="sm"
                                    className="w-full bg-white border-2 border-primary/30 text-primary font-bold hover:bg-primary/5 hover:border-primary"
-                                   onClick={() => {
-                                    setOpenAssignmentShift(openAssignmentShift === shift.id ? null : shift.id);
-                                    setSearchTerm('');
-                                  }}
+                                    onClick={() => {
+                                     console.log('🔥 CLICKED ASSIGN BUTTON for shift:', shift.id);
+                                     setOpenAssignmentShift(openAssignmentShift === shift.id ? null : shift.id);
+                                     setSearchTerm('');
+                                   }}
                                   disabled={assigningShift === shift.id}
                                 >
                                   {assigningShift === shift.id ? "משבץ..." : "שבץ עובד"}

@@ -128,7 +128,10 @@ export const ShiftAssignmentPopover: React.FC<ShiftAssignmentPopoverProps> = ({
           variant={shift.employee_id ? "outline" : "default"}
           size="sm"
           className="flex items-center gap-1"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            console.log('🔥 CLICKED ShiftAssignmentPopover BUTTON for shift:', shift.id);
+            e.stopPropagation();
+          }}
         >
           <UserPlus className="h-4 w-4" />
           {shift.employee_id ? 'שנה עובד' : 'שבץ עובד'}
