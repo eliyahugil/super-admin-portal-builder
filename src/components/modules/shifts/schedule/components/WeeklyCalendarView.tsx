@@ -445,9 +445,9 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
           </div>
         </div>
 
-        {/* Calendar Content - Responsive */}
+        {/* Calendar Content - Expanded for better readability */}
         <div className="border-l border-r border-b border-border rounded-b-lg bg-background">
-          <div className="grid grid-cols-7 gap-0 min-h-[300px] lg:min-h-[400px]">
+          <div className="grid grid-cols-7 gap-0 min-h-[400px] lg:min-h-[600px]">
             {weekDays.map((date, index) => {
               const dateKey = format(date, 'yyyy-MM-dd');
               const dayShifts = desktopShiftsByDate[dateKey] || [];
@@ -456,7 +456,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
               return (
                 <div
                   key={dateKey}
-                  className={`border-l border-border first:border-l-0 p-1 lg:p-2 min-h-[300px] lg:min-h-[400px] ${
+                  className={`border-l border-border first:border-l-0 p-2 lg:p-4 min-h-[400px] lg:min-h-[600px] ${
                     isCurrentDay ? 'bg-primary/5' : 'bg-background'
                   }`}
                 >
@@ -482,30 +482,30 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                     </Button>
                   </div>
 
-                  {/* Shifts - Responsive */}
-                  <div className="space-y-1">
+                  {/* Shifts - Expanded for better readability */}
+                  <div className="space-y-2">
                     {dayShifts
                       .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
                       .map(shift => (
                         <Card
                           key={shift.id}
-                          className="p-1 lg:p-2 bg-card border-border cursor-pointer hover:shadow-sm transition-all group"
+                          className="p-2 lg:p-3 bg-card border-border cursor-pointer hover:shadow-sm transition-all group min-h-[80px] lg:min-h-[100px]"
                           onClick={() => onShiftClick(shift)}
                         >
-                          <div className="space-y-1">
-                             {/* Time and Branch - Responsive */}
-                             <div className="flex flex-col gap-1">
+                          <div className="space-y-2">
+                             {/* Time and Branch - Expanded */}
+                             <div className="flex flex-col gap-2">
                                <div className="flex items-center justify-between">
-                                 <div className="flex items-center gap-1">
-                                   <Clock className="h-2 w-2 lg:h-2.5 lg:w-2.5 text-muted-foreground" />
-                                   <span className="text-foreground font-bold text-xs">
+                                 <div className="flex items-center gap-2">
+                                   <Clock className="h-3 w-3 lg:h-4 lg:w-4 text-primary" />
+                                   <span className="text-foreground font-bold text-sm lg:text-base">
                                      {shift.start_time?.slice(0, 5)} - {shift.end_time?.slice(0, 5)}
                                    </span>
                                  </div>
                                  {(() => {
                                    const submissionCount = getSubmittedEmployeesForShift(shift).length;
                                    return submissionCount > 0 ? (
-                                     <div className="bg-success text-success-foreground text-xs px-1 py-0.5 rounded-full font-bold min-w-[16px] h-4 flex items-center justify-center shadow-sm">
+                                     <div className="bg-success text-success-foreground text-xs lg:text-sm px-2 py-1 rounded-full font-bold min-w-[20px] lg:min-w-[24px] h-5 lg:h-6 flex items-center justify-center shadow-sm">
                                        {submissionCount}
                                      </div>
                                    ) : null;

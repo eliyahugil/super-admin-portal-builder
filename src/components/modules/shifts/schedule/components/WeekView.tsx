@@ -135,7 +135,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
 
   return (
     <div className="space-y-4" dir="rtl">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-6">
         {weekDates.map((date, index) => {
           const dateKey = formatDateKey(date);
           const dayShifts = shiftsByDate[dateKey] || [];
@@ -144,18 +144,18 @@ export const WeekView: React.FC<WeekViewProps> = ({
           return (
             <Card 
               key={dateKey} 
-              className={`min-h-[200px] sm:min-h-[300px] ${isCurrentDay ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+              className={`min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] ${isCurrentDay ? 'ring-2 ring-primary bg-primary/5' : ''}`}
             >
-              <CardHeader className="pb-2 p-2 sm:p-4">
-                <CardTitle className="text-sm flex flex-col items-center gap-1">
-                  <span className="text-gray-600">{dayNames[index]}</span>
-                  <span className={`text-lg ${isCurrentDay ? 'text-primary font-bold' : ''}`}>
+              <CardHeader className="pb-3 p-3 sm:p-4">
+                <CardTitle className="text-sm flex flex-col items-center gap-2">
+                  <span className="text-muted-foreground font-medium">{dayNames[index]}</span>
+                  <span className={`text-xl font-bold ${isCurrentDay ? 'text-primary' : ''}`}>
                     {formatDateDisplay(date)}
                   </span>
                 </CardTitle>
               </CardHeader>
               
-              <CardContent className="p-2 space-y-2">
+              <CardContent className="p-3 space-y-3">
                 {/* Add shift button */}
                 <Button
                   variant="outline"

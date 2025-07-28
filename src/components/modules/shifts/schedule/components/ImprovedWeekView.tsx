@@ -117,7 +117,7 @@ export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
 
   return (
     <div className="space-y-4" dir="rtl">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-6">
         {weekDays.map((date, index) => {
           const dateKey = formatDateKey(date);
           const dayShifts = shiftsByDate[dateKey] || [];
@@ -126,25 +126,25 @@ export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
           return (
             <Card 
               key={dateKey} 
-              className={`min-h-[300px] ${isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+              className={`min-h-[400px] lg:min-h-[500px] ${isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
             >
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-3">
                 <CardTitle className="text-center">
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-sm text-gray-600">{dayNames[index]}</span>
-                    <span className={`text-lg font-bold ${isCurrentDay ? 'text-blue-600' : ''}`}>
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-sm text-muted-foreground font-medium">{dayNames[index]}</span>
+                    <span className={`text-xl font-bold ${isCurrentDay ? 'text-blue-600' : ''}`}>
                       {formatDateDisplay(date)}
                     </span>
                   </div>
                 </CardTitle>
               </CardHeader>
               
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 {/* Add shift button */}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full"
+                  className="w-full font-medium"
                   onClick={() => onAddShift(date)}
                 >
                   <Plus className="h-4 w-4 mr-1" />
@@ -153,9 +153,9 @@ export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
 
                 {/* Shifts for this day */}
                 {dayShifts.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
-                    <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">אין משמרות</p>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm font-medium">אין משמרות</p>
                   </div>
                 ) : (
                   dayShifts
@@ -163,20 +163,20 @@ export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
                     .map(shift => (
                       <Card
                         key={shift.id}
-                        className="p-3 bg-white border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                        className="p-4 bg-white border border-border hover:shadow-lg transition-shadow cursor-pointer min-h-[120px]"
                         onClick={() => onShiftClick(shift)}
                       >
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                            {/* Time */}
                            <div className="flex items-center justify-between">
-                             <div className="flex items-center gap-1 text-sm font-medium">
-                               <Clock className="h-3 w-3 text-gray-500" />
-                               {shift.start_time} - {shift.end_time}
+                             <div className="flex items-center gap-2 text-base font-bold">
+                               <Clock className="h-4 w-4 text-primary" />
+                               <span className="text-foreground">{shift.start_time} - {shift.end_time}</span>
                              </div>
                                {(() => {
                                  const submissionCount = getSubmittedEmployeesForShift(shift).length;
                                  return submissionCount > 0 ? (
-                                   <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold min-w-[24px] h-6 flex items-center justify-center shadow-sm">
+                                   <div className="bg-success text-success-foreground text-sm px-2 py-1 rounded-full font-bold min-w-[24px] h-6 flex items-center justify-center shadow-sm">
                                      {submissionCount}
                                    </div>
                                  ) : null;
@@ -184,18 +184,18 @@ export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
                            </div>
 
                            {/* Branch */}
-                           <div className="flex items-center gap-1 text-xs text-foreground font-semibold mb-2">
-                             <MapPin className="h-3 w-3 text-primary" />
-                             <span className="bg-secondary/80 px-2 py-1 rounded-md border border-border/50 shadow-sm">
+                           <div className="flex items-center gap-2 text-sm text-foreground font-semibold">
+                             <MapPin className="h-4 w-4 text-primary" />
+                             <span className="bg-secondary px-3 py-2 rounded-md border border-border/50 shadow-sm font-bold">
                                {getBranchName(shift.branch_id)}
                              </span>
                            </div>
 
                            {/* Employee assignment */}
-                           <div className="space-y-1">
+                           <div className="space-y-2">
                              {shift.employee_id ? (
-                               <div className="flex items-center gap-1 text-sm p-2 bg-success/10 rounded-md border border-success/20">
-                                 <User className="h-3 w-3 text-success" />
+                               <div className="flex items-center gap-2 text-sm p-3 bg-success/10 rounded-md border border-success/20">
+                                 <User className="h-4 w-4 text-success" />
                                  <span className="text-success font-bold">
                                    {getEmployeeName(shift.employee_id)}
                                  </span>
