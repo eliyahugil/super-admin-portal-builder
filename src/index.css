@@ -91,6 +91,8 @@ body, html {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     background: white !important;
     border-bottom: 1px solid #e5e7eb !important;
+    display: flex !important;
+    align-items: center !important;
   }
   
   /* Force hardware acceleration and correct dimensions for all header children */
@@ -104,9 +106,9 @@ body, html {
   }
   
   /* Ensure header content container is properly sized */
-  header[class*="fixed"] > div,
-  div[class*="fixed top-0"] > div,
-  .fixed.top-0 > div {
+  header[class*="fixed"] > *,
+  div[class*="fixed top-0"] > *,
+  .fixed.top-0 > * {
     height: 64px !important;
     display: flex !important;
     align-items: center !important;

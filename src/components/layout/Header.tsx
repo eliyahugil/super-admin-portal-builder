@@ -22,12 +22,12 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
 
   if (loading) {
     return (
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="w-full h-16 bg-white border-b border-gray-200 px-6 py-4 flex items-center">
+        <div className="flex items-center justify-between w-full">
           <div className="animate-pulse bg-gray-200 h-6 w-32 rounded"></div>
           <div className="animate-pulse bg-gray-200 h-8 w-24 rounded"></div>
         </div>
-      </header>
+      </div>
     );
   }
 

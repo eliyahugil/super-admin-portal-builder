@@ -23,9 +23,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <div className="min-h-screen w-full max-w-none relative" dir="rtl">
         {/* Header - Fixed position with enhanced mobile stability */}
         <header className="fixed top-0 left-0 right-0 h-16 w-full bg-white border-b border-gray-200 z-[9999] shadow-sm">
-          <div className="h-full w-full">
-            <Header onMobileMenuToggle={isMobile ? handleMobileMenuToggle : undefined} />
-          </div>
+          <Header onMobileMenuToggle={isMobile ? handleMobileMenuToggle : undefined} />
         </header>
         
         {/* Main Layout Container */}
