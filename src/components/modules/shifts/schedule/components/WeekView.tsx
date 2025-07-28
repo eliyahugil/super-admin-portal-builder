@@ -134,8 +134,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
   };
 
   return (
-    <div className="space-y-4" dir="rtl">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-6">
+    <div className="space-y-4 w-full max-w-none" dir="rtl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 w-full">
         {weekDates.map((date, index) => {
           const dateKey = formatDateKey(date);
           const dayShifts = shiftsByDate[dateKey] || [];
@@ -144,7 +144,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
           return (
             <Card 
               key={dateKey} 
-              className={`min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] ${isCurrentDay ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+              className={`min-h-[400px] lg:min-h-[500px] flex-1 ${isCurrentDay ? 'ring-2 ring-primary bg-primary/5' : ''}`}
             >
               <CardHeader className="pb-3 p-3 sm:p-4">
                 <CardTitle className="text-sm flex flex-col items-center gap-2">
@@ -210,13 +210,13 @@ export const WeekView: React.FC<WeekViewProps> = ({
 
                          {/* Employee assignment section */}
                          <div className="space-y-1">
-                           {shift.employee_id ? (
-                             <div className="flex items-center gap-1 text-xs p-2 bg-success/10 rounded-md border border-success/20">
-                               <CheckCircle2 className="h-3 w-3 text-success" />
-                               <span className="text-success font-bold">
-                                 {getEmployeeName(shift.employee_id)}
-                               </span>
-                             </div>
+                            {shift.employee_id ? (
+                              <div className="flex items-center gap-1 text-xs p-2 bg-success/10 rounded-md border border-success/20">
+                                <CheckCircle2 className="h-3 w-3 text-success shrink-0" />
+                                <span className="text-success font-bold text-wrap break-words leading-tight min-w-0">
+                                  {getEmployeeName(shift.employee_id)}
+                                </span>
+                              </div>
                              ) : onShiftUpdate ? (
                                <div onClick={(e) => e.stopPropagation()}>
                                  <ShiftAssignmentPopover
@@ -227,11 +227,11 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                    onShiftUpdate={onShiftUpdate}
                                  />
                                </div>
-                             ) : (
-                               <div className="flex items-center gap-1 text-xs text-muted-foreground p-2 bg-muted/30 rounded-md border border-border/50">
-                                 <User className="h-3 w-3" />
-                                 <span className="font-medium">לא משובץ</span>
-                               </div>
+                              ) : (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground p-2 bg-muted/30 rounded-md border border-border/50">
+                                  <User className="h-3 w-3 shrink-0" />
+                                  <span className="font-medium text-wrap break-words leading-tight min-w-0">לא משובץ</span>
+                                </div>
                             )}
                           </div>
 

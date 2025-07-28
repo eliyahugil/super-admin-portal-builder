@@ -116,8 +116,8 @@ export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
   };
 
   return (
-    <div className="space-y-4" dir="rtl">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-6">
+    <div className="space-y-4 w-full max-w-none" dir="rtl">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-2 w-full">
         {weekDays.map((date, index) => {
           const dateKey = formatDateKey(date);
           const dayShifts = shiftsByDate[dateKey] || [];
@@ -126,7 +126,7 @@ export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
           return (
             <Card 
               key={dateKey} 
-              className={`min-h-[400px] lg:min-h-[500px] ${isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+              className={`min-h-[400px] lg:min-h-[500px] flex-1 ${isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
             >
               <CardHeader className="pb-3">
                 <CardTitle className="text-center">
@@ -193,13 +193,13 @@ export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
 
                            {/* Employee assignment */}
                            <div className="space-y-2">
-                             {shift.employee_id ? (
-                               <div className="flex items-center gap-2 text-sm p-3 bg-success/10 rounded-md border border-success/20">
-                                 <User className="h-4 w-4 text-success" />
-                                 <span className="text-success font-bold">
-                                   {getEmployeeName(shift.employee_id)}
-                                 </span>
-                               </div>
+                              {shift.employee_id ? (
+                                <div className="flex items-center gap-2 text-sm p-3 bg-success/10 rounded-md border border-success/20">
+                                  <User className="h-4 w-4 text-success shrink-0" />
+                                  <span className="text-success font-bold text-wrap break-words leading-tight min-w-0 overflow-hidden">
+                                    {getEmployeeName(shift.employee_id)}
+                                  </span>
+                                </div>
                              ) : (
                                <div onClick={(e) => e.stopPropagation()}>
                                  <ShiftAssignmentPopover
