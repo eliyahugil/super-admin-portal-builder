@@ -93,28 +93,45 @@ export const EmployeeRegistrationPage: React.FC = () => {
 
     const fetchTokenInfo = async () => {
       try {
+        console.log('🔍 Starting token validation for:', token);
+        
         // קבלת מידע על הטוקן
         const { data: tokenData, error: tokenError } = await supabase
           .rpc('get_registration_token_info', { token_value: token });
 
-        if (tokenError) throw tokenError;
+        console.log('📊 Token RPC response:', { tokenData, tokenError });
+
+        if (tokenError) {
+          console.error('❌ Token error:', tokenError);
+          throw tokenError;
+        }
         
         if (!tokenData || tokenData.length === 0) {
+          console.warn('⚠️ No token data returned');
           setError('טוקן רישום לא תקף או פג תוקף');
           return;
         }
 
+        console.log('✅ Token info loaded:', tokenData[0]);
         setTokenInfo(tokenData[0]);
 
         // קבלת רשימת סניפים
+        console.log('🔍 Fetching branches for token...');
         const { data: branchesData, error: branchesError } = await supabase
           .rpc('get_business_branches_for_token', { token_value: token });
 
-        if (branchesError) throw branchesError;
+        console.log('📊 Branches RPC response:', { branchesData, branchesError });
+
+        if (branchesError) {
+          console.error('⚠️ Branches error (non-critical):', branchesError);
+          // Don't throw here - branches are optional
+        }
+        
         setBranches(branchesData || []);
+        console.log('✅ Branches loaded:', branchesData?.length || 0);
 
       } catch (err) {
-        console.error('Error fetching token info:', err);
+        console.error('💥 Error fetching token info:', err);
         setError('שגיאה בטעינת נתוני הרישום');
       } finally {
         setIsLoading(false);
@@ -335,11 +352,12 @@ export const EmployeeRegistrationPage: React.FC = () => {
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 9999,
-        overflow: 'auto'
+        zIndex: 99999,
+        overflow: 'auto',
+        backgroundColor: 'white'
       }}
     >
-      <div className="container mx-auto py-8 px-4">
+      <div className="container mx-auto py-8 px-4" style={{ zIndex: 100000, position: 'relative' }}>
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <Card className="mb-6">
