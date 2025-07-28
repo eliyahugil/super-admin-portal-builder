@@ -398,113 +398,103 @@ export const EmployeeRegistrationPage: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-               <form onSubmit={(e) => {
-                 console.log('📝 Form onSubmit triggered');
-                 console.log('📝 Event:', e);
-                 console.log('📝 isSubmitting before handleSubmit:', isSubmitting);
-                 return handleSubmit(onSubmitWithValidation, onInvalidSubmit)(e);
+               <form onSubmit={async (e) => {
+                 e.preventDefault();
+                 
+                 const formData = new FormData(e.target as HTMLFormElement);
+                 const data = {
+                   first_name: formData.get('first_name') as string,
+                   last_name: formData.get('last_name') as string,
+                   id_number: formData.get('id_number') as string,
+                   email: formData.get('email') as string,
+                   phone: formData.get('phone') as string,
+                   birth_date: formData.get('birth_date') as string,
+                   address: formData.get('address') as string,
+                   branch_assignment_notes: formData.get('branch_assignment_notes') as string,
+                   preferred_branches: [],
+                   shift_preferences: {
+                     morning: true,
+                     evening: false,
+                     fixed_availability: {},
+                     unavailable_days: {},
+                     notes: formData.get('shift_notes') as string || ''
+                   }
+                 };
+                 
+                 onSubmit(data);
                }} className="space-y-6">
                 {/* Personal Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="first_name">שם פרטי *</Label>
-                    <Input
-                      id="first_name"
-                      {...register('first_name', { required: 'שם פרטי חובה' })}
-                    />
-                    {errors.first_name && (
-                      <p className="text-sm text-destructive mt-1">{errors.first_name.message}</p>
-                    )}
-                  </div>
+                   <div>
+                     <Label htmlFor="first_name">שם פרטי *</Label>
+                     <Input
+                       id="first_name"
+                       name="first_name"
+                       required
+                     />
+                   </div>
 
-                  <div>
-                    <Label htmlFor="last_name">שם משפחה *</Label>
-                    <Input
-                      id="last_name"
-                      {...register('last_name', { required: 'שם משפחה חובה' })}
-                    />
-                    {errors.last_name && (
-                      <p className="text-sm text-destructive mt-1">{errors.last_name.message}</p>
-                    )}
-                  </div>
+                   <div>
+                     <Label htmlFor="last_name">שם משפחה *</Label>
+                     <Input
+                       id="last_name"
+                       name="last_name"
+                       required
+                     />
+                   </div>
 
-                  <div>
-                    <Label htmlFor="id_number">תעודת זהות *</Label>
-                    <Input
-                      id="id_number"
-                      {...register('id_number', { 
-                        required: 'תעודת זהות חובה',
-                        pattern: {
-                          value: /^\d{9}$/,
-                          message: 'תעודת זהות חייבת להכיל 9 ספרות'
-                        }
-                      })}
-                    />
-                    {errors.id_number && (
-                      <p className="text-sm text-destructive mt-1">{errors.id_number.message}</p>
-                    )}
-                  </div>
+                   <div>
+                     <Label htmlFor="id_number">תעודת זהות *</Label>
+                     <Input
+                       id="id_number"
+                       name="id_number"
+                       pattern="[0-9]{9}"
+                       required
+                     />
+                   </div>
 
-                  <div>
-                    <Label htmlFor="birth_date">תאריך לידה *</Label>
-                    <Input
-                      id="birth_date"
-                      type="date"
-                      {...register('birth_date', { required: 'תאריך לידה חובה' })}
-                    />
-                    {errors.birth_date && (
-                      <p className="text-sm text-destructive mt-1">{errors.birth_date.message}</p>
-                    )}
-                  </div>
+                   <div>
+                     <Label htmlFor="birth_date">תאריך לידה *</Label>
+                     <Input
+                       id="birth_date"
+                       name="birth_date"
+                       type="date"
+                       required
+                     />
+                   </div>
                 </div>
 
                 {/* Contact Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="email">דוא"ל *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      {...register('email', { 
-                        required: 'דוא"ל חובה',
-                        pattern: {
-                          value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                          message: 'כתובת דוא"ל לא תקינה'
-                        }
-                      })}
-                    />
-                    {errors.email && (
-                      <p className="text-sm text-destructive mt-1">{errors.email.message}</p>
-                    )}
-                  </div>
+                   <div>
+                     <Label htmlFor="email">דוא"ל *</Label>
+                     <Input
+                       id="email"
+                       name="email"
+                       type="email"
+                       required
+                     />
+                   </div>
 
-                  <div>
-                    <Label htmlFor="phone">טלפון *</Label>
-                    <Input
-                      id="phone"
-                      {...register('phone', { 
-                        required: 'מספר טלפון חובה',
-                        pattern: {
-                          value: /^[0-9\-\s\+]{9,15}$/,
-                          message: 'מספר טלפון לא תקין'
-                        }
-                      })}
-                      placeholder="050-1234567"
-                    />
-                    {errors.phone && (
-                      <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>
-                    )}
-                  </div>
+                   <div>
+                     <Label htmlFor="phone">טלפון *</Label>
+                     <Input
+                       id="phone"
+                       name="phone"
+                       placeholder="050-1234567"
+                       required
+                     />
+                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="address">כתובת</Label>
-                  <Input
-                    id="address"
-                    {...register('address')}
-                    placeholder="רחוב, עיר"
-                  />
-                </div>
+                 <div>
+                   <Label htmlFor="address">כתובת</Label>
+                   <Input
+                     id="address"
+                     name="address"
+                     placeholder="רחוב, עיר"
+                   />
+                 </div>
 
                 {/* Branch Preferences */}
                 {branches.length > 0 && (
@@ -532,13 +522,13 @@ export const EmployeeRegistrationPage: React.FC = () => {
                     </div>
                     
                     <div>
-                      <Label htmlFor="branch_notes">הערות לגבי העמדה בסניפים</Label>
-                      <Textarea
-                        id="branch_notes"
-                        {...register('branch_assignment_notes')}
-                        placeholder="הערות נוספות לגבי העדפות סניפים..."
-                        rows={2}
-                      />
+                       <Label htmlFor="branch_notes">הערות לגבי העמדה בסניפים</Label>
+                       <Textarea
+                         id="branch_notes"
+                         name="branch_assignment_notes"
+                         placeholder="הערות נוספות לגבי העדפות סניפים..."
+                         rows={2}
+                       />
                     </div>
                   </div>
                 )}
@@ -565,15 +555,15 @@ export const EmployeeRegistrationPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div>
-                    <Label htmlFor="shift_notes">הערות נוספות</Label>
-                    <Textarea
-                      id="shift_notes"
-                      {...register('shift_preferences.notes')}
-                      placeholder="הערות לגבי זמינות, מגבלות זמן וכו'..."
-                      rows={3}
-                    />
-                  </div>
+                   <div>
+                     <Label htmlFor="shift_notes">הערות נוספות</Label>
+                     <Textarea
+                       id="shift_notes"
+                       name="shift_notes"
+                       placeholder="הערות לגבי זמינות, מגבלות זמן וכו'..."
+                       rows={3}
+                     />
+                   </div>
                 </div>
 
                 {/* Submit */}
