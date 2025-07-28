@@ -114,6 +114,7 @@ body, html {
     max-width: 100% !important;
     overflow: hidden !important;
   }
+}
 
 /* General mobile optimization */
 @media (max-width: 768px) {
