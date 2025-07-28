@@ -220,6 +220,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
           employees={employees}
           branches={branches}
           currentDate={selectedWeek}
+          pendingSubmissions={safePendingSubmissions}
           onShiftClick={handleShiftClick}
           onShiftUpdate={onShiftUpdate}
           onAddShift={onAddShift}

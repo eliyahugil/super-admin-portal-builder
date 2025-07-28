@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from '@/components/ui/select';
 import { Plus, User, Clock, MapPin, CheckCircle2 } from 'lucide-react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -13,6 +13,7 @@ interface WeeklyCalendarViewProps {
   employees: Employee[];
   branches: Branch[];
   currentDate: Date;
+  pendingSubmissions?: any[]; // Add this prop
   onShiftClick: (shift: ShiftScheduleData) => void;
   onShiftUpdate?: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
   onAddShift: (date: Date) => void;
@@ -23,6 +24,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
   employees,
   branches,
   currentDate,
+  pendingSubmissions = [],
   onShiftClick,
   onShiftUpdate,
   onAddShift
@@ -79,6 +81,29 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
     } finally {
       setAssigningShift(null);
     }
+  };
+
+  // Helper function to get employees who submitted for a specific shift
+  const getSubmittedEmployeesForShift = (shift: ShiftScheduleData) => {
+    if (!pendingSubmissions || pendingSubmissions.length === 0) return [];
+    
+    return pendingSubmissions.filter(submission => {
+      // Match by date, time, and branch
+      return submission.shift_date === shift.shift_date &&
+             submission.start_time === shift.start_time &&
+             submission.end_time === shift.end_time &&
+             submission.branch_id === shift.branch_id;
+    }).map(submission => submission.employee_id);
+  };
+
+  // Helper function to organize employees for dropdown
+  const getOrganizedEmployees = (shift: ShiftScheduleData) => {
+    const submittedEmployeeIds = getSubmittedEmployeesForShift(shift);
+    
+    const submittedEmployees = employees.filter(emp => submittedEmployeeIds.includes(emp.id));
+    const otherEmployees = employees.filter(emp => !submittedEmployeeIds.includes(emp.id));
+    
+    return { submittedEmployees, otherEmployees };
   };
 
   // Add state to control whether to show by branches or unified
@@ -179,7 +204,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                               </div>
                             </div>
 
-                            {/* Employee - Enhanced readability */}
+                            {/* Employee - Enhanced with submissions */}
                             <div className="text-xs">
                               {shift.employee_id ? (
                                 <div className="flex items-center gap-1">
@@ -195,17 +220,54 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                                     onValueChange={(employeeId) => handleEmployeeAssignment(shift.id, employeeId)}
                                     disabled={assigningShift === shift.id}
                                   >
-                                    <SelectTrigger className="h-5 text-xs border-muted">
+                                    <SelectTrigger className="h-5 text-xs border-muted bg-background z-50">
                                       <SelectValue placeholder={
                                         assigningShift === shift.id ? "משבץ..." : "בחר עובד"
                                       } />
                                     </SelectTrigger>
-                                    <SelectContent className="max-h-48">
-                                      {employees.map(employee => (
-                                        <SelectItem key={employee.id} value={employee.id} className="text-xs">
-                                          {employee.first_name} {employee.last_name}
-                                        </SelectItem>
-                                      ))}
+                                    <SelectContent className="max-h-48 bg-background border border-border z-50">
+                                      {(() => {
+                                        const { submittedEmployees, otherEmployees } = getOrganizedEmployees(shift);
+                                        
+                                        return (
+                                          <>
+                                            {/* Employees who submitted */}
+                                            {submittedEmployees.length > 0 && (
+                                              <>
+                                                <div className="px-2 py-1 text-xs font-medium text-green-700 bg-green-50">
+                                                  עובדים שהגישו בקשה ({submittedEmployees.length})
+                                                </div>
+                                                {submittedEmployees.map(employee => (
+                                                  <SelectItem 
+                                                    key={employee.id} 
+                                                    value={employee.id} 
+                                                    className="text-xs bg-green-50 text-green-800 font-medium"
+                                                  >
+                                                    ✓ {employee.first_name} {employee.last_name}
+                                                  </SelectItem>
+                                                ))}
+                                                {otherEmployees.length > 0 && <SelectSeparator />}
+                                              </>
+                                            )}
+                                            
+                                            {/* Other employees */}
+                                            {otherEmployees.length > 0 && (
+                                              <>
+                                                {submittedEmployees.length > 0 && (
+                                                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
+                                                    עובדים אחרים
+                                                  </div>
+                                                )}
+                                                {otherEmployees.map(employee => (
+                                                  <SelectItem key={employee.id} value={employee.id} className="text-xs">
+                                                    {employee.first_name} {employee.last_name}
+                                                  </SelectItem>
+                                                ))}
+                                              </>
+                                            )}
+                                          </>
+                                        );
+                                      })()}
                                     </SelectContent>
                                   </Select>
                                 </div>
