@@ -4,12 +4,14 @@ import { useShiftScheduleData } from './hooks/useShiftScheduleData';
 import { useOptimizedShiftMutations } from './hooks/useOptimizedShiftMutations';
 import { useShiftScheduleFilters } from './hooks/useShiftScheduleFilters';
 import { useShiftScheduleNavigation } from './hooks/useShiftScheduleNavigation';
+import { useViewPreferences } from '@/hooks/useViewPreferences';
 
 export const useShiftSchedule = () => {
   const { businessId } = useCurrentBusiness();
+  const { preferences, updateViewType, updateShowNewShifts, updateFilters, updateSelectedWeek } = useViewPreferences();
   const { currentDate, selectedWeek, navigateDate, navigateWeek, setSelectedWeek } = useShiftScheduleNavigation();
   const { shifts, employees, branches, pendingSubmissions, loading, error, refetchShifts } = useShiftScheduleData(businessId);
-  const { filters, filteredShifts, updateFilters } = useShiftScheduleFilters(shifts);
+  const { filters, filteredShifts, updateFilters: updateShiftFilters } = useShiftScheduleFilters(shifts);
   const { createShift, updateShift, deleteShift, isCreating, isUpdating, isDeleting } = useOptimizedShiftMutations(businessId);
 
   console.log('🔍 useShiftSchedule - Current state:', {
@@ -34,10 +36,19 @@ export const useShiftSchedule = () => {
     loading: isLoading,
     error,
     filters,
+    preferences, // הוספת העדפות
     navigateDate,
     navigateWeek,
-    setSelectedWeek,
-    updateFilters,
+    setSelectedWeek: (date: Date) => {
+      setSelectedWeek(date);
+      updateSelectedWeek(date); // שמירת העדפת השבוע
+    },
+    updateFilters: (newFilters: any) => {
+      updateShiftFilters(newFilters);
+      updateFilters(newFilters); // שמירת העדפות הסינון
+    },
+    updateViewType, // פונקציה לעדכון סוג התצוגה
+    updateShowNewShifts, // פונקציה לעדכון הצגת משמרות חדשות
     updateShift,
     deleteShift,
     createShift,

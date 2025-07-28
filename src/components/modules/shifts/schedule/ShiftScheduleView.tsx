@@ -3,7 +3,8 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus, Eye, EyeOff, Grid, List } from 'lucide-react';
+import { Calendar, Plus, Eye, EyeOff, Grid, List, RotateCcw, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { ShiftScheduleViewProps, PendingSubmission } from './types';
 import { ShiftSubmissionReminderButton } from './components/ShiftSubmissionReminderButton';
 import { BulkWeekDeleteDialog } from './components/BulkWeekDeleteDialog';
@@ -18,11 +19,8 @@ import { startOfWeek, endOfWeek, format } from 'date-fns';
 
 export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDeleted?: () => void }> = (props) => {
   const { type: deviceType } = useDeviceType();
-  const [showNewShifts, setShowNewShifts] = useState(true);
-  const [viewType, setViewType] = useState<'list' | 'week'>('week');
-  const [selectedWeek, setSelectedWeek] = useState(new Date());
   const [selectedShiftForAssignment, setSelectedShiftForAssignment] = useState<any>(null);
-  
+
   const {
     shifts,
     employees,
@@ -48,6 +46,90 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     onQuickFilter = () => {},
     onResetFilters = () => {}
   } = props;
+
+  // State for view preferences (will be managed internally for now)
+  const [viewType, setViewType] = useState<'list' | 'week'>('week');
+  const [showNewShifts, setShowNewShifts] = useState(true);
+  const [selectedWeek, setSelectedWeek] = useState(new Date());
+
+  // Local storage key for preferences
+  const getPreferencesKey = () => `shift_schedule_preferences_${businessId}`;
+
+  // Load preferences from localStorage
+  React.useEffect(() => {
+    if (!businessId) return;
+    
+    try {
+      const stored = localStorage.getItem(getPreferencesKey());
+      if (stored) {
+        const prefs = JSON.parse(stored);
+        setViewType(prefs.viewType || 'week');
+        setShowNewShifts(prefs.showNewShifts !== false);
+        if (prefs.selectedWeek) {
+          setSelectedWeek(new Date(prefs.selectedWeek));
+        }
+        console.log('📋 Loaded preferences:', prefs);
+      }
+    } catch (error) {
+      console.error('Error loading preferences:', error);
+    }
+  }, [businessId]);
+
+  // Save preferences to localStorage
+  const savePreferences = React.useCallback(() => {
+    if (!businessId) return;
+    
+    const prefs = {
+      viewType,
+      showNewShifts,
+      selectedWeek: selectedWeek.toISOString(),
+      lastUpdated: Date.now()
+    };
+    
+    try {
+      localStorage.setItem(getPreferencesKey(), JSON.stringify(prefs));
+      console.log('💾 Saved preferences:', prefs);
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+    }
+  }, [businessId, viewType, showNewShifts, selectedWeek]);
+
+  // Reset preferences to defaults
+  const resetPreferences = React.useCallback(() => {
+    const defaults = {
+      viewType: 'week' as const,
+      showNewShifts: true,
+      selectedWeek: new Date().toISOString(),
+      lastUpdated: Date.now()
+    };
+    
+    try {
+      localStorage.setItem(getPreferencesKey(), JSON.stringify(defaults));
+      setViewType(defaults.viewType);
+      setShowNewShifts(defaults.showNewShifts);
+      setSelectedWeek(new Date(defaults.selectedWeek));
+      toast.success('העדפות התצוגה אופסו בהצלחה');
+      console.log('🔄 Reset preferences to defaults');
+    } catch (error) {
+      console.error('Error resetting preferences:', error);
+      toast.error('שגיאה באיפוס העדפות');
+    }
+  }, [businessId]);
+
+  // Save preferences when they change
+  React.useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      savePreferences();
+      // הראה הודעה רק פעם ראשונה או לאחר שינוי משמעותי
+      const shouldShowMessage = !localStorage.getItem(`${getPreferencesKey()}_notified`);
+      if (shouldShowMessage) {
+        toast.success('העדפות התצוגה נשמרו אוטומטית', { duration: 3000 });
+        localStorage.setItem(`${getPreferencesKey()}_notified`, 'true');
+      }
+    }, 1000); // דיליי קטן כדי לא לשמור כל שינוי מיידית
+
+    return () => clearTimeout(timeoutId);
+  }, [savePreferences]);
 
   // If mobile, use the mobile-optimized view
   if (deviceType === 'mobile') {
@@ -128,7 +210,13 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
         />
       )}
 
-      {/* Header with actions */}
+        {/* Header with actions and preferences info */}
+        <div className="bg-gradient-to-r from-primary/5 to-accent/5 p-3 rounded-lg border border-primary/10 mb-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Save className="h-4 w-4 text-primary" />
+            <span className="font-medium">העדפות התצוגה נשמרות אוטומטית עבור העסק שלך</span>
+          </div>
+        </div>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -184,6 +272,17 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
             )}
 
             <BulkWeekDeleteDialog onSuccess={onWeekDeleted} businessId={businessId} />
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetPreferences}
+              className="hidden sm:flex"
+              title="איפוס העדפות תצוגה"
+            >
+              <RotateCcw className="h-4 w-4" />
+              <span className="hidden lg:inline ml-1">איפוס העדפות</span>
+            </Button>
 
             <Button
               size="sm"
