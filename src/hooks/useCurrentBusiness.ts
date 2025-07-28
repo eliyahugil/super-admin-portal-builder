@@ -124,35 +124,7 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
   useEffect(() => {
     setError(null);
     
-    // Safety timeout to prevent infinite loading
-    const loadingTimeElapsed = Date.now() - loadingStartTime;
-    if (loadingTimeElapsed > 8000) { // 8 seconds timeout
-      console.warn('⚠️ useCurrentBusiness: Loading timeout, forcing initialization with available data');
-      // Force initialize even if still loading
-      if (isSuperAdmin) {
-        console.log('👑 Timeout: Super admin forced initialization');
-        setBusinessId(null);
-        setBusinessName(null);
-        setRole('super_admin');
-        return;
-      }
-    }
-
-    if (loading || !user || !profile) {
-      console.log('🔄 useCurrentBusiness: Still loading user/profile data');
-      return;
-    }
-
-    if (businessesError) {
-      console.error('❌ useCurrentBusiness: Error loading businesses:', businessesError);
-      setError('שגיאה בטעינת העסקים');
-      return;
-    }
-
-    // Set role from profile
-    setRole(profile.role);
-
-    // פונקציה פנימית לעדכון מיידי של state בלי רקורסיה
+    // פונקציה פנימית לעדכון מיידי של state בלי רקורסיה - הוגדרה כאן כדי להיות זמינה
     const updateBusinessState = (newBusinessId: string | null) => {
       setBusinessId(newBusinessId);
       
@@ -177,6 +149,45 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
         setBusinessName(null);
       }
     };
+    
+    // Safety timeout to prevent infinite loading - increased timeout and improved logic
+    const loadingTimeElapsed = Date.now() - loadingStartTime;
+    if (loadingTimeElapsed > 15000 && !businessId && !isSuperAdmin) { // 15 seconds timeout, only for non-super-admin
+      console.warn('⚠️ useCurrentBusiness: Loading timeout, forcing initialization with available data');
+      // Only force initialize if we have valid user data and no business is selected
+      if (userBusinesses && userBusinesses.length > 0) {
+        const savedBusinessId = localStorage.getItem(SELECTED_BUSINESS_KEY);
+        if (savedBusinessId && userBusinesses.some(ub => ub.business_id === savedBusinessId)) {
+          updateBusinessState(savedBusinessId);
+          return;
+        }
+      }
+    }
+    
+    // Don't force initialize super admin if they haven't selected a business
+    if (isSuperAdmin && !businessId) {
+      const savedBusinessId = localStorage.getItem(SELECTED_BUSINESS_KEY);
+      if (savedBusinessId) {
+        updateBusinessState(savedBusinessId);
+        return;
+      }
+      // Super admin can work without a selected business
+      return;
+    }
+
+    if (loading || !user || !profile) {
+      console.log('🔄 useCurrentBusiness: Still loading user/profile data');
+      return;
+    }
+
+    if (businessesError) {
+      console.error('❌ useCurrentBusiness: Error loading businesses:', businessesError);
+      setError('שגיאה בטעינת העסקים');
+      return;
+    }
+
+    // Set role from profile
+    setRole(profile.role);
 
     // 1. אם יש business ID ב-URL, השתמש בו (עדיפות ראשונה)
     if (urlBusinessId && userBusinesses) {
