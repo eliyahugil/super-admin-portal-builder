@@ -131,12 +131,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     return () => clearTimeout(timeoutId);
   }, [savePreferences]);
 
-  // If mobile, use the mobile-optimized view
-  if (deviceType === 'mobile') {
-    return <MobileShiftScheduleView {...props} />;
-  }
-
-  // Get shifts for the selected week
+  // Get shifts for the selected week - MOVED BEFORE EARLY RETURN
   const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 0 });
   const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 0 });
   const weekStartStr = format(weekStart, 'yyyy-MM-dd');
@@ -188,6 +183,11 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
       }, {} as Record<string, typeof displayShifts>)
     ).sort(([a], [b]) => a.localeCompare(b));
   }, [displayShifts]);
+
+  // If mobile, use the mobile-optimized view - MOVED AFTER ALL HOOKS
+  if (deviceType === 'mobile') {
+    return <MobileShiftScheduleView {...props} />;
+  }
 
   return (
     <div className="space-y-6 w-full max-w-none overflow-visible" dir="rtl">
