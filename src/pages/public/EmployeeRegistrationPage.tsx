@@ -158,10 +158,12 @@ export const EmployeeRegistrationPage: React.FC = () => {
 
   const onSubmit = async (data: FormData) => {
     if (!tokenInfo) {
+      alert('❌ No token info available');
       console.error('❌ No token info available');
       return;
     }
 
+    alert('🔄 Starting form submission');
     console.log('🔄 Starting form submission with data:', data);
     console.log('🎯 Token info:', tokenInfo);
     setIsSubmitting(true);
@@ -247,6 +249,7 @@ export const EmployeeRegistrationPage: React.FC = () => {
   };
 
   const onSubmitWithValidation = (data: FormData) => {
+    alert('🎯 Form submitted!');
     console.log('🎯 Form submitted with data:', data);
     console.log('🔍 Form errors:', errors);
     console.log('🔍 Current isSubmitting state:', isSubmitting);
@@ -257,11 +260,13 @@ export const EmployeeRegistrationPage: React.FC = () => {
     const missingFields = requiredFields.filter(field => !data[field]);
     
     if (missingFields.length > 0) {
+      alert('❌ Missing required fields: ' + missingFields.join(', '));
       console.error('❌ Missing required fields:', missingFields);
       toast.error('אנא מלא את כל השדות החובה: ' + missingFields.join(', '));
       return;
     }
     
+    alert('✅ All required fields present, proceeding with submission');
     console.log('✅ All required fields present, proceeding with submission');
     onSubmit(data);
   };
