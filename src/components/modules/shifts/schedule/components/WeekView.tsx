@@ -134,8 +134,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
   };
 
   return (
-    <div className="space-y-4 w-full max-w-none" dir="rtl">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 w-full">
+    <div className="space-y-4 w-full max-w-none overflow-x-auto" dir="rtl">
+      <div className="grid grid-cols-7 gap-1 w-full min-w-[1200px]">
         {weekDates.map((date, index) => {
           const dateKey = formatDateKey(date);
           const dayShifts = shiftsByDate[dateKey] || [];
@@ -144,7 +144,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
           return (
             <Card 
               key={dateKey} 
-              className={`min-h-[400px] lg:min-h-[500px] flex-1 ${isCurrentDay ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+              className={`min-h-[400px] lg:min-h-[500px] w-full ${isCurrentDay ? 'ring-2 ring-primary bg-primary/5' : ''}`}
             >
               <CardHeader className="pb-3 p-3 sm:p-4">
                 <CardTitle className="text-sm flex flex-col items-center gap-2">
@@ -211,9 +211,9 @@ export const WeekView: React.FC<WeekViewProps> = ({
                          {/* Employee assignment section */}
                          <div className="space-y-1">
                             {shift.employee_id ? (
-                              <div className="flex items-center gap-1 text-xs p-2 bg-success/10 rounded-md border border-success/20">
-                                <CheckCircle2 className="h-3 w-3 text-success shrink-0" />
-                                <span className="text-success font-bold text-wrap break-words leading-tight min-w-0">
+                              <div className="flex items-start gap-1 text-sm p-3 bg-success/10 rounded-md border border-success/20 min-h-[3rem]">
+                                <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
+                                <span className="text-success font-bold text-wrap break-words leading-relaxed text-base w-full overflow-wrap-anywhere">
                                   {getEmployeeName(shift.employee_id)}
                                 </span>
                               </div>
@@ -228,9 +228,9 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                  />
                                </div>
                               ) : (
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground p-2 bg-muted/30 rounded-md border border-border/50">
-                                  <User className="h-3 w-3 shrink-0" />
-                                  <span className="font-medium text-wrap break-words leading-tight min-w-0">לא משובץ</span>
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground p-3 bg-muted/30 rounded-md border border-border/50">
+                                  <User className="h-4 w-4 shrink-0" />
+                                  <span className="font-medium text-base">לא משובץ</span>
                                 </div>
                             )}
                           </div>
