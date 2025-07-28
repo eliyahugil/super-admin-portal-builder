@@ -184,6 +184,17 @@ export const EmployeeRegistrationPage: React.FC = () => {
     }
   };
 
+  const onSubmitWithValidation = (data: FormData) => {
+    console.log('🎯 Form submitted with data:', data);
+    console.log('🔍 Form errors:', errors);
+    onSubmit(data);
+  };
+
+  const onInvalidSubmit = (errors: any) => {
+    console.log('❌ Form validation failed:', errors);
+    toast.error('אנא מלא את כל השדות החובה');
+  };
+
   if (!token) {
     return <Navigate to="/" replace />;
   }
@@ -263,7 +274,7 @@ export const EmployeeRegistrationPage: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmitWithValidation, onInvalidSubmit)} className="space-y-6">
                 {/* Personal Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
