@@ -140,9 +140,13 @@ export const EmployeeRegistrationPage: React.FC = () => {
   };
 
   const onSubmit = async (data: FormData) => {
-    if (!tokenInfo) return;
+    if (!tokenInfo) {
+      console.error('❌ No token info available');
+      return;
+    }
 
     console.log('🔄 Starting form submission with data:', data);
+    console.log('🎯 Token info:', tokenInfo);
     setIsSubmitting(true);
     
     try {
@@ -163,7 +167,18 @@ export const EmployeeRegistrationPage: React.FC = () => {
         submitted_at: new Date().toISOString(),
       };
 
-      console.log('📤 Submitting data:', submissionData);
+      console.log('📤 Final submission data structure:', submissionData);
+      console.log('📊 Data validation:');
+      console.log('- Required fields present:', {
+        token_id: !!submissionData.token_id,
+        business_id: !!submissionData.business_id,
+        first_name: !!submissionData.first_name,
+        last_name: !!submissionData.last_name,
+        id_number: !!submissionData.id_number,
+        email: !!submissionData.email,
+        phone: !!submissionData.phone,
+        birth_date: !!submissionData.birth_date
+      });
 
       const { data: insertedData, error } = await supabase
         .from('employee_registration_requests')
@@ -171,17 +186,44 @@ export const EmployeeRegistrationPage: React.FC = () => {
         .select();
 
       if (error) {
-        console.error('❌ Database error:', error);
+        console.error('❌ Database insertion error:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
 
       console.log('✅ Registration submitted successfully:', insertedData);
+      
+      // Update token registration count if needed
+      try {
+        const { error: updateError } = await supabase
+          .from('employee_registration_tokens')
+          .update({ 
+            current_registrations: tokenInfo.current_registrations + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', tokenInfo.id);
+          
+        if (updateError) {
+          console.warn('⚠️ Failed to update token count:', updateError);
+        } else {
+          console.log('✅ Token registration count updated');
+        }
+      } catch (updateErr) {
+        console.warn('⚠️ Error updating token count:', updateErr);
+      }
+      
       setSubmitted(true);
       toast.success('בקשת הרישום נשלחה בהצלחה!');
 
     } catch (err) {
       console.error('💥 Error submitting registration:', err);
-      toast.error(`שגיאה בשליחת בקשת הרישום: ${err.message}`);
+      const errorMessage = err?.message || 'שגיאה לא ידועה';
+      toast.error(`שגיאה בשליחת בקשת הרישום: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -204,7 +246,19 @@ export const EmployeeRegistrationPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
+      <div 
+        className="min-h-screen bg-background flex items-center justify-center"
+        dir="rtl"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999,
+          overflow: 'auto'
+        }}
+      >
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
           <p>טוען נתוני רישום...</p>
@@ -215,7 +269,19 @@ export const EmployeeRegistrationPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
+      <div 
+        className="min-h-screen bg-background flex items-center justify-center"
+        dir="rtl"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999,
+          overflow: 'auto'
+        }}
+      >
         <Card className="max-w-md">
           <CardContent className="pt-6 text-center">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
@@ -229,7 +295,19 @@ export const EmployeeRegistrationPage: React.FC = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
+      <div 
+        className="min-h-screen bg-background flex items-center justify-center"
+        dir="rtl"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999,
+          overflow: 'auto'
+        }}
+      >
         <Card className="max-w-md">
           <CardContent className="pt-6 text-center">
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
@@ -248,7 +326,19 @@ export const EmployeeRegistrationPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div 
+      className="min-h-screen bg-background relative"
+      dir="rtl"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 9999,
+        overflow: 'auto'
+      }}
+    >
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
