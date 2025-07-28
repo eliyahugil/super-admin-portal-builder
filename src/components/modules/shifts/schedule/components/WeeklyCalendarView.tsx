@@ -90,12 +90,43 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
   const getSubmittedEmployeesForShift = (shift: ShiftScheduleData) => {
     if (!pendingSubmissions || pendingSubmissions.length === 0) return [];
     
+    console.log('🔍 Checking shift:', {
+      shift_date: shift.shift_date,
+      start_time: shift.start_time,
+      end_time: shift.end_time,
+      branch_id: shift.branch_id
+    });
+    
+    console.log('📋 Available submissions:', pendingSubmissions);
+    
     return pendingSubmissions.filter(submission => {
-      // Match by date, time, and branch
-      return submission.shift_date === shift.shift_date &&
-             submission.start_time === shift.start_time &&
-             submission.end_time === shift.end_time &&
-             submission.branch_id === shift.branch_id;
+      // More flexible matching - handle different date and time formats
+      const submissionDate = submission.date || submission.shift_date;
+      const submissionStartTime = submission.start_time;
+      const submissionEndTime = submission.end_time;
+      const submissionBranchId = submission.branch_id;
+      
+      // Get branch name for submission if it has branch_preference
+      const submissionBranchName = submission.branch_preference;
+      const shiftBranch = branches.find(b => b.id === shift.branch_id);
+      
+      const dateMatch = submissionDate === shift.shift_date;
+      const startTimeMatch = submissionStartTime === shift.start_time;
+      const endTimeMatch = submissionEndTime === shift.end_time;
+      const branchMatch = submissionBranchId === shift.branch_id || 
+                         (submissionBranchName && shiftBranch && submissionBranchName === shiftBranch.name);
+      
+      console.log('🔍 Submission check:', {
+        submission,
+        matches: {
+          date: dateMatch,
+          start_time: startTimeMatch,
+          end_time: endTimeMatch,
+          branch: branchMatch
+        }
+      });
+      
+      return dateMatch && startTimeMatch && endTimeMatch && branchMatch;
     }).map(submission => submission.employee_id);
   };
 
