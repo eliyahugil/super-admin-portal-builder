@@ -7,6 +7,7 @@ import { NotificationIcon } from '@/components/modules/shifts/notifications/Noti
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { BusinessSwitcher } from './BusinessSwitcher';
 
 interface HeaderProps {
   onMobileMenuToggle?: () => void;
@@ -80,8 +81,9 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
           </div>
         </div>
 
-        {/* Notifications and User Profile Menu - Right side */}
+        {/* Business Switcher and Notifications and User Profile Menu - Right side */}
         <div className="flex items-center gap-2">
+          {isSuperAdmin && <BusinessSwitcher />}
           <NotificationIcon />
           <UserProfileMenu />
         </div>

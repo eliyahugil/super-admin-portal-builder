@@ -28,6 +28,7 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
   const [businessName, setBusinessName] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadingStartTime] = useState(() => Date.now());
   
   const { user, profile, loading: authLoading } = useAuth();
   const { data: userBusinesses, isLoading: businessesLoading, error: businessesError } = useUserBusinesses();
@@ -123,6 +124,20 @@ export function useCurrentBusiness(): UseCurrentBusinessResult {
   useEffect(() => {
     setError(null);
     
+    // Safety timeout to prevent infinite loading
+    const loadingTimeElapsed = Date.now() - loadingStartTime;
+    if (loadingTimeElapsed > 8000) { // 8 seconds timeout
+      console.warn('⚠️ useCurrentBusiness: Loading timeout, forcing initialization with available data');
+      // Force initialize even if still loading
+      if (isSuperAdmin) {
+        console.log('👑 Timeout: Super admin forced initialization');
+        setBusinessId(null);
+        setBusinessName(null);
+        setRole('super_admin');
+        return;
+      }
+    }
+
     if (loading || !user || !profile) {
       console.log('🔄 useCurrentBusiness: Still loading user/profile data');
       return;
