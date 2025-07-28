@@ -93,15 +93,6 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
   const getSubmittedEmployeesForShift = (shift: ShiftScheduleData) => {
     if (!pendingSubmissions || pendingSubmissions.length === 0) return [];
     
-    console.log('🔍 Checking shift:', {
-      shift_date: shift.shift_date,
-      start_time: shift.start_time,
-      end_time: shift.end_time,
-      branch_id: shift.branch_id
-    });
-    
-    console.log('📋 Available submissions:', pendingSubmissions);
-    
     const submittedEmployeeIds = [];
     
     // Each submission has a 'shifts' array with multiple shift preferences
@@ -116,17 +107,6 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
           const endTimeMatch = submittedShift.end_time === shift.end_time;
           const branchMatch = submittedShift.branch_preference === shiftBranch?.name;
           
-          console.log('🔍 Checking submitted shift:', {
-            submittedShift,
-            shiftBranch: shiftBranch?.name,
-            matches: {
-              date: dateMatch,
-              start_time: startTimeMatch,
-              end_time: endTimeMatch,
-              branch: branchMatch
-            }
-          });
-          
           return dateMatch && startTimeMatch && endTimeMatch && branchMatch;
         });
         
@@ -136,7 +116,6 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
       }
     });
     
-    console.log('✅ Found submitted employees:', submittedEmployeeIds);
     return submittedEmployeeIds;
   };
 
@@ -246,15 +225,25 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                       >
                         <div className="space-y-2">
                           {/* Time and Branch */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 font-medium">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span>{shift.start_time?.slice(0, 5)} - {shift.end_time?.slice(0, 5)}</span>
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              {getBranchName(shift.branch_id)}
-                            </Badge>
-                          </div>
+                           <div className="flex items-center justify-between">
+                             <div className="flex items-center gap-2 font-medium">
+                               <Clock className="h-4 w-4 text-muted-foreground" />
+                               <span>{shift.start_time?.slice(0, 5)} - {shift.end_time?.slice(0, 5)}</span>
+                             </div>
+                             <div className="flex items-center gap-2">
+                               {(() => {
+                                 const submissionCount = getSubmittedEmployeesForShift(shift).length;
+                                 return submissionCount > 0 ? (
+                                   <div className="bg-success text-success-foreground text-xs px-2 py-1 rounded-full font-bold min-w-[24px] h-6 flex items-center justify-center shadow-sm">
+                                     {submissionCount}
+                                   </div>
+                                 ) : null;
+                               })()}
+                               <Badge variant="secondary" className="text-xs font-semibold">
+                                 {getBranchName(shift.branch_id)}
+                               </Badge>
+                             </div>
+                           </div>
 
                           {/* Employee Assignment */}
                           <div className="text-sm">
@@ -504,20 +493,30 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                           onClick={() => onShiftClick(shift)}
                         >
                           <div className="space-y-1">
-                            {/* Time and Branch - Responsive */}
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1 text-xs font-bold">
-                                <Clock className="h-2 w-2 lg:h-2.5 lg:w-2.5 text-muted-foreground" />
-                                <span className="text-foreground font-bold text-xs">
-                                  {shift.start_time?.slice(0, 5)} - {shift.end_time?.slice(0, 5)}
-                                </span>
-                              </div>
-                              
-                              {/* Branch name - more prominent and responsive */}
-                              <div className="text-xs font-medium text-muted-foreground bg-muted px-1 rounded max-w-[80px] lg:max-w-none truncate">
-                                {getBranchName(shift.branch_id)}
-                              </div>
-                            </div>
+                             {/* Time and Branch - Responsive */}
+                             <div className="flex flex-col gap-1">
+                               <div className="flex items-center justify-between">
+                                 <div className="flex items-center gap-1">
+                                   <Clock className="h-2 w-2 lg:h-2.5 lg:w-2.5 text-muted-foreground" />
+                                   <span className="text-foreground font-bold text-xs">
+                                     {shift.start_time?.slice(0, 5)} - {shift.end_time?.slice(0, 5)}
+                                   </span>
+                                 </div>
+                                 {(() => {
+                                   const submissionCount = getSubmittedEmployeesForShift(shift).length;
+                                   return submissionCount > 0 ? (
+                                     <div className="bg-success text-success-foreground text-xs px-1 py-0.5 rounded-full font-bold min-w-[16px] h-4 flex items-center justify-center shadow-sm">
+                                       {submissionCount}
+                                     </div>
+                                   ) : null;
+                                 })()}
+                               </div>
+                               
+                               {/* Branch name - more prominent and responsive */}
+                               <div className="text-xs font-semibold text-foreground bg-secondary px-2 py-1 rounded-md border border-border/50 truncate shadow-sm">
+                                 {getBranchName(shift.branch_id)}
+                               </div>
+                             </div>
 
                             {/* Employee - Responsive assignment */}
                             <div className="text-xs space-y-1">
