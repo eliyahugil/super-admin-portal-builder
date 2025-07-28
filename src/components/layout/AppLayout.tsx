@@ -38,9 +38,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             />
           )}
           
-          {/* Main Content - Full width utilization */}
-          <main className="flex-1 bg-gray-50 w-full max-w-none overflow-visible">
-            <div className="w-full max-w-none p-0">
+          {/* Main Content - Full width utilization - Start below header */}
+          <main className="flex-1 bg-gray-50 w-full max-w-none overflow-visible pt-0">
+            <div className="w-full max-w-none">
               {children}
             </div>
           </main>
