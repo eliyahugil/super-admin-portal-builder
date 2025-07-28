@@ -63,7 +63,7 @@ export const ShiftSchedule: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8" dir="rtl">
+      <div className="w-full max-w-none px-4 py-8" dir="rtl">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
@@ -74,7 +74,7 @@ export const ShiftSchedule: React.FC = () => {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8" dir="rtl">
+      <div className="w-full max-w-none px-4 py-8" dir="rtl">
         <div className="text-center py-12">
           <p className="text-red-600 mb-4">שגיאה בטעינת נתוני המשמרות</p>
           <button 
