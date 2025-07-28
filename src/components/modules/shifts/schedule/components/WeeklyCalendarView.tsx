@@ -424,13 +424,13 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
     }, {} as Record<string, ShiftScheduleData[]>);
 
     return (
-      <div className="w-full mb-4" dir="rtl">
+      <div className="w-full max-w-none overflow-x-auto mb-4" dir="rtl">
         {title && (
           <h3 className="text-lg font-semibold mb-3 text-center">{title}</h3>
         )}
         
         {/* Calendar Header - Responsive */}
-        <div className="bg-muted/30 border border-border rounded-t-lg">
+        <div className="bg-muted/30 border border-border rounded-t-lg min-w-[1200px]">
           <div className="grid grid-cols-7 gap-0">
             {dayNames.map((dayName, index) => (
               <div
@@ -446,7 +446,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
         </div>
 
         {/* Calendar Content - Full width utilization */}
-        <div className="border-l border-r border-b border-border rounded-b-lg bg-background">
+        <div className="border-l border-r border-b border-border rounded-b-lg bg-background min-w-[1200px]">
           <div className="grid grid-cols-7 gap-0 min-h-[500px] lg:min-h-[700px] w-full">
             {weekDays.map((date, index) => {
               const dateKey = format(date, 'yyyy-MM-dd');
@@ -656,7 +656,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
     };
 
     return (
-      <div className="space-y-4 lg:space-y-6" dir="rtl">
+      <div className="space-y-4 lg:space-y-6 w-full max-w-none" dir="rtl">
         {/* View Mode Toggle - Responsive */}
         <div className="flex items-center justify-center gap-2 lg:gap-4">
           <Button
