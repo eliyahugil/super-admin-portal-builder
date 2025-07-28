@@ -134,8 +134,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
   };
 
   return (
-    <div className="space-y-4 w-full max-w-none overflow-x-auto" dir="rtl">
-      <div className="grid grid-cols-7 gap-1 w-full min-w-[1200px]">
+    <div className="space-y-4 w-full max-w-none" dir="rtl">
+      <div className="grid grid-cols-7 gap-1 w-full">
         {weekDates.map((date, index) => {
           const dateKey = formatDateKey(date);
           const dayShifts = shiftsByDate[dateKey] || [];

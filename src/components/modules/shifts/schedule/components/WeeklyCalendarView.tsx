@@ -430,7 +430,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
         )}
         
         {/* Calendar Header - Responsive */}
-        <div className="bg-muted/30 border border-border rounded-t-lg min-w-[1200px]">
+        <div className="bg-muted/30 border border-border rounded-t-lg w-full">
           <div className="grid grid-cols-7 gap-0">
             {dayNames.map((dayName, index) => (
               <div
@@ -446,7 +446,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
         </div>
 
         {/* Calendar Content - Full width utilization */}
-        <div className="border-l border-r border-b border-border rounded-b-lg bg-background min-w-[1200px]">
+        <div className="border-l border-r border-b border-border rounded-b-lg bg-background w-full">
           <div className="grid grid-cols-7 gap-0 min-h-[500px] lg:min-h-[700px] w-full">
             {weekDays.map((date, index) => {
               const dateKey = format(date, 'yyyy-MM-dd');
