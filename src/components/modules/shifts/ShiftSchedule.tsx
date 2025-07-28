@@ -36,10 +36,12 @@ export const ShiftSchedule: React.FC = () => {
 
   // פונקציה לשיבוץ עובד למשמרת
   const handleAssignEmployee = async (employeeId: string, shiftId: string) => {
+    console.log('🔄 ShiftSchedule handleAssignEmployee called:', { employeeId, shiftId });
     try {
-      await updateShift(shiftId, { employee_id: employeeId });
+      await updateShift(shiftId, { employee_id: employeeId, status: 'assigned' });
+      console.log('✅ ShiftSchedule handleAssignEmployee - Success');
     } catch (error) {
-      console.error('Error assigning employee:', error);
+      console.error('❌ ShiftSchedule handleAssignEmployee - Error:', error);
       throw error;
     }
   };

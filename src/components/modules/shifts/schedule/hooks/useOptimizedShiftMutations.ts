@@ -52,7 +52,7 @@ export const useOptimizedShiftMutations = (businessId: string | null) => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ shiftId, updates }: { shiftId: string; updates: Partial<ShiftScheduleData> }) => {
-      console.log('🔄 Optimized updateMutation - Starting update:', { shiftId, updates });
+      console.log('🔄 useOptimizedShiftMutations updateMutation - Starting update:', { shiftId, updates });
       
       const dbUpdates = {
         ...updates,
