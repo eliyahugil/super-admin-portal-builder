@@ -97,9 +97,10 @@ export const ShiftSchedule: React.FC = () => {
         totalBranches={branches.length}
       />
       
-      <div className="flex flex-col xl:flex-row gap-2 w-full max-w-none">
-        <div className="w-full xl:w-56 shrink-0">
-          <ScheduleFilters
+      <div className="flex flex-col gap-2 w-full max-w-none">
+        {/* Compact filters moved to top */}
+        <div className="w-full">
+          <ScheduleFilters 
             filters={filters} 
             onFiltersChange={updateFilters} 
             employees={employees} 
@@ -107,7 +108,7 @@ export const ShiftSchedule: React.FC = () => {
           />
         </div>
 
-        <div className="flex-1 min-w-0 w-full">
+        <div className="w-full max-w-none">
           <ShiftScheduleView
             shifts={shifts}
             employees={employees}
