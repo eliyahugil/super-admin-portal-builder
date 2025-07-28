@@ -89,7 +89,7 @@ export const ShiftSchedule: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-none px-2 sm:px-4 py-4 sm:py-8" dir="rtl">
+    <div className="w-full max-w-none p-4 sm:p-6" dir="rtl">
       <ShiftScheduleHeader 
         currentDate={currentDate}
         totalShifts={shifts.length}
@@ -97,8 +97,8 @@ export const ShiftSchedule: React.FC = () => {
         totalBranches={branches.length}
       />
       
-      <div className="flex flex-col xl:flex-row gap-4 w-full">
-        <div className="w-full xl:w-80 shrink-0">
+      <div className="flex flex-col xl:flex-row gap-2 w-full">
+        <div className="w-full xl:w-64 shrink-0">
           <ScheduleFilters 
             filters={filters} 
             onFiltersChange={updateFilters} 
