@@ -22,7 +22,15 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
 
   if (loading) {
     return (
-      <div className="w-full h-16 bg-white border-b border-gray-200 px-6 py-4 flex items-center">
+      <div className="w-full h-16 bg-white border-b border-gray-200 px-6 py-4 flex items-center mobile-header-fix" style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 99999,
+        height: '64px',
+        width: '100%'
+      }}>
         <div className="flex items-center justify-between w-full">
           <div className="animate-pulse bg-gray-200 h-6 w-32 rounded"></div>
           <div className="animate-pulse bg-gray-200 h-8 w-24 rounded"></div>
@@ -32,7 +40,15 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
   }
 
   return (
-    <div className="w-full h-16 bg-white border-b border-gray-200 px-3 sm:px-6 flex items-center" dir="rtl">
+    <div className="w-full h-16 bg-white border-b border-gray-200 px-3 sm:px-6 flex items-center mobile-header-fix" dir="rtl" style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 99999,
+      height: '64px',
+      width: '100%'
+    }}>
       <div className="flex items-center justify-between w-full h-full">
         {/* Mobile Menu Button and Logo */}
         <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">

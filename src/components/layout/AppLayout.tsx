@@ -22,7 +22,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     <SidebarProvider>
       <div className="min-h-screen w-full max-w-none relative" dir="rtl">
         {/* Header - Fixed position with enhanced mobile stability */}
-        <header className="fixed top-0 left-0 right-0 h-16 w-full bg-white border-b border-gray-200 z-[9999] shadow-sm">
+        <header className="fixed top-0 left-0 right-0 h-16 w-full bg-white border-b border-gray-200 z-[99999] shadow-sm mobile-header-fix" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 99999,
+          height: '64px',
+          width: '100%'
+        }}>
           <Header onMobileMenuToggle={isMobile ? handleMobileMenuToggle : undefined} />
         </header>
         
