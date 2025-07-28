@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Plus, User, Clock, MapPin, CheckCircle2 } from 'lucide-react';
+import { ShiftAssignmentPopover } from './ShiftAssignmentPopover';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { he } from 'date-fns/locale';
 import type { ShiftScheduleData, Employee, Branch } from '../types';
@@ -14,6 +15,7 @@ interface WeekViewProps {
   employees: Employee[];
   branches: Branch[];
   currentDate: Date;
+  pendingSubmissions?: any[];
   onShiftClick: (shift: ShiftScheduleData) => void;
   onShiftUpdate?: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
   onAddShift: (date: Date) => void;
@@ -24,6 +26,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
   employees,
   branches,
   currentDate,
+  pendingSubmissions = [],
   onShiftClick,
   onShiftUpdate,
   onAddShift
@@ -100,6 +103,36 @@ export const WeekView: React.FC<WeekViewProps> = ({
     return date.toDateString() === new Date().toDateString();
   };
 
+  // Helper function to get employees who submitted for a specific shift
+  const getSubmittedEmployeesForShift = (shift: ShiftScheduleData) => {
+    if (!pendingSubmissions || pendingSubmissions.length === 0) return [];
+    
+    const submittedEmployeeIds = [];
+    
+    // Each submission has a 'shifts' array with multiple shift preferences
+    pendingSubmissions.forEach(submission => {
+      const shiftBranch = branches.find(b => b.id === shift.branch_id);
+      
+      // Check if any of the submitted shifts match our current shift
+      if (submission.shifts && Array.isArray(submission.shifts)) {
+        const hasMatchingShift = submission.shifts.some(submittedShift => {
+          const dateMatch = submittedShift.date === shift.shift_date;
+          const startTimeMatch = submittedShift.start_time === shift.start_time;
+          const endTimeMatch = submittedShift.end_time === shift.end_time;
+          const branchMatch = submittedShift.branch_preference === shiftBranch?.name;
+          
+          return dateMatch && startTimeMatch && endTimeMatch && branchMatch;
+        });
+        
+        if (hasMatchingShift) {
+          submittedEmployeeIds.push(submission.employee_id);
+        }
+      }
+    });
+    
+    return submittedEmployeeIds;
+  };
+
   return (
     <div className="space-y-4" dir="rtl">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 sm:gap-4">
@@ -153,10 +186,20 @@ export const WeekView: React.FC<WeekViewProps> = ({
                             className="cursor-pointer"
                             onClick={() => onShiftClick(shift)}
                           >
-                            <div className="flex items-center gap-1 text-xs font-medium mb-1">
-                              <Clock className="h-3 w-3 text-gray-500" />
-                              {shift.start_time} - {shift.end_time}
-                            </div>
+                             <div className="flex items-center justify-between mb-1">
+                               <div className="flex items-center gap-1 text-xs font-medium">
+                                 <Clock className="h-3 w-3 text-gray-500" />
+                                 {shift.start_time} - {shift.end_time}
+                               </div>
+                               {(() => {
+                                 const submissionCount = getSubmittedEmployeesForShift(shift).length;
+                                 return submissionCount > 0 ? (
+                                   <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold min-w-[24px] h-6 flex items-center justify-center shadow-sm">
+                                     {submissionCount}
+                                   </div>
+                                 ) : null;
+                               })()}
+                             </div>
                             <div className="flex items-center gap-1 text-xs text-gray-600 mb-1">
                               <MapPin className="h-3 w-3" />
                               {getBranchName(shift.branch_id)}
@@ -172,28 +215,17 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                   {getEmployeeName(shift.employee_id)}
                                 </span>
                               </div>
-                            ) : onShiftUpdate ? (
-                              <div className="relative">
-                                <Select
-                                  value=""
-                                  onValueChange={(employeeId) => handleEmployeeAssignment(shift.id, employeeId)}
-                                  disabled={assigningShift === shift.id}
-                                >
-                                  <SelectTrigger className="h-6 text-xs">
-                                    <SelectValue placeholder={
-                                      assigningShift === shift.id ? "משבץ..." : "בחר עובד"
-                                    } />
-                                  </SelectTrigger>
-                                  <SelectContent className="max-h-48">
-                                    {employees.map(employee => (
-                                      <SelectItem key={employee.id} value={employee.id} className="text-xs">
-                                        {employee.first_name} {employee.last_name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            ) : (
+                             ) : onShiftUpdate ? (
+                               <div onClick={(e) => e.stopPropagation()}>
+                                 <ShiftAssignmentPopover
+                                   shift={shift}
+                                   employees={employees}
+                                   branches={branches}
+                                   pendingSubmissions={pendingSubmissions}
+                                   onShiftUpdate={onShiftUpdate}
+                                 />
+                               </div>
+                             ) : (
                               <div className="flex items-center gap-1 text-xs text-gray-500">
                                 <User className="h-3 w-3" />
                                 <span>לא משובץ</span>

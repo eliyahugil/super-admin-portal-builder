@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Plus, User, Clock, MapPin } from 'lucide-react';
+import { ShiftAssignmentPopover } from './ShiftAssignmentPopover';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { he } from 'date-fns/locale';
 import type { ShiftScheduleData, Employee, Branch } from '../types';
@@ -14,6 +15,7 @@ interface ImprovedWeekViewProps {
   employees: Employee[];
   branches: Branch[];
   currentWeek: Date;
+  pendingSubmissions?: any[];
   onShiftClick: (shift: ShiftScheduleData) => void;
   onShiftUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
   onAddShift: (date: Date) => void;
@@ -24,6 +26,7 @@ export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
   employees,
   branches,
   currentWeek,
+  pendingSubmissions = [],
   onShiftClick,
   onShiftUpdate,
   onAddShift
@@ -82,6 +85,36 @@ export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
     return format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
   };
 
+  // Helper function to get employees who submitted for a specific shift
+  const getSubmittedEmployeesForShift = (shift: ShiftScheduleData) => {
+    if (!pendingSubmissions || pendingSubmissions.length === 0) return [];
+    
+    const submittedEmployeeIds = [];
+    
+    // Each submission has a 'shifts' array with multiple shift preferences
+    pendingSubmissions.forEach(submission => {
+      const shiftBranch = branches.find(b => b.id === shift.branch_id);
+      
+      // Check if any of the submitted shifts match our current shift
+      if (submission.shifts && Array.isArray(submission.shifts)) {
+        const hasMatchingShift = submission.shifts.some(submittedShift => {
+          const dateMatch = submittedShift.date === shift.shift_date;
+          const startTimeMatch = submittedShift.start_time === shift.start_time;
+          const endTimeMatch = submittedShift.end_time === shift.end_time;
+          const branchMatch = submittedShift.branch_preference === shiftBranch?.name;
+          
+          return dateMatch && startTimeMatch && endTimeMatch && branchMatch;
+        });
+        
+        if (hasMatchingShift) {
+          submittedEmployeeIds.push(submission.employee_id);
+        }
+      }
+    });
+    
+    return submittedEmployeeIds;
+  };
+
   return (
     <div className="space-y-4" dir="rtl">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
@@ -134,11 +167,21 @@ export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
                         onClick={() => onShiftClick(shift)}
                       >
                         <div className="space-y-2">
-                          {/* Time */}
-                          <div className="flex items-center gap-1 text-sm font-medium">
-                            <Clock className="h-3 w-3 text-gray-500" />
-                            {shift.start_time} - {shift.end_time}
-                          </div>
+                           {/* Time */}
+                           <div className="flex items-center justify-between">
+                             <div className="flex items-center gap-1 text-sm font-medium">
+                               <Clock className="h-3 w-3 text-gray-500" />
+                               {shift.start_time} - {shift.end_time}
+                             </div>
+                               {(() => {
+                                 const submissionCount = getSubmittedEmployeesForShift(shift).length;
+                                 return submissionCount > 0 ? (
+                                   <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold min-w-[24px] h-6 flex items-center justify-center shadow-sm">
+                                     {submissionCount}
+                                   </div>
+                                 ) : null;
+                               })()}
+                           </div>
 
                           {/* Branch */}
                           <div className="flex items-center gap-1 text-xs text-gray-600">
@@ -155,28 +198,17 @@ export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
                                   {getEmployeeName(shift.employee_id)}
                                 </span>
                               </div>
-                            ) : (
-                              <div onClick={(e) => e.stopPropagation()}>
-                                <Select
-                                  value=""
-                                  onValueChange={(employeeId) => handleEmployeeAssignment(shift.id, employeeId)}
-                                  disabled={assigningShift === shift.id}
-                                >
-                                  <SelectTrigger className="h-7 text-xs">
-                                    <SelectValue placeholder={
-                                      assigningShift === shift.id ? "משבץ..." : "בחר עובד"
-                                    } />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {employees.map(employee => (
-                                      <SelectItem key={employee.id} value={employee.id}>
-                                        {employee.first_name} {employee.last_name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            )}
+                             ) : (
+                               <div onClick={(e) => e.stopPropagation()}>
+                                 <ShiftAssignmentPopover
+                                   shift={shift}
+                                   employees={employees}
+                                   branches={branches}
+                                   pendingSubmissions={pendingSubmissions}
+                                   onShiftUpdate={onShiftUpdate}
+                                 />
+                               </div>
+                             )}
                           </div>
 
                           {/* Status */}
