@@ -99,35 +99,42 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
     
     console.log('📋 Available submissions:', pendingSubmissions);
     
-    return pendingSubmissions.filter(submission => {
-      // More flexible matching - handle different date and time formats
-      const submissionDate = submission.date || submission.shift_date;
-      const submissionStartTime = submission.start_time;
-      const submissionEndTime = submission.end_time;
-      const submissionBranchId = submission.branch_id;
-      
-      // Get branch name for submission if it has branch_preference
-      const submissionBranchName = submission.branch_preference;
+    const submittedEmployeeIds = [];
+    
+    // Each submission has a 'shifts' array with multiple shift preferences
+    pendingSubmissions.forEach(submission => {
       const shiftBranch = branches.find(b => b.id === shift.branch_id);
       
-      const dateMatch = submissionDate === shift.shift_date;
-      const startTimeMatch = submissionStartTime === shift.start_time;
-      const endTimeMatch = submissionEndTime === shift.end_time;
-      const branchMatch = submissionBranchId === shift.branch_id || 
-                         (submissionBranchName && shiftBranch && submissionBranchName === shiftBranch.name);
-      
-      console.log('🔍 Submission check:', {
-        submission,
-        matches: {
-          date: dateMatch,
-          start_time: startTimeMatch,
-          end_time: endTimeMatch,
-          branch: branchMatch
+      // Check if any of the submitted shifts match our current shift
+      if (submission.shifts && Array.isArray(submission.shifts)) {
+        const hasMatchingShift = submission.shifts.some(submittedShift => {
+          const dateMatch = submittedShift.date === shift.shift_date;
+          const startTimeMatch = submittedShift.start_time === shift.start_time;
+          const endTimeMatch = submittedShift.end_time === shift.end_time;
+          const branchMatch = submittedShift.branch_preference === shiftBranch?.name;
+          
+          console.log('🔍 Checking submitted shift:', {
+            submittedShift,
+            shiftBranch: shiftBranch?.name,
+            matches: {
+              date: dateMatch,
+              start_time: startTimeMatch,
+              end_time: endTimeMatch,
+              branch: branchMatch
+            }
+          });
+          
+          return dateMatch && startTimeMatch && endTimeMatch && branchMatch;
+        });
+        
+        if (hasMatchingShift) {
+          submittedEmployeeIds.push(submission.employee_id);
         }
-      });
-      
-      return dateMatch && startTimeMatch && endTimeMatch && branchMatch;
-    }).map(submission => submission.employee_id);
+      }
+    });
+    
+    console.log('✅ Found submitted employees:', submittedEmployeeIds);
+    return submittedEmployeeIds;
   };
 
   // Helper function to organize employees for dropdown
