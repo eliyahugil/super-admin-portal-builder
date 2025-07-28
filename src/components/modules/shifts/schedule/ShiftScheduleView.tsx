@@ -190,7 +190,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
   }, [displayShifts]);
 
   return (
-    <div className="space-y-6 w-full max-w-none" dir="rtl">
+    <div className="space-y-6 w-full max-w-none overflow-visible" dir="rtl">
       {/* Advanced Filters */}
       <AdvancedScheduleFilters
         filters={filters}

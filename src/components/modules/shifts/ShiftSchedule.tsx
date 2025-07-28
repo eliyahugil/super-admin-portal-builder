@@ -98,7 +98,7 @@ export const ShiftSchedule: React.FC = () => {
       />
       
       <div className="flex flex-col xl:flex-row gap-2 w-full max-w-none">
-        <div className="w-full xl:w-60 shrink-0">
+        <div className="w-full xl:w-56 shrink-0">
           <ScheduleFilters
             filters={filters} 
             onFiltersChange={updateFilters} 

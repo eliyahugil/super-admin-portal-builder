@@ -20,13 +20,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full" dir="rtl">
+      <div className="min-h-screen flex w-full max-w-none" dir="rtl">
         {/* Desktop Sidebar - Only on desktop */}
         {!isMobile && <DynamicSidebar />}
         
-        <SidebarInset className="flex-1">
+        <SidebarInset className="flex-1 w-full max-w-none">
           {/* Header with mobile menu toggle - Fixed height to prevent layout shift */}
-          <div className="h-16 w-full">
+          <div className="h-16 w-full max-w-none">
             <Header onMobileMenuToggle={isMobile ? handleMobileMenuToggle : undefined} />
           </div>
           
