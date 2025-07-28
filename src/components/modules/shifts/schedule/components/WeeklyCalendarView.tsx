@@ -38,6 +38,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
   const { type: deviceType } = useDeviceType();
   
   console.log('🔍 WeeklyCalendarView RENDERED with shifts:', shifts.length, 'employees:', employees.length);
+  console.log('🚀 WeeklyCalendarView onShiftUpdate exists:', !!onShiftUpdate);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -262,11 +263,11 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                                    variant="outline"
                                    size="sm"
                                    className="w-full bg-white border-2 border-primary/30 text-primary font-bold hover:bg-primary/5 hover:border-primary"
-                                    onClick={() => {
-                                     console.log('🔥 CLICKED ASSIGN BUTTON for shift:', shift.id);
-                                     setOpenAssignmentShift(openAssignmentShift === shift.id ? null : shift.id);
-                                     setSearchTerm('');
-                                   }}
+                                     onClick={() => {
+                                      console.log('🔥 CLICKED ASSIGN BUTTON for shift:', shift.id, 'onShiftUpdate exists:', !!onShiftUpdate);
+                                      setOpenAssignmentShift(openAssignmentShift === shift.id ? null : shift.id);
+                                      setSearchTerm('');
+                                    }}
                                   disabled={assigningShift === shift.id}
                                 >
                                   {assigningShift === shift.id ? "משבץ..." : "שבץ עובד"}
@@ -562,10 +563,11 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                                   variant="outline"
                                   size="sm"
                                   className="h-5 px-1 text-xs w-full"
-                                  onClick={() => {
-                                    setOpenAssignmentShift(openAssignmentShift === shift.id ? null : shift.id);
-                                    setSearchTerm('');
-                                  }}
+                                 onClick={() => {
+                                   console.log('🔥 CLICKED DESKTOP ASSIGN BUTTON for shift:', shift.id, 'onShiftUpdate exists:', !!onShiftUpdate);
+                                   setOpenAssignmentShift(openAssignmentShift === shift.id ? null : shift.id);
+                                   setSearchTerm('');
+                                 }}
                                   disabled={assigningShift === shift.id}
                                 >
                                   {assigningShift === shift.id ? "משבץ..." : "שבץ עובד"}
