@@ -82,6 +82,9 @@ export const EmployeeRegistrationPage: React.FC = () => {
   const preferredBranches = watch('preferred_branches') || [];
 
   useEffect(() => {
+    console.log('🔍 Current user auth state:', supabase.auth.getUser());
+    console.log('🔍 Current session:', supabase.auth.getSession());
+    
     if (!token) {
       setError('לא נמצא טוקן רישום תקף');
       setIsLoading(false);
