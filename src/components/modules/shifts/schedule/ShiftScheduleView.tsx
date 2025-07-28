@@ -324,10 +324,10 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
           onShiftUpdate={onShiftUpdate}
           onAddShift={onAddShift}
         />
-      ) : viewType === 'list' ? (
-        <div className="space-y-4">
+        ) : viewType === 'list' ? (
+        <div className="space-y-4 w-full max-w-none">
           {displayShifts.length === 0 ? (
-            <Card>
+            <Card className="w-full">
               <CardContent className="p-8 text-center">
                 <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">אין משמרות להצגה</h3>
@@ -341,7 +341,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
           ) : (
             // Use memoized grouped shifts
             groupedShifts.map(([date, dayShifts]) => (
-              <Card key={date} className="overflow-hidden">
+              <Card key={date} className="overflow-hidden w-full">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center justify-between">
                     <span>{new Date(date).toLocaleDateString('he-IL', {

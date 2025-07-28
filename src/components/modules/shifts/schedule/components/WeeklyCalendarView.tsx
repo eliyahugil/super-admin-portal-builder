@@ -424,7 +424,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
     }, {} as Record<string, ShiftScheduleData[]>);
 
     return (
-      <div className="w-full max-w-none overflow-x-auto mb-4" dir="rtl">
+      <div className="w-full max-w-none mb-4" dir="rtl">
         {title && (
           <h3 className="text-lg font-semibold mb-3 text-center">{title}</h3>
         )}

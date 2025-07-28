@@ -97,9 +97,9 @@ export const ShiftSchedule: React.FC = () => {
         totalBranches={branches.length}
       />
       
-      <div className="flex flex-col xl:flex-row gap-2 w-full">
-        <div className="w-full xl:w-64 shrink-0">
-          <ScheduleFilters 
+      <div className="flex flex-col xl:flex-row gap-2 w-full max-w-none">
+        <div className="w-full xl:w-60 shrink-0">
+          <ScheduleFilters
             filters={filters} 
             onFiltersChange={updateFilters} 
             employees={employees} 
