@@ -445,9 +445,9 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
           </div>
         </div>
 
-        {/* Calendar Content - Expanded for better readability */}
+        {/* Calendar Content - Full width utilization */}
         <div className="border-l border-r border-b border-border rounded-b-lg bg-background">
-          <div className="grid grid-cols-7 gap-0 min-h-[400px] lg:min-h-[600px]">
+          <div className="grid grid-cols-7 gap-0 min-h-[500px] lg:min-h-[700px] w-full">
             {weekDays.map((date, index) => {
               const dateKey = format(date, 'yyyy-MM-dd');
               const dayShifts = desktopShiftsByDate[dateKey] || [];
@@ -456,7 +456,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
               return (
                 <div
                   key={dateKey}
-                  className={`border-l border-border first:border-l-0 p-2 lg:p-4 min-h-[400px] lg:min-h-[600px] ${
+                  className={`border-l border-border first:border-l-0 p-1.5 lg:p-3 min-h-[500px] lg:min-h-[700px] ${
                     isCurrentDay ? 'bg-primary/5' : 'bg-background'
                   }`}
                 >
@@ -489,239 +489,182 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                       .map(shift => (
                         <Card
                           key={shift.id}
-                          className="p-2 lg:p-3 bg-card border-border cursor-pointer hover:shadow-sm transition-all group min-h-[80px] lg:min-h-[100px]"
+                          className="p-2 bg-white border border-border cursor-pointer hover:shadow-sm transition-all group min-h-[60px]"
                           onClick={() => onShiftClick(shift)}
                         >
-                          <div className="space-y-2">
-                             {/* Time and Branch - Expanded */}
-                             <div className="flex flex-col gap-2">
-                               <div className="flex items-center justify-between">
-                                 <div className="flex items-center gap-2">
-                                   <Clock className="h-3 w-3 lg:h-4 lg:w-4 text-primary" />
-                                   <span className="text-foreground font-bold text-sm lg:text-base">
-                                     {shift.start_time?.slice(0, 5)} - {shift.end_time?.slice(0, 5)}
-                                   </span>
-                                 </div>
-                                 {(() => {
-                                   const submissionCount = getSubmittedEmployeesForShift(shift).length;
-                                   return submissionCount > 0 ? (
-                                     <div className="bg-success text-success-foreground text-xs lg:text-sm px-2 py-1 rounded-full font-bold min-w-[20px] lg:min-w-[24px] h-5 lg:h-6 flex items-center justify-center shadow-sm">
-                                       {submissionCount}
-                                     </div>
-                                   ) : null;
-                                 })()}
+                          <div className="space-y-1">
+                             {/* Time and submission count */}
+                             <div className="flex items-center justify-between">
+                               <div className="flex items-center gap-1">
+                                 <Clock className="h-2.5 w-2.5 text-primary flex-shrink-0" />
+                                 <span className="text-foreground font-bold text-xs leading-tight">
+                                   {shift.start_time?.slice(0, 5)}-{shift.end_time?.slice(0, 5)}
+                                 </span>
                                </div>
-                               
-                               {/* Branch name - more prominent and responsive */}
-                               <div className="text-xs font-semibold text-foreground bg-secondary px-2 py-1 rounded-md border border-border/50 truncate shadow-sm">
-                                 {getBranchName(shift.branch_id)}
-                               </div>
-                             </div>
-
-                            {/* Employee - Responsive assignment */}
-                            <div className="text-xs space-y-1">
+                               {(() => {
+                                 const submissionCount = getSubmittedEmployeesForShift(shift).length;
+                                 return submissionCount > 0 ? (
+                                   <div className="bg-success text-success-foreground text-xs px-1.5 py-0.5 rounded-full font-bold min-w-[16px] h-4 flex items-center justify-center flex-shrink-0">
+                                     {submissionCount}
+                                   </div>
+                                 ) : null;
+                               })()}
+                              </div>
+                              
+                              {/* Branch name - Compact but readable */}
+                              <div className="text-xs font-medium text-foreground bg-secondary/80 px-1.5 py-1 rounded text-center border border-border/30 leading-tight">
+                                {getBranchName(shift.branch_id)}
+                              </div>
+                            </div>
+                            {/* Employee status - Compact */}
+                            <div className="mt-1">
                               {shift.employee_id ? (
-                                <div className="flex items-center gap-1">
-                                  <CheckCircle2 className="h-2 w-2 lg:h-2.5 lg:w-2.5 text-green-600 flex-shrink-0" />
-                                  <span className="text-green-700 font-medium truncate text-xs">
-                                    {getEmployeeName(shift.employee_id)}
-                                  </span>
+                                <div className="flex items-center gap-1 text-xs p-1 bg-success/10 rounded border border-success/20">
+                                  <CheckCircle2 className="h-2.5 w-2.5 text-success flex-shrink-0" />
+                                  <span className="text-success font-medium truncate text-xs leading-tight">{getEmployeeName(shift.employee_id)}</span>
                                 </div>
                               ) : (
-                                <div onClick={(e) => e.stopPropagation()} className="relative">
-                                  {/* Responsive Assignment Button */}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-4 lg:h-5 px-1 lg:px-2 text-xs w-full"
-                                    onClick={() => {
-                                      setOpenAssignmentShift(openAssignmentShift === shift.id ? null : shift.id);
-                                      setSearchTerm('');
-                                    }}
-                                    disabled={assigningShift === shift.id}
-                                  >
-                                    {assigningShift === shift.id ? "משבץ..." : "שבץ עובד"}
-                                  </Button>
+                                <div className="text-xs text-muted-foreground font-medium p-1 bg-muted/20 rounded text-center border border-border/30 leading-tight">
+                                  לא משובץ
+                                </div>
+                              )}
+                            </div>
 
-                                  {/* Desktop Assignment Popup */}
-                                  {openAssignmentShift === shift.id && (
-                                    <div 
-                                      className="absolute top-5 lg:top-6 left-0 right-0 bg-background border border-border rounded-lg shadow-lg p-2 lg:p-3 z-[100] max-h-48 lg:max-h-64 overflow-hidden"
-                                      style={{ minWidth: '200px', maxWidth: '280px' }}
-                                    >
-                                      {(() => {
-                                        const { submittedEmployees, filteredEmployees } = getOrganizedEmployees(shift);
-                                        
-                                        return (
-                                          <>
-                                            {/* Header with close button */}
-                                            <div className="flex items-center justify-between mb-2 pb-1 lg:pb-2 border-b">
-                                              <span className="text-xs font-medium">שיבוץ עובד למשמרת</span>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-3 w-3 lg:h-4 lg:w-4 p-0"
-                                                onClick={() => setOpenAssignmentShift(null)}
-                                              >
-                                                <X className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
-                                              </Button>
-                                            </div>
+                            {/* Assignment button for non-assigned shifts */}
+                            {!shift.employee_id && onShiftUpdate && (
+                              <div onClick={(e) => e.stopPropagation()} className="mt-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-5 px-1 text-xs w-full"
+                                  onClick={() => {
+                                    setOpenAssignmentShift(openAssignmentShift === shift.id ? null : shift.id);
+                                    setSearchTerm('');
+                                  }}
+                                  disabled={assigningShift === shift.id}
+                                >
+                                  {assigningShift === shift.id ? "משבץ..." : "שבץ עובד"}
+                                </Button>
 
-                                            {/* Employees who submitted - Responsive */}
-                                            {submittedEmployees.length > 0 && (
-                                              <div className="mb-2 lg:mb-3">
-                                                <div className="text-xs font-medium text-green-700 mb-1 lg:mb-2 flex items-center gap-1">
-                                                  <CheckCircle2 className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
-                                                  עובדים שהגישו ({submittedEmployees.length})
-                                                </div>
-                                                <div className="space-y-1 max-h-16 lg:max-h-20 overflow-y-auto">
-                                                  {submittedEmployees.map(employee => (
-                                                    <div
-                                                      key={employee.id}
-                                                      className="flex items-center justify-between p-1 bg-green-50 rounded text-xs"
-                                                    >
-                                                      <span className="text-green-800 font-medium truncate">
-                                                        {`${employee.first_name} ${employee.last_name}`}
-                                                      </span>
-                                                      <div className="flex gap-1">
-                                                        <Button
-                                                          variant="ghost"
-                                                          size="sm"
-                                                          className="h-4 lg:h-5 px-1 text-xs bg-green-100 hover:bg-green-200 text-green-800"
-                                                          onClick={() => {
-                                                            handleEmployeeAssignment(shift.id, employee.id);
-                                                            setOpenAssignmentShift(null);
-                                                          }}
-                                                        >
-                                                          שבץ
-                                                        </Button>
-                                                        <Button
-                                                          variant="ghost"
-                                                          size="sm"
-                                                          className="h-4 lg:h-5 px-1 text-xs text-red-600 hover:bg-red-50"
-                                                          onClick={() => {
-                                                            console.log('Remove submission for:', employee.id);
-                                                          }}
-                                                        >
-                                                          הסר
-                                                        </Button>
-                                                      </div>
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              </div>
-                                            )}
+                                {/* Assignment Popup */}
+                                {openAssignmentShift === shift.id && (
+                                  <div className="absolute top-5 left-0 right-0 bg-background border border-border rounded-lg shadow-lg p-2 z-[100] max-h-48 overflow-hidden" style={{ minWidth: '200px', maxWidth: '280px' }}>
+                                    {(() => {
+                                      const { submittedEmployees, filteredEmployees } = getOrganizedEmployees(shift);
+                                      
+                                      return (
+                                        <>
+                                          <div className="flex items-center justify-between mb-2 pb-1 border-b">
+                                            <span className="text-xs font-medium">שיבוץ עובד למשמרת</span>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-4 w-4 p-0"
+                                              onClick={() => setOpenAssignmentShift(null)}
+                                            >
+                                              <X className="h-3 w-3" />
+                                            </Button>
+                                          </div>
 
-                                            {/* Search section - Responsive */}
-                                            <div>
-                                              <div className="text-xs font-medium text-muted-foreground mb-1 lg:mb-2 flex items-center gap-1">
-                                                <Search className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
-                                                חיפוש עובדים
+                                          {submittedEmployees.length > 0 && (
+                                            <div className="mb-2">
+                                              <div className="text-xs font-medium text-green-700 mb-1 flex items-center gap-1">
+                                                <CheckCircle2 className="h-3 w-3" />
+                                                עובדים שהגישו ({submittedEmployees.length})
                                               </div>
-                                              
-                                              {/* Search input */}
-                                              <div className="mb-1 lg:mb-2">
-                                                <Input
-                                                  placeholder="הקלד שם עובד..."
-                                                  value={searchTerm}
-                                                  onChange={(e) => setSearchTerm(e.target.value)}
-                                                  className="h-5 lg:h-6 text-xs"
-                                                  autoFocus={submittedEmployees.length === 0}
-                                                />
-                                              </div>
-                                              
-                                              {/* Search results - Responsive */}
-                                              <div className="max-h-16 lg:max-h-24 overflow-y-auto space-y-1">
-                                                {filteredEmployees.length === 0 ? (
-                                                  <div className="text-xs text-muted-foreground text-center py-1 lg:py-2">
-                                                    {searchTerm ? 'לא נמצאו עובדים התואמים לחיפוש' : 'הקלד כדי לחפש עובדים'}
-                                                  </div>
-                                                ) : (
-                                                  filteredEmployees.map(employee => (
-                                                    <div
-                                                      key={employee.id}
-                                                      className="flex items-center justify-between p-1 bg-muted/30 rounded text-xs hover:bg-muted/50 cursor-pointer"
+                                              <div className="space-y-1 max-h-16 overflow-y-auto">
+                                                {submittedEmployees.map(employee => (
+                                                  <div
+                                                    key={employee.id}
+                                                    className="flex items-center justify-between p-1 bg-green-50 rounded text-xs"
+                                                  >
+                                                    <span className="text-green-800 font-medium truncate">
+                                                      {`${employee.first_name} ${employee.last_name}`}
+                                                    </span>
+                                                    <Button
+                                                      size="sm"
+                                                      className="h-4 px-1 text-xs"
                                                       onClick={() => {
                                                         handleEmployeeAssignment(shift.id, employee.id);
                                                         setOpenAssignmentShift(null);
                                                       }}
                                                     >
-                                                      <span className="truncate">
-                                                        {`${employee.first_name} ${employee.last_name}`}
-                                                      </span>
-                                                      <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-4 lg:h-5 px-1 text-xs"
-                                                      >
-                                                        שבץ
-                                                      </Button>
-                                                    </div>
-                                                  ))
-                                                )}
+                                                      שבץ
+                                                    </Button>
+                                                  </div>
+                                                ))}
                                               </div>
                                             </div>
-                                          </>
-                                        );
-                                      })()}
-                                    </div>
-                                  )}
-                                 </div>
-                              )}
-                            </div>
+                                          )}
 
-                            {/* Status badges - Responsive */}
-                            <div className="flex items-center justify-between">
-                              <Badge 
-                                variant={
-                                  shift.status === 'assigned' ? 'default' :
-                                  shift.status === 'pending' ? 'secondary' :
-                                  'outline'
-                                }
-                                className="text-xs py-0 px-1 h-3 lg:h-4"
-                              >
-                                {shift.status === 'assigned' ? 'משובץ' : 
-                                 shift.status === 'pending' ? 'ממתין' : 
-                                 shift.status}
-                              </Badge>
-                              
-                              {shift.is_new && (
-                                <Badge variant="outline" className="text-xs py-0 px-1 h-3 lg:h-4 border-blue-500 text-blue-600">
-                                  חדש
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
+                                          <div>
+                                            <div className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                                              <Search className="h-3 w-3" />
+                                              חיפוש עובדים
+                                            </div>
+                                            
+                                            <div className="mb-1">
+                                              <Input
+                                                placeholder="הקלד שם עובד..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                className="h-5 text-xs"
+                                              />
+                                            </div>
+                                            
+                                            <div className="max-h-16 overflow-y-auto space-y-1">
+                                              {filteredEmployees.length === 0 ? (
+                                                <div className="text-xs text-muted-foreground text-center py-1">
+                                                  {searchTerm ? 'לא נמצאו עובדים התואמים לחיפוש' : 'הקלד כדי לחפש עובדים'}
+                                                </div>
+                                              ) : (
+                                                filteredEmployees.map(employee => (
+                                                  <div
+                                                    key={employee.id}
+                                                    className="flex items-center justify-between p-1 bg-muted/30 rounded text-xs hover:bg-muted/50 cursor-pointer"
+                                                    onClick={() => {
+                                                      handleEmployeeAssignment(shift.id, employee.id);
+                                                      setOpenAssignmentShift(null);
+                                                    }}
+                                                  >
+                                                    <span className="truncate">
+                                                      {`${employee.first_name} ${employee.last_name}`}
+                                                    </span>
+                                                  </div>
+                                                ))
+                                              )}
+                                            </div>
+                                          </div>
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                          </Card>
+                        ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
-    );
-  };
+      );
+    };
 
-  const formatDateKey = (date: Date) => {
-    return format(date, 'yyyy-MM-dd');
-  };
-
-  const isToday = (date: Date) => {
-    return format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-  };
-
-  return (
-    <div className="space-y-4 lg:space-y-6" dir="rtl">
-      {/* View Mode Toggle - Responsive */}
-      <div className="flex items-center justify-center gap-2 lg:gap-4">
-        <Button
-          variant={viewMode === 'unified' ? 'default' : 'outline'}
-          size={deviceType === 'mobile' ? 'sm' : 'default'}
-          onClick={() => setViewMode('unified')}
-          className="text-xs lg:text-sm"
-        >
+    return (
+      <div className="space-y-4 lg:space-y-6" dir="rtl">
+        {/* View Mode Toggle - Responsive */}
+        <div className="flex items-center justify-center gap-2 lg:gap-4">
+          <Button
+            variant={viewMode === 'unified' ? 'default' : 'outline'}
+            size={deviceType === 'mobile' ? 'sm' : 'default'}
+            onClick={() => setViewMode('unified')}
+            className="text-xs lg:text-sm"
+          >
           לוח מאוחד
         </Button>
         <Button
