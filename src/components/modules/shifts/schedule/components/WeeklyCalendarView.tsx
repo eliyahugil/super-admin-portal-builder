@@ -218,17 +218,17 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                   {dayShifts
                     .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
                     .map(shift => (
-                      <Card
-                        key={shift.id}
-                        className="p-3 bg-card border-border cursor-pointer hover:shadow-sm transition-all"
-                        onClick={() => onShiftClick(shift)}
-                      >
+                       <Card
+                         key={shift.id}
+                         className="p-3 bg-white border-2 border-border/50 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
+                         onClick={() => onShiftClick(shift)}
+                       >
                         <div className="space-y-2">
-                          {/* Time and Branch */}
-                           <div className="flex items-center justify-between">
-                             <div className="flex items-center gap-2 font-medium">
-                               <Clock className="h-4 w-4 text-muted-foreground" />
-                               <span>{shift.start_time?.slice(0, 5)} - {shift.end_time?.slice(0, 5)}</span>
+                           {/* Time and Branch */}
+                           <div className="flex items-center justify-between mb-2">
+                             <div className="flex items-center gap-2 font-bold text-sm">
+                               <Clock className="h-4 w-4 text-primary" />
+                               <span className="text-foreground">{shift.start_time?.slice(0, 5)} - {shift.end_time?.slice(0, 5)}</span>
                              </div>
                              <div className="flex items-center gap-2">
                                {(() => {
@@ -247,20 +247,20 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
 
                           {/* Employee Assignment */}
                           <div className="text-sm">
-                            {shift.employee_id ? (
-                              <div className="flex items-center gap-2">
-                                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                <span className="text-green-700 font-medium">
-                                  {getEmployeeName(shift.employee_id)}
-                                </span>
-                              </div>
+                             {shift.employee_id ? (
+                               <div className="flex items-center gap-2 p-2 bg-success/10 rounded-md border border-success/20">
+                                 <CheckCircle2 className="h-4 w-4 text-success" />
+                                 <span className="text-success font-bold text-sm">
+                                   {getEmployeeName(shift.employee_id)}
+                                 </span>
+                               </div>
                             ) : (
-                              <div onClick={(e) => e.stopPropagation()}>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full"
-                                  onClick={() => {
+                               <div onClick={(e) => e.stopPropagation()}>
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   className="w-full bg-white border-2 border-primary/30 text-primary font-bold hover:bg-primary/5 hover:border-primary"
+                                   onClick={() => {
                                     setOpenAssignmentShift(openAssignmentShift === shift.id ? null : shift.id);
                                     setSearchTerm('');
                                   }}

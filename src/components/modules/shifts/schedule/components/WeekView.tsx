@@ -176,10 +176,10 @@ export const WeekView: React.FC<WeekViewProps> = ({
                   dayShifts
                     .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
                     .map(shift => (
-                      <div
-                        key={shift.id}
-                        className="p-2 bg-white border rounded hover:shadow-sm transition-all group"
-                      >
+                       <div
+                         key={shift.id}
+                         className="p-3 bg-white border-2 border-border/50 rounded-lg hover:shadow-md hover:border-primary/40 transition-all group"
+                       >
                         <div className="space-y-2">
                           {/* Time and branch */}
                           <div 
@@ -200,21 +200,23 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                  ) : null;
                                })()}
                              </div>
-                            <div className="flex items-center gap-1 text-xs text-gray-600 mb-1">
-                              <MapPin className="h-3 w-3" />
-                              {getBranchName(shift.branch_id)}
-                            </div>
-                          </div>
+                           <div className="flex items-center gap-1 text-xs text-foreground font-semibold mb-1">
+                             <MapPin className="h-3 w-3 text-primary" />
+                             <span className="bg-secondary/80 px-2 py-1 rounded-md border border-border/50 shadow-sm">
+                               {getBranchName(shift.branch_id)}
+                             </span>
+                           </div>
+                         </div>
 
-                          {/* Employee assignment section */}
-                          <div className="space-y-1">
-                            {shift.employee_id ? (
-                              <div className="flex items-center gap-1 text-xs">
-                                <CheckCircle2 className="h-3 w-3 text-green-600" />
-                                <span className="text-green-700 font-medium">
-                                  {getEmployeeName(shift.employee_id)}
-                                </span>
-                              </div>
+                         {/* Employee assignment section */}
+                         <div className="space-y-1">
+                           {shift.employee_id ? (
+                             <div className="flex items-center gap-1 text-xs p-2 bg-success/10 rounded-md border border-success/20">
+                               <CheckCircle2 className="h-3 w-3 text-success" />
+                               <span className="text-success font-bold">
+                                 {getEmployeeName(shift.employee_id)}
+                               </span>
+                             </div>
                              ) : onShiftUpdate ? (
                                <div onClick={(e) => e.stopPropagation()}>
                                  <ShiftAssignmentPopover
@@ -226,10 +228,10 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                  />
                                </div>
                              ) : (
-                              <div className="flex items-center gap-1 text-xs text-gray-500">
-                                <User className="h-3 w-3" />
-                                <span>לא משובץ</span>
-                              </div>
+                               <div className="flex items-center gap-1 text-xs text-muted-foreground p-2 bg-muted/30 rounded-md border border-border/50">
+                                 <User className="h-3 w-3" />
+                                 <span className="font-medium">לא משובץ</span>
+                               </div>
                             )}
                           </div>
 

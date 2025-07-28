@@ -45,11 +45,11 @@ body, html {
 @layer base {
   :root {
     /* Modern Blue & Teal Theme - נעים לעיניים */
-    --background: 220 18% 97%;
-    --foreground: 215 25% 27%;
+    --background: 0 0% 100%;
+    --foreground: 220 39% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 27%;
+    --card-foreground: 220 39% 11%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 27%;
@@ -60,12 +60,12 @@ body, html {
     --primary-glow: 213 94% 75%;
 
     /* Secondary - אפור כחלחל עדין */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 215 25% 27%;
+    --secondary: 210 40% 95%;
+    --secondary-foreground: 220 39% 11%;
 
     /* Muted - אפור רך */
-    --muted: 220 13% 95%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 210 40% 93%;
+    --muted-foreground: 220 26% 35%;
 
     /* Accent - תכלת רך */
     --accent: 193 95% 68%;

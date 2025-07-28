@@ -183,21 +183,23 @@ export const ImprovedWeekView: React.FC<ImprovedWeekViewProps> = ({
                                })()}
                            </div>
 
-                          {/* Branch */}
-                          <div className="flex items-center gap-1 text-xs text-gray-600">
-                            <MapPin className="h-3 w-3" />
-                            {getBranchName(shift.branch_id)}
-                          </div>
+                           {/* Branch */}
+                           <div className="flex items-center gap-1 text-xs text-foreground font-semibold mb-2">
+                             <MapPin className="h-3 w-3 text-primary" />
+                             <span className="bg-secondary/80 px-2 py-1 rounded-md border border-border/50 shadow-sm">
+                               {getBranchName(shift.branch_id)}
+                             </span>
+                           </div>
 
-                          {/* Employee assignment */}
-                          <div className="space-y-1">
-                            {shift.employee_id ? (
-                              <div className="flex items-center gap-1 text-sm">
-                                <User className="h-3 w-3 text-green-600" />
-                                <span className="text-green-700 font-medium">
-                                  {getEmployeeName(shift.employee_id)}
-                                </span>
-                              </div>
+                           {/* Employee assignment */}
+                           <div className="space-y-1">
+                             {shift.employee_id ? (
+                               <div className="flex items-center gap-1 text-sm p-2 bg-success/10 rounded-md border border-success/20">
+                                 <User className="h-3 w-3 text-success" />
+                                 <span className="text-success font-bold">
+                                   {getEmployeeName(shift.employee_id)}
+                                 </span>
+                               </div>
                              ) : (
                                <div onClick={(e) => e.stopPropagation()}>
                                  <ShiftAssignmentPopover
