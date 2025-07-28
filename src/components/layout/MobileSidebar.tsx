@@ -284,8 +284,8 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
     );
   };
 
-  // Show loading state if business is loading
-  if (businessLoading) {
+  // Show loading state only if business is loading AND we're not a super admin
+  if (businessLoading && !isSuperAdmin) {
     return (
       <Sheet open={isOpen} onOpenChange={onOpenChange}>
         <SheetContent side="right" className="w-[280px] sm:w-[320px] p-0">
