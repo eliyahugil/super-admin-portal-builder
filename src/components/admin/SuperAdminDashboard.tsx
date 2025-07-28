@@ -132,8 +132,8 @@ export const SuperAdminDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6" dir="rtl">
-      <div className="max-w-7xl mx-auto">{" "}
+    <div className="w-full" dir="rtl">
+      <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8 text-center sm:text-right">
           <div className="inline-flex items-center justify-center sm:justify-start gap-3 mb-4">
