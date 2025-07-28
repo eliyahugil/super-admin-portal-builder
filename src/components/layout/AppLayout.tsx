@@ -20,18 +20,20 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full max-w-none" dir="rtl">
-        {/* Header - Fixed position for constant visibility during scroll */}
-        <div className="fixed top-0 left-0 right-0 h-16 w-full bg-white border-b border-gray-200 z-[100] flex-shrink-0 sticky-header mobile-header-fix">
-          <Header onMobileMenuToggle={isMobile ? handleMobileMenuToggle : undefined} />
-        </div>
+      <div className="min-h-screen w-full max-w-none relative" dir="rtl">
+        {/* Header - Fixed position with enhanced mobile stability */}
+        <header className="fixed top-0 left-0 right-0 h-16 w-full bg-white border-b border-gray-200 z-[9999] shadow-sm">
+          <div className="h-full w-full">
+            <Header onMobileMenuToggle={isMobile ? handleMobileMenuToggle : undefined} />
+          </div>
+        </header>
         
-        {/* Main Layout with padding top for fixed header */}
-        <div className="flex-1 flex w-full max-w-none pt-16">
+        {/* Main Layout Container */}
+        <div className="flex min-h-screen w-full pt-16">
           {/* Desktop Sidebar - Only on desktop */}
           {!isMobile && <DynamicSidebar />}
           
-          <SidebarInset className="flex-1 w-full max-w-none">
+          <SidebarInset className="flex-1 w-full max-w-none min-h-screen">
             {/* Mobile Sidebar - Always render when mobile */}
             {isMobile && (
               <MobileSidebar 
@@ -40,9 +42,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               />
             )}
             
-            {/* Main Content - Full width utilization */}
-            <main className="flex-1 bg-gray-50 w-full max-w-none overflow-visible">
-              <div className="w-full max-w-none">
+            {/* Main Content */}
+            <main className="flex-1 bg-gray-50 w-full max-w-none min-h-screen">
+              <div className="w-full max-w-none h-full">
                 {children}
               </div>
             </main>
