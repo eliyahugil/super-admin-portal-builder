@@ -258,42 +258,55 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                                             value=""
                                             onValueChange={(employeeId) => handleEmployeeAssignment(shift.id, employeeId)}
                                             disabled={assigningShift === shift.id}
+                                            onOpenChange={(open) => {
+                                              if (open) {
+                                                setSearchTerm(''); // Reset search when opening
+                                              }
+                                            }}
                                           >
-                                            <SelectTrigger className="h-5 text-xs border-muted bg-background z-50">
+                                            <SelectTrigger className="h-5 text-xs border-muted bg-background">
                                               <SelectValue placeholder={
                                                 assigningShift === shift.id ? "משבץ..." : "חפש עובד..."
                                               } />
                                             </SelectTrigger>
-                                            <SelectContent className="max-h-48 bg-background border border-border z-50">
+                                            <SelectContent 
+                                              className="max-h-48 bg-background border border-border shadow-lg"
+                                              style={{ zIndex: 9999 }}
+                                              position="popper"
+                                              sideOffset={4}
+                                            >
                                               {/* Search input */}
-                                              <div className="p-2 border-b">
+                                              <div className="p-2 border-b sticky top-0 bg-background">
                                                 <Input
                                                   placeholder="חפש עובד..."
                                                   value={searchTerm}
                                                   onChange={(e) => setSearchTerm(e.target.value)}
                                                   className="h-6 text-xs"
-                                                  autoFocus
+                                                  onClick={(e) => e.stopPropagation()}
+                                                  onKeyDown={(e) => e.stopPropagation()}
                                                 />
                                               </div>
                                               
                                               {/* Filtered employees */}
-                                              {(() => {
-                                                const { filteredEmployees } = getOrganizedEmployees(shift);
-                                                
-                                                if (filteredEmployees.length === 0) {
-                                                  return (
-                                                    <div className="p-2 text-xs text-muted-foreground text-center">
-                                                      לא נמצאו עובדים
-                                                    </div>
-                                                  );
-                                                }
-                                                
-                                                return filteredEmployees.map(employee => (
-                                                  <SelectItem key={employee.id} value={employee.id} className="text-xs">
-                                                    {employee.first_name} {employee.last_name}
-                                                  </SelectItem>
-                                                ));
-                                              })()}
+                                              <div className="max-h-32 overflow-y-auto">
+                                                {(() => {
+                                                  const { filteredEmployees } = getOrganizedEmployees(shift);
+                                                  
+                                                  if (filteredEmployees.length === 0) {
+                                                    return (
+                                                      <div className="p-2 text-xs text-muted-foreground text-center">
+                                                        {searchTerm ? 'לא נמצאו עובדים התואמים לחיפוש' : 'לא נמצאו עובדים'}
+                                                      </div>
+                                                    );
+                                                  }
+                                                  
+                                                  return filteredEmployees.map(employee => (
+                                                    <SelectItem key={employee.id} value={employee.id} className="text-xs">
+                                                      {employee.first_name} {employee.last_name}
+                                                    </SelectItem>
+                                                  ));
+                                                })()}
+                                              </div>
                                             </SelectContent>
                                           </Select>
                                         </div>
