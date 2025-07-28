@@ -20,31 +20,33 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full max-w-none" dir="rtl">
-        {/* Desktop Sidebar - Only on desktop */}
-        {!isMobile && <DynamicSidebar />}
+      <div className="min-h-screen flex flex-col w-full max-w-none" dir="rtl">
+        {/* Header - Always visible at top */}
+        <div className="h-16 w-full max-w-none bg-white border-b border-gray-200 z-50">
+          <Header onMobileMenuToggle={isMobile ? handleMobileMenuToggle : undefined} />
+        </div>
         
-        <SidebarInset className="flex-1 w-full max-w-none">
-          {/* Header with mobile menu toggle - Fixed height to prevent layout shift */}
-          <div className="h-16 w-full max-w-none">
-            <Header onMobileMenuToggle={isMobile ? handleMobileMenuToggle : undefined} />
-          </div>
+        <div className="flex-1 flex w-full max-w-none">
+          {/* Desktop Sidebar - Only on desktop */}
+          {!isMobile && <DynamicSidebar />}
           
-          {/* Mobile Sidebar - Always render when mobile */}
-          {isMobile && (
-            <MobileSidebar 
-              isOpen={mobileMenuOpen} 
-              onOpenChange={setMobileMenuOpen} 
-            />
-          )}
-          
-          {/* Main Content - Full width utilization - Start below header */}
-          <main className="flex-1 bg-gray-50 w-full max-w-none overflow-visible pt-0">
-            <div className="w-full max-w-none">
-              {children}
-            </div>
-          </main>
-        </SidebarInset>
+          <SidebarInset className="flex-1 w-full max-w-none">
+            {/* Mobile Sidebar - Always render when mobile */}
+            {isMobile && (
+              <MobileSidebar 
+                isOpen={mobileMenuOpen} 
+                onOpenChange={setMobileMenuOpen} 
+              />
+            )}
+            
+            {/* Main Content - Full width utilization */}
+            <main className="flex-1 bg-gray-50 w-full max-w-none overflow-visible">
+              <div className="w-full max-w-none">
+                {children}
+              </div>
+            </main>
+          </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );
