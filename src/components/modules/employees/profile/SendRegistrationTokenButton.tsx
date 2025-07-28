@@ -54,7 +54,7 @@ export const SendRegistrationTokenButton: React.FC<Props> = ({ employee }) => {
           שלח קישור רישום
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]" dir="rtl">
+      <DialogContent className="sm:max-w-[500px] max-w-[95vw] max-h-[90vh] overflow-y-auto m-4" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Send className="h-5 w-5" />
