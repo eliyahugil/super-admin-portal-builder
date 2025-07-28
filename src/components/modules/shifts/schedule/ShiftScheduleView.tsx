@@ -152,6 +152,9 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     ? pendingSubmissions.filter((sub): sub is PendingSubmission => sub != null)
     : [];
 
+  
+  console.log('🚀 ShiftScheduleView COMPONENT LOADED:', { viewType, loading: isWeekLoading, shiftsCount: shifts.length, weekShiftsCount: weekShifts.length });
+  
   // Use the properly typed shifts for display
   const displayShifts = viewType === 'week' ? weekShifts : shifts;
 
@@ -313,7 +316,10 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
       )}
 
       {/* Shifts Display */}
-      {viewType === 'week' && !isWeekLoading ? (
+      {(() => {
+        console.log('🔍 ShiftScheduleView render conditions:', { viewType, isWeekLoading, weekShiftsLength: weekShifts.length });
+        return viewType === 'week' && !isWeekLoading;
+      })() ? (
         <WeeklyCalendarView
           shifts={weekShifts}
           employees={employees}

@@ -36,6 +36,8 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
   const [openAssignmentShift, setOpenAssignmentShift] = useState<string | null>(null);
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const { type: deviceType } = useDeviceType();
+  
+  console.log('🔍 WeeklyCalendarView RENDERED with shifts:', shifts.length, 'employees:', employees.length);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
