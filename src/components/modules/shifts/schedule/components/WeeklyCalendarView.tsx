@@ -307,10 +307,21 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                                                       <Button
                                                         size="sm"
                                                         className="h-7 px-2 text-xs"
-                                                        onClick={() => {
-                                                          handleEmployeeAssignment(shift.id, employee.id);
-                                                          setOpenAssignmentShift(null);
-                                                        }}
+                                                         onClick={async () => {
+                                                           console.log('🔄 WeeklyCalendarView - Assigning employee:', { employeeId: employee.id, shiftId: shift.id });
+                                                           if (onShiftUpdate) {
+                                                             try {
+                                                               setAssigningShift(shift.id);
+                                                               await onShiftUpdate(shift.id, { employee_id: employee.id, status: 'assigned' });
+                                                               setOpenAssignmentShift(null);
+                                                               console.log('✅ WeeklyCalendarView - Assignment successful');
+                                                             } catch (error) {
+                                                               console.error('❌ WeeklyCalendarView - Assignment failed:', error);
+                                                             } finally {
+                                                               setAssigningShift(null);
+                                                             }
+                                                           }
+                                                         }}
                                                       >
                                                         שבץ
                                                       </Button>
@@ -351,10 +362,21 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                                                   <div
                                                     key={employee.id}
                                                     className="flex items-center justify-between p-2 bg-muted/30 rounded hover:bg-muted/50 cursor-pointer"
-                                                    onClick={() => {
-                                                      handleEmployeeAssignment(shift.id, employee.id);
-                                                      setOpenAssignmentShift(null);
-                                                    }}
+                                                     onClick={async () => {
+                                                       console.log('🔄 WeeklyCalendarView - Other employee assignment:', { employeeId: employee.id, shiftId: shift.id });
+                                                       if (onShiftUpdate) {
+                                                         try {
+                                                           setAssigningShift(shift.id);
+                                                           await onShiftUpdate(shift.id, { employee_id: employee.id, status: 'assigned' });
+                                                           setOpenAssignmentShift(null);
+                                                           console.log('✅ WeeklyCalendarView - Other employee assignment successful');
+                                                         } catch (error) {
+                                                           console.error('❌ WeeklyCalendarView - Other employee assignment failed:', error);
+                                                         } finally {
+                                                           setAssigningShift(null);
+                                                         }
+                                                       }
+                                                     }}
                                                   >
                                                     <span className="text-sm">{employee.first_name} {employee.last_name}</span>
                                                     <Button size="sm" className="h-6 px-2 text-xs">
@@ -584,10 +606,21 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                                                     <Button
                                                       size="sm"
                                                       className="h-4 px-1 text-xs"
-                                                      onClick={() => {
-                                                        handleEmployeeAssignment(shift.id, employee.id);
-                                                        setOpenAssignmentShift(null);
-                                                      }}
+                                                       onClick={async () => {
+                                                         console.log('🔄 WeeklyCalendarView - Desktop submitted employee assignment:', { employeeId: employee.id, shiftId: shift.id });
+                                                         if (onShiftUpdate) {
+                                                           try {
+                                                             setAssigningShift(shift.id);
+                                                             await onShiftUpdate(shift.id, { employee_id: employee.id, status: 'assigned' });
+                                                             setOpenAssignmentShift(null);
+                                                             console.log('✅ WeeklyCalendarView - Desktop submitted employee assignment successful');
+                                                           } catch (error) {
+                                                             console.error('❌ WeeklyCalendarView - Desktop submitted employee assignment failed:', error);
+                                                           } finally {
+                                                             setAssigningShift(null);
+                                                           }
+                                                         }
+                                                       }}
                                                     >
                                                       שבץ
                                                     </Button>
@@ -622,11 +655,22 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                                                   <div
                                                     key={employee.id}
                                                     className="flex items-center justify-between p-1 bg-muted/30 rounded text-xs hover:bg-muted/50 cursor-pointer"
-                                                    onClick={() => {
-                                                      handleEmployeeAssignment(shift.id, employee.id);
-                                                      setOpenAssignmentShift(null);
-                                                    }}
-                                                  >
+                                                     onClick={async () => {
+                                                       console.log('🔄 WeeklyCalendarView - Desktop other employee assignment:', { employeeId: employee.id, shiftId: shift.id });
+                                                       if (onShiftUpdate) {
+                                                         try {
+                                                           setAssigningShift(shift.id);
+                                                           await onShiftUpdate(shift.id, { employee_id: employee.id, status: 'assigned' });
+                                                           setOpenAssignmentShift(null);
+                                                           console.log('✅ WeeklyCalendarView - Desktop other employee assignment successful');
+                                                         } catch (error) {
+                                                           console.error('❌ WeeklyCalendarView - Desktop other employee assignment failed:', error);
+                                                         } finally {
+                                                           setAssigningShift(null);
+                                                         }
+                                                       }
+                                                      }}
+                                                   >
                                                     <span className="truncate">
                                                       {`${employee.first_name} ${employee.last_name}`}
                                                     </span>
