@@ -186,18 +186,8 @@ export const EmployeeRegistrationPage: React.FC = () => {
         submitted_at: new Date().toISOString(),
       };
 
+      alert('📤 About to send to database');
       console.log('📤 Final submission data structure:', submissionData);
-      console.log('📊 Data validation:');
-      console.log('- Required fields present:', {
-        token_id: !!submissionData.token_id,
-        business_id: !!submissionData.business_id,
-        first_name: !!submissionData.first_name,
-        last_name: !!submissionData.last_name,
-        id_number: !!submissionData.id_number,
-        email: !!submissionData.email,
-        phone: !!submissionData.phone,
-        birth_date: !!submissionData.birth_date
-      });
 
       const { data: insertedData, error } = await supabase
         .from('employee_registration_requests')
@@ -205,6 +195,7 @@ export const EmployeeRegistrationPage: React.FC = () => {
         .select();
 
       if (error) {
+        alert('❌ Database error: ' + error.message);
         console.error('❌ Database insertion error:', error);
         console.error('❌ Error details:', {
           message: error.message,
@@ -215,6 +206,7 @@ export const EmployeeRegistrationPage: React.FC = () => {
         throw error;
       }
 
+      alert('✅ Database insert successful!');
       console.log('✅ Registration submitted successfully:', insertedData);
       
       // Update token registration count if needed
@@ -236,10 +228,12 @@ export const EmployeeRegistrationPage: React.FC = () => {
         console.warn('⚠️ Error updating token count:', updateErr);
       }
       
+      alert('🎉 Registration completed successfully!');
       setSubmitted(true);
       toast.success('בקשת הרישום נשלחה בהצלחה!');
 
     } catch (err) {
+      alert('💥 Error: ' + (err?.message || 'Unknown error'));
       console.error('💥 Error submitting registration:', err);
       const errorMessage = err?.message || 'שגיאה לא ידועה';
       toast.error(`שגיאה בשליחת בקשת הרישום: ${errorMessage}`);
