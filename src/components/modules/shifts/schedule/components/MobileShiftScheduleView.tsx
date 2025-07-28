@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { MobileShiftCard } from './MobileShiftCard';
 import { MobileWeekSelector } from './MobileWeekSelector';
+import { MobileFiltersSheet } from './MobileFiltersSheet';
 import { ShiftScheduleViewProps, PendingSubmission } from '../types';
 import { ShiftSubmissionReminderButton } from './ShiftSubmissionReminderButton';
 import { BulkWeekDeleteDialog } from './BulkWeekDeleteDialog';
@@ -132,12 +133,14 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
           </p>
         </div>
 
-        {/* Week Selector */}
+      {/* Week Selector with enhanced mobile view */}
+      <div className="bg-white border border-border rounded-lg shadow-sm">
         <MobileWeekSelector
           selectedWeek={selectedWeek}
           onWeekChange={setSelectedWeek}
           shiftsCount={weekShifts.length}
         />
+      </div>
 
         {/* Mobile Action Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-2">

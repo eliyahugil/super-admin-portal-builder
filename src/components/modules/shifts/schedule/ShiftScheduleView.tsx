@@ -189,7 +189,14 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
 
   // If mobile, use the mobile-optimized view - MOVED AFTER ALL HOOKS
   if (deviceType === 'mobile') {
-    return <MobileShiftScheduleView {...props} />;
+    return (
+      <MobileShiftScheduleView 
+        {...props} 
+        filters={filters}
+        onFiltersChange={onFiltersChange}
+        onResetFilters={onResetFilters}
+      />
+    );
   }
 
   return (
