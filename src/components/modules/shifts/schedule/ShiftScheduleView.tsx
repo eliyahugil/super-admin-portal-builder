@@ -394,12 +394,23 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
                           </div>
                           
                           <div className="flex items-center gap-2">
-                            <UnsubmittedEmployeeAssignment
-                              shift={shift}
-                              employees={employees}
-                              branches={branches}
-                              onShiftUpdate={onShiftUpdate}
-                            />
+                            <div onClick={(e) => {
+                              console.log('🔥 CLICKED ASSIGNMENT CONTAINER for shift:', shift.id, 'onShiftUpdate:', !!onShiftUpdate);
+                              e.stopPropagation();
+                            }}>
+                              {onShiftUpdate ? (
+                                <UnsubmittedEmployeeAssignment
+                                  shift={shift}
+                                  employees={employees}
+                                  branches={branches}
+                                  onShiftUpdate={onShiftUpdate}
+                                />
+                              ) : (
+                                <Button variant="outline" size="sm" disabled>
+                                  שבץ עובד (לא זמין)
+                                </Button>
+                              )}
+                            </div>
                             
                             {shift.is_new && showNewShifts && (
                               <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">

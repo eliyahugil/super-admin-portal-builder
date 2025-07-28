@@ -29,6 +29,8 @@ export const UnsubmittedEmployeeAssignment: React.FC<UnsubmittedEmployeeAssignme
   onShiftUpdate,
   onClose
 }) => {
+  console.log('🚀 UnsubmittedEmployeeAssignment RENDERING for shift:', shift?.id, 'onShiftUpdate exists:', !!onShiftUpdate);
+  
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [isAssigning, setIsAssigning] = useState(false);
@@ -145,6 +147,9 @@ export const UnsubmittedEmployeeAssignment: React.FC<UnsubmittedEmployeeAssignme
           variant={shift.employee_id ? "outline" : "default"}
           size="sm"
           className="flex items-center gap-1"
+          onClick={() => {
+            console.log('🔥 CLICKED UnsubmittedEmployeeAssignment BUTTON for shift:', shift.id);
+          }}
         >
           <UserPlus className="h-4 w-4" />
           {shift.employee_id ? 'שנה עובד' : 'שבץ עובד'}
