@@ -109,16 +109,25 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
     }
   };
 
+  console.log('🔍 MobileShiftScheduleView - Debug info:', {
+    shifts: shifts?.length || 0,
+    employees: employees?.length || 0,
+    branches: branches?.length || 0,
+    pendingSubmissions: pendingSubmissions?.length || 0,
+    weekShifts: weekShifts?.length || 0,
+    businessId
+  });
+
   return (
     <div className="space-y-4 p-4" dir="rtl">
       {/* Mobile Header */}
       <div className="space-y-4">
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">לוח משמרות</h2>
+            <Calendar className="h-6 w-6 text-primary" />
+            <h2 className="text-xl font-bold text-foreground">לוח משמרות</h2>
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-base font-semibold text-muted-foreground bg-secondary/30 px-3 py-2 rounded-lg border border-border/50">
             {format(weekStart, 'dd/MM')} - {format(weekEnd, 'dd/MM/yyyy')}
           </p>
         </div>
@@ -182,13 +191,15 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
         {Object.keys(shiftsByDate).length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
-              <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-              <h3 className="text-base font-medium text-gray-900 mb-2">
+              <Calendar className="h-12 w-12 text-primary mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-foreground mb-3">
                 אין משמרות בשבוע {format(weekStart, 'dd/MM')} - {format(weekEnd, 'dd/MM')}
               </h3>
-              <p className="text-sm text-gray-600 mb-4">לא נמצאו משמרות בשבוע הנבחר</p>
-              <Button onClick={() => onAddShift(selectedWeek)} size="sm">
-                <Plus className="h-4 w-4 ml-1" />
+              <p className="text-base font-medium text-muted-foreground mb-4 bg-muted/30 p-3 rounded-lg border border-border">
+                לא נמצאו משמרות בשבוע הנבחר
+              </p>
+              <Button onClick={() => onAddShift(selectedWeek)} size="lg" className="font-bold">
+                <Plus className="h-5 w-5 ml-2" />
                 הוסף משמרת לשבוע זה
               </Button>
             </CardContent>
@@ -204,25 +215,25 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
                 <Collapsible key={date} open={isExpanded} onOpenChange={() => toggleDateExpansion(date)}>
                   <Card className="overflow-hidden">
                     <CollapsibleTrigger asChild>
-                      <CardHeader className="pb-2 cursor-pointer hover:bg-gray-50">
+                      <CardHeader className="pb-2 cursor-pointer hover:bg-secondary/20 transition-colors">
                         <div className="flex items-center justify-between">
                           <div>
-                            <CardTitle className="text-base">{dateInfo.full}</CardTitle>
+                            <CardTitle className="text-lg font-bold text-foreground">{dateInfo.full}</CardTitle>
                             <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="default" className="text-sm font-bold bg-primary text-primary-foreground">
                                 {dayShifts.length} משמרות
                               </Badge>
                               {dayShifts.some(s => s.is_new) && showNewShifts && (
-                                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                                <Badge variant="outline" className="text-sm font-bold bg-success/10 text-success border-success">
                                   יש חדשות
                                 </Badge>
                               )}
                             </div>
                           </div>
                           {isExpanded ? (
-                            <ChevronUp className="h-5 w-5 text-gray-500" />
+                            <ChevronUp className="h-6 w-6 text-primary" />
                           ) : (
-                            <ChevronDown className="h-5 w-5 text-gray-500" />
+                            <ChevronDown className="h-6 w-6 text-primary" />
                           )}
                         </div>
                       </CardHeader>
