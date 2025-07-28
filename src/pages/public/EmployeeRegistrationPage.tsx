@@ -249,6 +249,20 @@ export const EmployeeRegistrationPage: React.FC = () => {
   const onSubmitWithValidation = (data: FormData) => {
     console.log('🎯 Form submitted with data:', data);
     console.log('🔍 Form errors:', errors);
+    console.log('🔍 Current isSubmitting state:', isSubmitting);
+    console.log('🔍 Current tokenInfo:', tokenInfo);
+    
+    // Add a manual check for required fields
+    const requiredFields = ['first_name', 'last_name', 'id_number', 'email', 'phone', 'birth_date'];
+    const missingFields = requiredFields.filter(field => !data[field]);
+    
+    if (missingFields.length > 0) {
+      console.error('❌ Missing required fields:', missingFields);
+      toast.error('אנא מלא את כל השדות החובה: ' + missingFields.join(', '));
+      return;
+    }
+    
+    console.log('✅ All required fields present, proceeding with submission');
     onSubmit(data);
   };
 
@@ -385,7 +399,12 @@ export const EmployeeRegistrationPage: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit(onSubmitWithValidation, onInvalidSubmit)} className="space-y-6">
+               <form onSubmit={(e) => {
+                 console.log('📝 Form onSubmit triggered');
+                 console.log('📝 Event:', e);
+                 console.log('📝 isSubmitting before handleSubmit:', isSubmitting);
+                 return handleSubmit(onSubmitWithValidation, onInvalidSubmit)(e);
+               }} className="space-y-6">
                 {/* Personal Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
