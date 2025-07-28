@@ -21,8 +21,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex flex-col w-full max-w-none" dir="rtl">
-        {/* Header - Always visible at top */}
-        <div className="h-16 w-full max-w-none bg-white border-b border-gray-200 z-50">
+        {/* Header - Fixed position for mobile stability */}
+        <div className="sticky top-0 h-16 w-full max-w-none bg-white border-b border-gray-200 z-50 flex-shrink-0 sticky-header mobile-header-fix">
           <Header onMobileMenuToggle={isMobile ? handleMobileMenuToggle : undefined} />
         </div>
         

@@ -40,6 +40,38 @@ body, html {
   background-color: #ffffff !important;
 }
 
+/* Mobile Header Stability - מניעת בעיות viewport במובייל */
+@supports (-webkit-touch-callout: none) {
+  /* iOS specific fixes */
+  .mobile-header-fix {
+    position: -webkit-sticky;
+    position: sticky;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+}
+
+/* תיקון viewport height במובייל */
+@media screen and (max-width: 768px) {
+  html {
+    height: -webkit-fill-available;
+  }
+  
+  body {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+  
+  /* וידוא שההדר נשאר במקום */
+  .sticky-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 9999 !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
 /* Utility classes for scrollable tabs */
 
 @layer base {
