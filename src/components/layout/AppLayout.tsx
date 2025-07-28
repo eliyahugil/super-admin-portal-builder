@@ -21,12 +21,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex flex-col w-full max-w-none" dir="rtl">
-        {/* Header - Fixed position for mobile stability */}
-        <div className="sticky top-0 h-16 w-full max-w-none bg-white border-b border-gray-200 z-50 flex-shrink-0 sticky-header mobile-header-fix">
+        {/* Header - Fixed position for constant visibility during scroll */}
+        <div className="fixed top-0 left-0 right-0 h-16 w-full bg-white border-b border-gray-200 z-[100] flex-shrink-0 sticky-header mobile-header-fix">
           <Header onMobileMenuToggle={isMobile ? handleMobileMenuToggle : undefined} />
         </div>
         
-        <div className="flex-1 flex w-full max-w-none">
+        {/* Main Layout with padding top for fixed header */}
+        <div className="flex-1 flex w-full max-w-none pt-16">
           {/* Desktop Sidebar - Only on desktop */}
           {!isMobile && <DynamicSidebar />}
           
