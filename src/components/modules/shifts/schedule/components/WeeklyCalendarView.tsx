@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Plus, User, Clock, MapPin, CheckCircle2 } from 'lucide-react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -30,6 +31,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
   onAddShift
 }) => {
   const [assigningShift, setAssigningShift] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -101,9 +103,13 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
     const submittedEmployeeIds = getSubmittedEmployeesForShift(shift);
     
     const submittedEmployees = employees.filter(emp => submittedEmployeeIds.includes(emp.id));
-    const otherEmployees = employees.filter(emp => !submittedEmployeeIds.includes(emp.id));
+    const filteredEmployees = employees.filter(emp => 
+      !submittedEmployeeIds.includes(emp.id) && 
+      (emp.first_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+       emp.last_name.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
     
-    return { submittedEmployees, otherEmployees };
+    return { submittedEmployees, filteredEmployees };
   };
 
   // Add state to control whether to show by branches or unified
@@ -205,7 +211,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                             </div>
 
                             {/* Employee - Enhanced with submissions */}
-                            <div className="text-xs">
+                            <div className="text-xs space-y-2">
                               {shift.employee_id ? (
                                 <div className="flex items-center gap-1">
                                   <CheckCircle2 className="h-2.5 w-2.5 text-green-600 flex-shrink-0" />
@@ -214,62 +220,86 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                                   </span>
                                 </div>
                               ) : onShiftUpdate ? (
-                                <div onClick={(e) => e.stopPropagation()}>
-                                  <Select
-                                    value=""
-                                    onValueChange={(employeeId) => handleEmployeeAssignment(shift.id, employeeId)}
-                                    disabled={assigningShift === shift.id}
-                                  >
-                                    <SelectTrigger className="h-5 text-xs border-muted bg-background z-50">
-                                      <SelectValue placeholder={
-                                        assigningShift === shift.id ? "משבץ..." : "בחר עובד"
-                                      } />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-48 bg-background border border-border z-50">
-                                      {(() => {
-                                        const { submittedEmployees, otherEmployees } = getOrganizedEmployees(shift);
+                                <div onClick={(e) => e.stopPropagation()} className="space-y-2">
+                                  {(() => {
+                                    const { submittedEmployees } = getOrganizedEmployees(shift);
+                                    
+                                    return (
+                                      <>
+                                        {/* Employees who submitted - as clickable buttons */}
+                                        {submittedEmployees.length > 0 && (
+                                          <div>
+                                            <div className="text-xs font-medium text-green-700 mb-1">
+                                              הגישו בקשה ({submittedEmployees.length}):
+                                            </div>
+                                            <div className="flex flex-wrap gap-1">
+                                              {submittedEmployees.map(employee => (
+                                                <Button
+                                                  key={employee.id}
+                                                  variant="outline"
+                                                  size="sm"
+                                                  className="h-5 px-2 text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                                                  onClick={() => handleEmployeeAssignment(shift.id, employee.id)}
+                                                  disabled={assigningShift === shift.id}
+                                                >
+                                                  ✓ {employee.first_name} {employee.last_name}
+                                                </Button>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
                                         
-                                        return (
-                                          <>
-                                            {/* Employees who submitted */}
-                                            {submittedEmployees.length > 0 && (
-                                              <>
-                                                <div className="px-2 py-1 text-xs font-medium text-green-700 bg-green-50">
-                                                  עובדים שהגישו בקשה ({submittedEmployees.length})
-                                                </div>
-                                                {submittedEmployees.map(employee => (
-                                                  <SelectItem 
-                                                    key={employee.id} 
-                                                    value={employee.id} 
-                                                    className="text-xs bg-green-50 text-green-800 font-medium"
-                                                  >
-                                                    ✓ {employee.first_name} {employee.last_name}
-                                                  </SelectItem>
-                                                ))}
-                                                {otherEmployees.length > 0 && <SelectSeparator />}
-                                              </>
-                                            )}
-                                            
-                                            {/* Other employees */}
-                                            {otherEmployees.length > 0 && (
-                                              <>
-                                                {submittedEmployees.length > 0 && (
-                                                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
-                                                    עובדים אחרים
-                                                  </div>
-                                                )}
-                                                {otherEmployees.map(employee => (
+                                        {/* Manual selection dropdown with search */}
+                                        <div>
+                                          <div className="text-xs font-medium text-muted-foreground mb-1">
+                                            בחירה ידנית:
+                                          </div>
+                                          <Select
+                                            value=""
+                                            onValueChange={(employeeId) => handleEmployeeAssignment(shift.id, employeeId)}
+                                            disabled={assigningShift === shift.id}
+                                          >
+                                            <SelectTrigger className="h-5 text-xs border-muted bg-background z-50">
+                                              <SelectValue placeholder={
+                                                assigningShift === shift.id ? "משבץ..." : "חפש עובד..."
+                                              } />
+                                            </SelectTrigger>
+                                            <SelectContent className="max-h-48 bg-background border border-border z-50">
+                                              {/* Search input */}
+                                              <div className="p-2 border-b">
+                                                <Input
+                                                  placeholder="חפש עובד..."
+                                                  value={searchTerm}
+                                                  onChange={(e) => setSearchTerm(e.target.value)}
+                                                  className="h-6 text-xs"
+                                                  autoFocus
+                                                />
+                                              </div>
+                                              
+                                              {/* Filtered employees */}
+                                              {(() => {
+                                                const { filteredEmployees } = getOrganizedEmployees(shift);
+                                                
+                                                if (filteredEmployees.length === 0) {
+                                                  return (
+                                                    <div className="p-2 text-xs text-muted-foreground text-center">
+                                                      לא נמצאו עובדים
+                                                    </div>
+                                                  );
+                                                }
+                                                
+                                                return filteredEmployees.map(employee => (
                                                   <SelectItem key={employee.id} value={employee.id} className="text-xs">
                                                     {employee.first_name} {employee.last_name}
                                                   </SelectItem>
-                                                ))}
-                                              </>
-                                            )}
-                                          </>
-                                        );
-                                      })()}
-                                    </SelectContent>
-                                  </Select>
+                                                ));
+                                              })()}
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                      </>
+                                    );
+                                  })()}
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-1 text-muted-foreground">
