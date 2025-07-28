@@ -1,0 +1,232 @@
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, User, Clock, MapPin, CheckCircle2 } from 'lucide-react';
+import { format, startOfWeek, addDays } from 'date-fns';
+import { he } from 'date-fns/locale';
+import type { ShiftScheduleData, Employee, Branch } from '../types';
+
+interface WeeklyCalendarViewProps {
+  shifts: ShiftScheduleData[];
+  employees: Employee[];
+  branches: Branch[];
+  currentDate: Date;
+  onShiftClick: (shift: ShiftScheduleData) => void;
+  onShiftUpdate?: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
+  onAddShift: (date: Date) => void;
+}
+
+export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
+  shifts,
+  employees,
+  branches,
+  currentDate,
+  onShiftClick,
+  onShiftUpdate,
+  onAddShift
+}) => {
+  const [assigningShift, setAssigningShift] = useState<string | null>(null);
+
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+
+  // Group shifts by date
+  const shiftsByDate = shifts.reduce((acc, shift) => {
+    const date = shift.shift_date;
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(shift);
+    return acc;
+  }, {} as Record<string, ShiftScheduleData[]>);
+
+  const getEmployeeName = (employeeId: string | null) => {
+    if (!employeeId) return null;
+    const employee = employees.find(emp => emp.id === employeeId);
+    return employee ? `${employee.first_name} ${employee.last_name}` : null;
+  };
+
+  const getBranchName = (branchId: string | null) => {
+    if (!branchId) return 'לא משויך';
+    const branch = branches.find(br => br.id === branchId);
+    return branch ? branch.name : 'לא ידוע';
+  };
+
+  const handleEmployeeAssignment = async (shiftId: string, employeeId: string) => {
+    if (!onShiftUpdate) return;
+    
+    setAssigningShift(shiftId);
+    try {
+      await onShiftUpdate(shiftId, { 
+        employee_id: employeeId,
+        status: 'assigned'
+      });
+    } catch (error) {
+      console.error('Error assigning employee:', error);
+    } finally {
+      setAssigningShift(null);
+    }
+  };
+
+  const formatDateKey = (date: Date) => {
+    return format(date, 'yyyy-MM-dd');
+  };
+
+  const isToday = (date: Date) => {
+    return format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+  };
+
+  return (
+    <div className="w-full" dir="rtl">
+      {/* Calendar Header */}
+      <div className="bg-muted/30 border border-border rounded-t-lg">
+        <div className="grid grid-cols-7 gap-0">
+          {dayNames.map((dayName, index) => (
+            <div
+              key={dayName}
+              className="p-4 text-center border-l border-border last:border-l-0"
+            >
+              <div className="font-semibold text-sm text-foreground">
+                {dayName}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Calendar Content */}
+      <div className="border-l border-r border-b border-border rounded-b-lg bg-background">
+        <div className="grid grid-cols-7 gap-0 min-h-[400px]">
+          {weekDays.map((date, index) => {
+            const dateKey = formatDateKey(date);
+            const dayShifts = shiftsByDate[dateKey] || [];
+            const isCurrentDay = isToday(date);
+            
+            return (
+              <div
+                key={dateKey}
+                className={`border-l border-border last:border-l-0 p-2 min-h-[400px] ${
+                  isCurrentDay ? 'bg-primary/5' : 'bg-background'
+                }`}
+              >
+                {/* Date */}
+                <div className="flex items-center justify-between mb-3">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      isCurrentDay
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {format(date, 'd')}
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 hover:bg-muted"
+                    onClick={() => onAddShift(date)}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+
+                {/* Shifts */}
+                <div className="space-y-1">
+                  {dayShifts
+                    .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
+                    .map(shift => (
+                      <Card
+                        key={shift.id}
+                        className="p-2 bg-card border-border cursor-pointer hover:shadow-sm transition-all group"
+                        onClick={() => onShiftClick(shift)}
+                      >
+                        <div className="space-y-1">
+                          {/* Time */}
+                          <div className="flex items-center gap-1 text-xs font-medium">
+                            <Clock className="h-2.5 w-2.5 text-muted-foreground" />
+                            <span className="text-foreground">
+                              {shift.start_time?.slice(0, 5)} - {shift.end_time?.slice(0, 5)}
+                            </span>
+                          </div>
+
+                          {/* Branch */}
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+                            <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+                            <span className="truncate">{getBranchName(shift.branch_id)}</span>
+                          </div>
+
+                          {/* Employee */}
+                          <div className="text-xs">
+                            {shift.employee_id ? (
+                              <div className="flex items-center gap-1">
+                                <CheckCircle2 className="h-2.5 w-2.5 text-green-600 flex-shrink-0" />
+                                <span className="text-green-700 font-medium truncate">
+                                  {getEmployeeName(shift.employee_id)}
+                                </span>
+                              </div>
+                            ) : onShiftUpdate ? (
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <Select
+                                  value=""
+                                  onValueChange={(employeeId) => handleEmployeeAssignment(shift.id, employeeId)}
+                                  disabled={assigningShift === shift.id}
+                                >
+                                  <SelectTrigger className="h-5 text-xs border-muted">
+                                    <SelectValue placeholder={
+                                      assigningShift === shift.id ? "משבץ..." : "בחר עובד"
+                                    } />
+                                  </SelectTrigger>
+                                  <SelectContent className="max-h-48">
+                                    {employees.map(employee => (
+                                      <SelectItem key={employee.id} value={employee.id} className="text-xs">
+                                        {employee.first_name} {employee.last_name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <User className="h-2.5 w-2.5" />
+                                <span>לא משובץ</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Status and badges */}
+                          <div className="flex items-center justify-between">
+                            <Badge 
+                              variant={
+                                shift.status === 'assigned' ? 'default' :
+                                shift.status === 'pending' ? 'secondary' :
+                                'outline'
+                              }
+                              className="text-xs py-0 px-1 h-4"
+                            >
+                              {shift.status === 'assigned' ? 'משובץ' : 
+                               shift.status === 'pending' ? 'ממתין' : 
+                               shift.status}
+                            </Badge>
+                            
+                            {shift.is_new && (
+                              <Badge variant="outline" className="text-xs py-0 px-1 h-4 border-blue-500 text-blue-600">
+                                חדש
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -8,7 +8,7 @@ import { ShiftScheduleViewProps, PendingSubmission } from './types';
 import { ShiftSubmissionReminderButton } from './components/ShiftSubmissionReminderButton';
 import { BulkWeekDeleteDialog } from './components/BulkWeekDeleteDialog';
 import { MobileShiftScheduleView } from './components/MobileShiftScheduleView';
-import { WeekView } from './components/WeekView';
+import { WeeklyCalendarView } from './components/WeeklyCalendarView';
 import { ImprovedWeekSelector } from './components/ImprovedWeekSelector';
 import { AdvancedScheduleFilters } from './components/AdvancedScheduleFilters';
 import { UnsubmittedEmployeeAssignment } from './components/UnsubmittedEmployeeAssignment';
@@ -215,7 +215,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
 
       {/* Shifts Display */}
       {viewType === 'week' && !isWeekLoading ? (
-        <WeekView
+        <WeeklyCalendarView
           shifts={weekShifts}
           employees={employees}
           branches={branches}
