@@ -161,6 +161,38 @@ export const useEmployeeRegistrationRequests = () => {
     },
   });
 
+  // Mutation לעדכון בקשה
+  const updateRequestMutation = useMutation({
+    mutationFn: async (params: {
+      requestId: string;
+      updateData: Partial<EmployeeRegistrationRequest>;
+    }) => {
+      const { data, error } = await supabase
+        .from('employee_registration_requests')
+        .update(params.updateData)
+        .eq('id', params.requestId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'הצלחה',
+        description: 'בקשת הרישום עודכנה בהצלחה',
+      });
+      queryClient.invalidateQueries({ queryKey: ['employee-registration-requests'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'שגיאה',
+        description: error.message || 'שגיאה בעדכון הבקשה',
+        variant: 'destructive',
+      });
+    },
+  });
+
   // פונקציה לסינון בקשות לפי סטטוס
   const getRequestsByStatus = (status: EmployeeRegistrationRequest['status']) => {
     return requests?.filter(req => req.status === status) || [];
@@ -175,6 +207,8 @@ export const useEmployeeRegistrationRequests = () => {
     isApproving: approveRequestMutation.isPending,
     rejectRequest: rejectRequestMutation.mutate,
     isRejecting: rejectRequestMutation.isPending,
+    updateRequest: updateRequestMutation.mutate,
+    isUpdating: updateRequestMutation.isPending,
     getRequestsByStatus,
     pendingRequests: getRequestsByStatus('pending'),
     approvedRequests: getRequestsByStatus('approved'),

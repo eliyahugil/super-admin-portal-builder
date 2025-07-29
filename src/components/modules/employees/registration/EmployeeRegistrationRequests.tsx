@@ -15,12 +15,14 @@ import {
   XCircle,
   Calendar,
   FileText,
-  AlertCircle 
+  AlertCircle,
+  Edit
 } from 'lucide-react';
 import { useEmployeeRegistrationRequests } from '@/hooks/useEmployeeRegistrationRequests';
 import { RequestDetailDialog } from './RequestDetailDialog';
 import { ApproveRequestDialog } from './ApproveRequestDialog';
 import { RejectRequestDialog } from './RejectRequestDialog';
+import { EditRequestDialog } from './EditRequestDialog';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { RegistrationTokenStats } from './RegistrationTokenStats';
@@ -29,6 +31,7 @@ export const EmployeeRegistrationRequests: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   const {
     requests,
@@ -40,6 +43,8 @@ export const EmployeeRegistrationRequests: React.FC = () => {
     isApproving,
     rejectRequest,
     isRejecting,
+    updateRequest,
+    isUpdating,
   } = useEmployeeRegistrationRequests();
 
   const getStatusBadge = (status: string) => {
@@ -140,6 +145,18 @@ export const EmployeeRegistrationRequests: React.FC = () => {
 
         {request.status === 'pending' && (
           <div className="flex gap-2 pt-2">
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedRequest(request);
+                setShowEditDialog(true);
+              }}
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              ערוך
+            </Button>
             <Button 
               size="sm" 
               onClick={(e) => {
@@ -310,7 +327,7 @@ export const EmployeeRegistrationRequests: React.FC = () => {
         <>
           <RequestDetailDialog
             request={selectedRequest}
-            open={!!selectedRequest && !showApproveDialog && !showRejectDialog}
+            open={!!selectedRequest && !showApproveDialog && !showRejectDialog && !showEditDialog}
             onOpenChange={(open) => !open && setSelectedRequest(null)}
             onApprove={() => setShowApproveDialog(true)}
             onReject={() => setShowRejectDialog(true)}
@@ -343,6 +360,21 @@ export const EmployeeRegistrationRequests: React.FC = () => {
               setShowRejectDialog(false);
               setSelectedRequest(null);
             }}
+          />
+
+          <EditRequestDialog
+            request={selectedRequest}
+            open={showEditDialog}
+            onOpenChange={setShowEditDialog}
+            onUpdate={(updateData) => {
+              updateRequest({
+                requestId: selectedRequest.id,
+                updateData
+              });
+              setShowEditDialog(false);
+              setSelectedRequest(null);
+            }}
+            isUpdating={isUpdating}
           />
         </>
       )}
