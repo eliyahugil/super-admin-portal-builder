@@ -141,7 +141,7 @@ export const ShiftAssignmentPopover: React.FC<ShiftAssignmentPopoverProps> = ({
       <PopoverContent 
         className="w-80 p-0" 
         dir="rtl" 
-        side="left" 
+        side="right" 
         align="start"
         style={{ zIndex: 9999 }}
       >

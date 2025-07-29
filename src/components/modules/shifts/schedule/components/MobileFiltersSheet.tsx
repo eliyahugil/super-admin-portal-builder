@@ -73,7 +73,7 @@ export const MobileFiltersSheet: React.FC<MobileFiltersSheetProps> = ({
         </Button>
       </SheetTrigger>
       
-      <SheetContent side="bottom" className="h-[80vh]" dir="rtl">
+      <SheetContent side="left" className="w-[90vw] max-w-md h-full overflow-y-auto" dir="rtl">
         <SheetHeader className="text-right mb-6">
           <SheetTitle className="text-xl font-bold">סינון משמרות</SheetTitle>
           <SheetDescription className="text-base">

@@ -44,7 +44,7 @@ export const MainSidebar: React.FC = () => {
   };
 
   return (
-    <Sidebar side="right" className="border-r border-border">
+    <Sidebar side="left" className="border-l border-border">
       <SidebarHeader className="p-4 text-right">
         <h2 className="text-lg font-bold text-foreground text-right">
           {business?.name || 'ניהול מערכת'}
