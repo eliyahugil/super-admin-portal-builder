@@ -5,7 +5,7 @@ import { useAdvancedNotifications } from '@/hooks/useAdvancedNotifications';
 
 export const NotificationIcon = () => {
   const navigate = useNavigate();
-  const { notifications, markAsRead, acknowledgeNotification } = useAdvancedNotifications();
+  const { notifications, markAsRead } = useAdvancedNotifications();
 
   // המרת התראות מתקדמות לפורמט של הפאנל הישן
   const convertedNotifications = notifications.map(notification => ({
@@ -30,10 +30,6 @@ export const NotificationIcon = () => {
     }
   };
 
-  const handleDeleteNotification = async (notificationId: string) => {
-    await acknowledgeNotification(notificationId);
-  };
-
   const handleNotificationClick = (notification: any) => {
     switch (notification.type) {
       case 'shift_submission':
@@ -44,7 +40,8 @@ export const NotificationIcon = () => {
         navigate('/modules/shifts');
         break;
       case 'employee_registration':
-        navigate('/modules/employees');
+        // נווט לעמוד אישור עובדים חדשים
+        navigate('/modules/employees/registration-requests');
         break;
       default:
         // For general notifications, stay on current page
@@ -57,7 +54,6 @@ export const NotificationIcon = () => {
       notifications={convertedNotifications}
       onMarkAsRead={handleMarkAsRead}
       onMarkAllAsRead={handleMarkAllAsRead}
-      onDeleteNotification={handleDeleteNotification}
       onNotificationClick={handleNotificationClick}
     />
   );

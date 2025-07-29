@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bell, Clock, User, MapPin, Calendar, CheckCircle, X, UserPlus } from 'lucide-react';
+import { Bell, Clock, User, MapPin, Calendar, CheckCircle, UserPlus, XCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -26,7 +26,6 @@ interface NotificationsPanelProps {
   notifications: Notification[];
   onMarkAsRead: (notificationId: string) => void;
   onMarkAllAsRead: () => void;
-  onDeleteNotification: (notificationId: string) => void;
   onNotificationClick?: (notification: Notification) => void;
 }
 
@@ -34,7 +33,6 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
   notifications,
   onMarkAsRead,
   onMarkAllAsRead,
-  onDeleteNotification,
   onNotificationClick
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -48,7 +46,7 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
       case 'shift_approval':
         return <CheckCircle className="h-4 w-4 text-green-600" />;
       case 'shift_rejection':
-        return <X className="h-4 w-4 text-red-600" />;
+        return <XCircle className="h-4 w-4 text-red-600" />;
       case 'employee_registration':
         return <UserPlus className="h-4 w-4 text-purple-600" />;
       default:
@@ -215,18 +213,6 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
                               <span className="text-xs text-gray-400">
                                 {formatTimeAgo(notification.createdAt)}
                               </span>
-                              
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDeleteNotification(notification.id);
-                                }}
-                                className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
                             </div>
                           </div>
                         </div>
