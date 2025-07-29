@@ -241,6 +241,94 @@ export type Database = {
         }
         Relationships: []
       }
+      advanced_notifications: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          action_deadline: string | null
+          branch_id: string | null
+          business_id: string
+          created_at: string
+          employee_id: string | null
+          id: string
+          is_acknowledged: boolean
+          is_read: boolean
+          message: string
+          metadata: Json | null
+          notification_category: string
+          notification_type: string
+          requires_action: boolean
+          severity: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          action_deadline?: string | null
+          branch_id?: string | null
+          business_id: string
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          is_acknowledged?: boolean
+          is_read?: boolean
+          message: string
+          metadata?: Json | null
+          notification_category: string
+          notification_type: string
+          requires_action?: boolean
+          severity?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          action_deadline?: string | null
+          branch_id?: string | null
+          business_id?: string
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          is_acknowledged?: boolean
+          is_read?: boolean
+          message?: string
+          metadata?: Json | null
+          notification_category?: string
+          notification_type?: string
+          requires_action?: boolean
+          severity?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advanced_notifications_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advanced_notifications_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advanced_notifications_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_records: {
         Row: {
           action: Database["public"]["Enums"]["attendance_action"]
@@ -304,6 +392,94 @@ export type Database = {
             columns: ["scheduled_shift_id"]
             isOneToOne: false
             referencedRelation: "scheduled_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_tracking: {
+        Row: {
+          actual_end_time: string | null
+          actual_start_time: string | null
+          branch_id: string
+          break_end_time: string | null
+          break_overdue_minutes: number | null
+          break_start_time: string | null
+          business_id: string
+          created_at: string
+          employee_id: string
+          expected_break_duration: number | null
+          id: string
+          is_offline_sync: boolean
+          late_minutes: number | null
+          overtime_minutes: number | null
+          scheduled_end_time: string
+          scheduled_start_time: string
+          shift_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          branch_id: string
+          break_end_time?: string | null
+          break_overdue_minutes?: number | null
+          break_start_time?: string | null
+          business_id: string
+          created_at?: string
+          employee_id: string
+          expected_break_duration?: number | null
+          id?: string
+          is_offline_sync?: boolean
+          late_minutes?: number | null
+          overtime_minutes?: number | null
+          scheduled_end_time: string
+          scheduled_start_time: string
+          shift_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          branch_id?: string
+          break_end_time?: string | null
+          break_overdue_minutes?: number | null
+          break_start_time?: string | null
+          business_id?: string
+          created_at?: string
+          employee_id?: string
+          expected_break_duration?: number | null
+          id?: string
+          is_offline_sync?: boolean
+          late_minutes?: number | null
+          overtime_minutes?: number | null
+          scheduled_end_time?: string
+          scheduled_start_time?: string
+          shift_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_tracking_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_tracking_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_tracking_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
@@ -4340,6 +4516,112 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_settings: {
+        Row: {
+          business_id: string
+          created_at: string
+          email_enabled: boolean
+          id: string
+          is_enabled: boolean
+          mobile_enabled: boolean
+          setting_key: string
+          setting_type: string
+          sound_enabled: boolean
+          threshold_unit: string | null
+          threshold_value: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          email_enabled?: boolean
+          id?: string
+          is_enabled?: boolean
+          mobile_enabled?: boolean
+          setting_key: string
+          setting_type: string
+          sound_enabled?: boolean
+          threshold_unit?: string | null
+          threshold_value?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          email_enabled?: boolean
+          id?: string
+          is_enabled?: boolean
+          mobile_enabled?: boolean
+          setting_key?: string
+          setting_type?: string
+          sound_enabled?: boolean
+          threshold_unit?: string | null
+          threshold_value?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offline_actions_log: {
+        Row: {
+          action_data: Json
+          action_type: string
+          attempted_at: string
+          business_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          retry_count: number
+          sync_status: string
+          synced_at: string | null
+          user_id: string
+        }
+        Insert: {
+          action_data: Json
+          action_type: string
+          attempted_at?: string
+          business_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          retry_count?: number
+          sync_status?: string
+          synced_at?: string | null
+          user_id: string
+        }
+        Update: {
+          action_data?: Json
+          action_type?: string
+          attempted_at?: string
+          business_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          retry_count?: number
+          sync_status?: string
+          synced_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offline_actions_log_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opportunities: {
         Row: {
           actual_close_date: string | null
@@ -6289,6 +6571,23 @@ export type Database = {
           created_by_user_id?: string
         }
         Returns: Json
+      }
+      create_advanced_notification: {
+        Args: {
+          p_business_id: string
+          p_user_id: string
+          p_notification_type: string
+          p_notification_category: string
+          p_title: string
+          p_message: string
+          p_employee_id?: string
+          p_branch_id?: string
+          p_severity?: string
+          p_requires_action?: boolean
+          p_action_deadline?: string
+          p_metadata?: Json
+        }
+        Returns: string
       }
       create_custom_module_table: {
         Args: {
