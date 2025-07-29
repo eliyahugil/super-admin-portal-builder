@@ -136,11 +136,24 @@ export const useAdvancedNotifications = () => {
     if (!businessId || !user) return;
 
     try {
-      const { data, error } = await supabase
+      // בנייה דינמית של השאילתה בהתאם לתפקיד המשתמש
+      let query = supabase
         .from('advanced_notifications')
         .select('*')
-        .eq('business_id', businessId)
-        .eq('user_id', user.id)
+        .eq('business_id', businessId);
+
+      // אם לא סופר אדמין, הוסף פילטר למשתמש ספציפי
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.role !== 'super_admin') {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -290,46 +303,68 @@ export const useAdvancedNotifications = () => {
     loadNotifications();
     loadSettings();
 
-    const channel = supabase
-      .channel(`advanced-notifications-${businessId}-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'advanced_notifications',
-          filter: `business_id=eq.${businessId} AND user_id=eq.${user.id}`
-        },
-        async (payload) => {
-          const newNotification = payload.new as AdvancedNotification;
-          
-          setNotifications(prev => [newNotification, ...prev]);
-          
-          // הצגת התראה visual
-          toast[newNotification.severity === 'critical' ? 'error' : 'info'](
-            newNotification.title,
-            { description: newNotification.message }
-          );
+    // בדיקת תפקיד המשתמש לפילטר realtime
+    const checkUserRoleAndSubscribe = async () => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
-          // השמעת צליל
-          const setting = settings.find(s => 
-            s.setting_type === newNotification.notification_category && 
-            s.sound_enabled
-          );
-          if (setting?.sound_enabled !== false) {
-            playNotificationSound(newNotification.severity as 'info' | 'warning' | 'error' | 'critical');
+      const isSuper = profile?.role === 'super_admin';
+      
+      // בניית פילטר בהתאם לתפקיד
+      const filter = isSuper 
+        ? `business_id=eq.${businessId}`
+        : `business_id=eq.${businessId} AND user_id=eq.${user.id}`;
+
+      const channel = supabase
+        .channel(`advanced-notifications-${businessId}-${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'advanced_notifications',
+            filter: filter
+          },
+          async (payload) => {
+            const newNotification = payload.new as AdvancedNotification;
+            
+            setNotifications(prev => [newNotification, ...prev]);
+            
+            // הצגת התראה visual
+            toast[newNotification.severity === 'critical' ? 'error' : 'info'](
+              newNotification.title,
+              { description: newNotification.message }
+            );
+
+            // השמעת צליל
+            const setting = settings.find(s => 
+              s.setting_type === newNotification.notification_category && 
+              s.sound_enabled
+            );
+            if (setting?.sound_enabled !== false) {
+              playNotificationSound(newNotification.severity as 'info' | 'warning' | 'error' | 'critical');
+            }
+
+            // התראה native במובייל
+            if (Capacitor.isNativePlatform()) {
+              await showNativeNotification(newNotification);
+            }
           }
+        )
+        .subscribe();
 
-          // התראה native במובייל
-          if (Capacitor.isNativePlatform()) {
-            await showNativeNotification(newNotification);
-          }
-        }
-      )
-      .subscribe();
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
 
+    const cleanup = checkUserRoleAndSubscribe();
+    
     return () => {
-      supabase.removeChannel(channel);
+      cleanup.then(fn => fn && fn());
     };
   }, [businessId, user, loadNotifications, loadSettings, playNotificationSound, showNativeNotification, settings]);
 
