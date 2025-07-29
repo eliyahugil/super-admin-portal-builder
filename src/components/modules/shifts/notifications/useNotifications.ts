@@ -5,7 +5,7 @@ import { useMobileNotifications } from '@/hooks/useMobileNotifications';
 
 interface Notification {
   id: string;
-  type: 'shift_submission' | 'shift_approval' | 'shift_rejection' | 'general';
+  type: 'shift_submission' | 'shift_approval' | 'shift_rejection' | 'employee_registration' | 'general';
   title: string;
   message: string;
   employeeName?: string;
@@ -52,8 +52,10 @@ export const useNotifications = () => {
     if (!profile?.business_id) return;
 
     try {
+      const allNotifications: Notification[] = [];
+
       // קריאה להגשות משמרות חדשות מטבלת shift_submissions
-      const { data: shiftSubmissions, error } = await supabase
+      const { data: shiftSubmissions, error: shiftError } = await supabase
         .from('shift_submissions')
         .select(`
           id,
@@ -73,35 +75,61 @@ export const useNotifications = () => {
         .eq('status', 'submitted')
         .order('submitted_at', { ascending: false });
 
-      if (error) {
-        console.error('Error loading shift submissions:', error);
-        return;
+      if (shiftError) {
+        console.error('Error loading shift submissions:', shiftError);
+      } else {
+        // המרת הגשות משמרות להתראות
+        const shiftNotifications: Notification[] = (shiftSubmissions || []).map(submission => {
+          const shifts = Array.isArray(submission.shifts) ? submission.shifts : [];
+          const shiftsCount = shifts.length;
+          
+          return {
+            id: submission.id,
+            type: 'shift_submission' as const,
+            title: 'הגשת משמרות חדשה',
+            message: `עובד הגיש ${shiftsCount} משמרות לשבוע`,
+            employeeName: `${submission.employees.first_name} ${submission.employees.last_name}`,
+            submissionTime: new Date(submission.submitted_at).toLocaleTimeString('he-IL', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            }),
+            shiftDate: `${new Date(submission.week_start_date).toLocaleDateString('he-IL')} - ${new Date(submission.week_end_date).toLocaleDateString('he-IL')}`,
+            shiftTime: `${shiftsCount} משמרות`,
+            branchName: submission.notes || 'אין הערות',
+            isRead: false,
+            createdAt: submission.submitted_at
+          };
+        });
+        allNotifications.push(...shiftNotifications);
       }
 
-      // המרת הגשות משמרות להתראות
-      const shiftNotifications: Notification[] = (shiftSubmissions || []).map(submission => {
-        const shifts = Array.isArray(submission.shifts) ? submission.shifts : [];
-        const shiftsCount = shifts.length;
-        
-        return {
-          id: submission.id,
-          type: 'shift_submission' as const,
-          title: 'הגשת משמרות חדשה',
-          message: `עובד הגיש ${shiftsCount} משמרות לשבוע`,
-          employeeName: `${submission.employees.first_name} ${submission.employees.last_name}`,
-          submissionTime: new Date(submission.submitted_at).toLocaleTimeString('he-IL', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-          }),
-          shiftDate: `${new Date(submission.week_start_date).toLocaleDateString('he-IL')} - ${new Date(submission.week_end_date).toLocaleDateString('he-IL')}`,
-          shiftTime: `${shiftsCount} משמרות`,
-          branchName: submission.notes || 'אין הערות',
-          isRead: false,
-          createdAt: submission.submitted_at
-        };
-      });
+      // קריאה להתראות רישום עובדים
+      const { data: registrationNotifications, error: regError } = await supabase
+        .from('employee_registration_notifications')
+        .select('*')
+        .eq('business_id', profile.business_id)
+        .eq('is_read', false)
+        .order('created_at', { ascending: false });
 
-      setNotifications(shiftNotifications);
+      if (regError) {
+        console.error('Error loading registration notifications:', regError);
+      } else {
+        // המרת התראות רישום עובדים
+        const empRegNotifications: Notification[] = (registrationNotifications || []).map(notification => ({
+          id: notification.id,
+          type: 'employee_registration' as const,
+          title: notification.title,
+          message: notification.message,
+          isRead: notification.is_read,
+          createdAt: notification.created_at
+        }));
+        allNotifications.push(...empRegNotifications);
+      }
+
+      // מיון לפי תאריך יצירה
+      allNotifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      setNotifications(allNotifications);
     } catch (error) {
       console.error('Error in loadNotifications:', error);
     }
@@ -114,7 +142,7 @@ export const useNotifications = () => {
     if (!profile?.business_id) return;
     
     const channel = supabase
-      .channel(`shift-submissions-${profile.business_id}`)
+      .channel(`notifications-${profile.business_id}`)
       .on(
         'postgres_changes',
         {
@@ -146,6 +174,36 @@ export const useNotifications = () => {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'employee_registration_notifications'
+        },
+        (payload) => {
+          console.log('New employee registration notification:', payload);
+          
+          // בדיקה שזה התראה שייכת לעסק הנוכחי
+          if (payload.new?.business_id === profile.business_id) {
+            
+            // אם זה אפליקציה native, הצג התראה native
+            if (isNative) {
+              showLocalNotification(
+                payload.new.title || 'התראת רישום עובד',
+                payload.new.message || 'התראה חדשה על רישום עובד',
+                { type: 'employee_registration', payload }
+              );
+            } else {
+              // אחרת, נגן צליל התראה
+              playNotificationSound();
+            }
+            
+            // טעינה מחדש של ההתראות כשיש התראה חדשה
+            loadNotifications();
+          }
+        }
+      )
       .subscribe();
 
     return () => {
@@ -162,7 +220,20 @@ export const useNotifications = () => {
     setNotifications(prev => [newNotification, ...prev]);
   };
 
-  const markAsRead = (notificationId: string) => {
+  const markAsRead = async (notificationId: string) => {
+    // עדכון התראה במסד נתונים אם זה התראת רישום עובד
+    const notification = notifications.find(n => n.id === notificationId);
+    if (notification?.type === 'employee_registration') {
+      try {
+        await supabase
+          .from('employee_registration_notifications')
+          .update({ is_read: true })
+          .eq('id', notificationId);
+      } catch (error) {
+        console.error('Error updating notification read status:', error);
+      }
+    }
+
     setNotifications(prev =>
       prev.map(n =>
         n.id === notificationId ? { ...n, isRead: true } : n

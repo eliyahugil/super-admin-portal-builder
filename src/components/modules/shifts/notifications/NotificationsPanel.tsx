@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bell, Clock, User, MapPin, Calendar, CheckCircle, X } from 'lucide-react';
+import { Bell, Clock, User, MapPin, Calendar, CheckCircle, X, UserPlus } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
 
 interface Notification {
   id: string;
-  type: 'shift_submission' | 'shift_approval' | 'shift_rejection' | 'general';
+  type: 'shift_submission' | 'shift_approval' | 'shift_rejection' | 'employee_registration' | 'general';
   title: string;
   message: string;
   employeeName?: string;
@@ -47,6 +47,8 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
         return <CheckCircle className="h-4 w-4 text-green-600" />;
       case 'shift_rejection':
         return <X className="h-4 w-4 text-red-600" />;
+      case 'employee_registration':
+        return <UserPlus className="h-4 w-4 text-purple-600" />;
       default:
         return <Bell className="h-4 w-4 text-gray-600" />;
     }
@@ -62,6 +64,8 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
         return `${baseClasses} ${!isRead ? 'border-l-green-500' : ''}`;
       case 'shift_rejection':
         return `${baseClasses} ${!isRead ? 'border-l-red-500' : ''}`;
+      case 'employee_registration':
+        return `${baseClasses} ${!isRead ? 'border-l-purple-500' : ''}`;
       default:
         return `${baseClasses} ${!isRead ? 'border-l-gray-500' : ''}`;
     }
@@ -185,6 +189,16 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
                                     {notification.branchName}
                                   </Badge>
                                 )}
+                              </div>
+                            )}
+
+                            {/* פרטי רישום עובד */}
+                            {notification.type === 'employee_registration' && (
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                                  <UserPlus className="h-3 w-3 ml-1" />
+                                  רישום עובד חדש
+                                </Badge>
                               </div>
                             )}
                             
