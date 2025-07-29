@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus, Filter, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Plus, Filter, Eye, EyeOff, ChevronDown, ChevronUp, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { MobileShiftCard } from './MobileShiftCard';
@@ -36,6 +36,7 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
   const [showNewShifts, setShowNewShifts] = useState(true);
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
   const [selectedWeek, setSelectedWeek] = useState(new Date());
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
 
   // Safely handle pendingSubmissions
   const safePendingSubmissions: PendingSubmission[] = Array.isArray(pendingSubmissions) 
@@ -201,10 +202,16 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
               <p className="text-base font-medium text-muted-foreground mb-4 bg-muted/30 p-3 rounded-lg border border-border">
                 לא נמצאו משמרות בשבוע הנבחר
               </p>
-              <Button onClick={() => onAddShift(selectedWeek)} size="lg" className="font-bold">
-                <Plus className="h-5 w-5 ml-2" />
-                הוסף משמרת לשבוע זה
-              </Button>
+              <div className="space-y-3 pb-20"> {/* הוספת padding למטה למניעת חסימה */}
+                <Button onClick={() => onAddShift(selectedWeek)} size="lg" className="font-bold w-full">
+                  <Plus className="h-5 w-5 ml-2" />
+                  הוסף משמרת לשבוע זה
+                </Button>
+                <Button onClick={() => setCopyDialogOpen(true)} size="lg" variant="outline" className="font-bold w-full">
+                  <Copy className="h-5 w-5 ml-2" />
+                  העתק משמרות משבוע קודם
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
@@ -263,8 +270,11 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
                 </Collapsible>
               );
             })
-        )}
+         )}
       </div>
+      
+      {/* הוספת padding גדול למטה */}
+      <div className="pb-24"></div>
     </div>
   );
 };
