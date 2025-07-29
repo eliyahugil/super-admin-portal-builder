@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Upload, FileText, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useActivityLogger } from '@/hooks/useActivityLogger';
@@ -48,6 +48,7 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
     email: '',
     phone: '',
     address: '',
+    birth_date: '', // הוספת תאריך לידה
     employee_type: 'permanent' as EmployeeType,
     preferred_shift_type: 'morning' as ShiftType,
     weekly_hours_required: 40,
@@ -61,6 +62,22 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
     password: '',
     is_system_user: false,
   });
+  
+  // שדות מסמכים נדרשים
+  const [requiredDocuments, setRequiredDocuments] = useState({
+    id_document: null as File | null,
+    form_101: null as File | null,
+    employment_agreement: null as File | null,
+    medical_certificate: null as File | null,
+  });
+  
+  const [documentUploading, setDocumentUploading] = useState({
+    id_document: false,
+    form_101: false,
+    employment_agreement: false,
+    medical_certificate: false,
+  });
+  
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -90,6 +107,35 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
   });
 
   const effectiveBusinessId = businessId || formData.selected_business_id;
+
+  // חישוב האם נדרש אישור רפואי לפי גיל
+  const isUnder18 = formData.birth_date ? 
+    new Date().getFullYear() - new Date(formData.birth_date).getFullYear() < 18 : false;
+
+  // פונקציה להעלאת קובץ לסטורג'
+  const uploadDocumentToStorage = async (file: File, documentType: string, employeeId: string): Promise<string | null> => {
+    const fileName = `${documentType}_${employeeId}_${Date.now()}.${file.name.split('.').pop()}`;
+    const filePath = `employee-documents/${employeeId}/${fileName}`;
+
+    const { data, error } = await supabase.storage
+      .from('employee-files')
+      .upload(filePath, file);
+
+    if (error) {
+      console.error('Error uploading document:', error);
+      return null;
+    }
+
+    return filePath;
+  };
+
+  // פונקציה לטיפול בהעלאת קובץ
+  const handleDocumentUpload = (documentType: keyof typeof requiredDocuments, file: File | null) => {
+    setRequiredDocuments(prev => ({
+      ...prev,
+      [documentType]: file
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,6 +175,7 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
         email: formData.email.trim() || null,
         phone: formData.phone.trim() || null,
         address: formData.address.trim() || null,
+        birth_date: formData.birth_date || null,
         employee_type: formData.employee_type,
         preferred_shift_type: formData.preferred_shift_type,
         weekly_hours_required: formData.weekly_hours_required,
@@ -148,7 +195,6 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
         employeeData.is_system_user = false;
       }
 
-      // For display/debug:
       console.log('👤 Creating employee with user fields:', employeeData);
 
       const { data: createdEmployee, error } = await supabase
@@ -180,6 +226,8 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
 
       console.log('✅ Employee created successfully:', createdEmployee);
 
+      // השאר לעת עתה בלי מסמכים נדרשים עד שהטבלה תיוצר כראוי
+
       logActivity({
         action: 'create',
         target_type: 'employee',
@@ -200,6 +248,7 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
         description: 'העובד נוצר בהצלחה',
       });
 
+      // איפוס הטופס
       setFormData({
         employee_id: '',
         first_name: '',
@@ -208,6 +257,7 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
         email: '',
         phone: '',
         address: '',
+        birth_date: '',
         employee_type: 'permanent',
         preferred_shift_type: 'morning',
         weekly_hours_required: 40,
@@ -219,6 +269,13 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
         username: '',
         password: '',
         is_system_user: false,
+      });
+
+      setRequiredDocuments({
+        id_document: null,
+        form_101: null,
+        employment_agreement: null,
+        medical_certificate: null,
       });
 
       onSuccess();
@@ -243,6 +300,12 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
       });
     } finally {
       setLoading(false);
+      setDocumentUploading({
+        id_document: false,
+        form_101: false,
+        employment_agreement: false,
+        medical_certificate: false,
+      });
     }
   };
 
@@ -431,14 +494,28 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="hire_date">תאריך תחילת עבודה</Label>
-            <Input
-              id="hire_date"
-              type="date"
-              value={formData.hire_date}
-              onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="birth_date">תאריך לידה</Label>
+              <Input
+                id="birth_date"
+                type="date"
+                value={formData.birth_date}
+                onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+              />
+              <div className="text-xs text-muted-foreground mt-1">
+                נדרש לחישוב האם עובד מתחת לגיל 18 (אישור רפואי)
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="hire_date">תאריך תחילת עבודה</Label>
+              <Input
+                id="hire_date"
+                type="date"
+                value={formData.hire_date}
+                onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
+              />
+            </div>
           </div>
 
           <div>
@@ -502,6 +579,119 @@ export const CreateEmployeeDialog: React.FC<CreateEmployeeDialogProps> = ({
               disabled={!formData.username}
             />
             <span className="text-xs text-gray-500">(סימון זה יאפשר לעובד גישה לאפליקציה)</span>
+          </div>
+
+          {/* --- מסמכים נדרשים --- */}
+          <div className="border-t pt-4">
+            <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              מסמכים נדרשים לעובד חדש
+            </h3>
+            
+            <div className="grid grid-cols-1 gap-4">
+              {/* צילום תעודת זהות */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  צילום תעודת זהות *
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={(e) => handleDocumentUpload('id_document', e.target.files?.[0] || null)}
+                    className="flex-1"
+                  />
+                  {requiredDocuments.id_document && (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  )}
+                  {documentUploading.id_document && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  )}
+                </div>
+              </div>
+
+              {/* טופס 101 חתום */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  טופס 101 חתום *
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={(e) => handleDocumentUpload('form_101', e.target.files?.[0] || null)}
+                    className="flex-1"
+                  />
+                  {requiredDocuments.form_101 && (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  )}
+                  {documentUploading.form_101 && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  )}
+                </div>
+              </div>
+
+              {/* חתימה על אישור העסקה */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  חתימה על אישור העסקה *
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={(e) => handleDocumentUpload('employment_agreement', e.target.files?.[0] || null)}
+                    className="flex-1"
+                  />
+                  {requiredDocuments.employment_agreement && (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  )}
+                  {documentUploading.employment_agreement && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  )}
+                </div>
+              </div>
+
+              {/* אישור רפואי - רק אם נדרש */}
+              {isUnder18 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    אישור רפואי * (נדרש עבור עובדים מתחת לגיל 18)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(e) => handleDocumentUpload('medical_certificate', e.target.files?.[0] || null)}
+                      className="flex-1"
+                    />
+                    {requiredDocuments.medical_certificate && (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    )}
+                    {documentUploading.medical_certificate && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {!isUnder18 && formData.birth_date && (
+                <div className="text-sm text-green-600 flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  אישור רפואי לא נדרש (עובד מעל גיל 18)
+                </div>
+              )}
+              
+              {!formData.birth_date && (
+                <div className="text-sm text-muted-foreground">
+                  הזן תאריך לידה כדי לקבוע האם נדרש אישור רפואי
+                </div>
+              )}
+            </div>
           </div>
 
           {/* טוגל פעיל, כפתורים וכו' */}
