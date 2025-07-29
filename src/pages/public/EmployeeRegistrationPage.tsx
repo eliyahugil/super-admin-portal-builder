@@ -188,6 +188,16 @@ export const EmployeeRegistrationPage: React.FC = () => {
 
       alert('📤 About to send to database');
       console.log('📤 Final submission data structure:', submissionData);
+      console.log('🔍 Required fields check:', {
+        token_id: submissionData.token_id,
+        business_id: submissionData.business_id,
+        first_name: submissionData.first_name,
+        last_name: submissionData.last_name,
+        id_number: submissionData.id_number,
+        email: submissionData.email,
+        birth_date: submissionData.birth_date,
+        status: submissionData.status
+      });
 
       const { data: insertedData, error } = await supabase
         .from('employee_registration_requests')
