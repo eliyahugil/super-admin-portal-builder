@@ -288,7 +288,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
   if (businessLoading && !isSuperAdmin) {
     return (
       <Sheet open={isOpen} onOpenChange={onOpenChange}>
-        <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0">
+        <SheetContent side="right" className="w-[280px] sm:w-[320px] p-0">
           <SheetHeader className="px-4 py-6 border-b">
             <Skeleton className="h-6 w-32 mb-2" />
             <Skeleton className="h-4 w-24" />
@@ -305,7 +305,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onOpenChan
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0 flex flex-col bg-gradient-to-b from-background to-muted/20">
+      <SheetContent side="right" className="w-[300px] sm:w-[350px] p-0 flex flex-col bg-gradient-to-b from-background to-muted/20">
         <SheetHeader className="px-6 py-6 border-b border-border/50 flex-shrink-0 bg-gradient-to-r from-primary/5 to-primary/10">
           <div className="flex items-center justify-between">
             <div className="text-right">

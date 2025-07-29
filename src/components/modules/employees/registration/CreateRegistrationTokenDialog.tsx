@@ -73,7 +73,7 @@ export const CreateRegistrationTokenDialog: React.FC<Props> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]" dir="rtl">
+      <DialogContent className="w-[95vw] max-w-lg mx-auto max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>יצירת טוקן הוספת עובדים</DialogTitle>
         </DialogHeader>

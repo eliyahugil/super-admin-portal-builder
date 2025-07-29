@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export const SidebarLoading: React.FC = () => {
   return (
-    <Sidebar side="left" className="border-l border-border hidden md:flex">
+    <Sidebar side="right" className="border-r border-border hidden md:flex">
       <SidebarHeader className="p-4 text-right">
         <Skeleton className="h-6 w-32 mb-2" />
         <Skeleton className="h-4 w-24" />
