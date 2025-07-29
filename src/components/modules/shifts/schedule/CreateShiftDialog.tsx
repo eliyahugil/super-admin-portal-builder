@@ -44,7 +44,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({ open, onCl
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-4xl mx-auto max-h-[90vh] overflow-y-auto" dir="rtl">
+      <DialogContent className="w-[95vw] max-w-2xl mx-auto max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>יצירת משמרת חדשה</DialogTitle>
         </DialogHeader>
