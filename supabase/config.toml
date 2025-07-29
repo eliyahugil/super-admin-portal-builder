@@ -183,3 +183,6 @@ verify_jwt = false
 
 [functions.check-submission-status]
 verify_jwt = false
+
+[functions.employee-registration]
+verify_jwt = false

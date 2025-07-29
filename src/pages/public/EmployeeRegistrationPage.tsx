@@ -199,25 +199,25 @@ export const EmployeeRegistrationPage: React.FC = () => {
         status: submissionData.status
       });
 
-      const { data: insertedData, error } = await supabase
-        .from('employee_registration_requests')
-        .insert(submissionData)
-        .select();
+      // Use edge function to handle registration
+      const { data: response, error } = await supabase.functions.invoke('employee-registration', {
+        body: { registrationData: submissionData }
+      });
 
       if (error) {
-        alert('❌ Database error: ' + error.message);
-        console.error('❌ Database insertion error:', error);
-        console.error('❌ Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        alert('❌ Edge function error: ' + error.message);
+        console.error('❌ Edge function error:', error);
         throw error;
       }
 
-      alert('✅ Database insert successful!');
-      console.log('✅ Registration submitted successfully:', insertedData);
+      if (!response.success) {
+        alert('❌ Registration error: ' + response.error);
+        console.error('❌ Registration error:', response.error);
+        throw new Error(response.error);
+      }
+
+      alert('✅ Registration successful!');
+      console.log('✅ Registration submitted successfully:', response.data);
       
       // Update token registration count if needed
       try {
