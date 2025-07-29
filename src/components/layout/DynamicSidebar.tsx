@@ -45,7 +45,7 @@ export const DynamicSidebar: React.FC = () => {
   const adminMenuItems = createAdminMenuItems();
 
   return (
-    <Sidebar side="right" className="border-r border-border hidden md:flex w-52 shrink-0">
+    <Sidebar side="right" className="border-r border-border hidden md:flex w-[--sidebar-width] shrink-0">
       <SidebarHeader />
 
       <SidebarContent className="px-2 py-4">
