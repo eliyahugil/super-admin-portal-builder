@@ -28,6 +28,75 @@
   label { font-size: 0.85rem !important; }
 }
 
+/* מערכת הגדרות תצוגה גלובלית */
+/* ערכות צבעים */
+[data-color-scheme="blue"] {
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+}
+
+[data-color-scheme="green"] {
+  --primary: 142.1 76.2% 36.3%;
+  --primary-foreground: 138 76% 97%;
+}
+
+[data-color-scheme="purple"] {
+  --primary: 262.1 83.3% 57.8%;
+  --primary-foreground: 270 20% 98%;
+}
+
+[data-color-scheme="orange"] {
+  --primary: 24.6 95% 53.1%;
+  --primary-foreground: 24 76% 97%;
+}
+
+/* צפיפות תצוגה */
+[data-density="compact"] {
+  --spacing-unit: 0.75rem;
+  --component-height: 2rem;
+}
+
+[data-density="comfortable"] {
+  --spacing-unit: 1rem;
+  --component-height: 2.5rem;
+}
+
+[data-density="spacious"] {
+  --spacing-unit: 1.5rem;
+  --component-height: 3rem;
+}
+
+/* מצב דחוס */
+.compact-mode .space-y-4 > * + * {
+  margin-top: 0.5rem !important;
+}
+
+.compact-mode .p-4 {
+  padding: 0.5rem !important;
+}
+
+.compact-mode .gap-4 {
+  gap: 0.5rem !important;
+}
+
+/* כיבוי אנימציות */
+.no-animations *,
+.no-animations *::before,
+.no-animations *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* רספונסיביות כללית לדיאלוגים */
+.dialog-mobile {
+  @apply !w-[95vw] !max-w-[95vw] sm:!max-w-2xl !left-[50%] !translate-x-[-50%] max-h-[95vh] overflow-y-auto p-3 sm:p-6;
+}
+
+.dialog-large-mobile {
+  @apply !w-[95vw] !max-w-[95vw] sm:!max-w-4xl !left-[50%] !translate-x-[-50%] max-h-[95vh] overflow-y-auto p-3 sm:p-6;
+}
+
 /* תיקון רקע Google Maps מציק */
 body {
   background: #ffffff !important;

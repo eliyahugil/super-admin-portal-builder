@@ -109,7 +109,7 @@ export const BulkEditShiftsDialog: React.FC<BulkEditShiftsDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] sm:max-w-[800px] max-h-[95vh] overflow-y-auto" dir="rtl">
+      <DialogContent className="!w-[95vw] !max-w-[95vw] sm:!max-w-4xl !left-[50%] !translate-x-[-50%] max-h-[95vh] overflow-y-auto p-3 sm:p-6" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>עריכה מרובה של משמרות</span>

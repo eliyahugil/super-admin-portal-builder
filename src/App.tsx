@@ -13,6 +13,7 @@ import { MainRoutes } from '@/components/routes/MainRoutes';
 import { BusinessRoutes } from '@/components/routes/BusinessRoutes';
 import { ModuleRoutes } from '@/components/routes/ModuleRoutes';
 import { AdminRoutes } from '@/components/routes/AdminRoutes';
+import { useUserDisplaySettings } from '@/hooks/useUserDisplaySettings';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,6 +26,9 @@ const queryClient = new QueryClient({
 
 function App() {
   console.log('🚀 App component rendering');
+  
+  // טעינת הגדרות תצוגה בטעינה הראשונה
+  useUserDisplaySettings();
   
   return (
     <ErrorBoundary>

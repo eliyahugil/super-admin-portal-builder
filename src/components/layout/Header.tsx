@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BusinessSwitcher } from './BusinessSwitcher';
+import { DisplaySettingsButton } from '@/components/settings/DisplaySettingsButton';
 
 interface HeaderProps {
   onMobileMenuToggle?: () => void;
@@ -101,6 +102,7 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
         {/* Business Switcher and Notifications and User Profile Menu - Right side */}
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {isSuperAdmin && !isMobile && <BusinessSwitcher />}
+          <DisplaySettingsButton />
           <ActivityPanel />
           <NotificationIcon />
           <UserProfileMenu />
