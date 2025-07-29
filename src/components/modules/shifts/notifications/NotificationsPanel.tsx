@@ -27,15 +27,23 @@ interface NotificationsPanelProps {
   onMarkAsRead: (notificationId: string) => void;
   onMarkAllAsRead: () => void;
   onNotificationClick?: (notification: Notification) => void;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
   notifications,
   onMarkAsRead,
   onMarkAllAsRead,
-  onNotificationClick
+  onNotificationClick,
+  isOpen: externalIsOpen,
+  onOpenChange
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  
+  // Use external control if provided, otherwise use internal state
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = onOpenChange || setInternalIsOpen;
   
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -148,6 +156,8 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
                         }
                         if (onNotificationClick) {
                           onNotificationClick(notification);
+                          // Close the popover when navigating
+                          setIsOpen(false);
                         }
                       }}
                     >

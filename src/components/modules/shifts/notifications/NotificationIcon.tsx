@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationsPanel } from './NotificationsPanel';
 import { useAdvancedNotifications } from '@/hooks/useAdvancedNotifications';
@@ -49,12 +49,16 @@ export const NotificationIcon = () => {
     }
   };
 
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <NotificationsPanel 
       notifications={convertedNotifications}
       onMarkAsRead={handleMarkAsRead}
       onMarkAllAsRead={handleMarkAllAsRead}
       onNotificationClick={handleNotificationClick}
+      isOpen={isOpen}
+      onOpenChange={setIsOpen}
     />
   );
 };
