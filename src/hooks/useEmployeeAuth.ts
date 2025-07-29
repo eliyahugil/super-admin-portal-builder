@@ -96,21 +96,42 @@ export const useEmployeeAuth = () => {
 
       // Check if it's first login (default password: 123456)
       if (employee.is_first_login) {
-        if (password === '123456') {
-          console.log('✅ First login successful, requires birth date update');
-          const employeeSession: EmployeeSession = {
-            employee,
-            isFirstLogin: true
-          };
-          setSession(employeeSession);
-          localStorage.setItem('employee_session', JSON.stringify(employeeSession));
-          
-          return { 
-            success: true, 
-            requiresBirthDate: true,
-            employee 
-          };
-        } else {
+      if (password === '123456') {
+        console.log('✅ First login successful, requires birth date update');
+        
+        // Generate permanent token if employee doesn't have one (for first login too)
+        try {
+          const { data: existingToken } = await supabase
+            .from('employee_permanent_tokens')
+            .select('token')
+            .eq('employee_id', employee.id)
+            .eq('is_active', true)
+            .maybeSingle();
+
+          if (!existingToken) {
+            console.log('🔑 Creating permanent token for new employee:', employee.id);
+            await supabase.rpc('generate_employee_permanent_token', {
+              p_employee_id: employee.id
+            });
+          }
+        } catch (error) {
+          console.error('Error creating permanent token:', error);
+          // Don't fail login if token creation fails
+        }
+        
+        const employeeSession: EmployeeSession = {
+          employee,
+          isFirstLogin: true
+        };
+        setSession(employeeSession);
+        localStorage.setItem('employee_session', JSON.stringify(employeeSession));
+        
+        return { 
+          success: true, 
+          requiresBirthDate: true,
+          employee 
+        };
+      } else {
           toast({
             title: 'סיסמה שגויה',
             description: 'עבור התחברות ראשונה השתמש בסיסמה: 123456',
@@ -134,6 +155,27 @@ export const useEmployeeAuth = () => {
       const expectedPassword = generatePasswordFromBirthDate(employee.birth_date);
       if (password === expectedPassword) {
         console.log('✅ Login successful with birth date password');
+        
+        // Generate permanent token if employee doesn't have one
+        try {
+          const { data: existingToken } = await supabase
+            .from('employee_permanent_tokens')
+            .select('token')
+            .eq('employee_id', employee.id)
+            .eq('is_active', true)
+            .maybeSingle();
+
+          if (!existingToken) {
+            console.log('🔑 Creating permanent token for employee:', employee.id);
+            await supabase.rpc('generate_employee_permanent_token', {
+              p_employee_id: employee.id
+            });
+          }
+        } catch (error) {
+          console.error('Error creating permanent token:', error);
+          // Don't fail login if token creation fails
+        }
+        
         const employeeSession: EmployeeSession = {
           employee,
           isFirstLogin: false

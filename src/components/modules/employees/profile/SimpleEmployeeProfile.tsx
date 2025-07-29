@@ -240,8 +240,8 @@ export const SimpleEmployeeProfile: React.FC = () => {
           setNotifications(notificationsData);
         }
 
-        // Fetch active tokens for this employee - UPDATED for new system
-        const { data: tokensData } = await supabase
+        // Fetch active tokens for this employee - UPDATED for permanent tokens
+        const { data: weeklyTokensData } = await supabase
           .from('employee_weekly_tokens')
           .select('*')
           .eq('employee_id', employeeId)
@@ -250,9 +250,28 @@ export const SimpleEmployeeProfile: React.FC = () => {
           .gt('expires_at', new Date().toISOString())
           .order('created_at', { ascending: false });
 
-        if (tokensData) {
-          setActiveTokens(tokensData);
-        }
+        // Fetch permanent tokens for this employee
+        const { data: permanentTokensData } = await supabase
+          .from('employee_permanent_tokens')
+          .select('*')
+          .eq('employee_id', employeeId)
+          .eq('business_id', employeeData.business_id)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        // Combine weekly and permanent tokens
+        const allTokens = [
+          ...(weeklyTokensData || []),
+          ...(permanentTokensData || []).map(token => ({
+            ...token,
+            is_permanent: true,
+            week_start_date: null,
+            week_end_date: null,
+            expires_at: null // Permanent tokens don't expire
+          }))
+        ];
+
+        setActiveTokens(allTokens);
 
       } catch (error) {
         console.error('Unexpected error:', error);
@@ -1073,31 +1092,49 @@ export const SimpleEmployeeProfile: React.FC = () => {
                 ) : (
                   <div className="space-y-3">
                     {activeTokens.map((token) => (
-                      <div key={token.id} className="p-4 border rounded-lg bg-green-50 border-green-200">
+                      <div key={token.id} className={`p-4 border rounded-lg ${
+                        token.is_permanent 
+                          ? 'bg-blue-50 border-blue-200' 
+                          : 'bg-green-50 border-green-200'
+                      }`}>
                         <div className="flex items-center justify-between mb-3">
                           <div className="text-right flex-1">
-                            <h4 className="font-medium text-lg">טוקן להגשה וצפייה במשמרות</h4>
+                            <h4 className="font-medium text-lg">
+                              {token.is_permanent ? 'טוקן קבוע להגשת משמרות' : 'טוקן להגשה וצפייה במשמרות'}
+                            </h4>
                             <p className="text-sm text-muted-foreground">
-                              מאפשר הגשת משמרות וצפייה במשמרות עבר/עתיד <br/>
-                              תקף מ-{format(new Date(token.week_start_date), 'dd/MM/yyyy')} 
-                              {' '}עד{' '}
-                              {format(new Date(token.week_end_date), 'dd/MM/yyyy')}
+                              {token.is_permanent ? (
+                                'טוקן אישי קבוע להגשת משמרות - לא פג תוקף'
+                              ) : (
+                                <>
+                                  מאפשר הגשת משמרות וצפייה במשמרות עבר/עתיד <br/>
+                                  תקף מ-{format(new Date(token.week_start_date), 'dd/MM/yyyy')} 
+                                  {' '}עד{' '}
+                                  {format(new Date(token.week_end_date), 'dd/MM/yyyy')}
+                                </>
+                              )}
                             </p>
                           </div>
                           <div className="text-left">
-                            <Badge variant="outline" className="bg-green-100 text-green-800">
-                              פעיל
+                            <Badge variant="outline" className={
+                              token.is_permanent 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-green-100 text-green-800'
+                            }>
+                              {token.is_permanent ? 'קבוע' : 'פעיל'}
                             </Badge>
                           </div>
                         </div>
                         
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">תוקף עד:</span>
-                            <span className="font-medium">
-                              {format(new Date(token.expires_at), 'dd/MM/yyyy HH:mm')}
-                            </span>
-                          </div>
+                          {!token.is_permanent && (
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">תוקף עד:</span>
+                              <span className="font-medium">
+                                {format(new Date(token.expires_at), 'dd/MM/yyyy HH:mm')}
+                              </span>
+                            </div>
+                          )}
                           
                           {token.max_submissions && (
                             <div className="flex items-center justify-between text-sm">
@@ -1111,7 +1148,7 @@ export const SimpleEmployeeProfile: React.FC = () => {
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">סוג טוקן:</span>
                             <span className="font-medium">
-                              {token.employee_id ? 'אישי' : 'כללי'}
+                              {token.is_permanent ? 'קבוע אישי' : (token.employee_id ? 'אישי' : 'כללי')}
                             </span>
                           </div>
                           
@@ -1140,13 +1177,23 @@ export const SimpleEmployeeProfile: React.FC = () => {
                             
                             <div className="flex justify-center">
                               <Button 
-                                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                className={`w-full text-white ${
+                                  token.is_permanent 
+                                    ? 'bg-blue-600 hover:bg-blue-700' 
+                                    : 'bg-green-600 hover:bg-green-700'
+                                }`}
                                 onClick={() => {
-                                  window.open(`/public/weekly-shifts/${token.token}`, '_blank');
+                                  const url = token.is_permanent 
+                                    ? `/public/permanent-shifts/${token.token}`
+                                    : `/public/weekly-shifts/${token.token}`;
+                                  window.open(url, '_blank');
                                 }}
                               >
                                 <Send className="h-4 w-4 ml-2" />
-                                כניסה לאזור הגשה וצפייה במשמרות
+                                {token.is_permanent 
+                                  ? 'כניסה לאזור הגשת משמרות קבוע'
+                                  : 'כניסה לאזור הגשה וצפייה במשמרות'
+                                }
                               </Button>
                             </div>
                           </div>
