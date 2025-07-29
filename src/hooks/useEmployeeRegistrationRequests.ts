@@ -75,47 +75,37 @@ export const useEmployeeRegistrationRequests = () => {
       createEmployee?: boolean;
       notes?: string;
     }) => {
-      const { data, error } = await supabase
-        .from('employee_registration_requests')
-        .update({
-          status: 'approved',
-          approved_at: new Date().toISOString(),
+      console.log('🔄 Calling approve-employee-registration function:', params);
+      
+      const { data, error } = await supabase.functions.invoke('approve-employee-registration', {
+        body: {
+          requestId: params.requestId,
+          createEmployee: params.createEmployee,
           notes: params.notes,
-        })
-        .eq('id', params.requestId)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // אם נבחר ליצור עובד, נשתמש בפונקציה המיוחדת
-      if (params.createEmployee) {
-        try {
-          // נקרא לפונקציה ישירות באמצעות SQL
-          const { data: employeeResult, error: createError } = await supabase
-            .from('employees')
-            .select('id')
-            .eq('id_number', data.id_number)
-            .eq('business_id', businessId)
-            .single();
-
-          if (createError && createError.code !== 'PGRST116') {
-            console.error('Error checking existing employee:', createError);
-          }
-        } catch (error) {
-          console.error('Error creating employee:', error);
-          // נמשיך גם אם יש שגיאה ביצירת העובד - הבקשה עדיין אושרה
+          businessId: businessId
         }
+      });
+
+      if (error) {
+        console.error('❌ Error calling edge function:', error);
+        throw error;
       }
 
+      console.log('✅ Edge function response:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: 'הצלחה',
         description: 'בקשת הרישום אושרה בהצלחה',
       });
+      // רפרוש כל ה-queries הרלוונטיים
       queryClient.invalidateQueries({ queryKey: ['employee-registration-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['active-employees'] });
+      queryClient.invalidateQueries({ queryKey: ['activity-logs'] });
+      
+      console.log('✅ Queries invalidated after approval');
     },
     onError: (error: any) => {
       toast({
