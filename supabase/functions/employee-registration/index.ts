@@ -44,54 +44,28 @@ serve(async (req) => {
 
     console.log('✅ Token validated:', tokenData);
 
-    // Create employee directly in the business
-    const { data: employeeData, error: employeeError } = await supabase
-      .from('employees')
-      .insert({
-        business_id: tokenData.business_id,
-        first_name: registrationData.first_name,
-        last_name: registrationData.last_name,
-        id_number: registrationData.id_number,
-        email: registrationData.email,
-        phone: registrationData.phone,
-        birth_date: registrationData.birth_date,
-        address: registrationData.address,
-        employee_type: 'permanent',
-        is_active: true,
-        hire_date: new Date().toISOString().split('T')[0]
-      })
-      .select()
-      .single();
-
-    if (employeeError) {
-      console.error('❌ Employee creation error:', employeeError);
-      return new Response(
-        JSON.stringify({ error: 'שגיאה ביצירת העובד' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      );
-    }
-
-    console.log('✅ Employee created:', employeeData);
-
-    // Insert registration request for tracking
+    // Create registration request for manager approval (NOT the employee yet)
     const { data, error } = await supabase
       .from('employee_registration_requests')
       .insert({
         ...registrationData,
-        status: 'approved',
-        employee_id: employeeData.id,
-        approved_at: new Date().toISOString(),
+        status: 'pending',
+        employee_id: null,
+        approved_at: null,
         approved_by: null
       })
       .select()
       .single();
 
     if (error) {
-      console.error('❌ Registration request insertion error:', error);
-      // Don't fail here since employee was already created
+      console.error('❌ Registration request creation failed:', error);
+      return new Response(
+        JSON.stringify({ error: 'שגיאה ביצירת בקשת הרישום' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      );
     }
 
     console.log('✅ Registration request created:', data);
