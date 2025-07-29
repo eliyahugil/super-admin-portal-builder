@@ -23,9 +23,21 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // קבלת user_id מה-JWT token
+    const authHeader = req.headers.get('Authorization');
+    let approvingUserId = null;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+      if (!userError && user) {
+        approvingUserId = user.id;
+      }
+    }
+
     const { requestId, createEmployee, notes, businessId }: ApprovalRequest = await req.json();
 
-    console.log('🔄 Processing approval request:', { requestId, createEmployee, businessId });
+    console.log('🔄 Processing approval request:', { requestId, createEmployee, businessId, approvingUserId });
 
     // אישור הבקשה
     const { data: requestData, error: approvalError } = await supabase
@@ -133,25 +145,53 @@ Deno.serve(async (req) => {
           ? `עובד חדש ${requestData.first_name} ${requestData.last_name} אושר ונוסף למערכת`
           : `בקשת רישום של ${requestData.first_name} ${requestData.last_name} אושרה`;
 
-        const { error: notificationError } = await supabase
-          .from('activity_logs')
+        // רק אם יש user_id של המאשר
+        if (approvingUserId) {
+          const { error: notificationError } = await supabase
+            .from('activity_logs')
+            .insert({
+              user_id: approvingUserId,
+              action: 'employee_registration_approved',
+              target_type: 'employee_registration_request',
+              target_id: requestId,
+              details: {
+                employee_name: `${requestData.first_name} ${requestData.last_name}`,
+                employee_created: createEmployee,
+                business_name: businessOwner.name,
+                message: notificationMessage
+              }
+            });
+
+          if (notificationError) {
+            console.error('❌ Error creating activity log:', notificationError);
+          } else {
+            console.log('✅ Activity log created');
+          }
+        } else {
+          console.warn('⚠️ No approving user ID available for activity log');
+        }
+
+        // יצירת התראה מתקדמת
+        const { error: advancedNotificationError } = await supabase
+          .from('advanced_notifications')
           .insert({
+            business_id: businessId,
             user_id: businessOwner.owner_id,
-            action: 'employee_registration_approved',
-            target_type: 'employee_registration_request',
-            target_id: requestId,
-            details: {
+            notification_type: 'employee_registration_approved',
+            notification_category: 'employee_management',
+            title: 'אישור עובד חדש',
+            message: notificationMessage,
+            metadata: {
+              request_id: requestId,
               employee_name: `${requestData.first_name} ${requestData.last_name}`,
-              employee_created: createEmployee,
-              business_name: businessOwner.name,
-              message: notificationMessage
+              approved_by: approvingUserId
             }
           });
 
-        if (notificationError) {
-          console.error('❌ Error creating notification:', notificationError);
+        if (advancedNotificationError) {
+          console.error('❌ Error creating advanced notification:', advancedNotificationError);
         } else {
-          console.log('✅ Notification created');
+          console.log('✅ Advanced notification created');
         }
       }
     } catch (error) {
