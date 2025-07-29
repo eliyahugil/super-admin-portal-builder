@@ -27,13 +27,15 @@ interface NotificationsPanelProps {
   onMarkAsRead: (notificationId: string) => void;
   onMarkAllAsRead: () => void;
   onDeleteNotification: (notificationId: string) => void;
+  onNotificationClick?: (notification: Notification) => void;
 }
 
 export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
   notifications,
   onMarkAsRead,
   onMarkAllAsRead,
-  onDeleteNotification
+  onDeleteNotification,
+  onNotificationClick
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -142,7 +144,14 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
                       className={`p-4 border-b hover:bg-gray-50 transition-colors cursor-pointer ${
                         getNotificationColor(notification.type, notification.isRead)
                       }`}
-                      onClick={() => !notification.isRead && onMarkAsRead(notification.id)}
+                      onClick={() => {
+                        if (!notification.isRead) {
+                          onMarkAsRead(notification.id);
+                        }
+                        if (onNotificationClick) {
+                          onNotificationClick(notification);
+                        }
+                      }}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3 flex-1">

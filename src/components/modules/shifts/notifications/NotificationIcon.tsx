@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { NotificationsPanel } from './NotificationsPanel';
 import { useAdvancedNotifications } from '@/hooks/useAdvancedNotifications';
 
 export const NotificationIcon = () => {
+  const navigate = useNavigate();
   const { notifications, markAsRead, acknowledgeNotification } = useAdvancedNotifications();
 
   // המרת התראות מתקדמות לפורמט של הפאנל הישן
@@ -32,12 +34,31 @@ export const NotificationIcon = () => {
     await acknowledgeNotification(notificationId);
   };
 
+  const handleNotificationClick = (notification: any) => {
+    switch (notification.type) {
+      case 'shift_submission':
+        navigate('/modules/shifts');
+        break;
+      case 'shift_approval':
+      case 'shift_rejection':
+        navigate('/modules/shifts');
+        break;
+      case 'employee_registration':
+        navigate('/modules/employees');
+        break;
+      default:
+        // For general notifications, stay on current page
+        break;
+    }
+  };
+
   return (
     <NotificationsPanel 
       notifications={convertedNotifications}
       onMarkAsRead={handleMarkAsRead}
       onMarkAllAsRead={handleMarkAllAsRead}
       onDeleteNotification={handleDeleteNotification}
+      onNotificationClick={handleNotificationClick}
     />
   );
 };
