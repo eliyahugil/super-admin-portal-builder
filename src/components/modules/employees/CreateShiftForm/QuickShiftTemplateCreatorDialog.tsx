@@ -81,7 +81,7 @@ export const QuickShiftTemplateCreatorDialog: React.FC<QuickShiftTemplateCreator
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="!w-[95vw] !max-w-[95vw] sm:!max-w-md !left-[50%] !translate-x-[-50%] max-h-[95vh] overflow-y-auto p-3 sm:p-6" dir="rtl">
         <DialogHeader>
           <DialogTitle>תבנית משמרת חדשה</DialogTitle>
         </DialogHeader>

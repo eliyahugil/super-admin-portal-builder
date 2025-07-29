@@ -178,6 +178,37 @@ export const MobileShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeek
             <Plus className="h-4 w-4 ml-1" />
             הוסף משמרת
           </Button>
+          
+          {/* העתקה גורפת למובייל */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              // פונקציונליות העתקה גורפת
+              const currentWeekShifts = shifts.filter(shift => {
+                const shiftDate = new Date(shift.shift_date);
+                return isWithinInterval(shiftDate, { start: startOfWeek(selectedWeek), end: endOfWeek(selectedWeek) });
+              });
+              
+              if (currentWeekShifts.length === 0) {
+                alert('אין משמרות השבוע להעתקה');
+                return;
+              }
+              
+              // ממשק העתקה פשוט
+              const nextWeekDate = new Date(selectedWeek);
+              nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+              
+              if (confirm(`האם להעתיק ${currentWeekShifts.length} משמרות לשבוע ${format(nextWeekDate, 'dd/MM/yyyy')}?`)) {
+                // כאן תהיה לוגיקת ההעתקה
+                alert('פונקציונליות זו תהיה זמינה בקרוב');
+              }
+            }}
+            className="px-3"
+          >
+            העתק שבוע
+          </Button>
+          
           <BulkWeekDeleteDialog onSuccess={onWeekDeleted} businessId={businessId} />
         </div>
 

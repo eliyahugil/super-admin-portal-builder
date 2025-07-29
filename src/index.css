@@ -3,6 +3,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* תיקון גופנים גדולים - הקטנה כללית */
+:root {
+  font-size: 14px; /* במקום 16px */
+}
+
+@media screen and (max-width: 768px) {
+  :root {
+    font-size: 13px; /* במובייל עוד יותר קטן */
+  }
+  
+  /* הקטנת כותרות במובייל */
+  h1 { font-size: 1.5rem !important; }
+  h2 { font-size: 1.3rem !important; }
+  h3 { font-size: 1.1rem !important; }
+  h4 { font-size: 1rem !important; }
+  
+  /* הקטנת כפתורים */
+  button { font-size: 0.875rem !important; }
+  .btn { font-size: 0.875rem !important; }
+  
+  /* הקטנת טקסט בטפסים */
+  input, textarea, select { font-size: 0.875rem !important; }
+  label { font-size: 0.8rem !important; }
+}
+
 /* תיקון רקע Google Maps מציק */
 body {
   background: #ffffff !important;

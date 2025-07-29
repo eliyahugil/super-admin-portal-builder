@@ -50,11 +50,13 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({ open, onCl
         </DialogHeader>
         
         {businessId ? (
-          <CreateShiftFormView 
-            businessId={businessId}
-            employees={employees || []}
-            shiftTemplates={shiftTemplates || []}
-          />
+          <div className="overflow-y-auto max-h-[85vh] px-1">
+            <CreateShiftFormView 
+              businessId={businessId}
+              employees={employees || []}
+              shiftTemplates={shiftTemplates || []}
+            />
+          </div>
         ) : (
           <div className="p-4 text-center">
             <p>שגיאה: לא נמצא מזהה עסק</p>
