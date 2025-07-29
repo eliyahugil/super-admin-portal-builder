@@ -45,7 +45,7 @@ export const ShiftTemplateSelector: React.FC<ShiftTemplateSelectorProps> = ({
         </SelectContent>
       </Select>
       
-      {hasNoTemplates && (
+      {hasNoTemplates ? (
         <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-2 rounded justify-between mt-2">
           <span>
             לא נמצאו תבניות משמרות. יש ליצור תבנית משמרת תחילה.
@@ -57,6 +57,17 @@ export const ShiftTemplateSelector: React.FC<ShiftTemplateSelectorProps> = ({
           >
             <Plus className="h-4 w-4" />
             צור תבנית חדשה
+          </button>
+        </div>
+      ) : (
+        <div className="flex justify-end mt-2">
+          <button
+            type="button"
+            className="flex items-center gap-1 text-blue-700 bg-white border border-blue-200 rounded px-2 py-1 hover:bg-blue-50 transition-colors text-sm"
+            onClick={onOpenCreator}
+          >
+            <Plus className="h-4 w-4" />
+            הוסף תבנית חדשה
           </button>
         </div>
       )}
