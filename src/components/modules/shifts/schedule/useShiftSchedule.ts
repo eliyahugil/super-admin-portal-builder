@@ -16,7 +16,9 @@ export const useShiftSchedule = () => {
   const { createShift, updateShift, deleteShift, isCreating, isUpdating, isDeleting } = useOptimizedShiftMutations(businessId);
   
   // הפעלת real-time updates למשמרות
+  console.log('🔥 About to call useShiftScheduleRealtime with businessId:', businessId);
   useShiftScheduleRealtime(businessId);
+  console.log('🔥 useShiftScheduleRealtime called');
 
   console.log('🔍 useShiftSchedule - Current state:', {
     businessId,

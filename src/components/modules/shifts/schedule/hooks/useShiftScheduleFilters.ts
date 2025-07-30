@@ -84,6 +84,7 @@ export const useShiftScheduleFilters = (shifts: ShiftScheduleData[]) => {
   };
 
   const filteredShifts = useMemo(() => {
+    console.log('🔍 Filtering shifts:', { totalShifts: shifts.length, filters });
     return shifts.filter(shift => {
       // Status filter
       if (filters.status !== 'all' && shift.status !== filters.status) {

@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useShiftScheduleRealtime = (businessId: string | null) => {
+  console.log('🔴 useShiftScheduleRealtime called with businessId:', businessId);
   const queryClient = useQueryClient();
 
   useEffect(() => {
