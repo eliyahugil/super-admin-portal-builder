@@ -1,10 +1,10 @@
 /* תיקון רקע Google Maps מציק */
 body {
-  background: #ffffff !important;
+  background: transparent !important;
 }
 
 #root {
-  background: #ffffff !important;
+  background: transparent !important;
 }
 
 /* מניעת רכיבי מפה מלהופיע */
@@ -20,11 +20,11 @@ div[class*="gm-"] {
   display: none !important;
 }
 
-/* וידוא שהאפליקציה תמיד על רקע לבן */
+/* וידוא שהאפליקציה תמיד על רקע שקוף */
 .app-container,
 .main-content,
 [data-testid="app-container"] {
-  background: #ffffff !important;
+  background: transparent !important;
   position: relative;
   z-index: 1000;
 }
@@ -32,5 +32,5 @@ div[class*="gm-"] {
 /* מניעת overflow מבעיתי ברקע */
 body, html {
   overflow-x: hidden;
-  background-color: #ffffff !important;
+  background-color: transparent !important;
 }
