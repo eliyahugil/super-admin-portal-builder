@@ -56,6 +56,14 @@ export const QuickShiftCreationOptions: React.FC<QuickShiftCreationOptionsProps>
     enabled: !!businessId,
   });
 
+  console.log('🔍 QuickShiftCreationOptions - Previous week shifts:', {
+    businessId,
+    weekStart: weekStart.toISOString(),
+    weekEnd: weekEnd.toISOString(),
+    shiftsCount: previousWeekShifts?.length || 0,
+    shifts: previousWeekShifts
+  });
+
   // טעינת תבניות שבועיות קיימות
   const templateWeekStart = startOfWeek(selectedTemplateWeek, { weekStartsOn: 0 });
   const templateWeekEnd = endOfWeek(selectedTemplateWeek, { weekStartsOn: 0 });
@@ -87,12 +95,26 @@ export const QuickShiftCreationOptions: React.FC<QuickShiftCreationOptionsProps>
     enabled: !!businessId,
   });
 
+  console.log('🔍 QuickShiftCreationOptions - Template week shifts:', {
+    businessId,
+    templateWeekStart: templateWeekStart.toISOString(),
+    templateWeekEnd: templateWeekEnd.toISOString(),
+    shiftsCount: templateWeekShifts?.length || 0,
+    shifts: templateWeekShifts
+  });
+
   // טעינת תבניות משמרות
   const { data: shiftTemplates = [] } = useRealData<any>({
     queryKey: ['quick-shift-templates', businessId],
     tableName: 'shift_templates',
     filters: { business_id: businessId, is_active: true },
     enabled: !!businessId,
+  });
+
+  console.log('🔍 QuickShiftCreationOptions - Shift templates:', {
+    businessId,
+    templatesCount: shiftTemplates?.length || 0,
+    templates: shiftTemplates
   });
 
   const handleCopyFromPreviousWeek = () => {
@@ -200,7 +222,7 @@ export const QuickShiftCreationOptions: React.FC<QuickShiftCreationOptionsProps>
               </Button>
             </div>
 
-            {previousWeekShifts.length > 0 && (
+            {previousWeekShifts.length > 0 ? (
               <div className="grid grid-cols-7 gap-1 mt-2">
                 {WEEKDAY_NAMES.map((day, index) => (
                   <div key={index} className="text-center">
@@ -210,6 +232,10 @@ export const QuickShiftCreationOptions: React.FC<QuickShiftCreationOptionsProps>
                     </Badge>
                   </div>
                 ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-500 text-sm">
+                אין משמרות בשבוע שנבחר. בחר שבוע אחר או צור משמרות ידנית תחילה.
               </div>
             )}
           </div>
@@ -248,7 +274,7 @@ export const QuickShiftCreationOptions: React.FC<QuickShiftCreationOptionsProps>
               </Button>
             </div>
 
-            {templateWeekShifts.length > 0 && (
+            {templateWeekShifts.length > 0 ? (
               <div className="grid grid-cols-7 gap-1 mt-2">
                 {WEEKDAY_NAMES.map((day, index) => (
                   <div key={index} className="text-center">
@@ -258,6 +284,10 @@ export const QuickShiftCreationOptions: React.FC<QuickShiftCreationOptionsProps>
                     </Badge>
                   </div>
                 ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-500 text-sm">
+                אין משמרות בשבוע התבנית שנבחר. בחר שבוע אחר או צור משמרות תחילה.
               </div>
             )}
           </div>
