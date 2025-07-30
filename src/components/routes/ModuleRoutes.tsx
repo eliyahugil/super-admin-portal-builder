@@ -17,6 +17,7 @@ import { BusinessSettings } from '@/components/modules/settings/BusinessSettings
 import { BusinessMultiManagement } from '@/components/modules/settings/BusinessMultiManagement';
 import EmployeeImportPage from '@/pages/business/employees/EmployeeImportPage';
 import EmployeeDuplicateManagerPage from '@/pages/business/employees/EmployeeDuplicateManagerPage';
+import { ShiftSchedule } from '@/components/modules/shifts/ShiftSchedule';
 
 export const ModuleRoutes = () => (
   <>
@@ -91,6 +92,15 @@ export const ModuleRoutes = () => (
       <ProtectedRoute>
         <AppLayout>
           <EmployeeDuplicateManagerPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+
+    {/* URGENT FIX: Direct route for shift schedule */}
+    <Route path="/modules/shifts/schedule" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ShiftSchedule />
         </AppLayout>
       </ProtectedRoute>
     } />
