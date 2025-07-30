@@ -41,7 +41,7 @@ export const EmployeeTokensTab: React.FC<EmployeeTokensTabProps> = ({
 
   const handleCopyToken = () => {
     if (tokenData?.token) {
-      const tokenUrl = `${window.location.origin}/public/shifts/${tokenData.token}`;
+      const tokenUrl = `${window.location.origin}/public/permanent-shifts/${tokenData.token}`;
       navigator.clipboard.writeText(tokenUrl);
       toast.success('קישור הטוקן הועתק ללוח');
     }
@@ -49,7 +49,7 @@ export const EmployeeTokensTab: React.FC<EmployeeTokensTabProps> = ({
 
   const handleOpenToken = () => {
     if (tokenData?.token) {
-      const tokenUrl = `${window.location.origin}/public/shifts/${tokenData.token}`;
+      const tokenUrl = `${window.location.origin}/public/permanent-shifts/${tokenData.token}`;
       window.open(tokenUrl, '_blank');
     }
   };
