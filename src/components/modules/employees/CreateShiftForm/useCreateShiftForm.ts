@@ -50,7 +50,8 @@ export const useScheduledShiftsArchiver = () => {
 export const useCreateShiftForm = (
   businessId?: string, 
   branches?: Branch[],
-  onSuccess?: () => void
+  onSuccess?: () => void,
+  onCreate?: (shiftData: any) => Promise<void>
 ) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -214,6 +215,27 @@ export const useCreateShiftForm = (
     });
 
     console.log('📦 Shifts to create:', newShifts);
+
+    // If onCreate is provided (from dialog), use it instead of direct supabase call
+    if (onCreate) {
+      console.log('🔄 Using onCreate callback from dialog');
+      for (const shift of newShifts) {
+        await onCreate(shift);
+      }
+      
+      toast({
+        title: "הצלחה",
+        description: `נוצרו ${newShifts.length} משמרות בהצלחה`
+      });
+
+      resetForm();
+      
+      if (onSuccess) {
+        console.log('📞 Calling onSuccess callback');
+        onSuccess();
+      }
+      return;
+    }
 
     // Use React Query mutation for better cache management
     const { error } = await supabase

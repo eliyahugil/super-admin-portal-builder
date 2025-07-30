@@ -26,6 +26,7 @@ export interface CreateShiftFormViewProps {
   employees: Employee[] | undefined;
   shiftTemplates: ShiftTemplate[] | undefined;
   onSuccess?: () => void;
+  onCreate?: (shiftData: any) => Promise<void>;
 }
 
 export interface ShiftDatesSelectorProps {

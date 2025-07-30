@@ -33,13 +33,8 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({ open, onCl
     enabled: !!businessId && open,
   });
 
-  const handleFormSubmit = async (shiftData: any) => {
-    try {
-      await onCreate(shiftData);
-      onClose();
-    } catch (error) {
-      console.error('Error creating shift:', error);
-    }
+  const handleFormSubmit = async () => {
+    onClose();
   };
 
   return (
@@ -55,7 +50,8 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({ open, onCl
               businessId={businessId}
               employees={employees || []}
               shiftTemplates={shiftTemplates || []}
-              onSuccess={onClose}
+              onSuccess={handleFormSubmit}
+              onCreate={onCreate}
             />
           </div>
         ) : (
