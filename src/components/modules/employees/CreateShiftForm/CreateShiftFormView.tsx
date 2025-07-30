@@ -28,7 +28,8 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
   employees,
   shiftTemplates,
   onSuccess,
-  onCreate
+  onCreate,
+  selectedDate
 }) => {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [templates, setTemplates] = useState<ShiftTemplate[]>(shiftTemplates || []);
@@ -78,7 +79,7 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
     setRequiredEmployees,
     selectedRoleId,
     setSelectedRoleId,
-  } = useCreateShiftForm(businessId, branches, onSuccess, onCreate);
+  } = useCreateShiftForm(businessId, branches, onSuccess, onCreate, selectedDate);
 
   // פונקציות טיפול בהעתקת משמרות
   const handleCopyShifts = (copiedShifts: any[]) => {

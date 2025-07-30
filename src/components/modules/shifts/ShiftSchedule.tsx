@@ -13,6 +13,7 @@ export const ShiftSchedule: React.FC = () => {
   const [showCreateDialog, setShowCreateDialog] = React.useState(false);
   const [selectedShift, setSelectedShift] = React.useState<any>(null);
   const [showShiftDetails, setShowShiftDetails] = React.useState(false);
+  const [selectedDateForNewShift, setSelectedDateForNewShift] = React.useState<Date | null>(null);
   
   const {
     currentDate,
@@ -98,7 +99,10 @@ export const ShiftSchedule: React.FC = () => {
         totalShifts={shifts.length}
         totalEmployees={employees.length}
         totalBranches={branches.length}
-        onAddShift={() => setShowCreateDialog(true)}
+        onAddShift={() => {
+          setSelectedDateForNewShift(null);
+          setShowCreateDialog(true);
+        }}
         onRefresh={refetchShifts}
       />
       
@@ -126,8 +130,9 @@ export const ShiftSchedule: React.FC = () => {
             onShiftUpdate={updateShift}
             onAddShift={(date) => {
               console.log('🔘 Add shift button clicked for date:', date);
+              setSelectedDateForNewShift(date);
               setShowCreateDialog(true);
-              console.log('🔘 setShowCreateDialog(true) called');
+              console.log('🔘 setShowCreateDialog(true) called with date:', date);
             }}
             onShiftDelete={deleteShift}
             businessId={businessId}
@@ -158,8 +163,12 @@ export const ShiftSchedule: React.FC = () => {
       />
       <CreateShiftDialog 
         open={showCreateDialog}
-        onClose={() => setShowCreateDialog(false)}
-        onCreate={createShift} 
+        onClose={() => {
+          setShowCreateDialog(false);
+          setSelectedDateForNewShift(null);
+        }}
+        onCreate={createShift}
+        selectedDate={selectedDateForNewShift}
       />
       <PendingSubmissionsDialog />
     </div>

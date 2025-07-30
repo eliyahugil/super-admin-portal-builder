@@ -10,9 +10,10 @@ interface CreateShiftDialogProps {
   open: boolean;
   onClose: () => void;
   onCreate: (shiftData: CreateShiftData) => Promise<void>;
+  selectedDate?: Date | null;
 }
 
-export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({ open, onClose, onCreate }) => {
+export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({ open, onClose, onCreate, selectedDate }) => {
   const { businessId } = useCurrentBusiness();
   
   const { data: shiftTemplates } = useRealData<any>({
@@ -52,6 +53,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({ open, onCl
               shiftTemplates={shiftTemplates || []}
               onSuccess={handleFormSubmit}
               onCreate={onCreate}
+              selectedDate={selectedDate}
             />
           </div>
         ) : (

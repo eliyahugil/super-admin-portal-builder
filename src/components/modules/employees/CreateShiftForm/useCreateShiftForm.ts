@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -51,7 +51,8 @@ export const useCreateShiftForm = (
   businessId?: string, 
   branches?: Branch[],
   onSuccess?: () => void,
-  onCreate?: (shiftData: any) => Promise<void>
+  onCreate?: (shiftData: any) => Promise<void>,
+  selectedDate?: Date | null
 ) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -69,11 +70,23 @@ export const useCreateShiftForm = (
   const [requiredEmployees, setRequiredEmployees] = useState(1);
   const [selectedRoleId, setSelectedRoleId] = useState('');
 
+  // Set initial date if selectedDate is provided
+  useEffect(() => {
+    if (selectedDate) {
+      const dateString = selectedDate.toISOString().split('T')[0];
+      setShiftDates([dateString]);
+      console.log('📅 Auto-set selected date:', dateString);
+    }
+  }, [selectedDate]);
+
   const resetForm = () => {
     setSelectedEmployeeId('');
     setSelectedTemplateId('');
     setSelectedBranchId([]);
-    setShiftDates([]);
+    // Don't reset shiftDates if we have selectedDate - keep the pre-selected date
+    if (!selectedDate) {
+      setShiftDates([]);
+    }
     setWeekdayRange({start: '', end: ''});
     setSelectedWeekdays([]);
     setNotes('');
