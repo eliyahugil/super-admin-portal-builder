@@ -14,10 +14,14 @@ interface Props {
 }
 
 export const ShiftsModuleRouter: React.FC<Props> = ({ route }) => {
+  console.log('🚨🚨🚨 ShiftsModuleRouter - route received:', route);
+  
   switch (route) {
     case '':
+      console.log('🚨 Routing to ShiftManagementTabs');
       return <ShiftManagementTabs />;
     case 'schedule':
+      console.log('🚨🚨🚨 ROUTING TO SHIFT SCHEDULE!!!');
       return <ShiftSchedule />;
     case 'submission':
       return <PublicTokenManager />;
