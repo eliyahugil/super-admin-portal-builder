@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Branch } from '@/types/branch';
@@ -47,10 +48,12 @@ export const useScheduledShiftsArchiver = () => {
 };
 
 export const useCreateShiftForm = (
-  businessId?: string,
-  branches?: Branch[]
+  businessId?: string, 
+  branches?: Branch[],
+  onSuccess?: () => void
 ) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [selectedBranchId, setSelectedBranchId] = useState<string[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
@@ -212,6 +215,7 @@ export const useCreateShiftForm = (
 
     console.log('📦 Shifts to create:', newShifts);
 
+    // Use React Query mutation for better cache management
     const { error } = await supabase
       .from('scheduled_shifts')
       .insert(newShifts);
@@ -223,12 +227,38 @@ export const useCreateShiftForm = (
 
     console.log('✅ Shifts created successfully:', newShifts.length);
     
+    console.log('🔄 Starting cache invalidation...');
+    
+    // Force immediate refresh of shift data
+    await queryClient.invalidateQueries({ 
+      queryKey: ['shift-schedule-data', businessId],
+      refetchType: 'active'
+    });
+    
+    console.log('✅ Shift data cache invalidated');
+    
+    // Also invalidate employees data in case of assignment changes
+    await queryClient.invalidateQueries({ 
+      queryKey: ['employees', businessId],
+      refetchType: 'active'
+    });
+    
+    console.log('✅ Employee data cache invalidated');
+    
     toast({
       title: "הצלחה",
       description: `נוצרו ${newShifts.length} משמרות בהצלחה`
     });
 
     resetForm();
+    
+    console.log('🎉 Form reset completed');
+    
+    // סגירת הדיאלוג אחרי יצירה מוצלחת
+    if (onSuccess) {
+      console.log('📞 Calling onSuccess callback');
+      onSuccess();
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

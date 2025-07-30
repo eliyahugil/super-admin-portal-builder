@@ -22,7 +22,8 @@ import { CreateShiftFormViewProps, ShiftTemplate } from './types';
 export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
   businessId,
   employees,
-  shiftTemplates
+  shiftTemplates,
+  onSuccess
 }) => {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [templates, setTemplates] = useState<ShiftTemplate[]>(shiftTemplates || []);
@@ -72,7 +73,7 @@ export const CreateShiftFormView: React.FC<CreateShiftFormViewProps> = ({
     setRequiredEmployees,
     selectedRoleId,
     setSelectedRoleId,
-  } = useCreateShiftForm(businessId, branches);
+  } = useCreateShiftForm(businessId, branches, onSuccess);
 
   React.useEffect(() => {
     if (!selectedTemplateId && templates.length === 1) {

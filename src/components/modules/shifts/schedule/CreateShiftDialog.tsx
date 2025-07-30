@@ -55,6 +55,7 @@ export const CreateShiftDialog: React.FC<CreateShiftDialogProps> = ({ open, onCl
               businessId={businessId}
               employees={employees || []}
               shiftTemplates={shiftTemplates || []}
+              onSuccess={onClose}
             />
           </div>
         ) : (

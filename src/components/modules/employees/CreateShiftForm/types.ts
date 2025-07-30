@@ -25,6 +25,7 @@ export interface CreateShiftFormViewProps {
   businessId: string;
   employees: Employee[] | undefined;
   shiftTemplates: ShiftTemplate[] | undefined;
+  onSuccess?: () => void;
 }
 
 export interface ShiftDatesSelectorProps {
