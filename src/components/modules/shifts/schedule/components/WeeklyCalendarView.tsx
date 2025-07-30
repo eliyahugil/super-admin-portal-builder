@@ -48,6 +48,8 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
   
   console.log('🔍 WeeklyCalendarView RENDERED with shifts:', shifts.length, 'employees:', employees.length);
   console.log('🚀 WeeklyCalendarView onShiftUpdate exists:', !!onShiftUpdate);
+  console.log('🎂 WeeklyCalendarView allEmployeesWithBirthdays:', allEmployeesWithBirthdays.length, 'employees');
+  console.log('🎂 WeeklyCalendarView birthday employees:', allEmployeesWithBirthdays.filter(emp => emp.birth_date).map(emp => ({ name: `${emp.first_name} ${emp.last_name}`, birthDate: emp.birth_date })));
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -87,7 +89,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
 
   // פונקציה לבדיקת ימי הולדת - משופרת לעבוד עם כל התאריכים
   const getBirthdayEmployeesForDate = (date: Date) => {
-    return allEmployeesWithBirthdays.filter(emp => {
+    const birthdayEmployees = allEmployeesWithBirthdays.filter(emp => {
       if (!emp.birth_date) return false;
       
       try {
@@ -98,12 +100,33 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
         const birthDay = birthDate.getDate();
         const birthMonth = birthDate.getMonth() + 1;
         
+        // לוג לבדיקה
+        if (emp.first_name?.includes('אליהו') || emp.last_name?.includes('גיל')) {
+          console.log('🎂 Birthday check for', emp.first_name, emp.last_name, ':', {
+            birthDate: emp.birth_date,
+            parsedBirthDate: birthDate,
+            birthDay,
+            birthMonth,
+            currentDay,
+            currentMonth,
+            checkingDate: date.toISOString().split('T')[0],
+            match: currentDay === birthDay && currentMonth === birthMonth
+          });
+        }
+        
         return currentDay === birthDay && currentMonth === birthMonth;
       } catch (error) {
         console.error('Error parsing birth date:', emp.birth_date, error);
         return false;
       }
     });
+    
+    // לוג תוצאות
+    if (birthdayEmployees.length > 0) {
+      console.log('🎉 Found birthday employees for', date.toISOString().split('T')[0], ':', birthdayEmployees);
+    }
+    
+    return birthdayEmployees;
   };
 
   const handleEmployeeAssignment = async (shiftId: string, employeeId: string) => {
