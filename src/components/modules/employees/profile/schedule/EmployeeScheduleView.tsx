@@ -13,6 +13,7 @@ interface Employee {
   first_name: string;
   last_name: string;
   phone?: string;
+  business_id?: string;
 }
 
 interface Branch {
@@ -53,11 +54,12 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 });
   const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 0 });
 
-  // Fetch employee's branch assignments
+  // Fetch employee's branch assignments - אם אין הקצאות, נטען את הסניף הראשי
   const fetchEmployeeBranches = async () => {
     console.log('🔍 Starting fetchEmployeeBranches for employee:', employee.id);
     try {
-      const { data, error } = await supabase
+      // נבדוק קודם אם יש הקצאות ספציפיות לסניפים
+      const { data: assignments, error: assignmentError } = await supabase
         .from('employee_branch_assignments')
         .select(`
           branch_id,
@@ -66,30 +68,65 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
         `)
         .eq('employee_id', employee.id)
         .eq('is_active', true)
-        .order('priority_order', { ascending: true }); // Sort by priority - preferred branches first
+        .order('priority_order', { ascending: true });
 
-      console.log('📊 Branch assignments query result:', { data, error });
+      console.log('📊 Branch assignments query result:', { data: assignments, error: assignmentError });
 
-      if (error) {
-        console.error('❌ Error in fetchEmployeeBranches:', error);
-        throw error;
+      if (assignmentError) {
+        console.error('❌ Error in fetchEmployeeBranches:', assignmentError);
+        throw assignmentError;
       }
       
-      const branches = data?.map(item => ({
-        ...item.branches,
-        priority_order: item.priority_order
-      })).filter(Boolean) || [];
-      console.log('✅ Processed branches with priority:', branches);
-      setEmployeeBranches(branches);
-      
-      // If no branches found, stop loading immediately
-      if (branches.length === 0) {
-        console.log('⚠️ No branches found for employee, stopping loading');
-        setLoading(false);
+      if (assignments && assignments.length > 0) {
+        const branches = assignments.map(item => ({
+          ...item.branches,
+          priority_order: item.priority_order
+        })).filter(Boolean);
+        console.log('✅ Found branch assignments:', branches);
+        setEmployeeBranches(branches);
+      } else {
+        // אם אין הקצאות, נטען את הסניף הראשי של העובד
+        console.log('⚠️ No branch assignments, checking main_branch_id');
+        const { data: employeeData, error: employeeError } = await supabase
+          .from('employees')
+          .select(`
+            main_branch_id,
+            main_branch:branches!main_branch_id(id, name, address)
+          `)
+          .eq('id', employee.id)
+          .single();
+
+        console.log('📊 Employee main branch query result:', { data: employeeData, error: employeeError });
+
+        if (employeeError) {
+          console.error('❌ Error fetching employee main branch:', employeeError);
+          throw employeeError;
+        }
+
+        if (employeeData?.main_branch) {
+          console.log('✅ Using main branch:', employeeData.main_branch);
+          setEmployeeBranches([employeeData.main_branch]);
+        } else {
+          console.log('⚠️ No main branch found, fetching all business branches');
+          // כמוצא אחרון - נטען את כל הסניפים של העסק
+          const { data: businessBranches, error: branchesError } = await supabase
+            .from('branches')
+            .select('id, name, address')
+            .eq('business_id', employee.business_id || '')
+            .eq('is_active', true);
+
+          if (branchesError) {
+            console.error('❌ Error fetching business branches:', branchesError);
+            throw branchesError;
+          }
+
+          console.log('✅ Using all business branches:', businessBranches);
+          setEmployeeBranches(businessBranches || []);
+        }
       }
     } catch (error) {
       console.error('💥 Error fetching employee branches:', error);
-      setLoading(false); // Stop loading on error
+      setLoading(false);
     }
   };
 
