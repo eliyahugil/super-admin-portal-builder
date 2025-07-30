@@ -121,17 +121,27 @@ export const useCreateShiftForm = (
   };
 
   const createShifts = async (allDates: string[]) => {
+    console.log('🔄 Creating shifts with dates:', allDates);
     const branchIds = Array.isArray(selectedBranchId) ? selectedBranchId : [selectedBranchId];
+    console.log('🏢 Branch IDs:', branchIds);
     
     // Get template data if using template
     let templateData = null;
     if (!useCustomTime && selectedTemplateId) {
-      const { data: template } = await supabase
+      console.log('📋 Fetching template data for ID:', selectedTemplateId);
+      const { data: template, error: templateError } = await supabase
         .from('shift_templates')
         .select('start_time, end_time, shift_type, role_name')
         .eq('id', selectedTemplateId)
         .single();
+      
+      if (templateError) {
+        console.error('❌ Error fetching template:', templateError);
+        throw new Error('שגיאה בטעינת תבנית המשמרת');
+      }
+      
       templateData = template;
+      console.log('📋 Template data loaded:', templateData);
     }
     
     const newShifts = allDates.flatMap((shiftDate) => {
@@ -150,6 +160,7 @@ export const useCreateShiftForm = (
         if (useCustomTime) {
           shiftData.start_time = startTime;
           shiftData.end_time = endTime;
+          console.log('⏰ Using custom time:', { startTime, endTime });
         } else {
           shiftData.shift_template_id = selectedTemplateId;
           // Copy time data from template
@@ -157,6 +168,10 @@ export const useCreateShiftForm = (
             shiftData.start_time = templateData.start_time;
             shiftData.end_time = templateData.end_time;
             shiftData.shift_type = templateData.shift_type;
+            console.log('📋 Using template time:', { 
+              start_time: templateData.start_time, 
+              end_time: templateData.end_time 
+            });
           }
         }
         
@@ -195,12 +210,19 @@ export const useCreateShiftForm = (
       });
     });
 
+    console.log('📦 Shifts to create:', newShifts);
+
     const { error } = await supabase
       .from('scheduled_shifts')
       .insert(newShifts);
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error inserting shifts:', error);
+      throw error;
+    }
 
+    console.log('✅ Shifts created successfully:', newShifts.length);
+    
     toast({
       title: "הצלחה",
       description: `נוצרו ${newShifts.length} משמרות בהצלחה`
