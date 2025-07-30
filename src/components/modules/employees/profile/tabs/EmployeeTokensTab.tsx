@@ -156,226 +156,209 @@ export const EmployeeTokensTab: React.FC<EmployeeTokensTabProps> = ({
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5" />
-            טוקני הגשת משמרות - {employeeName}
+    <div className="w-full max-w-5xl mx-auto p-4" dir="rtl">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6 border border-blue-100">
+        <div className="flex items-center gap-3 mb-2">
+          <KeyRound className="h-6 w-6 text-blue-600" />
+          <h2 className="text-xl font-bold text-gray-800">טוקני הגשת משמרות</h2>
+        </div>
+        <p className="text-sm text-gray-600 font-medium">{employeeName}</p>
+        <p className="text-xs text-gray-500 mt-1">
+          טוקנים אישיים לעובד להגשת משמרות וצפייה בסידור עבודה
+        </p>
+      </div>
+
+      {/* Permanent Token Card */}
+      <Card className="mb-6 border-l-4 border-l-yellow-400">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Star className="h-5 w-5 text-yellow-500" />
+            טוקן קבוע
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+              מומלץ
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground mb-6">
-            טוקן אישי קבוע לעובד להגשת משמרות וצפייה בסידור עבודה
-          </p>
+          {permanentError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+              <p className="text-red-700 text-sm">שגיאה: {permanentError.message}</p>
+            </div>
+          )}
+          
+          {permanentToken ? (
+            <div className="space-y-4">
+              {/* Token Info */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-sm font-medium text-green-700">פעיל וזמין</span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    נוצר: {format(new Date(permanentToken.created_at), 'dd/MM/yyyy', { locale: he })}
+                  </div>
+                </div>
+                
+                <div className="bg-white border rounded-md p-3 mb-3">
+                  <div className="font-mono text-xs break-all text-center text-gray-700">
+                    {permanentToken.token}
+                  </div>
+                </div>
 
-          {/* Permanent Token Section */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Star className="h-5 w-5 text-yellow-500" />
-              טוקן אישי קבוע
-            </h3>
-            
-            {permanentError && (
-              <div className="text-red-500 text-sm mb-4">
-                שגיאה בטעינת טוקן קבוע: {permanentError.message}
-              </div>
-            )}
-            
-            {permanentToken ? (
-              <Card className="border-yellow-200 bg-yellow-50/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
-                        טוקן קבוע
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        נוצר: {format(new Date(permanentToken.created_at), 'PPP', { locale: he })}
+                <div className="flex flex-col sm:flex-row gap-2 justify-between items-start sm:items-center">
+                  <div className="text-xs text-gray-600">
+                    <span className="font-medium">שימושים:</span> {permanentToken.uses_count}
+                    {permanentToken.last_used_at && (
+                      <span className="block sm:inline sm:mr-3">
+                        <span className="font-medium">שימוש אחרון:</span> {format(new Date(permanentToken.last_used_at), 'dd/MM HH:mm', { locale: he })}
                       </span>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      שימושים: {permanentToken.uses_count}
-                      {permanentToken.last_used_at && (
-                        <span className="ml-2">
-                          | שימוש אחרון: {format(new Date(permanentToken.last_used_at), 'PPp', { locale: he })}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white border border-yellow-200 rounded-md p-3 mb-3">
-                    <div className="font-mono text-sm break-all text-center">
-                      {permanentToken.token}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      <CheckCircle className="h-4 w-4 inline text-green-500 mr-1" />
-                      טוקן קבוע - ללא תפוגה
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyTokenToClipboard(permanentToken.token)}
-                      >
-                        <Copy className="h-4 w-4 mr-1" />
-                        העתק
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openTokenPage(permanentToken.token, true)}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        צפה במשמרות
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="border-dashed border-2 border-gray-200">
-                <CardContent className="p-6 text-center">
-                  <KeyRound className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground mb-4">אין טוקן קבוע לעובד זה</p>
-                  <Button 
-                    onClick={handleGeneratePermanentToken}
-                    disabled={generatePermanentTokens.isPending}
-                  >
-                    {generatePermanentTokens.isPending ? (
-                      <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                    ) : (
-                      <KeyRound className="h-4 w-4 mr-1" />
                     )}
-                    צור טוקן קבוע
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          <hr className="my-6" />
-
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-blue-500" />
-            טוקנים שבועיים (מערכת ישנה)
-          </h3>
-
-          {tokens.length === 0 ? (
-            <div className="text-center py-6">
-              <Calendar className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground text-sm">לא נמצאו טוקנים שבועיים עבור עובד זה</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyTokenToClipboard(permanentToken.token)}
+                      className="text-xs"
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      העתק
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openTokenPage(permanentToken.token, true)}
+                      className="text-xs"
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      צפה
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="text-center py-6">
+              <KeyRound className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600 mb-4 text-sm">לא נוצר טוקן קבוע עדיין</p>
+              <Button 
+                onClick={handleGeneratePermanentToken}
+                disabled={generatePermanentTokens.isPending}
+                size="sm"
+              >
+                {generatePermanentTokens.isPending ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <KeyRound className="h-4 w-4 mr-2" />
+                )}
+                צור טוקן קבוע
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Weekly Tokens Card */}
+      <Card className="border-l-4 border-l-blue-400">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Calendar className="h-5 w-5 text-blue-500" />
+            טוקנים שבועיים
+            <Badge variant="outline" className="bg-gray-50 text-gray-600">
+              מערכת ישנה
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {tokens.length === 0 ? (
+            <div className="text-center py-6">
+              <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600 text-sm">לא נמצאו טוקנים שבועיים</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
               {/* Active Tokens */}
               {activeTokens.length > 0 && (
                 <div>
-                  <h4 className="text-md font-medium mb-3 flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    טוקנים שבועיים פעילים ({activeTokens.length})
+                  <h4 className="text-sm font-medium mb-3 flex items-center gap-2 text-green-700">
+                    <CheckCircle className="h-4 w-4" />
+                    פעילים ({activeTokens.length})
                   </h4>
-                  <div className="grid gap-4">
+                  <div className="space-y-3">
                     {activeTokens.map((token) => (
-                      <Card key={token.id} className="border-green-200 bg-green-50/50">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="bg-green-100 text-green-700">
-                                פעיל
-                              </Badge>
-                              <span className="text-sm text-muted-foreground">
-                                נוצר: {format(new Date(token.created_at), 'PPP', { locale: he })}
-                              </span>
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              <Calendar className="h-4 w-4 inline mr-1" />
-                              {format(new Date(token.week_start_date), 'PPP', { locale: he })} - {format(new Date(token.week_end_date), 'PPP', { locale: he })}
-                            </div>
+                      <div key={token.id} className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-green-100 text-green-700 text-xs">פעיל</Badge>
+                            <span className="text-xs text-gray-600">
+                              {format(new Date(token.week_start_date), 'dd/MM', { locale: he })} - {format(new Date(token.week_end_date), 'dd/MM', { locale: he })}
+                            </span>
                           </div>
-                          
-                          <div className="bg-white border border-green-200 rounded-md p-3 mb-3">
-                            <div className="font-mono text-sm break-all text-center">
-                              {token.token}
-                            </div>
+                          <div className="text-xs text-gray-500">
+                            פג תוקף: {format(new Date(token.expires_at), 'dd/MM HH:mm', { locale: he })}
                           </div>
+                        </div>
+                        
+                        <div className="bg-white border rounded p-2 mb-2">
+                          <div className="font-mono text-xs break-all text-center text-gray-700">
+                            {token.token}
+                          </div>
+                        </div>
 
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm text-muted-foreground flex items-center gap-1">
-                              <Clock className="h-4 w-4" />
-                              פג תוקף: {format(new Date(token.expires_at), 'PPp', { locale: he })}
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => copyTokenToClipboard(token.token)}
-                              >
-                                <Copy className="h-4 w-4 mr-1" />
-                                העתק
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openTokenPage(token.token)}
-                              >
-                                <ExternalLink className="h-4 w-4 mr-1" />
-                                פתח דף
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyTokenToClipboard(token.token)}
+                            className="text-xs"
+                          >
+                            <Copy className="h-3 w-3 mr-1" />
+                            העתק
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openTokenPage(token.token)}
+                            className="text-xs"
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            פתח
+                          </Button>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Expired Tokens */}
+              {/* Expired Tokens - Compact View */}
               {expiredTokens.length > 0 && (
                 <div>
-                  <h4 className="text-md font-medium mb-3 flex items-center gap-2">
-                    <XCircle className="h-4 w-4 text-red-500" />
-                    טוקנים שבועיים שפג תוקפם ({expiredTokens.length})
+                  <h4 className="text-sm font-medium mb-3 flex items-center gap-2 text-red-600">
+                    <XCircle className="h-4 w-4" />
+                    פג תוקף ({expiredTokens.length})
                   </h4>
-                  <div className="grid gap-4">
-                    {expiredTokens.slice(0, 5).map((token) => (
-                      <Card key={token.id} className="border-red-200 bg-red-50/50">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="bg-red-100 text-red-700">
-                                פג תוקף
-                              </Badge>
-                              <span className="text-sm text-muted-foreground">
-                                נוצר: {format(new Date(token.created_at), 'PPP', { locale: he })}
-                              </span>
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              <Calendar className="h-4 w-4 inline mr-1" />
-                              {format(new Date(token.week_start_date), 'PPP', { locale: he })} - {format(new Date(token.week_end_date), 'PPP', { locale: he })}
-                            </div>
+                  <div className="space-y-2">
+                    {expiredTokens.slice(0, 3).map((token) => (
+                      <div key={token.id} className="bg-red-50 border border-red-200 rounded-lg p-3 opacity-75">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-red-100 text-red-700 text-xs">פג תוקף</Badge>
+                            <span className="text-xs text-gray-600">
+                              {format(new Date(token.week_start_date), 'dd/MM', { locale: he })} - {format(new Date(token.week_end_date), 'dd/MM', { locale: he })}
+                            </span>
                           </div>
-                          
-                          <div className="bg-white border border-red-200 rounded-md p-3 mb-3 opacity-60">
-                            <div className="font-mono text-sm break-all text-center">
-                              {token.token}
-                            </div>
-                          </div>
-
-                          <div className="text-sm text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            פג תוקף: {format(new Date(token.expires_at), 'PPp', { locale: he })}
-                          </div>
-                        </CardContent>
-                      </Card>
+                          <span className="text-xs text-gray-500">
+                            {format(new Date(token.expires_at), 'dd/MM', { locale: he })}
+                          </span>
+                        </div>
+                      </div>
                     ))}
-                    {expiredTokens.length > 5 && (
-                      <p className="text-sm text-muted-foreground text-center">
-                        ועוד {expiredTokens.length - 5} טוקנים...
+                    {expiredTokens.length > 3 && (
+                      <p className="text-xs text-gray-500 text-center py-2">
+                        ועוד {expiredTokens.length - 3} טוקנים שפג תוקפם
                       </p>
                     )}
                   </div>
