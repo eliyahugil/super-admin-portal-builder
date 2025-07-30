@@ -5,6 +5,7 @@ import { useOptimizedShiftMutations } from './hooks/useOptimizedShiftMutations';
 import { useShiftScheduleFilters } from './hooks/useShiftScheduleFilters';
 import { useShiftScheduleNavigation } from './hooks/useShiftScheduleNavigation';
 import { useViewPreferences } from '@/hooks/useViewPreferences';
+import { useShiftScheduleRealtime } from '@/hooks/useShiftScheduleRealtime';
 
 export const useShiftSchedule = () => {
   const { businessId } = useCurrentBusiness();
@@ -13,6 +14,9 @@ export const useShiftSchedule = () => {
   const { shifts, employees, branches, pendingSubmissions, loading, error, refetchShifts } = useShiftScheduleData(businessId);
   const { filters, filteredShifts, updateFilters: updateShiftFilters } = useShiftScheduleFilters(shifts);
   const { createShift, updateShift, deleteShift, isCreating, isUpdating, isDeleting } = useOptimizedShiftMutations(businessId);
+  
+  // הפעלת real-time updates למשמרות
+  useShiftScheduleRealtime(businessId);
 
   console.log('🔍 useShiftSchedule - Current state:', {
     businessId,
