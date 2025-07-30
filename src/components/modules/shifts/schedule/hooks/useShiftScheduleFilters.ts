@@ -92,11 +92,16 @@ export const useShiftScheduleFilters = (shifts: ShiftScheduleData[]) => {
       
       // Employee filter
       if (filters.employee !== 'all') {
-        if (filters.employee === 'unassigned' && shift.employee_id !== null) {
-          return false;
-        }
-        if (filters.employee !== 'unassigned' && shift.employee_id !== filters.employee) {
-          return false;
+        if (filters.employee === 'unassigned') {
+          // Show only unassigned shifts
+          if (shift.employee_id !== null) {
+            return false;
+          }
+        } else {
+          // Show only shifts assigned to specific employee
+          if (shift.employee_id !== filters.employee) {
+            return false;
+          }
         }
       }
       
