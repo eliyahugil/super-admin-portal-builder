@@ -44,6 +44,7 @@ export const useShiftScheduleData = (businessId: string | null) => {
       if (!businessId) return [];
 
       console.log('📊 Fetching shift schedule data for business:', businessId);
+      console.log('📅 Fetching shifts with query...');
 
       const { data, error } = await supabase
         .from('scheduled_shifts')
@@ -85,6 +86,11 @@ export const useShiftScheduleData = (businessId: string | null) => {
       }));
 
       console.log('✅ Shift schedule data fetched:', transformedData.length);
+      console.log('📅 Friday shifts:', transformedData.filter(shift => {
+        const date = new Date(shift.shift_date + 'T00:00:00');
+        return date.getDay() === 5; // יום שישי
+      }));
+      console.log('🔍 All shifts dates:', transformedData.map(s => ({ date: s.shift_date, dow: new Date(s.shift_date + 'T00:00:00').getDay() })));
       return transformedData;
     },
     enabled: !isEmployee && !!businessId,
