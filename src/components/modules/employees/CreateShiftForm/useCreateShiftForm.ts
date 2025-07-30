@@ -53,7 +53,8 @@ export const useCreateShiftForm = (
   branches?: Branch[],
   onSuccess?: () => void,
   onCreate?: (shiftData: any) => Promise<void>,
-  selectedDate?: Date | null
+  selectedDate?: Date | null,
+  copiedShiftData?: any
 ) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -93,22 +94,59 @@ export const useCreateShiftForm = (
     }
   }, [selectedDate]);
 
+  // Set form data from copied shift
+  useEffect(() => {
+    if (copiedShiftData) {
+      console.log('📋 Setting form data from copied shift:', copiedShiftData);
+      
+      if (copiedShiftData.employee_id) {
+        setSelectedEmployeeId(copiedShiftData.employee_id);
+      }
+      
+      if (copiedShiftData.branch_id) {
+        setSelectedBranchId([copiedShiftData.branch_id]);
+      }
+      
+      if (copiedShiftData.start_time && copiedShiftData.end_time) {
+        setStartTime(copiedShiftData.start_time);
+        setEndTime(copiedShiftData.end_time);
+        setUseCustomTime(true); // השתמש בזמן מותאם אישית
+      }
+      
+      if (copiedShiftData.notes) {
+        setNotes(copiedShiftData.notes);
+      }
+      
+      if (copiedShiftData.required_employees) {
+        setRequiredEmployees(copiedShiftData.required_employees);
+      }
+      
+      if (copiedShiftData.role) {
+        setSelectedRoleId(copiedShiftData.role);
+      }
+    }
+  }, [copiedShiftData]);
+
   const resetForm = () => {
-    setSelectedEmployeeId('');
-    setSelectedTemplateId('');
-    setSelectedBranchId([]);
-    // Don't reset shiftDates if we have selectedDate - keep the pre-selected date
+    // Don't reset if we have copied data - keep the copied information
+    if (!copiedShiftData) {
+      setSelectedEmployeeId('');
+      setSelectedTemplateId('');
+      setSelectedBranchId([]);
+      setNotes('');
+      setStartTime('09:00');
+      setEndTime('17:00');
+      setUseCustomTime(false);
+      setRequiredEmployees(1);
+      setSelectedRoleId('');
+    }
+    
+    // Always reset dates and weekday selection
     if (!selectedDate) {
       setShiftDates([]);
     }
     setWeekdayRange({start: '', end: ''});
     setSelectedWeekdays([]);
-    setNotes('');
-    setStartTime('09:00');
-    setEndTime('17:00');
-    setUseCustomTime(false);
-    setRequiredEmployees(1);
-    setSelectedRoleId('');
   };
 
   const validateForm = () => {

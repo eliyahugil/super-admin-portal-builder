@@ -28,6 +28,7 @@ export interface CreateShiftFormViewProps {
   onSuccess?: () => void;
   onCreate?: (shiftData: any) => Promise<void>;
   selectedDate?: Date | null;
+  copiedShiftData?: any;
 }
 
 export interface ShiftDatesSelectorProps {

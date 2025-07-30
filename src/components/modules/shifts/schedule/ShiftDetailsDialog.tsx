@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Clock, MapPin, User, FileText, X, Edit, Trash2, UserCheck } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, User, FileText, X, Edit, Trash2, UserCheck, Copy, Move } from 'lucide-react';
 import { useRealData } from '@/hooks/useRealData';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,11 +17,15 @@ interface ShiftDetailsDialogProps {
   onUpdate?: (shiftId: string, updates: any) => Promise<void>;
   onDelete?: (shiftId: string) => Promise<void>;
   onAssignEmployee?: (employeeId: string, shiftId: string) => Promise<void>;
+  onCopyShift?: (shiftData: any) => void;
+  onMoveShift?: (shiftId: string, newDate: string) => Promise<void>;
 }
 
-export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, open, onClose, onUpdate, onDelete, onAssignEmployee }) => {
+export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, open, onClose, onUpdate, onDelete, onAssignEmployee, onCopyShift, onMoveShift }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<any>({});
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [newDate, setNewDate] = useState('');
   const { toast } = useToast();
 
   // קבלת נתונים נוספים עבור הצגה תקינה - כל ה-hooks תמיד נקראים באותו סדר
@@ -213,6 +217,45 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
     }
   };
 
+  const handleCopyShift = () => {
+    if (!onCopyShift) return;
+    
+    const shiftData = {
+      ...shift,
+      id: undefined, // יצירת משמרת חדשה
+      created_at: undefined,
+      updated_at: undefined,
+    };
+    
+    onCopyShift(shiftData);
+    toast({
+      title: "הצלחה",
+      description: "נתוני המשמרת הועתקו ונפתח עורך המשמרות החדש",
+    });
+    onClose();
+  };
+
+  const handleMoveShift = async () => {
+    if (!onMoveShift || !newDate) return;
+    
+    try {
+      await onMoveShift(shift.id, newDate);
+      setShowMoveDialog(false);
+      setNewDate('');
+      toast({
+        title: "הצלחה",
+        description: "המשמרת הועברה בהצלחה לתאריך החדש",
+      });
+      onClose();
+    } catch (error) {
+      toast({
+        title: "שגיאה",
+        description: "שגיאה בהעברת המשמרת",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="!w-[95vw] !max-w-[95vw] sm:!max-w-2xl !left-[50%] !translate-x-[-50%] max-h-[95vh] overflow-y-auto p-3 sm:p-6" dir="rtl">
@@ -220,6 +263,19 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
           <div className="flex items-center justify-between">
             <DialogTitle>{isEditing ? 'עריכת משמרת' : 'פרטי משמרת'}</DialogTitle>
             <div className="flex items-center gap-2">
+              {!isEditing && onCopyShift && (
+                <Button variant="ghost" size="sm" onClick={handleCopyShift} title="העתק משמרת">
+                  <Copy className="h-4 w-4" />
+                </Button>
+              )}
+              {!isEditing && onMoveShift && (
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setNewDate(shift.shift_date);
+                  setShowMoveDialog(true);
+                }} title="העבר משמרת לתאריך אחר">
+                  <Move className="h-4 w-4" />
+                </Button>
+              )}
               {!isEditing && onUpdate && (
                 <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
                   <Edit className="h-4 w-4" />
@@ -547,6 +603,36 @@ export const ShiftDetailsDialog: React.FC<ShiftDetailsDialogProps> = ({ shift, o
             <Button onClick={onClose}>סגור</Button>
           )}
         </div>
+        
+        {/* דיאלוג העברת משמרת */}
+        {showMoveDialog && (
+          <Dialog open={showMoveDialog} onOpenChange={setShowMoveDialog}>
+            <DialogContent className="sm:max-w-md" dir="rtl">
+              <DialogHeader>
+                <DialogTitle>העבר משמרת לתאריך אחר</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-date">תאריך חדש</Label>
+                  <Input
+                    id="new-date"
+                    type="date"
+                    value={newDate}
+                    onChange={(e) => setNewDate(e.target.value)}
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowMoveDialog(false)}>
+                    ביטול
+                  </Button>
+                  <Button onClick={handleMoveShift} disabled={!newDate}>
+                    העבר
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </DialogContent>
     </Dialog>
   );

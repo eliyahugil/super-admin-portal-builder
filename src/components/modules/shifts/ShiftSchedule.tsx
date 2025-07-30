@@ -14,6 +14,7 @@ export const ShiftSchedule: React.FC = () => {
   const [selectedShift, setSelectedShift] = React.useState<any>(null);
   const [showShiftDetails, setShowShiftDetails] = React.useState(false);
   const [selectedDateForNewShift, setSelectedDateForNewShift] = React.useState<Date | null>(null);
+  const [copiedShiftData, setCopiedShiftData] = React.useState<any>(null);
   
   const {
     currentDate,
@@ -163,15 +164,26 @@ export const ShiftSchedule: React.FC = () => {
         onUpdate={updateShift}
         onDelete={deleteShift}
         onAssignEmployee={handleAssignEmployee}
+        onCopyShift={(shiftData) => {
+          console.log('📋 Copying shift data:', shiftData);
+          setCopiedShiftData(shiftData);
+          setSelectedDateForNewShift(null);
+          setShowCreateDialog(true);
+        }}
+        onMoveShift={async (shiftId, newDate) => {
+          await updateShift(shiftId, { shift_date: newDate });
+        }}
       />
       <CreateShiftDialog 
         open={showCreateDialog}
         onClose={() => {
           setShowCreateDialog(false);
           setSelectedDateForNewShift(null);
+          setCopiedShiftData(null);
         }}
         onCreate={createShift}
         selectedDate={selectedDateForNewShift}
+        copiedShiftData={copiedShiftData}
       />
       <PendingSubmissionsDialog />
     </div>
