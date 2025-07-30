@@ -53,6 +53,8 @@ export const EmployeeTokensTab: React.FC<EmployeeTokensTabProps> = ({
   employeeId,
   employeeName
 }) => {
+  console.log('🎯 EmployeeTokensTab rendered with:', { employeeId, employeeName, hasEmployee: !!employee });
+  
   const [tokens, setTokens] = useState<EmployeeToken[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -61,7 +63,16 @@ export const EmployeeTokensTab: React.FC<EmployeeTokensTabProps> = ({
   // Get permanent token for this employee
   const { data: permanentToken, isLoading: permanentLoading, error: permanentError } = useEmployeePermanentToken(employeeId);
 
+  console.log('🔍 EmployeeTokensTab state:', { 
+    tokensCount: tokens.length, 
+    isLoading, 
+    permanentLoading, 
+    hasPermanentToken: !!permanentToken,
+    permanentError: permanentError?.message 
+  });
+
   useEffect(() => {
+    console.log('🔄 EmployeeTokensTab useEffect triggered, employeeId:', employeeId);
     fetchTokens();
   }, [employeeId]);
 
@@ -144,14 +155,16 @@ export const EmployeeTokensTab: React.FC<EmployeeTokensTabProps> = ({
   const expiredTokens = tokens.filter(t => !t.is_active || new Date(t.expires_at) <= new Date());
 
   if (isLoading || permanentLoading) {
+    console.log('⏳ EmployeeTokensTab loading state');
     return (
-      <Card className="w-full">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="w-full p-6">
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">טוען טוקנים...</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
