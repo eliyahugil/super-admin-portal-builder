@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Branch } from '@/types/branch';
 import { getDatesForSelectedWeekdays } from './utils';
+import { getIsraelDate } from '@/lib/dateUtils';
 
 // Archive/unarchive helpers for scheduled shifts
 export const useScheduledShiftsArchiver = () => {
@@ -78,13 +79,14 @@ export const useCreateShiftForm = (
       console.log('🗓️ selectedDate getDate():', selectedDate.getDate());
       console.log('🗓️ selectedDate getTimezoneOffset():', selectedDate.getTimezoneOffset());
       
-      // Use local date formatting to avoid timezone issues
-      const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(selectedDate.getDate()).padStart(2, '0');
+      // Use Israel timezone formatting to avoid timezone issues
+      const israelDate = getIsraelDate(selectedDate);
+      const year = israelDate.getFullYear();
+      const month = String(israelDate.getMonth() + 1).padStart(2, '0');
+      const day = String(israelDate.getDate()).padStart(2, '0');
       const dateString = `${year}-${month}-${day}`;
       
-      console.log('🗓️ Converted dateString (local):', dateString);
+      console.log('🗓️ Converted dateString (Israel timezone):', dateString);
       
       setShiftDates([dateString]);
       console.log('📅 Auto-set selected date:', dateString);

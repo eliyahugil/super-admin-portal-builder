@@ -1,24 +1,28 @@
 
 import { eachDayOfInterval } from "date-fns";
+import { getIsraelDate, getIsraelDateString, createIsraelDateFromString } from '@/lib/dateUtils';
 
 export function getDatesForSelectedWeekdays(start: string, end: string, weekdays: number[]): string[] {
   // start & end are yyyy-MM-dd strings
   if (!start || !end || weekdays.length === 0) return [];
   
-  // Use local date construction to avoid timezone issues
-  const [startYear, startMonth, startDay] = start.split('-').map(Number);
-  const [endYear, endMonth, endDay] = end.split('-').map(Number);
+  // Use Israel timezone date construction
+  const startDate = createIsraelDateFromString(start);
+  const endDate = createIsraelDateFromString(end);
   
-  const from = new Date(startYear, startMonth - 1, startDay);
-  const to = new Date(endYear, endMonth - 1, endDay);
+  console.log('🗓️ getDatesForSelectedWeekdays:', {
+    start,
+    end,
+    startDate,
+    endDate,
+    weekdays
+  });
   
-  const all = eachDayOfInterval({ start: from, end: to });
-  return all
-    .filter((d) => weekdays.includes(d.getDay()))
-    .map((d) => {
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    });
+  const allDates = eachDayOfInterval({ start: startDate, end: endDate });
+  return allDates
+    .filter((date) => {
+      const israelDate = getIsraelDate(date);
+      return weekdays.includes(israelDate.getDay());
+    })
+   .map(date => getIsraelDateString(date));
 }
