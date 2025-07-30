@@ -54,7 +54,7 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 });
   const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 0 });
 
-  // Fetch employee's branch assignments - אם אין הקצאות, נטען את הסניף הראשי
+  // Fetch employee's branch assignments - רק סניפים שהעובד משויך אליהם
   const fetchEmployeeBranches = async () => {
     console.log('🔍 Starting fetchEmployeeBranches for employee:', employee.id);
     try {
@@ -107,25 +107,14 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
           console.log('✅ Using main branch:', employeeData.main_branch);
           setEmployeeBranches([employeeData.main_branch]);
         } else {
-          console.log('⚠️ No main branch found, fetching all business branches');
-          // כמוצא אחרון - נטען את כל הסניפים של העסק
-          const { data: businessBranches, error: branchesError } = await supabase
-            .from('branches')
-            .select('id, name, address')
-            .eq('business_id', employee.business_id || '')
-            .eq('is_active', true);
-
-          if (branchesError) {
-            console.error('❌ Error fetching business branches:', branchesError);
-            throw branchesError;
-          }
-
-          console.log('✅ Using all business branches:', businessBranches);
-          setEmployeeBranches(businessBranches || []);
+          console.log('⚠️ No main branch found for employee');
+          setEmployeeBranches([]);
         }
       }
     } catch (error) {
       console.error('💥 Error fetching employee branches:', error);
+      setEmployeeBranches([]);
+    } finally {
       setLoading(false);
     }
   };
