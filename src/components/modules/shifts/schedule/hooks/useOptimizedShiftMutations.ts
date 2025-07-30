@@ -1,17 +1,26 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { debounce } from '@/utils/performance';
 import type { CreateShiftData, ShiftScheduleData } from '../types';
 
 export const useOptimizedShiftMutations = (businessId: string | null) => {
   const queryClient = useQueryClient();
 
-  // Debounced invalidation to prevent excessive refetches
-  const debouncedInvalidate = debounce(() => {
-    queryClient.invalidateQueries({ queryKey: ['shift-schedule-data'] });
-    queryClient.invalidateQueries({ queryKey: ['employee-shifts'] });
-  }, 300);
+  // מיידי - ללא debouncing כדי לקבל עדכונים מיידיים
+  const immediateInvalidate = React.useCallback(() => {
+    queryClient.invalidateQueries({ 
+      queryKey: ['shift-schedule-data', businessId],
+      refetchType: 'active'
+    });
+    queryClient.invalidateQueries({ 
+      queryKey: ['employee-shifts', businessId],
+      refetchType: 'active'
+    });
+    queryClient.invalidateQueries({ 
+      queryKey: ['shifts-table', businessId],
+      refetchType: 'active'
+    });
+  }, [queryClient, businessId]);
 
   // Helper function to convert ShiftAssignment[] to JSON for database
   const convertShiftAssignmentsForDB = (assignments?: any): any => {
@@ -45,29 +54,9 @@ export const useOptimizedShiftMutations = (businessId: string | null) => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (newShift) => {
-      console.log('✅ SHIFT CREATED SUCCESSFULLY! Force refreshing everything:', newShift);
-      
-      // **CRITICAL FIX:** Multiple aggressive cache invalidations
-      queryClient.invalidateQueries({ queryKey: ['shift-schedule-data'] });
-      queryClient.invalidateQueries({ queryKey: ['shifts'] });
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
-      queryClient.invalidateQueries({ queryKey: ['branches'] });
-      
-      // Force immediate refetch
-      queryClient.refetchQueries({ 
-        queryKey: ['shift-schedule-data', businessId],
-        type: 'active'
-      });
-      
-      // Additional delayed refetch to make sure
-      setTimeout(() => {
-        console.log('🔄 DELAYED REFETCH for shifts');
-        queryClient.invalidateQueries({ queryKey: ['shift-schedule-data'] });
-        queryClient.refetchQueries({ queryKey: ['shift-schedule-data', businessId] });
-      }, 1500);
-      
-      debouncedInvalidate();
+    onSuccess: () => {
+      // רענון מיידי של הנתונים
+      immediateInvalidate();
     }
   });
 
@@ -98,7 +87,8 @@ export const useOptimizedShiftMutations = (businessId: string | null) => {
       return data;
     },
     onSuccess: () => {
-      debouncedInvalidate();
+      // רענון מיידי של הנתונים
+      immediateInvalidate();
     }
   });
 
@@ -112,7 +102,8 @@ export const useOptimizedShiftMutations = (businessId: string | null) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      debouncedInvalidate();
+      // רענון מיידי של הנתונים
+      immediateInvalidate();
     }
   });
 

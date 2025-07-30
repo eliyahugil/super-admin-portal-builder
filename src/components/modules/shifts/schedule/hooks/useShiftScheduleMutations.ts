@@ -40,8 +40,21 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shift-schedule-data'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-shifts'] });
+      // רענון מיידי וחד ממדי של הנתונים
+      queryClient.invalidateQueries({ 
+        queryKey: ['shift-schedule-data'],
+        refetchType: 'active'
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['employee-shifts'],
+        refetchType: 'active' 
+      });
+      
+      // רענון כללי של כל ה-cache הקשור למשמרות
+      queryClient.invalidateQueries({ 
+        queryKey: ['shifts-table'],
+        refetchType: 'active'
+      });
     }
   });
 
@@ -80,8 +93,21 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shift-schedule-data'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-shifts'] });
+      // רענון מיידי וחד ממדי של הנתונים
+      queryClient.invalidateQueries({ 
+        queryKey: ['shift-schedule-data'],
+        refetchType: 'active'
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['employee-shifts'],
+        refetchType: 'active' 
+      });
+      
+      // רענון כללי של כל ה-cache הקשור למשמרות
+      queryClient.invalidateQueries({ 
+        queryKey: ['shifts-table'],
+        refetchType: 'active'
+      });
     }
   });
 
@@ -95,8 +121,21 @@ export const useShiftScheduleMutations = (businessId: string | null) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shift-schedule-data'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-shifts'] });
+      // רענון מיידי וחד ממדי של הנתונים
+      queryClient.invalidateQueries({ 
+        queryKey: ['shift-schedule-data'],
+        refetchType: 'active'
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['employee-shifts'],
+        refetchType: 'active' 
+      });
+      
+      // רענון כללי של כל ה-cache הקשור למשמרות
+      queryClient.invalidateQueries({ 
+        queryKey: ['shifts-table'],
+        refetchType: 'active'
+      });
     }
   });
 
