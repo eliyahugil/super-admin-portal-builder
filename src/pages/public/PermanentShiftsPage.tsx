@@ -188,33 +188,63 @@ const PermanentShiftsPage: React.FC = () => {
   const weekRange = getCurrentWeekRange();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100" dir="rtl">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50" dir="rtl">
+      <div className="max-w-6xl mx-auto px-4 py-6">
         
-          {/* Week Navigation Header */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        {/* Header with Employee Info */}
+        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <User className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {employee ? `${employee.first_name} ${employee.last_name}` : 'משמרות ואזור אישי'}
+                </h1>
+                <p className="text-gray-600 text-sm">
+                  {employee?.business?.name || 'צפייה במשמרות זמינות וסידור עבודה'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
+                <Star className="h-3 w-3 mr-1" />
+                טוקן קבוע
+              </Badge>
+              <Badge variant="outline" className="text-gray-600">
+                <Eye className="h-3 w-3 mr-1" />
+                {tokenData?.usesCount || 0} שימושים
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Week Navigation */}
+        <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
           <div className="flex items-center justify-between">
             <Button 
               variant="outline" 
               onClick={() => navigateWeek('prev')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-sm"
+              size="sm"
             >
               ← שבוע קודם
             </Button>
             
             <div className="text-center">
               <div className="text-lg font-semibold text-gray-800">
-                {weekRange.start} - {weekRange.end}
+                {format(getCurrentWeekRange().weekStartDate, 'dd/MM', { locale: he })} - {format(getCurrentWeekRange().weekEndDate, 'dd/MM', { locale: he })}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-gray-500">
                 {weekRange.isCurrentWeek && "השבוע הנוכחי"}
                 {weekRange.isPastWeek && "שבוע שעבר"}
                 {weekRange.isFutureWeek && "שבוע עתידי"}
               </div>
               {isWeekInPast() && (
-                <div className="mt-2 inline-flex items-center gap-2 bg-red-50 text-red-700 px-3 py-1 rounded-full text-sm">
+                <div className="mt-2 inline-flex items-center gap-1 bg-red-50 text-red-700 px-3 py-1 rounded-full text-xs">
                   <XCircle className="w-3 h-3" />
-                  השבוע חלף - לא ניתן להגיש משמרות
+                  השבוע חלף - לא ניתן להגיש
                 </div>
               )}
             </div>
@@ -222,129 +252,47 @@ const PermanentShiftsPage: React.FC = () => {
             <Button 
               variant="outline" 
               onClick={() => navigateWeek('next')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-sm"
+              size="sm"
             >
               שבוע הבא →
             </Button>
           </div>
         </div>
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            משמרות ואזור אישי
-          </h1>
-          <p className="text-gray-600">
-            צפייה במשמרות זמינות וסידור עבודה אישי
-          </p>
-          {context.isCurrentWeek === false && (
-            <div className="mt-2 inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              השבוע הקרוב
-            </div>
-          )}
-        </div>
 
-        {/* Employee Info */}
-        {employee && (
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                    <User className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold">
-                      {employee.first_name} {employee.last_name}
-                    </h2>
-                    <p className="text-muted-foreground">
-                      {employee.business?.name}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-green-100 text-green-700">
-                    <Star className="h-3 w-3 mr-1" />
-                    טוקן קבוע
-                  </Badge>
-                  <Badge variant="outline">
-                    <Eye className="h-3 w-3 mr-1" />
-                    שימושים: {tokenData.usesCount}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Advanced Summary */}
+        {/* Quick Stats */}
         {shiftsData && (
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <div className="text-lg font-semibold text-blue-700">
-                    {availableShifts.filter((s: any) => !isShiftInPast(s.shift_date || '')).length}
-                  </div>
-                  <div className="text-xs text-blue-600">משמרות זמינות</div>
-                  {availableShifts.filter((s: any) => s.is_special).length > 0 && (
-                    <div className="text-xs text-purple-600 mt-1">
-                      {availableShifts.filter((s: any) => s.is_special).length} מיוחדות
-                    </div>
-                  )}
+          <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="text-lg font-semibold text-blue-700">
+                  {availableShifts.filter((s: any) => !isShiftInPast(s.shift_date || '')).length}
                 </div>
-                
-                <div className="bg-green-50 p-3 rounded-lg">
-                  <div className="text-lg font-semibold text-green-700">
-                    {employeeScheduledShifts.length}
-                  </div>
-                  <div className="text-xs text-green-600">משמרות מתוכננות</div>
-                </div>
-                
-                <div className="bg-amber-50 p-3 rounded-lg">
-                  <div className="text-lg font-semibold text-amber-700">
-                    {(() => {
-                      const allShifts = [...availableShifts, ...employeeScheduledShifts];
-                      const timeGroups = allShifts.reduce((acc: any, shift: any) => {
-                        const timeKey = `${shift.start_time}-${shift.end_time}`;
-                        if (!acc[timeKey]) acc[timeKey] = [];
-                        acc[timeKey].push(shift);
-                        return acc;
-                      }, {});
-                      return Object.values(timeGroups).filter((group: any) => group.length > 1).length;
-                    })()}
-                  </div>
-                  <div className="text-xs text-amber-600">התנגשויות זמנים</div>
-                </div>
-                
-                <div className="bg-purple-50 p-3 rounded-lg">
-                  <div className="text-lg font-semibold text-purple-700">
-                    {shiftsData?.employeeAssignments?.filter((ea: any) => ea.priority_order === 1)?.length || 0}
-                  </div>
-                  <div className="text-xs text-purple-600">סניפים מועדפים</div>
-                </div>
+                <div className="text-xs text-blue-600">משמרות זמינות</div>
               </div>
               
-              {/* Branch Preferences Summary */}
-              {shiftsData?.employeeAssignments && shiftsData.employeeAssignments.length > 0 && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="text-sm font-medium mb-2">השמות סניפים:</div>
-                  <div className="flex flex-wrap gap-2">
-                    {shiftsData.employeeAssignments.map((assignment: any, index: number) => (
-                      <Badge 
-                        key={index}
-                        variant={assignment.priority_order === 1 ? "default" : "secondary"}
-                        className={assignment.priority_order === 1 ? "bg-green-100 text-green-700" : ""}
-                      >
-                        {assignment.priority_order === 1 && <Star className="h-3 w-3 mr-1" />}
-                        {assignment.role_name} (עדיפות {assignment.priority_order})
-                      </Badge>
-                    ))}
-                  </div>
+              <div className="bg-green-50 p-3 rounded-lg">
+                <div className="text-lg font-semibold text-green-700">
+                  {employeeScheduledShifts.length}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <div className="text-xs text-green-600">המשמרות שלי</div>
+              </div>
+              
+              <div className="bg-purple-50 p-3 rounded-lg">
+                <div className="text-lg font-semibold text-purple-700">
+                  {selectedShifts.size}
+                </div>
+                <div className="text-xs text-purple-600">נבחרו להגשה</div>
+              </div>
+              
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="text-lg font-semibold text-gray-700">
+                  {shiftsData?.employeeAssignments?.length || 0}
+                </div>
+                <div className="text-xs text-gray-600">סניפים משוייכים</div>
+              </div>
+            </div>
+          </div>
         )}
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -401,149 +349,144 @@ const PermanentShiftsPage: React.FC = () => {
                     </div>
                   )}
                   
-                  <div className="grid gap-3">
+                  <div className="space-y-3">
                     {(() => {
-                      // Group shifts by time to identify identical times
-                      const shiftsByTime = availableShifts.reduce((acc: any, shift: any) => {
-                        const timeKey = `${shift.start_time}-${shift.end_time}`;
-                        if (!acc[timeKey]) acc[timeKey] = [];
-                        acc[timeKey].push(shift);
+                      // Group shifts by day for better organization
+                      const shiftsByDay = availableShifts.reduce((acc: any, shift: any) => {
+                        const dayKey = `${shift.day_of_week}-${shift.shift_date}`;
+                        if (!acc[dayKey]) {
+                          acc[dayKey] = {
+                            dayName: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][shift.day_of_week],
+                            date: shift.shift_date,
+                            shifts: []
+                          };
+                        }
+                        acc[dayKey].shifts.push(shift);
                         return acc;
                       }, {});
 
-                      return availableShifts.map((shift: any) => {
-                        const timeKey = `${shift.start_time}-${shift.end_time}`;
-                        const shiftsAtSameTime = shiftsByTime[timeKey];
-                        const hasIdenticalTimes = shiftsAtSameTime.length > 1;
-                        const isSpecialShift = shift.source === 'scheduled_shifts' || shift.is_special;
-                        const businessShiftType = shiftsData?.businessShiftTypes?.find((bst: any) => bst.shift_type === shift.shift_type);
-                        
-                        // Check if this is employee's preferred branch
-                        const employeeAssignments = shiftsData?.employeeAssignments || [];
-                        const branchAssignment = employeeAssignments.find((ea: any) => ea.branch_id === shift.branch_id);
-                        const isPreferredBranch = branchAssignment?.priority_order === 1;
-                        
-                        // Check if shift is in the past or week is in past
-                        const isPastShift = isShiftInPast(shift.shift_date || '') || isWeekInPast();
-                        const isSelected = selectedShifts.has(shift.id);
-
-                        return (
-                          <div 
-                            key={shift.id} 
-                            className={`border rounded-lg p-4 relative cursor-pointer transition-all duration-200 ${
-                              isSelected 
-                                ? 'border-green-400 bg-green-50 shadow-md ring-2 ring-green-200'
-                                : isSpecialShift 
-                                  ? 'border-purple-300 bg-purple-50/70 hover:shadow-md' 
-                                  : hasIdenticalTimes
-                                    ? 'border-amber-300 bg-amber-50/70 hover:shadow-sm'
-                                    : isPastShift
-                                      ? 'border-gray-300 bg-gray-50/70 opacity-60'
-                                      : 'border-blue-200 bg-blue-50/50 hover:border-blue-300 hover:shadow-sm'
-                            } ${isPastShift || isWeekInPast() ? 'pointer-events-none' : ''}`}
-                            onClick={() => !isPastShift && !isWeekInPast() && toggleShiftSelection(shift.id)}
-                          >
-                            {/* Past shift overlay */}
-                            {(isPastShift || isWeekInPast()) && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-gray-200/80 rounded-lg">
-                                <span className="text-gray-600 font-medium text-sm bg-white px-3 py-1 rounded-full shadow">
-                                  {isWeekInPast() ? "השבוע חלף" : "✓ משמרת שבוצעה"}
-                                </span>
-                              </div>
-                            )}
-                            
-                            {/* Selection indicator */}
-                            {isSelected && !isPastShift && (
-                              <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                                <CheckCircle className="w-4 h-4 text-white" />
-                              </div>
-                            )}
-
-                            {/* Special/Regular Shift Indicator */}
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                {isSpecialShift && !isPastShift && (
-                                  <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
-                                    <Star className="h-3 w-3 mr-1" />
-                                    משמרת מיוחדת
-                                  </Badge>
-                                )}
-                                <Badge 
-                                  variant="outline" 
-                                  className="text-xs"
-                                  style={{ 
-                                    backgroundColor: businessShiftType?.color + '20' || '#3B82F620',
-                                    borderColor: businessShiftType?.color || '#3B82F6',
-                                    color: businessShiftType?.color || '#3B82F6'
-                                  }}
-                                >
-                                  {businessShiftType?.display_name || shift.shift_type}
-                                </Badge>
-                                <span className="text-sm font-medium">
-                                  יום {['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][shift.day_of_week]}
-                                </span>
-                              </div>
-                              
-                              {/* Time with identical time warning */}
-                              <div className="flex items-center gap-2">
-                                {hasIdenticalTimes && !isPastShift && (
-                                  <Badge variant="outline" className="bg-amber-100 text-amber-700 text-xs">
-                                    <Clock className="h-3 w-3 mr-1" />
-                                    {shiftsAtSameTime.length} באותה שעה
-                                  </Badge>
-                                )}
-                                <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
-                                </div>
-                              </div>
+                      return Object.values(shiftsByDay).map((dayGroup: any) => (
+                        <div key={`${dayGroup.date}`} className="border border-gray-200 rounded-lg p-4 bg-white">
+                          {/* Day Header */}
+                          <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-blue-500" />
+                              <span className="font-medium text-gray-800">
+                                יום {dayGroup.dayName}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                {format(new Date(dayGroup.date), 'dd/MM', { locale: he })}
+                              </span>
                             </div>
-                            
-                            {/* Branch with preference indicator */}
-                            {shift.branch && (
-                              <div className="flex items-center justify-between">
-                                <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" />
-                                  {shift.branch.name}
-                                  {isPreferredBranch && !isPastShift && (
-                                    <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs mr-2">
-                                      <Star className="h-3 w-3 mr-1" />
-                                      סניף מועדף
-                                    </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {dayGroup.shifts.length} משמרות
+                            </Badge>
+                          </div>
+
+                          {/* Shifts for this day */}
+                          <div className="space-y-2">
+                            {dayGroup.shifts.map((shift: any) => {
+                              const isSpecialShift = shift.source === 'scheduled_shifts' || shift.is_special;
+                              const businessShiftType = shiftsData?.businessShiftTypes?.find((bst: any) => bst.shift_type === shift.shift_type);
+                              const employeeAssignments = shiftsData?.employeeAssignments || [];
+                              const branchAssignment = employeeAssignments.find((ea: any) => ea.branch_id === shift.branch_id);
+                              const isPreferredBranch = branchAssignment?.priority_order === 1;
+                              const isPastShift = isShiftInPast(shift.shift_date || '') || isWeekInPast();
+                              const isSelected = selectedShifts.has(shift.id);
+
+                              return (
+                                <div 
+                                  key={shift.id} 
+                                  className={`border rounded-lg p-3 cursor-pointer transition-all duration-200 ${
+                                    isSelected 
+                                      ? 'border-green-400 bg-green-50 shadow-sm ring-2 ring-green-200'
+                                      : isSpecialShift 
+                                        ? 'border-purple-200 bg-purple-50 hover:shadow-sm' 
+                                        : isPastShift
+                                          ? 'border-gray-200 bg-gray-50 opacity-60'
+                                          : 'border-blue-200 bg-blue-50 hover:border-blue-300 hover:shadow-sm'
+                                  } ${isPastShift || isWeekInPast() ? 'pointer-events-none' : ''}`}
+                                  onClick={() => !isPastShift && !isWeekInPast() && toggleShiftSelection(shift.id)}
+                                >
+                                  {/* Past shift overlay */}
+                                  {(isPastShift || isWeekInPast()) && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-gray-200/80 rounded-lg">
+                                      <span className="text-gray-600 font-medium text-sm bg-white px-3 py-1 rounded-full shadow">
+                                        {isWeekInPast() ? "השבוע חלף" : "✓ בוצעה"}
+                                      </span>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Selection indicator */}
+                                  {isSelected && !isPastShift && (
+                                    <div className="absolute top-2 left-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                      <CheckCircle className="w-3 h-3 text-white" />
+                                    </div>
+                                  )}
+
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      {/* Time */}
+                                      <div className="flex items-center gap-1 text-sm font-medium">
+                                        <Clock className="h-3 w-3 text-gray-500" />
+                                        {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
+                                      </div>
+
+                                      {/* Shift Type */}
+                                      <Badge 
+                                        variant="outline" 
+                                        className="text-xs"
+                                        style={{ 
+                                          backgroundColor: businessShiftType?.color + '20' || '#3B82F620',
+                                          borderColor: businessShiftType?.color || '#3B82F6',
+                                          color: businessShiftType?.color || '#3B82F6'
+                                        }}
+                                      >
+                                        {businessShiftType?.display_name || shift.shift_type}
+                                      </Badge>
+
+                                      {/* Special shift indicator */}
+                                      {isSpecialShift && !isPastShift && (
+                                        <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
+                                          <Star className="h-3 w-3 mr-1" />
+                                          מיוחדת
+                                        </Badge>
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                      {/* Branch */}
+                                      {shift.branch && (
+                                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                                          <MapPin className="h-3 w-3" />
+                                          {shift.branch.name}
+                                          {isPreferredBranch && !isPastShift && (
+                                            <Star className="h-3 w-3 text-yellow-500" />
+                                          )}
+                                        </div>
+                                      )}
+
+                                      {/* Required employees */}
+                                      {shift.required_employees > 1 && (
+                                        <span className="text-xs text-gray-500">
+                                          נדרשים {shift.required_employees}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Selection instruction */}
+                                  {!isPastShift && (
+                                    <div className="mt-2 text-xs text-center text-gray-500 border-t pt-2">
+                                      {isSelected ? '✓ נבחר להגשה' : 'לחץ לבחירה'}
+                                    </div>
                                   )}
                                 </div>
-                                
-                                {shift.required_employees > 1 && (
-                                  <span className="text-xs text-muted-foreground">
-                                    נדרשים {shift.required_employees} עובדים
-                                  </span>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Additional shift info */}
-                            {shift.notes && (
-                              <div className="mt-2 text-xs text-muted-foreground p-2 bg-white/60 rounded">
-                                📝 {shift.notes}
-                              </div>
-                            )}
-
-                            {/* Role info if available */}
-                            {branchAssignment?.role_name && (
-                              <div className="mt-2 text-xs text-blue-600">
-                                תפקיד: {branchAssignment.role_name}
-                              </div>
-                            )}
-                            
-                            {/* Click instruction for available shifts */}
-                            {!isPastShift && (
-                              <div className="mt-2 text-xs text-center text-gray-500 border-t pt-2">
-                                {isSelected ? '✓ נבחר להגשה' : 'לחץ לבחירה להגשה'}
-                              </div>
-                            )}
+                              );
+                            })}
                           </div>
-                        );
-                      });
+                        </div>
+                      ));
                     })()}
                   </div>
                 </div>
@@ -554,140 +497,181 @@ const PermanentShiftsPage: React.FC = () => {
           {/* Scheduled Shifts */}
           <Card>
             <CardHeader>
-               <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-green-500" />
-                המשמרות שלי (מאושרות ומשובצות)
+                המשמרות שלי
+                <Badge variant="outline" className="bg-green-100 text-green-700">
+                  {employeeScheduledShifts.length} משמרות
+                </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
               {employeeScheduledShifts.length === 0 ? (
                 <div className="text-center py-8">
-                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">
+                  <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">
                     אין לך משמרות מתוכננות השבוע
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    משמרות שאושרו יופיעו כאן
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <p className="text-sm text-green-700">
+                <div className="space-y-3">
+                  <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                    <p className="text-sm text-green-700 font-medium">
                       <CheckCircle className="h-4 w-4 inline mr-1" />
                       יש לך {employeeScheduledShifts.length} משמרות מתוכננות
                     </p>
-                    <p className="text-xs text-green-600 mt-1">
-                      כולל שבוע נוכחי ועתידי
-                    </p>
                   </div>
                   
-                  <div className="grid gap-3">
-                    {(() => {
-                      // Group employee's shifts by time to identify conflicts
-                      const allEmployeeShifts = employeeScheduledShifts;
-                      
-                      const shiftsByTime = allEmployeeShifts.reduce((acc: any, shift: any) => {
-                        const timeKey = `${shift.start_time}-${shift.end_time}`;
-                        if (!acc[timeKey]) acc[timeKey] = [];
-                        acc[timeKey].push(shift);
-                        return acc;
-                      }, {});
+                  {(() => {
+                    // Group employee's shifts by day
+                    const shiftsByDay = employeeScheduledShifts.reduce((acc: any, shift: any) => {
+                      const dayKey = `${shift.day_of_week || new Date(shift.shift_date).getDay()}-${shift.shift_date}`;
+                      if (!acc[dayKey]) {
+                        acc[dayKey] = {
+                          dayName: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][shift.day_of_week || new Date(shift.shift_date).getDay()],
+                          date: shift.shift_date,
+                          shifts: []
+                        };
+                      }
+                      acc[dayKey].shifts.push(shift);
+                      return acc;
+                    }, {});
 
-                      return allEmployeeShifts.map((shift: any) => {
-                        const timeKey = `${shift.start_time}-${shift.end_time}`;
-                        const shiftsAtSameTime = shiftsByTime[timeKey];
-                        const hasTimeConflict = shiftsAtSameTime.length > 1;
-                        const businessShiftType = shiftsData?.businessShiftTypes?.find((bst: any) => bst.shift_type === shift.shift_type);
-                        
-                        // Check if this is from employee's scheduled shifts vs available assignment
-                        const isFromScheduled = shift.source === 'employee_scheduled';
-                        const isSpecialShift = shift.is_special || shift.submission_type === 'special';
-                        const isPastShift = isShiftInPast(shift.shift_date || '');
-
-                        return (
-                          <div 
-                            key={shift.id} 
-                            className={`border rounded-lg p-4 relative ${
-                              isPastShift
-                                ? 'border-gray-300 bg-gray-50/70 opacity-75'
-                                : hasTimeConflict 
-                                  ? 'border-red-300 bg-red-50/70 shadow-md' 
-                                  : isSpecialShift
-                                    ? 'border-purple-300 bg-purple-50/70 shadow-md'
-                                    : 'border-green-200 bg-green-50/50'
-                            }`}
-                          >
-                            {/* Past shift overlay */}
-                            {isPastShift && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-gray-200/80 rounded-lg">
-                                <span className="text-gray-600 font-medium text-sm bg-white px-3 py-1 rounded-full shadow line-through">
-                                  ✓ משמרת שבוצעה
-                                </span>
-                              </div>
-                            )}
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                {hasTimeConflict && (
-                                  <Badge variant="destructive" className="text-xs">
-                                    ⚠️ התנגשות זמנים
-                                  </Badge>
-                                )}
-                                {isSpecialShift && (
-                                  <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
-                                    <Star className="h-3 w-3 mr-1" />
-                                    משמרת מיוחדת
-                                  </Badge>
-                                )}
-                                <Badge 
-                                  variant="secondary" 
-                                  className={isFromScheduled ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}
-                                >
-                                  {isFromScheduled ? 'משמרת קבועה' : (shift.status === 'approved' ? 'אושר' : 'ממתין')}
-                                </Badge>
-                                {businessShiftType && (
-                                  <Badge 
-                                    variant="outline" 
-                                    className="text-xs"
-                                    style={{ 
-                                      backgroundColor: businessShiftType.color + '20',
-                                      borderColor: businessShiftType.color,
-                                      color: businessShiftType.color
-                                    }}
-                                  >
-                                    {businessShiftType.display_name}
-                                  </Badge>
-                                )}
-                                <span className="font-medium">
-                                  {shift.shift_date ? format(new Date(shift.shift_date), 'EEEE, dd/MM', { locale: he }) : 'תאריך לא זמין'}
-                                </span>
-                              </div>
-                              <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
-                              </div>
-                            </div>
-                            
-                            {shift.branch && (
-                              <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {shift.branch.name}
-                              </div>
-                            )}
-                            
-                            {shift.role && (
-                              <div className="text-xs text-muted-foreground mt-1">
-                                תפקיד: {shift.role}
-                              </div>
-                            )}
-
-                            {shift.notes && (
-                              <div className="mt-2 text-xs text-muted-foreground p-2 bg-white/60 rounded">
-                                📝 {shift.notes}
-                              </div>
-                            )}
+                    return Object.values(shiftsByDay).map((dayGroup: any) => (
+                      <div key={`scheduled-${dayGroup.date}`} className="border border-green-200 rounded-lg p-4 bg-green-50/50">
+                        {/* Day Header */}
+                        <div className="flex items-center justify-between mb-3 pb-2 border-b border-green-200">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-green-600" />
+                            <span className="font-medium text-green-800">
+                              יום {dayGroup.dayName}
+                            </span>
+                            <span className="text-sm text-green-600">
+                              {format(new Date(dayGroup.date), 'dd/MM', { locale: he })}
+                            </span>
                           </div>
-                        );
-                      });
-                    })()}
-                  </div>
+                          <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
+                            {dayGroup.shifts.length} משמרות
+                          </Badge>
+                        </div>
+
+                        {/* Shifts for this day */}
+                        <div className="space-y-2">
+                          {dayGroup.shifts.map((shift: any) => {
+                            const businessShiftType = shiftsData?.businessShiftTypes?.find((bst: any) => bst.shift_type === shift.shift_type);
+                            const isFromScheduled = shift.source === 'employee_scheduled';
+                            const isSpecialShift = shift.is_special || shift.submission_type === 'special';
+                            const isPastShift = isShiftInPast(shift.shift_date || '');
+
+                            return (
+                              <div 
+                                key={`scheduled-${shift.id}`} 
+                                className={`border rounded-lg p-3 ${
+                                  isPastShift
+                                    ? 'border-gray-300 bg-gray-100 opacity-75'
+                                    : isSpecialShift
+                                      ? 'border-purple-200 bg-purple-50'
+                                      : 'border-green-300 bg-green-50'
+                                }`}
+                              >
+                                {/* Past shift overlay */}
+                                {isPastShift && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-gray-200/80 rounded-lg">
+                                    <span className="text-gray-600 font-medium text-sm bg-white px-3 py-1 rounded-full shadow">
+                                      ✓ הושלמה
+                                    </span>
+                                  </div>
+                                )}
+
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    {/* Time */}
+                                    <div className="flex items-center gap-1 text-sm font-medium">
+                                      <Clock className="h-3 w-3 text-gray-500" />
+                                      {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
+                                    </div>
+
+                                    {/* Status Badge */}
+                                    <Badge 
+                                      variant="secondary" 
+                                      className={`text-xs ${
+                                        isPastShift 
+                                          ? "bg-gray-100 text-gray-600"
+                                          : isFromScheduled 
+                                            ? "bg-blue-100 text-blue-700" 
+                                            : shift.status === 'approved' 
+                                              ? "bg-green-100 text-green-700"
+                                              : "bg-yellow-100 text-yellow-700"
+                                      }`}
+                                    >
+                                      {isPastShift 
+                                        ? 'הושלמה'
+                                        : isFromScheduled 
+                                          ? 'קבועה' 
+                                          : shift.status === 'approved' 
+                                            ? 'אושרה' 
+                                            : 'ממתינה'
+                                      }
+                                    </Badge>
+
+                                    {/* Shift Type */}
+                                    {businessShiftType && (
+                                      <Badge 
+                                        variant="outline" 
+                                        className="text-xs"
+                                        style={{ 
+                                          backgroundColor: businessShiftType.color + '20',
+                                          borderColor: businessShiftType.color,
+                                          color: businessShiftType.color
+                                        }}
+                                      >
+                                        {businessShiftType.display_name}
+                                      </Badge>
+                                    )}
+
+                                    {/* Special shift indicator */}
+                                    {isSpecialShift && (
+                                      <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
+                                        <Star className="h-3 w-3 mr-1" />
+                                        מיוחדת
+                                      </Badge>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    {/* Branch */}
+                                    {shift.branch && (
+                                      <div className="flex items-center gap-1 text-xs text-gray-600">
+                                        <MapPin className="h-3 w-3" />
+                                        {shift.branch.name}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Role info */}
+                                {shift.role && (
+                                  <div className="mt-2 text-xs text-gray-600">
+                                    תפקיד: {shift.role}
+                                  </div>
+                                )}
+
+                                {/* Notes */}
+                                {shift.notes && (
+                                  <div className="mt-2 text-xs text-gray-600 p-2 bg-white/60 rounded">
+                                    📝 {shift.notes}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ));
+                  })()}
                 </div>
               )}
             </CardContent>
