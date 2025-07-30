@@ -9,6 +9,7 @@ import { CreateShiftDialog } from './schedule/CreateShiftDialog';
 import { PendingSubmissionsDialog } from './schedule/PendingSubmissionsDialog';
 
 export const ShiftSchedule: React.FC = () => {
+  console.log('🚨 ShiftSchedule component is rendering!');
   const [showCreateDialog, setShowCreateDialog] = React.useState(false);
   const [selectedShift, setSelectedShift] = React.useState<any>(null);
   const [showShiftDetails, setShowShiftDetails] = React.useState(false);
