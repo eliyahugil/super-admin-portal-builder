@@ -122,7 +122,9 @@ export const ShiftSchedule: React.FC = () => {
             }}
             onShiftUpdate={updateShift}
             onAddShift={(date) => {
+              console.log('🔘 Add shift button clicked for date:', date);
               setShowCreateDialog(true);
+              console.log('🔘 setShowCreateDialog(true) called');
             }}
             onShiftDelete={deleteShift}
             businessId={businessId}
