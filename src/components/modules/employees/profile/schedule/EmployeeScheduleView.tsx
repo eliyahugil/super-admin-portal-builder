@@ -56,7 +56,7 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({ empl
 
   // Fetch employee's branch assignments - רק סניפים שהעובד משויך אליהם
   const fetchEmployeeBranches = async () => {
-    console.log('🔍 Starting fetchEmployeeBranches for employee:', employee.id);
+    console.log('🔍 Starting fetchEmployeeBranches for employee:', employee.id, 'businessId:', employee.business_id);
     try {
       // נבדוק קודם אם יש הקצאות ספציפיות לסניפים
       const { data: assignments, error: assignmentError } = await supabase

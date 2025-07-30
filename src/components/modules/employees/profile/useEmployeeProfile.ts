@@ -19,7 +19,9 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
       userRole: profile?.role,
       businessId,
       isSuperAdmin,
-      userEmail: profile?.email
+      userEmail: profile?.email,
+      profileAvailable: !!profile,
+      timestamp: new Date().toISOString()
     });
 
     if (!employeeId) {
@@ -169,7 +171,9 @@ export const useEmployeeProfile = (employeeId: string | undefined) => {
         type: normalizedEmployee.employee_type,
         hasBranchAssignments: normalizedEmployee.branch_assignments?.length || 0,
         branchAssignmentsNormalized: normalizedEmployee.branch_assignments,
-        hasNotes: normalizedEmployee.employee_notes?.length || 0
+        hasNotes: normalizedEmployee.employee_notes?.length || 0,
+        businessId: normalizedEmployee.business_id,
+        employeeId: normalizedEmployee.id
       });
 
       setEmployee(normalizedEmployee);
