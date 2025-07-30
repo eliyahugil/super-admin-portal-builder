@@ -178,7 +178,7 @@ export const QuickShiftCreationOptions: React.FC<QuickShiftCreationOptionsProps>
             <div className="flex items-center gap-2 flex-wrap">
               <input
                 type="week"
-                value={format(selectedWeek, 'yyyy-\\WW')}
+                value={format(selectedWeek, "yyyy-'W'ww")}
                 onChange={(e) => {
                   const [year, week] = e.target.value.split('-W');
                   const weekDate = new Date(parseInt(year), 0, 1 + (parseInt(week) - 1) * 7);
@@ -226,7 +226,7 @@ export const QuickShiftCreationOptions: React.FC<QuickShiftCreationOptionsProps>
             <div className="flex items-center gap-2 flex-wrap">
               <input
                 type="week"
-                value={format(selectedTemplateWeek, 'yyyy-\\WW')}
+                value={format(selectedTemplateWeek, "yyyy-'W'ww")}
                 onChange={(e) => {
                   const [year, week] = e.target.value.split('-W');
                   const weekDate = new Date(parseInt(year), 0, 1 + (parseInt(week) - 1) * 7);
