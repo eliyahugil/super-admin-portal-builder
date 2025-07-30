@@ -120,6 +120,12 @@ export interface ShiftScheduleViewProps {
   calendarEvents: CalendarEvent[];
   pendingSubmissions?: PendingSubmission[];
   businessId?: string | null;
+  todaysBirthdays?: Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    birth_date: string;
+  }>;
   
   onShiftClick: (shift: ShiftScheduleData) => void;
   onShiftUpdate: (shiftId: string, updates: Partial<ShiftScheduleData>) => Promise<void>;

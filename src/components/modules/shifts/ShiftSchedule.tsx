@@ -7,6 +7,7 @@ import { ScheduleFilters } from './schedule/ScheduleFilters';
 import { ShiftDetailsDialog } from './schedule/ShiftDetailsDialog';
 import { CreateShiftDialog } from './schedule/CreateShiftDialog';
 import { PendingSubmissionsDialog } from './schedule/PendingSubmissionsDialog';
+import { useTodaysBirthdays } from '@/hooks/useBirthdayNotifications';
 
 export const ShiftSchedule: React.FC = () => {
   console.log('🚨 ShiftSchedule component is rendering!');
@@ -36,6 +37,9 @@ export const ShiftSchedule: React.FC = () => {
     businessId,
     refetchShifts
   } = useShiftSchedule();
+
+  // שליפת ימי הולדת של עובדים
+  const { data: todaysBirthdays = [] } = useTodaysBirthdays(businessId);
 
   // פונקציה לשיבוץ עובד למשמרת
   const handleAssignEmployee = async (employeeId: string, shiftId: string) => {
@@ -153,6 +157,8 @@ export const ShiftSchedule: React.FC = () => {
             onFiltersChange={updateFilters}
             onQuickFilter={handleQuickFilter}
             onResetFilters={handleResetFilters}
+            // העברת ימי הולדת
+            todaysBirthdays={todaysBirthdays}
           />
         </div>
       </div>

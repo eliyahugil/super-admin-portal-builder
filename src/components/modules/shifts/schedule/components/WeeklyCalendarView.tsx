@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Plus, User, Clock, MapPin, CheckCircle2, X, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, User, Clock, MapPin, CheckCircle2, X, Search, ChevronDown, ChevronUp, Cake } from 'lucide-react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { he } from 'date-fns/locale';
 import type { ShiftScheduleData, Employee, Branch } from '../types';
@@ -20,6 +20,12 @@ interface WeeklyCalendarViewProps {
   onShiftClick: (shift: ShiftScheduleData) => void;
   onShiftUpdate?: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
   onAddShift: (date: Date) => void;
+  todaysBirthdays?: Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    birth_date: string;
+  }>;
 }
 
 export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
@@ -31,7 +37,8 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
   preferences,
   onShiftClick,
   onShiftUpdate,
-  onAddShift
+  onAddShift,
+  todaysBirthdays = []
 }) => {
   const [assigningShift, setAssigningShift] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -76,6 +83,18 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
     if (!branchId) return 'לא משויך';
     const branch = branches.find(br => br.id === branchId);
     return branch ? branch.name : 'לא ידוע';
+  };
+
+  // פונקציה לבדיקת ימי הולדת
+  const getBirthdayEmployeesForDate = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return todaysBirthdays.filter(emp => {
+      if (!emp.birth_date) return false;
+      const birthDate = new Date(emp.birth_date);
+      const birthFormatted = `${String(birthDate.getDate()).padStart(2, '0')}-${String(birthDate.getMonth() + 1).padStart(2, '0')}`;
+      const currentFormatted = `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      return birthFormatted === currentFormatted;
+    });
   };
 
   const handleEmployeeAssignment = async (shiftId: string, employeeId: string) => {
@@ -196,6 +215,18 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                       <div className="text-sm text-muted-foreground">
                         {format(date, 'dd/MM')}
                       </div>
+                      {/* הצגת ימי הולדת במובייל */}
+                      {(() => {
+                        const birthdayEmployees = getBirthdayEmployeesForDate(date);
+                        return birthdayEmployees.length > 0 && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Cake className="h-3 w-3 text-yellow-600" />
+                            <span className="text-xs font-medium text-yellow-700">
+                              מזל טוב! {birthdayEmployees.map(emp => `${emp.first_name} ${emp.last_name}`).join(', ')}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                   
@@ -511,6 +542,22 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                       <Plus className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
                     </Button>
                   </div>
+
+                  {/* הצגת ימי הולדת בדסקטופ */}
+                  {(() => {
+                    const birthdayEmployees = getBirthdayEmployeesForDate(date);
+                    return birthdayEmployees.length > 0 && (
+                      <div className="mb-2 p-1.5 bg-yellow-50 border border-yellow-200 rounded-md">
+                        <div className="flex items-center gap-1 mb-1">
+                          <Cake className="h-3 w-3 text-yellow-600" />
+                          <span className="text-xs font-bold text-yellow-700">מזל טוב!</span>
+                        </div>
+                        <div className="text-xs text-yellow-800 leading-tight">
+                          {birthdayEmployees.map(emp => `${emp.first_name} ${emp.last_name}`).join(', ')}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Shifts - Expanded for better readability */}
                   <div className="space-y-2">
