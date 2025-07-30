@@ -16,7 +16,7 @@ type SubmissionResult = {
 };
 
 // Create untyped supabase client to avoid deep type instantiation
-const untypedSupabase = createClient(
+const untypedSupabase: any = createClient(
   "https://xmhmztipuvzmwgbcovch.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtaG16dGlwdXZ6bXdnYmNvdmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMjkzODIsImV4cCI6MjA2NDcwNTM4Mn0.QEugxUTGlJ1rnG8ddf3E6BIpNaiqwkp2ml7MbiUfY9c"
 );
