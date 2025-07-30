@@ -122,6 +122,18 @@ export const useCreateShiftForm = (
 
   const createShifts = async (allDates: string[]) => {
     const branchIds = Array.isArray(selectedBranchId) ? selectedBranchId : [selectedBranchId];
+    
+    // Get template data if using template
+    let templateData = null;
+    if (!useCustomTime && selectedTemplateId) {
+      const { data: template } = await supabase
+        .from('shift_templates')
+        .select('start_time, end_time, shift_type, role_name')
+        .eq('id', selectedTemplateId)
+        .single();
+      templateData = template;
+    }
+    
     const newShifts = allDates.flatMap((shiftDate) => {
       return branchIds.map(branch_id => {
         const shiftData: any = {
@@ -140,6 +152,12 @@ export const useCreateShiftForm = (
           shiftData.end_time = endTime;
         } else {
           shiftData.shift_template_id = selectedTemplateId;
+          // Copy time data from template
+          if (templateData) {
+            shiftData.start_time = templateData.start_time;
+            shiftData.end_time = templateData.end_time;
+            shiftData.shift_type = templateData.shift_type;
+          }
         }
         
         // Create shift assignments based on required employees
