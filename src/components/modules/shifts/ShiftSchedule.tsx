@@ -40,6 +40,12 @@ export const ShiftSchedule: React.FC = () => {
 
   // שליפת כל העובדים עם תאריכי לידה במקום רק של היום
   const { data: allEmployees = [] } = useExistingEmployees(businessId);
+  
+  // לוג לבדיקה
+  console.log('🎂 ShiftSchedule - All employees with birthdays:', allEmployees.filter(emp => emp.birth_date).map(emp => ({ 
+    name: `${emp.first_name} ${emp.last_name}`, 
+    birthDate: emp.birth_date 
+  })));
 
   // פונקציה לשיבוץ עובד למשמרת
   const handleAssignEmployee = async (employeeId: string, shiftId: string) => {
