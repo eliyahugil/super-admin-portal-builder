@@ -98,6 +98,8 @@ export const ShiftSchedule: React.FC = () => {
         totalShifts={shifts.length}
         totalEmployees={employees.length}
         totalBranches={branches.length}
+        onAddShift={() => setShowCreateDialog(true)}
+        onRefresh={refetchShifts}
       />
       
       <div className="flex flex-col gap-2 w-full max-w-none">
