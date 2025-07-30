@@ -9,6 +9,9 @@ export const useShiftScheduleRealtime = (businessId: string | null) => {
     if (!businessId) return;
 
     console.log('🔴 Setting up real-time subscription for scheduled_shifts:', businessId);
+    
+    // Force console log to verify hook is called
+    console.log('🔍 Real-time hook initialized with businessId:', businessId);
 
     const channel = supabase
       .channel('scheduled_shifts_changes')
