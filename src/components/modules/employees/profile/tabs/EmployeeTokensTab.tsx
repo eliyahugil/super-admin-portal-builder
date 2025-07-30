@@ -55,10 +55,10 @@ export const EmployeeTokensTab: React.FC<EmployeeTokensTabProps> = ({
   };
   
   return (
-    <div className="p-8 bg-white min-h-[500px]" dir="rtl">
+    <div className="p-6" dir="rtl">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-4">
             <KeyRound className="h-8 w-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-800">
@@ -71,19 +71,6 @@ export const EmployeeTokensTab: React.FC<EmployeeTokensTabProps> = ({
           <p className="text-sm text-gray-500">
             מזהה עובד: {employeeId}
           </p>
-        </div>
-
-        {/* Success Message */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold">✓</span>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-green-800">הטאב עובד בהצלחה!</h3>
-              <p className="text-green-700">המערכת טוענת כרגע את הטוקנים...</p>
-            </div>
-          </div>
         </div>
 
         {/* Permanent Token Section */}
