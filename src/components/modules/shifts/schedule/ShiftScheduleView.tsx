@@ -31,7 +31,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     calendarEvents,
     pendingSubmissions = [],
     businessId,
-    todaysBirthdays = [],
+    allEmployeesWithBirthdays = [],
     onShiftClick,
     onShiftUpdate,
     onAddShift,
@@ -343,7 +343,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
           onShiftClick={handleShiftClick}
           onShiftUpdate={onShiftUpdate}
           onAddShift={onAddShift}
-          todaysBirthdays={todaysBirthdays}
+          allEmployeesWithBirthdays={allEmployeesWithBirthdays}
         />
         ) : viewType === 'list' ? (
         <div className="space-y-4 w-full max-w-none">

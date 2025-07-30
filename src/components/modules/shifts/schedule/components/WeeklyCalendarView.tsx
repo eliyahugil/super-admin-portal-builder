@@ -20,11 +20,11 @@ interface WeeklyCalendarViewProps {
   onShiftClick: (shift: ShiftScheduleData) => void;
   onShiftUpdate?: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
   onAddShift: (date: Date) => void;
-  todaysBirthdays?: Array<{
+  allEmployeesWithBirthdays?: Array<{
     id: string;
     first_name: string;
     last_name: string;
-    birth_date: string;
+    birth_date?: string;
   }>;
 }
 
@@ -38,7 +38,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
   onShiftClick,
   onShiftUpdate,
   onAddShift,
-  todaysBirthdays = []
+  allEmployeesWithBirthdays = []
 }) => {
   const [assigningShift, setAssigningShift] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -85,15 +85,24 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
     return branch ? branch.name : 'לא ידוע';
   };
 
-  // פונקציה לבדיקת ימי הולדת
+  // פונקציה לבדיקת ימי הולדת - משופרת לעבוד עם כל התאריכים
   const getBirthdayEmployeesForDate = (date: Date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return todaysBirthdays.filter(emp => {
+    return allEmployeesWithBirthdays.filter(emp => {
       if (!emp.birth_date) return false;
-      const birthDate = new Date(emp.birth_date);
-      const birthFormatted = `${String(birthDate.getDate()).padStart(2, '0')}-${String(birthDate.getMonth() + 1).padStart(2, '0')}`;
-      const currentFormatted = `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      return birthFormatted === currentFormatted;
+      
+      try {
+        const birthDate = new Date(emp.birth_date);
+        // השוואה רק של יום וחודש, ללא שנה
+        const currentDay = date.getDate();
+        const currentMonth = date.getMonth() + 1; // getMonth() מחזיר 0-11
+        const birthDay = birthDate.getDate();
+        const birthMonth = birthDate.getMonth() + 1;
+        
+        return currentDay === birthDay && currentMonth === birthMonth;
+      } catch (error) {
+        console.error('Error parsing birth date:', emp.birth_date, error);
+        return false;
+      }
     });
   };
 
