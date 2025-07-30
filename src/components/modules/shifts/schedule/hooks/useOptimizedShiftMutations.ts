@@ -45,8 +45,24 @@ export const useOptimizedShiftMutations = (businessId: string | null) => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      debouncedInvalidate();
+    onSuccess: (newShift) => {
+      // עדכון מיידי של הקאש עם המשמרת החדשה
+      queryClient.setQueryData(['shift-schedule-data', businessId], (oldData: any) => {
+        if (!oldData) return [newShift];
+        return [newShift, ...oldData];
+      });
+      
+      // רענון מיידי של השאילתות לעדכון העמוד
+      queryClient.invalidateQueries({ 
+        queryKey: ['shift-schedule-data', businessId],
+        refetchType: 'active'
+      });
+      
+      // רענון נתוני עובדים (אם יש עדכונים בהקצאות)
+      queryClient.invalidateQueries({ 
+        queryKey: ['employees', businessId],
+        refetchType: 'active'
+      });
     }
   });
 
