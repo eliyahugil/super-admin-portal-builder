@@ -5214,6 +5214,7 @@ export type Database = {
           shift_assignments: Json | null
           shift_date: string
           shift_template_id: string | null
+          shift_type: string | null
           start_time: string | null
           status: string | null
           updated_at: string | null
@@ -5239,6 +5240,7 @@ export type Database = {
           shift_assignments?: Json | null
           shift_date: string
           shift_template_id?: string | null
+          shift_type?: string | null
           start_time?: string | null
           status?: string | null
           updated_at?: string | null
@@ -5264,6 +5266,7 @@ export type Database = {
           shift_assignments?: Json | null
           shift_date?: string
           shift_template_id?: string | null
+          shift_type?: string | null
           start_time?: string | null
           status?: string | null
           updated_at?: string | null
