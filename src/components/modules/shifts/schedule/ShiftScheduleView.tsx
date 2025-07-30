@@ -51,6 +51,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
   const [viewType, setViewType] = useState<'list' | 'week'>('week');
   const [showNewShifts, setShowNewShifts] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState(new Date());
+  const [calendarViewMode, setCalendarViewMode] = useState<'unified' | 'by-branch'>('by-branch');
 
   // Local storage key for preferences
   const getPreferencesKey = () => `shift_schedule_preferences_${businessId}`;
@@ -65,6 +66,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
         const prefs = JSON.parse(stored);
         setViewType(prefs.viewType || 'week');
         setShowNewShifts(prefs.showNewShifts !== false);
+        setCalendarViewMode(prefs.calendarViewMode || 'by-branch');
         if (prefs.selectedWeek) {
           setSelectedWeek(new Date(prefs.selectedWeek));
         }
@@ -82,6 +84,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     const prefs = {
       viewType,
       showNewShifts,
+      calendarViewMode,
       selectedWeek: selectedWeek.toISOString(),
       lastUpdated: Date.now()
     };
@@ -92,13 +95,14 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
     } catch (error) {
       console.error('Error saving preferences:', error);
     }
-  }, [businessId, viewType, showNewShifts, selectedWeek]);
+  }, [businessId, viewType, showNewShifts, calendarViewMode, selectedWeek]);
 
   // Reset preferences to defaults
   const resetPreferences = React.useCallback(() => {
     const defaults = {
       viewType: 'week' as const,
       showNewShifts: true,
+      calendarViewMode: 'by-branch' as const,
       selectedWeek: new Date().toISOString(),
       lastUpdated: Date.now()
     };
@@ -107,6 +111,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
       localStorage.setItem(getPreferencesKey(), JSON.stringify(defaults));
       setViewType(defaults.viewType);
       setShowNewShifts(defaults.showNewShifts);
+      setCalendarViewMode(defaults.calendarViewMode);
       setSelectedWeek(new Date(defaults.selectedWeek));
       toast.success('העדפות התצוגה אופסו בהצלחה');
       console.log('🔄 Reset preferences to defaults');
@@ -333,6 +338,7 @@ export const ShiftScheduleView: React.FC<ShiftScheduleViewProps & { onWeekDelete
           branches={branches}
           currentDate={selectedWeek}
           pendingSubmissions={safePendingSubmissions}
+          preferences={{ calendarViewMode }}
           onShiftClick={handleShiftClick}
           onShiftUpdate={onShiftUpdate}
           onAddShift={onAddShift}

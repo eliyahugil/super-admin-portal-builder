@@ -15,7 +15,8 @@ interface WeeklyCalendarViewProps {
   employees: Employee[];
   branches: Branch[];
   currentDate: Date;
-  pendingSubmissions?: any[]; // Add this prop
+  pendingSubmissions?: any[];
+  preferences?: any; // Add preferences prop
   onShiftClick: (shift: ShiftScheduleData) => void;
   onShiftUpdate?: (shiftId: string, updates: Partial<ShiftScheduleData>) => void;
   onAddShift: (date: Date) => void;
@@ -27,6 +28,7 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
   branches,
   currentDate,
   pendingSubmissions = [],
+  preferences,
   onShiftClick,
   onShiftUpdate,
   onAddShift
@@ -136,8 +138,10 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
     return { submittedEmployees, filteredEmployees };
   };
 
-  // Add state to control whether to show by branches or unified
-  const [viewMode, setViewMode] = useState<'unified' | 'by-branch'>('unified');
+  // Use view mode from preferences (default to 'by-branch' for better management)
+  const [viewMode, setViewMode] = useState<'unified' | 'by-branch'>(
+    (preferences?.calendarViewMode as 'unified' | 'by-branch') || 'by-branch'
+  );
 
   // Toggle day expansion for mobile/tablet
   const toggleDayExpansion = (dateKey: string) => {
