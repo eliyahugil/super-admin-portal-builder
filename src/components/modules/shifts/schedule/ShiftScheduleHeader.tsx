@@ -71,11 +71,6 @@ export const ShiftScheduleHeader: React.FC<ShiftScheduleHeaderProps> = ({
                   הוסף משמרת
                 </Button>
               )}
-              
-              <BulkShiftCreator 
-                businessId={businessId}
-                onSuccess={onRefresh}
-              />
             </div>
           )}
         </div>
