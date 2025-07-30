@@ -180,8 +180,8 @@ serve(async (req) => {
         weekEnd: weekEndStr,
         weekOffset,
         employee: tokenData.employee,
-        description: availableShifts?.length ? 
-          `נמצאו ${availableShifts.length} משמרות זמינות לשבוע זה` : 
+        description: enhancedAvailableShifts?.length ? 
+          `נמצאו ${enhancedAvailableShifts.length} משמרות זמינות לשבוע זה` : 
           'אין משמרות זמינות לשבוע זה',
         error: employeeAssignments?.length === 0 ? 'NO_BRANCH_ASSIGNMENTS' : null
       }

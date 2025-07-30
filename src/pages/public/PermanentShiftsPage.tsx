@@ -104,8 +104,10 @@ const PermanentShiftsPage: React.FC = () => {
     const newOffset = direction === 'next' ? currentWeekOffset + 1 : currentWeekOffset - 1;
     setCurrentWeekOffset(newOffset);
     
-    // Actually load shifts for the new week
-    loadTokenAndShifts();
+    // Load shifts for the new week with updated offset
+    setTimeout(() => {
+      loadTokenAndShifts();
+    }, 100);
     
     toast({
       title: `עובר ל${direction === 'next' ? 'שבוע הבא' : 'שבוע הקודם'}`,
