@@ -41,9 +41,16 @@ export const EmployeeTokensTab: React.FC<EmployeeTokensTabProps> = ({
 
   const handleCopyToken = () => {
     if (tokenData?.token) {
-      const tokenUrl = `${window.location.origin}/submit-shifts/${tokenData.token}`;
+      const tokenUrl = `${window.location.origin}/public/shifts/${tokenData.token}`;
       navigator.clipboard.writeText(tokenUrl);
       toast.success('קישור הטוקן הועתק ללוח');
+    }
+  };
+
+  const handleOpenToken = () => {
+    if (tokenData?.token) {
+      const tokenUrl = `${window.location.origin}/public/shifts/${tokenData.token}`;
+      window.open(tokenUrl, '_blank');
     }
   };
   
@@ -94,35 +101,30 @@ export const EmployeeTokensTab: React.FC<EmployeeTokensTabProps> = ({
               <p className="text-gray-600 text-lg">טוען טוקן...</p>
             </div>
           ) : tokenData ? (
-            <div className="bg-white border border-green-300 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <KeyRound className="h-5 w-5 text-green-600" />
-                  <span className="font-semibold text-gray-800">טוקן פעיל</span>
-                </div>
-                <div className="text-sm text-gray-500">
-                  נוצר: {new Date(tokenData.created_at).toLocaleDateString('he-IL')}
-                </div>
+            <div className="bg-white border border-green-300 rounded-lg p-6 text-center">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <KeyRound className="h-6 w-6 text-green-600" />
+                <span className="font-semibold text-gray-800">טוקן קבוע פעיל</span>
               </div>
               
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                <div className="flex items-center justify-between">
-                  <code className="text-sm bg-white px-3 py-2 rounded border break-all">
-                    {`${window.location.origin}/submit-shifts/${tokenData.token}`}
-                  </code>
-                  <Button 
-                    onClick={handleCopyToken}
-                    variant="outline" 
-                    size="sm"
-                    className="mr-2 flex-shrink-0"
-                  >
-                    <Copy className="h-4 w-4 ml-1" />
-                    העתק
-                  </Button>
-                </div>
+              <div className="flex gap-3 justify-center">
+                <Button 
+                  onClick={handleOpenToken}
+                  className="flex items-center gap-2"
+                >
+                  פתח טוקן
+                </Button>
+                <Button 
+                  onClick={handleCopyToken}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  העתק קישור
+                </Button>
               </div>
               
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 mt-4">
                 העובד יכול להשתמש בקישור זה כדי להגיש משמרות ולצפות בסידור העבודה שלו
               </p>
             </div>
