@@ -46,23 +46,28 @@ export const useOptimizedShiftMutations = (businessId: string | null) => {
       return data;
     },
     onSuccess: (newShift) => {
-      // עדכון מיידי של הקאש עם המשמרת החדשה
-      queryClient.setQueryData(['shift-schedule-data', businessId], (oldData: any) => {
-        if (!oldData) return [newShift];
-        return [newShift, ...oldData];
-      });
+      console.log('✅ SHIFT CREATED SUCCESSFULLY! Force refreshing everything:', newShift);
       
-      // רענון מיידי של השאילתות לעדכון העמוד
-      queryClient.invalidateQueries({ 
+      // **CRITICAL FIX:** Multiple aggressive cache invalidations
+      queryClient.invalidateQueries({ queryKey: ['shift-schedule-data'] });
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['branches'] });
+      
+      // Force immediate refetch
+      queryClient.refetchQueries({ 
         queryKey: ['shift-schedule-data', businessId],
-        refetchType: 'active'
+        type: 'active'
       });
       
-      // רענון נתוני עובדים (אם יש עדכונים בהקצאות)
-      queryClient.invalidateQueries({ 
-        queryKey: ['employees', businessId],
-        refetchType: 'active'
-      });
+      // Additional delayed refetch to make sure
+      setTimeout(() => {
+        console.log('🔄 DELAYED REFETCH for shifts');
+        queryClient.invalidateQueries({ queryKey: ['shift-schedule-data'] });
+        queryClient.refetchQueries({ queryKey: ['shift-schedule-data', businessId] });
+      }, 1500);
+      
+      debouncedInvalidate();
     }
   });
 
