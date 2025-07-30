@@ -59,12 +59,9 @@ const PermanentShiftsPage: React.FC = () => {
 
       // Then get the shifts
       console.log('📅 Getting shifts for permanent token...');
-      const weekRange = getCurrentWeekRange();
       const shiftsResponse = await getPermanentTokenShifts.mutateAsync({ 
         token, 
-        weekOffset: currentWeekOffset,
-        weekStart: weekRange.weekStartDate.toISOString().split('T')[0],
-        weekEnd: weekRange.weekEndDate.toISOString().split('T')[0]
+        weekOffset: currentWeekOffset
       });
       
       if (!shiftsResponse.success) {
