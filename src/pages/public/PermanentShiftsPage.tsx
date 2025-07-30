@@ -29,7 +29,7 @@ const PermanentShiftsPage: React.FC = () => {
   const [shiftsData, setShiftsData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentWeekOffset, setCurrentWeekOffset] = useState(0); // 0 = this week, 1 = next week, -1 = last week
+  const [currentWeekOffset, setCurrentWeekOffset] = useState(2); // Start with week 3 (index 2) as per user request
   const [selectedShifts, setSelectedShifts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
