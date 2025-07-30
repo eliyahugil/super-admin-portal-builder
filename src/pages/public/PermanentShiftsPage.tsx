@@ -188,7 +188,7 @@ const PermanentShiftsPage: React.FC = () => {
   const weekRange = getCurrentWeekRange();
 
   return (
-    <div className="min-h-screen bg-gray-50" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50" dir="rtl">
       <div className="max-w-6xl mx-auto px-4 py-6">
         
         {/* Header with Employee Info */}
