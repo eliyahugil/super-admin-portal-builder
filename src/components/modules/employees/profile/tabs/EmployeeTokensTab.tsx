@@ -45,6 +45,7 @@ export const EmployeeTokensTab: React.FC<EmployeeTokensTabProps> = ({
   });
 
   console.log('🔍 Token data state:', { tokenData, isLoading, employeeId });
+  console.log('📊 Full tokenData object:', JSON.stringify(tokenData, null, 2));
 
   const handleGenerateToken = async () => {
     console.log('🔥 Starting token generation for employee:', employeeId, 'business:', employee.business_id);
