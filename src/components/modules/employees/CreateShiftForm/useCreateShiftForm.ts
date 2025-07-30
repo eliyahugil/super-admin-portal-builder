@@ -73,7 +73,19 @@ export const useCreateShiftForm = (
   // Set initial date if selectedDate is provided
   useEffect(() => {
     if (selectedDate) {
-      const dateString = selectedDate.toISOString().split('T')[0];
+      console.log('🗓️ Original selectedDate:', selectedDate);
+      console.log('🗓️ selectedDate toISOString():', selectedDate.toISOString());
+      console.log('🗓️ selectedDate getDate():', selectedDate.getDate());
+      console.log('🗓️ selectedDate getTimezoneOffset():', selectedDate.getTimezoneOffset());
+      
+      // Use local date formatting to avoid timezone issues
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
+      
+      console.log('🗓️ Converted dateString (local):', dateString);
+      
       setShiftDates([dateString]);
       console.log('📅 Auto-set selected date:', dateString);
     }
