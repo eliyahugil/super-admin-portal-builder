@@ -100,7 +100,7 @@ export const AccountingSystem: React.FC = () => {
 
         {/* סטטוס תאמה */}
         <Card className="mb-6 border-r-4 border-r-blue-500">
-          <CardHeader>
+          <CardHeader dir="rtl">
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
               סטטוס תאמה לתקנות רשות המיסים

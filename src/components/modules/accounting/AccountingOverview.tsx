@@ -62,7 +62,7 @@ export const AccountingOverview: React.FC<AccountingOverviewProps> = ({ business
       {/* כרטיסי סטטיסטיקות ראשיים */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="border-r-4 border-r-blue-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row-reverse items-center justify-between space-y-0 pb-2" dir="rtl">
             <CardTitle className="text-sm font-medium">חשבוניות</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -75,7 +75,7 @@ export const AccountingOverview: React.FC<AccountingOverviewProps> = ({ business
         </Card>
 
         <Card className="border-r-4 border-r-green-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row-reverse items-center justify-between space-y-0 pb-2" dir="rtl">
             <CardTitle className="text-sm font-medium">קבלות</CardTitle>
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -88,7 +88,7 @@ export const AccountingOverview: React.FC<AccountingOverviewProps> = ({ business
         </Card>
 
         <Card className="border-r-4 border-r-purple-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row-reverse items-center justify-between space-y-0 pb-2" dir="rtl">
             <CardTitle className="text-sm font-medium">פריטי מלאי</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -101,7 +101,7 @@ export const AccountingOverview: React.FC<AccountingOverviewProps> = ({ business
         </Card>
 
         <Card className="border-r-4 border-r-orange-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row-reverse items-center justify-between space-y-0 pb-2" dir="rtl">
             <CardTitle className="text-sm font-medium">רישומי יומן</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
