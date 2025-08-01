@@ -63,8 +63,8 @@ export const AccountingOverview: React.FC<AccountingOverviewProps> = ({ business
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="border-r-4 border-r-blue-500">
           <CardHeader className="flex flex-row-reverse items-center justify-between space-y-0 pb-2" dir="rtl">
-            <CardTitle className="text-sm font-medium">חשבוניות</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">חשבוניות</CardTitle>
           </CardHeader>
           <CardContent dir="rtl">
             <div className="text-2xl font-bold">{stats.totalInvoices}</div>
@@ -76,8 +76,8 @@ export const AccountingOverview: React.FC<AccountingOverviewProps> = ({ business
 
         <Card className="border-r-4 border-r-green-500">
           <CardHeader className="flex flex-row-reverse items-center justify-between space-y-0 pb-2" dir="rtl">
-            <CardTitle className="text-sm font-medium">קבלות</CardTitle>
             <Receipt className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">קבלות</CardTitle>
           </CardHeader>
           <CardContent dir="rtl">
             <div className="text-2xl font-bold">{stats.totalReceipts}</div>
@@ -102,8 +102,8 @@ export const AccountingOverview: React.FC<AccountingOverviewProps> = ({ business
 
         <Card className="border-r-4 border-r-orange-500">
           <CardHeader className="flex flex-row-reverse items-center justify-between space-y-0 pb-2" dir="rtl">
-            <CardTitle className="text-sm font-medium">רישומי יומן</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">רישומי יומן</CardTitle>
           </CardHeader>
           <CardContent dir="rtl">
             <div className="text-2xl font-bold">{stats.totalJournalEntries}</div>
