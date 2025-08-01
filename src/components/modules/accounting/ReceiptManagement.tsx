@@ -27,43 +27,44 @@ export const ReceiptManagement: React.FC<ReceiptManagementProps> = ({ businessId
   }) || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir="rtl">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">ניהול קבלות</h2>
           <p className="text-gray-600">ניהול קבלות בהתאם לתקנות רשות המיסים</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2 flex-row-reverse">
           <Plus className="h-4 w-4" />
           קבלה חדשה
         </Button>
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader dir="rtl">
           <CardTitle>חיפוש קבלות</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent dir="rtl">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="מספר קבלה או שם לקוח..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pr-10"
+              dir="rtl"
             />
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader dir="rtl">
+          <CardTitle className="flex items-center gap-2 flex-row-reverse">
             <Receipt className="h-5 w-5" />
             קבלות ({filteredReceipts.length})
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent dir="rtl">
           {filteredReceipts.length === 0 ? (
             <div className="text-center py-8">
               <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
