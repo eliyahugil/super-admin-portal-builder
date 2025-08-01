@@ -92,8 +92,10 @@ export const EmployeeDropdownContent: React.FC<EmployeeDropdownContentProps> = (
   };
 
   return (
-    <div className="p-4 sm:p-6" dir="rtl">
-      {renderContent()}
+    <div className="p-3 sm:p-4 lg:p-6 overflow-hidden" dir="rtl">
+      <div className="w-full overflow-x-auto">
+        {renderContent()}
+      </div>
     </div>
   );
 };

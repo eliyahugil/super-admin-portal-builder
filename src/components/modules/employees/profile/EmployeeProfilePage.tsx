@@ -95,26 +95,26 @@ export const EmployeeProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-2 sm:p-4 lg:p-6" dir="rtl">
-      <div className="max-w-full mx-auto space-y-3 sm:space-y-4 lg:space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6" dir="rtl">
+      <div className="max-w-full mx-auto space-y-4 sm:space-y-6">
         {/* Header with navigation */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-right">
-            <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-foreground break-words">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="text-right min-w-0 flex-1">
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-foreground break-words leading-tight">
               פרופיל עובד - {employee.first_name} {employee.last_name}
             </h1>
-            <p className="text-xs sm:text-sm lg:text-base text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm lg:text-base text-muted-foreground mt-1 break-words">
               פרטי עובד מלאים עם כל הכרטיסיות והמידע
             </p>
           </div>
           <Button
             onClick={handleGoBack}
             variant="outline"
-            className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0"
+            className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0 text-sm"
             size="sm"
           >
             <ArrowLeft className="h-4 w-4" />
-            חזרה לרשימת העובדים
+            <span className="truncate">חזרה לרשימת העובדים</span>
           </Button>
         </div>
 
@@ -125,8 +125,8 @@ export const EmployeeProfilePage: React.FC = () => {
             onGoBack={handleGoBack}
             onEmployeeUpdated={refetchEmployee}
           />
-          <CardContent className="p-4 sm:p-6">
-            <div className="space-y-6" dir="rtl">
+          <CardContent className="p-3 sm:p-4 lg:p-6">
+            <div className="space-y-4 sm:space-y-6" dir="rtl">
               <div className="w-full">
                 <EmployeeProfileSidebar employee={employee} />
               </div>

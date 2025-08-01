@@ -31,29 +31,29 @@ export const EmployeeProfileDropdown: React.FC<EmployeeProfileDropdownProps> = (
   return (
     <div className="w-full space-y-4" dir="rtl">
       {/* Dropdown Selector */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
               variant="outline" 
-              className="w-auto min-w-48 justify-between bg-background"
-              size="lg"
+              className="w-full sm:w-auto sm:min-w-64 justify-between bg-background text-sm sm:text-base"
+              size="default"
             >
-              <div className="flex items-center gap-2">
-                {IconComponent && <IconComponent className="h-4 w-4" />}
-                <span>{currentTab?.label}</span>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                {IconComponent && <IconComponent className="h-4 w-4 flex-shrink-0" />}
+                <span className="truncate">{currentTab?.label}</span>
                 {currentTab?.badge && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-xs flex-shrink-0">
                     {currentTab.badge}
                   </Badge>
                 )}
               </div>
-              <ChevronDown className="h-4 w-4 opacity-50" />
+              <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent 
             align="start" 
-            className="w-80 bg-background border shadow-lg z-50"
+            className="w-[calc(100vw-2rem)] sm:w-96 bg-background border shadow-lg z-50 max-h-[70vh] overflow-y-auto"
           >
             {availableTabs.map((tab) => {
               const TabIcon = tab.icon;
@@ -65,17 +65,17 @@ export const EmployeeProfileDropdown: React.FC<EmployeeProfileDropdownProps> = (
                     activeSection === tab.id ? 'bg-muted text-primary' : 'hover:bg-muted/50'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <TabIcon className="h-4 w-4" />
-                    <div className="text-right">
-                      <div className="font-medium">{tab.label}</div>
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <TabIcon className="h-4 w-4 flex-shrink-0" />
+                    <div className="text-right min-w-0 flex-1">
+                      <div className="font-medium truncate">{tab.label}</div>
                       {tab.description && (
-                        <div className="text-xs text-muted-foreground">{tab.description}</div>
+                        <div className="text-xs text-muted-foreground truncate hidden sm:block">{tab.description}</div>
                       )}
                     </div>
                   </div>
                   {tab.badge && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs flex-shrink-0">
                       {tab.badge}
                     </Badge>
                   )}
@@ -85,13 +85,13 @@ export const EmployeeProfileDropdown: React.FC<EmployeeProfileDropdownProps> = (
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground hidden sm:block truncate">
           {currentTab?.description}
         </div>
       </div>
 
       {/* Content Area */}
-      <div className="bg-background rounded-lg border min-h-[600px]">
+      <div className="bg-background rounded-lg border min-h-[400px] sm:min-h-[600px] overflow-hidden">
         <EmployeeDropdownContent
           employee={employee}
           employeeId={employeeId}
