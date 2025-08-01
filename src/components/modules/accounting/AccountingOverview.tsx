@@ -58,7 +58,7 @@ export const AccountingOverview: React.FC<AccountingOverviewProps> = ({ business
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir="rtl">
       {/* כרטיסי סטטיסטיקות ראשיים */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="border-r-4 border-r-blue-500">
@@ -66,7 +66,7 @@ export const AccountingOverview: React.FC<AccountingOverviewProps> = ({ business
             <CardTitle className="text-sm font-medium">חשבוניות</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent dir="rtl">
             <div className="text-2xl font-bold">{stats.totalInvoices}</div>
             <p className="text-xs text-muted-foreground">
               {stats.pendingInvoices} ממתינות לתשלום
@@ -79,7 +79,7 @@ export const AccountingOverview: React.FC<AccountingOverviewProps> = ({ business
             <CardTitle className="text-sm font-medium">קבלות</CardTitle>
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent dir="rtl">
             <div className="text-2xl font-bold">{stats.totalReceipts}</div>
             <p className="text-xs text-muted-foreground">
               ₪{stats.totalRevenue.toLocaleString()} סה"כ הכנסות
@@ -92,7 +92,7 @@ export const AccountingOverview: React.FC<AccountingOverviewProps> = ({ business
             <CardTitle className="text-sm font-medium">פריטי מלאי</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent dir="rtl">
             <div className="text-2xl font-bold">{stats.totalInventoryItems}</div>
             <p className="text-xs text-muted-foreground">
               {stats.lowStockItems} במלאי נמוך
@@ -105,7 +105,7 @@ export const AccountingOverview: React.FC<AccountingOverviewProps> = ({ business
             <CardTitle className="text-sm font-medium">רישומי יומן</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent dir="rtl">
             <div className="text-2xl font-bold">{stats.totalJournalEntries}</div>
             <p className="text-xs text-muted-foreground">
               החודש הנוכחי
