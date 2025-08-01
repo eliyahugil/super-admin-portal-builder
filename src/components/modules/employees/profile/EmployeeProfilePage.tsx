@@ -7,7 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useEmployeeProfile } from './useEmployeeProfile';
 import { EmployeeProfileHeader } from './EmployeeProfileHeader';
 import { EmployeeProfileSidebar } from './EmployeeProfileSidebar';
-import { EmployeeProfileTabs } from './EmployeeProfileTabs';
+import { EmployeeProfileDropdown } from './EmployeeProfileDropdown';
 
 export const EmployeeProfilePage: React.FC = () => {
   const { employeeId } = useParams<{ employeeId: string }>();
@@ -125,13 +125,13 @@ export const EmployeeProfilePage: React.FC = () => {
             onGoBack={handleGoBack}
             onEmployeeUpdated={refetchEmployee}
           />
-          <CardContent className="p-2 sm:p-4 lg:p-6">
-            <div className="flex flex-col xl:flex-row gap-3 sm:gap-4 lg:gap-6" dir="rtl">
-              <div className="w-full xl:w-80 flex-shrink-0">
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-6" dir="rtl">
+              <div className="w-full">
                 <EmployeeProfileSidebar employee={employee} />
               </div>
-              <div className="flex-1 min-w-0 overflow-hidden">
-                <EmployeeProfileTabs employee={employee} employeeId={employeeId!} />
+              <div className="w-full">
+                <EmployeeProfileDropdown employee={employee} employeeId={employeeId!} />
               </div>
             </div>
           </CardContent>
