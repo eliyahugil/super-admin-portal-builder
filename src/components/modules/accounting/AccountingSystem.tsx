@@ -146,36 +146,36 @@ export const AccountingSystem: React.FC = () => {
 
         {/* תפריט ראשי */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-6">
-            <TabsTrigger value="overview" className="flex items-center gap-1">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-6" dir="rtl">
+            <TabsTrigger value="overview" className="flex items-center gap-1 flex-row-reverse">
               <Database className="h-4 w-4" />
               <span className="hidden sm:inline">סקירה</span>
             </TabsTrigger>
-            <TabsTrigger value="invoices" className="flex items-center gap-1">
+            <TabsTrigger value="invoices" className="flex items-center gap-1 flex-row-reverse">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">חשבוניות</span>
             </TabsTrigger>
-            <TabsTrigger value="receipts" className="flex items-center gap-1">
+            <TabsTrigger value="receipts" className="flex items-center gap-1 flex-row-reverse">
               <Calculator className="h-4 w-4" />
               <span className="hidden sm:inline">קבלות</span>
             </TabsTrigger>
-            <TabsTrigger value="journal" className="flex items-center gap-1">
+            <TabsTrigger value="journal" className="flex items-center gap-1 flex-row-reverse">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">יומן</span>
             </TabsTrigger>
-            <TabsTrigger value="inventory" className="flex items-center gap-1">
+            <TabsTrigger value="inventory" className="flex items-center gap-1 flex-row-reverse">
               <Archive className="h-4 w-4" />
               <span className="hidden sm:inline">מלאי</span>
             </TabsTrigger>
-            <TabsTrigger value="backups" className="flex items-center gap-1">
+            <TabsTrigger value="backups" className="flex items-center gap-1 flex-row-reverse">
               <Archive className="h-4 w-4" />
               <span className="hidden sm:inline">גיבויים</span>
             </TabsTrigger>
-            <TabsTrigger value="activity" className="flex items-center gap-1">
+            <TabsTrigger value="activity" className="flex items-center gap-1 flex-row-reverse">
               <Clock className="h-4 w-4" />
               <span className="hidden sm:inline">פעילות</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-1">
+            <TabsTrigger value="settings" className="flex items-center gap-1 flex-row-reverse">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">הגדרות</span>
             </TabsTrigger>
