@@ -1616,6 +1616,53 @@ export type Database = {
           },
         ]
       }
+      employee_auth_sessions: {
+        Row: {
+          business_id: string
+          created_at: string
+          employee_id: string
+          expires_at: string
+          id: string
+          ip_address: unknown | null
+          is_active: boolean
+          last_used_at: string | null
+          session_token: string
+          user_agent: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          employee_id: string
+          expires_at: string
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean
+          last_used_at?: string | null
+          session_token: string
+          user_agent?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          employee_id?: string
+          expires_at?: string
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean
+          last_used_at?: string | null
+          session_token?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_auth_sessions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_branch_assignments: {
         Row: {
           available_days: number[] | null
@@ -5383,6 +5430,42 @@ export type Database = {
           },
         ]
       }
+      security_audit_log: {
+        Row: {
+          action: string
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          resource_id: string | null
+          resource_type: string
+          timestamp: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type: string
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type?: string
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       shift_definitions: {
         Row: {
           business_id: string
@@ -6711,6 +6794,10 @@ export type Database = {
       get_user_business_ids: {
         Args: Record<PropertyKey, never>
         Returns: string[]
+      }
+      get_user_role: {
+        Args: { check_user_id?: string }
+        Returns: string
       }
       increment_registration_code_usage: {
         Args: { code_param: string }
