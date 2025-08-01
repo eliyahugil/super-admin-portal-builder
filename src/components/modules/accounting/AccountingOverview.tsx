@@ -89,8 +89,8 @@ export const AccountingOverview: React.FC<AccountingOverviewProps> = ({ business
 
         <Card className="border-r-4 border-r-purple-500">
           <CardHeader className="flex flex-row-reverse items-center justify-between space-y-0 pb-2" dir="rtl">
-            <CardTitle className="text-sm font-medium">פריטי מלאי</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">פריטי מלאי</CardTitle>
           </CardHeader>
           <CardContent dir="rtl">
             <div className="text-2xl font-bold">{stats.totalInventoryItems}</div>
