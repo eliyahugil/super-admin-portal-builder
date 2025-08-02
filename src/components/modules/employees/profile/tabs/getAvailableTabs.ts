@@ -82,7 +82,7 @@ export const getAvailableTabs = (employee: Employee): TabItem[] => {
       label: 'טוקנים', 
       icon: KeyRound,
       badge: activeTokens > 0 ? activeTokens : undefined,
-      description: 'ניהול טוקני הגשת משמרות'
+      description: 'ניהול טוקני הגשת משמרות - לחץ לעמוד נפרד'
     },
     { 
       id: 'salary', 

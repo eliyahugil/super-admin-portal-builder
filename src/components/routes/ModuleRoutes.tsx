@@ -17,6 +17,7 @@ import { BusinessSettings } from '@/components/modules/settings/BusinessSettings
 import { BusinessMultiManagement } from '@/components/modules/settings/BusinessMultiManagement';
 import EmployeeImportPage from '@/pages/business/employees/EmployeeImportPage';
 import EmployeeDuplicateManagerPage from '@/pages/business/employees/EmployeeDuplicateManagerPage';
+import EmployeeTokenPage from '@/pages/business/employees/EmployeeTokenPage';
 import { ShiftSchedule } from '@/components/modules/shifts/ShiftSchedule';
 
 export const ModuleRoutes = () => (
@@ -35,6 +36,15 @@ export const ModuleRoutes = () => (
       <ProtectedRoute>
         <AppLayout>
           <EmployeeProfilePage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    {/* Employee token management route */}
+    <Route path="/modules/employees/tokens/:employeeId" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <EmployeeTokenPage />
         </AppLayout>
       </ProtectedRoute>
     } />

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { EmployeeOverviewTab } from './tabs/EmployeeOverviewTab';
 import { EmployeeAnalyticsTab } from './tabs/EmployeeAnalyticsTab';
 import { EmployeeNotesTab } from './tabs/EmployeeNotesTab';
@@ -33,6 +34,7 @@ export const EmployeeDropdownContent: React.FC<EmployeeDropdownContentProps> = (
   activeSection,
   onUpdate = () => {}
 }) => {
+  const navigate = useNavigate();
   const renderContent = () => {
     switch (activeSection) {
       case 'overview':
@@ -66,7 +68,25 @@ export const EmployeeDropdownContent: React.FC<EmployeeDropdownContentProps> = (
         );
       
       case 'tokens':
-        return <EmployeeTokensTab employee={employee} employeeId={employeeId} employeeName={employeeName} />;
+        return (
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium text-blue-900">טוקן אישי לעובד</h3>
+                  <p className="text-blue-700 text-sm mt-1">לניהול מתקדם ותיקונים, עבור לעמוד הייעודי</p>
+                </div>
+                <button
+                  onClick={() => navigate(`/modules/employees/tokens/${employeeId}`)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  פתח עמוד ייעודי
+                </button>
+              </div>
+            </div>
+            <EmployeeTokensTab employee={employee} employeeId={employeeId} employeeName={employeeName} />
+          </div>
+        );
       
       case 'shift-settings':
         return <EmployeeShiftSettings employee={employee} onUpdate={onUpdate} />;

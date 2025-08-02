@@ -181,6 +181,7 @@ export const getModuleRoutes = (businessId?: string | number) => {
       base: `${prefix}/modules/employees`,
       files: `${prefix}/modules/employees/employee-files`,
       profile: `${prefix}/modules/employees/profile`,
+      tokens: `${prefix}/modules/employees/tokens`,
       attendance: `${prefix}/modules/employees/attendance`,
       requests: `${prefix}/modules/employees/employee-requests`,
       docs: `${prefix}/modules/employees/employee-docs`,
