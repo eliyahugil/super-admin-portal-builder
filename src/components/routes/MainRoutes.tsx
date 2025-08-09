@@ -11,6 +11,7 @@ const GlobalIntegrationsPage = lazy(() => import('@/pages/GlobalIntegrationsPage
 const CRMDashboard = lazy(() => import('@/components/crm/CRMDashboard').then(m => ({ default: m.CRMDashboard })));
 const LeadProfile = lazy(() => import('@/components/crm/LeadProfile').then(m => ({ default: m.LeadProfile })));
 const AdminIntegrationsPage = lazy(() => import('@/pages/AdminIntegrationsPage').then(m => ({ default: m.AdminIntegrationsPage })));
+const SelectBusinessPage = lazy(() => import('@/pages/SelectBusinessPage').then(m => ({ default: m.SelectBusinessPage })));
 
 export const MainRoutes = () => (
   <>
@@ -69,6 +70,16 @@ export const MainRoutes = () => (
         <AppLayout>
           <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
             <AdminIntegrationsPage />
+          </Suspense>
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+
+    <Route path="/select-business" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+            <SelectBusinessPage />
           </Suspense>
         </AppLayout>
       </ProtectedRoute>

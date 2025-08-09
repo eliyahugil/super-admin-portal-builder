@@ -22,7 +22,7 @@ export const BusinessSelector: React.FC<BusinessSelectorProps> = ({
   onChange
 }) => {
   const [open, setOpen] = useState(false);
-  const { businessId: selectedBusinessId, setSelectedBusinessId, isSuperAdmin, availableBusinesses } = useCurrentBusiness();
+  const { businessId: selectedBusinessId, setSelectedBusinessId, selectBusiness, isSuperAdmin, availableBusinesses } = useCurrentBusiness();
   
   // Transform availableBusinesses to match the expected format
   const businesses = availableBusinesses?.map(ub => ({
@@ -45,11 +45,15 @@ const handleBusinessChange = (businessId: string | null) => {
   });
   
   try {
-    setSelectedBusinessId(businessId);
+    if (selectBusiness) {
+      selectBusiness(businessId);
+    } else {
+      setSelectedBusinessId(businessId);
+    }
     onChange?.(businessId);
-    console.log('✅ BusinessSelector: setSelectedBusinessId called successfully');
+    console.log('✅ BusinessSelector: selection updated successfully');
   } catch (error) {
-    console.error('❌ BusinessSelector: Error calling setSelectedBusinessId:', error);
+    console.error('❌ BusinessSelector: Error updating selection:', error);
   }
   
   setOpen(false);

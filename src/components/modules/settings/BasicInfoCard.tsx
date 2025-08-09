@@ -49,6 +49,7 @@ export const BasicInfoCard: React.FC<BasicInfoCardProps> = ({
               value={details.name}
               onChange={(e) => onDetailsChange({ name: e.target.value })}
               placeholder="שם העסק" 
+              data-testid="input-business-name"
             />
           </div>
           <div>
@@ -57,6 +58,7 @@ export const BasicInfoCard: React.FC<BasicInfoCardProps> = ({
               value={details.contact_phone || ''}
               onChange={(e) => onDetailsChange({ contact_phone: e.target.value })}
               placeholder="03-1234567" 
+              data-testid="input-contact-phone"
             />
           </div>
         </div>
@@ -67,6 +69,7 @@ export const BasicInfoCard: React.FC<BasicInfoCardProps> = ({
             value={details.description || ''}
             onChange={(e) => onDetailsChange({ description: e.target.value })}
             placeholder="תיאור קצר על העסק..." 
+            data-testid="input-description"
           />
         </div>
 

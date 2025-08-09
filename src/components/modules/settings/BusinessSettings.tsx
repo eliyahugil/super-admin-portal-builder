@@ -26,9 +26,9 @@ export const BusinessSettings: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto p-6" dir="rtl">
+    <div className="max-w-7xl mx-auto p-6" dir="rtl" data-testid="settings-page">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">הגדרות עסק</h1>
+        <h1 className="text-3xl font-bold text-gray-900" data-testid="page-title">הגדרות עסק</h1>
         <p className="text-gray-600 mt-2">נהל את הגדרות העסק והמערכת</p>
       </div>
 

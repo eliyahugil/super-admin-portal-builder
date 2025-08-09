@@ -50,9 +50,9 @@ export const BusinessProfileEdit: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6" data-testid="profile-page">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2" data-testid="page-title">
           <Building className="h-8 w-8" />
           פרטי עסק
         </h1>
@@ -75,14 +75,14 @@ export const BusinessProfileEdit: React.FC = () => {
           onDetailsChange={handleDetailsChange}
         />
 
-<Button 
-  onClick={handleSave} 
-  disabled={saving}
-  className="w-full"
-  data-testid="settings-profile-save"
->
-  {saving ? 'שומר...' : 'שמור שינויים'}
-</Button>
+        <Button 
+          onClick={handleSave} 
+          disabled={saving}
+          className="w-full"
+          data-testid="save-button"
+        >
+          {saving ? 'שומר...' : 'שמור שינויים'}
+        </Button>
       </div>
     </div>
   );

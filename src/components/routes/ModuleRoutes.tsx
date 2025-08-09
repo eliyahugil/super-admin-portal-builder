@@ -152,7 +152,7 @@ export const ModuleRoutes = () => (
 
     {/* Settings - profile (restricted to admins) */}
     <Route path="/modules/settings/profile" element={
-      <ProtectedRoute allowedRoles={['super_admin','business_admin']}>
+      <ProtectedRoute allowedRoles={['super_admin','business_admin']} requireActiveBusiness>
         <AppLayout>
           <BusinessProfileEdit />
         </AppLayout>
@@ -161,7 +161,7 @@ export const ModuleRoutes = () => (
 
     {/* Business-specific settings - profile (restricted to admins) */}
     <Route path="/business/:businessId/modules/settings/profile" element={
-      <ProtectedRoute allowedRoles={['super_admin','business_admin']}>
+      <ProtectedRoute allowedRoles={['super_admin','business_admin']} requireActiveBusiness>
         <AppLayout>
           <BusinessProfileEdit />
         </AppLayout>

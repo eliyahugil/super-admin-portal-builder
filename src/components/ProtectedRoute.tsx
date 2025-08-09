@@ -5,14 +5,17 @@ import { useAuth } from '@/components/auth/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: string[];
+  allowedRoles?: Array<'super_admin' | 'business_admin' | 'business_user'>;
+  requireActiveBusiness?: boolean;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
-  allowedRoles 
+  allowedRoles,
+  requireActiveBusiness
 }) => {
   const { user, profile, loading } = useAuth();
+  const { businessId, loading: businessLoading } = useCurrentBusiness();
 
   console.log('🛡️ ProtectedRoute - Current state:', {
     hasUser: !!user,
@@ -21,10 +24,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     profileRole: profile?.role,
     loading,
     allowedRoles,
-    currentTime: new Date().toISOString()
+    currentTime: new Date().toISOString(),
+    businessId,
+    businessLoading,
+    requireActiveBusiness
   });
 
-  if (loading) {
+  if (loading || businessLoading) {
     console.log('⏳ ProtectedRoute - Still loading, showing spinner');
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -51,7 +57,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       return <Navigate to="/not-authorized" replace />;
     }
   }
-
   console.log('✅ ProtectedRoute - User authenticated and authorized, rendering children');
   return <>{children}</>;
 };

@@ -33,6 +33,7 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
               value={details.contact_email || ''}
               onChange={(e) => onDetailsChange({ contact_email: e.target.value })}
               placeholder="info@company.com" 
+              data-testid="input-contact-email"
             />
           </div>
           <div>
@@ -42,6 +43,7 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({
               value={details.admin_email || ''}
               onChange={(e) => onDetailsChange({ admin_email: e.target.value })}
               placeholder="admin@company.com" 
+              data-testid="input-admin-email"
             />
           </div>
         </div>

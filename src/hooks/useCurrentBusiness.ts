@@ -1,14 +1,15 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, startTransition } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useUserBusinesses } from './useUserBusinesses';
 import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 const SELECTED_BUSINESS_KEY = 'selectedBusinessId';
 
 export interface UseCurrentBusinessReturn {
   businessId: string | null;
-  role: string | null;
+  role: 'super_admin' | 'business_admin' | 'business_user' | null;
   loading: boolean;
   isSuperAdmin: boolean;
   businessName: string | null;
@@ -16,6 +17,7 @@ export interface UseCurrentBusinessReturn {
   hasMultipleBusinesses: boolean;
   error: string | null;
   setSelectedBusinessId: (businessId: string | null) => void;
+  selectBusiness: (businessId: string | null) => void;
 }
 
 let logThrottle = 0; // For log throttling
@@ -28,9 +30,10 @@ export const useCurrentBusiness = (): UseCurrentBusinessReturn => {
 
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole] = useState<'super_admin' | 'business_admin' | 'business_user' | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Check if user is authorized super admin
   const isAuthorizedSuperUser = useMemo(() => {
@@ -50,32 +53,45 @@ export const useCurrentBusiness = (): UseCurrentBusinessReturn => {
 
   const setSelectedBusinessId = useCallback((newBusinessId: string | null) => {
     console.log('🔄 setSelectedBusinessId called with:', newBusinessId);
-    
     setBusinessId(newBusinessId);
     setRole(isSuperAdmin ? 'super_admin' : null);
     
     if (newBusinessId) {
       localStorage.setItem(SELECTED_BUSINESS_KEY, newBusinessId);
-      
-      // Update business name
+      // Update business name and role based on available businesses
       if (userBusinesses) {
         const business = userBusinesses.find(ub => ub.business_id === newBusinessId);
         if (business) {
           setBusinessName(business.business.name);
-          setRole(business.role || (isSuperAdmin ? 'super_admin' : null));
+          setRole((business.role as any) || (isSuperAdmin ? 'super_admin' : null));
         }
       }
     } else {
       localStorage.removeItem(SELECTED_BUSINESS_KEY);
       setBusinessName(null);
     }
+  }, [userBusinesses, isSuperAdmin]);
 
-    // Clear and refetch queries
-    setTimeout(() => {
-      queryClient.clear();
-      queryClient.refetchQueries();
-    }, 50);
-  }, [userBusinesses, isSuperAdmin, queryClient]);
+  const selectBusiness = useCallback((newBusinessId: string | null) => {
+    // 1) Optimistic update
+    setSelectedBusinessId(newBusinessId);
+
+    // 2) Targeted invalidation in transition for snappy UI
+    startTransition(() => {
+      const keysToInvalidate: any[] = [
+        ['business.active'],
+        ['employees', newBusinessId],
+        ['shifts', newBusinessId],
+        ['orders', newBusinessId],
+        ['products', newBusinessId],
+        ['settings', newBusinessId],
+      ];
+      keysToInvalidate.forEach((k) => queryClient.invalidateQueries({ queryKey: k }));
+    });
+
+    // 3) Feedback toast
+    toast({ title: 'העסק הוחלף', description: 'הדפים מתעדכנים ברקע' });
+  }, [queryClient, setSelectedBusinessId, toast]);
 
   useEffect(() => {
     // Early return if still loading user data
@@ -213,6 +229,7 @@ export const useCurrentBusiness = (): UseCurrentBusinessReturn => {
     availableBusinesses: userBusinesses || [],
     hasMultipleBusinesses: (userBusinesses?.length || 0) > 1,
     error,
-    setSelectedBusinessId
+    setSelectedBusinessId,
+    selectBusiness,
   };
 };
