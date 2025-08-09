@@ -18,10 +18,12 @@ export const ImportButton: React.FC<ImportButtonProps> = ({
     <Button 
       onClick={onClick}
       disabled={disabled || loading}
-      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
       size="lg"
+      aria-label={loading ? 'מייבא עובדים...' : 'ייבוא עובדים מקובץ Excel'}
+      aria-busy={loading}
+      data-testid="import-employees-button"
     >
-      <Upload className="h-5 w-5" />
+      <Upload className="h-5 w-5" aria-hidden="true" />
       {loading ? 'טוען...' : 'ייבוא עובדים מקובץ Excel'}
     </Button>
   );
