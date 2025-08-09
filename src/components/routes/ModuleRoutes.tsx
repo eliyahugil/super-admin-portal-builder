@@ -16,6 +16,7 @@ import EmployeeTasksPage from '@/pages/business/employees/EmployeeTasksPage';
 import { BusinessSettings } from '@/components/modules/settings/BusinessSettings';
 // Removed import - ShiftTokenSchedulePage no longer exists
 import { BusinessMultiManagement } from '@/components/modules/settings/BusinessMultiManagement';
+import { BusinessProfileEdit } from '@/components/modules/settings/BusinessProfileEdit';
 import EmployeeImportPage from '@/pages/business/employees/EmployeeImportPage';
 import EmployeeDuplicateManagerPage from '@/pages/business/employees/EmployeeDuplicateManagerPage';
 import EmployeeTokenPage from '@/pages/business/employees/EmployeeTokenPage';
@@ -145,6 +146,24 @@ export const ModuleRoutes = () => (
       <ProtectedRoute>
         <AppLayout>
           <ShiftSchedule />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+
+    {/* Settings - profile (restricted to admins) */}
+    <Route path="/modules/settings/profile" element={
+      <ProtectedRoute allowedRoles={['super_admin','business_admin']}>
+        <AppLayout>
+          <BusinessProfileEdit />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+
+    {/* Business-specific settings - profile (restricted to admins) */}
+    <Route path="/business/:businessId/modules/settings/profile" element={
+      <ProtectedRoute allowedRoles={['super_admin','business_admin']}>
+        <AppLayout>
+          <BusinessProfileEdit />
         </AppLayout>
       </ProtectedRoute>
     } />

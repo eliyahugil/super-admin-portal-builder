@@ -64,12 +64,12 @@ export const BusinessSettings: React.FC = () => {
                     </CardDescription>
                   </div>
                 </div>
-                <Link to={category.link}>
-                  <Button variant={category.featured ? 'default' : 'outline'}>
-                    <Settings className="h-4 w-4 mr-2" />
-                    הגדר
-                  </Button>
-                </Link>
+<Link to={category.link} data-testid={`settings-link-${category.link.replace(/\//g,'-')}` }>
+  <Button variant={category.featured ? 'default' : 'outline'}>
+    <Settings className="h-4 w-4 mr-2" />
+    הגדר
+  </Button>
+</Link>
               </div>
             </CardHeader>
           </Card>

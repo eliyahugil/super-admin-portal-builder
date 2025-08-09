@@ -5,6 +5,7 @@ describe('Smoke tests - core routes and primary actions', () => {
     '/modules/employees',
     '/modules/employees/requests',
     '/modules/employees/employee-requests',
+    '/modules/settings/profile',
   ];
 
   routes.forEach((path) => {

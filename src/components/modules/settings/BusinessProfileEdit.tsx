@@ -75,13 +75,14 @@ export const BusinessProfileEdit: React.FC = () => {
           onDetailsChange={handleDetailsChange}
         />
 
-        <Button 
-          onClick={handleSave} 
-          disabled={saving}
-          className="w-full"
-        >
-          {saving ? 'שומר...' : 'שמור שינויים'}
-        </Button>
+<Button 
+  onClick={handleSave} 
+  disabled={saving}
+  className="w-full"
+  data-testid="settings-profile-save"
+>
+  {saving ? 'שומר...' : 'שמור שינויים'}
+</Button>
       </div>
     </div>
   );

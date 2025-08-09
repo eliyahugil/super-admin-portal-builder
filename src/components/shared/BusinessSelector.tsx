@@ -12,12 +12,14 @@ interface BusinessSelectorProps {
   placeholder?: string;
   className?: string;
   showAllOption?: boolean;
+  onChange?: (businessId: string | null) => void;
 }
 
 export const BusinessSelector: React.FC<BusinessSelectorProps> = ({
   placeholder = "בחר עסק...",
   className,
-  showAllOption = false
+  showAllOption = false,
+  onChange
 }) => {
   const [open, setOpen] = useState(false);
   const { businessId: selectedBusinessId, setSelectedBusinessId, isSuperAdmin, availableBusinesses } = useCurrentBusiness();
@@ -33,24 +35,25 @@ export const BusinessSelector: React.FC<BusinessSelectorProps> = ({
 
   const selectedBusiness = businesses.find(b => b.id === selectedBusinessId);
 
-  const handleBusinessChange = (businessId: string | null) => {
-    console.log('🔄 BusinessSelector: Changing business to:', businessId);
-    console.log('🔄 BusinessSelector: Current state before change:', {
-      currentSelectedBusinessId: selectedBusinessId,
-      isSuperAdmin,
-      availableBusinesses: businesses.length,
-      setSelectedBusinessIdExists: !!setSelectedBusinessId
-    });
-    
-    try {
-      setSelectedBusinessId(businessId);
-      console.log('✅ BusinessSelector: setSelectedBusinessId called successfully');
-    } catch (error) {
-      console.error('❌ BusinessSelector: Error calling setSelectedBusinessId:', error);
-    }
-    
-    setOpen(false);
-  };
+const handleBusinessChange = (businessId: string | null) => {
+  console.log('🔄 BusinessSelector: Changing business to:', businessId);
+  console.log('🔄 BusinessSelector: Current state before change:', {
+    currentSelectedBusinessId: selectedBusinessId,
+    isSuperAdmin,
+    availableBusinesses: businesses.length,
+    setSelectedBusinessIdExists: !!setSelectedBusinessId
+  });
+  
+  try {
+    setSelectedBusinessId(businessId);
+    onChange?.(businessId);
+    console.log('✅ BusinessSelector: setSelectedBusinessId called successfully');
+  } catch (error) {
+    console.error('❌ BusinessSelector: Error calling setSelectedBusinessId:', error);
+  }
+  
+  setOpen(false);
+};
 
   const getDisplayText = () => {
     if (selectedBusiness) {
@@ -75,20 +78,21 @@ export const BusinessSelector: React.FC<BusinessSelectorProps> = ({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          aria-label="בחירת עסק"
-          aria-describedby="business-selector-desc"
-          className={cn(
-            "w-full justify-between border-2 hover:border-blue-300 transition-all duration-200",
-            selectedBusiness ? "border-blue-200 bg-blue-50" : 
-            (isSuperAdmin && !selectedBusinessId) ? "border-purple-200 bg-purple-50" : "border-gray-200",
-            className
-          )}
-          disabled={isLoading}
-        >
+<Button
+  variant="outline"
+  role="combobox"
+  aria-expanded={open}
+  aria-label="בחירת עסק"
+  aria-describedby="business-selector-desc"
+  data-testid="business-switcher-trigger"
+  className={cn(
+    "w-full justify-between border-2 hover:border-blue-300 transition-all duration-200",
+    selectedBusiness ? "border-blue-200 bg-blue-50" : 
+    (isSuperAdmin && !selectedBusinessId) ? "border-purple-200 bg-purple-50" : "border-gray-200",
+    className
+  )}
+  disabled={isLoading}
+>
           <div className="flex items-center gap-2">
             <Building2 className={cn("h-4 w-4", getDisplayColor())} />
             <span className={cn("truncate font-medium", getDisplayColor())}>
@@ -104,54 +108,56 @@ export const BusinessSelector: React.FC<BusinessSelectorProps> = ({
           <CommandList>
             <CommandEmpty>לא נמצאו עסקים</CommandEmpty>
             <CommandGroup>
-              {showAllOption && (
-                <CommandItem
-                  value=""
-                  onSelect={() => handleBusinessChange(null)}
-                  className="text-purple-700 hover:bg-purple-50"
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      !selectedBusinessId ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-purple-700 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs">👑</span>
-                    </div>
-                    <span className="font-medium">מנהל מערכת ראשי</span>
-                  </div>
-                </CommandItem>
-              )}
-              {businesses.map((business) => (
-                <CommandItem
-                  key={business.id}
-                  value={business.name}
-                  onSelect={() => handleBusinessChange(business.id)}
-                  className="hover:bg-blue-50"
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      selectedBusinessId === business.id ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-blue-700 rounded-full flex items-center justify-center">
-                      <Building2 className="h-3 w-3 text-white" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{business.name}</span>
-                      {business.description && (
-                        <span className="text-xs text-gray-500 truncate max-w-48">
-                          {business.description}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </CommandItem>
-              ))}
+{showAllOption && (
+  <CommandItem
+    value=""
+    onSelect={() => handleBusinessChange(null)}
+    className="text-purple-700 hover:bg-purple-50"
+    data-testid="business-option-all"
+  >
+    <Check
+      className={cn(
+        "mr-2 h-4 w-4",
+        !selectedBusinessId ? "opacity-100" : "opacity-0"
+      )}
+    />
+    <div className="flex items-center gap-2">
+      <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-purple-700 rounded-full flex items-center justify-center">
+        <span className="text-white text-xs">👑</span>
+      </div>
+      <span className="font-medium">מנהל מערכת ראשי</span>
+    </div>
+  </CommandItem>
+)}
+{businesses.map((business) => (
+  <CommandItem
+    key={business.id}
+    value={business.name}
+    onSelect={() => handleBusinessChange(business.id)}
+    className="hover:bg-blue-50"
+    data-testid={`business-option-${business.id}`}
+  >
+    <Check
+      className={cn(
+        "mr-2 h-4 w-4",
+        selectedBusinessId === business.id ? "opacity-100" : "opacity-0"
+      )}
+    />
+    <div className="flex items-center gap-2">
+      <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-blue-700 rounded-full flex items-center justify-center">
+        <Building2 className="h-3 w-3 text-white" />
+      </div>
+      <div className="flex flex-col">
+        <span className="font-medium">{business.name}</span>
+        {business.description && (
+          <span className="text-xs text-gray-500 truncate max-w-48">
+            {business.description}
+          </span>
+        )}
+      </div>
+    </div>
+  </CommandItem>
+))}
             </CommandGroup>
           </CommandList>
         </Command>
