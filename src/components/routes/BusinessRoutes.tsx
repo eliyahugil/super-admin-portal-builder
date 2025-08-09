@@ -1,51 +1,70 @@
-
 import React from 'react';
-import { Route } from 'react-router-dom';
+import { Route, useParams } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { AppLayout } from '@/components/layout/AppLayout';
+import AppShell from '@/components/layout/AppShell';
 import { BusinessDashboard } from '@/components/business/BusinessDashboard';
 import { ModuleWrapper } from '@/components/modules/ModuleWrapper';
 import { EmployeeProfilePage } from '@/components/modules/employees/EmployeeProfilePage';
+
+const BusinessShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { businessId } = useParams();
+  const id = businessId ?? 'test-business';
+
+  const NAV = [
+    { id: 'dashboard', label: 'לוח מחוונים', href: `/business/${id}/dashboard` },
+    { id: 'employees', label: 'עובדים', href: `/business/${id}/modules/employees` },
+    { id: 'shifts', label: 'משמרות', href: `/business/${id}/modules/shifts` },
+    { id: 'orders', label: 'הזמנות', href: `/business/${id}/modules/orders` },
+    { id: 'products', label: 'מוצרים', href: `/business/${id}/modules/products` },
+    { id: 'settings', label: 'הגדרות', href: `/business/${id}/modules/settings` },
+  ];
+
+  return (
+    <AppShell navItems={NAV}>
+      {children}
+    </AppShell>
+  );
+};
 
 export const BusinessRoutes = () => (
   <>
     <Route path="/business/:businessId/dashboard" element={
       <ProtectedRoute>
-        <AppLayout>
+        <BusinessShell>
           <BusinessDashboard />
-        </AppLayout>
+        </BusinessShell>
       </ProtectedRoute>
     } />
 
     <Route path="/business/:businessId/modules/:moduleRoute" element={
       <ProtectedRoute>
-        <AppLayout>
+        <BusinessShell>
           <ModuleWrapper />
-        </AppLayout>
+        </BusinessShell>
       </ProtectedRoute>
     } />
     
     <Route path="/business/:businessId/modules/:moduleRoute/:subModule" element={
       <ProtectedRoute>
-        <AppLayout>
+        <BusinessShell>
           <ModuleWrapper />
-        </AppLayout>
+        </BusinessShell>
       </ProtectedRoute>
     } />
 
     <Route path="/business/:businessId/modules/:moduleRoute/:subModule/:employeeId" element={
       <ProtectedRoute>
-        <AppLayout>
+        <BusinessShell>
           <ModuleWrapper />
-        </AppLayout>
+        </BusinessShell>
       </ProtectedRoute>
     } />
 
     <Route path="/business/:businessId/modules/employees/profile/:employeeId" element={
       <ProtectedRoute>
-        <AppLayout>
+        <BusinessShell>
           <EmployeeProfilePage />
-        </AppLayout>
+        </BusinessShell>
       </ProtectedRoute>
     } />
   </>
