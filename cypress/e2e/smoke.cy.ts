@@ -2,6 +2,7 @@ describe('Smoke tests - core routes and primary actions', () => {
   const routes = [
     '/',
     '/auth',
+    '/modules/employees',
     '/modules/employees/requests',
     '/modules/employees/employee-requests',
   ];

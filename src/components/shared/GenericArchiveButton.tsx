@@ -61,6 +61,7 @@ export const GenericArchiveButton: React.FC<GenericArchiveButtonProps> = ({
       onClick={handleClick}
       disabled={isLoading}
       className={isArchived ? 'text-green-600 hover:text-green-800' : 'text-orange-600 hover:text-orange-800'}
+      data-testid={`${tableName}-${isArchived ? 'restore' : 'archive'}-button-${entity?.id ?? ''}`}
     >
       {isLoading ? (
         <Loader2 className="h-4 w-4 animate-spin" />

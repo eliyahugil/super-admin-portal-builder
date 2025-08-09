@@ -22,6 +22,7 @@ export const EmployeeEditButton: React.FC<EmployeeEditButtonProps> = ({
         variant="outline"
         size="sm"
         onClick={() => setOpen(true)}
+        data-testid={`employee-edit-${employee.id}`}
       >
         <Edit className="h-3 w-3" />
       </Button>

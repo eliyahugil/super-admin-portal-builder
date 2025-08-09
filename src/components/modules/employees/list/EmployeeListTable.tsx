@@ -86,6 +86,7 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
                   onChange={e => onSelectAll(e.target.checked)}
                   className="w-5 h-5 accent-primary border-2 border-muted-foreground/30 rounded-md"
                   aria-label="בחר/י הכל"
+                  data-testid="employees-select-all-mobile"
                 />
                 <span className="text-lg font-semibold">
                   כל העובדים ({employees.length})
@@ -131,6 +132,7 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
               <Checkbox
                 checked={allFilteredSelected}
                 onCheckedChange={onSelectAll}
+                data-testid="employees-select-all"
               />
             </TableHead>
             <EmployeeListTableHeader
@@ -144,12 +146,13 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
           {employees.map((employee) => (
             <TableRow key={employee.id} className="hover:bg-muted/50" dir="rtl">
               <TableCell>
-                <Checkbox
-                  checked={selectedEmployees.has(employee.id)}
-                  onCheckedChange={(checked) =>
-                    onSelectEmployee(employee.id, checked as boolean)
-                  }
-                />
+              <Checkbox
+                checked={selectedEmployees.has(employee.id)}
+                onCheckedChange={(checked) =>
+                  onSelectEmployee(employee.id, checked as boolean)
+                }
+                data-testid={`employee-select-${employee.id}`}
+              />
               </TableCell>
               <TableCell className="font-medium min-w-[180px] max-w-[280px]">
                 <EmployeeListProfileCell employee={employee} />

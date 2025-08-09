@@ -40,13 +40,14 @@ export const EmployeeManagementHeader: React.FC<EmployeeManagementHeaderProps> =
             <Button 
               variant={showArchived ? "default" : "outline"}
               onClick={() => onToggleArchived(!showArchived)}
+              data-testid="employees-toggle-archive"
             >
               {showArchived 
                 ? `עובדים פעילים (${totalActiveEmployees})` 
                 : `ארכיון (${totalArchivedEmployees})`
               }
             </Button>
-            <Button onClick={() => setCreateEmployeeOpen(true)}>
+            <Button onClick={() => setCreateEmployeeOpen(true)} data-testid="employees-add-button">
               <Plus className="h-4 w-4 ml-2" />
               הוסף עובד
             </Button>
