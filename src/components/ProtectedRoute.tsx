@@ -2,6 +2,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
+import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

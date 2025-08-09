@@ -4,12 +4,13 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { useUserBusinesses } from './useUserBusinesses';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { Role, toRole } from '@/types/roles';
 
 const SELECTED_BUSINESS_KEY = 'selectedBusinessId';
 
 export interface UseCurrentBusinessReturn {
   businessId: string | null;
-  role: 'super_admin' | 'business_admin' | 'business_user' | null;
+  role: Role | null;
   loading: boolean;
   isSuperAdmin: boolean;
   businessName: string | null;
@@ -30,7 +31,7 @@ export const useCurrentBusiness = (): UseCurrentBusinessReturn => {
 
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
-  const [role, setRole] = useState<'super_admin' | 'business_admin' | 'business_user' | null>(null);
+  const [role, setRole] = useState<Role | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -63,7 +64,7 @@ export const useCurrentBusiness = (): UseCurrentBusinessReturn => {
         const business = userBusinesses.find(ub => ub.business_id === newBusinessId);
         if (business) {
           setBusinessName(business.business.name);
-          setRole((business.role as any) || (isSuperAdmin ? 'super_admin' : null));
+          setRole(business.role ? toRole(business.role) : (isSuperAdmin ? 'super_admin' : null));
         }
       }
     } else {
@@ -129,7 +130,7 @@ export const useCurrentBusiness = (): UseCurrentBusinessReturn => {
           console.log('🔗 Setting business from URL:', urlBusinessId);
           setBusinessId(urlBusinessId);
           setBusinessName(urlBusiness.business.name);
-          setRole(urlBusiness.role || (isSuperAdmin ? 'super_admin' : null));
+          setRole(urlBusiness.role ? toRole(urlBusiness.role) : (isSuperAdmin ? 'super_admin' : null));
           localStorage.setItem(SELECTED_BUSINESS_KEY, urlBusinessId);
         }
         setLoading(false);
@@ -161,7 +162,7 @@ export const useCurrentBusiness = (): UseCurrentBusinessReturn => {
             console.log('💾 Setting business from localStorage:', savedBusinessId);
             setBusinessId(savedBusinessId);
             setBusinessName(savedBusiness.business.name);
-            setRole(savedBusiness.role || (isSuperAdmin ? 'super_admin' : null));
+            setRole(savedBusiness.role ? toRole(savedBusiness.role) : (isSuperAdmin ? 'super_admin' : null));
           }
           setLoading(false);
           return;
@@ -186,7 +187,7 @@ export const useCurrentBusiness = (): UseCurrentBusinessReturn => {
       console.log('🎯 Setting first available business:', firstBusiness.business_id);
       setBusinessId(firstBusiness.business_id);
       setBusinessName(firstBusiness.business.name);
-      setRole(firstBusiness.role);
+      setRole(toRole(firstBusiness.role));
       localStorage.setItem(SELECTED_BUSINESS_KEY, firstBusiness.business_id);
       setLoading(false);
       return;
