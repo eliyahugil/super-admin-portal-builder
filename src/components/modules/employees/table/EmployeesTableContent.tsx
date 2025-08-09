@@ -13,6 +13,7 @@ interface EmployeesTableContentProps {
   filterStatus: string;
   onCreateEmployee: () => void;
   onTokenSent: () => void;
+  onEditEmployee: (employee: Employee) => void;
 }
 
 export const EmployeesTableContent: React.FC<EmployeesTableContentProps> = ({
@@ -22,6 +23,7 @@ export const EmployeesTableContent: React.FC<EmployeesTableContentProps> = ({
   filterStatus,
   onCreateEmployee,
   onTokenSent,
+  onEditEmployee,
 }) => {
   if (filteredEmployees.length === 0) {
     return (
@@ -42,7 +44,7 @@ export const EmployeesTableContent: React.FC<EmployeesTableContentProps> = ({
   return (
     <CardContent>
       <div className="overflow-x-auto" dir="rtl">
-        <EmployeesTableGrid employees={filteredEmployees} onRefetch={onTokenSent} />
+        <EmployeesTableGrid employees={filteredEmployees} onRefetch={onTokenSent} onEdit={onEditEmployee} />
       </div>
     </CardContent>
   );

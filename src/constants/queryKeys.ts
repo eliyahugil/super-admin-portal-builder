@@ -4,6 +4,8 @@ export const QUERY_KEYS = {
     ['employees', businessId ?? null, filters ?? null] as const,
   orders: (businessId: string | null | undefined, filters?: unknown) =>
     ['orders', businessId ?? null, filters ?? null] as const,
+  employeeBranches: (employeeId: string | null | undefined) =>
+    ['employee_branches', employeeId ?? null] as const,
 } as const;
 
 export type EmployeesKey = ReturnType<typeof QUERY_KEYS.employees>;

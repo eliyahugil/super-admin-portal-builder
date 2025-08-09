@@ -9,12 +9,14 @@ interface EmployeesMobileCardProps {
   employee: Employee;
   onRefetch: () => void;
   showBranch?: boolean;
+  onEdit?: (employee: Employee) => void;
 }
 
 export const EmployeesMobileCard: React.FC<EmployeesMobileCardProps> = ({ 
   employee, 
   onRefetch,
-  showBranch = true 
+  showBranch = true,
+  onEdit,
 }) => {
   const navigate = useNavigate();
   
@@ -114,7 +116,7 @@ export const EmployeesMobileCard: React.FC<EmployeesMobileCardProps> = ({
 
         {/* Actions */}
         <div className="flex justify-end pt-2 border-t border-border">
-          <EmployeeRowActions employee={employee} onTokenSent={onRefetch} />
+          <EmployeeRowActions employee={employee} onTokenSent={onRefetch} onEdit={onEdit} />
       </div>
     </div>
   );

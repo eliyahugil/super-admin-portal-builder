@@ -27,9 +27,10 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialValues?: Partial<EmployeeFormValues>;
+  initialBranchIds?: string[];
 };
 
-export const EmployeeEditDialog: React.FC<Props> = ({ open, onOpenChange, initialValues }) => {
+export const EmployeeEditDialog: React.FC<Props> = ({ open, onOpenChange, initialValues, initialBranchIds = [] }) => {
   const { toast } = useToast();
   const {
     register,
@@ -50,11 +51,15 @@ export const EmployeeEditDialog: React.FC<Props> = ({ open, onOpenChange, initia
     reset();
   });
 
+  const [branchIds, setBranchIds] = React.useState<string[]>(initialBranchIds);
+  const { data: branches = [] } = require('@/hooks/useBranchesData');
+
   const onSubmit = async (values: EmployeeFormValues) => {
     try {
       const payload: EmployeeUpsertInput = {
         ...values,
         email: values.email && values.email.length > 0 ? values.email : undefined,
+        branchIds,
       } as EmployeeUpsertInput;
       await mutateAsync(payload);
       toast({ title: 'נשמר בהצלחה', description: 'פרטי העובד עודכנו', duration: 2000 });
@@ -151,10 +156,17 @@ export const EmployeeEditDialog: React.FC<Props> = ({ open, onOpenChange, initia
                 <textarea rows={4} {...register('notes')} className="px-3 py-2 rounded-md bg-background text-foreground border border-input focus:outline-none focus:ring-2 focus:ring-primary" data-testid="input-notes" />
               </div>
 
-              {/* שיוך לסניף (אופציונלי לעת עתה - single select main_branch_id) */}
+              {/* שיוך לסניפים (מרובה) */}
               <div className="md:col-span-2 flex flex-col">
-                <label className="text-sm text-muted-foreground mb-1">סניף ראשי (אופציונלי)</label>
-                <input {...register('main_branch_id')} placeholder="UUID של סניף" className="h-10 px-3 rounded-md bg-background text-foreground border border-input focus:outline-none focus:ring-2 focus:ring-primary" data-testid="input-main-branch-id" />
+                <label className="text-sm text-muted-foreground mb-1">שיוך לסניפים (אופציונלי)</label>
+                {/* eslint-disable-next-line @typescript-eslint/no-var-requires */}
+                {(() => {
+                  const { useBranchesData } = require('@/hooks/useBranchesData');
+                  const { data: bs = [] } = useBranchesData();
+                  const items = bs.map((b: any) => ({ id: b.id as string, name: b.name as string }));
+                  const Comp = require('@/components/inputs/BranchesMultiSelect').default as React.FC<any>;
+                  return <Comp branches={items} value={branchIds} onChange={setBranchIds} data-testid="select-branches" />;
+                })()}
               </div>
 
               <div className="md:col-span-2 flex justify-start gap-2 pt-2">

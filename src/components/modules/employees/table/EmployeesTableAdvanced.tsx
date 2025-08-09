@@ -27,6 +27,7 @@ export const EmployeesTableAdvanced: React.FC<EmployeesTableAdvancedProps> = ({ 
   } = useEmployeesTableLogic(selectedBusinessId);
 
   const [openCreate, setOpenCreate] = React.useState(false);
+  const [editEmployee, setEditEmployee] = React.useState<import('@/types/employee').Employee | null>(null);
 
   console.log('🔍 EmployeesTableAdvanced - Using business filter:', selectedBusinessId);
 
@@ -67,9 +68,30 @@ export const EmployeesTableAdvanced: React.FC<EmployeesTableAdvancedProps> = ({ 
         filterStatus={filterStatus}
         onCreateEmployee={() => setOpenCreate(true)}
         onTokenSent={handleTokenSent}
+        onEditEmployee={(emp) => setEditEmployee(emp)}
       />
 
       <EmployeeEditDialog open={openCreate} onOpenChange={setOpenCreate} />
+      <EmployeeEditDialog
+        open={!!editEmployee}
+        onOpenChange={(o) => !o && setEditEmployee(null)}
+        initialValues={editEmployee ? {
+          id: editEmployee.id,
+          first_name: editEmployee.first_name,
+          last_name: editEmployee.last_name,
+          phone: editEmployee.phone || '',
+          email: editEmployee.email || undefined,
+          employee_id: editEmployee.employee_id || undefined,
+          id_number: editEmployee.id_number || undefined,
+          employee_type: editEmployee.employee_type,
+          is_active: !!editEmployee.is_active,
+          notes: editEmployee.notes || undefined,
+          main_branch_id: editEmployee.main_branch?.id || undefined,
+        } : undefined}
+        // initial branch IDs from assignments
+        // @ts-expect-error extending component props below
+        initialBranchIds={editEmployee?.branch_assignments?.map(a => a.branch_id) || []}
+      />
     </Card>
   );
 };

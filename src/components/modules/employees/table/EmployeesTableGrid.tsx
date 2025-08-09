@@ -6,11 +6,13 @@ import type { Employee } from '@/types/employee';
 interface EmployeesTableGridProps {
   employees: Employee[];
   onRefetch: () => void;
+  onEdit: (employee: Employee) => void;
 }
 
 export const EmployeesTableGrid: React.FC<EmployeesTableGridProps> = ({
   employees,
   onRefetch,
+  onEdit,
 }) => {
   console.log('📊 EmployeesTableGrid rendering with employees:', employees.length);
 
@@ -42,6 +44,7 @@ export const EmployeesTableGrid: React.FC<EmployeesTableGridProps> = ({
               key={employee.id}
               employee={employee}
               onRefetch={onRefetch}
+              onEdit={onEdit}
             />
           ))}
         </tbody>

@@ -10,6 +10,7 @@ interface EmployeesTableRowProps {
   employee: Employee;
   onRefetch: () => void;
   showBranch?: boolean;
+  onEdit?: (employee: Employee) => void;
 }
 
 export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({ 
@@ -96,7 +97,7 @@ export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({
         </Badge>
       </TableCell>
       <TableCell>
-        <EmployeeRowActions employee={employee} onTokenSent={onRefetch} />
+        <EmployeeRowActions employee={employee} onTokenSent={onRefetch} onEdit={onEdit} />
       </TableCell>
     </TableRow>
   );

@@ -11,6 +11,7 @@ interface EmployeeRowActionsProps {
   employee: Employee;
   onTokenSent: () => void;
   onDelete?: (employee: Employee) => void;
+  onEdit?: (employee: Employee) => void;
 }
 
 export const EmployeeRowActions: React.FC<EmployeeRowActionsProps> = ({
@@ -33,8 +34,11 @@ export const EmployeeRowActions: React.FC<EmployeeRowActionsProps> = ({
   };
 
   const handleEditEmployee = () => {
-    // TODO: Implement edit functionality
-    console.log('Edit employee:', employee.id);
+    if (onEdit) {
+      onEdit(employee);
+    } else {
+      console.log('Edit employee:', employee.id);
+    }
   };
 
   const handleDeleteEmployee = () => {
@@ -71,6 +75,8 @@ export const EmployeeRowActions: React.FC<EmployeeRowActionsProps> = ({
         size="sm"
         onClick={handleEditEmployee}
         className="flex items-center gap-1"
+        data-testid={`employee-edit-${employee.id}`}
+        aria-label="עריכת עובד"
       >
         <Edit className="h-3 w-3" />
         <span className="sr-only">עריכה</span>
