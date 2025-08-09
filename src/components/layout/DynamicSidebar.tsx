@@ -14,6 +14,7 @@ import {
   createSystemMenuItems,
   createAdminMenuItems
 } from './sidebar/menuItems';
+import { useAuth } from '@/components/auth/AuthContext';
 
 export const DynamicSidebar: React.FC = () => {
   const { isSuperAdmin, business, isLoading: businessLoading } = useBusiness();

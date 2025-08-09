@@ -12,6 +12,7 @@ interface SidebarMenuGroupProps {
   isSuperAdmin: boolean;
   modulesLoading: boolean;
   onMenuItemClick: () => void;
+  currentRole?: 'super_admin' | 'business_admin' | 'business_user';
 }
 
 export const SidebarMenuGroup: React.FC<SidebarMenuGroupProps> = ({
@@ -21,11 +22,13 @@ export const SidebarMenuGroup: React.FC<SidebarMenuGroupProps> = ({
   isModuleEnabled,
   isSuperAdmin,
   modulesLoading,
-  onMenuItemClick
+  onMenuItemClick,
+  currentRole
 }) => {
   const getVisibleItems = (items: MenuItem[]) => {
     return items.filter(item => {
       if (item.requiresSuperAdmin && !isSuperAdmin) return false;
+      if (item.allowedRoles && !isSuperAdmin && currentRole && !item.allowedRoles.includes(currentRole)) return false;
       if (item.moduleKey && !isSuperAdmin && !modulesLoading) {
         return isModuleEnabled(item.moduleKey);
       }

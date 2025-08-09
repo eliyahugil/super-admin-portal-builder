@@ -19,6 +19,7 @@ interface SidebarMenuItemsProps {
   modulesLoading: boolean;
   collapsed: boolean;
   onMenuItemClick: () => void;
+  currentRole?: 'super_admin' | 'business_admin' | 'business_user';
 }
 
 export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
@@ -28,7 +29,8 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
   isSuperAdmin,
   modulesLoading,
   collapsed,
-  onMenuItemClick
+  onMenuItemClick,
+  currentRole
 }) => {
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
@@ -73,7 +75,14 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
 
   return (
     <SidebarMenu>
-      {items.map((item) => {
+      {items
+        .filter((item) => {
+          if (isSuperAdmin) return true;
+          if (item.allowedRoles && currentRole && !item.allowedRoles.includes(currentRole)) return false;
+          if (item.moduleKey && !modulesLoading) return isModuleEnabled(item.moduleKey);
+          return true;
+        })
+        .map((item) => {
         const hasSubItems = item.subItems && item.subItems.length > 0;
         const isExpanded = expandedItems[item.path] || false;
         const itemIsActive = isActive(item.path);
@@ -101,6 +110,7 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
                   to={item.path} 
                   className="flex items-center justify-end gap-3 text-right pr-2"
                   onClick={() => handleMenuItemClick(false, item.path)}
+                  data-testid={`sidebar-link-${item.path.replace(/\//g,'-')}`}
                 >
                   <span className="flex-1 text-right">{item.label}</span>
                   <item.icon className="h-4 w-4 flex-shrink-0" />
@@ -110,13 +120,21 @@ export const SidebarMenuItems: React.FC<SidebarMenuItemsProps> = ({
             
             {hasSubItems && isExpanded && !collapsed && (
               <SidebarMenuSub>
-                {item.subItems!.map((subItem) => (
+                {item.subItems!
+                  .filter((subItem) => {
+                    if (isSuperAdmin) return true;
+                    if (subItem.allowedRoles && currentRole && !subItem.allowedRoles.includes(currentRole)) return false;
+                    if (subItem.moduleKey && !modulesLoading) return isModuleEnabled(subItem.moduleKey);
+                    return true;
+                  })
+                  .map((subItem) => (
                   <SidebarMenuSubItem key={subItem.path}>
                     <SidebarMenuSubButton asChild isActive={isActive(subItem.path)}>
                       <NavLink
                         to={subItem.path}
                         className="flex items-center justify-end gap-3 text-right text-sm pr-4"
                         onClick={onMenuItemClick}
+                        data-testid={`sidebar-link-${subItem.path.replace(/\//g,'-')}`}
                       >
                         <span className="flex-1 text-right">{subItem.label}</span>
                         <subItem.icon className="h-3 w-3 flex-shrink-0" />
