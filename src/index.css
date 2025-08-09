@@ -97,15 +97,8 @@
   @apply !w-[95vw] !max-w-[95vw] sm:!max-w-4xl !left-[50%] !translate-x-[-50%] max-h-[95vh] overflow-y-auto p-3 sm:p-6;
 }
 
-/* תיקון רקע Google Maps מציק */
-body {
-  background: #ffffff !important;
-}
-
-#root {
-  background: #ffffff !important;
-}
-
+/* תיקון רקע Google Maps מציק - שימוש בערכי טוקנים בלבד, ללא צבע קשיח */
+/* רקע הגוף והאפליקציה מנוהל דרך bg-background ב-@layer base */
 /* מניעת רכיבי מפה מלהופיע */
 div[id*="google"] {
   display: none !important;
@@ -119,11 +112,11 @@ div[class*="gm-"] {
   display: none !important;
 }
 
-/* וידוא שהאפליקציה תמיד על רקע לבן */
+/* וידוא שהאפליקציה משתמשת בטוקנים לעיצוב רקע */
 .app-container,
 .main-content,
 [data-testid="app-container"] {
-  background: #ffffff !important;
+  background: hsl(var(--background)) !important;
   position: relative;
   z-index: 1000;
 }
@@ -131,7 +124,7 @@ div[class*="gm-"] {
 /* מניעת overflow מבעיתי ברקע */
 body, html {
   overflow-x: hidden;
-  background-color: #ffffff !important;
+  background-color: hsl(var(--background)) !important;
 }
 
 /* Mobile Header Stability - מניעת בעיות viewport במובייל */
@@ -359,7 +352,7 @@ body, html {
     @apply bg-background text-foreground;
     direction: rtl;
     text-align: right;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: Heebo, system-ui, -apple-system, sans-serif;
     overflow-x: hidden;
     max-width: 100vw;
   }
