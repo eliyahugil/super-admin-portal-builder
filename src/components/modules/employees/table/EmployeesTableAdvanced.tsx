@@ -5,6 +5,7 @@ import { EmployeesTableHeader } from './EmployeesTableHeader';
 import { EmployeesTableFilters } from './EmployeesTableFilters';
 import { EmployeesTableContent } from './EmployeesTableContent';
 import { useEmployeesTableLogic } from './useEmployeesTableLogic';
+import { EmployeeEditDialog } from '@/modules/employees/EmployeeEditDialog';
 
 interface EmployeesTableAdvancedProps {
   selectedBusinessId?: string | null;
@@ -25,6 +26,8 @@ export const EmployeesTableAdvanced: React.FC<EmployeesTableAdvancedProps> = ({ 
     handleTokenSent,
   } = useEmployeesTableLogic(selectedBusinessId);
 
+  const [openCreate, setOpenCreate] = React.useState(false);
+
   console.log('🔍 EmployeesTableAdvanced - Using business filter:', selectedBusinessId);
 
   if (loading) {
@@ -32,7 +35,7 @@ export const EmployeesTableAdvanced: React.FC<EmployeesTableAdvancedProps> = ({ 
       <Card dir="rtl">
         <EmployeesTableHeader
           employeesCount={0}
-          onCreateEmployee={handleCreateEmployee}
+          onCreateEmployee={() => setOpenCreate(true)}
         />
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -45,7 +48,7 @@ export const EmployeesTableAdvanced: React.FC<EmployeesTableAdvancedProps> = ({ 
     <Card dir="rtl">
       <EmployeesTableHeader
         employeesCount={employees.length}
-        onCreateEmployee={handleCreateEmployee}
+        onCreateEmployee={() => setOpenCreate(true)}
       />
       
       <EmployeesTableFilters
@@ -62,9 +65,11 @@ export const EmployeesTableAdvanced: React.FC<EmployeesTableAdvancedProps> = ({ 
         search={search}
         filterType={filterType}
         filterStatus={filterStatus}
-        onCreateEmployee={handleCreateEmployee}
+        onCreateEmployee={() => setOpenCreate(true)}
         onTokenSent={handleTokenSent}
       />
+
+      <EmployeeEditDialog open={openCreate} onOpenChange={setOpenCreate} />
     </Card>
   );
 };
