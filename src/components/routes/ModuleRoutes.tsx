@@ -26,84 +26,106 @@ export const ModuleRoutes = () => (
     {/* דפי עובדים עם AppLayout */}
     <Route path="/modules/employees" element={
       <ProtectedRoute>
-        <AppLayout>
-          <EmployeeManagementPage />
-        </AppLayout>
+        <ProtectedModuleRoute moduleName="employee_management">
+          <AppLayout>
+            <EmployeeManagementPage />
+          </AppLayout>
+        </ProtectedModuleRoute>
       </ProtectedRoute>
     } />
     
     {/* CRITICAL FIX: Specific employee profile route - must come BEFORE the generic routes */}
     <Route path="/modules/employees/profile/:employeeId" element={
       <ProtectedRoute>
-        <AppLayout>
-          <EmployeeProfilePage />
-        </AppLayout>
+        <ProtectedModuleRoute moduleName="employee_management">
+          <AppLayout>
+            <EmployeeProfilePage />
+          </AppLayout>
+        </ProtectedModuleRoute>
       </ProtectedRoute>
     } />
     
     {/* Employee token management route */}
     <Route path="/modules/employees/tokens/:employeeId" element={
       <ProtectedRoute>
-        <AppLayout>
-          <EmployeeTokenPage />
-        </AppLayout>
+        <ProtectedModuleRoute moduleName="employee_management">
+          <AppLayout>
+            <EmployeeTokenPage />
+          </AppLayout>
+        </ProtectedModuleRoute>
       </ProtectedRoute>
     } />
     
     <Route path="/modules/employees/branches" element={
       <ProtectedRoute>
-        <AppLayout>
-          <BranchManagementPage />
-        </AppLayout>
+        <ProtectedModuleRoute moduleName="employee_management">
+          <AppLayout>
+            <BranchManagementPage />
+          </AppLayout>
+        </ProtectedModuleRoute>
       </ProtectedRoute>
     } />
     <Route path="/modules/employees/attendance" element={
       <ProtectedRoute>
-        <AppLayout>
-          <AttendanceReportPage />
-        </AppLayout>
+        <ProtectedModuleRoute moduleName="employee_management">
+          <AppLayout>
+            <AttendanceReportPage />
+          </AppLayout>
+        </ProtectedModuleRoute>
       </ProtectedRoute>
     } />
     <Route path="/modules/employees/documents" element={
       <ProtectedRoute>
-        <AppLayout>
-          <EmployeeDocumentsPage />
-        </AppLayout>
+        <ProtectedModuleRoute moduleName="employee_management">
+          <AppLayout>
+            <EmployeeDocumentsPage />
+          </AppLayout>
+        </ProtectedModuleRoute>
       </ProtectedRoute>
     } />
     <Route path="/modules/employees/requests" element={
       <ProtectedRoute>
-        <AppLayout>
-          <EmployeeRequestsPage />
-        </AppLayout>
+        <ProtectedModuleRoute moduleName="employee_management">
+          <AppLayout>
+            <EmployeeRequestsPage />
+          </AppLayout>
+        </ProtectedModuleRoute>
       </ProtectedRoute>
     } />
     <Route path="/modules/employees/chat" element={
       <ProtectedRoute>
-        <AppLayout>
-          <EmployeeChatPage />
-        </AppLayout>
+        <ProtectedModuleRoute moduleName="employee_management">
+          <AppLayout>
+            <EmployeeChatPage />
+          </AppLayout>
+        </ProtectedModuleRoute>
       </ProtectedRoute>
     } />
     <Route path="/modules/employees/tasks" element={
       <ProtectedRoute>
-        <AppLayout>
-          <EmployeeTasksPage />
-        </AppLayout>
+        <ProtectedModuleRoute moduleName="employee_management">
+          <AppLayout>
+            <EmployeeTasksPage />
+          </AppLayout>
+        </ProtectedModuleRoute>
       </ProtectedRoute>
     } />
     <Route path="/modules/employees/import" element={
       <ProtectedRoute>
-        <AppLayout>
-          <EmployeeImportPage />
-        </AppLayout>
+        <ProtectedModuleRoute moduleName="employee_management">
+          <AppLayout>
+            <EmployeeImportPage />
+          </AppLayout>
+        </ProtectedModuleRoute>
       </ProtectedRoute>
     } />
     <Route path="/modules/employees/duplicate-manager" element={
       <ProtectedRoute>
-        <AppLayout>
-          <EmployeeDuplicateManagerPage />
-        </AppLayout>
+        <ProtectedModuleRoute moduleName="employee_management">
+          <AppLayout>
+            <EmployeeDuplicateManagerPage />
+          </AppLayout>
+        </ProtectedModuleRoute>
       </ProtectedRoute>
     } />
 
