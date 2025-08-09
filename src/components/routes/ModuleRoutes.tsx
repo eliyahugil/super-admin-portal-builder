@@ -2,6 +2,7 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { ProtectedModuleRoute } from '@/components/ProtectedModuleRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ModuleWrapper } from '@/components/modules/ModuleWrapper';
 import EmployeeManagementPage from '@/pages/business/employees/EmployeeManagementPage';
@@ -112,6 +113,17 @@ export const ModuleRoutes = () => (
         <AppLayout>
           <ShiftSchedule />
         </AppLayout>
+      </ProtectedRoute>
+    } />
+
+    {/* Branches module - restricted to admins and enabled module */}
+    <Route path="/modules/branches/*" element={
+      <ProtectedRoute allowedRoles={['super_admin','business_admin']}>
+        <ProtectedModuleRoute moduleName="branch_management">
+          <AppLayout>
+            <ModuleWrapper />
+          </AppLayout>
+        </ProtectedModuleRoute>
       </ProtectedRoute>
     } />
 

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { AddressAutocomplete } from '@/components/ui/AddressAutocomplete';
+import type { AddressData } from '@/components/ui/AddressAutocomplete';
 
 interface BranchFormData {
   name: string;
@@ -30,7 +31,7 @@ export const CreateBranchForm: React.FC<CreateBranchFormProps> = ({
   onCancel,
   loading,
 }) => {
-  const handleAddressChange = (addressData: any) => {
+  const handleAddressChange = (addressData: AddressData | null) => {
     if (addressData) {
       setFormData(prev => ({
         ...prev,
