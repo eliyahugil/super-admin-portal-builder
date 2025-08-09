@@ -83,6 +83,17 @@ export const ModuleRoutes = () => (
         </ProtectedModuleRoute>
       </ProtectedRoute>
     } />
+    {/* Alias route to support legacy path */}
+    <Route path="/modules/employees/employee-requests" element={
+      <ProtectedRoute>
+        <ProtectedModuleRoute moduleName="employee_management">
+          <AppLayout>
+            <EmployeeRequestsPage />
+          </AppLayout>
+        </ProtectedModuleRoute>
+      </ProtectedRoute>
+    } />
+
     <Route path="/modules/employees/requests" element={
       <ProtectedRoute>
         <ProtectedModuleRoute moduleName="employee_management">
