@@ -44,6 +44,7 @@ export const EmployeeListHeader: React.FC<EmployeeListHeaderProps> = ({
             onClick={onBulkDelete}
             disabled={loading}
             className="flex items-center gap-2 text-orange-600 hover:text-orange-800 hover:bg-orange-50"
+            data-testid="bulk-archive"
           >
             <Archive className="h-4 w-4" />
             העבר לארכיון

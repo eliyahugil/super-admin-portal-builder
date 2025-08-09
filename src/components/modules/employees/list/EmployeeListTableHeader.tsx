@@ -19,11 +19,11 @@ export const EmployeeListTableHeader: React.FC<EmployeeListTableHeaderProps> = (
 
   const getSortIcon = (field: EmployeeListFilters['sortBy']) => {
     if (sortBy !== field) {
-      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+      return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
     }
     return sortOrder === 'asc' 
-      ? <ArrowUp className="h-4 w-4 text-blue-600" />
-      : <ArrowDown className="h-4 w-4 text-blue-600" />;
+      ? <ArrowUp className="h-4 w-4 text-primary" />
+      : <ArrowDown className="h-4 w-4 text-primary" />;
   };
 
   const handleSort = (field: EmployeeListFilters['sortBy']) => {
@@ -34,38 +34,38 @@ export const EmployeeListTableHeader: React.FC<EmployeeListTableHeaderProps> = (
   return (
     <>
       <TableHead 
-        className="text-right cursor-pointer hover:bg-gray-50 select-none"
+        className="text-start cursor-pointer hover:bg-accent/50 select-none sticky top-0 z-10 bg-card"
         onClick={() => handleSort('name')}
       >
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-start gap-2">
           <span>שם מלא</span>
           {getSortIcon('name')}
         </div>
       </TableHead>
-      <TableHead className="text-right">מספר עובד</TableHead>
-      <TableHead className="text-right">טלפון</TableHead>
+      <TableHead className="text-start sticky top-0 bg-card z-10">מספר עובד</TableHead>
+      <TableHead className="text-start sticky top-0 bg-card z-10">טלפון</TableHead>
       <TableHead 
-        className="text-right cursor-pointer hover:bg-gray-50 select-none"
+        className="text-start cursor-pointer hover:bg-accent/50 select-none sticky top-0 z-10 bg-card"
         onClick={() => handleSort('employee_type')}
       >
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-start gap-2">
           <span>סוג עובד</span>
           {getSortIcon('employee_type')}
         </div>
       </TableHead>
-      <TableHead className="text-right">סניף ראשי</TableHead>
-      <TableHead className="text-right">שעות שבועיות</TableHead>
-      <TableHead className="text-right">סטטוס</TableHead>
+      <TableHead className="text-start sticky top-0 bg-card z-10">סניף ראשי</TableHead>
+      <TableHead className="text-start sticky top-0 bg-card z-10">שעות שבועיות</TableHead>
+      <TableHead className="text-start sticky top-0 bg-card z-10">סטטוס</TableHead>
       <TableHead 
-        className="text-right cursor-pointer hover:bg-gray-50 select-none"
+        className="text-start cursor-pointer hover:bg-accent/50 select-none sticky top-0 z-10 bg-card"
         onClick={() => handleSort('created_at')}
       >
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-start gap-2">
           <span>תאריך הצטרפות</span>
           {getSortIcon('created_at')}
         </div>
       </TableHead>
-      <TableHead className="text-right">פעולות</TableHead>
+      <TableHead className="text-start sticky top-0 bg-card z-10">פעולות</TableHead>
     </>
   );
 };

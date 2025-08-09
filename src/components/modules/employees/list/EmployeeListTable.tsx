@@ -125,10 +125,10 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
   // Desktop view: table - הנתונים כבר ממוינים לכן אין צורך למיין שוב
   return (
     <div dir="rtl" className="overflow-x-auto w-full bg-background">
-      <Table className="min-w-[750px] sm:min-w-full bg-card">
+      <Table className="min-w-[750px] sm:min-w-full bg-card" data-testid="employees-table">
         <TableHeader className="bg-muted/30">
           <TableRow dir="rtl">
-            <TableHead className="w-12 text-right">
+            <TableHead className="w-12 text-start sticky top-0 bg-card z-10">
               <Checkbox
                 checked={allFilteredSelected}
                 onCheckedChange={onSelectAll}
@@ -144,7 +144,7 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
         </TableHeader>
         <TableBody>
           {employees.map((employee) => (
-            <TableRow key={employee.id} className="hover:bg-muted/50" dir="rtl">
+            <TableRow key={employee.id} className="hover:bg-muted/50" dir="rtl" data-testid={`employee-row-${employee.id}`}>
               <TableCell>
               <Checkbox
                 checked={selectedEmployees.has(employee.id)}
@@ -154,30 +154,30 @@ export const EmployeeListTable: React.FC<EmployeeListTableProps> = ({
                 data-testid={`employee-select-${employee.id}`}
               />
               </TableCell>
-              <TableCell className="font-medium min-w-[180px] max-w-[280px]">
+              <TableCell className="font-medium min-w-[180px] max-w-[280px] text-start">
                 <EmployeeListProfileCell employee={employee} />
               </TableCell>
-              <TableCell>
+              <TableCell className="text-end">
                 {employee.employee_id || (
                   <span className="text-muted-foreground text-sm">לא הוגדר</span>
                 )}
               </TableCell>
-              <TableCell>
+              <TableCell className="text-end">
                 <EmployeeListPhoneCell employee={employee} />
               </TableCell>
               <TableCell>
                 <EmployeeListTypeCell type={employee.employee_type} />
               </TableCell>
-              <TableCell>
+              <TableCell className="text-start">
                 <EmployeeListBranchCell employee={employee} />
               </TableCell>
-              <TableCell>
+              <TableCell className="text-end">
                 <EmployeeListWeeklyHoursCell weeklyHoursRequired={employee.weekly_hours_required} />
               </TableCell>
-              <TableCell>
+              <TableCell className="text-start">
                 <EmployeeListStatusCell isActive={!!employee.is_active} />
               </TableCell>
-              <TableCell>
+              <TableCell className="text-end">
                 <span className="text-sm text-muted-foreground">
                   {new Date(employee.created_at).toLocaleDateString('he-IL')}
                 </span>
