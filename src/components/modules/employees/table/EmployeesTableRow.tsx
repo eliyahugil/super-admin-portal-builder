@@ -16,7 +16,8 @@ interface EmployeesTableRowProps {
 export const EmployeesTableRow: React.FC<EmployeesTableRowProps> = ({ 
   employee, 
   onRefetch,
-  showBranch = true 
+  showBranch = true,
+  onEdit
 }) => {
   const navigate = useNavigate();
   

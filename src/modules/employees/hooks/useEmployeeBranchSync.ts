@@ -11,12 +11,16 @@ export function useEmployeeBranchSync() {
   const syncEmployeeBranches = useCallback(async (employeeId: string, nextBranchIds: string[]) => {
     if (!businessId) throw new Error('אין מזהה עסק פעיל');
 
-    // Current assignments
-    const { data: current, error: selErr } = await supabase
+    // Current assignments with type casting to avoid TS issues
+    const response = await (supabase as any)
       .from('employee_branch_assignments')
       .select('id, branch_id')
       .eq('employee_id', employeeId)
       .eq('business_id', businessId);
+    
+    const current = response.data as Array<{ id: string; branch_id: string }> | null;
+    const selErr = response.error;
+    
     if (selErr) throw selErr;
 
     const currentSet = new Set((current ?? []).map((r) => r.branch_id));
@@ -33,8 +37,9 @@ export function useEmployeeBranchSync() {
         branch_id: branchId,
         business_id: businessId,
         is_active: true,
+        role_name: 'assigned',
       }));
-      const { error: insErr } = await supabase.from('employee_branch_assignments').insert(rows);
+      const { error: insErr } = await supabase.from('employee_branch_assignments').insert(rows as any);
       if (insErr) throw insErr;
     }
 

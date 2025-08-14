@@ -89,7 +89,6 @@ export const EmployeesTableAdvanced: React.FC<EmployeesTableAdvancedProps> = ({ 
           main_branch_id: editEmployee.main_branch?.id || undefined,
         } : undefined}
         // initial branch IDs from assignments
-        // @ts-expect-error extending component props below
         initialBranchIds={editEmployee?.branch_assignments?.map(a => a.branch_id) || []}
       />
     </Card>

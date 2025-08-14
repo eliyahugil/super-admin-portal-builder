@@ -17,7 +17,8 @@ interface EmployeeRowActionsProps {
 export const EmployeeRowActions: React.FC<EmployeeRowActionsProps> = ({
   employee,
   onTokenSent,
-  onDelete
+  onDelete,
+  onEdit
 }) => {
   const navigate = useNavigate();
   const employeeName = `${employee.first_name} ${employee.last_name}`;
