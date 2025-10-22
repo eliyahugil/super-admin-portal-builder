@@ -16,7 +16,8 @@ import {
   Calendar,
   User,
   LinkIcon,
-  Send
+  Send,
+  Refrigerator
 } from "lucide-react";
 import { getModuleRoutes } from "@/utils/routeMapping";
 import { MenuItem } from "./MainSidebarTypes";
@@ -68,6 +69,7 @@ export const buildMainSidebarMenuItems = (isSuperAdmin: boolean, business?: { id
   
   const businessMenuItems: MenuItem[] = [
     { path: moduleRoutes.crm.base, label: 'CRM', icon: Users, category: 'business' },
+    { path: '/fridges', label: 'מקררים ומקפיאים', icon: Refrigerator, category: 'business' },
     { path: '/modules/accounting', label: 'חשבונות ממוחשבת', icon: FileText, category: 'business' },
     { path: '/modules/finance', label: 'כספים', icon: Calculator, category: 'business' },
     { path: '/modules/inventory', label: 'מלאי', icon: Package, category: 'business' },
