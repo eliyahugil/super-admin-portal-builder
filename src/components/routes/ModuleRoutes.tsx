@@ -24,6 +24,10 @@ import { ShiftSchedule } from '@/components/modules/shifts/ShiftSchedule';
 import FridgesPage from '@/modules/fridges/pages/FridgesPage';
 import FridgeDetailPage from '@/modules/fridges/pages/FridgeDetailPage';
 import FridgeFormPage from '@/modules/fridges/pages/FridgeFormPage';
+import { ProductionDashboard } from '@/modules/production/pages/ProductionDashboard';
+import { ProductionBatchesPage } from '@/modules/production/pages/ProductionBatchesPage';
+import { RawMaterialsPage } from '@/modules/production/pages/RawMaterialsPage';
+import { QualityChecksPage } from '@/modules/production/pages/QualityChecksPage';
 
 export const ModuleRoutes = () => (
   <>
@@ -48,6 +52,39 @@ export const ModuleRoutes = () => (
       <ProtectedRoute>
         <AppLayout>
           <FridgeDetailPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+
+    {/* Production Log Routes */}
+    <Route path="/production" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ProductionDashboard />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/production/batches" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ProductionBatchesPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/production/materials" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <RawMaterialsPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/production/quality" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <QualityChecksPage />
         </AppLayout>
       </ProtectedRoute>
     } />

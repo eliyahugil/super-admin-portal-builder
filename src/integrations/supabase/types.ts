@@ -1286,6 +1286,68 @@ export type Database = {
           },
         ]
       }
+      cleaning_logs: {
+        Row: {
+          area_name: string
+          business_id: string
+          cleaned_by: string | null
+          cleaning_date: string
+          cleaning_products_used: string | null
+          cleaning_type: string
+          created_at: string
+          equipment_name: string | null
+          id: string
+          next_cleaning_due: string | null
+          notes: string | null
+          passed: boolean | null
+          verification_performed: boolean | null
+          verification_time: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          area_name: string
+          business_id: string
+          cleaned_by?: string | null
+          cleaning_date?: string
+          cleaning_products_used?: string | null
+          cleaning_type: string
+          created_at?: string
+          equipment_name?: string | null
+          id?: string
+          next_cleaning_due?: string | null
+          notes?: string | null
+          passed?: boolean | null
+          verification_performed?: boolean | null
+          verification_time?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          area_name?: string
+          business_id?: string
+          cleaned_by?: string | null
+          cleaning_date?: string
+          cleaning_products_used?: string | null
+          cleaning_type?: string
+          created_at?: string
+          equipment_name?: string | null
+          id?: string
+          next_cleaning_due?: string | null
+          notes?: string | null
+          passed?: boolean | null
+          verification_performed?: boolean | null
+          verification_time?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaning_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       corrective_actions: {
         Row: {
           action_taken: string
@@ -3464,6 +3526,66 @@ export type Database = {
           },
         ]
       }
+      equipment_maintenance: {
+        Row: {
+          business_id: string
+          cost: number | null
+          created_at: string
+          description: string
+          equipment_id: string
+          id: string
+          maintenance_date: string
+          maintenance_type: string
+          next_maintenance_date: string | null
+          parts_replaced: string | null
+          performed_by: string | null
+          technician_name: string | null
+        }
+        Insert: {
+          business_id: string
+          cost?: number | null
+          created_at?: string
+          description: string
+          equipment_id: string
+          id?: string
+          maintenance_date?: string
+          maintenance_type: string
+          next_maintenance_date?: string | null
+          parts_replaced?: string | null
+          performed_by?: string | null
+          technician_name?: string | null
+        }
+        Update: {
+          business_id?: string
+          cost?: number | null
+          created_at?: string
+          description?: string
+          equipment_id?: string
+          id?: string
+          maintenance_date?: string
+          maintenance_type?: string
+          next_maintenance_date?: string | null
+          parts_replaced?: string | null
+          performed_by?: string | null
+          technician_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_maintenance_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_maintenance_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "production_equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       file_approval_notifications: {
         Row: {
           business_id: string
@@ -5105,6 +5227,133 @@ export type Database = {
           },
         ]
       }
+      production_batches: {
+        Row: {
+          actual_quantity: number | null
+          batch_number: string
+          business_id: string
+          created_at: string
+          end_time: string | null
+          id: string
+          notes: string | null
+          planned_quantity: number
+          product_code: string | null
+          product_name: string
+          production_date: string
+          shift_type: string | null
+          start_time: string | null
+          status: string
+          supervisor_id: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          actual_quantity?: number | null
+          batch_number: string
+          business_id: string
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          planned_quantity: number
+          product_code?: string | null
+          product_name: string
+          production_date: string
+          shift_type?: string | null
+          start_time?: string | null
+          status?: string
+          supervisor_id?: string | null
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          actual_quantity?: number | null
+          batch_number?: string
+          business_id?: string
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          planned_quantity?: number
+          product_code?: string | null
+          product_name?: string
+          production_date?: string
+          shift_type?: string | null
+          start_time?: string | null
+          status?: string
+          supervisor_id?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_batches_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_equipment: {
+        Row: {
+          business_id: string
+          created_at: string
+          equipment_code: string | null
+          equipment_name: string
+          equipment_type: string | null
+          id: string
+          is_active: boolean | null
+          last_maintenance_date: string | null
+          location: string | null
+          next_maintenance_due: string | null
+          notes: string | null
+          purchase_date: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          equipment_code?: string | null
+          equipment_name: string
+          equipment_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_maintenance_date?: string | null
+          location?: string | null
+          next_maintenance_due?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          equipment_code?: string | null
+          equipment_name?: string
+          equipment_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_maintenance_date?: string | null
+          location?: string | null
+          next_maintenance_due?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_equipment_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           business_id: string | null
@@ -5284,6 +5533,87 @@ export type Database = {
           },
         ]
       }
+      quality_checks: {
+        Row: {
+          appearance: string | null
+          batch_id: string | null
+          business_id: string
+          check_date: string
+          check_type: string
+          corrective_action: string | null
+          created_at: string
+          failure_reason: string | null
+          id: string
+          inspector_id: string | null
+          notes: string | null
+          passed: boolean
+          ph_level: number | null
+          product_name: string | null
+          smell: string | null
+          taste: string | null
+          temperature: number | null
+          texture: string | null
+          visual_inspection: string | null
+        }
+        Insert: {
+          appearance?: string | null
+          batch_id?: string | null
+          business_id: string
+          check_date?: string
+          check_type: string
+          corrective_action?: string | null
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          inspector_id?: string | null
+          notes?: string | null
+          passed: boolean
+          ph_level?: number | null
+          product_name?: string | null
+          smell?: string | null
+          taste?: string | null
+          temperature?: number | null
+          texture?: string | null
+          visual_inspection?: string | null
+        }
+        Update: {
+          appearance?: string | null
+          batch_id?: string | null
+          business_id?: string
+          check_date?: string
+          check_type?: string
+          corrective_action?: string | null
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          inspector_id?: string | null
+          notes?: string | null
+          passed?: boolean
+          ph_level?: number | null
+          product_name?: string | null
+          smell?: string | null
+          taste?: string | null
+          temperature?: number | null
+          texture?: string | null
+          visual_inspection?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_checks_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "production_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_checks_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quarterly_backups: {
         Row: {
           backup_date: string
@@ -5330,6 +5660,126 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "quarterly_backups_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      raw_material_usage: {
+        Row: {
+          batch_id: string
+          business_id: string
+          created_at: string
+          expiry_date: string | null
+          id: string
+          lot_number: string | null
+          material_id: string
+          quantity_used: number
+          recorded_by: string | null
+        }
+        Insert: {
+          batch_id: string
+          business_id: string
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          lot_number?: string | null
+          material_id: string
+          quantity_used: number
+          recorded_by?: string | null
+        }
+        Update: {
+          batch_id?: string
+          business_id?: string
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          lot_number?: string | null
+          material_id?: string
+          quantity_used?: number
+          recorded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raw_material_usage_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "production_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raw_material_usage_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raw_material_usage_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "raw_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      raw_materials: {
+        Row: {
+          business_id: string
+          category: string | null
+          created_at: string
+          current_stock: number | null
+          id: string
+          is_active: boolean | null
+          material_code: string | null
+          material_name: string
+          min_stock: number | null
+          storage_location: string | null
+          storage_temp_max: number | null
+          storage_temp_min: number | null
+          supplier: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          category?: string | null
+          created_at?: string
+          current_stock?: number | null
+          id?: string
+          is_active?: boolean | null
+          material_code?: string | null
+          material_name: string
+          min_stock?: number | null
+          storage_location?: string | null
+          storage_temp_max?: number | null
+          storage_temp_min?: number | null
+          supplier?: string | null
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          category?: string | null
+          created_at?: string
+          current_stock?: number | null
+          id?: string
+          is_active?: boolean | null
+          material_code?: string | null
+          material_name?: string
+          min_stock?: number | null
+          storage_location?: string | null
+          storage_temp_max?: number | null
+          storage_temp_min?: number | null
+          supplier?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raw_materials_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
