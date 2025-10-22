@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FileText, Plus, Search, Eye, Edit, Trash2 } from 'lucide-react';
 import { useRealData } from '@/hooks/useRealData';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InvoiceManagementProps {
   businessId: string;
@@ -14,6 +16,7 @@ interface InvoiceManagementProps {
 export const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ businessId }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const { toast } = useToast();
 
   const { data: invoices } = useRealData<any>({
     queryKey: ['invoices', businessId],
@@ -28,6 +31,50 @@ export const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ businessId
     const matchesStatus = filterStatus === 'all' || invoice.status === filterStatus;
     return matchesSearch && matchesStatus;
   }) || [];
+
+  const handleCreateInvoice = async () => {
+    try {
+      // Get next sequential number
+      const { data: seqData, error: seqError } = await supabase
+        .rpc('get_next_sequential_number', {
+          table_name_param: 'invoices',
+          business_id_param: businessId
+        });
+
+      if (seqError) throw seqError;
+
+      const nextNumber = seqData || 1;
+      const invoiceNumber = `INV-${new Date().getFullYear()}-${String(nextNumber).padStart(6, '0')}`;
+
+      // Insert new invoice
+      const { error: insertError } = await supabase
+        .from('invoices')
+        .insert({
+          business_id: businessId,
+          sequential_number: nextNumber,
+          invoice_number: invoiceNumber,
+          invoice_date: new Date().toISOString().split('T')[0],
+          customer_name: 'לקוח חדש',
+          subtotal: 0,
+          total_amount: 0,
+          status: 'pending'
+        });
+
+      if (insertError) throw insertError;
+
+      toast({
+        title: 'חשבונית נוצרה',
+        description: `חשבונית ${invoiceNumber} נוצרה בהצלחה`,
+      });
+    } catch (error: any) {
+      console.error('Error creating invoice:', error);
+      toast({
+        title: 'שגיאה',
+        description: error.message || 'לא ניתן ליצור חשבונית',
+        variant: 'destructive'
+      });
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -52,7 +99,7 @@ export const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ businessId
           <h2 className="text-2xl font-bold text-gray-900">ניהול חשבוניות</h2>
           <p className="text-gray-600">ניהול חשבוניות בהתאם לתקנות רשות המיסים</p>
         </div>
-        <Button className="flex items-center gap-2 flex-row-reverse">
+        <Button onClick={handleCreateInvoice} className="flex items-center gap-2 flex-row-reverse">
           <Plus className="h-4 w-4" />
           חשבונית חדשה
         </Button>
@@ -117,7 +164,7 @@ export const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ businessId
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">אין חשבוניות</h3>
               <p className="text-gray-600 mb-4">טרם נוצרו חשבוניות במערכת</p>
-              <Button className="flex items-center gap-2 flex-row-reverse">
+              <Button onClick={handleCreateInvoice} className="flex items-center gap-2 flex-row-reverse">
                 <Plus className="h-4 w-4" />
                 צור חשבונית ראשונה
               </Button>
