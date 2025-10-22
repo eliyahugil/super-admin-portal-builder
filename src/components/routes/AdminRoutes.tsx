@@ -1,6 +1,6 @@
 
 import React, { Suspense, lazy } from 'react';
-import { Route } from 'react-router-dom';
+import { Route, Navigate } from 'react-router-dom';
 import { SuperAdminRoute } from '@/components/SuperAdminRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 
@@ -151,5 +151,10 @@ export const AdminRoutes = () => [
         </AppLayout>
       </SuperAdminRoute>
     }
+  />,
+  <Route
+    key="admin-fallback"
+    path="/admin/*"
+    element={<Navigate to="/admin" replace />}
   />
 ];

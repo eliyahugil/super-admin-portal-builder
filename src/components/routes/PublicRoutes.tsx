@@ -20,6 +20,7 @@ export const PublicRoutes = () => (
       element={<SignDocumentPage />} 
     />
     <Route path="/auth" element={<AuthForm />} />
+    <Route path="/auth/login" element={<AuthForm />} />
     <Route 
       path="/employee-login" 
       element={
