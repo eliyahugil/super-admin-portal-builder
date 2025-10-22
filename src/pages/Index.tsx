@@ -12,7 +12,10 @@ const Index = () => {
   const { user, loading, profile } = useAuth();
   const { isSuperAdmin } = useBusiness();
 
+  console.log('📄 Index page rendering:', { user: !!user, loading, profile: !!profile });
+
   useEffect(() => {
+    console.log('📄 Index useEffect:', { user: !!user, loading, profile: !!profile, role: profile?.role });
     if (!loading && user && profile) {
       if (profile.role === 'super_admin') {
         navigate('/admin', { replace: true });
