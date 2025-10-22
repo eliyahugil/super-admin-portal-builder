@@ -45,7 +45,7 @@ export const useBusinessCreation = () => {
             selectedModules: finalModules
           },
           adminData: {
-            email: formData.admin_email,
+            email: formData.contact_email,  // משתמש באימייל העסק למנהל
             full_name: formData.admin_full_name
           },
           subscriptionData: useSubscriptionPlan ? {

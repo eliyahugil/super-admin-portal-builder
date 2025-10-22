@@ -75,18 +75,21 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
             </div>
             
             <div>
-              <Label htmlFor="adminEmail" className="flex items-center gap-2">
+              <Label htmlFor="contactEmail" className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
-                כתובת מייל *
+                כתובת מייל העסק *
               </Label>
               <Input
-                id="adminEmail"
+                id="contactEmail"
                 type="email"
-                value={formData.admin_email}
-                onChange={(e) => onInputChange('admin_email', e.target.value)}
-                placeholder="admin@company.com"
+                value={formData.contact_email}
+                onChange={(e) => onInputChange('contact_email', e.target.value)}
+                placeholder="info@company.com"
                 required
               />
+              <p className="text-xs text-gray-500 mt-1">
+                המייל ישמש גם להתחברות המנהל הראשי
+              </p>
             </div>
           </CardContent>
         </Card>

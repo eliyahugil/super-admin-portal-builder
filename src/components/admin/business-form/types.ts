@@ -1,7 +1,7 @@
 
 export interface BusinessFormData {
   name: string;
-  admin_email: string;
+  contact_email: string;  // אימייל העסק ישמש גם כאימייל המנהל
   contact_phone: string;
   address: string;
   description: string;

@@ -82,6 +82,7 @@ serve(async (req) => {
       .insert({
         name: businessData.name,
         contact_phone: businessData.contact_phone || null,
+        contact_email: adminData.email, // אימייל העסק זהה לאימייל המנהל
         address: businessData.address || null,
         description: businessData.description || null,
         admin_email: adminData.email,

@@ -15,7 +15,7 @@ import { useBusinessCreation } from './business-form/useBusinessCreation';
 export const NewBusinessForm: React.FC = () => {
   const [formData, setFormData] = useState<BusinessFormData>({
     name: '',
-    admin_email: '',
+    contact_email: '',
     contact_phone: '',
     address: '',
     description: '',
@@ -79,7 +79,7 @@ export const NewBusinessForm: React.FC = () => {
       // Reset form
       setFormData({
         name: '',
-        admin_email: '',
+        contact_email: '',
         contact_phone: '',
         address: '',
         description: '',
