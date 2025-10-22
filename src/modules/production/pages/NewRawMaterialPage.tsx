@@ -8,13 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { ArrowRight, Leaf } from 'lucide-react';
 
 export const NewRawMaterialPage: React.FC = () => {
   const navigate = useNavigate();
   const { businessId } = useCurrentBusiness();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -43,11 +44,12 @@ export const NewRawMaterialPage: React.FC = () => {
 
       if (error) throw error;
 
-      toast.success('חומר גלם נוסף בהצלחה');
+      toast({ title: 'חומר גלם נוסף בהצלחה' });
       queryClient.invalidateQueries({ queryKey: ['raw-materials'] });
       navigate('/production/materials');
     } catch (error: any) {
-      toast.error('שגיאה בהוספת חומר גלם: ' + error.message);
+      console.error('❌ Error creating raw material:', error);
+      toast({ title: 'שגיאה בהוספת חומר גלם', description: error.message, variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }

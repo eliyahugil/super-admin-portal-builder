@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from 'sonner';
 import { AuthProvider } from '@/components/auth/AuthContext';
 import { AuthErrorHandler } from '@/components/auth/AuthErrorHandler';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -63,6 +64,7 @@ function App() {
           <AuthErrorHandler>
             <Router>
               <Toaster />
+              <SonnerToaster richColors closeButton dir="rtl" position="top-center" />
               <Routes>
                 {PublicRoutes()}
                 {MainRoutes()}
