@@ -78,6 +78,7 @@ export const createBusinessMenuItems = (business: { id: string } | undefined): M
 
 export const createSystemMenuItems = (business: { id: string } | undefined): MenuItem[] => {
   const moduleRoutes = getModuleRoutes(business?.id);
+  const accountingBase = business?.id ? `/business/${business.id}/modules/accounting` : '/modules/accounting';
   
   return [
     { 
@@ -90,7 +91,7 @@ export const createSystemMenuItems = (business: { id: string } | undefined): Men
         { path: moduleRoutes.integrations.googleMaps, label: 'Google Maps', icon: Plug, moduleKey: 'integrations' },
         { path: moduleRoutes.integrations.whatsapp, label: 'WhatsApp', icon: Plug, moduleKey: 'integrations' },
         { path: moduleRoutes.integrations.facebook, label: 'Facebook', icon: Plug, moduleKey: 'integrations' },
-        { path: moduleRoutes.integrations.invoices, label: 'חשבוניות', icon: Plug, moduleKey: 'integrations' },
+        { path: `${accountingBase}?tab=invoices`, label: 'חשבוניות', icon: Plug, moduleKey: 'integrations' },
         
         { path: moduleRoutes.integrations.payments, label: 'תשלומים', icon: Plug, moduleKey: 'integrations' },
       ]

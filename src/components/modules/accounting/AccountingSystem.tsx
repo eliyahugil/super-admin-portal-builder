@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,9 @@ import { SystemSettings } from './SystemSettings';
 
 export const AccountingSystem: React.FC = () => {
   const { businessId } = useCurrentBusiness();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'overview';
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   console.log('💼 AccountingSystem - Business state:', { businessId });
 
@@ -145,7 +148,7 @@ export const AccountingSystem: React.FC = () => {
         </Card>
 
         {/* תפריט ראשי */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); setSearchParams({ tab: val }); }} className="w-full">
           <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-6" dir="rtl">
             <TabsTrigger value="overview" className="flex items-center gap-1 flex-row-reverse">
               <Database className="h-4 w-4" />

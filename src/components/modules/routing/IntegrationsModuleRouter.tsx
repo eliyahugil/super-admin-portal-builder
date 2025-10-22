@@ -4,6 +4,7 @@ import { IntegrationManagement } from '../integrations/IntegrationManagement';
 import { WhatsAppDashboard } from '@/components/whatsapp/WhatsAppDashboard';
 import { useBusinessId } from '@/hooks/useBusinessId';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
+import { Navigate } from 'react-router-dom';
 
 interface Props {
   route: string;
@@ -25,10 +26,14 @@ export const IntegrationsModuleRouter: React.FC<Props> = ({ route }) => {
       return <WhatsAppDashboard businessId={businessId} businessName={businessName || "העסק שלי"} />;
     case 'facebook':
       return <div className="p-6 text-center">רכיב Facebook בפיתוח</div>;
-    case 'invoices':
-      return <div className="p-6 text-center">רכיב חשבוניות בפיתוח</div>;
-    case 'payments':
-      return <div className="p-6 text-center">רכיב תשלומים בפיתוח</div>;
+    case 'invoices': {
+      const target = `/modules/accounting?tab=invoices`;
+      return <Navigate to={target} replace />;
+    }
+    case 'payments': {
+      const target = `/modules/accounting?tab=receipts`;
+      return <Navigate to={target} replace />;
+    }
     default:
       return null;
   }

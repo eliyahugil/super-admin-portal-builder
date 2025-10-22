@@ -24,6 +24,7 @@ import { MenuItem } from "./MainSidebarTypes";
 
 export const buildMainSidebarMenuItems = (isSuperAdmin: boolean, business?: { id: string; name: string }) => {
   const moduleRoutes = getModuleRoutes(business?.id);
+  const accountingBase = business?.id ? `/business/${business.id}/modules/accounting` : '/modules/accounting';
 
   const coreMenuItems: MenuItem[] = [
     { 
@@ -87,7 +88,7 @@ export const buildMainSidebarMenuItems = (isSuperAdmin: boolean, business?: { id
         { path: moduleRoutes.integrations.googleMaps, label: 'Google Maps', icon: Plug },
         { path: moduleRoutes.integrations.whatsapp, label: 'WhatsApp', icon: Plug },
         { path: moduleRoutes.integrations.facebook, label: 'Facebook', icon: Plug },
-        { path: moduleRoutes.integrations.invoices, label: 'חשבוניות', icon: Plug },
+        { path: `${accountingBase}?tab=invoices`, label: 'חשבוניות', icon: Plug },
         
         { path: moduleRoutes.integrations.payments, label: 'תשלומים', icon: Plug },
       ]
