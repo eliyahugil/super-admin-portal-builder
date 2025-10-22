@@ -69,171 +69,84 @@ export const CreateBusinessForm: React.FC = () => {
     setError(null);
 
     try {
-      console.log('🚀 Starting business creation process...');
+      console.log('🚀 Starting business creation via Edge Function...');
       
-      // Step 1: Create the business first
-      console.log('📝 Creating business with data:', {
-        name: formData.name,
-        admin_email: formData.admin_email,
-        address: formData.address
-      });
+      if (!createUser) {
+        // If not creating user, just create business directly
+        const { data: business, error: businessError } = await supabase
+          .from('businesses')
+          .insert({
+            name: formData.name,
+            admin_email: formData.admin_email,
+            contact_email: formData.admin_email,
+            contact_phone: formData.contact_phone,
+            address: formData.address,
+            description: formData.description,
+            is_active: true
+          })
+          .select()
+          .single();
 
-      const { data: business, error: businessError } = await supabase
-        .from('businesses')
-        .insert({
-          name: formData.name,
-          admin_email: formData.admin_email,
-          contact_email: formData.admin_email,
-          contact_phone: formData.contact_phone,
-          address: formData.address,
-          description: formData.description,
-          is_active: true
-        })
-        .select()
-        .single();
-
-      if (businessError) {
-        console.error('❌ Error creating business:', businessError);
-        throw new Error(`שגיאה ביצירת העסק: ${businessError.message}`);
-      }
-
-      console.log('✅ Business created successfully:', business.name);
-
-      let userCreationResult = null;
-      
-      if (createUser) {
-        console.log('👤 Creating admin user via Edge Function...');
-        
-        try {
-          // Use the edge function to create the admin user
-          const { data: edgeData, error: edgeError } = await supabase.functions.invoke('create-business-admin', {
-            body: {
-              businessData: {
-                name: formData.name,
-                contact_phone: formData.contact_phone,
-                address: formData.address,
-                description: formData.description,
-                selectedModules: ['shift_management', 'employee_documents', 'employee_notes']
-              },
-              adminData: {
-                email: formData.admin_email,
-                full_name: formData.admin_full_name
-              }
-            }
-          });
-
-          if (edgeError) {
-            console.error('⚠️ Edge function error:', edgeError);
-            throw new Error(`שגיאה ביצירת המנהל דרך Edge Function: ${edgeError.message}`);
-          }
-
-          if (edgeData && !edgeData.success) {
-            console.error('⚠️ Edge function returned error:', edgeData.error);
-            throw new Error(`שגיאה ביצירת המנהל: ${edgeData.error}`);
-          }
-
-          console.log('✅ Admin user created successfully via edge function');
-          userCreationResult = { success: true, email: formData.admin_email };
-          
-        } catch (edgeError) {
-          console.warn('⚠️ Edge function failed, trying direct approach...', edgeError);
-          
-          // Fallback: try creating user directly with Supabase admin API
-          try {
-            const tempPassword = '123456';
-            console.log('🔄 Attempting direct user creation with admin API...');
-            
-            const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-              email: formData.admin_email,
-              password: tempPassword,
-              email_confirm: true,
-              user_metadata: {
-                full_name: formData.admin_full_name,
-                business_id: business.id,
-                role: 'business_admin'
-              }
-            });
-
-            if (authError) {
-              console.error('❌ Direct auth creation failed:', authError);
-              throw new Error(`שגיאה ביצירת המשתמש: ${authError.message}`);
-            }
-
-            console.log('✅ Direct user creation succeeded:', authData.user?.email);
-
-            // Update business with owner
-            const { error: updateError } = await supabase
-              .from('businesses')
-              .update({ owner_id: authData.user?.id })
-              .eq('id', business.id);
-
-            if (updateError) {
-              console.error('⚠️ Error updating business owner:', updateError);
-              // Don't fail the entire process for this
-            }
-
-            userCreationResult = { success: true, email: formData.admin_email, password: tempPassword };
-            
-          } catch (directError) {
-            console.error('❌ Direct user creation also failed:', directError);
-            
-            // Show warning but don't fail the entire process
-            toast({
-              title: 'אזהרה',
-              description: `העסק נוצר בהצלחה אך לא ניתן ליצור משתמש למנהל. שגיאה: ${directError instanceof Error ? directError.message : 'שגיאה לא ידועה'}`,
-              variant: 'destructive',
-            });
-          }
+        if (businessError) {
+          throw new Error(`שגיאה ביצירת העסק: ${businessError.message}`);
         }
-      }
 
-      // Create default business module configurations
-      const defaultModules = [
-        'shift_management',
-        'employee_documents', 
-        'employee_notes',
-        'salary_management',
-        'employee_contacts',
-        'branch_management',
-        'employee_attendance'
-      ];
-
-      const { error: modulesError } = await supabase
-        .from('business_module_config')
-        .insert(
-          defaultModules.map(module_key => ({
-            business_id: business.id,
-            module_key,
-            is_enabled: true,
-            enabled_at: new Date().toISOString()
-          }))
-        );
-
-      if (modulesError) {
-        console.error('⚠️ Error creating default modules:', modulesError);
-        // Don't fail the entire process for module configuration errors
-      }
-
-      // Show success message
-      if (createUser && userCreationResult?.success) {
-        toast({
-          title: 'הצלחה! 🎉',
-          description: `העסק "${business.name}" נוצר והמשתמש נוצר בהצלחה`,
-        });
-        
-        if (userCreationResult.password) {
-          toast({
-            title: 'פרטי כניסה ראשוניים',
-            description: `המייל: ${formData.admin_email}\nהסיסמה הראשונית: ${userCreationResult.password}`,
-            variant: 'default',
-          });
-        }
-      } else {
         toast({
           title: 'הצלחה!',
           description: `העסק "${business.name}" נוצר בהצלחה`,
         });
+        navigate('/admin');
+        return;
       }
+
+      // Use Edge Function to create both business and admin user
+      const { data, error } = await supabase.functions.invoke('create-business-admin', {
+        body: {
+          businessData: {
+            name: formData.name,
+            contact_phone: formData.contact_phone,
+            address: formData.address,
+            description: formData.description,
+            selectedModules: [
+              'shift_management',
+              'employee_documents',
+              'employee_notes',
+              'salary_management',
+              'employee_contacts',
+              'branch_management',
+              'employee_attendance'
+            ]
+          },
+          adminData: {
+            email: formData.admin_email,
+            full_name: formData.admin_full_name
+          },
+          subscriptionData: null
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error from Edge Function:', error);
+        throw new Error(error.message || 'שגיאה ביצירת העסק והמנהל');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'שגיאה ביצירת העסק והמנהל');
+      }
+
+      console.log('✅ Business and admin created successfully:', data);
+
+      // Show success messages
+      toast({
+        title: 'הצלחה! 🎉',
+        description: `העסק "${data.business.name}" והמנהל נוצרו בהצלחה`,
+      });
+      
+      toast({
+        title: 'פרטי כניסה למנהל העסק',
+        description: `המייל: ${data.admin.email}\nהסיסמה הראשונית: 123456\n\nיש להחליף את הסיסמה בהתחברות הראשונה`,
+        variant: 'default',
+      });
 
       // Navigate back to admin dashboard
       navigate('/admin');
