@@ -26,12 +26,19 @@ import FridgeDetailPage from '@/modules/fridges/pages/FridgeDetailPage';
 import FridgeFormPage from '@/modules/fridges/pages/FridgeFormPage';
 import { ProductionDashboard } from '@/modules/production/pages/ProductionDashboard';
 import { ProductsPage } from '@/modules/production/pages/ProductsPage';
+import { NewProductPage } from '@/modules/production/pages/NewProductPage';
 import { ProductionBatchesPage } from '@/modules/production/pages/ProductionBatchesPage';
+import { NewProductionBatchPage } from '@/modules/production/pages/NewProductionBatchPage';
 import { RawReceiptsPage } from '@/modules/production/pages/RawReceiptsPage';
+import { NewRawReceiptPage } from '@/modules/production/pages/NewRawReceiptPage';
 import { RawMaterialsPage } from '@/modules/production/pages/RawMaterialsPage';
+import { NewRawMaterialPage } from '@/modules/production/pages/NewRawMaterialPage';
 import { QualityChecksPage } from '@/modules/production/pages/QualityChecksPage';
+import { NewQualityCheckPage } from '@/modules/production/pages/NewQualityCheckPage';
 import { CleaningLogsPage } from '@/modules/production/pages/CleaningLogsPage';
+import { NewCleaningLogPage } from '@/modules/production/pages/NewCleaningLogPage';
 import { EquipmentPage } from '@/modules/production/pages/EquipmentPage';
+import { NewEquipmentPage } from '@/modules/production/pages/NewEquipmentPage';
 
 export const ModuleRoutes = () => (
   <>
@@ -77,10 +84,26 @@ export const ModuleRoutes = () => (
       </ProtectedRoute>
     } />
     
+    <Route path="/production/products/new" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <NewProductPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
     <Route path="/production/batches" element={
       <ProtectedRoute>
         <AppLayout>
           <ProductionBatchesPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/production/batches/new" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <NewProductionBatchPage />
         </AppLayout>
       </ProtectedRoute>
     } />
@@ -93,10 +116,26 @@ export const ModuleRoutes = () => (
       </ProtectedRoute>
     } />
     
+    <Route path="/production/raw-receipts/new" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <NewRawReceiptPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
     <Route path="/production/materials" element={
       <ProtectedRoute>
         <AppLayout>
           <RawMaterialsPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/production/materials/new" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <NewRawMaterialPage />
         </AppLayout>
       </ProtectedRoute>
     } />
@@ -109,6 +148,14 @@ export const ModuleRoutes = () => (
       </ProtectedRoute>
     } />
     
+    <Route path="/production/quality/new" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <NewQualityCheckPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
     <Route path="/production/cleaning" element={
       <ProtectedRoute>
         <AppLayout>
@@ -117,10 +164,26 @@ export const ModuleRoutes = () => (
       </ProtectedRoute>
     } />
     
+    <Route path="/production/cleaning/new" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <NewCleaningLogPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
     <Route path="/production/equipment" element={
       <ProtectedRoute>
         <AppLayout>
           <EquipmentPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/production/equipment/new" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <NewEquipmentPage />
         </AppLayout>
       </ProtectedRoute>
     } />
