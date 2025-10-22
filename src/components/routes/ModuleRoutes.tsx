@@ -21,9 +21,37 @@ import EmployeeImportPage from '@/pages/business/employees/EmployeeImportPage';
 import EmployeeDuplicateManagerPage from '@/pages/business/employees/EmployeeDuplicateManagerPage';
 import EmployeeTokenPage from '@/pages/business/employees/EmployeeTokenPage';
 import { ShiftSchedule } from '@/components/modules/shifts/ShiftSchedule';
+import FridgesPage from '@/modules/fridges/pages/FridgesPage';
+import FridgeDetailPage from '@/modules/fridges/pages/FridgeDetailPage';
+import FridgeFormPage from '@/modules/fridges/pages/FridgeFormPage';
 
 export const ModuleRoutes = () => (
   <>
+    {/* מקררים ומקפיאים */}
+    <Route path="/fridges" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <FridgesPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/fridges/new" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <FridgeFormPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/fridges/:id" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <FridgeDetailPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
     {/* דפי עובדים עם AppLayout */}
     <Route path="/modules/employees" element={
       <ProtectedRoute>
