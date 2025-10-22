@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { ArrowRight, Package2 } from 'lucide-react';
@@ -19,11 +18,10 @@ export const NewProductPage: React.FC = () => {
 
   const [formData, setFormData] = useState({
     name: '',
+    product_code: '',
     product_type: '',
-    description: '',
+    default_unit: '',
     shelf_life_days: '',
-    storage_temp_min: '',
-    storage_temp_max: '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,11 +35,10 @@ export const NewProductPage: React.FC = () => {
       const { error } = await supabase.from('products').insert({
         business_id: businessId,
         name: formData.name,
+        product_code: formData.product_code || null,
         product_type: formData.product_type,
-        description: formData.description || null,
-        shelf_life_days: formData.shelf_life_days ? Number(formData.shelf_life_days) : null,
-        storage_temp_min: formData.storage_temp_min ? Number(formData.storage_temp_min) : null,
-        storage_temp_max: formData.storage_temp_max ? Number(formData.storage_temp_max) : null,
+        default_unit: formData.default_unit,
+        shelf_life_days: Number(formData.shelf_life_days),
       });
 
       if (error) throw error;
@@ -50,6 +47,7 @@ export const NewProductPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       navigate('/production/products');
     } catch (error: any) {
+      console.error('❌ Error creating product:', error);
       toast.error('שגיאה בהוספת מוצר: ' + error.message);
     } finally {
       setIsSubmitting(false);
@@ -84,6 +82,16 @@ export const NewProductPage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="product_code">קוד מוצר</Label>
+              <Input
+                id="product_code"
+                value={formData.product_code}
+                onChange={(e) => setFormData({ ...formData, product_code: e.target.value })}
+                placeholder="לדוגמה: P-001"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="product_type">סוג מוצר *</Label>
               <Select
                 value={formData.product_type}
@@ -105,48 +113,37 @@ export const NewProductPage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">תיאור</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="תיאור המוצר והערות"
-                rows={3}
-              />
+              <Label htmlFor="default_unit">יחידת מידה *</Label>
+              <Select
+                value={formData.default_unit}
+                onValueChange={(value) => setFormData({ ...formData, default_unit: value })}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר יחידת מידה" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="kg">ק״ג</SelectItem>
+                  <SelectItem value="liter">ליטר</SelectItem>
+                  <SelectItem value="unit">יחידות</SelectItem>
+                  <SelectItem value="gram">גרם</SelectItem>
+                  <SelectItem value="ml">מ״ל</SelectItem>
+                  <SelectItem value="box">קרטון</SelectItem>
+                  <SelectItem value="package">אריזה</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="shelf_life_days">חיי מדף (ימים)</Label>
+              <Label htmlFor="shelf_life_days">חיי מדף (ימים) *</Label>
               <Input
                 id="shelf_life_days"
                 type="number"
                 value={formData.shelf_life_days}
                 onChange={(e) => setFormData({ ...formData, shelf_life_days: e.target.value })}
                 placeholder="מספר ימים"
+                required
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="storage_temp_min">טמפ׳ אחסון מינימום (°C)</Label>
-                <Input
-                  id="storage_temp_min"
-                  type="number"
-                  value={formData.storage_temp_min}
-                  onChange={(e) => setFormData({ ...formData, storage_temp_min: e.target.value })}
-                  placeholder="-5"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="storage_temp_max">טמפ׳ אחסון מקסימום (°C)</Label>
-                <Input
-                  id="storage_temp_max"
-                  type="number"
-                  value={formData.storage_temp_max}
-                  onChange={(e) => setFormData({ ...formData, storage_temp_max: e.target.value })}
-                  placeholder="5"
-                />
-              </div>
             </div>
 
             <div className="flex gap-3 pt-4">
