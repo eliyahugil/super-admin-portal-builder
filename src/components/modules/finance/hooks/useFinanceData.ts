@@ -52,38 +52,23 @@ export const useFinanceData = (selectedBusinessId?: string | null) => {
         throw new Error('Business ID required');
       }
 
-      // For demo purposes, return mock data
-      // In real implementation, this would query a financial_transactions table
-      console.log('💰 Returning mock financial data for business:', targetBusinessId);
+      // Query real data from financial_transactions table
+      console.log('💰 Fetching financial transactions for business:', targetBusinessId);
       
-      const mockTransactions: FinancialTransaction[] = [
-        {
-          id: '1',
-          business_id: targetBusinessId,
-          transaction_type: 'income',
-          amount: 5000,
-          currency: 'ILS',
-          description: 'תשלום מלקוח',
-          category: 'מכירות',
-          transaction_date: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          created_by: profile.id
-        },
-        {
-          id: '2',
-          business_id: targetBusinessId,
-          transaction_type: 'expense',
-          amount: 1200,
-          currency: 'ILS',
-          description: 'משכורות עובדים',
-          category: 'שכר',
-          transaction_date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          created_by: profile.id
-        }
-      ];
+      const { data, error } = await supabase
+        .from('financial_transactions')
+        .select('*')
+        .eq('business_id', targetBusinessId)
+        .eq('is_active', true)
+        .order('transaction_date', { ascending: false });
 
-      return mockTransactions;
+      if (error) {
+        console.error('❌ Error fetching financial transactions:', error);
+        throw error;
+      }
+
+      console.log('✅ Fetched financial transactions:', data?.length || 0);
+      return (data || []) as FinancialTransaction[];
     },
     // CRITICAL FIX: Only enable query when we have a target business ID
     enabled: !!profile && !!targetBusinessId,

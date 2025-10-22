@@ -21,7 +21,7 @@ export type Database = {
           additional_info: Json | null
           business_id: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_values: Json | null
           old_values: Json | null
           record_id: string | null
@@ -38,7 +38,7 @@ export type Database = {
           additional_info?: Json | null
           business_id: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           record_id?: string | null
@@ -55,7 +55,7 @@ export type Database = {
           additional_info?: Json | null
           business_id?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           record_id?: string | null
@@ -1739,7 +1739,7 @@ export type Database = {
           employee_id: string
           expires_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           is_active: boolean
           last_used_at: string | null
           session_token: string
@@ -1751,7 +1751,7 @@ export type Database = {
           employee_id: string
           expires_at: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_used_at?: string | null
           session_token: string
@@ -1763,7 +1763,7 @@ export type Database = {
           employee_id?: string
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_used_at?: string | null
           session_token?: string
@@ -3629,6 +3629,59 @@ export type Database = {
             columns: ["file_id"]
             isOneToOne: false
             referencedRelation: "employee_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          business_id: string
+          category: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string
+          id: string
+          is_active: boolean
+          transaction_date: string
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          business_id: string
+          category: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description: string
+          id?: string
+          is_active?: boolean
+          transaction_date?: string
+          transaction_type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          business_id?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -5527,6 +5580,125 @@ export type Database = {
           },
         ]
       }
+      project_tasks: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string
+          project_id: string
+          status: string
+          task_name: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          project_id: string
+          status?: string
+          task_name: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          project_id?: string
+          status?: string
+          task_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          actual_cost: number | null
+          budget: number | null
+          business_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean
+          progress_percentage: number | null
+          project_name: string
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          budget?: number | null
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          progress_percentage?: number | null
+          project_name: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          budget?: number | null
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          progress_percentage?: number | null
+          project_name?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_shift_submissions: {
         Row: {
           email: string | null
@@ -6276,7 +6448,7 @@ export type Database = {
           action: string
           details: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           resource_id: string | null
           resource_type: string
           timestamp: string
@@ -6287,7 +6459,7 @@ export type Database = {
           action: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type: string
           timestamp?: string
@@ -6298,7 +6470,7 @@ export type Database = {
           action?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type?: string
           timestamp?: string
@@ -7537,14 +7709,8 @@ export type Database = {
         Args: { table_name: string; where_clause: string }
         Returns: undefined
       }
-      drop_custom_table: {
-        Args: { table_name: string }
-        Returns: boolean
-      }
-      generate_business_registration_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      drop_custom_table: { Args: { table_name: string }; Returns: boolean }
+      generate_business_registration_code: { Args: never; Returns: string }
       generate_employee_permanent_token: {
         Args: { p_employee_id: string }
         Returns: string
@@ -7557,14 +7723,8 @@ export type Database = {
         }
         Returns: string
       }
-      generate_module_route: {
-        Args: { module_name: string }
-        Returns: string
-      }
-      generate_table_name: {
-        Args: { module_name: string }
-        Returns: string
-      }
+      generate_module_route: { Args: { module_name: string }; Returns: string }
+      generate_table_name: { Args: { module_name: string }; Returns: string }
       get_business_branches_for_token: {
         Args: { token_value: string }
         Returns: {
@@ -7595,12 +7755,9 @@ export type Database = {
           route_pattern: string
         }[]
       }
-      get_current_business_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_business_id: { Args: never; Returns: string }
       get_current_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
       get_employee_shift_preferences: {
@@ -7632,14 +7789,8 @@ export type Database = {
           title: string
         }[]
       }
-      get_user_business_ids: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
-      get_user_role: {
-        Args: { check_user_id?: string }
-        Returns: string
-      }
+      get_user_business_ids: { Args: never; Returns: string[] }
+      get_user_role: { Args: { check_user_id?: string }; Returns: string }
       increment_registration_code_usage: {
         Args: { code_param: string }
         Returns: undefined
@@ -7648,10 +7799,7 @@ export type Database = {
         Args: { columns_list: string; table_name: string; values_list: string }
         Returns: Json
       }
-      is_super_admin: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
+      is_super_admin: { Args: { user_id: string }; Returns: boolean }
       is_valid_public_token: {
         Args: {
           target_business_id: string

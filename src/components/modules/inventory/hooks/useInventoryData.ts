@@ -38,7 +38,7 @@ export const useInventoryData = (selectedBusinessId?: string | null) => {
   return useQuery({
     queryKey: ['inventory-data', targetBusinessId, profile?.role],
     queryFn: async (): Promise<InventoryItem[]> => {
-      console.log('📊 useInventoryData - Starting query...');
+      console.log('📦 useInventoryData - Starting query...');
       
       if (!profile) {
         console.log('❌ No profile available');
@@ -56,46 +56,40 @@ export const useInventoryData = (selectedBusinessId?: string | null) => {
         throw new Error('Business ID required');
       }
 
-      // For demo purposes, return mock data only for specific demo user
-      // In real implementation, this would query the inventory table
-      console.log('📦 Returning mock inventory data for business:', targetBusinessId);
+      // Query real data from inventory_items table
+      console.log('📦 Fetching inventory items for business:', targetBusinessId);
       
-      const mockInventoryItems: InventoryItem[] = [
-        {
-          id: '1',
-          business_id: targetBusinessId,
-          name: 'מוצר מלאי 1',
-          sku: 'INV001',
-          category: 'אלקטרוניקה',
-          current_stock: 25,
-          min_stock: 10,
-          max_stock: 100,
-          price: 299.99,
-          cost: 150.00,
-          description: 'מוצר דמה למלאי',
-          location: 'מחסן A',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          business_id: targetBusinessId,
-          name: 'מוצר מלאי 2',
-          sku: 'INV002',
-          category: 'ביגוד',
-          current_stock: 5,
-          min_stock: 10,
-          max_stock: 50,
-          price: 89.99,
-          cost: 45.00,
-          description: 'מוצר דמה למלאי - מלאי נמוך',
-          location: 'מחסן B',
-          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          updated_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        }
-      ];
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('id, business_id, item_name, item_code, category, unit_of_measure, cost_price, selling_price, current_quantity, minimum_quantity, created_at, updated_at, created_by, is_active')
+        .eq('business_id', targetBusinessId)
+        .eq('is_active', true)
+        .order('item_name');
 
-      return mockInventoryItems;
+      if (error) {
+        console.error('❌ Error fetching inventory items:', error);
+        throw error;
+      }
+
+      console.log('✅ Fetched inventory items:', data?.length || 0);
+      
+      // Transform data to match InventoryItem interface
+      const inventoryItems: InventoryItem[] = (data || []).map(item => ({
+        id: item.id,
+        business_id: item.business_id,
+        name: item.item_name,
+        sku: item.item_code,
+        category: item.category || 'לא מסווג',
+        current_stock: Number(item.current_quantity) || 0,
+        min_stock: Number(item.minimum_quantity) || 0,
+        price: Number(item.selling_price) || 0,
+        cost: Number(item.cost_price) || 0,
+        location: '', // Not in schema, can be added if needed
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+
+      return inventoryItems;
     },
     // CRITICAL FIX: Only enable query when we have a target business ID
     enabled: !!profile && !!targetBusinessId,
