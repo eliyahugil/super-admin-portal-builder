@@ -16,9 +16,10 @@ interface InvoiceManagementProps {
 export const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ businessId }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [creating, setCreating] = useState(false);
   const { toast } = useToast();
 
-  const { data: invoices } = useRealData<any>({
+  const { data: invoices, refetch } = useRealData<any>({
     queryKey: ['invoices', businessId],
     tableName: 'invoices',
     filters: { business_id: businessId },
@@ -34,6 +35,7 @@ export const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ businessId
 
   const handleCreateInvoice = async () => {
     try {
+      setCreating(true);
       // Get next sequential number
       const { data: seqData, error: seqError } = await supabase
         .rpc('get_next_sequential_number', {
@@ -62,6 +64,8 @@ export const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ businessId
 
       if (insertError) throw insertError;
 
+      await refetch();
+
       toast({
         title: 'חשבונית נוצרה',
         description: `חשבונית ${invoiceNumber} נוצרה בהצלחה`,
@@ -73,7 +77,23 @@ export const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ businessId
         description: error.message || 'לא ניתן ליצור חשבונית',
         variant: 'destructive'
       });
+    } finally {
+      setCreating(false);
     }
+  };
+
+  const handleViewInvoice = (invoice: any) => {
+    toast({ title: 'תצוגה', description: `פתיחת חשבונית ${invoice.invoice_number}` });
+  };
+  const handleEditInvoice = (invoice: any) => {
+    toast({ title: 'בקרוב', description: 'טופס עריכת חשבונית יתווסף בקרוב' });
+  };
+  const handleDeleteInvoice = (invoice: any) => {
+    toast({
+      title: 'מחיקה אינה מותרת',
+      description: 'לפי התקנות לא ניתן למחוק חשבוניות. יש לבצע ביטול/זיכוי (סטורנו).',
+      variant: 'destructive',
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -99,9 +119,9 @@ export const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ businessId
           <h2 className="text-2xl font-bold text-gray-900">ניהול חשבוניות</h2>
           <p className="text-gray-600">ניהול חשבוניות בהתאם לתקנות רשות המיסים</p>
         </div>
-        <Button onClick={handleCreateInvoice} className="flex items-center gap-2 flex-row-reverse">
+        <Button onClick={handleCreateInvoice} disabled={creating} className="flex items-center gap-2 flex-row-reverse">
           <Plus className="h-4 w-4" />
-          חשבונית חדשה
+          {creating ? 'יוצר…' : 'חשבונית חדשה'}
         </Button>
       </div>
 
@@ -206,13 +226,13 @@ export const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ businessId
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-red-600">
+                          <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleDeleteInvoice(invoice)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>

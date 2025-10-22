@@ -27,11 +27,11 @@ export const IntegrationsModuleRouter: React.FC<Props> = ({ route }) => {
     case 'facebook':
       return <div className="p-6 text-center">רכיב Facebook בפיתוח</div>;
     case 'invoices': {
-      const target = `/modules/accounting?tab=invoices`;
+      const target = businessId ? `/business/${businessId}/modules/accounting?tab=invoices` : `/modules/accounting?tab=invoices`;
       return <Navigate to={target} replace />;
     }
     case 'payments': {
-      const target = `/modules/accounting?tab=receipts`;
+      const target = businessId ? `/business/${businessId}/modules/accounting?tab=receipts` : `/modules/accounting?tab=receipts`;
       return <Navigate to={target} replace />;
     }
     default:
