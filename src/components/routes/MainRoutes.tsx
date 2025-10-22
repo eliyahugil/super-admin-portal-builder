@@ -25,6 +25,17 @@ export const MainRoutes = () => (
       </ProtectedRoute>
     } />
     
+    {/* Dashboard redirect - for backward compatibility */}
+    <Route path="/dashboard" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+            <Index />
+          </Suspense>
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
     <Route path="/learn-more" element={
       <ProtectedRoute>
         <AppLayout>

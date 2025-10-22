@@ -12,6 +12,8 @@ const CreateBusinessForm = lazy(() => import('@/components/admin/CreateBusinessF
 const NewBusinessForm = lazy(() => import('@/components/admin/NewBusinessForm').then(m => ({ default: m.NewBusinessForm })));
 const ArchivedBusinessesPage = lazy(() => import('@/pages/ArchivedBusinessesPage'));
 const SystemSettings = lazy(() => import('@/pages/superadmin/SystemSettings'));
+const ModuleManagement = lazy(() => import('@/components/modules/ModuleManagement').then(m => ({ default: m.ModuleManagement })));
+const SystemPreview = lazy(() => import('@/components/admin/SystemPreview').then(m => ({ default: m.SystemPreview })));
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center h-64">
@@ -119,6 +121,32 @@ export const AdminRoutes = () => [
         <AppLayout>
           <Suspense fallback={<LoadingSpinner />}>
             <SystemSettings />
+          </Suspense>
+        </AppLayout>
+      </SuperAdminRoute>
+    }
+  />,
+  <Route
+    key="admin-modules"
+    path="/admin/modules"
+    element={
+      <SuperAdminRoute>
+        <AppLayout>
+          <Suspense fallback={<LoadingSpinner />}>
+            <ModuleManagement />
+          </Suspense>
+        </AppLayout>
+      </SuperAdminRoute>
+    }
+  />,
+  <Route
+    key="admin-system-preview"
+    path="/admin/system-preview"
+    element={
+      <SuperAdminRoute>
+        <AppLayout>
+          <Suspense fallback={<LoadingSpinner />}>
+            <SystemPreview />
           </Suspense>
         </AppLayout>
       </SuperAdminRoute>

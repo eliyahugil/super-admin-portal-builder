@@ -1,17 +1,29 @@
 describe('AllForYou Smoke Tests - מקיף', () => {
   const routes = [
     '/',
+    '/dashboard',
     '/auth',
     '/auth/login',
-    '/dashboard',
+    '/admin',
+    '/admin/businesses',
+    '/admin/modules',
+    '/admin/system-preview',
+    '/admin/system-settings',
+    '/admin/integrations',
     '/production',
+    '/production/products',
     '/production/batches',
-    '/production/raw-materials',
-    '/production/quality-checks',
+    '/production/raw-receipts',
+    '/production/materials',
+    '/production/quality',
+    '/production/cleaning',
+    '/production/equipment',
+    '/fridges',
     '/modules/employees',
     '/modules/employees/requests',
     '/modules/employees/employee-requests',
     '/modules/settings/profile',
+    '/modules/shifts/schedule',
   ];
 
   routes.forEach((path) => {

@@ -75,14 +75,14 @@ export const SuperAdminDashboard: React.FC = () => {
       description: 'נהל משתמשי המערכת והרשאות',
       icon: Users,
       color: 'bg-purple-500',
-      action: () => navigate('/admin/users')
+      action: () => navigate('/admin/businesses') // Fixed: נווט לעסקים במקום users שלא קיים
     },
     {
       title: 'הגדרות מערכת',
       description: 'קבע הגדרות כלליות למערכת',
       icon: Settings,
       color: 'bg-gray-500',
-      action: () => navigate('/admin/system-config')
+      action: () => navigate('/admin/system-settings') // Fixed: נווט להגדרות מערכת תקין
     },
     {
       title: 'אינטגרציות',
@@ -92,11 +92,11 @@ export const SuperAdminDashboard: React.FC = () => {
       action: () => navigate('/admin/integrations')
     },
     {
-      title: 'דוחות ואנליטיקה',
-      description: 'צפה בדוחות שימוש ופעילות',
+      title: 'דוחות ומודולים',
+      description: 'צפה במודולי המערכת',
       icon: BarChart3,
       color: 'bg-indigo-500',
-      action: () => navigate('/admin/analytics')
+      action: () => navigate('/admin/modules') // Fixed: נווט למודולים במקום analytics שלא קיים
     }
   ];
 
