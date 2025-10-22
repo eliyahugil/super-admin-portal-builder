@@ -34,14 +34,17 @@ export const NewQualityCheckPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      const notesWithInspector = formData.notes 
+        ? `${formData.notes}\n\nנבדק על ידי: ${formData.checked_by}`
+        : `נבדק על ידי: ${formData.checked_by}`;
+
       const { error } = await supabase.from('quality_checks').insert({
         business_id: businessId,
         batch_id: formData.batch_id || null,
         check_date: formData.check_date,
         check_type: formData.check_type,
         passed: formData.result === 'passed',
-        notes: formData.notes || null,
-        inspector_id: formData.checked_by,
+        notes: notesWithInspector,
       });
 
       if (error) throw error;
