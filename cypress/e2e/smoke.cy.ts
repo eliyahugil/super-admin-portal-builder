@@ -1,7 +1,13 @@
-describe('Smoke tests - core routes and primary actions', () => {
+describe('AllForYou Smoke Tests - מקיף', () => {
   const routes = [
     '/',
     '/auth',
+    '/auth/login',
+    '/dashboard',
+    '/production',
+    '/production/batches',
+    '/production/raw-materials',
+    '/production/quality-checks',
     '/modules/employees',
     '/modules/employees/requests',
     '/modules/employees/employee-requests',

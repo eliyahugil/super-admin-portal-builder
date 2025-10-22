@@ -30,6 +30,32 @@ function App() {
   // טעינת הגדרות תצוגה בטעינה הראשונה
   useUserDisplaySettings();
   
+  // Runtime guards – לוכד קישורים שבורים ו-unhandled rejections
+  React.useEffect(() => {
+    // לוכד קישורים שבורים/ריקים
+    const handleClick = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement)?.closest?.('a');
+      if (!a) return;
+      const href = a.getAttribute('href');
+      if (!href || href === '#' || href.trim() === '') {
+        console.warn('⚠️ קישור ללא יעד תקין:', a);
+      }
+    };
+    
+    // לוכד reject לא מטופל
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      console.error('❌ Unhandled promise rejection:', event.reason);
+    };
+    
+    document.addEventListener('click', handleClick);
+    window.addEventListener('unhandledrejection', handleRejection);
+    
+    return () => {
+      document.removeEventListener('click', handleClick);
+      window.removeEventListener('unhandledrejection', handleRejection);
+    };
+  }, []);
+  
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>

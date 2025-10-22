@@ -1,0 +1,123 @@
+name: AllForYou QA
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  route-smoke:
+    name: בדיקת נתיבים
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - run: npm ci
+      
+      - run: npx playwright install --with-deps chromium
+      
+      - name: הרצת בדיקת נתיבים
+        run: |
+          AFY_BASE_URL="${{ secrets.AFY_BASE_URL || 'http://localhost:5173' }}" \
+          node qa/route-smoke.js
+        continue-on-error: true
+      
+      - name: העלאת דוחות
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-reports-routes
+          path: qa-report/
+
+  link-crawler:
+    name: סריקת קישורים
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - run: npm ci
+      
+      - run: npx playwright install --with-deps chromium
+      
+      - name: הרצת סורק קישורים
+        run: |
+          AFY_BASE_URL="${{ secrets.AFY_BASE_URL || 'http://localhost:5173' }}" \
+          AFY_EMAIL="${{ secrets.AFY_EMAIL }}" \
+          AFY_PASSWORD="${{ secrets.AFY_PASSWORD }}" \
+          AFY_MAX_PAGES=100 \
+          node qa/link-crawler.js
+        continue-on-error: true
+      
+      - name: העלאת דוחות
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-reports-crawler
+          path: qa-report/
+
+  supabase-smoke:
+    name: בדיקת Supabase
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - run: npm ci
+      
+      - name: הרצת בדיקת Supabase
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: node qa/supabase-smoke.js
+
+  cypress:
+    name: Cypress E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - run: npm ci
+      
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          start: npm run dev
+          wait-on: 'http://localhost:5173'
+          wait-on-timeout: 120
+          record: false
+        continue-on-error: true
+      
+      - name: העלאת screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+          if-no-files-found: ignore
+      
+      - name: העלאת videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-videos
+          path: cypress/videos
+          if-no-files-found: ignore
