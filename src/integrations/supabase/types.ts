@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1282,6 +1282,60 @@ export type Database = {
             columns: ["parent_account_id"]
             isOneToOne: false
             referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      corrective_actions: {
+        Row: {
+          action_taken: string
+          action_time: string
+          alert_id: string | null
+          business_id: string
+          closed: boolean
+          created_at: string
+          fridge_id: string
+          id: string
+          taken_by: string | null
+          verification_note: string | null
+        }
+        Insert: {
+          action_taken: string
+          action_time?: string
+          alert_id?: string | null
+          business_id: string
+          closed?: boolean
+          created_at?: string
+          fridge_id: string
+          id?: string
+          taken_by?: string | null
+          verification_note?: string | null
+        }
+        Update: {
+          action_taken?: string
+          action_time?: string
+          alert_id?: string | null
+          business_id?: string
+          closed?: boolean
+          created_at?: string
+          fridge_id?: string
+          id?: string
+          taken_by?: string | null
+          verification_note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corrective_actions_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "fridge_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_actions_fridge_id_fkey"
+            columns: ["fridge_id"]
+            isOneToOne: false
+            referencedRelation: "fridges"
             referencedColumns: ["id"]
           },
         ]
@@ -3456,6 +3510,155 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fridge_alerts: {
+        Row: {
+          actual_temp: number | null
+          alert_type: string
+          business_id: string
+          details: string | null
+          fridge_id: string
+          id: string
+          occurred_at: string
+          resolved_at: string | null
+          status: string
+          temp_log_id: string | null
+          threshold: string | null
+        }
+        Insert: {
+          actual_temp?: number | null
+          alert_type: string
+          business_id: string
+          details?: string | null
+          fridge_id: string
+          id?: string
+          occurred_at?: string
+          resolved_at?: string | null
+          status?: string
+          temp_log_id?: string | null
+          threshold?: string | null
+        }
+        Update: {
+          actual_temp?: number | null
+          alert_type?: string
+          business_id?: string
+          details?: string | null
+          fridge_id?: string
+          id?: string
+          occurred_at?: string
+          resolved_at?: string | null
+          status?: string
+          temp_log_id?: string | null
+          threshold?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fridge_alerts_fridge_id_fkey"
+            columns: ["fridge_id"]
+            isOneToOne: false
+            referencedRelation: "fridges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fridge_alerts_temp_log_id_fkey"
+            columns: ["temp_log_id"]
+            isOneToOne: false
+            referencedRelation: "fridge_temperature_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fridge_temperature_logs: {
+        Row: {
+          business_id: string
+          created_at: string
+          fridge_id: string
+          id: string
+          measured_at: string
+          measured_by: string | null
+          method: string
+          note: string | null
+          probe_calibrated: boolean | null
+          probe_id: string | null
+          temperature: number
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          fridge_id: string
+          id?: string
+          measured_at?: string
+          measured_by?: string | null
+          method?: string
+          note?: string | null
+          probe_calibrated?: boolean | null
+          probe_id?: string | null
+          temperature: number
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          fridge_id?: string
+          id?: string
+          measured_at?: string
+          measured_by?: string | null
+          method?: string
+          note?: string | null
+          probe_calibrated?: boolean | null
+          probe_id?: string | null
+          temperature?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fridge_temperature_logs_fridge_id_fkey"
+            columns: ["fridge_id"]
+            isOneToOne: false
+            referencedRelation: "fridges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fridges: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          location: string | null
+          max_temp: number
+          min_temp: number
+          name: string
+          notes: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          max_temp: number
+          min_temp: number
+          name: string
+          notes?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          max_temp?: number
+          min_temp?: number
+          name?: string
+          notes?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       global_integrations: {
         Row: {
@@ -6631,8 +6834,8 @@ export type Database = {
     Functions: {
       approve_employee_file: {
         Args: {
-          file_id_param: string
           approval_status_param: string
+          file_id_param: string
           rejection_reason_param?: string
         }
         Returns: boolean
@@ -6642,53 +6845,53 @@ export type Database = {
         Returns: boolean
       }
       check_sequential_integrity: {
-        Args: { table_name_param: string; business_id_param: string }
+        Args: { business_id_param: string; table_name_param: string }
         Returns: {
-          missing_numbers: number[]
           duplicate_numbers: number[]
           max_number: number
+          missing_numbers: number[]
           total_records: number
         }[]
       }
       clone_employees_to_business: {
         Args: {
+          created_by_user_id?: string
           from_business_id: string
           to_business_id: string
-          created_by_user_id?: string
         }
         Returns: Json
       }
       create_advanced_notification: {
         Args: {
-          p_business_id: string
-          p_user_id: string
-          p_notification_type: string
-          p_notification_category: string
-          p_title: string
-          p_message: string
-          p_employee_id?: string
-          p_branch_id?: string
-          p_severity?: string
-          p_requires_action?: boolean
           p_action_deadline?: string
+          p_branch_id?: string
+          p_business_id: string
+          p_employee_id?: string
+          p_message: string
           p_metadata?: Json
+          p_notification_category: string
+          p_notification_type: string
+          p_requires_action?: boolean
+          p_severity?: string
+          p_title: string
+          p_user_id: string
         }
         Returns: string
       }
       create_custom_module_table: {
         Args: {
+          fields_config: Json
           module_id_param: string
           table_name_param: string
-          fields_config: Json
         }
         Returns: boolean
       }
       create_quarterly_backup: {
         Args: {
+          backup_location_param: string
           business_id_param: string
           quarter_param: number
           year_param: number
-          backup_location_param: string
         }
         Returns: string
       }
@@ -6711,8 +6914,8 @@ export type Database = {
       generate_employee_weekly_token: {
         Args: {
           p_employee_id: string
-          p_week_start_date: string
           p_week_end_date: string
+          p_week_start_date: string
         }
         Returns: string
       }
@@ -6727,11 +6930,11 @@ export type Database = {
       get_business_branches_for_token: {
         Args: { token_value: string }
         Returns: {
-          id: string
-          name: string
           address: string
+          id: string
           latitude: number
           longitude: number
+          name: string
         }[]
       }
       get_business_by_registration_code: {
@@ -6746,11 +6949,11 @@ export type Database = {
       get_business_modules: {
         Args: { business_id_param: string }
         Returns: {
-          module_key: string
-          is_enabled: boolean
-          module_name: string
           description: string
           icon: string
+          is_enabled: boolean
+          module_key: string
+          module_name: string
           route_pattern: string
         }[]
       }
@@ -6763,11 +6966,11 @@ export type Database = {
         Returns: Database["public"]["Enums"]["user_role"]
       }
       get_employee_shift_preferences: {
-        Args: { employee_id_param: string; branch_id_param?: string }
+        Args: { branch_id_param?: string; employee_id_param: string }
         Returns: {
           available_days: number[]
-          shift_types: string[]
           max_weekly_hours: number
+          shift_types: string[]
         }[]
       }
       get_next_customer_number: {
@@ -6775,20 +6978,20 @@ export type Database = {
         Returns: number
       }
       get_next_sequential_number: {
-        Args: { table_name_param: string; business_id_param: string }
+        Args: { business_id_param: string; table_name_param: string }
         Returns: number
       }
       get_registration_token_info: {
         Args: { token_value: string }
         Returns: {
-          id: string
           business_id: string
-          title: string
-          description: string
-          is_active: boolean
-          expires_at: string
-          max_registrations: number
           current_registrations: number
+          description: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          max_registrations: number
+          title: string
         }[]
       }
       get_user_business_ids: {
@@ -6804,7 +7007,7 @@ export type Database = {
         Returns: undefined
       }
       insert_into_table: {
-        Args: { table_name: string; columns_list: string; values_list: string }
+        Args: { columns_list: string; table_name: string; values_list: string }
         Returns: Json
       }
       is_super_admin: {
@@ -6813,9 +7016,9 @@ export type Database = {
       }
       is_valid_public_token: {
         Args: {
-          token_value: string
           target_business_id: string
           target_date: string
+          token_value: string
         }
         Returns: boolean
       }
@@ -6825,18 +7028,18 @@ export type Database = {
       }
       select_from_table: {
         Args: {
-          table_name: string
           select_clause?: string
+          table_name: string
           where_clause?: string
         }
         Returns: Json
       }
       toggle_token_status: {
-        Args: { token_id_param: string; new_status: boolean }
+        Args: { new_status: boolean; token_id_param: string }
         Returns: undefined
       }
       update_table: {
-        Args: { table_name: string; set_clause: string; where_clause: string }
+        Args: { set_clause: string; table_name: string; where_clause: string }
         Returns: Json
       }
     }
