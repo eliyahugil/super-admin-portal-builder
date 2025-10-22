@@ -14,6 +14,7 @@ import {
   Smartphone
 } from 'lucide-react';
 import { useWhatsAppIntegration } from '@/hooks/useWhatsAppIntegration';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface WhatsAppChatPanelProps {
@@ -127,10 +128,10 @@ export const WhatsAppChatPanel: React.FC<WhatsAppChatPanelProps> = ({
               שירות ההודעות לא מחובר
             </p>
             <Button variant="outline" size="sm" asChild>
-              <a href="/integrations/whatsapp" target="_blank" className="flex items-center gap-2">
+              <Link to="/modules/integrations/whatsapp" className="flex items-center gap-2">
                 <ExternalLink className="h-4 w-4" />
                 חבר שירות הודעות
-              </a>
+              </Link>
             </Button>
           </div>
         </CardContent>
