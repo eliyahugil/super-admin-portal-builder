@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Route } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { SuperAdminRoute } from '@/components/SuperAdminRoute';
@@ -9,6 +9,8 @@ import { CreateBusinessPage } from '@/components/admin/CreateBusinessPage';
 import { AccessRequestsManagerEnhanced } from '@/components/admin/AccessRequestsManagerEnhanced';
 import { BusinessRegistrationCodesManager } from '@/components/admin/BusinessRegistrationCodesManager';
 import { SubscriptionManagement } from '@/components/admin/SubscriptionManagement';
+
+const CreateMissingAdmin = lazy(() => import('@/pages/superadmin/CreateMissingAdmin'));
 
 export const SuperAdminRoutes: React.FC = () => {
   return (
@@ -30,6 +32,19 @@ export const SuperAdminRoutes: React.FC = () => {
           <SuperAdminRoute>
             <AppLayout>
               <AccessRequestsManagerEnhanced />
+            </AppLayout>
+          </SuperAdminRoute>
+        </ProtectedRoute>
+      } />
+
+      {/* Create Missing Admin for existing business */}
+      <Route path="/admin/create-missing-admin" element={
+        <ProtectedRoute>
+          <SuperAdminRoute>
+            <AppLayout>
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                <CreateMissingAdmin />
+              </Suspense>
             </AppLayout>
           </SuperAdminRoute>
         </ProtectedRoute>
