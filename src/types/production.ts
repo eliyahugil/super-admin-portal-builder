@@ -1,3 +1,35 @@
+// Products
+export interface Product {
+  id: string;
+  business_id: string;
+  name: string;
+  product_code?: string;
+  product_type: string;
+  default_unit: string;
+  shelf_life_days: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Raw Material Receipts
+export interface RawMaterialReceipt {
+  id: string;
+  business_id: string;
+  supplier_name: string;
+  material_name: string;
+  lot_code?: string;
+  received_date: string;
+  expiration_date?: string;
+  quantity?: number;
+  unit?: string;
+  documents_url?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Production Batch (Updated)
 export interface ProductionBatch {
   id: string;
   business_id: string;
@@ -14,8 +46,30 @@ export interface ProductionBatch {
   supervisor_id?: string;
   status: 'planned' | 'in_progress' | 'completed' | 'cancelled';
   notes?: string;
+  production_line?: string;
+  employee_in_charge?: string;
+  raw_receipt_id?: string;
+  raw_received_date?: string;
+  raw_expiration_date?: string;
+  sanitation_check: boolean;
+  equipment_cleaned_at?: string;
+  quality_check_passed: boolean;
+  verified_by?: string;
   created_at: string;
   updated_at: string;
+}
+
+// Production Materials
+export interface ProductionMaterial {
+  id: string;
+  business_id: string;
+  batch_id: string;
+  material_name: string;
+  lot_code?: string;
+  quantity?: number;
+  unit?: string;
+  notes?: string;
+  created_at: string;
 }
 
 export interface RawMaterial {

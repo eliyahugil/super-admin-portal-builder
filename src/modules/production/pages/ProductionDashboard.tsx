@@ -18,20 +18,36 @@ export const ProductionDashboard: React.FC = () => {
 
   const modules = [
     {
-      title: 'אצוות ייצור',
-      description: 'ניהול ומעקב אחר אצוות ייצור יומיות',
+      title: 'מוצרים',
+      description: 'ניהול מוצרי הייצור והגדרות',
       icon: Package,
-      path: '/production/batches',
+      path: '/production/products',
       color: 'text-blue-500',
       bgColor: 'bg-blue-50'
     },
     {
-      title: 'חומרי גלם',
+      title: 'אצוות ייצור',
+      description: 'ניהול ומעקב אחר אצוות ייצור יומיות',
+      icon: FileText,
+      path: '/production/batches',
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-50'
+    },
+    {
+      title: 'קבלות חומרי גלם',
+      description: 'מעקב קבלת חומרי גלם ותוקפים',
+      icon: Leaf,
+      path: '/production/raw-receipts',
+      color: 'text-green-500',
+      bgColor: 'bg-green-50'
+    },
+    {
+      title: 'חומרי גלם במלאי',
       description: 'ניהול מלאי וצריכת חומרי גלם',
       icon: Leaf,
       path: '/production/materials',
-      color: 'text-green-500',
-      bgColor: 'bg-green-50'
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-50'
     },
     {
       title: 'בקרת איכות',

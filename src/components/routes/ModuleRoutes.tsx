@@ -25,9 +25,13 @@ import FridgesPage from '@/modules/fridges/pages/FridgesPage';
 import FridgeDetailPage from '@/modules/fridges/pages/FridgeDetailPage';
 import FridgeFormPage from '@/modules/fridges/pages/FridgeFormPage';
 import { ProductionDashboard } from '@/modules/production/pages/ProductionDashboard';
+import { ProductsPage } from '@/modules/production/pages/ProductsPage';
 import { ProductionBatchesPage } from '@/modules/production/pages/ProductionBatchesPage';
+import { RawReceiptsPage } from '@/modules/production/pages/RawReceiptsPage';
 import { RawMaterialsPage } from '@/modules/production/pages/RawMaterialsPage';
 import { QualityChecksPage } from '@/modules/production/pages/QualityChecksPage';
+import { CleaningLogsPage } from '@/modules/production/pages/CleaningLogsPage';
+import { EquipmentPage } from '@/modules/production/pages/EquipmentPage';
 
 export const ModuleRoutes = () => (
   <>
@@ -65,10 +69,26 @@ export const ModuleRoutes = () => (
       </ProtectedRoute>
     } />
     
+    <Route path="/production/products" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <ProductsPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
     <Route path="/production/batches" element={
       <ProtectedRoute>
         <AppLayout>
           <ProductionBatchesPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/production/raw-receipts" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <RawReceiptsPage />
         </AppLayout>
       </ProtectedRoute>
     } />
@@ -85,6 +105,22 @@ export const ModuleRoutes = () => (
       <ProtectedRoute>
         <AppLayout>
           <QualityChecksPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/production/cleaning" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <CleaningLogsPage />
+        </AppLayout>
+      </ProtectedRoute>
+    } />
+    
+    <Route path="/production/equipment" element={
+      <ProtectedRoute>
+        <AppLayout>
+          <EquipmentPage />
         </AppLayout>
       </ProtectedRoute>
     } />
