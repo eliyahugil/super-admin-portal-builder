@@ -68,14 +68,30 @@ export const buildMainSidebarMenuItems = (isSuperAdmin: boolean, business?: { id
     },
   ];
   
+  const productionBase = business?.id ? `/business/${business.id}/production` : '/production';
+  
   const businessMenuItems: MenuItem[] = [
     { path: moduleRoutes.crm.base, label: 'CRM', icon: Users, category: 'business' },
-    { path: '/production', label: 'יומן ייצור', icon: FileText, category: 'business' },
-    { path: '/modules/accounting', label: 'חשבונות ממוחשבת', icon: FileText, category: 'business' },
-    { path: '/modules/finance', label: 'כספים', icon: Calculator, category: 'business' },
-    { path: '/modules/inventory', label: 'מלאי', icon: Package, category: 'business' },
-    { path: '/modules/orders', label: 'הזמנות', icon: ShoppingCart, category: 'business' },
-    { path: '/modules/projects', label: 'פרויקטים', icon: Briefcase, category: 'business' },
+    { 
+      path: productionBase, 
+      label: 'יומן ייצור', 
+      icon: Refrigerator, 
+      category: 'business',
+      subItems: [
+        { path: `${productionBase}/batches`, label: 'ניהול אצוות', icon: Package },
+        { path: `${productionBase}/quality`, label: 'בקרת איכות', icon: CheckSquare },
+      ]
+    },
+    { 
+      path: accountingBase, 
+      label: 'חשבוניות ותשלומים', 
+      icon: Calculator, 
+      category: 'business',
+      subItems: [
+        { path: `${accountingBase}?tab=invoices`, label: 'חשבוניות', icon: FileText },
+        { path: `${accountingBase}?tab=receipts`, label: 'קבלות', icon: FileText },
+      ]
+    },
   ];
   
   const systemMenuItems: MenuItem[] = [
