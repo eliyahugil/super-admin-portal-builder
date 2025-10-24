@@ -5,6 +5,7 @@ import { BusinessSettingsMain } from '../settings/BusinessSettingsMain';
 import { BusinessProfileEdit } from '../settings/BusinessProfileEdit';
 import { UsersManagement } from '../settings/UsersManagement';
 import BusinessModulesPage from '../settings/BusinessModulesPage';
+import { PermissionsManagement } from '../settings/PermissionsManagement';
 
 interface Props {
   route: string;
@@ -23,7 +24,7 @@ export const SettingsModuleRouter: React.FC<Props> = ({ route, businessId }) => 
     case 'modules':
       return <BusinessModulesPage />;
     case 'permissions':
-      return <div className="p-6 text-center">רכיב הרשאות בפיתוח</div>;
+      return <PermissionsManagement />;
     default:
       return null;
   }
