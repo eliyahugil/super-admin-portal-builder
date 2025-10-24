@@ -5,34 +5,38 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building, MapPin, Users, Settings, Plus, Edit, Archive } from 'lucide-react';
+import { Building, MapPin, Users, Settings, Plus, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { BranchDialog } from './BranchDialog';
-import { BranchRoles } from './BranchRoles';
 import { BranchArchiveButton } from './BranchArchiveButton';
-import { GenericArchivedList } from '@/components/shared/GenericArchivedList';
 import type { Branch } from '../shifts/schedule/types';
+import { useBusinessId } from '@/hooks/useBusinessId';
 
 export const BranchManagement: React.FC = () => {
   const navigate = useNavigate();
+  const businessId = useBusinessId();
   const [editBranchOpen, setEditBranchOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
 
   const { data: branches, refetch } = useQuery({
-    queryKey: ['branches-detailed'],
+    queryKey: ['branches-detailed', businessId],
     queryFn: async () => {
+      if (!businessId) return [];
+      
       const { data, error } = await supabase
         .from('branches')
         .select(`
           *,
           employees:employees(count)
         `)
+        .eq('business_id', businessId)
+        .eq('is_archived', false)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!businessId,
   });
 
   const handleEditBranch = (branch: any) => {
@@ -69,27 +73,11 @@ export const BranchManagement: React.FC = () => {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8" dir="rtl">
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">ניהול סניפים ותפקידים</h1>
-        <p className="text-gray-600 text-sm sm:text-base">ניהול סניפים, עובדים ותפקידים של העסק</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">סניפים</h1>
+        <p className="text-gray-600 text-sm sm:text-base">ניהול סניפי העסק</p>
       </div>
 
-      <Tabs defaultValue="branches" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-full sm:max-w-lg mb-4 sm:mb-6">
-          <TabsTrigger value="branches" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <Building className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden xs:inline">סניפים</span>
-          </TabsTrigger>
-          <TabsTrigger value="roles" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <Users className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden xs:inline">תפקידים</span>
-          </TabsTrigger>
-          <TabsTrigger value="archive" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <Archive className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden xs:inline">ארכיון</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="branches" className="space-y-6">
+      <div className="space-y-6">
           {/* Add Branch Button */}
           <div className="mb-4 sm:mb-6">
             <Button onClick={handleCreateBranch} className="w-full sm:w-auto flex items-center gap-2">
@@ -182,36 +170,7 @@ export const BranchManagement: React.FC = () => {
               </Button>
             </div>
           )}
-        </TabsContent>
-
-        <TabsContent value="roles">
-          <BranchRoles />
-        </TabsContent>
-
-        <TabsContent value="archive">
-          <GenericArchivedList
-            tableName="branches"
-            entityName="סניף"
-            entityNamePlural="סניפים"
-            queryKey={['branches-archived']}
-            getEntityDisplayName={(branch) => branch.name}
-            renderEntityCard={(branch) => (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Building className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">{branch.name}</span>
-                </div>
-                {branch.address && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <MapPin className="h-3 w-3" />
-                    <span>{branch.address}</span>
-                  </div>
-                )}
-              </div>
-            )}
-          />
-        </TabsContent>
-      </Tabs>
+      </div>
 
       <BranchDialog
         isOpen={editBranchOpen}
