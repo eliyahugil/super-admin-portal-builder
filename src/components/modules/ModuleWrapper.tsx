@@ -14,12 +14,19 @@ export const ModuleWrapper: React.FC = () => {
   const { profile, isSuperAdmin, loading } = useAuth();
   const { business, totalOwnedBusinesses, isBusinessOwner } = useBusiness();
 
+  const fullPath = window.location.pathname;
+  const segments = fullPath.split('/').filter(Boolean);
+  const inferredModule = moduleRoute || (segments[0] === 'modules' ? segments[1] : undefined);
+  const inferredSubModule = subModule || (segments[0] === 'modules' ? segments[2] : undefined);
+
   console.log('ModuleWrapper - Current params:', {
     businessId,
     moduleRoute,
     subModule,
     employeeId,
-    fullPath: window.location.pathname
+    inferredModule,
+    inferredSubModule,
+    fullPath
   });
 
   if (loading) {
@@ -54,7 +61,7 @@ export const ModuleWrapper: React.FC = () => {
   }
 
   // Handle super admin routes
-  if (!businessId && !moduleRoute) {
+  if (!businessId && !inferredModule) {
     if (isSuperAdmin) {
       return <SuperAdminDashboard />;
     }
@@ -67,7 +74,7 @@ export const ModuleWrapper: React.FC = () => {
   }
 
   // Handle business management routes
-  if ((businessId === 'admin' && moduleRoute === 'businesses') || (moduleRoute === 'businesses' && isSuperAdmin)) {
+  if ((businessId === 'admin' && inferredModule === 'businesses') || (inferredModule === 'businesses' && isSuperAdmin)) {
     if (isSuperAdmin) {
       return <BusinessManagement />;
     }
@@ -80,18 +87,18 @@ export const ModuleWrapper: React.FC = () => {
   }
 
   // Handle employee profile route specifically - check for URL pattern like /modules/employees/profile/123
-  if (moduleRoute === 'employees' && subModule === 'profile' && employeeId) {
+  if (inferredModule === 'employees' && inferredSubModule === 'profile' && employeeId) {
     console.log('🎯 Detected employee profile route, rendering EmployeeProfilePage for:', employeeId);
     return <EmployeeProfilePage />;
   }
 
   // Handle modules route
-  if (moduleRoute === 'modules') {
+  if (inferredModule === 'modules') {
     return <ModuleManagement />;
   }
 
   // Handle general module routes
-  const fullRoute = subModule ? `${moduleRoute}/${subModule}` : moduleRoute;
+  const fullRoute = inferredSubModule ? `${inferredModule}/${inferredSubModule}` : inferredModule;
   
   console.log('🔀 Routing to ModuleRouteHandler with:', {
     fullRoute,
