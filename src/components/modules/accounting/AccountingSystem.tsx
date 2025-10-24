@@ -13,7 +13,8 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  Database
+  Database,
+  Hash
 } from 'lucide-react';
 import { useRealData } from '@/hooks/useRealData';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
@@ -25,6 +26,7 @@ import { InventoryManagement } from './InventoryManagement';
 import { BackupManagement } from './BackupManagement';
 import { ActivityLog } from './ActivityLog';
 import { SystemSettings } from './SystemSettings';
+import { DocumentNumberingSettings } from './DocumentNumberingSettings';
 
 export const AccountingSystem: React.FC = () => {
   const { businessId } = useCurrentBusiness();
@@ -149,7 +151,7 @@ export const AccountingSystem: React.FC = () => {
 
         {/* תפריט ראשי */}
         <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); setSearchParams({ tab: val }); }} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-6" dir="rtl">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9 mb-6" dir="rtl">
             <TabsTrigger value="overview" className="flex items-center gap-1 flex-row-reverse">
               <Database className="h-4 w-4" />
               <span className="hidden sm:inline">סקירה</span>
@@ -177,6 +179,10 @@ export const AccountingSystem: React.FC = () => {
             <TabsTrigger value="activity" className="flex items-center gap-1 flex-row-reverse">
               <Clock className="h-4 w-4" />
               <span className="hidden sm:inline">פעילות</span>
+            </TabsTrigger>
+            <TabsTrigger value="numbering" className="flex items-center gap-1 flex-row-reverse">
+              <Hash className="h-4 w-4" />
+              <span className="hidden sm:inline">ספרור</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-1 flex-row-reverse">
               <Settings className="h-4 w-4" />
@@ -210,6 +216,10 @@ export const AccountingSystem: React.FC = () => {
 
           <TabsContent value="activity" className="space-y-6">
             <ActivityLog businessId={businessId} />
+          </TabsContent>
+
+          <TabsContent value="numbering" className="space-y-6">
+            <DocumentNumberingSettings businessId={businessId} />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
