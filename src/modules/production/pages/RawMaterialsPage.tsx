@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Leaf, AlertTriangle, Package } from 'lucide-react';
+import { Plus, Leaf, AlertTriangle, Package, ArrowRight } from 'lucide-react';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { RawMaterial } from '@/types/production';
 
@@ -45,10 +45,16 @@ export const RawMaterialsPage: React.FC = () => {
             <p className="text-muted-foreground">ניהול מלאי וצריכת חומרי גלם</p>
           </div>
         </div>
-        <Button onClick={() => navigate('/production/materials/new')}>
-          <Plus className="h-4 w-4 ml-2" />
-          חומר גלם חדש
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/production')}>
+            <ArrowRight className="h-4 w-4 ml-2" />
+            חזור
+          </Button>
+          <Button onClick={() => navigate('/production/materials/new')}>
+            <Plus className="h-4 w-4 ml-2" />
+            חומר גלם חדש
+          </Button>
+        </div>
       </div>
 
       {getLowStockMaterials().length > 0 && (

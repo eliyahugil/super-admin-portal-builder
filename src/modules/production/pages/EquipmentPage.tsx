@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Wrench, AlertCircle } from 'lucide-react';
+import { Plus, Wrench, AlertCircle, ArrowRight } from 'lucide-react';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { ProductionEquipment } from '@/types/production';
 import { format } from 'date-fns';
@@ -51,10 +51,16 @@ export const EquipmentPage: React.FC = () => {
             <p className="text-muted-foreground">ניהול ציוד ותחזוקה שוטפת</p>
           </div>
         </div>
-        <Button onClick={() => navigate('/production/equipment/new')}>
-          <Plus className="h-4 w-4 ml-2" />
-          ציוד חדש
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/production')}>
+            <ArrowRight className="h-4 w-4 ml-2" />
+            חזור
+          </Button>
+          <Button onClick={() => navigate('/production/equipment/new')}>
+            <Plus className="h-4 w-4 ml-2" />
+            ציוד חדש
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (

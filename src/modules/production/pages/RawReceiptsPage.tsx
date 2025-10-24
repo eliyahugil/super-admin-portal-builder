@@ -4,7 +4,7 @@ import { useRawMaterialReceipts } from '../hooks/useRawMaterialReceipts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FileText, AlertTriangle } from 'lucide-react';
+import { Plus, FileText, AlertTriangle, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -35,10 +35,16 @@ export const RawReceiptsPage: React.FC = () => {
             <p className="text-muted-foreground">מעקב אחר חומרי גלם שהתקבלו</p>
           </div>
         </div>
-        <Button onClick={() => navigate('/production/raw-receipts/new')}>
-          <Plus className="h-4 w-4 ml-2" />
-          קבלה חדשה
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/production')}>
+            <ArrowRight className="h-4 w-4 ml-2" />
+            חזור
+          </Button>
+          <Button onClick={() => navigate('/production/raw-receipts/new')}>
+            <Plus className="h-4 w-4 ml-2" />
+            קבלה חדשה
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (

@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Package, Calendar, TrendingUp } from 'lucide-react';
+import { Plus, Package, Calendar, TrendingUp, ArrowRight } from 'lucide-react';
 import { useCurrentBusiness } from '@/hooks/useCurrentBusiness';
 import { ProductionBatch } from '@/types/production';
 import { format } from 'date-fns';
@@ -56,10 +56,16 @@ export const ProductionBatchesPage: React.FC = () => {
             <p className="text-muted-foreground">ניהול אצוות ייצור יומיות</p>
           </div>
         </div>
-        <Button onClick={() => navigate('/production/batches/new')}>
-          <Plus className="h-4 w-4 ml-2" />
-          אצווה חדשה
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/production')}>
+            <ArrowRight className="h-4 w-4 ml-2" />
+            חזור
+          </Button>
+          <Button onClick={() => navigate('/production/batches/new')}>
+            <Plus className="h-4 w-4 ml-2" />
+            אצווה חדשה
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-2">
